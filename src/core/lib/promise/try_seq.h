@@ -24,37 +24,6 @@ namespace grpc_core {
 
 namespace try_seq_detail {
 
-template <typename... Ts>
-struct List {
-  template <typename T>
-  using Append = List<Ts..., T>;
-  using Variant = absl::variant<Ts...>;
-};
-
-template <typename F, typename... Next>
-class State;
-
-template <typename F>
-class State<F> {
- public:
-  explicit State(F f) : f_(std::move(f)) {}
-  using Result = typename decltype(std::declval<F>()())::Type;
-
-  using FinalState = State<F>;
-  using StatesList = List<FinalState>;
-
-  template <typename StateVariant>
-  Poll<Result> Run(StateVariant*) {
-    return f_();
-  }
-
- private:
-  F f_;
-};
-
-template <typename Next, typename T>
-struct NextResultTraits;
-
 template <typename T>
 struct NextArg;
 template <typename T>
@@ -77,61 +46,56 @@ auto CallNext(Next* next, absl::Status* status) -> decltype(next->Once()) {
   return next->Once();
 }
 
-template <typename Result>
-Result StatusFrom(absl::Status* status) {
-  return Result(std::move(*status));
-}
-
-template <typename Result, typename T>
-Result StatusFrom(absl::StatusOr<T>* status) {
-  return Result(std::move(status->status()));
-}
-
-template <typename F, typename Next, typename... Nexts>
-class State<F, Next, Nexts...> final {
- public:
-  State(F f, Next next, Nexts... nexts)
-      : f_(std::move(f)), next_(std::move(next)), nexts_(std::move(nexts)...) {}
-
-  using FResult = typename decltype(std::declval<F>()())::Type;
-  using NextFactory =
-      adaptor_detail::Factory<typename NextArg<FResult>::Type, Next>;
-  using NextResult = decltype(CallNext(static_cast<NextFactory*>(nullptr),
-                                       static_cast<FResult*>(nullptr)));
-  using NextState = State<NextResult, Nexts...>;
-  using FinalState = typename NextState::FinalState;
-  using StatesList =
-      typename NextState::StatesList::template Append<State<F, Next, Nexts...>>;
-  using PollResult = absl::StatusOr<NextState>;
-
-  template <typename StateVariant>
-  Poll<typename FinalState::Result> Run(StateVariant* state_variant) {
-    auto r = f_();
-    if (auto* result = r.get_ready()) {
-      if (result->ok()) {
-        auto next = &next_;
-        return absl::apply(
-            [result, next, state_variant](Nexts&... nexts) {
-              return state_variant
-                  ->template emplace<NextState>(CallNext(next, result),
-                                                std::move(nexts)...)
-                  .Run(state_variant);
-            },
-            nexts_);
-      }
-      return ready(StatusFrom<typename FinalState::Result>(result));
-    }
-    return kPending;
-  }
-
- private:
-  F f_;
-  NextFactory next_;
-  std::tuple<Nexts...> nexts_;
+template <typename F0, typename F1>
+struct InitialState {
+  InitialState(F0&& f0, F1&& f1)
+      : f(std::forward<F0>(f0)), next(std::forward<F1>(f1)) {}
+  InitialState(InitialState&& other)
+      : f(std::move(other.f)), next(std::move(other.next)) {}
+  InitialState(const InitialState& other) : f(other.f), next(other.next) {}
+  ~InitialState() = delete;
+  using F = F0;
+  [[no_unique_address]] F0 f;
+  using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
+  using Next = adaptor_detail::Factory<typename NextArg<FResult>::Type, F1>;
+  [[no_unique_address]] Next next;
 };
 
+template <typename PriorState, typename FNext, typename... PriorStateFs>
+struct IntermediateState {
+  IntermediateState(PriorStateFs&&... prior_fs, FNext&& f)
+      : next(std::forward<F>(f)) {
+    new (&prior) PriorState(std::forward<PriorStateFs>(prior_fs)...);
+  }
+  IntermediateState(IntermediateState&& other)
+      : prior(std::move(other.prior)), next(std::move(other.next)) {}
+  IntermediateState(const IntermediateState& other)
+      : prior(other.prior), next(other.next) {}
+  ~IntermediateState() = delete;
+  using F = typename PriorState::Next::Promise;
+  union {
+    [[no_unique_address]] PriorState prior;
+    [[no_unique_address]] F f;
+  };
+  using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
+  using Next = adaptor_detail::Factory<typename NextArg<FResult>::Type, FNext>;
+  [[no_unique_address]] Next next;
+};
+
+template <typename PriorState, typename NewStateF, typename Result>
+void AdvanceState(PriorState* prior_state, NewStateF* new_state_f, Result* p) {
+  Destruct(&prior_state->f);
+  auto n = CallNext(&prior_state->next, p);
+  Destruct(&prior_state->next);
+  Construct(new_state_f, std::move(n));
+}
+
 template <typename... Functors>
-class TrySeq {
+class TrySeq;
+
+#include "try_seq_switch.h"
+
+/* {
  private:
   using InitialState = State<Functors...>;
   using FinalState = typename InitialState::FinalState;
@@ -159,7 +123,7 @@ class TrySeq {
       : state_(InitialState(std::move(functors)...)) {}
 
   Poll<Result> operator()() { return absl::visit(CallPoll{this}, state_); }
-};
+};*/
 
 }  // namespace try_seq_detail
 

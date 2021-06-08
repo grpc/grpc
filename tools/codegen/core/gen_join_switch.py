@@ -81,32 +81,32 @@ with open('src/core/lib/promise/join_switch.h', 'w') as H:
         print >>H, " private:"
         print >>H, "  [[no_unique_address]] uint%d_t state_ = 0;" % state_size
         for i in range(0, n+1):
-            print >>H, "  using R%d = typename decltype(std::declval<F%d>()())::Type;" % (i,i)
-            print >>H, "  union { [[no_unique_address]] F%d pending%d_; [[no_unique_address]] R%d ready%d_; };" % (i,i,i,i)
+            print >>H, "  [[no_unique_address]] Fused<F%d> f%d_;" % (i,i)
+            print >>H, "  using R%d = typename Fused<F%d>::Result;" % (i,i)
         print >>H, " public:"
-        print >>H, "  Join(%s) : %s {}" % (fs_decls(n), ", ".join("pending%d_(std::move(f%d))" % (i,i) for i in range(0, n+1)))
+        print >>H, "  Join(%s) {" % (fs_decls(n))
+        for i in range(0, n+1):
+            print >>H, "    Construct(&f%d_.pending, std::move(f%d));" % (i,i)
+        print >>H, "  }"
         print >>H, "  Join& operator=(const Join&) = delete;"
         print >>H, "  Join(const Join& other) {"
         print >>H, "    assert(other.state_ == 0);"
         for i in range(0, n+1):
-            print >>H, "    Construct(&pending%d_, std::move(other.pending%d_));" % (i,i)
+            print >>H, "    Construct(&f%d_.pending, std::move(other.f%d_.pending));" % (i,i)
         print >>H, "  }"
         print >>H, "  Join(Join&& other) {"
         print >>H, "    assert(other.state_ == 0);"
         for i in range(0, n+1):
-            print >>H, "    Construct(&pending%d_, std::move(other.pending%d_));" % (i,i)
+            print >>H, "    Construct(&f%d_.pending, std::move(other.f%d_.pending));" % (i,i)
         print >>H, "  }"
         print >>H, "  ~Join() {"
         for i in range(0, n+1):
-            print >>H, "    if (state_ & %d) {Destruct(&ready%d_);} else {Destruct(&pending%d_);}" % (1<<i,i,i)
+            print >>H, "    f%d_.CallDestruct((state_ & %d) != 0);" % (i, 1<<i)
         print >>H, "  }"
         print >>H, "  Poll<std::tuple<%s>> operator()() {" % rs(n)
         for i in range(0, n+1):
-            print >>H, "    if ((state_ & %d) == 0) {" % (1<<i)
-            print >>H, "      auto r = pending%d_();" % i
-            print >>H, "      if (auto* p = r.get_ready()) { state_ |= %d; Destruct(&pending%d_); Construct(&ready%d_, std::move(*p)); }" % (1<<i,i,i)
-            print >>H, "    }"
+            print >>H, "    f%d_.Poll(&state_, decltype(state_)(%d));" % (i, 1<<i)
         print >>H, "    if (state_ != %d) return kPending;" % sum(1<<i for i in range(0,n+1))
-        print >>H, "    return ready(std::tuple<%s>(%s));" % (rs(n), ", ".join("std::move(ready%d_)" % i for i in range(0,n+1)))
+        print >>H, "    return ready(std::tuple<%s>(%s));" % (rs(n), ", ".join("std::move(f%d_.ready)" % i for i in range(0,n+1)))
         print >>H, "  }"
         print >>H, "};"

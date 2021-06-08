@@ -27,6 +27,36 @@ namespace join_detail {
 template <typename... Promise>
 class Join;
 
+template <typename F>
+union Fused {
+  Fused() {}
+  ~Fused() {}
+
+  using Result = typename decltype(std::declval<F>()())::Type;
+  [[no_unique_address]] F pending;
+  [[no_unique_address]] Result ready;
+
+  void CallDestruct(bool ready) {
+    if (ready) {
+      Destruct(&ready);
+    } else {
+      Destruct(&pending);
+    }
+  }
+
+  template <typename T>
+  void Poll(T* state, T control_bit) {
+    if ((*state & control_bit) == 0) {
+      auto r = pending();
+      if (auto* p = r.get_ready()) {
+        *state |= control_bit;
+        Destruct(&pending);
+        Construct(&ready, std::move(*p));
+      }
+    }
+  }
+};
+
 #include "join_switch.h"
 
 }  // namespace join_detail

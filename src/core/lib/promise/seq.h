@@ -23,6 +23,54 @@ namespace grpc_core {
 
 namespace seq_detail {
 
+template <typename F0, typename F1>
+struct InitialState {
+  InitialState(F0&& f0, F1&& f1)
+      : f(std::forward<F0>(f0)), next(std::forward<F1>(f1)) {}
+  InitialState(InitialState&& other)
+      : f(std::move(other.f)), next(std::move(other.next)) {}
+  InitialState(const InitialState& other) : f(other.f), next(other.next) {}
+  ~InitialState() = delete;
+  using F = F0;
+  [[no_unique_address]] F0 f;
+  using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
+  using Next = adaptor_detail::Factory<FResult, F1>;
+  [[no_unique_address]] Next next;
+};
+
+template <typename PriorState, typename FNext, typename... PriorStateFs>
+struct IntermediateState {
+  IntermediateState(PriorStateFs&&... prior_fs, FNext&& f)
+      : next(std::forward<FNext>(f)) {
+    new (&prior) PriorState(std::forward<PriorStateFs>(prior_fs)...);
+  }
+  IntermediateState(IntermediateState&& other)
+      : prior(std::move(other.prior)), next(std::move(other.next)) {}
+  IntermediateState(const IntermediateState& other)
+      : prior(other.prior), next(other.next) {}
+  ~IntermediateState() = delete;
+  using F = typename PriorState::Next::Promise;
+  union {
+    [[no_unique_address]] PriorState prior;
+    [[no_unique_address]] F f;
+  };
+  using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
+  using Next = adaptor_detail::Factory<FResult, FNext>;
+  [[no_unique_address]] Next next;
+};
+
+template <typename State, typename NextF>
+bool StepSeq(State* state, NextF* next_f) {
+  auto r = state->f();
+  auto* p = r.get_ready();
+  if (p == nullptr) return true;
+  Destruct(&state->f);
+  auto n = state->next.Once(std::move(*p));
+  Destruct(&state->next);
+  Construct(next_f, std::move(n));
+  return false;
+}
+
 template <typename... Fs>
 class Seq;
 

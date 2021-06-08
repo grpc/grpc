@@ -363,7 +363,7 @@ static void BM_ActivityStack_Interject30Latches_Unary(benchmark::State& state) {
         nullptr, std::move(rpcio));
   });
 }
-BENCHMARK(BM_ActivityStack_Interject10Latches_Unary);
+BENCHMARK(BM_ActivityStack_Interject30Latches_Unary);
 
 static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
   unary(state, []() {

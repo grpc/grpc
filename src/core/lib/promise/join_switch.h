@@ -22,422 +22,217 @@ template <typename F0>
 class Join<F0> {
  private:
   [[no_unique_address]] uint8_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
 
  public:
-  Join(F0 f0) : pending0_(std::move(f0)) {}
+  Join(F0 f0) { Construct(&f0_.pending, std::move(f0)); }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
   }
-  ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-  }
+  ~Join() { f0_.CallDestruct((state_ & 1) != 0); }
   Poll<std::tuple<R0>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
     if (state_ != 1) return kPending;
-    return ready(std::tuple<R0>(std::move(ready0_)));
+    return ready(std::tuple<R0>(std::move(f0_.ready)));
   }
 };
 template <typename F0, typename F1>
 class Join<F0, F1> {
  private:
   [[no_unique_address]] uint8_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
 
  public:
-  Join(F0 f0, F1 f1) : pending0_(std::move(f0)), pending1_(std::move(f1)) {}
+  Join(F0 f0, F1 f1) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
   }
   Poll<std::tuple<R0, R1>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
     if (state_ != 3) return kPending;
-    return ready(std::tuple<R0, R1>(std::move(ready0_), std::move(ready1_)));
+    return ready(
+        std::tuple<R0, R1>(std::move(f0_.ready), std::move(f1_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2>
 class Join<F0, F1, F2> {
  private:
   [[no_unique_address]] uint8_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
 
  public:
-  Join(F0 f0, F1 f1, F2 f2)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)) {}
+  Join(F0 f0, F1 f1, F2 f2) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
   }
   Poll<std::tuple<R0, R1, R2>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
     if (state_ != 7) return kPending;
-    return ready(std::tuple<R0, R1, R2>(std::move(ready0_), std::move(ready1_),
-                                        std::move(ready2_)));
+    return ready(std::tuple<R0, R1, R2>(
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3>
 class Join<F0, F1, F2, F3> {
  private:
   [[no_unique_address]] uint8_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
 
  public:
-  Join(F0 f0, F1 f1, F2 f2, F3 f3)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)) {}
+  Join(F0 f0, F1 f1, F2 f2, F3 f3) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
     if (state_ != 15) return kPending;
     return ready(
-        std::tuple<R0, R1, R2, R3>(std::move(ready0_), std::move(ready1_),
-                                   std::move(ready2_), std::move(ready3_)));
+        std::tuple<R0, R1, R2, R3>(std::move(f0_.ready), std::move(f1_.ready),
+                                   std::move(f2_.ready), std::move(f3_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4>
 class Join<F0, F1, F2, F3, F4> {
  private:
   [[no_unique_address]] uint8_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
 
  public:
-  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)) {}
+  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
     if (state_ != 31) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -445,149 +240,66 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5> {
  private:
   [[no_unique_address]] uint8_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
 
  public:
-  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)) {}
+  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
     if (state_ != 63) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -595,171 +307,74 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6> {
  private:
   [[no_unique_address]] uint8_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
 
  public:
-  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)) {}
+  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
     if (state_ != 127) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -767,192 +382,81 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6, F7> {
  private:
   [[no_unique_address]] uint8_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
 
  public:
-  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)) {}
+  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
     if (state_ != 255) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -960,213 +464,88 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8> {
  private:
   [[no_unique_address]] uint16_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
 
  public:
-  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)) {}
+  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
     if (state_ != 511) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -1174,235 +553,96 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
  private:
   [[no_unique_address]] uint16_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
 
  public:
-  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)) {}
+  Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
     if (state_ != 1023) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -1411,257 +651,104 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
  private:
   [[no_unique_address]] uint16_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-       F10 f10)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)) {}
+       F10 f10) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10>> operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
     if (state_ != 2047) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -1670,279 +757,112 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
  private:
   [[no_unique_address]] uint16_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-       F10 f10, F11 f11)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)) {}
+       F10 f10, F11 f11) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
     if (state_ != 4095) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -1951,302 +871,121 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12> {
  private:
   [[no_unique_address]] uint16_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-       F10 f10, F11 f11, F12 f12)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)) {}
+       F10 f10, F11 f11, F12 f12) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
     if (state_ != 8191) return kPending;
     return ready(
         std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12>(
-            std::move(ready0_), std::move(ready1_), std::move(ready2_),
-            std::move(ready3_), std::move(ready4_), std::move(ready5_),
-            std::move(ready6_), std::move(ready7_), std::move(ready8_),
-            std::move(ready9_), std::move(ready10_), std::move(ready11_),
-            std::move(ready12_)));
+            std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+            std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+            std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+            std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+            std::move(f12_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -2255,323 +994,128 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13> {
  private:
   [[no_unique_address]] uint16_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-       F10 f10, F11 f11, F12 f12, F13 f13)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)) {}
+       F10 f10, F11 f11, F12 f12, F13 f13) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
     if (state_ != 16383) return kPending;
     return ready(
         std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13>(
-            std::move(ready0_), std::move(ready1_), std::move(ready2_),
-            std::move(ready3_), std::move(ready4_), std::move(ready5_),
-            std::move(ready6_), std::move(ready7_), std::move(ready8_),
-            std::move(ready9_), std::move(ready10_), std::move(ready11_),
-            std::move(ready12_), std::move(ready13_)));
+            std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+            std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+            std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+            std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+            std::move(f12_.ready), std::move(f13_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -2580,345 +1124,136 @@ template <typename F0, typename F1, typename F2, typename F3, typename F4,
 class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14> {
  private:
   [[no_unique_address]] uint16_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-       F10 f10, F11 f11, F12 f12, F13 f13, F14 f14)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)) {}
+       F10 f10, F11 f11, F12 f12, F13 f13, F14 f14) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
     if (state_ != 32767) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -2929,367 +1264,144 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
            F15> {
  private:
   [[no_unique_address]] uint16_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-       F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)) {}
+       F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
     if (state_ != 65535) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -3300,388 +1412,151 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-       F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)) {}
+       F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
     if (state_ != 131071) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -3692,409 +1567,158 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
-       F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)) {}
+       F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
     if (state_ != 262143) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -4105,432 +1729,167 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
-       F18 f18)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)) {}
+       F18 f18) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
     if (state_ != 524287) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -4541,453 +1900,174 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
-       F18 f18, F19 f19)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)) {}
+       F18 f18, F19 f19) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
     if (state_ != 1048575) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -4999,474 +2079,181 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
-       F18 f18, F19 f19, F20 f20)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)) {}
+       F18 f18, F19 f19, F20 f20) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
     if (state_ != 2097151) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19, R20>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_), std::move(ready20_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -5478,496 +2265,189 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20, F21> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
-       F18 f18, F19 f19, F20 f20, F21 f21)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)) {}
+       F18 f18, F19 f19, F20 f20, F21 f21) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
     if (state_ != 4194303) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19, R20, R21>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_), std::move(ready20_),
-        std::move(ready21_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+        std::move(f21_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -5979,518 +2459,197 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20, F21, F22> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
-       F18 f18, F19 f19, F20 f20, F21 f21, F22 f22)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)) {}
+       F18 f18, F19 f19, F20 f20, F21 f21, F22 f22) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
     if (state_ != 8388607) return kPending;
     return ready(
         std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                    R14, R15, R16, R17, R18, R19, R20, R21, R22>(
-            std::move(ready0_), std::move(ready1_), std::move(ready2_),
-            std::move(ready3_), std::move(ready4_), std::move(ready5_),
-            std::move(ready6_), std::move(ready7_), std::move(ready8_),
-            std::move(ready9_), std::move(ready10_), std::move(ready11_),
-            std::move(ready12_), std::move(ready13_), std::move(ready14_),
-            std::move(ready15_), std::move(ready16_), std::move(ready17_),
-            std::move(ready18_), std::move(ready19_), std::move(ready20_),
-            std::move(ready21_), std::move(ready22_)));
+            std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+            std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+            std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+            std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+            std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+            std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+            std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+            std::move(f21_.ready), std::move(f22_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -6502,539 +2661,205 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20, F21, F22, F23> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
-       F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)) {}
+       F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
     if (state_ != 16777215) return kPending;
     return ready(
         std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                    R14, R15, R16, R17, R18, R19, R20, R21, R22, R23>(
-            std::move(ready0_), std::move(ready1_), std::move(ready2_),
-            std::move(ready3_), std::move(ready4_), std::move(ready5_),
-            std::move(ready6_), std::move(ready7_), std::move(ready8_),
-            std::move(ready9_), std::move(ready10_), std::move(ready11_),
-            std::move(ready12_), std::move(ready13_), std::move(ready14_),
-            std::move(ready15_), std::move(ready16_), std::move(ready17_),
-            std::move(ready18_), std::move(ready19_), std::move(ready20_),
-            std::move(ready21_), std::move(ready22_), std::move(ready23_)));
+            std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+            std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+            std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+            std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+            std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+            std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+            std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+            std::move(f21_.ready), std::move(f22_.ready),
+            std::move(f23_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -7046,561 +2871,212 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20, F21, F22, F23, F24> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
-  using R24 = typename decltype(std::declval<F24>()())::Type;
-  union {
-    [[no_unique_address]] F24 pending24_;
-    [[no_unique_address]] R24 ready24_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
+  [[no_unique_address]] Fused<F24> f24_;
+  using R24 = typename Fused<F24>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
-       F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)),
-        pending24_(std::move(f24)) {}
+       F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+    Construct(&f24_.pending, std::move(f24));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
-    if (state_ & 16777216) {
-      Destruct(&ready24_);
-    } else {
-      Destruct(&pending24_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
+    f24_.CallDestruct((state_ & 16777216) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
-    if ((state_ & 16777216) == 0) {
-      auto r = pending24_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16777216;
-        Destruct(&pending24_);
-        Construct(&ready24_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
+    f24_.Poll(&state_, decltype(state_)(16777216));
     if (state_ != 33554431) return kPending;
     return ready(
         std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                    R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24>(
-            std::move(ready0_), std::move(ready1_), std::move(ready2_),
-            std::move(ready3_), std::move(ready4_), std::move(ready5_),
-            std::move(ready6_), std::move(ready7_), std::move(ready8_),
-            std::move(ready9_), std::move(ready10_), std::move(ready11_),
-            std::move(ready12_), std::move(ready13_), std::move(ready14_),
-            std::move(ready15_), std::move(ready16_), std::move(ready17_),
-            std::move(ready18_), std::move(ready19_), std::move(ready20_),
-            std::move(ready21_), std::move(ready22_), std::move(ready23_),
-            std::move(ready24_)));
+            std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+            std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+            std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+            std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+            std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+            std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+            std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+            std::move(f21_.ready), std::move(f22_.ready), std::move(f23_.ready),
+            std::move(f24_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -7613,582 +3089,219 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20, F21, F22, F23, F24, F25> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
-  using R24 = typename decltype(std::declval<F24>()())::Type;
-  union {
-    [[no_unique_address]] F24 pending24_;
-    [[no_unique_address]] R24 ready24_;
-  };
-  using R25 = typename decltype(std::declval<F25>()())::Type;
-  union {
-    [[no_unique_address]] F25 pending25_;
-    [[no_unique_address]] R25 ready25_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
+  [[no_unique_address]] Fused<F24> f24_;
+  using R24 = typename Fused<F24>::Result;
+  [[no_unique_address]] Fused<F25> f25_;
+  using R25 = typename Fused<F25>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
-       F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)),
-        pending24_(std::move(f24)),
-        pending25_(std::move(f25)) {}
+       F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+    Construct(&f24_.pending, std::move(f24));
+    Construct(&f25_.pending, std::move(f25));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
-    if (state_ & 16777216) {
-      Destruct(&ready24_);
-    } else {
-      Destruct(&pending24_);
-    }
-    if (state_ & 33554432) {
-      Destruct(&ready25_);
-    } else {
-      Destruct(&pending25_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
+    f24_.CallDestruct((state_ & 16777216) != 0);
+    f25_.CallDestruct((state_ & 33554432) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24, R25>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
-    if ((state_ & 16777216) == 0) {
-      auto r = pending24_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16777216;
-        Destruct(&pending24_);
-        Construct(&ready24_, std::move(*p));
-      }
-    }
-    if ((state_ & 33554432) == 0) {
-      auto r = pending25_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 33554432;
-        Destruct(&pending25_);
-        Construct(&ready25_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
+    f24_.Poll(&state_, decltype(state_)(16777216));
+    f25_.Poll(&state_, decltype(state_)(33554432));
     if (state_ != 67108863) return kPending;
     return ready(
         std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                    R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24, R25>(
-            std::move(ready0_), std::move(ready1_), std::move(ready2_),
-            std::move(ready3_), std::move(ready4_), std::move(ready5_),
-            std::move(ready6_), std::move(ready7_), std::move(ready8_),
-            std::move(ready9_), std::move(ready10_), std::move(ready11_),
-            std::move(ready12_), std::move(ready13_), std::move(ready14_),
-            std::move(ready15_), std::move(ready16_), std::move(ready17_),
-            std::move(ready18_), std::move(ready19_), std::move(ready20_),
-            std::move(ready21_), std::move(ready22_), std::move(ready23_),
-            std::move(ready24_), std::move(ready25_)));
+            std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+            std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+            std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+            std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+            std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+            std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+            std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+            std::move(f21_.ready), std::move(f22_.ready), std::move(f23_.ready),
+            std::move(f24_.ready), std::move(f25_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -8201,605 +3314,228 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20, F21, F22, F23, F24, F25, F26> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
-  using R24 = typename decltype(std::declval<F24>()())::Type;
-  union {
-    [[no_unique_address]] F24 pending24_;
-    [[no_unique_address]] R24 ready24_;
-  };
-  using R25 = typename decltype(std::declval<F25>()())::Type;
-  union {
-    [[no_unique_address]] F25 pending25_;
-    [[no_unique_address]] R25 ready25_;
-  };
-  using R26 = typename decltype(std::declval<F26>()())::Type;
-  union {
-    [[no_unique_address]] F26 pending26_;
-    [[no_unique_address]] R26 ready26_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
+  [[no_unique_address]] Fused<F24> f24_;
+  using R24 = typename Fused<F24>::Result;
+  [[no_unique_address]] Fused<F25> f25_;
+  using R25 = typename Fused<F25>::Result;
+  [[no_unique_address]] Fused<F26> f26_;
+  using R26 = typename Fused<F26>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
        F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
-       F26 f26)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)),
-        pending24_(std::move(f24)),
-        pending25_(std::move(f25)),
-        pending26_(std::move(f26)) {}
+       F26 f26) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+    Construct(&f24_.pending, std::move(f24));
+    Construct(&f25_.pending, std::move(f25));
+    Construct(&f26_.pending, std::move(f26));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
-    if (state_ & 16777216) {
-      Destruct(&ready24_);
-    } else {
-      Destruct(&pending24_);
-    }
-    if (state_ & 33554432) {
-      Destruct(&ready25_);
-    } else {
-      Destruct(&pending25_);
-    }
-    if (state_ & 67108864) {
-      Destruct(&ready26_);
-    } else {
-      Destruct(&pending26_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
+    f24_.CallDestruct((state_ & 16777216) != 0);
+    f25_.CallDestruct((state_ & 33554432) != 0);
+    f26_.CallDestruct((state_ & 67108864) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24, R25,
                   R26>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
-    if ((state_ & 16777216) == 0) {
-      auto r = pending24_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16777216;
-        Destruct(&pending24_);
-        Construct(&ready24_, std::move(*p));
-      }
-    }
-    if ((state_ & 33554432) == 0) {
-      auto r = pending25_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 33554432;
-        Destruct(&pending25_);
-        Construct(&ready25_, std::move(*p));
-      }
-    }
-    if ((state_ & 67108864) == 0) {
-      auto r = pending26_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 67108864;
-        Destruct(&pending26_);
-        Construct(&ready26_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
+    f24_.Poll(&state_, decltype(state_)(16777216));
+    f25_.Poll(&state_, decltype(state_)(33554432));
+    f26_.Poll(&state_, decltype(state_)(67108864));
     if (state_ != 134217727) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19, R20, R21,
                             R22, R23, R24, R25, R26>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_), std::move(ready20_),
-        std::move(ready21_), std::move(ready22_), std::move(ready23_),
-        std::move(ready24_), std::move(ready25_), std::move(ready26_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+        std::move(f21_.ready), std::move(f22_.ready), std::move(f23_.ready),
+        std::move(f24_.ready), std::move(f25_.ready), std::move(f26_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -8812,627 +3548,236 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20, F21, F22, F23, F24, F25, F26, F27> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
-  using R24 = typename decltype(std::declval<F24>()())::Type;
-  union {
-    [[no_unique_address]] F24 pending24_;
-    [[no_unique_address]] R24 ready24_;
-  };
-  using R25 = typename decltype(std::declval<F25>()())::Type;
-  union {
-    [[no_unique_address]] F25 pending25_;
-    [[no_unique_address]] R25 ready25_;
-  };
-  using R26 = typename decltype(std::declval<F26>()())::Type;
-  union {
-    [[no_unique_address]] F26 pending26_;
-    [[no_unique_address]] R26 ready26_;
-  };
-  using R27 = typename decltype(std::declval<F27>()())::Type;
-  union {
-    [[no_unique_address]] F27 pending27_;
-    [[no_unique_address]] R27 ready27_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
+  [[no_unique_address]] Fused<F24> f24_;
+  using R24 = typename Fused<F24>::Result;
+  [[no_unique_address]] Fused<F25> f25_;
+  using R25 = typename Fused<F25>::Result;
+  [[no_unique_address]] Fused<F26> f26_;
+  using R26 = typename Fused<F26>::Result;
+  [[no_unique_address]] Fused<F27> f27_;
+  using R27 = typename Fused<F27>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
        F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
-       F26 f26, F27 f27)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)),
-        pending24_(std::move(f24)),
-        pending25_(std::move(f25)),
-        pending26_(std::move(f26)),
-        pending27_(std::move(f27)) {}
+       F26 f26, F27 f27) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+    Construct(&f24_.pending, std::move(f24));
+    Construct(&f25_.pending, std::move(f25));
+    Construct(&f26_.pending, std::move(f26));
+    Construct(&f27_.pending, std::move(f27));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
-    if (state_ & 16777216) {
-      Destruct(&ready24_);
-    } else {
-      Destruct(&pending24_);
-    }
-    if (state_ & 33554432) {
-      Destruct(&ready25_);
-    } else {
-      Destruct(&pending25_);
-    }
-    if (state_ & 67108864) {
-      Destruct(&ready26_);
-    } else {
-      Destruct(&pending26_);
-    }
-    if (state_ & 134217728) {
-      Destruct(&ready27_);
-    } else {
-      Destruct(&pending27_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
+    f24_.CallDestruct((state_ & 16777216) != 0);
+    f25_.CallDestruct((state_ & 33554432) != 0);
+    f26_.CallDestruct((state_ & 67108864) != 0);
+    f27_.CallDestruct((state_ & 134217728) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24, R25,
                   R26, R27>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
-    if ((state_ & 16777216) == 0) {
-      auto r = pending24_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16777216;
-        Destruct(&pending24_);
-        Construct(&ready24_, std::move(*p));
-      }
-    }
-    if ((state_ & 33554432) == 0) {
-      auto r = pending25_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 33554432;
-        Destruct(&pending25_);
-        Construct(&ready25_, std::move(*p));
-      }
-    }
-    if ((state_ & 67108864) == 0) {
-      auto r = pending26_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 67108864;
-        Destruct(&pending26_);
-        Construct(&ready26_, std::move(*p));
-      }
-    }
-    if ((state_ & 134217728) == 0) {
-      auto r = pending27_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 134217728;
-        Destruct(&pending27_);
-        Construct(&ready27_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
+    f24_.Poll(&state_, decltype(state_)(16777216));
+    f25_.Poll(&state_, decltype(state_)(33554432));
+    f26_.Poll(&state_, decltype(state_)(67108864));
+    f27_.Poll(&state_, decltype(state_)(134217728));
     if (state_ != 268435455) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19, R20, R21,
                             R22, R23, R24, R25, R26, R27>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_), std::move(ready20_),
-        std::move(ready21_), std::move(ready22_), std::move(ready23_),
-        std::move(ready24_), std::move(ready25_), std::move(ready26_),
-        std::move(ready27_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+        std::move(f21_.ready), std::move(f22_.ready), std::move(f23_.ready),
+        std::move(f24_.ready), std::move(f25_.ready), std::move(f26_.ready),
+        std::move(f27_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -9445,648 +3790,243 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F16, F17, F18, F19, F20, F21, F22, F23, F24, F25, F26, F27, F28> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
-  using R24 = typename decltype(std::declval<F24>()())::Type;
-  union {
-    [[no_unique_address]] F24 pending24_;
-    [[no_unique_address]] R24 ready24_;
-  };
-  using R25 = typename decltype(std::declval<F25>()())::Type;
-  union {
-    [[no_unique_address]] F25 pending25_;
-    [[no_unique_address]] R25 ready25_;
-  };
-  using R26 = typename decltype(std::declval<F26>()())::Type;
-  union {
-    [[no_unique_address]] F26 pending26_;
-    [[no_unique_address]] R26 ready26_;
-  };
-  using R27 = typename decltype(std::declval<F27>()())::Type;
-  union {
-    [[no_unique_address]] F27 pending27_;
-    [[no_unique_address]] R27 ready27_;
-  };
-  using R28 = typename decltype(std::declval<F28>()())::Type;
-  union {
-    [[no_unique_address]] F28 pending28_;
-    [[no_unique_address]] R28 ready28_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
+  [[no_unique_address]] Fused<F24> f24_;
+  using R24 = typename Fused<F24>::Result;
+  [[no_unique_address]] Fused<F25> f25_;
+  using R25 = typename Fused<F25>::Result;
+  [[no_unique_address]] Fused<F26> f26_;
+  using R26 = typename Fused<F26>::Result;
+  [[no_unique_address]] Fused<F27> f27_;
+  using R27 = typename Fused<F27>::Result;
+  [[no_unique_address]] Fused<F28> f28_;
+  using R28 = typename Fused<F28>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
        F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
-       F26 f26, F27 f27, F28 f28)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)),
-        pending24_(std::move(f24)),
-        pending25_(std::move(f25)),
-        pending26_(std::move(f26)),
-        pending27_(std::move(f27)),
-        pending28_(std::move(f28)) {}
+       F26 f26, F27 f27, F28 f28) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+    Construct(&f24_.pending, std::move(f24));
+    Construct(&f25_.pending, std::move(f25));
+    Construct(&f26_.pending, std::move(f26));
+    Construct(&f27_.pending, std::move(f27));
+    Construct(&f28_.pending, std::move(f28));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
-    Construct(&pending28_, std::move(other.pending28_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
+    Construct(&f28_.pending, std::move(other.f28_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
-    Construct(&pending28_, std::move(other.pending28_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
+    Construct(&f28_.pending, std::move(other.f28_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
-    if (state_ & 16777216) {
-      Destruct(&ready24_);
-    } else {
-      Destruct(&pending24_);
-    }
-    if (state_ & 33554432) {
-      Destruct(&ready25_);
-    } else {
-      Destruct(&pending25_);
-    }
-    if (state_ & 67108864) {
-      Destruct(&ready26_);
-    } else {
-      Destruct(&pending26_);
-    }
-    if (state_ & 134217728) {
-      Destruct(&ready27_);
-    } else {
-      Destruct(&pending27_);
-    }
-    if (state_ & 268435456) {
-      Destruct(&ready28_);
-    } else {
-      Destruct(&pending28_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
+    f24_.CallDestruct((state_ & 16777216) != 0);
+    f25_.CallDestruct((state_ & 33554432) != 0);
+    f26_.CallDestruct((state_ & 67108864) != 0);
+    f27_.CallDestruct((state_ & 134217728) != 0);
+    f28_.CallDestruct((state_ & 268435456) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24, R25,
                   R26, R27, R28>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
-    if ((state_ & 16777216) == 0) {
-      auto r = pending24_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16777216;
-        Destruct(&pending24_);
-        Construct(&ready24_, std::move(*p));
-      }
-    }
-    if ((state_ & 33554432) == 0) {
-      auto r = pending25_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 33554432;
-        Destruct(&pending25_);
-        Construct(&ready25_, std::move(*p));
-      }
-    }
-    if ((state_ & 67108864) == 0) {
-      auto r = pending26_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 67108864;
-        Destruct(&pending26_);
-        Construct(&ready26_, std::move(*p));
-      }
-    }
-    if ((state_ & 134217728) == 0) {
-      auto r = pending27_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 134217728;
-        Destruct(&pending27_);
-        Construct(&ready27_, std::move(*p));
-      }
-    }
-    if ((state_ & 268435456) == 0) {
-      auto r = pending28_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 268435456;
-        Destruct(&pending28_);
-        Construct(&ready28_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
+    f24_.Poll(&state_, decltype(state_)(16777216));
+    f25_.Poll(&state_, decltype(state_)(33554432));
+    f26_.Poll(&state_, decltype(state_)(67108864));
+    f27_.Poll(&state_, decltype(state_)(134217728));
+    f28_.Poll(&state_, decltype(state_)(268435456));
     if (state_ != 536870911) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19, R20, R21,
                             R22, R23, R24, R25, R26, R27, R28>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_), std::move(ready20_),
-        std::move(ready21_), std::move(ready22_), std::move(ready23_),
-        std::move(ready24_), std::move(ready25_), std::move(ready26_),
-        std::move(ready27_), std::move(ready28_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+        std::move(f21_.ready), std::move(f22_.ready), std::move(f23_.ready),
+        std::move(f24_.ready), std::move(f25_.ready), std::move(f26_.ready),
+        std::move(f27_.ready), std::move(f28_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -10100,669 +4040,250 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F29> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
-  using R24 = typename decltype(std::declval<F24>()())::Type;
-  union {
-    [[no_unique_address]] F24 pending24_;
-    [[no_unique_address]] R24 ready24_;
-  };
-  using R25 = typename decltype(std::declval<F25>()())::Type;
-  union {
-    [[no_unique_address]] F25 pending25_;
-    [[no_unique_address]] R25 ready25_;
-  };
-  using R26 = typename decltype(std::declval<F26>()())::Type;
-  union {
-    [[no_unique_address]] F26 pending26_;
-    [[no_unique_address]] R26 ready26_;
-  };
-  using R27 = typename decltype(std::declval<F27>()())::Type;
-  union {
-    [[no_unique_address]] F27 pending27_;
-    [[no_unique_address]] R27 ready27_;
-  };
-  using R28 = typename decltype(std::declval<F28>()())::Type;
-  union {
-    [[no_unique_address]] F28 pending28_;
-    [[no_unique_address]] R28 ready28_;
-  };
-  using R29 = typename decltype(std::declval<F29>()())::Type;
-  union {
-    [[no_unique_address]] F29 pending29_;
-    [[no_unique_address]] R29 ready29_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
+  [[no_unique_address]] Fused<F24> f24_;
+  using R24 = typename Fused<F24>::Result;
+  [[no_unique_address]] Fused<F25> f25_;
+  using R25 = typename Fused<F25>::Result;
+  [[no_unique_address]] Fused<F26> f26_;
+  using R26 = typename Fused<F26>::Result;
+  [[no_unique_address]] Fused<F27> f27_;
+  using R27 = typename Fused<F27>::Result;
+  [[no_unique_address]] Fused<F28> f28_;
+  using R28 = typename Fused<F28>::Result;
+  [[no_unique_address]] Fused<F29> f29_;
+  using R29 = typename Fused<F29>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
        F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
-       F26 f26, F27 f27, F28 f28, F29 f29)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)),
-        pending24_(std::move(f24)),
-        pending25_(std::move(f25)),
-        pending26_(std::move(f26)),
-        pending27_(std::move(f27)),
-        pending28_(std::move(f28)),
-        pending29_(std::move(f29)) {}
+       F26 f26, F27 f27, F28 f28, F29 f29) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+    Construct(&f24_.pending, std::move(f24));
+    Construct(&f25_.pending, std::move(f25));
+    Construct(&f26_.pending, std::move(f26));
+    Construct(&f27_.pending, std::move(f27));
+    Construct(&f28_.pending, std::move(f28));
+    Construct(&f29_.pending, std::move(f29));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
-    Construct(&pending28_, std::move(other.pending28_));
-    Construct(&pending29_, std::move(other.pending29_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
+    Construct(&f28_.pending, std::move(other.f28_.pending));
+    Construct(&f29_.pending, std::move(other.f29_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
-    Construct(&pending28_, std::move(other.pending28_));
-    Construct(&pending29_, std::move(other.pending29_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
+    Construct(&f28_.pending, std::move(other.f28_.pending));
+    Construct(&f29_.pending, std::move(other.f29_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
-    if (state_ & 16777216) {
-      Destruct(&ready24_);
-    } else {
-      Destruct(&pending24_);
-    }
-    if (state_ & 33554432) {
-      Destruct(&ready25_);
-    } else {
-      Destruct(&pending25_);
-    }
-    if (state_ & 67108864) {
-      Destruct(&ready26_);
-    } else {
-      Destruct(&pending26_);
-    }
-    if (state_ & 134217728) {
-      Destruct(&ready27_);
-    } else {
-      Destruct(&pending27_);
-    }
-    if (state_ & 268435456) {
-      Destruct(&ready28_);
-    } else {
-      Destruct(&pending28_);
-    }
-    if (state_ & 536870912) {
-      Destruct(&ready29_);
-    } else {
-      Destruct(&pending29_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
+    f24_.CallDestruct((state_ & 16777216) != 0);
+    f25_.CallDestruct((state_ & 33554432) != 0);
+    f26_.CallDestruct((state_ & 67108864) != 0);
+    f27_.CallDestruct((state_ & 134217728) != 0);
+    f28_.CallDestruct((state_ & 268435456) != 0);
+    f29_.CallDestruct((state_ & 536870912) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24, R25,
                   R26, R27, R28, R29>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
-    if ((state_ & 16777216) == 0) {
-      auto r = pending24_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16777216;
-        Destruct(&pending24_);
-        Construct(&ready24_, std::move(*p));
-      }
-    }
-    if ((state_ & 33554432) == 0) {
-      auto r = pending25_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 33554432;
-        Destruct(&pending25_);
-        Construct(&ready25_, std::move(*p));
-      }
-    }
-    if ((state_ & 67108864) == 0) {
-      auto r = pending26_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 67108864;
-        Destruct(&pending26_);
-        Construct(&ready26_, std::move(*p));
-      }
-    }
-    if ((state_ & 134217728) == 0) {
-      auto r = pending27_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 134217728;
-        Destruct(&pending27_);
-        Construct(&ready27_, std::move(*p));
-      }
-    }
-    if ((state_ & 268435456) == 0) {
-      auto r = pending28_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 268435456;
-        Destruct(&pending28_);
-        Construct(&ready28_, std::move(*p));
-      }
-    }
-    if ((state_ & 536870912) == 0) {
-      auto r = pending29_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 536870912;
-        Destruct(&pending29_);
-        Construct(&ready29_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
+    f24_.Poll(&state_, decltype(state_)(16777216));
+    f25_.Poll(&state_, decltype(state_)(33554432));
+    f26_.Poll(&state_, decltype(state_)(67108864));
+    f27_.Poll(&state_, decltype(state_)(134217728));
+    f28_.Poll(&state_, decltype(state_)(268435456));
+    f29_.Poll(&state_, decltype(state_)(536870912));
     if (state_ != 1073741823) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19, R20, R21,
                             R22, R23, R24, R25, R26, R27, R28, R29>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_), std::move(ready20_),
-        std::move(ready21_), std::move(ready22_), std::move(ready23_),
-        std::move(ready24_), std::move(ready25_), std::move(ready26_),
-        std::move(ready27_), std::move(ready28_), std::move(ready29_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+        std::move(f21_.ready), std::move(f22_.ready), std::move(f23_.ready),
+        std::move(f24_.ready), std::move(f25_.ready), std::move(f26_.ready),
+        std::move(f27_.ready), std::move(f28_.ready), std::move(f29_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -10777,691 +4298,258 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F30> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
-  using R24 = typename decltype(std::declval<F24>()())::Type;
-  union {
-    [[no_unique_address]] F24 pending24_;
-    [[no_unique_address]] R24 ready24_;
-  };
-  using R25 = typename decltype(std::declval<F25>()())::Type;
-  union {
-    [[no_unique_address]] F25 pending25_;
-    [[no_unique_address]] R25 ready25_;
-  };
-  using R26 = typename decltype(std::declval<F26>()())::Type;
-  union {
-    [[no_unique_address]] F26 pending26_;
-    [[no_unique_address]] R26 ready26_;
-  };
-  using R27 = typename decltype(std::declval<F27>()())::Type;
-  union {
-    [[no_unique_address]] F27 pending27_;
-    [[no_unique_address]] R27 ready27_;
-  };
-  using R28 = typename decltype(std::declval<F28>()())::Type;
-  union {
-    [[no_unique_address]] F28 pending28_;
-    [[no_unique_address]] R28 ready28_;
-  };
-  using R29 = typename decltype(std::declval<F29>()())::Type;
-  union {
-    [[no_unique_address]] F29 pending29_;
-    [[no_unique_address]] R29 ready29_;
-  };
-  using R30 = typename decltype(std::declval<F30>()())::Type;
-  union {
-    [[no_unique_address]] F30 pending30_;
-    [[no_unique_address]] R30 ready30_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
+  [[no_unique_address]] Fused<F24> f24_;
+  using R24 = typename Fused<F24>::Result;
+  [[no_unique_address]] Fused<F25> f25_;
+  using R25 = typename Fused<F25>::Result;
+  [[no_unique_address]] Fused<F26> f26_;
+  using R26 = typename Fused<F26>::Result;
+  [[no_unique_address]] Fused<F27> f27_;
+  using R27 = typename Fused<F27>::Result;
+  [[no_unique_address]] Fused<F28> f28_;
+  using R28 = typename Fused<F28>::Result;
+  [[no_unique_address]] Fused<F29> f29_;
+  using R29 = typename Fused<F29>::Result;
+  [[no_unique_address]] Fused<F30> f30_;
+  using R30 = typename Fused<F30>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
        F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
-       F26 f26, F27 f27, F28 f28, F29 f29, F30 f30)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)),
-        pending24_(std::move(f24)),
-        pending25_(std::move(f25)),
-        pending26_(std::move(f26)),
-        pending27_(std::move(f27)),
-        pending28_(std::move(f28)),
-        pending29_(std::move(f29)),
-        pending30_(std::move(f30)) {}
+       F26 f26, F27 f27, F28 f28, F29 f29, F30 f30) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+    Construct(&f24_.pending, std::move(f24));
+    Construct(&f25_.pending, std::move(f25));
+    Construct(&f26_.pending, std::move(f26));
+    Construct(&f27_.pending, std::move(f27));
+    Construct(&f28_.pending, std::move(f28));
+    Construct(&f29_.pending, std::move(f29));
+    Construct(&f30_.pending, std::move(f30));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
-    Construct(&pending28_, std::move(other.pending28_));
-    Construct(&pending29_, std::move(other.pending29_));
-    Construct(&pending30_, std::move(other.pending30_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
+    Construct(&f28_.pending, std::move(other.f28_.pending));
+    Construct(&f29_.pending, std::move(other.f29_.pending));
+    Construct(&f30_.pending, std::move(other.f30_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
-    Construct(&pending28_, std::move(other.pending28_));
-    Construct(&pending29_, std::move(other.pending29_));
-    Construct(&pending30_, std::move(other.pending30_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
+    Construct(&f28_.pending, std::move(other.f28_.pending));
+    Construct(&f29_.pending, std::move(other.f29_.pending));
+    Construct(&f30_.pending, std::move(other.f30_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
-    if (state_ & 16777216) {
-      Destruct(&ready24_);
-    } else {
-      Destruct(&pending24_);
-    }
-    if (state_ & 33554432) {
-      Destruct(&ready25_);
-    } else {
-      Destruct(&pending25_);
-    }
-    if (state_ & 67108864) {
-      Destruct(&ready26_);
-    } else {
-      Destruct(&pending26_);
-    }
-    if (state_ & 134217728) {
-      Destruct(&ready27_);
-    } else {
-      Destruct(&pending27_);
-    }
-    if (state_ & 268435456) {
-      Destruct(&ready28_);
-    } else {
-      Destruct(&pending28_);
-    }
-    if (state_ & 536870912) {
-      Destruct(&ready29_);
-    } else {
-      Destruct(&pending29_);
-    }
-    if (state_ & 1073741824) {
-      Destruct(&ready30_);
-    } else {
-      Destruct(&pending30_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
+    f24_.CallDestruct((state_ & 16777216) != 0);
+    f25_.CallDestruct((state_ & 33554432) != 0);
+    f26_.CallDestruct((state_ & 67108864) != 0);
+    f27_.CallDestruct((state_ & 134217728) != 0);
+    f28_.CallDestruct((state_ & 268435456) != 0);
+    f29_.CallDestruct((state_ & 536870912) != 0);
+    f30_.CallDestruct((state_ & 1073741824) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24, R25,
                   R26, R27, R28, R29, R30>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
-    if ((state_ & 16777216) == 0) {
-      auto r = pending24_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16777216;
-        Destruct(&pending24_);
-        Construct(&ready24_, std::move(*p));
-      }
-    }
-    if ((state_ & 33554432) == 0) {
-      auto r = pending25_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 33554432;
-        Destruct(&pending25_);
-        Construct(&ready25_, std::move(*p));
-      }
-    }
-    if ((state_ & 67108864) == 0) {
-      auto r = pending26_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 67108864;
-        Destruct(&pending26_);
-        Construct(&ready26_, std::move(*p));
-      }
-    }
-    if ((state_ & 134217728) == 0) {
-      auto r = pending27_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 134217728;
-        Destruct(&pending27_);
-        Construct(&ready27_, std::move(*p));
-      }
-    }
-    if ((state_ & 268435456) == 0) {
-      auto r = pending28_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 268435456;
-        Destruct(&pending28_);
-        Construct(&ready28_, std::move(*p));
-      }
-    }
-    if ((state_ & 536870912) == 0) {
-      auto r = pending29_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 536870912;
-        Destruct(&pending29_);
-        Construct(&ready29_, std::move(*p));
-      }
-    }
-    if ((state_ & 1073741824) == 0) {
-      auto r = pending30_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1073741824;
-        Destruct(&pending30_);
-        Construct(&ready30_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
+    f24_.Poll(&state_, decltype(state_)(16777216));
+    f25_.Poll(&state_, decltype(state_)(33554432));
+    f26_.Poll(&state_, decltype(state_)(67108864));
+    f27_.Poll(&state_, decltype(state_)(134217728));
+    f28_.Poll(&state_, decltype(state_)(268435456));
+    f29_.Poll(&state_, decltype(state_)(536870912));
+    f30_.Poll(&state_, decltype(state_)(1073741824));
     if (state_ != 2147483647) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19, R20, R21,
                             R22, R23, R24, R25, R26, R27, R28, R29, R30>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_), std::move(ready20_),
-        std::move(ready21_), std::move(ready22_), std::move(ready23_),
-        std::move(ready24_), std::move(ready25_), std::move(ready26_),
-        std::move(ready27_), std::move(ready28_), std::move(ready29_),
-        std::move(ready30_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+        std::move(f21_.ready), std::move(f22_.ready), std::move(f23_.ready),
+        std::move(f24_.ready), std::move(f25_.ready), std::move(f26_.ready),
+        std::move(f27_.ready), std::move(f28_.ready), std::move(f29_.ready),
+        std::move(f30_.ready)));
   }
 };
 template <typename F0, typename F1, typename F2, typename F3, typename F4,
@@ -11476,711 +4564,264 @@ class Join<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15,
            F30, F31> {
  private:
   [[no_unique_address]] uint32_t state_ = 0;
-  using R0 = typename decltype(std::declval<F0>()())::Type;
-  union {
-    [[no_unique_address]] F0 pending0_;
-    [[no_unique_address]] R0 ready0_;
-  };
-  using R1 = typename decltype(std::declval<F1>()())::Type;
-  union {
-    [[no_unique_address]] F1 pending1_;
-    [[no_unique_address]] R1 ready1_;
-  };
-  using R2 = typename decltype(std::declval<F2>()())::Type;
-  union {
-    [[no_unique_address]] F2 pending2_;
-    [[no_unique_address]] R2 ready2_;
-  };
-  using R3 = typename decltype(std::declval<F3>()())::Type;
-  union {
-    [[no_unique_address]] F3 pending3_;
-    [[no_unique_address]] R3 ready3_;
-  };
-  using R4 = typename decltype(std::declval<F4>()())::Type;
-  union {
-    [[no_unique_address]] F4 pending4_;
-    [[no_unique_address]] R4 ready4_;
-  };
-  using R5 = typename decltype(std::declval<F5>()())::Type;
-  union {
-    [[no_unique_address]] F5 pending5_;
-    [[no_unique_address]] R5 ready5_;
-  };
-  using R6 = typename decltype(std::declval<F6>()())::Type;
-  union {
-    [[no_unique_address]] F6 pending6_;
-    [[no_unique_address]] R6 ready6_;
-  };
-  using R7 = typename decltype(std::declval<F7>()())::Type;
-  union {
-    [[no_unique_address]] F7 pending7_;
-    [[no_unique_address]] R7 ready7_;
-  };
-  using R8 = typename decltype(std::declval<F8>()())::Type;
-  union {
-    [[no_unique_address]] F8 pending8_;
-    [[no_unique_address]] R8 ready8_;
-  };
-  using R9 = typename decltype(std::declval<F9>()())::Type;
-  union {
-    [[no_unique_address]] F9 pending9_;
-    [[no_unique_address]] R9 ready9_;
-  };
-  using R10 = typename decltype(std::declval<F10>()())::Type;
-  union {
-    [[no_unique_address]] F10 pending10_;
-    [[no_unique_address]] R10 ready10_;
-  };
-  using R11 = typename decltype(std::declval<F11>()())::Type;
-  union {
-    [[no_unique_address]] F11 pending11_;
-    [[no_unique_address]] R11 ready11_;
-  };
-  using R12 = typename decltype(std::declval<F12>()())::Type;
-  union {
-    [[no_unique_address]] F12 pending12_;
-    [[no_unique_address]] R12 ready12_;
-  };
-  using R13 = typename decltype(std::declval<F13>()())::Type;
-  union {
-    [[no_unique_address]] F13 pending13_;
-    [[no_unique_address]] R13 ready13_;
-  };
-  using R14 = typename decltype(std::declval<F14>()())::Type;
-  union {
-    [[no_unique_address]] F14 pending14_;
-    [[no_unique_address]] R14 ready14_;
-  };
-  using R15 = typename decltype(std::declval<F15>()())::Type;
-  union {
-    [[no_unique_address]] F15 pending15_;
-    [[no_unique_address]] R15 ready15_;
-  };
-  using R16 = typename decltype(std::declval<F16>()())::Type;
-  union {
-    [[no_unique_address]] F16 pending16_;
-    [[no_unique_address]] R16 ready16_;
-  };
-  using R17 = typename decltype(std::declval<F17>()())::Type;
-  union {
-    [[no_unique_address]] F17 pending17_;
-    [[no_unique_address]] R17 ready17_;
-  };
-  using R18 = typename decltype(std::declval<F18>()())::Type;
-  union {
-    [[no_unique_address]] F18 pending18_;
-    [[no_unique_address]] R18 ready18_;
-  };
-  using R19 = typename decltype(std::declval<F19>()())::Type;
-  union {
-    [[no_unique_address]] F19 pending19_;
-    [[no_unique_address]] R19 ready19_;
-  };
-  using R20 = typename decltype(std::declval<F20>()())::Type;
-  union {
-    [[no_unique_address]] F20 pending20_;
-    [[no_unique_address]] R20 ready20_;
-  };
-  using R21 = typename decltype(std::declval<F21>()())::Type;
-  union {
-    [[no_unique_address]] F21 pending21_;
-    [[no_unique_address]] R21 ready21_;
-  };
-  using R22 = typename decltype(std::declval<F22>()())::Type;
-  union {
-    [[no_unique_address]] F22 pending22_;
-    [[no_unique_address]] R22 ready22_;
-  };
-  using R23 = typename decltype(std::declval<F23>()())::Type;
-  union {
-    [[no_unique_address]] F23 pending23_;
-    [[no_unique_address]] R23 ready23_;
-  };
-  using R24 = typename decltype(std::declval<F24>()())::Type;
-  union {
-    [[no_unique_address]] F24 pending24_;
-    [[no_unique_address]] R24 ready24_;
-  };
-  using R25 = typename decltype(std::declval<F25>()())::Type;
-  union {
-    [[no_unique_address]] F25 pending25_;
-    [[no_unique_address]] R25 ready25_;
-  };
-  using R26 = typename decltype(std::declval<F26>()())::Type;
-  union {
-    [[no_unique_address]] F26 pending26_;
-    [[no_unique_address]] R26 ready26_;
-  };
-  using R27 = typename decltype(std::declval<F27>()())::Type;
-  union {
-    [[no_unique_address]] F27 pending27_;
-    [[no_unique_address]] R27 ready27_;
-  };
-  using R28 = typename decltype(std::declval<F28>()())::Type;
-  union {
-    [[no_unique_address]] F28 pending28_;
-    [[no_unique_address]] R28 ready28_;
-  };
-  using R29 = typename decltype(std::declval<F29>()())::Type;
-  union {
-    [[no_unique_address]] F29 pending29_;
-    [[no_unique_address]] R29 ready29_;
-  };
-  using R30 = typename decltype(std::declval<F30>()())::Type;
-  union {
-    [[no_unique_address]] F30 pending30_;
-    [[no_unique_address]] R30 ready30_;
-  };
-  using R31 = typename decltype(std::declval<F31>()())::Type;
-  union {
-    [[no_unique_address]] F31 pending31_;
-    [[no_unique_address]] R31 ready31_;
-  };
+  [[no_unique_address]] Fused<F0> f0_;
+  using R0 = typename Fused<F0>::Result;
+  [[no_unique_address]] Fused<F1> f1_;
+  using R1 = typename Fused<F1>::Result;
+  [[no_unique_address]] Fused<F2> f2_;
+  using R2 = typename Fused<F2>::Result;
+  [[no_unique_address]] Fused<F3> f3_;
+  using R3 = typename Fused<F3>::Result;
+  [[no_unique_address]] Fused<F4> f4_;
+  using R4 = typename Fused<F4>::Result;
+  [[no_unique_address]] Fused<F5> f5_;
+  using R5 = typename Fused<F5>::Result;
+  [[no_unique_address]] Fused<F6> f6_;
+  using R6 = typename Fused<F6>::Result;
+  [[no_unique_address]] Fused<F7> f7_;
+  using R7 = typename Fused<F7>::Result;
+  [[no_unique_address]] Fused<F8> f8_;
+  using R8 = typename Fused<F8>::Result;
+  [[no_unique_address]] Fused<F9> f9_;
+  using R9 = typename Fused<F9>::Result;
+  [[no_unique_address]] Fused<F10> f10_;
+  using R10 = typename Fused<F10>::Result;
+  [[no_unique_address]] Fused<F11> f11_;
+  using R11 = typename Fused<F11>::Result;
+  [[no_unique_address]] Fused<F12> f12_;
+  using R12 = typename Fused<F12>::Result;
+  [[no_unique_address]] Fused<F13> f13_;
+  using R13 = typename Fused<F13>::Result;
+  [[no_unique_address]] Fused<F14> f14_;
+  using R14 = typename Fused<F14>::Result;
+  [[no_unique_address]] Fused<F15> f15_;
+  using R15 = typename Fused<F15>::Result;
+  [[no_unique_address]] Fused<F16> f16_;
+  using R16 = typename Fused<F16>::Result;
+  [[no_unique_address]] Fused<F17> f17_;
+  using R17 = typename Fused<F17>::Result;
+  [[no_unique_address]] Fused<F18> f18_;
+  using R18 = typename Fused<F18>::Result;
+  [[no_unique_address]] Fused<F19> f19_;
+  using R19 = typename Fused<F19>::Result;
+  [[no_unique_address]] Fused<F20> f20_;
+  using R20 = typename Fused<F20>::Result;
+  [[no_unique_address]] Fused<F21> f21_;
+  using R21 = typename Fused<F21>::Result;
+  [[no_unique_address]] Fused<F22> f22_;
+  using R22 = typename Fused<F22>::Result;
+  [[no_unique_address]] Fused<F23> f23_;
+  using R23 = typename Fused<F23>::Result;
+  [[no_unique_address]] Fused<F24> f24_;
+  using R24 = typename Fused<F24>::Result;
+  [[no_unique_address]] Fused<F25> f25_;
+  using R25 = typename Fused<F25>::Result;
+  [[no_unique_address]] Fused<F26> f26_;
+  using R26 = typename Fused<F26>::Result;
+  [[no_unique_address]] Fused<F27> f27_;
+  using R27 = typename Fused<F27>::Result;
+  [[no_unique_address]] Fused<F28> f28_;
+  using R28 = typename Fused<F28>::Result;
+  [[no_unique_address]] Fused<F29> f29_;
+  using R29 = typename Fused<F29>::Result;
+  [[no_unique_address]] Fused<F30> f30_;
+  using R30 = typename Fused<F30>::Result;
+  [[no_unique_address]] Fused<F31> f31_;
+  using R31 = typename Fused<F31>::Result;
 
  public:
   Join(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
        F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
        F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
-       F26 f26, F27 f27, F28 f28, F29 f29, F30 f30, F31 f31)
-      : pending0_(std::move(f0)),
-        pending1_(std::move(f1)),
-        pending2_(std::move(f2)),
-        pending3_(std::move(f3)),
-        pending4_(std::move(f4)),
-        pending5_(std::move(f5)),
-        pending6_(std::move(f6)),
-        pending7_(std::move(f7)),
-        pending8_(std::move(f8)),
-        pending9_(std::move(f9)),
-        pending10_(std::move(f10)),
-        pending11_(std::move(f11)),
-        pending12_(std::move(f12)),
-        pending13_(std::move(f13)),
-        pending14_(std::move(f14)),
-        pending15_(std::move(f15)),
-        pending16_(std::move(f16)),
-        pending17_(std::move(f17)),
-        pending18_(std::move(f18)),
-        pending19_(std::move(f19)),
-        pending20_(std::move(f20)),
-        pending21_(std::move(f21)),
-        pending22_(std::move(f22)),
-        pending23_(std::move(f23)),
-        pending24_(std::move(f24)),
-        pending25_(std::move(f25)),
-        pending26_(std::move(f26)),
-        pending27_(std::move(f27)),
-        pending28_(std::move(f28)),
-        pending29_(std::move(f29)),
-        pending30_(std::move(f30)),
-        pending31_(std::move(f31)) {}
+       F26 f26, F27 f27, F28 f28, F29 f29, F30 f30, F31 f31) {
+    Construct(&f0_.pending, std::move(f0));
+    Construct(&f1_.pending, std::move(f1));
+    Construct(&f2_.pending, std::move(f2));
+    Construct(&f3_.pending, std::move(f3));
+    Construct(&f4_.pending, std::move(f4));
+    Construct(&f5_.pending, std::move(f5));
+    Construct(&f6_.pending, std::move(f6));
+    Construct(&f7_.pending, std::move(f7));
+    Construct(&f8_.pending, std::move(f8));
+    Construct(&f9_.pending, std::move(f9));
+    Construct(&f10_.pending, std::move(f10));
+    Construct(&f11_.pending, std::move(f11));
+    Construct(&f12_.pending, std::move(f12));
+    Construct(&f13_.pending, std::move(f13));
+    Construct(&f14_.pending, std::move(f14));
+    Construct(&f15_.pending, std::move(f15));
+    Construct(&f16_.pending, std::move(f16));
+    Construct(&f17_.pending, std::move(f17));
+    Construct(&f18_.pending, std::move(f18));
+    Construct(&f19_.pending, std::move(f19));
+    Construct(&f20_.pending, std::move(f20));
+    Construct(&f21_.pending, std::move(f21));
+    Construct(&f22_.pending, std::move(f22));
+    Construct(&f23_.pending, std::move(f23));
+    Construct(&f24_.pending, std::move(f24));
+    Construct(&f25_.pending, std::move(f25));
+    Construct(&f26_.pending, std::move(f26));
+    Construct(&f27_.pending, std::move(f27));
+    Construct(&f28_.pending, std::move(f28));
+    Construct(&f29_.pending, std::move(f29));
+    Construct(&f30_.pending, std::move(f30));
+    Construct(&f31_.pending, std::move(f31));
+  }
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
-    Construct(&pending28_, std::move(other.pending28_));
-    Construct(&pending29_, std::move(other.pending29_));
-    Construct(&pending30_, std::move(other.pending30_));
-    Construct(&pending31_, std::move(other.pending31_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
+    Construct(&f28_.pending, std::move(other.f28_.pending));
+    Construct(&f29_.pending, std::move(other.f29_.pending));
+    Construct(&f30_.pending, std::move(other.f30_.pending));
+    Construct(&f31_.pending, std::move(other.f31_.pending));
   }
   Join(Join&& other) {
     assert(other.state_ == 0);
-    Construct(&pending0_, std::move(other.pending0_));
-    Construct(&pending1_, std::move(other.pending1_));
-    Construct(&pending2_, std::move(other.pending2_));
-    Construct(&pending3_, std::move(other.pending3_));
-    Construct(&pending4_, std::move(other.pending4_));
-    Construct(&pending5_, std::move(other.pending5_));
-    Construct(&pending6_, std::move(other.pending6_));
-    Construct(&pending7_, std::move(other.pending7_));
-    Construct(&pending8_, std::move(other.pending8_));
-    Construct(&pending9_, std::move(other.pending9_));
-    Construct(&pending10_, std::move(other.pending10_));
-    Construct(&pending11_, std::move(other.pending11_));
-    Construct(&pending12_, std::move(other.pending12_));
-    Construct(&pending13_, std::move(other.pending13_));
-    Construct(&pending14_, std::move(other.pending14_));
-    Construct(&pending15_, std::move(other.pending15_));
-    Construct(&pending16_, std::move(other.pending16_));
-    Construct(&pending17_, std::move(other.pending17_));
-    Construct(&pending18_, std::move(other.pending18_));
-    Construct(&pending19_, std::move(other.pending19_));
-    Construct(&pending20_, std::move(other.pending20_));
-    Construct(&pending21_, std::move(other.pending21_));
-    Construct(&pending22_, std::move(other.pending22_));
-    Construct(&pending23_, std::move(other.pending23_));
-    Construct(&pending24_, std::move(other.pending24_));
-    Construct(&pending25_, std::move(other.pending25_));
-    Construct(&pending26_, std::move(other.pending26_));
-    Construct(&pending27_, std::move(other.pending27_));
-    Construct(&pending28_, std::move(other.pending28_));
-    Construct(&pending29_, std::move(other.pending29_));
-    Construct(&pending30_, std::move(other.pending30_));
-    Construct(&pending31_, std::move(other.pending31_));
+    Construct(&f0_.pending, std::move(other.f0_.pending));
+    Construct(&f1_.pending, std::move(other.f1_.pending));
+    Construct(&f2_.pending, std::move(other.f2_.pending));
+    Construct(&f3_.pending, std::move(other.f3_.pending));
+    Construct(&f4_.pending, std::move(other.f4_.pending));
+    Construct(&f5_.pending, std::move(other.f5_.pending));
+    Construct(&f6_.pending, std::move(other.f6_.pending));
+    Construct(&f7_.pending, std::move(other.f7_.pending));
+    Construct(&f8_.pending, std::move(other.f8_.pending));
+    Construct(&f9_.pending, std::move(other.f9_.pending));
+    Construct(&f10_.pending, std::move(other.f10_.pending));
+    Construct(&f11_.pending, std::move(other.f11_.pending));
+    Construct(&f12_.pending, std::move(other.f12_.pending));
+    Construct(&f13_.pending, std::move(other.f13_.pending));
+    Construct(&f14_.pending, std::move(other.f14_.pending));
+    Construct(&f15_.pending, std::move(other.f15_.pending));
+    Construct(&f16_.pending, std::move(other.f16_.pending));
+    Construct(&f17_.pending, std::move(other.f17_.pending));
+    Construct(&f18_.pending, std::move(other.f18_.pending));
+    Construct(&f19_.pending, std::move(other.f19_.pending));
+    Construct(&f20_.pending, std::move(other.f20_.pending));
+    Construct(&f21_.pending, std::move(other.f21_.pending));
+    Construct(&f22_.pending, std::move(other.f22_.pending));
+    Construct(&f23_.pending, std::move(other.f23_.pending));
+    Construct(&f24_.pending, std::move(other.f24_.pending));
+    Construct(&f25_.pending, std::move(other.f25_.pending));
+    Construct(&f26_.pending, std::move(other.f26_.pending));
+    Construct(&f27_.pending, std::move(other.f27_.pending));
+    Construct(&f28_.pending, std::move(other.f28_.pending));
+    Construct(&f29_.pending, std::move(other.f29_.pending));
+    Construct(&f30_.pending, std::move(other.f30_.pending));
+    Construct(&f31_.pending, std::move(other.f31_.pending));
   }
   ~Join() {
-    if (state_ & 1) {
-      Destruct(&ready0_);
-    } else {
-      Destruct(&pending0_);
-    }
-    if (state_ & 2) {
-      Destruct(&ready1_);
-    } else {
-      Destruct(&pending1_);
-    }
-    if (state_ & 4) {
-      Destruct(&ready2_);
-    } else {
-      Destruct(&pending2_);
-    }
-    if (state_ & 8) {
-      Destruct(&ready3_);
-    } else {
-      Destruct(&pending3_);
-    }
-    if (state_ & 16) {
-      Destruct(&ready4_);
-    } else {
-      Destruct(&pending4_);
-    }
-    if (state_ & 32) {
-      Destruct(&ready5_);
-    } else {
-      Destruct(&pending5_);
-    }
-    if (state_ & 64) {
-      Destruct(&ready6_);
-    } else {
-      Destruct(&pending6_);
-    }
-    if (state_ & 128) {
-      Destruct(&ready7_);
-    } else {
-      Destruct(&pending7_);
-    }
-    if (state_ & 256) {
-      Destruct(&ready8_);
-    } else {
-      Destruct(&pending8_);
-    }
-    if (state_ & 512) {
-      Destruct(&ready9_);
-    } else {
-      Destruct(&pending9_);
-    }
-    if (state_ & 1024) {
-      Destruct(&ready10_);
-    } else {
-      Destruct(&pending10_);
-    }
-    if (state_ & 2048) {
-      Destruct(&ready11_);
-    } else {
-      Destruct(&pending11_);
-    }
-    if (state_ & 4096) {
-      Destruct(&ready12_);
-    } else {
-      Destruct(&pending12_);
-    }
-    if (state_ & 8192) {
-      Destruct(&ready13_);
-    } else {
-      Destruct(&pending13_);
-    }
-    if (state_ & 16384) {
-      Destruct(&ready14_);
-    } else {
-      Destruct(&pending14_);
-    }
-    if (state_ & 32768) {
-      Destruct(&ready15_);
-    } else {
-      Destruct(&pending15_);
-    }
-    if (state_ & 65536) {
-      Destruct(&ready16_);
-    } else {
-      Destruct(&pending16_);
-    }
-    if (state_ & 131072) {
-      Destruct(&ready17_);
-    } else {
-      Destruct(&pending17_);
-    }
-    if (state_ & 262144) {
-      Destruct(&ready18_);
-    } else {
-      Destruct(&pending18_);
-    }
-    if (state_ & 524288) {
-      Destruct(&ready19_);
-    } else {
-      Destruct(&pending19_);
-    }
-    if (state_ & 1048576) {
-      Destruct(&ready20_);
-    } else {
-      Destruct(&pending20_);
-    }
-    if (state_ & 2097152) {
-      Destruct(&ready21_);
-    } else {
-      Destruct(&pending21_);
-    }
-    if (state_ & 4194304) {
-      Destruct(&ready22_);
-    } else {
-      Destruct(&pending22_);
-    }
-    if (state_ & 8388608) {
-      Destruct(&ready23_);
-    } else {
-      Destruct(&pending23_);
-    }
-    if (state_ & 16777216) {
-      Destruct(&ready24_);
-    } else {
-      Destruct(&pending24_);
-    }
-    if (state_ & 33554432) {
-      Destruct(&ready25_);
-    } else {
-      Destruct(&pending25_);
-    }
-    if (state_ & 67108864) {
-      Destruct(&ready26_);
-    } else {
-      Destruct(&pending26_);
-    }
-    if (state_ & 134217728) {
-      Destruct(&ready27_);
-    } else {
-      Destruct(&pending27_);
-    }
-    if (state_ & 268435456) {
-      Destruct(&ready28_);
-    } else {
-      Destruct(&pending28_);
-    }
-    if (state_ & 536870912) {
-      Destruct(&ready29_);
-    } else {
-      Destruct(&pending29_);
-    }
-    if (state_ & 1073741824) {
-      Destruct(&ready30_);
-    } else {
-      Destruct(&pending30_);
-    }
-    if (state_ & 2147483648) {
-      Destruct(&ready31_);
-    } else {
-      Destruct(&pending31_);
-    }
+    f0_.CallDestruct((state_ & 1) != 0);
+    f1_.CallDestruct((state_ & 2) != 0);
+    f2_.CallDestruct((state_ & 4) != 0);
+    f3_.CallDestruct((state_ & 8) != 0);
+    f4_.CallDestruct((state_ & 16) != 0);
+    f5_.CallDestruct((state_ & 32) != 0);
+    f6_.CallDestruct((state_ & 64) != 0);
+    f7_.CallDestruct((state_ & 128) != 0);
+    f8_.CallDestruct((state_ & 256) != 0);
+    f9_.CallDestruct((state_ & 512) != 0);
+    f10_.CallDestruct((state_ & 1024) != 0);
+    f11_.CallDestruct((state_ & 2048) != 0);
+    f12_.CallDestruct((state_ & 4096) != 0);
+    f13_.CallDestruct((state_ & 8192) != 0);
+    f14_.CallDestruct((state_ & 16384) != 0);
+    f15_.CallDestruct((state_ & 32768) != 0);
+    f16_.CallDestruct((state_ & 65536) != 0);
+    f17_.CallDestruct((state_ & 131072) != 0);
+    f18_.CallDestruct((state_ & 262144) != 0);
+    f19_.CallDestruct((state_ & 524288) != 0);
+    f20_.CallDestruct((state_ & 1048576) != 0);
+    f21_.CallDestruct((state_ & 2097152) != 0);
+    f22_.CallDestruct((state_ & 4194304) != 0);
+    f23_.CallDestruct((state_ & 8388608) != 0);
+    f24_.CallDestruct((state_ & 16777216) != 0);
+    f25_.CallDestruct((state_ & 33554432) != 0);
+    f26_.CallDestruct((state_ & 67108864) != 0);
+    f27_.CallDestruct((state_ & 134217728) != 0);
+    f28_.CallDestruct((state_ & 268435456) != 0);
+    f29_.CallDestruct((state_ & 536870912) != 0);
+    f30_.CallDestruct((state_ & 1073741824) != 0);
+    f31_.CallDestruct((state_ & 2147483648) != 0);
   }
   Poll<std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13,
                   R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24, R25,
                   R26, R27, R28, R29, R30, R31>>
   operator()() {
-    if ((state_ & 1) == 0) {
-      auto r = pending0_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1;
-        Destruct(&pending0_);
-        Construct(&ready0_, std::move(*p));
-      }
-    }
-    if ((state_ & 2) == 0) {
-      auto r = pending1_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2;
-        Destruct(&pending1_);
-        Construct(&ready1_, std::move(*p));
-      }
-    }
-    if ((state_ & 4) == 0) {
-      auto r = pending2_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4;
-        Destruct(&pending2_);
-        Construct(&ready2_, std::move(*p));
-      }
-    }
-    if ((state_ & 8) == 0) {
-      auto r = pending3_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8;
-        Destruct(&pending3_);
-        Construct(&ready3_, std::move(*p));
-      }
-    }
-    if ((state_ & 16) == 0) {
-      auto r = pending4_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16;
-        Destruct(&pending4_);
-        Construct(&ready4_, std::move(*p));
-      }
-    }
-    if ((state_ & 32) == 0) {
-      auto r = pending5_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32;
-        Destruct(&pending5_);
-        Construct(&ready5_, std::move(*p));
-      }
-    }
-    if ((state_ & 64) == 0) {
-      auto r = pending6_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 64;
-        Destruct(&pending6_);
-        Construct(&ready6_, std::move(*p));
-      }
-    }
-    if ((state_ & 128) == 0) {
-      auto r = pending7_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 128;
-        Destruct(&pending7_);
-        Construct(&ready7_, std::move(*p));
-      }
-    }
-    if ((state_ & 256) == 0) {
-      auto r = pending8_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 256;
-        Destruct(&pending8_);
-        Construct(&ready8_, std::move(*p));
-      }
-    }
-    if ((state_ & 512) == 0) {
-      auto r = pending9_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 512;
-        Destruct(&pending9_);
-        Construct(&ready9_, std::move(*p));
-      }
-    }
-    if ((state_ & 1024) == 0) {
-      auto r = pending10_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1024;
-        Destruct(&pending10_);
-        Construct(&ready10_, std::move(*p));
-      }
-    }
-    if ((state_ & 2048) == 0) {
-      auto r = pending11_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2048;
-        Destruct(&pending11_);
-        Construct(&ready11_, std::move(*p));
-      }
-    }
-    if ((state_ & 4096) == 0) {
-      auto r = pending12_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4096;
-        Destruct(&pending12_);
-        Construct(&ready12_, std::move(*p));
-      }
-    }
-    if ((state_ & 8192) == 0) {
-      auto r = pending13_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8192;
-        Destruct(&pending13_);
-        Construct(&ready13_, std::move(*p));
-      }
-    }
-    if ((state_ & 16384) == 0) {
-      auto r = pending14_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16384;
-        Destruct(&pending14_);
-        Construct(&ready14_, std::move(*p));
-      }
-    }
-    if ((state_ & 32768) == 0) {
-      auto r = pending15_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 32768;
-        Destruct(&pending15_);
-        Construct(&ready15_, std::move(*p));
-      }
-    }
-    if ((state_ & 65536) == 0) {
-      auto r = pending16_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 65536;
-        Destruct(&pending16_);
-        Construct(&ready16_, std::move(*p));
-      }
-    }
-    if ((state_ & 131072) == 0) {
-      auto r = pending17_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 131072;
-        Destruct(&pending17_);
-        Construct(&ready17_, std::move(*p));
-      }
-    }
-    if ((state_ & 262144) == 0) {
-      auto r = pending18_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 262144;
-        Destruct(&pending18_);
-        Construct(&ready18_, std::move(*p));
-      }
-    }
-    if ((state_ & 524288) == 0) {
-      auto r = pending19_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 524288;
-        Destruct(&pending19_);
-        Construct(&ready19_, std::move(*p));
-      }
-    }
-    if ((state_ & 1048576) == 0) {
-      auto r = pending20_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1048576;
-        Destruct(&pending20_);
-        Construct(&ready20_, std::move(*p));
-      }
-    }
-    if ((state_ & 2097152) == 0) {
-      auto r = pending21_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2097152;
-        Destruct(&pending21_);
-        Construct(&ready21_, std::move(*p));
-      }
-    }
-    if ((state_ & 4194304) == 0) {
-      auto r = pending22_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 4194304;
-        Destruct(&pending22_);
-        Construct(&ready22_, std::move(*p));
-      }
-    }
-    if ((state_ & 8388608) == 0) {
-      auto r = pending23_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 8388608;
-        Destruct(&pending23_);
-        Construct(&ready23_, std::move(*p));
-      }
-    }
-    if ((state_ & 16777216) == 0) {
-      auto r = pending24_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 16777216;
-        Destruct(&pending24_);
-        Construct(&ready24_, std::move(*p));
-      }
-    }
-    if ((state_ & 33554432) == 0) {
-      auto r = pending25_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 33554432;
-        Destruct(&pending25_);
-        Construct(&ready25_, std::move(*p));
-      }
-    }
-    if ((state_ & 67108864) == 0) {
-      auto r = pending26_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 67108864;
-        Destruct(&pending26_);
-        Construct(&ready26_, std::move(*p));
-      }
-    }
-    if ((state_ & 134217728) == 0) {
-      auto r = pending27_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 134217728;
-        Destruct(&pending27_);
-        Construct(&ready27_, std::move(*p));
-      }
-    }
-    if ((state_ & 268435456) == 0) {
-      auto r = pending28_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 268435456;
-        Destruct(&pending28_);
-        Construct(&ready28_, std::move(*p));
-      }
-    }
-    if ((state_ & 536870912) == 0) {
-      auto r = pending29_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 536870912;
-        Destruct(&pending29_);
-        Construct(&ready29_, std::move(*p));
-      }
-    }
-    if ((state_ & 1073741824) == 0) {
-      auto r = pending30_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 1073741824;
-        Destruct(&pending30_);
-        Construct(&ready30_, std::move(*p));
-      }
-    }
-    if ((state_ & 2147483648) == 0) {
-      auto r = pending31_();
-      if (auto* p = r.get_ready()) {
-        state_ |= 2147483648;
-        Destruct(&pending31_);
-        Construct(&ready31_, std::move(*p));
-      }
-    }
+    f0_.Poll(&state_, decltype(state_)(1));
+    f1_.Poll(&state_, decltype(state_)(2));
+    f2_.Poll(&state_, decltype(state_)(4));
+    f3_.Poll(&state_, decltype(state_)(8));
+    f4_.Poll(&state_, decltype(state_)(16));
+    f5_.Poll(&state_, decltype(state_)(32));
+    f6_.Poll(&state_, decltype(state_)(64));
+    f7_.Poll(&state_, decltype(state_)(128));
+    f8_.Poll(&state_, decltype(state_)(256));
+    f9_.Poll(&state_, decltype(state_)(512));
+    f10_.Poll(&state_, decltype(state_)(1024));
+    f11_.Poll(&state_, decltype(state_)(2048));
+    f12_.Poll(&state_, decltype(state_)(4096));
+    f13_.Poll(&state_, decltype(state_)(8192));
+    f14_.Poll(&state_, decltype(state_)(16384));
+    f15_.Poll(&state_, decltype(state_)(32768));
+    f16_.Poll(&state_, decltype(state_)(65536));
+    f17_.Poll(&state_, decltype(state_)(131072));
+    f18_.Poll(&state_, decltype(state_)(262144));
+    f19_.Poll(&state_, decltype(state_)(524288));
+    f20_.Poll(&state_, decltype(state_)(1048576));
+    f21_.Poll(&state_, decltype(state_)(2097152));
+    f22_.Poll(&state_, decltype(state_)(4194304));
+    f23_.Poll(&state_, decltype(state_)(8388608));
+    f24_.Poll(&state_, decltype(state_)(16777216));
+    f25_.Poll(&state_, decltype(state_)(33554432));
+    f26_.Poll(&state_, decltype(state_)(67108864));
+    f27_.Poll(&state_, decltype(state_)(134217728));
+    f28_.Poll(&state_, decltype(state_)(268435456));
+    f29_.Poll(&state_, decltype(state_)(536870912));
+    f30_.Poll(&state_, decltype(state_)(1073741824));
+    f31_.Poll(&state_, decltype(state_)(2147483648));
     if (state_ != 4294967295) return kPending;
     return ready(std::tuple<R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11,
                             R12, R13, R14, R15, R16, R17, R18, R19, R20, R21,
                             R22, R23, R24, R25, R26, R27, R28, R29, R30, R31>(
-        std::move(ready0_), std::move(ready1_), std::move(ready2_),
-        std::move(ready3_), std::move(ready4_), std::move(ready5_),
-        std::move(ready6_), std::move(ready7_), std::move(ready8_),
-        std::move(ready9_), std::move(ready10_), std::move(ready11_),
-        std::move(ready12_), std::move(ready13_), std::move(ready14_),
-        std::move(ready15_), std::move(ready16_), std::move(ready17_),
-        std::move(ready18_), std::move(ready19_), std::move(ready20_),
-        std::move(ready21_), std::move(ready22_), std::move(ready23_),
-        std::move(ready24_), std::move(ready25_), std::move(ready26_),
-        std::move(ready27_), std::move(ready28_), std::move(ready29_),
-        std::move(ready30_), std::move(ready31_)));
+        std::move(f0_.ready), std::move(f1_.ready), std::move(f2_.ready),
+        std::move(f3_.ready), std::move(f4_.ready), std::move(f5_.ready),
+        std::move(f6_.ready), std::move(f7_.ready), std::move(f8_.ready),
+        std::move(f9_.ready), std::move(f10_.ready), std::move(f11_.ready),
+        std::move(f12_.ready), std::move(f13_.ready), std::move(f14_.ready),
+        std::move(f15_.ready), std::move(f16_.ready), std::move(f17_.ready),
+        std::move(f18_.ready), std::move(f19_.ready), std::move(f20_.ready),
+        std::move(f21_.ready), std::move(f22_.ready), std::move(f23_.ready),
+        std::move(f24_.ready), std::move(f25_.ready), std::move(f26_.ready),
+        std::move(f27_.ready), std::move(f28_.ready), std::move(f29_.ready),
+        std::move(f30_.ready), std::move(f31_.ready)));
   }
 };
