@@ -272,7 +272,7 @@ class ClientChannel {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
 
   Promise<absl::Status> ApplyServiceConfigPromise(
-      RefCountedPtr<ConfigSelector>> config_selector);
+      RefCountedPtr<ConfigSelector> config_selector);
 
   //
   // Fields set at construction and never modified.

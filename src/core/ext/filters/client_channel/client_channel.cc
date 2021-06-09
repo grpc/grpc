@@ -1170,61 +1170,55 @@ ClientChannel::~ClientChannel() {
 }
 
 Promise<absl::Status> ClientChannel::CreatePromise() {
-// FIXME If channel in IDLE, trigger exit idle.
+  // FIXME If channel in IDLE, trigger exit idle.
   auto config_selector_observer = config_selector_observable_.MakeObserver();
   return Race(
       Timeout(GetContext<ClientContext>().deadline()),
       // Run a few things concurrently.
       // Stop at first failure.
-      TryJoin(
-          Seq(
-              // Get service config.
-              While(
-                  Seq(
-                      // Wait for the next result.
-                      config_selector_observer.Next(),
-                      [](absl::optional<absl::StatusOr<RefCountedPtr<
-                             ConfigSelector>>> config_selector) {
-                        if (!config_selector.has_value()) {
-                          return absl::UnavailableError("call");
-                        }
-                        // Resolver failed, keep call queued until we
-                        // get a valid result.
-                        if (!config_selector->ok()) {
-                          // If wait_for_ready, keep queued, otherwise fail.
-                          if (GetContext<ClientContext>().wait_for_ready()) {
-                            return absl::nullopt;
-                          }
-                          return config_selector->status();
-                        }
-                        // Resolver succeeded, pass config selector along.
-                        return std::move(**config_selector);
-                      })
-              ),
-              // Apply service config to call.
-              // FIXME: "this" might need to be a smart pointer
-              [this](RefCountedPtr<ConfigSelector>> config_selector) {
-                return TryJoin(
-                    // Synchronous part of this will execute immediately,
-                    // so even though this is TryJoin() instead of
-                    // TrySeq(), we are still guaranteed that the service
-                    // config will be applied to the call before anything
-                    // else happens.
-                    ApplyServiceConfigPromise(std::move(config_selector)),
-                    // Send call to dynamic call.
-                    // (returned promise must hold a ref to whatever it
-                    // needs -- in this case, to dynamic_filters_.  but
-                    // this decision might be made on a filter-by-filter basis)
-                    dynamic_filters_->CreatePromise()
-                );
-              }
-          ),
-      )
-  );
+      TryJoin(Seq(
+          // Get service config.
+          While(Seq(
+              // Wait for the next result.
+              config_selector_observer.Next(),
+              // Check the result.
+              [](absl::optional<absl::StatusOr<RefCountedPtr<ConfigSelector>>>
+                     config_selector) {
+                // We haven't yet seen a resolver result, so tell the
+                // While() loop to continue.
+                if (!config_selector.has_value()) return absl::nullopt;
+                // Handle resolver transient failure before initial result.
+                if (!config_selector->ok()) {
+                  // If wait_for_ready, continue the While() loop.
+                  if (GetContext<ClientContext>().wait_for_ready()) {
+                    return absl::nullopt;
+                  }
+                  // Otherwise, fail the call.
+                  return config_selector->status();
+                }
+                // Resolver succeeded, pass config selector along.
+                return std::move(**config_selector);
+              })),
+          // Apply service config to call.
+          // FIXME: "this" might need to be a smart pointer
+          [this](RefCountedPtr<ConfigSelector> config_selector) {
+            return TryJoin(
+                // Synchronous part of this will execute immediately,
+                // so even though this is TryJoin() instead of
+                // TrySeq(), we are still guaranteed that the service
+                // config will be applied to the call before anything
+                // else happens.
+                ApplyServiceConfigPromise(std::move(config_selector)),
+                // Send call to dynamic call.
+                // (returned promise must hold a ref to whatever it
+                // needs -- in this case, to dynamic_filters_.  but
+                // this decision might be made on a filter-by-filter basis)
+                dynamic_filters_->CreatePromise());
+          })));
 }
 
 Promise<absl::Status> ClientChannel::ApplyServiceConfigPromise(
-    RefCountedPtr<ConfigSelector>> config_selector) {
+    RefCountedPtr<ConfigSelector> config_selector) {
   grpc_millis deadline = grpc_milli_inf();  // FIXME
   // Use the ConfigSelector to determine the config for the call.
   ConfigSelector::CallConfig call_config =
@@ -1240,11 +1234,10 @@ Promise<absl::Status> ClientChannel::ApplyServiceConfigPromise(
   // the call.  The MethodConfig will store itself in the call context,
   // so that it can be accessed by filters in the subchannel, and it
   // will be cleaned up when the call ends.
-  auto* service_config_context =
-      GetContext<ServiceConfigContext>();
-  service_config_context->Set(
-      std::move(call_config.service_config), call_config.method_configs,
-      std::move(call_config.call_attributes));
+  auto* service_config_context = GetContext<ServiceConfigContext>();
+  service_config_context->Set(std::move(call_config.service_config),
+                              call_config.method_configs,
+                              std::move(call_config.call_attributes));
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_context->GetMethodParsedConfig(
@@ -1276,24 +1269,21 @@ Promise<absl::Status> ClientChannel::ApplyServiceConfigPromise(
     }
   }
   // Return promise to continue call asynchronously.
-  return TryJoin(
-    Seq(
-        // Promise that completes when recv_initial_metadata is ready.
-        // (Everyone waiting for this from transport gets notified at the
-        // same time -- no ordering guarantee between those waiting.)
-        // Returns a pointer to metadata.
-        GetContext<ClientContext>().RecvInitialMetadataLatch(),
-        // Once we get initial metadata, then run a promise to invoke
-        // the config selector commit callback.
-        [on_call_committed]() {
-          if (on_call_committed != nullptr) on_call_committed();
-          return absl::OkStatus();
-        }
-    ),
-    // Start timer from deadline we determined above.
-    // (No-op if deadline is infinite.)
-    Timeout(deadline)
-  );
+  return TryJoin(Seq(
+                     // Promise that completes when recv_initial_metadata is
+                     // ready. (Everyone waiting for this from transport gets
+                     // notified at the same time -- no ordering guarantee
+                     // between those waiting.) Returns a pointer to metadata.
+                     GetContext<ClientContext>().RecvInitialMetadataLatch(),
+                     // Once we get initial metadata, then run a promise to
+                     // invoke the config selector commit callback.
+                     [on_call_committed]() {
+                       if (on_call_committed != nullptr) on_call_committed();
+                       return absl::OkStatus();
+                     }),
+                 // Start timer from deadline we determined above.
+                 // (No-op if deadline is infinite.)
+                 Timeout(deadline));
 }
 
 RefCountedPtr<ClientChannel::LoadBalancedCall>
