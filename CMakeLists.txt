@@ -126,6 +126,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_exponential_biased
   absl_fixed_array
   absl_flat_hash_map
+  absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
   absl_hash
