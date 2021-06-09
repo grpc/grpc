@@ -56,11 +56,23 @@ class Immediate {
  private:
   T value_;
 };
+
 }  // namespace promise_detail
 
+// Return \a value immediately
 template <typename T>
 promise_detail::Immediate<T> Immediate(T value) {
   return promise_detail::Immediate<T>(std::move(value));
+}
+
+// Typecheck that a promise returns the expected return type.
+// usage: auto promise = WithResult<int>([]() { return ready(3); });
+// NOTE: there are tests in promise_test.cc that are commented out because they
+// should fail to compile. When modifying this code these should be uncommented
+// and their miscompilation verified.
+template <typename T, typename F>
+auto WithResult(F f) -> typename std::enable_if<std::is_same<decltype(f()), Poll<T>>::value, F>::type {
+  return f;
 }
 
 }  // namespace grpc_core

@@ -17,9 +17,15 @@
 
 namespace grpc_core {
 
-TEST(PromiseTest, Works) {
-  Promise<int> x = []() { return ready(42); };
-  EXPECT_EQ(x().take(), 42);
+TEST(MapTest, Works) {
+  Promise<int> x = Map([]() { return ready(42); }, [](int i) { return i / 2; });
+  EXPECT_EQ(x().take(), 21);
+}
+
+TEST(MapTest, JustElem0) {
+  Promise<int> x =
+      Map([]() { return ready(std::make_tuple(1, 2, 3)); }, JustElem<0>());
+  EXPECT_EQ(x().take(), 1);
 }
 
 }  // namespace grpc_core
