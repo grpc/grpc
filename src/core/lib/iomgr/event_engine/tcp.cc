@@ -17,6 +17,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/endpoint_config_internal.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
@@ -30,7 +31,7 @@
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
-using ::grpc_event_engine::experimental::EndpointConfig;
+using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
@@ -107,8 +108,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                                   addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
-  // TODO(hork): Convert channel_args to EndpointConfig
-  EndpointConfig ecfg;
+  ChannelArgsEndpointConfig ecfg(channel_args);
   absl::Status connected = g_event_engine->Connect(ee_on_connect, ra, ecfg,
                                                    std::move(sa), ee_deadline);
   if (!connected.ok()) {
@@ -123,8 +123,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
 grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                               const grpc_channel_args* args,
                               grpc_tcp_server** server) {
-  // TODO(hork): Convert channel_args to ChannelArgs
-  EndpointConfig ecfg;
+  ChannelArgsEndpointConfig ecfg(channel_args);
   grpc_resource_quota* rq = grpc_resource_quota_from_channel_args(args);
   if (rq == nullptr) {
     rq = grpc_resource_quota_create(nullptr);
