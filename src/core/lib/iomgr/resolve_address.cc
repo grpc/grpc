@@ -21,6 +21,10 @@
 #include <grpc/support/alloc.h>
 #include "src/core/lib/iomgr/resolve_address.h"
 
+namespace grpc_core {
+const char* kDefaultSecurePort = "https";
+}  // namespace grpc_core
+
 grpc_address_resolver_vtable* grpc_resolve_address_impl;
 
 void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable) {
