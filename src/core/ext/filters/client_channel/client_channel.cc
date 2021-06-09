@@ -1174,35 +1174,59 @@ Promise<absl::Status> ClientChannel::CreatePromise() {
   auto config_selector_observer = config_selector_observable_.MakeObserver();
   return Race(
       Timeout(GetContext<ClientContext>().deadline()),
-      // Run a few things concurrently.
+      // Run a few things sequentially.
       // Stop at first failure.
-      TryJoin(Seq(
+      // - all promises in seq must return StatusOr<>
+      // - StatusOr<> will be stripped off for next promise in seq
+      // - TrySeq() will return StatusOr<> to its caller
+      TrySeq(
           // Get service config.
-          While(Seq(
-              // Wait for the next result.
-              config_selector_observer.Next(),
-              // Check the result.
-              [](absl::optional<absl::StatusOr<RefCountedPtr<ConfigSelector>>>
-                     config_selector) {
-                // We haven't yet seen a resolver result, so tell the
-                // While() loop to continue.
-                if (!config_selector.has_value()) return absl::nullopt;
-                // Handle resolver transient failure before initial result.
-                if (!config_selector->ok()) {
-                  // If wait_for_ready, continue the While() loop.
-                  if (GetContext<ClientContext>().wait_for_ready()) {
-                    return absl::nullopt;
-                  }
-                  // Otherwise, fail the call.
-                  return config_selector->status();
-                }
-                // Resolver succeeded, pass config selector along.
-                return std::move(**config_selector);
-              })),
+          // - all promises in seq must return optional<StatusOr<>>
+          // - optional<> will be stripped off for next promise in seq
+          // - While() will return StatusOr<> to its caller
+          While(
+              // - all promises in seq must return StatusOr<>
+              // - StatusOr<> will be stripped off for next promise in seq
+              // - TrySeq() will return StatusOr<> to its caller
+              TrySeq(
+                  // Wait for the next result.
+                  // Result type is
+                  // StatusOr<StatusOr<RefCountedPtr<ConfigSelector>>>
+                  // - outer StatusOr is status from observer
+                  //   (will be stripped off for input to next element of
+                  //   TrySeq())
+                  // - inner StatusOr is whether resolver had transient failure
+                  config_selector_observer.TryNext(),
+                  // Check the result.
+                  //              CheckResolverResult,
+                  [](absl::StatusOr<RefCountedPtr<ConfigSelector>>
+                         config_selector)
+                      -> absl::optional<
+                          absl::StatusOr<RefCountedPtr<ConfigSelector>>> {
+                    // Handle resolver transient failure before initial result.
+                    if (!config_selector.ok()) {
+                      // If wait_for_ready, continue the While() loop.
+                      if (GetContext<ClientContext>().wait_for_ready()) {
+                        //                    return While::kContinue;
+                        return absl::nullopt;
+                      }
+                      // Otherwise, fail the call.
+                      return config_selector.status();
+                    }
+                    // Resolver succeeded, pass config selector along.
+                    return std::move(*config_selector);
+                  })),
           // Apply service config to call.
+          // This needs to be a lambda wrapping the TryJoin() because we
+          // need the config_selector parameter from the previous promise
+          // to *construct* this promise.
           // FIXME: "this" might need to be a smart pointer
           [this](RefCountedPtr<ConfigSelector> config_selector) {
-            return TryJoin(
+            // - all promises in seq must return StatusOr<>
+            // - StatusOr<> will be stripped off for next promise in seq
+            // - TryJoin() will return StatusOr<tuple<...>> of results to
+            //   its caller
+            return StatusOf(TryJoin(
                 // Synchronous part of this will execute immediately,
                 // so even though this is TryJoin() instead of
                 // TrySeq(), we are still guaranteed that the service
@@ -1213,8 +1237,8 @@ Promise<absl::Status> ClientChannel::CreatePromise() {
                 // (returned promise must hold a ref to whatever it
                 // needs -- in this case, to dynamic_filters_.  but
                 // this decision might be made on a filter-by-filter basis)
-                dynamic_filters_->CreatePromise());
-          })));
+                dynamic_filters_->CreatePromise()));
+          }));
 }
 
 Promise<absl::Status> ClientChannel::ApplyServiceConfigPromise(
@@ -1268,22 +1292,24 @@ Promise<absl::Status> ClientChannel::ApplyServiceConfigPromise(
       }
     }
   }
-  // Return promise to continue call asynchronously.
-  return TryJoin(Seq(
-                     // Promise that completes when recv_initial_metadata is
-                     // ready. (Everyone waiting for this from transport gets
-                     // notified at the same time -- no ordering guarantee
-                     // between those waiting.) Returns a pointer to metadata.
-                     GetContext<ClientContext>().RecvInitialMetadataLatch(),
-                     // Once we get initial metadata, then run a promise to
-                     // invoke the config selector commit callback.
-                     [on_call_committed]() {
-                       if (on_call_committed != nullptr) on_call_committed();
-                       return absl::OkStatus();
-                     }),
-                 // Start timer from deadline we determined above.
-                 // (No-op if deadline is infinite.)
-                 Timeout(deadline));
+  // Construct promises needed to continue call asynchronously.
+  // A promise to invoke on_call_committed.
+  auto InvokeOnCallCommitted = Seq(
+      // Promise that completes when recv_initial_metadata is
+      // ready. (Everyone waiting for this from transport gets
+      // notified at the same time -- no ordering guarantee
+      // between those waiting.) Returns a pointer to metadata.
+      GetContext<ClientContext>().RecvInitialMetadataLatch(),
+      // Once we get initial metadata, then run a promise to
+      // invoke the config selector commit callback.
+      [on_call_committed]() {
+        if (on_call_committed != nullptr) on_call_committed();
+        return absl::OkStatus();
+      });
+  return Race(InvokeOnCallCommitted,
+              // Start timer from deadline we determined above.
+              // (No-op if deadline is infinite.)
+              Timeout(deadline));
 }
 
 RefCountedPtr<ClientChannel::LoadBalancedCall>
