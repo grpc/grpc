@@ -12,13 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(S2A_CORE_ABSL_DIR ${ABSL_ROOT_DIR})
-message("S2A_CORE_ABSL_DIR is " ${ABSL_ROOT_DIR})
-set(S2A_CORE_SSL_DIR ${_gRPC_SSL_INCLUDE_DIR})
-set(S2A_CORE_UPB_INCLUDE_DIR ${_gRPC_UPB_INCLUDE_DIR})
+if (ABSL_ROOT_DIR)
+  set(S2A_CORE_ABSL_DIR ${ABSL_ROOT_DIR})
+endif()
+message("S2A_CORE_ABSL_DIR is " ${S2A_CORE_ABSL_DIR})
+
+if (_gRPC_SSL_INCLUDE_DIR)
+  set(S2A_CORE_SSL_DIR ${_gRPC_SSL_INCLUDE_DIR})
+endif()
+message("S2A_CORE_SSL_DIR is " ${S2A_CORE_SSL_DIR})
+
+if (_gRPC_UPB_INCLUDE_DIR)
+  set(S2A_CORE_UPB_INCLUDE_DIR ${_gRPC_UPB_INCLUDE_DIR})
+endif()
 message ("S2A CORE UPB INCLUDE DIR is " ${S2A_CORE_UPB_INCLUDE_DIR})
-set(S2A_CORE_UPB_LIBRARY _gRPC_UPB_LIBRARIES)
+
+if (_gRPC_UPB_LIBRARIES)
+  set(S2A_CORE_UPB_LIBRARY _gRPC_UPB_LIBRARIES)
+endif()
 message("S2A CORE UPB LIBRARY is " ${S2A_CORE_UPB_LIBRARY})
+
 if(gRPC_S2A_CORE_PROVIDER STREQUAL "module")
   if(NOT S2A_CORE_ROOT_DIR)
     set(S2A_CORE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/s2a_core")
