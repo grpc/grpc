@@ -499,7 +499,6 @@ static void drop_uncovered(grpc_tcp* /*tcp*/) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p uncover cnt %d->%d", p, old_count,
             old_count - 1);
   }
-  GPR_ASSERT(old_count != 1);
 }
 
 // gRPC API considers a Write operation to be done the moment it clears ‘flow
