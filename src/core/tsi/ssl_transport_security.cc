@@ -2005,9 +2005,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
   }
 
-  #if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   if (options->crl_directory != nullptr) {
-    gpr_log(GPR_INFO, "enabling client CRL checking with path: %s", options->crl_directory);
+    gpr_log(GPR_INFO, "enabling client CRL checking with path: %s",
+            options->crl_directory);
     X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
     if (!X509_STORE_load_locations(cert_store, nullptr,
                                    options->crl_directory)) {
@@ -2019,7 +2020,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       gpr_log(GPR_INFO, "enabled client side CRL checking.");
     }
   }
-  #endif
+#endif
 
   *factory = impl;
   return TSI_OK;
@@ -2057,16 +2058,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
   options.num_alpn_protocols = num_alpn_protocols;
   return tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                                factory);
-}
-
-static int verify_cb(int ok, X509_STORE_CTX* ctx) {
-  int cert_error = X509_STORE_CTX_get_error(ctx);
-  if (cert_error != 0) {
-    std::string temp = "Certificate verify failed with code " +
-                       std::to_string(cert_error) + "\n";
-    gpr_log(GPR_INFO, "%s", temp.c_str());
-  }
-  return ok;
 }
 
 tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
@@ -2192,22 +2183,22 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           break;
       }
 
-      #if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       if (options->crl_directory != nullptr) {
-        gpr_log(GPR_INFO, "enabling server CRL checking with path %s.", options->crl_directory);
+        gpr_log(GPR_INFO, "enabling server CRL checking with path %s.",
+                options->crl_directory);
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
         if (!X509_STORE_load_locations(cert_store, nullptr,
                                        options->crl_directory)) {
           gpr_log(GPR_ERROR, "Failed to load CRL File from directory.");
         } else {
-                X509_STORE_set_verify_cb(cert_store, verify_cb);
           X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
           X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK);
 
           gpr_log(GPR_INFO, "enabled server CRL checking.");
         }
       }
-      #endif
+#endif
 
       result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
           options->pem_key_cert_pairs[i].cert_chain,
