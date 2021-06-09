@@ -668,7 +668,8 @@ typedef unsigned __int64 uint64_t;
 // overridden using the GRPC_USE_EVENT_ENGINE compiler flag.
 #ifndef GRPC_USE_EVENT_ENGINE
 // Not enabled by default on any platforms yet. (2021.06)
-#elif GRPC_USE_EVENT_ENGINE != 1
+#elif GRPC_USE_EVENT_ENGINE == 0
+// Building with `-DGRPC_USE_EVENT_ENGINE=0` will override the default.
 #undef GRPC_USE_EVENT_ENGINE
 #endif /* GRPC_USE_EVENT_ENGINE */
 
