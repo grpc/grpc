@@ -37,12 +37,10 @@ $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in revoked.csr \
 
 $ openssl ca -revoke revoked.pem -keyfile ca.key -cert ca.pem
 
-$ openssl ca -revoke revokedserver.pem -keyfile ca.key -cert ca.pem
-
 Generate the CRL file:
 ----------------------------------------------------------------------------
 $ openssl ca -gencrl -out current.crl -keyfile ca.key -cert ca.pem
-$ openssl rehash ./current.crl
+$ openssl rehash ./
 
 Clean up:
 ---------
