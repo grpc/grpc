@@ -76,7 +76,7 @@ ExternalProject_Add(s2a_core
   PREFIX s2a_core
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/s2a_core"
   CMAKE_CACHE_ARGS
-  	-DS2A_CORE_ABSL_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/third_party/abseil-cpp
+        -DS2A_CORE_ABSL_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/third_party/abseil-cpp
   	-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/s2a_core
 )
@@ -122,10 +122,11 @@ ExternalProject_Add(grpc
         -DgRPC_CARES_PROVIDER:STRING=package
         -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/c-ares/lib/cmake/c-ares
         -DgRPC_SSL_PROVIDER:STRING=package
+	-Ds2a_core_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/s2a_core/lib/cmake/s2a_core
 	-DS2A_CORE_ABSL_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/third_party/abseil-cpp
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
-  DEPENDS c-ares protobuf re2 zlib absl
+  DEPENDS c-ares protobuf re2 zlib absl s2a_core
 )
 
 # Build the helloworld projects itself using a CMakeLists.txt that assumes all the dependencies
