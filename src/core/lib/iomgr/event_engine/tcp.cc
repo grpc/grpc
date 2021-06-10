@@ -134,7 +134,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
             grpc_core::ExecCtx exec_ctx;
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
             grpc_event_engine_endpoint* iomgr_endpoint =
-                grpc_tcp_create(std::move(ee_endpoint));
+                grpc_tcp_server_endpoint_create(std::move(ee_endpoint));
             grpc_tcp_server_acceptor* acceptor =
                 static_cast<grpc_tcp_server_acceptor*>(
                     gpr_zalloc(sizeof(*acceptor)));

@@ -38,9 +38,15 @@ struct grpc_event_engine_endpoint {
       alignof(grpc_event_engine::experimental::SliceBuffer)>::type write_buffer;
 };
 
-grpc_event_engine_endpoint* grpc_tcp_create(
+/// Creates an internal endpoint struct from an EventEngine endpoint. Server
+/// code needs to create grpc_endpoints after the EventEngine has made
+/// connections.
+grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint> ee);
 
+/// Creates a new internal endpoint struct, when no EventEngine endpoint has yet
+/// been created. This is used in client code before connections are
+/// established.
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address);
 
