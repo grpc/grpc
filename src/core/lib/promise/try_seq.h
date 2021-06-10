@@ -74,7 +74,7 @@ struct IntermediateState {
   ~IntermediateState() = delete;
   using F = typename PriorState::Next::Promise;
   union {
-    [[no_unique_address]] PriorState prior;
+    [[no_unique_address]] PriorState p;
     [[no_unique_address]] F f;
   };
   using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
@@ -82,48 +82,23 @@ struct IntermediateState {
   [[no_unique_address]] Next next;
 };
 
-template <typename PriorState, typename NewStateF, typename Result>
-void AdvanceState(PriorState* prior_state, NewStateF* new_state_f, Result* p) {
+template <typename Result, typename PriorState, typename NewStateF, typename RunNextState>
+Poll<Result> RunState(PriorState* prior_state, NewStateF* new_state_f, RunNextState run_next_state) {
+  auto r = prior_state->f();
+  auto* p = r.get_ready();
+  if (p == nullptr) return kPending;
+  if (!p->ok()) return ready(Result(IntoStatus(p)));
   Destruct(&prior_state->f);
   auto n = CallNext(&prior_state->next, p);
   Destruct(&prior_state->next);
   Construct(new_state_f, std::move(n));
+  return next();
 }
 
 template <typename... Functors>
 class TrySeq;
 
 #include "try_seq_switch.h"
-
-/* {
- private:
-  using InitialState = State<Functors...>;
-  using FinalState = typename InitialState::FinalState;
-  using StatesVariant = typename InitialState::StatesList::Variant;
-  using Result = typename FinalState::Result;
-  StatesVariant state_;
-
-  struct CallPoll {
-    TrySeq* seq;
-    // CallPoll on a non-final state moves to the next state if it completes.
-    // If so, it immediately polls the next state also (recursively!) and when
-    // polling completes stores the current state back into state_.
-    // kSetState keeps track of the need to do this (or not) - when we first
-    // visit state_ kSetState is false indicating that we're already mutating
-    // it. If we gain a new state on the stack, we don't put that into state_
-    // immediately to avoid unnecessary potential copies.
-    template <typename State>
-    Poll<Result> operator()(State& state) {
-      return state.Run(&seq->state_);
-    }
-  };
-
- public:
-  explicit TrySeq(Functors... functors)
-      : state_(InitialState(std::move(functors)...)) {}
-
-  Poll<Result> operator()() { return absl::visit(CallPoll{this}, state_); }
-};*/
 
 }  // namespace try_seq_detail
 

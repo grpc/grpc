@@ -25,47 +25,48 @@ class TrySeq<F0, F1> {
   using State0 = InitialState<F0, F1>;
   using FLast = typename State0::Next::Promise;
   union {
-    [[no_unique_address]] State0 prior_;
+    [[no_unique_address]] State0 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State0::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() { return f_(); }
 
  public:
-  TrySeq(F0 f0, F1 f1) : prior_(std::move(f0), std::move(f1)) {}
+  TrySeq(F0 f0, F1 f1) : p_(std::move(f0), std::move(f1)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State0(other.prior_);
+    new (&p_) State0(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State0(std::move(other.prior_));
+    new (&p_) State0(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin0;
       case 1:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State0::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 1;
-      }
+      case 0:
+        return RunState0();
       case 1:
-        return f_();
+        return RunState1();
     }
     return kPending;
   }
@@ -78,61 +79,62 @@ class TrySeq<F0, F1, F2> {
   using State1 = IntermediateState<State0, F2, F0, F1>;
   using FLast = typename State1::Next::Promise;
   union {
-    [[no_unique_address]] State1 prior_;
+    [[no_unique_address]] State1 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State1::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2)
-      : prior_(std::move(f0), std::move(f1), std::move(f2)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State1(other.prior_);
+    new (&p_) State1(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State1(std::move(other.prior_));
+    new (&p_) State1(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin1;
       case 2:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin1:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State1::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 2;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
       case 2:
-        return f_();
+        return RunState2();
     }
     return kPending;
   }
@@ -146,74 +148,75 @@ class TrySeq<F0, F1, F2, F3> {
   using State2 = IntermediateState<State1, F3, F0, F1, F2>;
   using FLast = typename State2::Next::Promise;
   union {
-    [[no_unique_address]] State2 prior_;
+    [[no_unique_address]] State2 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State2::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State2(other.prior_);
+    new (&p_) State2(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State2(std::move(other.prior_));
+    new (&p_) State2(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin2;
       case 3:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin1:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin2:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State2::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 3;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
       case 3:
-        return f_();
+        return RunState3();
     }
     return kPending;
   }
@@ -228,88 +231,89 @@ class TrySeq<F0, F1, F2, F3, F4> {
   using State3 = IntermediateState<State2, F4, F0, F1, F2, F3>;
   using FLast = typename State3::Next::Promise;
   union {
-    [[no_unique_address]] State3 prior_;
+    [[no_unique_address]] State3 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State3::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State3(other.prior_);
+    new (&p_) State3(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State3(std::move(other.prior_));
+    new (&p_) State3(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin3;
       case 4:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin2:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin3:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State3::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 4;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
       case 4:
-        return f_();
+        return RunState4();
     }
     return kPending;
   }
@@ -326,102 +330,102 @@ class TrySeq<F0, F1, F2, F3, F4, F5> {
   using State4 = IntermediateState<State3, F5, F0, F1, F2, F3, F4>;
   using FLast = typename State4::Next::Promise;
   union {
-    [[no_unique_address]] State4 prior_;
+    [[no_unique_address]] State4 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State4::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State4(other.prior_);
+    new (&p_) State4(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State4(std::move(other.prior_));
+    new (&p_) State4(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin4;
       case 5:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin3:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin4:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State4::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 5;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
       case 5:
-        return f_();
+        return RunState5();
     }
     return kPending;
   }
@@ -439,116 +443,115 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6> {
   using State5 = IntermediateState<State4, F6, F0, F1, F2, F3, F4, F5>;
   using FLast = typename State5::Next::Promise;
   union {
-    [[no_unique_address]] State5 prior_;
+    [[no_unique_address]] State5 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State5::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State5(other.prior_);
+    new (&p_) State5(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State5(std::move(other.prior_));
+    new (&p_) State5(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin5;
       case 6:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin4:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin5:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State5::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 6;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
       case 6:
-        return f_();
+        return RunState6();
     }
     return kPending;
   }
@@ -567,130 +570,128 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7> {
   using State6 = IntermediateState<State5, F7, F0, F1, F2, F3, F4, F5, F6>;
   using FLast = typename State6::Next::Promise;
   union {
-    [[no_unique_address]] State6 prior_;
+    [[no_unique_address]] State6 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State6::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State6(other.prior_);
+    new (&p_) State6(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State6(std::move(other.prior_));
+    new (&p_) State6(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin6;
       case 7:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin5:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin6:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State6::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 7;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
       case 7:
-        return f_();
+        return RunState7();
     }
     return kPending;
   }
@@ -710,145 +711,142 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   using State7 = IntermediateState<State6, F8, F0, F1, F2, F3, F4, F5, F6, F7>;
   using FLast = typename State7::Next::Promise;
   union {
-    [[no_unique_address]] State7 prior_;
+    [[no_unique_address]] State7 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State7::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State7(other.prior_);
+    new (&p_) State7(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State7(std::move(other.prior_));
+    new (&p_) State7(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin7;
       case 8:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin6:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin7:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State7::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 8;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
       case 8:
-        return f_();
+        return RunState8();
     }
     return kPending;
   }
@@ -870,159 +868,155 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
       IntermediateState<State7, F9, F0, F1, F2, F3, F4, F5, F6, F7, F8>;
   using FLast = typename State8::Next::Promise;
   union {
-    [[no_unique_address]] State8 prior_;
+    [[no_unique_address]] State8 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State8::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 1;
+      return RunState1();
+    });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State8(other.prior_);
+    new (&p_) State8(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State8(std::move(other.prior_));
+    new (&p_) State8(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin8;
       case 9:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin7:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin8:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State8::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 9;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
       case 9:
-        return f_();
+        return RunState9();
     }
     return kPending;
   }
@@ -1047,178 +1041,170 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
       IntermediateState<State8, F10, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9>;
   using FLast = typename State9::Next::Promise;
   union {
-    [[no_unique_address]] State9 prior_;
+    [[no_unique_address]] State9 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result =
+      typename decltype(std::declval<typename State9::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 2;
+      return RunState2();
+    });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State9(other.prior_);
+    new (&p_) State9(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State9(std::move(other.prior_));
+    new (&p_) State9(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin9;
       case 10:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin8:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin9:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result =
-      typename decltype(std::declval<typename State9::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 10;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
       case 10:
-        return f_();
+        return RunState10();
     }
     return kPending;
   }
@@ -1245,196 +1231,184 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
                                     F8, F9, F10>;
   using FLast = typename State10::Next::Promise;
   union {
-    [[no_unique_address]] State10 prior_;
+    [[no_unique_address]] State10 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State10::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 3;
+      return RunState3();
+    });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State10(other.prior_);
+    new (&p_) State10(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State10(std::move(other.prior_));
+    new (&p_) State10(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin10;
       case 11:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin9:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin10:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State10::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 11;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
       case 11:
-        return f_();
+        return RunState11();
     }
     return kPending;
   }
@@ -1463,217 +1437,199 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12> {
                                     F7, F8, F9, F10, F11>;
   using FLast = typename State11::Next::Promise;
   union {
-    [[no_unique_address]] State11 prior_;
+    [[no_unique_address]] State11 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State11::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 4;
+      return RunState4();
+    });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State11(other.prior_);
+    new (&p_) State11(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State11(std::move(other.prior_));
+    new (&p_) State11(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin11;
       case 12:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin10:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin11:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State11::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 12;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
       case 12:
-        return f_();
+        return RunState12();
     }
     return kPending;
   }
@@ -1704,237 +1660,213 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13> {
                                     F7, F8, F9, F10, F11, F12>;
   using FLast = typename State12::Next::Promise;
   union {
-    [[no_unique_address]] State12 prior_;
+    [[no_unique_address]] State12 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State12::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 5;
+      return RunState5();
+    });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State12(other.prior_);
+    new (&p_) State12(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State12(std::move(other.prior_));
+    new (&p_) State12(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin12;
       case 13:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin11:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin12:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State12::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 13;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
       case 13:
-        return f_();
+        return RunState13();
     }
     return kPending;
   }
@@ -1967,257 +1899,227 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14> {
                                     F7, F8, F9, F10, F11, F12, F13>;
   using FLast = typename State13::Next::Promise;
   union {
-    [[no_unique_address]] State13 prior_;
+    [[no_unique_address]] State13 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State13::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 6;
+      return RunState6();
+    });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State13(other.prior_);
+    new (&p_) State13(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State13(std::move(other.prior_));
+    new (&p_) State13(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin13;
       case 14:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin12:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin13:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State13::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 14;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
       case 14:
-        return f_();
+        return RunState14();
     }
     return kPending;
   }
@@ -2254,278 +2156,241 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                                     F7, F8, F9, F10, F11, F12, F13, F14>;
   using FLast = typename State14::Next::Promise;
   union {
-    [[no_unique_address]] State14 prior_;
+    [[no_unique_address]] State14 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State14::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 7;
+      return RunState7();
+    });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15)) {
-  }
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State14(other.prior_);
+    new (&p_) State14(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State14(std::move(other.prior_));
+    new (&p_) State14(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin14;
       case 15:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin13:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin14:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State14::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 15;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
       case 15:
-        return f_();
+        return RunState15();
     }
     return kPending;
   }
@@ -2564,298 +2429,256 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                                     F7, F8, F9, F10, F11, F12, F13, F14, F15>;
   using FLast = typename State15::Next::Promise;
   union {
-    [[no_unique_address]] State15 prior_;
+    [[no_unique_address]] State15 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State15::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 8;
+      return RunState8();
+    });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State15(other.prior_);
+    new (&p_) State15(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State15(std::move(other.prior_));
+    new (&p_) State15(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin15;
       case 16:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin14:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin15:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State15::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 16;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
       case 16:
-        return f_();
+        return RunState16();
     }
     return kPending;
   }
@@ -2897,318 +2720,270 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F10, F11, F12, F13, F14, F15, F16>;
   using FLast = typename State16::Next::Promise;
   union {
-    [[no_unique_address]] State16 prior_;
+    [[no_unique_address]] State16 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State16::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 9;
+      return RunState9();
+    });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State16(other.prior_);
+    new (&p_) State16(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State16(std::move(other.prior_));
+    new (&p_) State16(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin16;
       case 17:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin15:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin16:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State16::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 17;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
       case 17:
-        return f_();
+        return RunState17();
     }
     return kPending;
   }
@@ -3253,340 +3028,285 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F10, F11, F12, F13, F14, F15, F16, F17>;
   using FLast = typename State17::Next::Promise;
   union {
-    [[no_unique_address]] State17 prior_;
+    [[no_unique_address]] State17 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State17::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 10;
+      return RunState10();
+    });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State17(other.prior_);
+    new (&p_) State17(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State17(std::move(other.prior_));
+    new (&p_) State17(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin17;
       case 18:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin16:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin17:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State17::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 18;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
       case 18:
-        return f_();
+        return RunState18();
     }
     return kPending;
   }
@@ -3634,362 +3354,299 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F10, F11, F12, F13, F14, F15, F16, F17, F18>;
   using FLast = typename State18::Next::Promise;
   union {
-    [[no_unique_address]] State18 prior_;
+    [[no_unique_address]] State18 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State18::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 11;
+      return RunState11();
+    });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19)) {
-  }
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State18(other.prior_);
+    new (&p_) State18(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State18(std::move(other.prior_));
+    new (&p_) State18(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin18;
       case 19:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin17:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin18:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State18::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 19;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
       case 19:
-        return f_();
+        return RunState19();
     }
     return kPending;
   }
@@ -4041,385 +3698,315 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F10, F11, F12, F13, F14, F15, F16, F17, F18, F19>;
   using FLast = typename State19::Next::Promise;
   union {
-    [[no_unique_address]] State19 prior_;
+    [[no_unique_address]] State19 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State19::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 12;
+      return RunState12();
+    });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State19(other.prior_);
+    new (&p_) State19(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State19(std::move(other.prior_));
+    new (&p_) State19(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin19;
       case 20:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin18:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin19:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State19::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 20;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
       case 20:
-        return f_();
+        return RunState20();
     }
     return kPending;
   }
@@ -4474,409 +4061,330 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20>;
   using FLast = typename State20::Next::Promise;
   union {
-    [[no_unique_address]] State20 prior_;
+    [[no_unique_address]] State20 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State20::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 13;
+      return RunState13();
+    });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State20(other.prior_);
+    new (&p_) State20(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State20(std::move(other.prior_));
+    new (&p_) State20(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin20;
       case 21:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin19:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin20:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State20::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 21;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
       case 21:
-        return f_();
+        return RunState21();
     }
     return kPending;
   }
@@ -4934,434 +4442,345 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                                     F16, F17, F18, F19, F20, F21>;
   using FLast = typename State21::Next::Promise;
   union {
-    [[no_unique_address]] State21 prior_;
+    [[no_unique_address]] State21 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State21::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 14;
+      return RunState14();
+    });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State21(other.prior_);
+    new (&p_) State21(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State21(std::move(other.prior_));
+    new (&p_) State21(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin21;
       case 22:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin20:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin21:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State21::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 22;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
       case 22:
-        return f_();
+        return RunState22();
     }
     return kPending;
   }
@@ -5422,460 +4841,360 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                                     F16, F17, F18, F19, F20, F21, F22>;
   using FLast = typename State22::Next::Promise;
   union {
-    [[no_unique_address]] State22 prior_;
+    [[no_unique_address]] State22 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State22::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 15;
+      return RunState15();
+    });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23)) {
-  }
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State22(other.prior_);
+    new (&p_) State22(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State22(std::move(other.prior_));
+    new (&p_) State22(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin22;
       case 23:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin20:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin21:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin22:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State22::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 23;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
       case 23:
-        return f_();
+        return RunState23();
     }
     return kPending;
   }
@@ -5939,485 +5258,376 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                                     F16, F17, F18, F19, F20, F21, F22, F23>;
   using FLast = typename State23::Next::Promise;
   union {
-    [[no_unique_address]] State23 prior_;
+    [[no_unique_address]] State23 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State23::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 15;
+                              return RunState15();
+                            });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 16;
+      return RunState16();
+    });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 24;
+      return RunState24();
+    });
+  }
+  Poll<Result> RunState24() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23),
-               std::move(f24)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23),
+           std::move(f24)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State23(other.prior_);
+    new (&p_) State23(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State23(std::move(other.prior_));
+    new (&p_) State23(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin22;
       case 23:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin23;
       case 24:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin20:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin21:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin22:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin23:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State23::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 23;
-      }
-      case 23: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 24;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
+      case 23:
+        return RunState23();
       case 24:
-        return f_();
+        return RunState24();
     }
     return kPending;
   }
@@ -6486,510 +5696,391 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F21, F22, F23, F24>;
   using FLast = typename State24::Next::Promise;
   union {
-    [[no_unique_address]] State24 prior_;
+    [[no_unique_address]] State24 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State24::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 1;
+                              return RunState1();
+                            });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 15;
+                              return RunState15();
+                            });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 16;
+                              return RunState16();
+                            });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 17;
+      return RunState17();
+    });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 24;
+      return RunState24();
+    });
+  }
+  Poll<Result> RunState24() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 25;
+      return RunState25();
+    });
+  }
+  Poll<Result> RunState25() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23),
-               std::move(f24), std::move(f25)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23),
+           std::move(f24), std::move(f25)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State24(other.prior_);
+    new (&p_) State24(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State24(std::move(other.prior_));
+    new (&p_) State24(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin22;
       case 23:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin23;
       case 24:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin24;
       case 25:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin20:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin21:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin22:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin23:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin24:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State24::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 23;
-      }
-      case 23: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 24;
-      }
-      case 24: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 25;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
+      case 23:
+        return RunState23();
+      case 24:
+        return RunState24();
       case 25:
-        return f_();
+        return RunState25();
     }
     return kPending;
   }
@@ -7062,536 +6153,407 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F21, F22, F23, F24, F25>;
   using FLast = typename State25::Next::Promise;
   union {
-    [[no_unique_address]] State25 prior_;
+    [[no_unique_address]] State25 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State25::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 1;
+          return RunState1();
+        });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 2;
+                              return RunState2();
+                            });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 15;
+                              return RunState15();
+                            });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 16;
+                              return RunState16();
+                            });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 17;
+                              return RunState17();
+                            });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 18;
+      return RunState18();
+    });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 24;
+      return RunState24();
+    });
+  }
+  Poll<Result> RunState24() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 25;
+      return RunState25();
+    });
+  }
+  Poll<Result> RunState25() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 26;
+      return RunState26();
+    });
+  }
+  Poll<Result> RunState26() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
          F26 f26)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23),
-               std::move(f24), std::move(f25), std::move(f26)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23),
+           std::move(f24), std::move(f25), std::move(f26)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State25(other.prior_);
+    new (&p_) State25(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State25(std::move(other.prior_));
+    new (&p_) State25(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin22;
       case 23:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin23;
       case 24:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin24;
       case 25:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin25;
       case 26:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin20:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin21:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin22:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin23:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin24:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin25:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State25::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 23;
-      }
-      case 23: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 24;
-      }
-      case 24: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 25;
-      }
-      case 25: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 26;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
+      case 23:
+        return RunState23();
+      case 24:
+        return RunState24();
+      case 25:
+        return RunState25();
       case 26:
-        return f_();
+        return RunState26();
     }
     return kPending;
   }
@@ -7668,563 +6630,422 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F21, F22, F23, F24, F25, F26>;
   using FLast = typename State26::Next::Promise;
   union {
-    [[no_unique_address]] State26 prior_;
+    [[no_unique_address]] State26 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State26::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 1;
+          return RunState1();
+        });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 2;
+          return RunState2();
+        });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 3;
+                              return RunState3();
+                            });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 15;
+                              return RunState15();
+                            });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 16;
+                              return RunState16();
+                            });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 17;
+                              return RunState17();
+                            });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 18;
+                              return RunState18();
+                            });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 19;
+      return RunState19();
+    });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 24;
+      return RunState24();
+    });
+  }
+  Poll<Result> RunState24() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 25;
+      return RunState25();
+    });
+  }
+  Poll<Result> RunState25() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 26;
+      return RunState26();
+    });
+  }
+  Poll<Result> RunState26() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 27;
+      return RunState27();
+    });
+  }
+  Poll<Result> RunState27() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
          F26 f26, F27 f27)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23),
-               std::move(f24), std::move(f25), std::move(f26), std::move(f27)) {
-  }
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23),
+           std::move(f24), std::move(f25), std::move(f26), std::move(f27)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State26(other.prior_);
+    new (&p_) State26(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State26(std::move(other.prior_));
+    new (&p_) State26(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin22;
       case 23:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin23;
       case 24:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin24;
       case 25:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin25;
       case 26:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin26;
       case 27:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin17:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin20:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin21:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin22:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin23:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin24:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin25:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin26:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State26::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 23;
-      }
-      case 23: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 24;
-      }
-      case 24: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 25;
-      }
-      case 25: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 26;
-      }
-      case 26: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 27;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
+      case 23:
+        return RunState23();
+      case 24:
+        return RunState24();
+      case 25:
+        return RunState25();
+      case 26:
+        return RunState26();
       case 27:
-        return f_();
+        return RunState27();
     }
     return kPending;
   }
@@ -8306,589 +7127,438 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F21, F22, F23, F24, F25, F26, F27>;
   using FLast = typename State27::Next::Promise;
   union {
-    [[no_unique_address]] State27 prior_;
+    [[no_unique_address]] State27 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State27::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 1;
+          return RunState1();
+        });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 2;
+          return RunState2();
+        });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 3;
+          return RunState3();
+        });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 4;
+                              return RunState4();
+                            });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 15;
+                              return RunState15();
+                            });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 16;
+                              return RunState16();
+                            });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 17;
+                              return RunState17();
+                            });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 18;
+                              return RunState18();
+                            });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 19;
+                              return RunState19();
+                            });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 20;
+      return RunState20();
+    });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 24;
+      return RunState24();
+    });
+  }
+  Poll<Result> RunState24() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 25;
+      return RunState25();
+    });
+  }
+  Poll<Result> RunState25() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 26;
+      return RunState26();
+    });
+  }
+  Poll<Result> RunState26() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 27;
+      return RunState27();
+    });
+  }
+  Poll<Result> RunState27() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 28;
+      return RunState28();
+    });
+  }
+  Poll<Result> RunState28() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
          F26 f26, F27 f27, F28 f28)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23),
-               std::move(f24), std::move(f25), std::move(f26), std::move(f27),
-               std::move(f28)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23),
+           std::move(f24), std::move(f25), std::move(f26), std::move(f27),
+           std::move(f28)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State27(other.prior_);
+    new (&p_) State27(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State27(std::move(other.prior_));
+    new (&p_) State27(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin22;
       case 23:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin23;
       case 24:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin24;
       case 25:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin25;
       case 26:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin26;
       case 27:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin27;
       case 28:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin18:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin20:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin21:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin22:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin23:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin24:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin25:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin26:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin27:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State27::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 23;
-      }
-      case 23: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 24;
-      }
-      case 24: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 25;
-      }
-      case 25: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 26;
-      }
-      case 26: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 27;
-      }
-      case 27: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 28;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
+      case 23:
+        return RunState23();
+      case 24:
+        return RunState24();
+      case 25:
+        return RunState25();
+      case 26:
+        return RunState26();
+      case 27:
+        return RunState27();
       case 28:
-        return f_();
+        return RunState28();
     }
     return kPending;
   }
@@ -8974,617 +7644,453 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F21, F22, F23, F24, F25, F26, F27, F28>;
   using FLast = typename State28::Next::Promise;
   union {
-    [[no_unique_address]] State28 prior_;
+    [[no_unique_address]] State28 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State28::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 1;
+          return RunState1();
+        });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 2;
+          return RunState2();
+        });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 3;
+          return RunState3();
+        });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 4;
+          return RunState4();
+        });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 5;
+                              return RunState5();
+                            });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 15;
+                              return RunState15();
+                            });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 16;
+                              return RunState16();
+                            });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 17;
+                              return RunState17();
+                            });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 18;
+                              return RunState18();
+                            });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 19;
+                              return RunState19();
+                            });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 20;
+                              return RunState20();
+                            });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 21;
+      return RunState21();
+    });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 24;
+      return RunState24();
+    });
+  }
+  Poll<Result> RunState24() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 25;
+      return RunState25();
+    });
+  }
+  Poll<Result> RunState25() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 26;
+      return RunState26();
+    });
+  }
+  Poll<Result> RunState26() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 27;
+      return RunState27();
+    });
+  }
+  Poll<Result> RunState27() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 28;
+      return RunState28();
+    });
+  }
+  Poll<Result> RunState28() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 29;
+      return RunState29();
+    });
+  }
+  Poll<Result> RunState29() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
          F26 f26, F27 f27, F28 f28, F29 f29)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23),
-               std::move(f24), std::move(f25), std::move(f26), std::move(f27),
-               std::move(f28), std::move(f29)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23),
+           std::move(f24), std::move(f25), std::move(f26), std::move(f27),
+           std::move(f28), std::move(f29)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State28(other.prior_);
+    new (&p_) State28(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State28(std::move(other.prior_));
+    new (&p_) State28(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin22;
       case 23:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin23;
       case 24:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin24;
       case 25:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin25;
       case 26:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin26;
       case 27:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin27;
       case 28:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin28;
       case 29:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin19:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin20:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin21:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin22:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin23:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin24:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin25:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin26:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin27:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin28:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State28::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 23;
-      }
-      case 23: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 24;
-      }
-      case 24: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 25;
-      }
-      case 25: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 26;
-      }
-      case 26: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 27;
-      }
-      case 27: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 28;
-      }
-      case 28: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 29;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
+      case 23:
+        return RunState23();
+      case 24:
+        return RunState24();
+      case 25:
+        return RunState25();
+      case 26:
+        return RunState26();
+      case 27:
+        return RunState27();
+      case 28:
+        return RunState28();
       case 29:
-        return f_();
+        return RunState29();
     }
     return kPending;
   }
@@ -9675,645 +8181,471 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F21, F22, F23, F24, F25, F26, F27, F28, F29>;
   using FLast = typename State29::Next::Promise;
   union {
-    [[no_unique_address]] State29 prior_;
+    [[no_unique_address]] State29 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State29::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+        [this]() {
+          state_ = 1;
+          return RunState1();
+        });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 2;
+          return RunState2();
+        });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 3;
+          return RunState3();
+        });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 4;
+          return RunState4();
+        });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 5;
+          return RunState5();
+        });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 6;
+                              return RunState6();
+                            });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 15;
+                              return RunState15();
+                            });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 16;
+                              return RunState16();
+                            });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 17;
+                              return RunState17();
+                            });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 18;
+                              return RunState18();
+                            });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 19;
+                              return RunState19();
+                            });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 20;
+                              return RunState20();
+                            });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 21;
+                              return RunState21();
+                            });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 22;
+      return RunState22();
+    });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 24;
+      return RunState24();
+    });
+  }
+  Poll<Result> RunState24() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 25;
+      return RunState25();
+    });
+  }
+  Poll<Result> RunState25() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 26;
+      return RunState26();
+    });
+  }
+  Poll<Result> RunState26() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 27;
+      return RunState27();
+    });
+  }
+  Poll<Result> RunState27() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 28;
+      return RunState28();
+    });
+  }
+  Poll<Result> RunState28() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 29;
+      return RunState29();
+    });
+  }
+  Poll<Result> RunState29() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 30;
+      return RunState30();
+    });
+  }
+  Poll<Result> RunState30() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
          F26 f26, F27 f27, F28 f28, F29 f29, F30 f30)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23),
-               std::move(f24), std::move(f25), std::move(f26), std::move(f27),
-               std::move(f28), std::move(f29), std::move(f30)) {}
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23),
+           std::move(f24), std::move(f25), std::move(f26), std::move(f27),
+           std::move(f28), std::move(f29), std::move(f30)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State29(other.prior_);
+    new (&p_) State29(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State29(std::move(other.prior_));
+    new (&p_) State29(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
         Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin20;
       case 21:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin22;
       case 23:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin23;
       case 24:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin24;
       case 25:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin25;
       case 26:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin26;
       case 27:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin27;
       case 28:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin28;
       case 29:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin29;
       case 30:
         Destruct(&f_);
         return;
     }
   fin0:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin20:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin21:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin22:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin23:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin24:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin25:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin26:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin27:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin28:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin29:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State29::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 23;
-      }
-      case 23: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 24;
-      }
-      case 24: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 25;
-      }
-      case 25: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 26;
-      }
-      case 26: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 27;
-      }
-      case 27: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 28;
-      }
-      case 28: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 29;
-      }
-      case 29: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 30;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
+      case 23:
+        return RunState23();
+      case 24:
+        return RunState24();
+      case 25:
+        return RunState25();
+      case 26:
+        return RunState26();
+      case 27:
+        return RunState27();
+      case 28:
+        return RunState28();
+      case 29:
+        return RunState29();
       case 30:
-        return f_();
+        return RunState30();
     }
     return kPending;
   }
@@ -10408,164 +8740,353 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
                         F21, F22, F23, F24, F25, F26, F27, F28, F29, F30>;
   using FLast = typename State30::Next::Promise;
   union {
-    [[no_unique_address]] State30 prior_;
+    [[no_unique_address]] State30 p_;
     [[no_unique_address]] FLast f_;
   };
+  using Result = typename decltype(
+      std::declval<typename State30::Next::Promise>()())::Type;
+  Poll<Result> RunState0() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+        [this]() {
+          state_ = 1;
+          return RunState1();
+        });
+  }
+  Poll<Result> RunState1() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+        [this]() {
+          state_ = 2;
+          return RunState2();
+        });
+  }
+  Poll<Result> RunState2() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 3;
+          return RunState3();
+        });
+  }
+  Poll<Result> RunState3() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 4;
+          return RunState4();
+        });
+  }
+  Poll<Result> RunState4() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 5;
+          return RunState5();
+        });
+  }
+  Poll<Result> RunState5() {
+    return RunState<Result>(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+          state_ = 6;
+          return RunState6();
+        });
+  }
+  Poll<Result> RunState6() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 7;
+                              return RunState7();
+                            });
+  }
+  Poll<Result> RunState7() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 8;
+                              return RunState8();
+                            });
+  }
+  Poll<Result> RunState8() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 9;
+                              return RunState9();
+                            });
+  }
+  Poll<Result> RunState9() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 10;
+                              return RunState10();
+                            });
+  }
+  Poll<Result> RunState10() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 11;
+                              return RunState11();
+                            });
+  }
+  Poll<Result> RunState11() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 12;
+                              return RunState12();
+                            });
+  }
+  Poll<Result> RunState12() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 13;
+                              return RunState13();
+                            });
+  }
+  Poll<Result> RunState13() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 14;
+                              return RunState14();
+                            });
+  }
+  Poll<Result> RunState14() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 15;
+                              return RunState15();
+                            });
+  }
+  Poll<Result> RunState15() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 16;
+                              return RunState16();
+                            });
+  }
+  Poll<Result> RunState16() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 17;
+                              return RunState17();
+                            });
+  }
+  Poll<Result> RunState17() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 18;
+                              return RunState18();
+                            });
+  }
+  Poll<Result> RunState18() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 19;
+                              return RunState19();
+                            });
+  }
+  Poll<Result> RunState19() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p.p,
+                            &p_.p.p.p.p.p.p.p.p.p.p.f, [this]() {
+                              state_ = 20;
+                              return RunState20();
+                            });
+  }
+  Poll<Result> RunState20() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 21;
+                              return RunState21();
+                            });
+  }
+  Poll<Result> RunState21() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.p.f,
+                            [this]() {
+                              state_ = 22;
+                              return RunState22();
+                            });
+  }
+  Poll<Result> RunState22() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.p.f, [this]() {
+      state_ = 23;
+      return RunState23();
+    });
+  }
+  Poll<Result> RunState23() {
+    return RunState<Result>(&p_.p.p.p.p.p.p.p, &p_.p.p.p.p.p.p.f, [this]() {
+      state_ = 24;
+      return RunState24();
+    });
+  }
+  Poll<Result> RunState24() {
+    return RunState<Result>(&p_.p.p.p.p.p.p, &p_.p.p.p.p.p.f, [this]() {
+      state_ = 25;
+      return RunState25();
+    });
+  }
+  Poll<Result> RunState25() {
+    return RunState<Result>(&p_.p.p.p.p.p, &p_.p.p.p.p.f, [this]() {
+      state_ = 26;
+      return RunState26();
+    });
+  }
+  Poll<Result> RunState26() {
+    return RunState<Result>(&p_.p.p.p.p, &p_.p.p.p.f, [this]() {
+      state_ = 27;
+      return RunState27();
+    });
+  }
+  Poll<Result> RunState27() {
+    return RunState<Result>(&p_.p.p.p, &p_.p.p.f, [this]() {
+      state_ = 28;
+      return RunState28();
+    });
+  }
+  Poll<Result> RunState28() {
+    return RunState<Result>(&p_.p.p, &p_.p.f, [this]() {
+      state_ = 29;
+      return RunState29();
+    });
+  }
+  Poll<Result> RunState29() {
+    return RunState<Result>(&p_.p, &p_.f, [this]() {
+      state_ = 30;
+      return RunState30();
+    });
+  }
+  Poll<Result> RunState30() {
+    return RunState<Result>(&p_, &f_, [this]() {
+      state_ = 31;
+      return RunState31();
+    });
+  }
+  Poll<Result> RunState31() { return f_(); }
 
  public:
   TrySeq(F0 f0, F1 f1, F2 f2, F3 f3, F4 f4, F5 f5, F6 f6, F7 f7, F8 f8, F9 f9,
          F10 f10, F11 f11, F12 f12, F13 f13, F14 f14, F15 f15, F16 f16, F17 f17,
          F18 f18, F19 f19, F20 f20, F21 f21, F22 f22, F23 f23, F24 f24, F25 f25,
          F26 f26, F27 f27, F28 f28, F29 f29, F30 f30, F31 f31)
-      : prior_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
-               std::move(f4), std::move(f5), std::move(f6), std::move(f7),
-               std::move(f8), std::move(f9), std::move(f10), std::move(f11),
-               std::move(f12), std::move(f13), std::move(f14), std::move(f15),
-               std::move(f16), std::move(f17), std::move(f18), std::move(f19),
-               std::move(f20), std::move(f21), std::move(f22), std::move(f23),
-               std::move(f24), std::move(f25), std::move(f26), std::move(f27),
-               std::move(f28), std::move(f29), std::move(f30), std::move(f31)) {
-  }
+      : p_(std::move(f0), std::move(f1), std::move(f2), std::move(f3),
+           std::move(f4), std::move(f5), std::move(f6), std::move(f7),
+           std::move(f8), std::move(f9), std::move(f10), std::move(f11),
+           std::move(f12), std::move(f13), std::move(f14), std::move(f15),
+           std::move(f16), std::move(f17), std::move(f18), std::move(f19),
+           std::move(f20), std::move(f21), std::move(f22), std::move(f23),
+           std::move(f24), std::move(f25), std::move(f26), std::move(f27),
+           std::move(f28), std::move(f29), std::move(f30), std::move(f31)) {}
   TrySeq& operator=(const TrySeq&) = delete;
   TrySeq(const TrySeq& other) {
     assert(other.state_ == 0);
-    new (&prior_) State30(other.prior_);
+    new (&p_) State30(other.p_);
   }
   TrySeq(TrySeq&& other) {
     assert(other.state_ == 0);
-    new (&prior_) State30(std::move(other.prior_));
+    new (&p_) State30(std::move(other.p_));
   }
   ~TrySeq() {
     switch (state_) {
       case 0:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(
+            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin0;
       case 1:
         Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+            &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin1;
       case 2:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin2;
       case 3:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin3;
       case 4:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin4;
       case 5:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin5;
       case 6:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin6;
       case 7:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin7;
       case 8:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin8;
       case 9:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin9;
       case 10:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin10;
       case 11:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin11;
       case 12:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin12;
       case 13:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin13;
       case 14:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin14;
       case 15:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin15;
       case 16:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin16;
       case 17:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin17;
       case 18:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin18;
       case 19:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.f);
         goto fin19;
       case 20:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                      .prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.p.f);
         goto fin20;
       case 21:
-        Destruct(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.p.f);
         goto fin21;
       case 22:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.p.f);
         goto fin22;
       case 23:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.p.f);
         goto fin23;
       case 24:
-        Destruct(&prior_.prior.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.p.f);
         goto fin24;
       case 25:
-        Destruct(&prior_.prior.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.p.f);
         goto fin25;
       case 26:
-        Destruct(&prior_.prior.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.p.f);
         goto fin26;
       case 27:
-        Destruct(&prior_.prior.prior.prior.f);
+        Destruct(&p_.p.p.p.f);
         goto fin27;
       case 28:
-        Destruct(&prior_.prior.prior.f);
+        Destruct(&p_.p.p.f);
         goto fin28;
       case 29:
-        Destruct(&prior_.prior.f);
+        Destruct(&p_.p.f);
         goto fin29;
       case 30:
-        Destruct(&prior_.f);
+        Destruct(&p_.f);
         goto fin30;
       case 31:
         Destruct(&f_);
@@ -10573,510 +9094,135 @@ class TrySeq<F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14,
     }
   fin0:
     Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin1:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(
+        &p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin2:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin3:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin4:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin5:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin6:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin7:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin8:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin9:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin10:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-             .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin11:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin12:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin13:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin14:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin15:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin16:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin17:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin18:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.p.next);
   fin19:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.p.next);
   fin20:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                  .next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.p.next);
   fin21:
-    Destruct(
-        &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.p.next);
   fin22:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.p.next);
   fin23:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.p.next);
   fin24:
-    Destruct(&prior_.prior.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.p.next);
   fin25:
-    Destruct(&prior_.prior.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.p.next);
   fin26:
-    Destruct(&prior_.prior.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.p.next);
   fin27:
-    Destruct(&prior_.prior.prior.prior.next);
+    Destruct(&p_.p.p.p.next);
   fin28:
-    Destruct(&prior_.prior.prior.next);
+    Destruct(&p_.p.p.next);
   fin29:
-    Destruct(&prior_.prior.next);
+    Destruct(&p_.p.next);
   fin30:
-    Destruct(&prior_.next);
+    Destruct(&p_.next);
   }
-  using Result = typename decltype(
-      std::declval<typename State30::Next::Promise>()())::Type;
   Poll<Result> operator()() {
     switch (state_) {
-      case 0: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 1;
-      }
-      case 1: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 2;
-      }
-      case 2: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 3;
-      }
-      case 3: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 4;
-      }
-      case 4: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 5;
-      }
-      case 5: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 6;
-      }
-      case 6: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 7;
-      }
-      case 7: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 8;
-      }
-      case 8: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 9;
-      }
-      case 9: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 10;
-      }
-      case 10: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 11;
-      }
-      case 11: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 12;
-      }
-      case 12: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 13;
-      }
-      case 13: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                 .prior.prior.prior.prior.prior.prior.f,
-            p);
-        state_ = 14;
-      }
-      case 14: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 15;
-      }
-      case 15: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 16;
-      }
-      case 16: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior.f,
-                     p);
-        state_ = 17;
-      }
-      case 17: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior.f,
-                     p);
-        state_ = 18;
-      }
-      case 18: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior.f,
-                     p);
-        state_ = 19;
-      }
-      case 19: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.prior
-                          .prior.prior.f,
-                     p);
-        state_ = 20;
-      }
-      case 20: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior
-                     .prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 21;
-      }
-      case 21: {
-        auto r =
-            prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.prior,
-            &prior_.prior.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 22;
-      }
-      case 22: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 23;
-      }
-      case 23: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.prior.f, p);
-        state_ = 24;
-      }
-      case 24: {
-        auto r = prior_.prior.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.prior.f, p);
-        state_ = 25;
-      }
-      case 25: {
-        auto r = prior_.prior.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.prior.f, p);
-        state_ = 26;
-      }
-      case 26: {
-        auto r = prior_.prior.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior.prior,
-                     &prior_.prior.prior.prior.f, p);
-        state_ = 27;
-      }
-      case 27: {
-        auto r = prior_.prior.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior.prior, &prior_.prior.prior.f, p);
-        state_ = 28;
-      }
-      case 28: {
-        auto r = prior_.prior.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior.prior, &prior_.prior.f, p);
-        state_ = 29;
-      }
-      case 29: {
-        auto r = prior_.prior.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_.prior, &prior_.f, p);
-        state_ = 30;
-      }
-      case 30: {
-        auto r = prior_.f();
-        auto* p = r.get_ready();
-        if (p == nullptr) break;
-        if (!p->ok()) return ready(Result(IntoStatus(p)));
-        AdvanceState(&prior_, &f_, p);
-        state_ = 31;
-      }
+      case 0:
+        return RunState0();
+      case 1:
+        return RunState1();
+      case 2:
+        return RunState2();
+      case 3:
+        return RunState3();
+      case 4:
+        return RunState4();
+      case 5:
+        return RunState5();
+      case 6:
+        return RunState6();
+      case 7:
+        return RunState7();
+      case 8:
+        return RunState8();
+      case 9:
+        return RunState9();
+      case 10:
+        return RunState10();
+      case 11:
+        return RunState11();
+      case 12:
+        return RunState12();
+      case 13:
+        return RunState13();
+      case 14:
+        return RunState14();
+      case 15:
+        return RunState15();
+      case 16:
+        return RunState16();
+      case 17:
+        return RunState17();
+      case 18:
+        return RunState18();
+      case 19:
+        return RunState19();
+      case 20:
+        return RunState20();
+      case 21:
+        return RunState21();
+      case 22:
+        return RunState22();
+      case 23:
+        return RunState23();
+      case 24:
+        return RunState24();
+      case 25:
+        return RunState25();
+      case 26:
+        return RunState26();
+      case 27:
+        return RunState27();
+      case 28:
+        return RunState28();
+      case 29:
+        return RunState29();
+      case 30:
+        return RunState30();
       case 31:
-        return f_();
+        return RunState31();
     }
     return kPending;
   }

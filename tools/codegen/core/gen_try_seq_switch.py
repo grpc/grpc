@@ -75,26 +75,36 @@ with open('src/core/lib/promise/try_seq_switch.h', 'w') as H:
             print >>H, "  using State%d = IntermediateState<State%d, F%d, %s>;" % (i, i-1, i+1, fs(i))
         print >>H, "  using FLast = typename State%d::Next::Promise;" % (n-1)
         print >>H, "  union {"
-        print >>H, "    [[no_unique_address]] State%d prior_;" % (n-1)
+        print >>H, "    [[no_unique_address]] State%d p_;" % (n-1)
         print >>H, "    [[no_unique_address]] FLast f_;"
         print >>H, "  };"
+        print >>H, "  using Result = typename decltype(std::declval<typename State%d::Next::Promise>()())::Type;" % (n-1)
+        for i in range(0, n):
+            print >>H, "  Poll<Result> RunState%d() {" % i
+            p = "p_" + ".p" * (n - i - 1)
+            next_f = "p_" + ".p" * (n - i - 2) + ".f" if i != n - 1 else "f_"
+            print >>H, "    return RunState<Result>(&%s, &%s, [this]() { state_ = %d; return RunState%d(); });" % (p, next_f, i+1, i+1)
+            print >>H, "  }"
+        print >>H, "  Poll<Result> RunState%d() {" % n
+        print >>H, "    return f_();"
+        print >>H, "  }"
         print >>H, " public:"
-        print >>H, "  TrySeq(%s) : prior_(%s) {}" % (fs_decls(n), moves(n))
+        print >>H, "  TrySeq(%s) : p_(%s) {}" % (fs_decls(n), moves(n))
         print >>H, "  TrySeq& operator=(const TrySeq&) = delete;"
         print >>H, "  TrySeq(const TrySeq& other) {"
         print >>H, "    assert(other.state_ == 0);"
-        print >>H, "    new (&prior_) State%d(other.prior_);" % (n-1)
+        print >>H, "    new (&p_) State%d(other.p_);" % (n-1)
         print >>H, "  }"
         print >>H, "  TrySeq(TrySeq&& other) {"
         print >>H, "    assert(other.state_ == 0);"
-        print >>H, "    new (&prior_) State%d(std::move(other.prior_));" % (n-1)
+        print >>H, "    new (&p_) State%d(std::move(other.p_));" % (n-1)
         print >>H, "  }"
         print >>H, "  ~TrySeq() {"
         print >>H, "    switch (state_) {"
         for i in range(0, n):
             print >>H, "     case %d:" % i
-            prior = "prior_" + ".prior" * (n - i - 1)
-            print >>H, "      Destruct(&%s.f);" % (prior)
+            p = "p_" + ".p" * (n - i - 1)
+            print >>H, "      Destruct(&%s.f);" % (p)
             print >>H, "      goto fin%d;" % i
         print >>H, "     case %d:" % n
         print >>H, "      Destruct(&f_);"
@@ -102,25 +112,13 @@ with open('src/core/lib/promise/try_seq_switch.h', 'w') as H:
         print >>H, "    }"
         for i in range(0, n):
             print >>H, "  fin%d:" % i
-            prior = "prior_" + ".prior" * (n - i - 1)
-            print >>H, "    Destruct(&%s.next);" % prior
+            p = "p_" + ".p" * (n - i - 1)
+            print >>H, "    Destruct(&%s.next);" % p
         print >>H, "  }"
-        print >>H, "  using Result = typename decltype(std::declval<typename State%d::Next::Promise>()())::Type;" % (n-1)
         print >>H, "  Poll<Result> operator()() {"
         print >>H, "    switch (state_) {"
-        for i in range(0, n):
-            print >>H, "     case %d: {" % i
-            prior = "prior_" + ".prior" * (n - i - 1)
-            next_f = "prior_" + ".prior" * (n - i - 2) + ".f" if i != n - 1 else "f_"
-            print >>H, "      auto r = %s.f();" % prior
-            print >>H, "      auto* p = r.get_ready();"
-            print >>H, "      if (p == nullptr) break;"
-            print >>H, "      if (!p->ok()) return ready(Result(IntoStatus(p)));"
-            print >>H, "      AdvanceState(&%s, &%s, p);" % (prior, next_f)
-            print >>H, "      state_ = %d;" % (i+1)
-            print >>H, "     }"
-        print >>H, "     case %d:" % n
-        print >>H, "      return f_();"
+        for i in range(0, n+1):
+            print >>H, "     case %d: return RunState%d();" % (i,i)
         print >>H, "    }"
         print >>H, "    return kPending;"
         print >>H, "  }"
