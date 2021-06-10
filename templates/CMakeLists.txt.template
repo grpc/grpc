@@ -224,11 +224,7 @@
   set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
   <%
     # Collect all abseil rules used by gpr, grpc, so on.
-    # TODO(matthewstevenson88) Remove absl_flat_hash_set when third_party/s2a_core
-    # is no longer the only user of this target.
-    used_abseil_rules = {
-      'absl_flat_hash_set',
-    }
+    used_abseil_rules = set()
     for lib in libs:
       if lib.get("baselib"):
         for dep in lib.transitive_deps:
