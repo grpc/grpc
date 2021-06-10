@@ -21,6 +21,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -364,6 +365,51 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
+char* convertPkeyToString(EVP_PKEY* pkey) {
+  if (pkey == nullptr) {
+    return nullptr;
+  }
+
+  BIO* bio{BIO_new(BIO_s_mem())};
+  if (bio == nullptr) {
+    return nullptr;
+  }
+
+  // Writing the private key to the BIO in PEM-encoded form
+  if (!PEM_write_bio_PrivateKey(bio, pkey, nullptr, nullptr, 0, 0, nullptr)) {
+    BIO_free(bio);
+    return nullptr;
+  }
+
+  char* pemString{(char*)malloc(bio->num_write + 1)};
+
+  if (pemString == nullptr) {
+    BIO_free(bio);
+    return nullptr;
+  }
+
+  memset(pemString, 0, bio->num_write + 1);
+  // Read the PEM-encoded data from the BIO into the string buffer
+  BIO_read(bio, pemString, bio->num_write);
+  BIO_free(bio);
+  return pemString;
+}
+
+EVP_PKEY *convertPemStringToPkey(const char *pkeyString) {
+    if (pkeyString == nullptr) {
+        return nullptr;
+    }
+
+    BIO *pkeyBio{BIO_new_mem_buf(pkeyString, strlen(pkeyString))};
+    if (pkeyBio == nullptr) {
+        return nullptr;
+    }
+
+    EVP_PKEY *pkey{PEM_read_bio_PrivateKey(pkeyBio, NULL, NULL, NULL)};
+    BIO_free(pkeyBio);
+
+    return pkey;
+}
 }  // namespace grpc_core
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/

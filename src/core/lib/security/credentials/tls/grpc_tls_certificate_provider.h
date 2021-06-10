@@ -133,6 +133,12 @@ class FileWatcherCertificateProvider final
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 
+// A function for converting EVP_PKEY structure to C style string
+char* convertPkeyToString(EVP_PKEY* pkey);
+
+// A function for converting C style string to EVP_PKEY structure
+EVP_PKEY *convertPemStringToPkey(const char *pkeyString);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
