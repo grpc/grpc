@@ -35,6 +35,6 @@ EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
   };
 }
 
-  }  // namespace experimental
+}  // namespace experimental
 }  // namespace grpc_event_engine
 #endif  // GRPC_USE_EVENT_ENGINE
