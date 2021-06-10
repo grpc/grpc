@@ -31,7 +31,7 @@ namespace experimental {
 class EndpointConfig {
  public:
   using Setting = absl::variant<absl::monostate, int, std::string, void*>;
-  virtual const Setting Get(absl::string_view key) const = 0;
+  virtual Setting Get(absl::string_view key) const = 0;
   virtual ~EndpointConfig() = default;
 };
 

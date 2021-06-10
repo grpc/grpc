@@ -25,10 +25,6 @@
 #include "src/core/lib/event_engine/endpoint_config_internal.h"
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::EndpointConfig;
-using ::testing::_;
-using ::testing::MockFunction;
-using ::testing::Return;
 
 TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
   const grpc_arg arg =

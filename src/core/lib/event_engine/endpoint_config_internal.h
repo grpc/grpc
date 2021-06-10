@@ -28,9 +28,10 @@ namespace experimental {
 /// should not be used after the underlying args are destroyed.
 class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
-  ChannelArgsEndpointConfig(const grpc_channel_args* args) : args_(args){};
-  ~ChannelArgsEndpointConfig() = default;
-  const Setting Get(absl::string_view key) const override;
+  explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
+      : args_(args){};
+  ~ChannelArgsEndpointConfig() override = default;
+  Setting Get(absl::string_view key) const override;
 
  private:
   const grpc_channel_args* args_ = nullptr;

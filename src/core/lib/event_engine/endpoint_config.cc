@@ -25,7 +25,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-const EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
+EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
     absl::string_view key) const {
   // TODO(hork): consider changing the API if string_view -> c_str is expensive.
   const grpc_arg* arg = grpc_channel_args_find(args_, std::string(key).c_str());
