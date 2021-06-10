@@ -26,10 +26,7 @@
 
 namespace grpc_core {
 
-BackOff::BackOff(const Options& options)
-    : options_(options) {
-  Reset();
-}
+BackOff::BackOff(const Options& options) : options_(options) { Reset(); }
 
 grpc_millis BackOff::NextAttemptTime() {
   if (initial_) {
