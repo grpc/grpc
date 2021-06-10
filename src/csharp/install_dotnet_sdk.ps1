@@ -19,8 +19,4 @@ $InstallScriptPath = Join-Path  "$env:TEMP" 'dotnet-install.ps1'
 # Download install script
 Write-Host "Downloading install script: $InstallScriptUrl => $InstallScriptPath"
 Invoke-WebRequest -Uri $InstallScriptUrl -OutFile $InstallScriptPath
-
-# Installed versions should be kept in sync with
-# templates/tools/dockerfile/csharp_dotnetcli_deps.include
-&$InstallScriptPath -Version 2.1.802
-&$InstallScriptPath -Version 3.1.301
+&$InstallScriptPath -Version 2.1.504
