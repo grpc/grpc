@@ -15,6 +15,9 @@
 if (ABSL_ROOT_DIR)
   set(S2A_CORE_ABSL_DIR ${ABSL_ROOT_DIR})
   message("In if statement, set S2A_CORE_ABSL_DIR to " ${ABSL_ROOT_DIR})
+else()
+  set(S2A_CORE_ABSL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp)
+  message("In else statement, set S2A_CORE_ABSL_DIR to " ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp)
 endif()
 message("S2A_CORE_ABSL_DIR is " ${S2A_CORE_ABSL_DIR})
 
