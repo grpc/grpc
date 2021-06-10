@@ -849,14 +849,39 @@ bool IsEds(absl::string_view type_url) {
 
 }  // namespace
 
+// If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
+// will be appended to the user agent name reported to the xDS server.
+#ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#else
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING ""
+#endif
+
+// If gRPC is built with -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="...", that string
+// will be appended to the user agent version reported to the xDS server.
+#ifdef GRPC_XDS_USER_AGENT_VERSION_SUFFIX
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_VERSION_SUFFIX
+#else
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING ""
+#endif
+
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node)
     : client_(client),
       tracer_(tracer),
       node_(node),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
-                                  grpc_version_string())),
-      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING)) {
+                                  grpc_version_string(),
+                                  GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                                  GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)),
+      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
+                                    GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING)),
+      user_agent_version_(
+          absl::StrCat("C-core ", grpc_version_string(),
+                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {
   // Populate upb symtab with xDS proto messages that we want to print
   // properly in logs.
   // Note: This won't actually work properly until upb adds support for
@@ -987,6 +1012,7 @@ void PopulateNode(const EncodingContext& context,
                   const XdsBootstrap::Node* node,
                   const std::string& build_version,
                   const std::string& user_agent_name,
+                  const std::string& user_agent_version,
                   envoy_config_core_v3_Node* node_msg) {
   if (node != nullptr) {
     if (!node->id.empty()) {
@@ -1026,7 +1052,7 @@ void PopulateNode(const EncodingContext& context,
   envoy_config_core_v3_Node_set_user_agent_name(
       node_msg, StdStringToUpbString(user_agent_name));
   envoy_config_core_v3_Node_set_user_agent_version(
-      node_msg, upb_strview_makez(grpc_version_string()));
+      node_msg, StdStringToUpbString(user_agent_version));
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lb.does_not_support_overprovisioning"),
       context.arena);
@@ -1132,7 +1158,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateNode(context, node_, build_version_, user_agent_name_, node_msg);
+    PopulateNode(context, node_, build_version_, user_agent_name_,
+                 user_agent_version_, node_msg);
   }
   // Add resource_names.
   for (const auto& resource_name : resource_names) {
@@ -3474,7 +3501,8 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
   envoy_config_core_v3_Node* node_msg =
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(context, node_, build_version_, user_agent_name_, node_msg);
+  PopulateNode(context, node_, build_version_, user_agent_name_,
+               user_agent_version_, node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
@@ -3871,7 +3899,8 @@ std::string XdsApi::AssembleClientConfig(
                                                                  arena.ptr());
   const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
                                    true};
-  PopulateNode(context, node_, build_version_, user_agent_name_, node);
+  PopulateNode(context, node_, build_version_, user_agent_name_,
+               user_agent_version_, node);
   // Dump each xDS-type config into PerXdsConfig
   for (auto& p : resource_type_metadata_map) {
     absl::string_view type_url = p.first;

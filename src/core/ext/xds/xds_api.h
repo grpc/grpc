@@ -672,6 +672,7 @@ class XdsApi {
   upb::SymbolTable symtab_;
   const std::string build_version_;
   const std::string user_agent_name_;
+  const std::string user_agent_version_;
 };
 
 }  // namespace grpc_core
