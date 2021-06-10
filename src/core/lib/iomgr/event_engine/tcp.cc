@@ -146,7 +146,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
             exec_ctx.Flush();
             pollset_ee_broadcast_event();
           },
-          GrpcClosureToCallback(shutdown_complete), ecfg,
+          GrpcClosureToCallback(shutdown_complete, GRPC_ERROR_NONE), ecfg,
           SliceAllocatorFactory(rq));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());

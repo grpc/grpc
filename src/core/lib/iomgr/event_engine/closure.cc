@@ -20,20 +20,21 @@
 #include "src/core/lib/transport/error_utils.h"
 
 void pollset_ee_broadcast_event();
+extern void exec_ctx_run(grpc_closure* closure, grpc_error_handle error);
 
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
-  return [closure](absl::Status status) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::Closure::Run(DEBUG_LOCATION, closure,
-                            absl_status_to_grpc_error(status));
-    exec_ctx.Flush();
+EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
+                                            grpc_error_handle error) {
+  return [closure, error](absl::Status status) {
+    grpc_error_handle new_error =
+        grpc_error_add_child(error, absl_status_to_grpc_error(status));
+    exec_ctx_run(closure, new_error);
     pollset_ee_broadcast_event();
   };
 }
 
-}  // namespace experimental
+  }  // namespace experimental
 }  // namespace grpc_event_engine
 #endif  // GRPC_USE_EVENT_ENGINE

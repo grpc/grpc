@@ -16,6 +16,7 @@
 #ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/init.h"
@@ -30,10 +31,10 @@ void timer_init(grpc_timer* timer, grpc_millis deadline,
   // Note: post-iomgr, callers will find their own EventEngine
   // TODO(hork): EventEngine and gRPC need to use the same clock type for
   // deadlines.
-  timer->ee_task_handle =
-      g_event_engine->RunAt(grpc_core::ToAbslTime(grpc_millis_to_timespec(
-                                deadline, GPR_CLOCK_REALTIME)),
-                            GrpcClosureToCallback(closure), {});
+  timer->ee_task_handle = g_event_engine->RunAt(
+      grpc_core::ToAbslTime(
+          grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
+      GrpcClosureToCallback(closure, GRPC_ERROR_NONE), {});
 }
 
 void timer_cancel(grpc_timer* timer) {
