@@ -525,9 +525,9 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
                                                              str]]] = None,
                            app_timeout: Optional[int] = None,
                            num_rpcs: int) -> RpcDistributionStats:
-        test_client.update_client_config(rpc_types=rpc_types,
-                                         metadata=metadata,
-                                         app_timeout=app_timeout)
+        test_client.update_config.configure(rpc_types=rpc_types,
+                                            metadata=metadata,
+                                            app_timeout=app_timeout)
         json_lb_stats = json_format.MessageToDict(
             test_client.get_load_balancer_stats(num_rpcs=num_rpcs))
         logging.info(

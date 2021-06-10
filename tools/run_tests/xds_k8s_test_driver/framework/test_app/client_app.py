@@ -71,7 +71,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
     @property
     @functools.lru_cache(None)
-    def update_client_config_client(self):
+    def update_config(self):
         return _XdsUpdateClientConfigureServiceClient(
             self._make_channel(self.rpc_port))
 
@@ -211,18 +211,6 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         raise self.NotFound(
             f'Not found a {_ChannelzChannelState.Name(state)} '
             f'subchannel for channel_id {channel.ref.channel_id}')
-
-    def update_client_config(self,
-                             *,
-                             rpc_types: Iterable[str],
-                             metadata: Optional[Iterable[Tuple[str, str,
-                                                               str]]] = None,
-                             app_timeout: Optional[int] = None,
-                             **kwargs) -> None:
-        self.update_client_config_client.configure(rpc_types=rpc_types,
-                                                   metadata=metadata,
-                                                   app_timeout=app_timeout,
-                                                   **kwargs)
 
 
 class KubernetesClientRunner(base_runner.KubernetesBaseRunner):

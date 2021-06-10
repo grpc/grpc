@@ -214,7 +214,8 @@ class TrafficDirectorManager:
         if protocol is None:
             protocol = _BackendGRPC
         name = self._ns_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
-        logger.info('Creating %s Backend Service "%s"', protocol.name, name)
+        logger.info('Creating %s Alternative Backend Service "%s"',
+                    protocol.name, name)
         resource = self.compute.create_backend_service_traffic_director(
             name, health_check=self.health_check, protocol=protocol)
         self.alternative_backend_service = resource
@@ -232,7 +233,7 @@ class TrafficDirectorManager:
             name = self.alternative_backend_service.name
         else:
             return
-        logger.info('Deleting Backend Service "%s"', name)
+        logger.info('Deleting Alternative Backend Service "%s"', name)
         self.compute.delete_backend_service(name)
         self.alternative_backend_service = None
 
@@ -281,9 +282,9 @@ class TrafficDirectorManager:
         self.url_map = resource
         return resource
 
-    def create_url_map_with_content(self, url_map: Any) -> GcpResource:
-        logger.info('Creating URL map: %s', url_map)
-        resource = self.compute.create_url_map_with_content(url_map)
+    def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
+        logger.info('Creating URL map: %s', url_map_body)
+        resource = self.compute.create_url_map_with_content(url_map_body)
         self.url_map = resource
         return resource
 
