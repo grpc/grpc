@@ -361,7 +361,15 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 bool g_enable_filter = false;
 
 bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* /*arg*/) {
+  // Skip if filter is not enabled.
   if (!g_enable_filter) return true;
+  // Skip on proxy (which explicitly disables retries).
+  const grpc_channel_args* args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
+    return true;
+  }
+  // Install filter.
   return grpc_channel_stack_builder_prepend_filter(
       builder, &FailFirstSendOpFilter::kFilterVtable, nullptr, nullptr);
 }
