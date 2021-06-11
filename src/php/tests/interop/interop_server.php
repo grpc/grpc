@@ -159,8 +159,7 @@ class TestService extends \Grpc\Testing\TestServiceStub
                 return;
             }
 
-            if ($request->getResponseParameters() > 0) {
-                $parameter = $request->getResponseParameters()[0];
+            foreach ($request->getResponseParameters() as $parameter) {
                 if ($parameter->getIntervalUs() > 0) {
                     usleep($parameter->getIntervalUs());
                 }
