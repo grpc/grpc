@@ -1062,6 +1062,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/profiling/stap_timers.cc )
   s.files += %w( src/core/lib/profiling/timers.h )
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )
+  s.files += %w( src/core/lib/security/authorization/authorization_filter.cc )
+  s.files += %w( src/core/lib/security/authorization/authorization_filter.h )
   s.files += %w( src/core/lib/security/authorization/authorization_policy_provider.h )
   s.files += %w( src/core/lib/security/authorization/authorization_policy_provider_vtable.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.cc )

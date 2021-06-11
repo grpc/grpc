@@ -518,6 +518,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/matchers/matchers.cc',
     'src/core/lib/profiling/basic_timers.cc',
     'src/core/lib/profiling/stap_timers.cc',
+    'src/core/lib/security/authorization/authorization_filter.cc',
     'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
     'src/core/lib/security/authorization/evaluate_args.cc',
     'src/core/lib/security/context/security_context.cc',

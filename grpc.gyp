@@ -923,6 +923,7 @@
         'src/core/lib/json/json_util.cc',
         'src/core/lib/json/json_writer.cc',
         'src/core/lib/matchers/matchers.cc',
+        'src/core/lib/security/authorization/authorization_filter.cc',
         'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
         'src/core/lib/security/authorization/evaluate_args.cc',
         'src/core/lib/security/context/security_context.cc',
