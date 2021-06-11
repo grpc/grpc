@@ -226,6 +226,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             self.td.create_firewall_rule(
                 allowed_ports=self.firewall_allowed_ports)
 
+        case_name = self.id().split(".")[-1]
+
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
@@ -235,7 +237,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
-            network=self.network)
+            network=self.network,
+            case_name=case_name)
 
         # Test Client Runner
         self.client_runner = client_app.KubernetesClientRunner(
@@ -249,7 +252,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             stats_port=self.client_port,
-            reuse_namespace=self.server_namespace == self.client_namespace)
+            reuse_namespace=self.server_namespace == self.client_namespace,
+            case_name=case_name)
 
     def startTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
         test_server = self.server_runner.run(

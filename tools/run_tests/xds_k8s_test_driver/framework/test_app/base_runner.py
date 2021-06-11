@@ -13,16 +13,26 @@
 # limitations under the License.
 import contextlib
 import logging
+import os
 import pathlib
 from typing import Optional
+import time
+import threading
 
 import mako.template
 import yaml
 
 from framework.infrastructure import k8s
+from kubernetes import client, utils, watch
+import kubernetes.client.rest
+
 
 logger = logging.getLogger(__name__)
 
+# TODO: Change Kokoro config to look inside the grpc directory.
+_TEST_LOG_BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  '../../../../../../artifacts')
+_BACKOFF_SECONDS = 1
 
 class RunnerError(Exception):
     """Error running app"""
@@ -35,14 +45,83 @@ class KubernetesBaseRunner:
     def __init__(self,
                  k8s_namespace,
                  namespace_template=None,
-                 reuse_namespace=False):
+                 reuse_namespace=False,
+                 case_name=None,
+                 pod_label_selector=None):
         # Kubernetes namespaced resources manager
         self.k8s_namespace: k8s.KubernetesNamespace = k8s_namespace
         self.reuse_namespace = reuse_namespace
         self.namespace_template = namespace_template or 'namespace.yaml'
+        self.case_name: str = case_name or ""
+        self.pod_label_selector: str = pod_label_selector or ""
 
         # Mutable state
         self.namespace: Optional[k8s.V1Namespace] = None
+        self._log_stop_event: threading.Event = threading.Event()
+
+    def _start_logging_container(self, core: client.CoreV1Api, pod_name: str, container_name: str, namespace: str) -> None:
+        def _inner():
+            restarted = False
+            logfile = os.path.join(_TEST_LOG_BASE_DIR, f"{self.case_name}.{pod_name}.{container_name}.sponge_log.txt")
+
+            while not self._log_stop_event.is_set():
+                try:
+                    pod_status = core.read_namespaced_pod_status(pod_name, namespace).status
+                    container = [container for container in pod_status.container_statuses if container.name == container_name][0]
+                    if not container.ready:
+                        time.sleep(_BACKOFF_SECONDS)
+                    else:
+                        break
+                except kubernetes.client.rest.ApiException:
+                    time.sleep(_BACKOFF_SECONDS)
+
+            with open(logfile, "w") as f:
+                while not self._log_stop_event.is_set():
+                    try:
+                        if restarted:
+                            f.write("Restarted log fetching. Attempting to read from the beginning, but truncation may have occurred.\n")
+                        w = watch.Watch()
+                        for msg in w.stream(core.read_namespaced_pod_log,
+                                            name=pod_name,
+                                            namespace=namespace,
+                                            container=container_name,
+                                            follow=True):
+                            f.write(msg)
+                            f.write("\n")
+                    except kubernetes.client.rest.ApiException as e:
+                        f.write(f"Exception fetching logs: {e}\n")
+                        restarted = True
+                        time.sleep(_BACKOFF_SECONDS)
+        t = threading.Thread(target=_inner, args=(), daemon=True)
+        t.start()
+
+
+    def _start_logging_pod(self, core: client.CoreV1Api, pod_name: str, namespace: str) -> None:
+        pod = core.read_namespaced_pod(pod_name, namespace)
+        for container in pod.spec.containers:
+            self._start_logging_container(core, pod_name, container.name, namespace)
+
+
+    def _start_logging_deployment(self, deployment_name: str):
+        core = self.k8s_namespace.api.core
+        apps = self.k8s_namespace.api.apps
+
+        pod_names = None
+        namespace = self.k8s_namespace.name
+
+        while True:
+            try:
+                pods_all_namespaces = core.list_pod_for_all_namespaces(label_selector=self.pod_label_selector).items
+                pods = [pod for pod in pods_all_namespaces if pod.metadata.namespace == namespace]
+                pod_names = [pod.metadata.name for pod in pods]
+                break
+            except kubernetes.client.rest.ApiException:
+                time.sleep(_BACKOFF_SECONDS)
+                continue
+
+        for pod_name in pod_names:
+            self._start_logging_pod(core, pod_name, namespace)
+
 
     def run(self, **kwargs):
         if self.reuse_namespace:
@@ -154,6 +233,7 @@ class KubernetesBaseRunner:
         logger.debug('V1Deployment %s created at %s',
                      deployment.metadata.self_link,
                      deployment.metadata.creation_timestamp)
+        self._start_logging_deployment(deployment.metadata.name)
         return deployment
 
     def _create_service(self, template, **kwargs) -> k8s.V1Service:
@@ -172,6 +252,7 @@ class KubernetesBaseRunner:
         logger.info('Deleting deployment %s', name)
         try:
             self.k8s_namespace.delete_deployment(name)
+            self._log_stop_event.set()
         except k8s.ApiException as e:
             logger.info('Deployment %s deletion failed, error: %s %s', name,
                         e.status, e.reason)
