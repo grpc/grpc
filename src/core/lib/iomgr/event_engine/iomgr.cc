@@ -38,9 +38,7 @@ namespace {
 
 void iomgr_platform_init(void) {}
 
-void iomgr_platform_flush(void) {
-  // TODO(hork): Do we need EventEngine::Flush??
-}
+void iomgr_platform_flush(void) {}
 
 void iomgr_platform_shutdown(void) {}
 

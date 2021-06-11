@@ -68,10 +68,8 @@ struct grpc_tcp_server {
 
 namespace {
 
-// NOTE: the closure is already initialized, and does not take an Endpoint.
-// See Chttp2Connector::Connect. Instead, the closure arg contains a ptr to the
-// endpoint that iomgr is expected to populate. When gRPC eventually uses the
-// EventEngine directly, closures will be replaced with EE callback types.
+/// Converts a grpc_closure to an EventEngine Callback. The closure is expected
+/// to already be initialized.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
   return [closure, endpoint_ptr](
@@ -92,7 +90,7 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
   };
 }
 
-/// Note: this method does not take ownership of any pointer arguments.
+/// Usage note: this method does not take ownership of any pointer arguments.
 void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
@@ -196,7 +194,6 @@ int tcp_server_port_fd(grpc_tcp_server* /* s */, unsigned /* port_index */,
 }
 
 grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
-  // TODO(hork): add macro helper to manage debuglocation. See tcp_posix
   s->refcount.Ref(DEBUG_LOCATION, "server ref");
   return s;
 }

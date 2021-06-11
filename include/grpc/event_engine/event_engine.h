@@ -27,7 +27,6 @@
 #include "grpc/event_engine/port.h"
 #include "grpc/event_engine/slice_allocator.h"
 
-// TODO(hork): explicitly define lifetimes and ownership of all objects.
 // TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
 namespace experimental {
@@ -297,7 +296,6 @@ class EventEngine {
 
   /// Intended for future expansion of Task run functionality.
   struct RunOptions {};
-  // TODO(hork): consider recommendation to make TaskHandle an output arg
   /// Run a callback as soon as possible.
   ///
   /// The \a fn callback's \a status argument is used to indicate whether it was

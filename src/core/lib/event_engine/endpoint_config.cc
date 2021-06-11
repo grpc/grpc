@@ -27,15 +27,12 @@ namespace experimental {
 
 EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
     absl::string_view key) const {
-  // TODO(hork): consider changing the API if string_view -> c_str is expensive.
   const grpc_arg* arg = grpc_channel_args_find(args_, std::string(key).c_str());
   if (arg == nullptr) {
     return absl::monostate();
   }
   switch (arg->type) {
     case GRPC_ARG_STRING:
-      // TODO(hork): consider changing this to char* if the conversion is too
-      // expensive. std::variant cannot hold references.
       return std::string(arg->value.string);
     case GRPC_ARG_INTEGER:
       return arg->value.integer;

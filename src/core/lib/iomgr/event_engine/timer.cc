@@ -28,9 +28,6 @@ using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
 void timer_init(grpc_timer* timer, grpc_millis deadline,
                 grpc_closure* closure) {
-  // Note: post-iomgr, callers will find their own EventEngine
-  // TODO(hork): EventEngine and gRPC need to use the same clock type for
-  // deadlines.
   timer->ee_task_handle = g_event_engine->RunAt(
       grpc_core::ToAbslTime(
           grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
@@ -38,7 +35,6 @@ void timer_init(grpc_timer* timer, grpc_millis deadline,
 }
 
 void timer_cancel(grpc_timer* timer) {
-  // Note: post-iomgr, callers will find their own EventEngine
   auto handle = timer->ee_task_handle;
   g_event_engine->TryCancel(handle);
 }

@@ -19,7 +19,6 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-
 #include "absl/types/variant.h"
 
 namespace grpc_event_engine {

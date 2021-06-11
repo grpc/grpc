@@ -48,7 +48,6 @@ SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) noexcept {
 
 absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
                                       SliceAllocator::AllocateCallback cb) {
-  // TODO(hork): implement
   (void)size;
   (void)dest;
   (void)cb;

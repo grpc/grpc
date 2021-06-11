@@ -61,7 +61,6 @@ class DnsRequest {
     for (size_t i = 0; i < addresses->size(); ++i) {
       (*addresses_)->addrs[i] = CreateGRPCResolvedAddress((*addresses)[i]);
     }
-    // Delete ourselves and invoke closure.
     grpc_closure* cb = cb_;
     delete this;
     grpc_core::Closure::Run(DEBUG_LOCATION, cb,
