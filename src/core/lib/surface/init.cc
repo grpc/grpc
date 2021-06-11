@@ -23,8 +23,6 @@
 #include <limits.h>
 #include <memory.h>
 
-#include <future>
-
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -190,11 +188,11 @@ void grpc_shutdown_internal_locked(void) {
     }
     grpc_iomgr_shutdown();
 #ifdef GRPC_USE_EVENT_ENGINE
-    std::promise<absl::Status> shutdown_status_promise;
+    grpc_core::Promise<absl::Status> shutdown_status_promise;
     g_event_engine->Shutdown([&shutdown_status_promise](absl::Status status) {
-      shutdown_status_promise.set_value(status);
+      shutdown_status_promise.Set(std::move(status));
     });
-    auto shutdown_status = shutdown_status_promise.get_future().get();
+    auto shutdown_status = shutdown_status_promise.Get();
     GPR_ASSERT(shutdown_status.ok());
 #endif
     gpr_timers_global_destroy();
