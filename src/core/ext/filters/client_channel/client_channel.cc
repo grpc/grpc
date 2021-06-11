@@ -1170,8 +1170,46 @@ ClientChannel::~ClientChannel() {
 }
 
 Promise<absl::Status> ClientChannel::CreatePromise() {
-  // FIXME If channel in IDLE, trigger exit idle.
+  // If we're still in IDLE, we need to start resolving.
+  chand->CheckConnectivityState(true);
+  // Construct promise to get service config and apply it to the call.
   auto config_selector_observer = config_selector_observable_.MakeObserver();
+  auto GetConfigSelector =
+      // Get service config.
+      // - all promises in seq must return optional<StatusOr<>>
+      // - optional<> will be stripped off for next promise in seq
+      // - While() will return StatusOr<> to its caller
+      TryUntil(
+          // - all promises in seq must return StatusOr<>
+          // - StatusOr<> will be stripped off for next promise in seq
+          // - TrySeq() will return StatusOr<> to its caller
+          TrySeq(
+              // Wait for the next result.
+              // Result type is
+              // StatusOr<StatusOr<RefCountedPtr<ConfigSelector>>>
+              // - outer StatusOr is status from observer
+              //   (will be stripped off for input to next element of
+              //   TrySeq())
+              // - inner StatusOr is whether resolver had transient failure
+              config_selector_observer.TryNext(),
+              // Check the result.
+              [](absl::StatusOr<RefCountedPtr<ConfigSelector>> config_selector)
+                  -> LoopControl<
+                      absl::StatusOr<RefCountedPtr<ConfigSelector>>> {
+                // Handle resolver transient failure before initial result.
+                if (!config_selector.ok()) {
+                  // If wait_for_ready, continue the While() loop.
+                  if (GetContext<ClientContext>().wait_for_ready()) {
+                    return kContinue;
+                  }
+                  // Otherwise, fail the call.
+                  return config_selector.status();
+                }
+                // Resolver succeeded, pass config selector along.
+                return std::move(*config_selector);
+              }));
+  // Construct promises to complete call asynchronously.
+  RefCountedPtr<ChannelStack> channel(Ref());
   return Race(
       Timeout(GetContext<ClientContext>().deadline()),
       // Run a few things sequentially.
@@ -1180,48 +1218,13 @@ Promise<absl::Status> ClientChannel::CreatePromise() {
       // - StatusOr<> will be stripped off for next promise in seq
       // - TrySeq() will return StatusOr<> to its caller
       TrySeq(
-          // Get service config.
-          // - all promises in seq must return optional<StatusOr<>>
-          // - optional<> will be stripped off for next promise in seq
-          // - While() will return StatusOr<> to its caller
-          While(
-              // - all promises in seq must return StatusOr<>
-              // - StatusOr<> will be stripped off for next promise in seq
-              // - TrySeq() will return StatusOr<> to its caller
-              TrySeq(
-                  // Wait for the next result.
-                  // Result type is
-                  // StatusOr<StatusOr<RefCountedPtr<ConfigSelector>>>
-                  // - outer StatusOr is status from observer
-                  //   (will be stripped off for input to next element of
-                  //   TrySeq())
-                  // - inner StatusOr is whether resolver had transient failure
-                  config_selector_observer.TryNext(),
-                  // Check the result.
-                  //              CheckResolverResult,
-                  [](absl::StatusOr<RefCountedPtr<ConfigSelector>>
-                         config_selector)
-                      -> absl::optional<
-                          absl::StatusOr<RefCountedPtr<ConfigSelector>>> {
-                    // Handle resolver transient failure before initial result.
-                    if (!config_selector.ok()) {
-                      // If wait_for_ready, continue the While() loop.
-                      if (GetContext<ClientContext>().wait_for_ready()) {
-                        //                    return While::kContinue;
-                        return absl::nullopt;
-                      }
-                      // Otherwise, fail the call.
-                      return config_selector.status();
-                    }
-                    // Resolver succeeded, pass config selector along.
-                    return std::move(*config_selector);
-                  })),
+          GetConfigSelector,
           // Apply service config to call.
           // This needs to be a lambda wrapping the TryJoin() because we
           // need the config_selector parameter from the previous promise
           // to *construct* this promise.
-          // FIXME: "this" might need to be a smart pointer
-          [this](RefCountedPtr<ConfigSelector> config_selector) {
+          [GRPC_CAPTURE(channel)](
+               RefCountedPtr<ConfigSelector> config_selector) {
             // - all promises in seq must return StatusOr<>
             // - StatusOr<> will be stripped off for next promise in seq
             // - TryJoin() will return StatusOr<tuple<...>> of results to
@@ -1243,13 +1246,12 @@ Promise<absl::Status> ClientChannel::CreatePromise() {
 
 Promise<absl::Status> ClientChannel::ApplyServiceConfigPromise(
     RefCountedPtr<ConfigSelector> config_selector) {
-  grpc_millis deadline = grpc_milli_inf();  // FIXME
+  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
   // Use the ConfigSelector to determine the config for the call.
   ConfigSelector::CallConfig call_config =
       config_selector->GetCallConfig(GetContext<ClientContext>());
   if (call_config.error != GRPC_ERROR_NONE) {
-    // FIXME: turn this into absl::Status
-    return call_config.error;
+    return grpc_error_to_absl_status(call_config.error);
   }
   std::function<void()> on_call_committed =
       std::move(call_config.on_call_committed);
@@ -1295,10 +1297,10 @@ Promise<absl::Status> ClientChannel::ApplyServiceConfigPromise(
   // Construct promises needed to continue call asynchronously.
   // A promise to invoke on_call_committed.
   auto InvokeOnCallCommitted = Seq(
-      // Promise that completes when recv_initial_metadata is
-      // ready. (Everyone waiting for this from transport gets
-      // notified at the same time -- no ordering guarantee
-      // between those waiting.) Returns a pointer to metadata.
+      // Promise that completes when recv_initial_metadata is ready.
+      // (Everyone waiting for this from the transport gets notified at the
+      // same time -- no ordering guarantee between those waiting.)
+      // Returns a pointer to metadata.
       GetContext<ClientContext>().RecvInitialMetadataLatch(),
       // Once we get initial metadata, then run a promise to
       // invoke the config selector commit callback.
@@ -2819,6 +2821,144 @@ void ClientChannel::LoadBalancedCall::PendingBatchesResume() {
   }
   // Note: This will release the call combiner.
   closures.RunClosures(call_combiner_);
+}
+
+void ClientChannel::LoadBalancedCall::CreatePromise() {
+  // Intercept recv_trailing_metadata_ready for LB callback.
+  auto InterceptTrailingMetadata =
+      [](std::function<void()> lb_recv_trailing_metadata_cb) {
+        // FIXME: is ClientContext right here?
+        GetContext<ClientContext>().GetIncomingPipe().Filter(
+            // Promise that takes an absl::variant<> and picks the
+            // appropriate lambda from its arguments to invoke based on the
+            // type in the variant.
+            Visitor(
+                [](InitialMetadata*) { return absl::OkStatus(); },
+                [](Message*) { return absl::OkStatus(); },
+                [GRPC_CAPTURE(lb_recv_trailing_metadata_cb)](
+                    TrailingMetadata* metadata) {
+                  if (lb_recv_trailing_metadata_cb != nullptr) {
+                    // Invoke callback to LB policy.
+                    Metadata trailing_metadata(this, metadata);
+                    LbCallState lb_call_state(this);
+                    // FIXME: this isn't the right place to get the
+                    // call's status -- may need to use Finish() combinator
+                    lb_recv_trailing_metadata_cb(call_status, &trailing_metadata,
+                                                 &lb_call_state);
+                  }
+                  return absl::OkStatus();
+                }
+            )
+        );
+      };
+
+  // Construct promise to get picker and pick for the call.
+  auto picker_observer = picker_observable_.MakeObserver();
+  auto GetSubchannel =
+      // Get service config.
+      // - all promises in seq must return optional<StatusOr<>>
+      // - optional<> will be stripped off for next promise in seq
+      // - While() will return StatusOr<> to its caller
+      TryUntil(
+          // - all promises in seq must return StatusOr<>
+          // - StatusOr<> will be stripped off for next promise in seq
+          // - TrySeq() will return StatusOr<> to its caller
+          TrySeq(
+              // Wait for the next result.
+              // Result type is
+              // StatusOr<StatusOr<RefCountedPtr<ConfigSelector>>>
+              // - outer StatusOr is status from observer
+              //   (will be stripped off for input to next element of
+              //   TrySeq())
+              // - inner StatusOr is whether resolver had transient failure
+              picker_observer.TryNext(),
+              // Check the result.
+              DoPick));
+
+  // - all promises in seq must return StatusOr<>
+  // - StatusOr<> will be stripped off for next promise in seq
+  // - TrySeq() will return StatusOr<> to its caller
+  return TrySeq(
+    GetSubchannel,
+    [](std::pair<RefCountedPtr<ConnectedSubchannel>, std::function<void()>> r) {
+      // - all promises in join must return StatusOr<>
+      // - TryJoin() returns a tuple of responses
+      return TryJoin(
+        InterceptTrailingMetadata(r.second),
+        r.first->CreatePromise()
+      );
+    });
+}
+
+// FIXME: use a custom struct instead of std::pair<>
+LoopControl<absl::StatusOr<std::pair<RefCountedPtr<ConnectedSubchannel>,
+                                     std::function<void()>>>
+ClientChannel::LoadBalancedCall::DoPick(
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+  GPR_ASSERT(connected_subchannel_ == nullptr);
+  GPR_ASSERT(subchannel_call_ == nullptr);
+  // Perform LB pick.
+  LoadBalancingPolicy::PickArgs pick_args;
+  pick_args.path = StringViewFromSlice(GetContext<ClientContext>().path());
+  LbCallState lb_call_state(this);
+  pick_args.call_state = &lb_call_state;
+  Metadata initial_metadata(
+      this, GetContext<ClientContext>().SendInitialMetadata());
+  pick_args.initial_metadata = &initial_metadata;
+  auto result = chand_->picker_->Pick(pick_args);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "chand=%p lb_call=%p: LB pick returned %s (subchannel=%p, error=%s)",
+        chand_, this, PickResultTypeName(result.type), result.subchannel.get(),
+        grpc_error_std_string(result.error).c_str());
+  }
+  switch (result.type) {
+    case LoadBalancingPolicy::PickResult::PICK_FAILED: {
+      // If we're shutting down, fail all RPCs.
+      grpc_error_handle disconnect_error = chand_->disconnect_error();
+      if (disconnect_error != GRPC_ERROR_NONE) {
+        GRPC_ERROR_UNREF(result.error);
+        // FIXME: convert to absl::Status
+        return disconnect_error;
+      }
+      // If wait_for_ready is false, then the error indicates the RPC
+      // attempt's final status.
+      if (GetContext<ClientContext>().wait_for_ready()) {
+        // FIXME: return absl::Status
+        grpc_error_handle new_error =
+            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                "Failed to pick subchannel", &result.error, 1);
+        GRPC_ERROR_UNREF(result.error);
+        *error = new_error;
+        return true;
+      }
+      // If wait_for_ready is true, then queue to retry when we get a new
+      // picker.
+      GRPC_ERROR_UNREF(result.error);
+    }
+    // Fallthrough
+    case LoadBalancingPolicy::PickResult::PICK_QUEUE:
+      return kContinue;
+    default:  // PICK_COMPLETE
+      // Handle drops.
+      if (GPR_UNLIKELY(result.subchannel == nullptr)) {
+        // FIXME: absl::Status
+        return grpc_error_set_int(
+            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "Call dropped by load balancing policy"),
+                               GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE),
+            GRPC_ERROR_INT_LB_POLICY_DROP, 1);
+      }
+      // Grab a ref to the connected subchannel while we're still
+      // holding the data plane mutex.
+      connected_subchannel_ =
+          chand_->GetConnectedSubchannelInDataPlane(result.subchannel.get());
+      GPR_ASSERT(connected_subchannel_ != nullptr);
+      lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
+      return true;
+  }
 }
 
 void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
