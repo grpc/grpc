@@ -401,6 +401,7 @@ libs:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/strings:cord
   - absl/strings:str_format
@@ -4330,6 +4331,7 @@ targets:
   - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -5432,7 +5434,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/testing_channel_create.cc
   deps:
-  - absl/random:random
   - grpc_test_util
 - name: end2end_test
   gtest: true
@@ -5541,7 +5542,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
-  - absl/random:random
   - grpc_test_util
   uses_polling: false
 - name: file_watcher_certificate_provider_factory_test
@@ -6251,6 +6251,7 @@ targets:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
@@ -6567,6 +6568,7 @@ targets:
   - absl/base:core_headers
   - absl/container:flat_hash_set
   - absl/memory:memory
+  - absl/random:random
   - absl/status:status
   - absl/status:statusor
   - absl/strings:cord
