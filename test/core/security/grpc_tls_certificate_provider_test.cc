@@ -39,7 +39,6 @@
 #define SERVER_CERT_PATH_2 "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_2 "src/core/tsi/test_creds/server0.key"
 #define INVALID_PATH "invalid/path"
-#define TEST_STR(x) #x
 
 namespace grpc_core {
 
@@ -170,6 +169,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     root_cert_2_ = GetFileContents(CA_CERT_PATH_2);
     cert_chain_2_ = GetFileContents(SERVER_CERT_PATH_2);
     private_key_2_ = GetFileContents(SERVER_KEY_PATH_2);
+    testPkey = nullptr;
   }
 
   WatcherState* MakeWatcher(
@@ -209,6 +209,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   std::list<WatcherState> watchers_;
   // This is to make watchers_ thread-safe.
   Mutex mu_;
+  EVP_PKEY* testPkey;
 };
 
 TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
@@ -298,9 +299,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderOnBothCertsRefreshed) {
   // Create temporary files and copy cert data into them.
-  TmpFile tmp_root_cert((root_cert_);
+  TmpFile tmp_root_cert((root_cert_));
   TmpFile tmp_identity_key(private_key_);
-  TmpFile tmp_identity_cert((cert_chain_);
+  TmpFile tmp_identity_cert((cert_chain_));
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -335,7 +336,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Create temporary files and copy cert data into them.
   TmpFile tmp_root_cert(root_cert_);
   TmpFile tmp_identity_key(private_key_);
-  TmpFile tmp_identity_cert((cert_chain_);
+  TmpFile tmp_identity_cert((cert_chain_));
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -435,8 +436,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedRootCerts) {
   // Create temporary files and copy cert data into it.
   auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
-  TmpFile tmp_identity_key((private_key_);
-  TmpFile tmp_identity_cert((cert_chain_);
+  TmpFile tmp_identity_key((private_key_));
+  TmpFile tmp_identity_cert((cert_chain_));
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -496,31 +497,37 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-class ConvertPemStringToPkeyTest : public testing::TestWithParam<int> {
- protected:
-  void SetUp override {
-    EVP_PKEY_CTX* context = EVP_PKEY_CTX_new_id(GetParam(), nullptr);
-    EVP_PKEY_keygen_init(context);
-    EVP_PKEY_keygen(context, &pkey);
-    EVP_PKEY_CTX_free(context);
-  }
+TEST_F(GrpcTlsCertificateProviderTest, ConvertPkeyToStringHandlesEVP_PKEY_RSA) {
+  EVP_PKEY_CTX* context = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
+  const char* isContextNull{boolToString(context == nullptr)};
+  gpr_log(GPR_ERROR, "Is context null: %s", isContextNull);
 
-  EVP_PKEY* pkey;
-};
+  int initResult = EVP_PKEY_keygen_init(context);
+  EXPECT_EQ(initResult, 1) << "Context not initialised for key generation!";
 
-TEST_P(ConvertPemStringToPkeyTest, HandlesAllEVP_PKEYTypes) {
-  const char* keyString{convertPkeyToString(pkey)};
+  int genResult = EVP_PKEY_keygen(context, &testPkey);
+  EXPECT_EQ(genResult, 1) << "Key generation failed!";
+  // Generated key is of expected type
+  EXPECT_EQ(EVP_PKEY_id(testPkey), EVP_PKEY_RSA);
+
+  // Convert test private key to PEM string
+  const char* keyString{convertPkeyToString(testPkey)};
+  gpr_log(GPR_ERROR, "\n%s\n", keyString);
+
+  // Pass test string to function being tested
   EVP_PKEY* returnedKey{convertPemStringToPkey(keyString)};
-  EXPECT_TRUE(EVP_PKEY_cmp(keyString, pkey))
-      << "convertPkeyToString() failed the " << TEST_STR(GetParam())
-      << " type test";
-}
+  const char* isReturnedKeyNull{boolToString(returnedKey == nullptr)};
+  gpr_log(GPR_ERROR, "Is returned key string null: %s", isReturnedKeyNull);
 
-INSTANTIATE_TEST_SUITE_P(PEMStringToPkey, ConvertPemStringToPkeyTest,
-                         ::testing::Values(EVP_PKEY_NONE, EVP_PKEY_RSA,
-                                           EVP_PKEY_RSA_PSS, EVP_PKEY_DSA,
-                                           EVP_PKEY_EC, EVP_PKEY_ED25519,
-                                           EVP_PKEY_X25519));
+  bool result{compareKeys(returnedKey, testPkey)};
+  EXPECT_TRUE(result)
+      << "convertPkeyToString() failed the EVP_PKEY_RSA type test";
+
+  EVP_PKEY_free(testPkey);
+  EVP_PKEY_free(returnedKey);
+  EVP_PKEY_CTX_free(context);
+  freeKeyString(keyString);
+}
 
 }  // namespace testing
 

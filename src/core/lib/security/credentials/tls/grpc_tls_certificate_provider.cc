@@ -27,6 +27,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
+#define KEYS_MATCH 1
+
 namespace grpc_core {
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
@@ -409,6 +411,20 @@ EVP_PKEY *convertPemStringToPkey(const char *pkeyString) {
     BIO_free(pkeyBio);
 
     return pkey;
+}
+
+void freeKeyString(const char* pkeyString){
+  free((void *)pkeyString);
+}
+
+bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b) {
+  int result {EVP_PKEY_cmp(a, b)};
+  return result == KEYS_MATCH;
+}
+
+const char * boolToString(bool b)
+{
+  return b ? "true" : "false";
 }
 }  // namespace grpc_core
 
