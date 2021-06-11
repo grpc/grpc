@@ -216,11 +216,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                  namespace_template=None,
                  debug_use_port_forwarding=False,
                  case_name=None):
-        super().__init__(k8s_namespace,
-                         namespace_template,
-                         reuse_namespace,
-                         case_name,
-                         "app=psm-grpc-client")
+        super().__init__(k8s_namespace, namespace_template, reuse_namespace,
+                         case_name, "app=psm-grpc-client")
 
         # Settings
         self.deployment_name = deployment_name

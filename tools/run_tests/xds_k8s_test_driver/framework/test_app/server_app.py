@@ -150,11 +150,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                  namespace_template=None,
                  case_name=None,
                  debug_use_port_forwarding=False):
-        super().__init__(k8s_namespace,
-                         namespace_template,
-                         reuse_namespace,
-                         case_name,
-                         "app=psm-grpc-server")
+        super().__init__(k8s_namespace, namespace_template, reuse_namespace,
+                         case_name, "app=psm-grpc-server")
 
         # Settings
         self.deployment_name = deployment_name
