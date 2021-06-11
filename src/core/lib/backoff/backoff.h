@@ -23,6 +23,8 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+#include "absl/random/random.h"
+
 namespace grpc_core {
 
 /// Implementation of the backoff mechanism described in
@@ -40,8 +42,6 @@ class BackOff {
   /// Reset the backoff, so the next value returned by NextAttemptTime()
   /// will be the time of the second attempt (rather than the Nth).
   void Reset();
-
-  void SetRandomSeed(unsigned int seed);
 
   class Options {
    public:
@@ -79,7 +79,7 @@ class BackOff {
 
  private:
   const Options options_;
-  uint32_t rng_state_;
+  absl::BitGen rand_gen_;
   bool initial_;
   /// current delay before retries
   grpc_millis current_backoff_;
