@@ -276,6 +276,9 @@ class SocketNode : public BaseNode {
  public:
   struct Security : public RefCounted<Security> {
     struct Tls {
+      // This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=50346
+      Tls() {}
+
       enum class NameType { kUnset = 0, kStandardName = 1, kOtherName = 2 };
       NameType type = NameType::kUnset;
       // Holds the value of standard_name or other_names if type is not kUnset.

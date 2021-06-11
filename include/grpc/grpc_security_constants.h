@@ -45,6 +45,7 @@ extern "C" {
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
 #define GRPC_PEER_DNS_PROPERTY_NAME "peer_dns"
 #define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
+#define GRPC_PEER_URI_PROPERTY_NAME "peer_uri"
 #define GRPC_PEER_EMAIL_PROPERTY_NAME "peer_email"
 #define GRPC_PEER_IP_PROPERTY_NAME "peer_ip"
 

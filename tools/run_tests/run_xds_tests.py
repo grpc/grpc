@@ -836,11 +836,8 @@ def test_round_robin(gcp, backend_service, instance_group):
     # creating new backend resources for each individual test case.
     # Each attempt takes 10 seconds. Config propagation can take several
     # minutes.
-    deadline = time.time() + _WAIT_FOR_URL_MAP_PATCH_SEC
-    logger.info(
-        'Attempting for %d seconds until received the expected distribution',
-        _WAIT_FOR_URL_MAP_PATCH_SEC)
-    while time.time() < deadline:
+    max_attempts = 40
+    for i in range(max_attempts):
         stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
         requests_received = [stats.rpcs_by_peer[x] for x in stats.rpcs_by_peer]
         total_requests_received = sum(requests_received)
@@ -855,8 +852,7 @@ def test_round_robin(gcp, backend_service, instance_group):
                     'RPC peer distribution differs from expected by more than %d '
                     'for instance %s (%s)' % (threshold, instance, stats))
         return
-    raise Exception('RPC failures persisted through after %s seconds' %
-                    _WAIT_FOR_URL_MAP_PATCH_SEC)
+    raise Exception('RPC failures persisted through %d retries' % max_attempts)
 
 
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
@@ -1320,11 +1316,10 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
             _WAIT_FOR_STATS_SEC)
 
         # Verify that weights between two services are expected.
-        deadline = time.time() + _WAIT_FOR_URL_MAP_PATCH_SEC
-        logger.info(
-            'Attempting for %d seconds until received the expected distribution',
-            _WAIT_FOR_URL_MAP_PATCH_SEC)
-        while time.time() < deadline:
+        retry_count = 10
+        # Each attempt takes about 10 seconds, 10 retries is equivalent to 100
+        # seconds timeout.
+        for i in range(retry_count):
             stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
             got_instance_count = [
                 stats.rpcs_by_peer[i] for i in original_backend_instances
@@ -1338,15 +1333,18 @@ def test_traffic_splitting(gcp, original_backend_service, instance_group,
                 compare_distributions(got_instance_percentage,
                                       expected_instance_percentage, 5)
             except Exception as e:
-                logger.info('Got percentage: %s, expected percentage: %s',
-                            got_instance_percentage,
+                logger.info('attempt %d', i)
+                logger.info('got percentage: %s', got_instance_percentage)
+                logger.info('expected percentage: %s',
                             expected_instance_percentage)
                 logger.info(e)
+                if i == retry_count - 1:
+                    raise Exception(
+                        'RPC distribution (%s) differs from expected (%s)' %
+                        (got_instance_percentage, expected_instance_percentage))
             else:
                 logger.info("success")
-                return
-        raise Exception('RPC distribution (%s) differs from expected (%s)' %
-                        (got_instance_percentage, expected_instance_percentage))
+                break
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, alternate_backend_service, [])
@@ -1470,22 +1468,23 @@ def test_path_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            deadline = time.time() + _WAIT_FOR_URL_MAP_PATCH_SEC
-            logger.info(
-                'Attempting for %d seconds until received the expected distribution',
-                _WAIT_FOR_URL_MAP_PATCH_SEC)
-            while time.time() < deadline:
+            retry_count = 80
+            # Each attempt takes about 5 seconds, 80 retries is equivalent to 400
+            # seconds timeout.
+            for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
                 if not stats.rpcs_by_method:
                     raise ValueError(
                         'stats.rpcs_by_method is None, the interop client stats service does not support this test case'
                     )
+                logger.info('attempt %d', i)
                 if compare_expected_instances(stats, expected_instances):
                     logger.info("success")
-                    return
-            raise Exception(
-                'timeout waiting for RPCs to the expected instances: %s' %
-                expected_instances)
+                    break
+                elif i == retry_count - 1:
+                    raise Exception(
+                        'timeout waiting for RPCs to the expected instances: %s'
+                        % expected_instances)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, alternate_backend_service, [])
@@ -1667,22 +1666,23 @@ def test_header_matching(gcp, original_backend_service, instance_group,
                 original_backend_instances + alternate_backend_instances,
                 _WAIT_FOR_STATS_SEC)
 
-            deadline = time.time() + _WAIT_FOR_URL_MAP_PATCH_SEC
-            logger.info(
-                'Attempting for %d seconds until received the expected distribution',
-                _WAIT_FOR_URL_MAP_PATCH_SEC)
-            while time.time() < deadline:
+            retry_count = 80
+            # Each attempt takes about 5 seconds, 80 retries is equivalent to 400
+            # seconds timeout.
+            for i in range(retry_count):
                 stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
                 if not stats.rpcs_by_method:
                     raise ValueError(
                         'stats.rpcs_by_method is None, the interop client stats service does not support this test case'
                     )
+                logger.info('attempt %d', i)
                 if compare_expected_instances(stats, expected_instances):
                     logger.info("success")
-                    return
-            raise Exception(
-                'timeout waiting for RPCs to the expected instances: %s' %
-                expected_instances)
+                    break
+                elif i == retry_count - 1:
+                    raise Exception(
+                        'timeout waiting for RPCs to the expected instances: %s'
+                        % expected_instances)
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, alternate_backend_service, [])
@@ -1693,7 +1693,7 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
     '''
     Since backend service circuit_breakers configuration cannot be unset,
     which causes trouble for restoring validate_for_proxy flag in target
-    proxy/global forwarding rule. This test uses dedicated backend services.
+    proxy/global forwarding rule. This test uses dedicated backend sevices.
     The url_map and backend services undergoes the following state changes:
 
     Before test:
@@ -1920,62 +1920,53 @@ def test_timeout(gcp, original_backend_service, instance_group):
     ]
 
     try:
-        deadline = time.time() + _WAIT_FOR_URL_MAP_PATCH_SEC
-        logger.info(
-            'Attempting for %d seconds until received the expected distribution',
-            _WAIT_FOR_URL_MAP_PATCH_SEC)
-        attempt_counter = 0
-        while True:
-            attempt_counter += 1
-            try:
-                for (testcase_name, client_config,
-                     expected_results) in test_cases:
-                    logger.info('starting case %s: attempt %d', testcase_name,
-                                attempt_counter)
-                    configure_client(**client_config)
-                    # wait a second to help ensure the client stops sending RPCs with
-                    # the old config.  We will make multiple attempts if it is failing,
-                    # but this improves confidence that the test is valid if the
-                    # previous client_config would lead to the same results.
-                    time.sleep(1)
-                    before_stats = get_client_accumulated_stats()
-                    if not before_stats.stats_per_method:
-                        raise ValueError(
-                            'stats.stats_per_method is None, the interop client stats service does not support this test case'
-                        )
-                    logger.info('%s: attempt %d', testcase_name,
-                                attempt_counter)
+        first_case = True
+        for (testcase_name, client_config, expected_results) in test_cases:
+            logger.info('starting case %s', testcase_name)
+            configure_client(**client_config)
+            # wait a second to help ensure the client stops sending RPCs with
+            # the old config.  We will make multiple attempts if it is failing,
+            # but this improves confidence that the test is valid if the
+            # previous client_config would lead to the same results.
+            time.sleep(1)
+            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
+            # second timeout.
+            attempt_count = 20
+            if first_case:
+                attempt_count = 120
+                first_case = False
+            before_stats = get_client_accumulated_stats()
+            if not before_stats.stats_per_method:
+                raise ValueError(
+                    'stats.stats_per_method is None, the interop client stats service does not support this test case'
+                )
+            for i in range(attempt_count):
+                logger.info('%s: attempt %d', testcase_name, i)
 
-                    test_runtime_secs = 10
-                    time.sleep(test_runtime_secs)
-                    after_stats = get_client_accumulated_stats()
+                test_runtime_secs = 10
+                time.sleep(test_runtime_secs)
+                after_stats = get_client_accumulated_stats()
 
-                    success = True
-                    for rpc, status in expected_results.items():
-                        qty = (
-                            after_stats.stats_per_method[rpc].result[status] -
-                            before_stats.stats_per_method[rpc].result[status])
-                        want = test_runtime_secs * args.qps
-                        # Allow 10% deviation from expectation to reduce flakiness
-                        if qty < (want * .9) or qty > (want * 1.1):
-                            logger.info(
-                                '%s: failed due to %s[%s]: got %d want ~%d',
-                                testcase_name, rpc, status, qty, want)
-                            success = False
-                    if success:
-                        logger.info('success')
-                        return
-                    logger.info('%s attempt %d failed', testcase_name,
-                                attempt_counter)
-                    raise RpcDistributionError(
-                        '%s: timeout waiting for expected results: %s; got %s' %
-                        (testcase_name, expected_results,
-                         after_stats.stats_per_method))
-            except RpcDistributionError as e:
-                if time.time() < deadline:
-                    pass
-                else:
-                    raise
+                success = True
+                for rpc, status in expected_results.items():
+                    qty = (after_stats.stats_per_method[rpc].result[status] -
+                           before_stats.stats_per_method[rpc].result[status])
+                    want = test_runtime_secs * args.qps
+                    # Allow 10% deviation from expectation to reduce flakiness
+                    if qty < (want * .9) or qty > (want * 1.1):
+                        logger.info('%s: failed due to %s[%s]: got %d want ~%d',
+                                    testcase_name, rpc, status, qty, want)
+                        success = False
+                if success:
+                    logger.info('success')
+                    break
+                logger.info('%s attempt %d failed', testcase_name, i)
+                before_stats = after_stats
+            else:
+                raise Exception(
+                    '%s: timeout waiting for expected results: %s; got %s' %
+                    (testcase_name, expected_results,
+                     after_stats.stats_per_method))
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
 
@@ -2098,78 +2089,70 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
     ]
 
     try:
-        deadline = time.time() + _WAIT_FOR_URL_MAP_PATCH_SEC
-        logger.info(
-            'Attempting for %d seconds until received the expected distribution',
-            _WAIT_FOR_URL_MAP_PATCH_SEC)
-        attempt_counter = 0
-        while True:
-            attempt_counter += 1
-            try:
-                for (testcase_name, client_config,
-                     expected_results) in test_cases:
-                    logger.info('starting case %s: attempt %d', testcase_name,
-                                attempt_counter)
+        first_case = True
+        for (testcase_name, client_config, expected_results) in test_cases:
+            logger.info('starting case %s', testcase_name)
 
-                    client_config['metadata'] = [
-                        (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
-                         testcase_header, testcase_name)
-                    ]
-                    client_config['rpc_types'] = [
-                        messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
-                    ]
-                    configure_client(**client_config)
-                    # wait a second to help ensure the client stops sending RPCs with
-                    # the old config.  We will make multiple attempts if it is failing,
-                    # but this improves confidence that the test is valid if the
-                    # previous client_config would lead to the same results.
-                    time.sleep(1)
-                    # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
-                    # second timeout.
-                    before_stats = get_client_accumulated_stats()
-                    if not before_stats.stats_per_method:
-                        raise ValueError(
-                            'stats.stats_per_method is None, the interop client stats service does not support this test case'
-                        )
-                    logger.info('%s: attempt %d', testcase_name, i)
+            client_config['metadata'] = [
+                (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                 testcase_header, testcase_name)
+            ]
+            client_config['rpc_types'] = [
+                messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+            ]
+            configure_client(**client_config)
+            # wait a second to help ensure the client stops sending RPCs with
+            # the old config.  We will make multiple attempts if it is failing,
+            # but this improves confidence that the test is valid if the
+            # previous client_config would lead to the same results.
+            time.sleep(1)
+            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
+            # second timeout.
+            attempt_count = 20
+            if first_case:
+                attempt_count = 120
+                first_case = False
+            before_stats = get_client_accumulated_stats()
+            if not before_stats.stats_per_method:
+                raise ValueError(
+                    'stats.stats_per_method is None, the interop client stats service does not support this test case'
+                )
+            for i in range(attempt_count):
+                logger.info('%s: attempt %d', testcase_name, i)
 
-                    test_runtime_secs = 10
-                    time.sleep(test_runtime_secs)
-                    after_stats = get_client_accumulated_stats()
+                test_runtime_secs = 10
+                time.sleep(test_runtime_secs)
+                after_stats = get_client_accumulated_stats()
 
-                    success = True
-                    for status, pct in expected_results.items():
-                        rpc = 'UNARY_CALL'
-                        qty = (
-                            after_stats.stats_per_method[rpc].result[status] -
-                            before_stats.stats_per_method[rpc].result[status])
-                        want = pct * args.qps * test_runtime_secs
-                        # Allow 10% deviation from expectation to reduce flakiness
-                        VARIANCE_ALLOWED = 0.1
-                        if abs(qty - want) > want * VARIANCE_ALLOWED:
-                            logger.info(
-                                '%s: failed due to %s[%s]: got %d want ~%d',
-                                testcase_name, rpc, status, qty, want)
-                            success = False
-                    if success:
-                        logger.info('success')
-                        break
-                    logger.info('%s attempt %d failed', testcase_name, i)
-                    raise RpcDistributionError(
-                        '%s: timeout waiting for expected results: %s; got %s' %
-                        (testcase_name, expected_results,
-                         after_stats.stats_per_method))
-            except RpcDistributionError as e:
-                if time.time() < deadline:
-                    pass
-                else:
-                    raise
+                success = True
+                for status, pct in expected_results.items():
+                    rpc = 'UNARY_CALL'
+                    qty = (after_stats.stats_per_method[rpc].result[status] -
+                           before_stats.stats_per_method[rpc].result[status])
+                    want = pct * args.qps * test_runtime_secs
+                    # Allow 10% deviation from expectation to reduce flakiness
+                    VARIANCE_ALLOWED = 0.1
+                    if abs(qty - want) > want * VARIANCE_ALLOWED:
+                        logger.info('%s: failed due to %s[%s]: got %d want ~%d',
+                                    testcase_name, rpc, status, qty, want)
+                        success = False
+                if success:
+                    logger.info('success')
+                    break
+                logger.info('%s attempt %d failed', testcase_name, i)
+                before_stats = after_stats
+            else:
+                raise Exception(
+                    '%s: timeout waiting for expected results: %s; got %s' %
+                    (testcase_name, expected_results,
+                     after_stats.stats_per_method))
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         set_validate_for_proxyless(gcp, True)
 
 
 def test_csds(gcp, original_backend_service, instance_group, server_uri):
+    test_csds_timeout_s = datetime.timedelta(minutes=5).total_seconds()
     sleep_interval_between_attempts_s = datetime.timedelta(
         seconds=2).total_seconds()
     logger.info('Running test_csds')
@@ -2177,9 +2160,10 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
     logger.info('waiting for original backends to become healthy')
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
 
-    deadline = time.time() + _WAIT_FOR_URL_MAP_PATCH_SEC
+    # Test case timeout: 5 minutes
+    deadline = time.time() + test_csds_timeout_s
     cnt = 0
-    while time.time() < deadline:
+    while time.time() <= deadline:
         client_config = get_client_xds_config_dump()
         logger.info('test_csds attempt %d: received xDS config %s', cnt,
                     json.dumps(client_config, indent=2))
@@ -2251,7 +2235,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
         cnt += 1
 
     raise RuntimeError('failed to receive a valid xDS config in %s seconds' %
-                       _WAIT_FOR_URL_MAP_PATCH_SEC)
+                       test_csds_timeout_s)
 
 
 def set_validate_for_proxyless(gcp, validate_for_proxyless):
@@ -2557,62 +2541,96 @@ def create_global_forwarding_rule(gcp,
 
 
 def get_health_check(gcp, health_check_name):
-    result = gcp.compute.healthChecks().get(
-        project=gcp.project, healthCheck=health_check_name).execute()
-    gcp.health_check = GcpResource(health_check_name, result['selfLink'])
+    try:
+        result = gcp.compute.healthChecks().get(
+            project=gcp.project, healthCheck=health_check_name).execute()
+        gcp.health_check = GcpResource(health_check_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.health_check = GcpResource(health_check_name, None)
 
 
 def get_health_check_firewall_rule(gcp, firewall_name):
-    result = gcp.compute.firewalls().get(project=gcp.project,
-                                         firewall=firewall_name).execute()
-    gcp.health_check_firewall_rule = GcpResource(firewall_name,
-                                                 result['selfLink'])
+    try:
+        result = gcp.compute.firewalls().get(project=gcp.project,
+                                             firewall=firewall_name).execute()
+        gcp.health_check_firewall_rule = GcpResource(firewall_name,
+                                                     result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.health_check_firewall_rule = GcpResource(firewall_name, None)
 
 
 def get_backend_service(gcp, backend_service_name):
-    result = gcp.compute.backendServices().get(
-        project=gcp.project, backendService=backend_service_name).execute()
-    backend_service = GcpResource(backend_service_name, result['selfLink'])
+    try:
+        result = gcp.compute.backendServices().get(
+            project=gcp.project, backendService=backend_service_name).execute()
+        backend_service = GcpResource(backend_service_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        backend_service = GcpResource(backend_service_name, None)
     gcp.backend_services.append(backend_service)
     return backend_service
 
 
 def get_url_map(gcp, url_map_name):
-    result = gcp.compute.urlMaps().get(project=gcp.project,
-                                       urlMap=url_map_name).execute()
-    gcp.url_map = GcpResource(url_map_name, result['selfLink'])
+    try:
+        result = gcp.compute.urlMaps().get(project=gcp.project,
+                                           urlMap=url_map_name).execute()
+        gcp.url_map = GcpResource(url_map_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.url_map = GcpResource(url_map_name, None)
 
 
 def get_target_proxy(gcp, target_proxy_name):
-    if gcp.alpha_compute:
-        result = gcp.alpha_compute.targetGrpcProxies().get(
-            project=gcp.project, targetGrpcProxy=target_proxy_name).execute()
-    else:
-        result = gcp.compute.targetHttpProxies().get(
-            project=gcp.project, targetHttpProxy=target_proxy_name).execute()
-    gcp.target_proxy = GcpResource(target_proxy_name, result['selfLink'])
+    try:
+        if gcp.alpha_compute:
+            result = gcp.alpha_compute.targetGrpcProxies().get(
+                project=gcp.project,
+                targetGrpcProxy=target_proxy_name).execute()
+        else:
+            result = gcp.compute.targetHttpProxies().get(
+                project=gcp.project,
+                targetHttpProxy=target_proxy_name).execute()
+        gcp.target_proxy = GcpResource(target_proxy_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.target_proxy = GcpResource(target_proxy_name, None)
 
 
 def get_global_forwarding_rule(gcp, forwarding_rule_name):
-    result = gcp.compute.globalForwardingRules().get(
-        project=gcp.project, forwardingRule=forwarding_rule_name).execute()
-    gcp.global_forwarding_rule = GcpResource(forwarding_rule_name,
-                                             result['selfLink'])
+    try:
+        result = gcp.compute.globalForwardingRules().get(
+            project=gcp.project, forwardingRule=forwarding_rule_name).execute()
+        gcp.global_forwarding_rule = GcpResource(forwarding_rule_name,
+                                                 result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.global_forwarding_rule = GcpResource(forwarding_rule_name, None)
 
 
 def get_instance_template(gcp, template_name):
-    result = gcp.compute.instanceTemplates().get(
-        project=gcp.project, instanceTemplate=template_name).execute()
-    gcp.instance_template = GcpResource(template_name, result['selfLink'])
+    try:
+        result = gcp.compute.instanceTemplates().get(
+            project=gcp.project, instanceTemplate=template_name).execute()
+        gcp.instance_template = GcpResource(template_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.instance_template = GcpResource(template_name, None)
 
 
 def get_instance_group(gcp, zone, instance_group_name):
-    result = gcp.compute.instanceGroups().get(
-        project=gcp.project, zone=zone,
-        instanceGroup=instance_group_name).execute()
-    gcp.service_port = result['namedPorts'][0]['port']
-    instance_group = InstanceGroup(instance_group_name, result['selfLink'],
-                                   zone)
+    try:
+        result = gcp.compute.instanceGroups().get(
+            project=gcp.project, zone=zone,
+            instanceGroup=instance_group_name).execute()
+        gcp.service_port = result['namedPorts'][0]['port']
+        instance_group = InstanceGroup(instance_group_name, result['selfLink'],
+                                       zone)
+    except Exception as e:
+        gcp.errors.append(e)
+        instance_group = InstanceGroup(instance_group_name, None, zone)
     gcp.instance_groups.append(instance_group)
     return instance_group
 
@@ -2623,6 +2641,7 @@ def delete_global_forwarding_rule(gcp, name=None):
     else:
         forwarding_rule_to_delete = gcp.global_forwarding_rule.name
     try:
+        logger.debug('Deleting forwarding rule %s', forwarding_rule_to_delete)
         result = gcp.compute.globalForwardingRules().delete(
             project=gcp.project,
             forwardingRule=forwarding_rule_to_delete).execute(
@@ -2639,10 +2658,12 @@ def delete_target_proxy(gcp, name=None):
         proxy_to_delete = gcp.target_proxy.name
     try:
         if gcp.alpha_compute:
+            logger.debug('Deleting grpc proxy %s', proxy_to_delete)
             result = gcp.alpha_compute.targetGrpcProxies().delete(
                 project=gcp.project, targetGrpcProxy=proxy_to_delete).execute(
                     num_retries=_GCP_API_RETRIES)
         else:
+            logger.debug('Deleting http proxy %s', proxy_to_delete)
             result = gcp.compute.targetHttpProxies().delete(
                 project=gcp.project, targetHttpProxy=proxy_to_delete).execute(
                     num_retries=_GCP_API_RETRIES)
@@ -2657,6 +2678,7 @@ def delete_url_map(gcp, name=None):
     else:
         url_map_to_delete = gcp.url_map.name
     try:
+        logger.debug('Deleting url map %s', url_map_to_delete)
         result = gcp.compute.urlMaps().delete(
             project=gcp.project,
             urlMap=url_map_to_delete).execute(num_retries=_GCP_API_RETRIES)
@@ -2667,6 +2689,7 @@ def delete_url_map(gcp, name=None):
 
 def delete_backend_service(gcp, backend_service):
     try:
+        logger.debug('Deleting backend service %s', backend_service.name)
         result = gcp.compute.backendServices().delete(
             project=gcp.project, backendService=backend_service.name).execute(
                 num_retries=_GCP_API_RETRIES)
@@ -2682,6 +2705,8 @@ def delete_backend_services(gcp):
 
 def delete_firewall(gcp):
     try:
+        logger.debug('Deleting firewall %s',
+                     gcp.health_check_firewall_rule.name)
         result = gcp.compute.firewalls().delete(
             project=gcp.project,
             firewall=gcp.health_check_firewall_rule.name).execute(
@@ -2693,6 +2718,7 @@ def delete_firewall(gcp):
 
 def delete_health_check(gcp):
     try:
+        logger.debug('Deleting health check %s', gcp.health_check.name)
         result = gcp.compute.healthChecks().delete(
             project=gcp.project, healthCheck=gcp.health_check.name).execute(
                 num_retries=_GCP_API_RETRIES)
@@ -2704,6 +2730,8 @@ def delete_health_check(gcp):
 def delete_instance_groups(gcp):
     for instance_group in gcp.instance_groups:
         try:
+            logger.debug('Deleting instance group %s %s', instance_group.name,
+                         instance_group.zone)
             result = gcp.compute.instanceGroupManagers().delete(
                 project=gcp.project,
                 zone=instance_group.zone,
@@ -2719,6 +2747,8 @@ def delete_instance_groups(gcp):
 
 def delete_instance_template(gcp):
     try:
+        logger.debug('Deleting instance template %s',
+                     gcp.instance_template.name)
         result = gcp.compute.instanceTemplates().delete(
             project=gcp.project,
             instanceTemplate=gcp.instance_template.name).execute(
@@ -2968,6 +2998,7 @@ class GcpState(object):
         self.service_port = None
         self.instance_template = None
         self.instance_groups = []
+        self.errors = []
 
 
 alpha_compute = None
@@ -3022,13 +3053,7 @@ try:
     if args.use_existing_gcp_resources:
         logger.info('Reusing existing GCP resources')
         get_health_check(gcp, health_check_name)
-        try:
-            get_health_check_firewall_rule(gcp, firewall_name)
-        except googleapiclient.errors.HttpError as http_error:
-            # Firewall rule may be auto-deleted periodically depending on GCP
-            # project settings.
-            logger.exception('Failed to find firewall rule, recreating')
-            create_health_check_firewall_rule(gcp, firewall_name)
+        get_health_check_firewall_rule(gcp, firewall_name)
         backend_service = get_backend_service(gcp, backend_service_name)
         alternate_backend_service = get_backend_service(
             gcp, alternate_backend_service_name)
@@ -3041,6 +3066,8 @@ try:
             gcp, args.zone, same_zone_instance_group_name)
         secondary_zone_instance_group = get_instance_group(
             gcp, args.secondary_zone, secondary_zone_instance_group_name)
+        if gcp.errors:
+            raise Exception(gcp.errors)
     else:
         create_health_check_firewall_rule(gcp, firewall_name)
         backend_service = add_backend_service(gcp, backend_service_name)
