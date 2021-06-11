@@ -66,10 +66,14 @@ class KubernetesBaseRunner:
             try:
                 pod_status = core.read_namespaced_pod_status(
                     pod_name, namespace).status
-                container = [
+                candidate_containers = [
                     container for container in pod_status.container_statuses
                     if container.name == container_name
-                ][0]
+                ]
+                if not candidate_containers:
+                    time.sleep(_BACKOFF_SECONDS)
+                    continue
+                container = candidate_containers[0]
                 if not container.ready:
                     time.sleep(_BACKOFF_SECONDS)
                 else:
@@ -79,7 +83,7 @@ class KubernetesBaseRunner:
 
     def _log_container(self, core: client.CoreV1Api, pod_name: str,
                        container_name: str, namespace: str) -> None:
-        restarted = False
+        query_restarted = False
         logfile = os.path.join(
             _TEST_LOG_BASE_DIR,
             f"{self.case_name}.{pod_name}.{container_name}.sponge_log.txt")
@@ -89,7 +93,7 @@ class KubernetesBaseRunner:
         with open(logfile, "w") as f:
             while not self._log_stop_event.is_set():
                 try:
-                    if restarted:
+                    if query_restarted:
                         f.write(
                             "Restarted log fetching. Attempting to read from the beginning, but truncation may have occurred.\n"
                         )
@@ -103,7 +107,7 @@ class KubernetesBaseRunner:
                         f.write("\n")
                 except kubernetes.client.rest.ApiException as e:
                     f.write(f"Exception fetching logs: {e}\n")
-                    restarted = True
+                    query_restarted = True
                     time.sleep(_BACKOFF_SECONDS)
 
     def _start_logging_container(self, core: client.CoreV1Api, pod_name: str,
