@@ -29,9 +29,13 @@ import kubernetes.client.rest
 
 logger = logging.getLogger(__name__)
 
-# TODO: Change Kokoro config to look inside the grpc directory.
-_TEST_LOG_BASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                  '../../../../../../artifacts')
+if "KOKORO_ARTIFACTS_DIR" in os.environ:
+    _TEST_LOG_BASE_DIR = os.environ["KOKORO_ARTIFACTS_DIR"]
+else:
+    _TEST_LOG_BASE_DIR = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '../../../../../../artifacts')
+
 _BACKOFF_SECONDS = 1
 
 
@@ -86,7 +90,7 @@ class KubernetesBaseRunner:
         query_restarted = False
         logfile = os.path.join(
             _TEST_LOG_BASE_DIR,
-            f"{self.case_name}.{pod_name}.{container_name}.sponge_log.txt")
+            f"{self.case_name}.{pod_name}.{container_name}.sponge_log.log")
 
         self._await_container_ready(core, pod_name, container_name, namespace)
 
