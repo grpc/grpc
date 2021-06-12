@@ -170,6 +170,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     cert_chain_2_ = GetFileContents(SERVER_CERT_PATH_2);
     private_key_2_ = GetFileContents(SERVER_KEY_PATH_2);
     testPkey = nullptr;
+    testX509 = nullptr;
   }
 
   WatcherState* MakeWatcher(
@@ -210,6 +211,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   // This is to make watchers_ thread-safe.
   Mutex mu_;
   EVP_PKEY* testPkey;
+  X509* testX509;
 };
 
 TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
@@ -526,7 +528,24 @@ TEST_F(GrpcTlsCertificateProviderTest, ConvertPkeyToStringHandlesEVP_PKEY_RSA) {
   EVP_PKEY_free(testPkey);
   EVP_PKEY_free(returnedKey);
   EVP_PKEY_CTX_free(context);
-  freeKeyString(keyString);
+  freePEMString(keyString);
+}
+
+//TODO: Should we remove newlines before comparing the strings
+TEST_F(GrpcTlsCertificateProviderTest, ConvertPemStringToX509) {
+  const char* x509String {cert_chain_2_.c_str()};
+  gpr_log(GPR_ERROR, "Cert: \n%slol", x509String);
+  testX509 = convertPemStringToX509(x509String);
+  EXPECT_TRUE(testX509 != nullptr) << "convertPemStringToX509 returned null";
+
+  const char* returnedString {convertX509ToString(testX509)};
+  EXPECT_TRUE(returnedString != nullptr) << "convertX509ToString returned null";
+  gpr_log(GPR_ERROR, "Cert: \n%slol", returnedString);
+
+  EXPECT_TRUE(strcmp(x509String, returnedString) == 0) << "blah";
+
+  X509_free(testX509);
+  freePEMString(returnedString);
 }
 
 }  // namespace testing
