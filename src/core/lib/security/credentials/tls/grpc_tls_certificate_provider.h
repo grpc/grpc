@@ -133,6 +133,21 @@ class FileWatcherCertificateProvider final
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 
+// A function for converting EVP_PKEY to C style string
+char* convertPkeyToString(EVP_PKEY* pkey);
+
+// A function for freeing the the buffer allocated in convertPkeyToString()
+void freeKeyString(const char* pkeyString);
+
+// A function for converting C style string to EVP_PKEY
+EVP_PKEY* convertPemStringToPkey(const char* pkeyString);
+
+// A function for comparing EVP_PKEY keys which takes into consideration that
+// EVP_PKEY_cmp() returns 1 if the keys match, 0 if they don't match, -1 if the
+// key types are different and -2 if the operation is not supported.
+bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b);
+
+const char* boolToString(bool b);
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
