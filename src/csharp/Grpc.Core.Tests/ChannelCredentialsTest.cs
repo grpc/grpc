@@ -58,6 +58,9 @@ namespace Grpc.Core.Tests
             var nativeCreds1 = creds.ToNativeCredentials();
             var nativeCreds2 = creds.ToNativeCredentials();
             Assert.AreSame(nativeCreds1, nativeCreds2);
+
+            var nativeCreds3 = ChannelCredentials.Secure.ToNativeCredentials();
+            Assert.AreSame(nativeCreds1, nativeCreds3);
         }
     }
 }
