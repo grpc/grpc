@@ -15,10 +15,12 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRY_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_TRY_SEQ_H
 
+#include <tuple>
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
 #include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/switch.h"
 
 namespace grpc_core {
 
@@ -46,59 +48,173 @@ auto CallNext(Next* next, absl::Status* status) -> decltype(next->Once()) {
   return next->Once();
 }
 
-template <typename F0, typename F1>
-struct InitialState {
-  InitialState(F0&& f0, F1&& f1)
-      : f(std::forward<F0>(f0)), next(std::forward<F1>(f1)) {}
-  InitialState(InitialState&& other)
-      : f(std::move(other.f)), next(std::move(other.next)) {}
-  InitialState(const InitialState& other) : f(other.f), next(other.next) {}
-  ~InitialState() = delete;
-  using F = F0;
-  [[no_unique_address]] F0 f;
-  using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
-  using Next = adaptor_detail::Factory<typename NextArg<FResult>::Type, F1>;
-  [[no_unique_address]] Next next;
-};
-
-template <typename PriorState, typename FNext, typename... PriorStateFs>
-struct IntermediateState {
-  IntermediateState(PriorStateFs&&... prior_fs, FNext&& f)
-      : next(std::forward<F>(f)) {
-    new (&prior) PriorState(std::forward<PriorStateFs>(prior_fs)...);
+template <typename Result, typename PriorState, typename NextStateF,
+          typename RunNextPriorState>
+Poll<Result> RunPriorState(PriorState* prior, NextStateF* next_f,
+                      RunNextPriorState run_next_prior_state) {
+  {
+    auto r = prior->f();
+    auto* p = r.get_ready();
+    if (p == nullptr) return kPending;
+    if (!p->ok()) return ready(Result(IntoStatus(p)));
+    Destruct(&prior->f);
+    auto n = CallNext(&prior->next, p);
+    Destruct(&prior->next);
+    Construct(next_f, std::move(n));
   }
-  IntermediateState(IntermediateState&& other)
+  return run_next_prior_state();
+}
+
+template <char I, typename... Fs>
+struct State {
+  using PriorState = State<I - 1, Fs...>;
+  using FNext = typename std::tuple_element<I + 1, std::tuple<Fs...>>::type;
+  State(std::tuple<Fs*...> fs) : next(std::move(*std::get<I + 1>(fs))) {
+    new (&prior) PriorState(fs);
+  }
+  State(State&& other)
       : prior(std::move(other.prior)), next(std::move(other.next)) {}
-  IntermediateState(const IntermediateState& other)
-      : prior(other.prior), next(other.next) {}
-  ~IntermediateState() = delete;
+  State(const State& other) : prior(other.prior), next(other.next) {}
+  ~State() = delete;
   using F = typename PriorState::Next::Promise;
   union {
-    [[no_unique_address]] PriorState p;
+    [[no_unique_address]] PriorState prior;
     [[no_unique_address]] F f;
   };
   using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
   using Next = adaptor_detail::Factory<typename NextArg<FResult>::Type, FNext>;
   [[no_unique_address]] Next next;
+
+  template <int J>
+  struct Get {
+    static State<J, Fs...>* f(State* p) { return PriorState::template Get<J>::f(&p->prior); }
+  };
+  template <>
+  struct Get<I> {
+    static State* f(State* p) { return p; }
+  };
 };
 
-template <typename Result, typename PriorState, typename NewStateF, typename RunNextState>
-Poll<Result> RunState(PriorState* prior_state, NewStateF* new_state_f, RunNextState run_next_state) {
-  auto r = prior_state->f();
-  auto* p = r.get_ready();
-  if (p == nullptr) return kPending;
-  if (!p->ok()) return ready(Result(IntoStatus(p)));
-  Destruct(&prior_state->f);
-  auto n = CallNext(&prior_state->next, p);
-  Destruct(&prior_state->next);
-  Construct(new_state_f, std::move(n));
-  return next();
-}
+template <typename... Fs>
+struct State<0, Fs...> {
+  State(std::tuple<Fs*...> args)
+      : f(std::move(*std::get<0>(args))), next(std::move(*std::get<1>(args))) {}
+  State(State&& other) : f(std::move(other.f)), next(std::move(other.next)) {}
+  State(const State& other) : f(other.f), next(other.next) {}
+  ~State() = delete;
+  using F = typename std::tuple_element<0, std::tuple<Fs...>>::type;
+  using FNext = typename std::tuple_element<1, std::tuple<Fs...>>::type;
+  [[no_unique_address]] F f;
+  using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
+  using Next = adaptor_detail::Factory<typename NextArg<FResult>::Type, FNext>;
+  [[no_unique_address]] Next next;
 
-template <typename... Functors>
-class TrySeq;
+  template <int I>
+  struct Get;
+  template <>
+  struct Get<0> {
+    static State* f(State* p) { return p; }
+  };
+};
 
-#include "try_seq_switch.h"
+template <typename... Fs>
+class TrySeq {
+ private:
+  static constexpr char N = sizeof...(Fs);
+
+  char state_ = 0;
+  using PenultimateState = State<N - 2, Fs...>;
+  using FLast = typename PenultimateState::Next::Promise;
+  union {
+    [[no_unique_address]] PenultimateState p_;
+    [[no_unique_address]] FLast f_;
+  };
+  using Result = typename decltype(f_())::Type;
+
+  template <char I>
+  struct RunState {
+    TrySeq* s;
+    Poll<Result> operator()() {
+      auto* state = PenultimateState::template Get<I + 1>::f(&s->p_);
+      return RunPriorState<Result>(&state->prior, &state->f, [this]() {
+        s->state_ = I + 1;
+        return RunState<I + 1>{s}();
+      });
+    }
+  };
+
+  template <>
+  struct RunState<N - 2> {
+    TrySeq* s;
+    Poll<Result> operator()() {
+      return RunPriorState<Result>(&s->p_, &s->f_, [this]() {
+        s->state_ = N - 1;
+        return RunState<N - 1>{s}();
+      });
+    }
+  };
+
+  template <>
+  struct RunState<N - 1> {
+    TrySeq* s;
+    Poll<Result> operator()() { return s->f_(); }
+  };
+
+  template <char I>
+  struct DestructF {
+    TrySeq* s;
+    void operator()() {
+      Destruct(&PenultimateState::template Get<I>::f(&s->p_)->f);
+      DestructNext<I>::Run(s);
+    }
+  };
+
+  template <>
+  struct DestructF<N - 1> {
+    TrySeq* s;
+    void operator()() { Destruct(&s->f_); }
+  };
+
+  template <char I>
+  struct DestructNext {
+    static void Run(TrySeq* s) {
+      Destruct(&PenultimateState::template Get<I>::f(&s->p_)->next);
+      DestructNext<I + 1>::Run(s);
+    }
+  };
+
+  template <>
+  struct DestructNext<N - 1> {
+    static void Run(TrySeq* s) {}
+  };
+
+  template <char... I>
+  Poll<Result> Run(absl::integer_sequence<char, I...>) {
+    return Switch<Poll<Result>>(state_, RunState<I>{this}...);
+  }
+
+  template <char... I>
+  void RunDestruct(absl::integer_sequence<char, I...>) {
+    Switch<void>(state_, DestructF<I>{this}...);
+  }
+
+ public:
+  TrySeq(Fs... fs) : p_(std::make_tuple(&fs...)) {}
+  TrySeq& operator=(const TrySeq&) = delete;
+  TrySeq(const TrySeq& other) {
+    assert(other.state_ == 0);
+    new (&p_) PenultimateState(other.p_);
+  }
+  TrySeq(TrySeq&& other) {
+    assert(other.state_ == 0);
+    new (&p_) PenultimateState(std::move(other.p_));
+  }
+  ~TrySeq() { RunDestruct(absl::make_integer_sequence<char, N>()); }
+
+  Poll<Result> operator()() {
+    return Run(absl::make_integer_sequence<char, N>());
+  }
+};
 
 }  // namespace try_seq_detail
 
