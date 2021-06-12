@@ -31,6 +31,7 @@ namespace Grpc.Core
     public abstract class ChannelCredentials
     {
         static readonly ChannelCredentials InsecureInstance = new InsecureCredentials();
+        static readonly ChannelCredentials SecureInstance = new SslCredentials();
 
         /// <summary>
         /// Creates a new instance of channel credentials
@@ -48,6 +49,22 @@ namespace Grpc.Core
             get
             {
                 return InsecureInstance;
+            }
+        }
+
+        /// <summary>
+        /// Returns instance of credentials that provides SSL security.
+        /// <para>
+        /// When used with Grpc.Core, these credentials will load from a
+        /// disk file pointed to by the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable.
+        /// If that fails, gets the roots certificates from a well known place on disk.
+        /// </para>
+        /// </summary>
+        public static ChannelCredentials Secure
+        {
+            get
+            {
+                return SecureInstance;
             }
         }
 

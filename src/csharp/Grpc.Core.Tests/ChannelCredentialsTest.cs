@@ -31,6 +31,12 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void SecureCredentials_IsNonComposable()
+        {
+            Assert.IsFalse(ChannelCredentials.Secure.IsComposable);
+        }
+
+        [Test]
         public void ChannelCredentials_CreateComposite()
         {
             var composite = ChannelCredentials.Create(new FakeChannelCredentials(true), new FakeCallCredentials());
