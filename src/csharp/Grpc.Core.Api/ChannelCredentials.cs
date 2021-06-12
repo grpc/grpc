@@ -58,6 +58,7 @@ namespace Grpc.Core
         /// When used with Grpc.Core, these credentials will load from a
         /// disk file pointed to by the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable.
         /// If that fails, gets the roots certificates from a well known place on disk.
+        /// Use <see cref="SslCredentials"/> to customize the credentials.
         /// </para>
         /// </summary>
         public static ChannelCredentials Secure
