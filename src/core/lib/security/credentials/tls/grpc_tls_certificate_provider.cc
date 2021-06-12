@@ -29,6 +29,7 @@
 
 #define KEYS_MATCH 1
 #define CERTS_MATCH 0
+#define ONE_YEAR_IN_SECONDS 31536000
 
 namespace grpc_core {
 
@@ -368,6 +369,50 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
+X509* generate_x509(EVP_PKEY* pkey) {
+  if (pkey == nullptr) {
+    return nullptr;
+  }
+
+  X509* x509 = X509_new();
+  if (x509 == nullptr) {
+    return nullptr;
+  }
+
+  // Set cert serial no
+  ASN1_INTEGER_set(const_cast<ASN1_INTEGER*>(X509_get0_serialNumber(x509)), 1);
+
+  // Set certificate validity period
+  X509_gmtime_adj(const_cast<ASN1_INTEGER*>(X509_get0_notBefore(x509)), 0);
+  X509_gmtime_adj(const_cast<ASN1_INTEGER*>(X509_get0_notAfter(x509)),
+                  ONE_YEAR_IN_SECONDS);
+
+  // Assign key to cert
+  X509_set_pubkey(x509, pkey);
+
+  // Don't free this pointer
+  X509_NAME* name = X509_get_subject_name(x509);
+
+  // These fields could be used by a CA filter to authorise only clients with
+  // certain fields e.g. country = US. Just adding for "real world feel"
+  //(https://docs.oracle.com/cd/E24191_01/common/tutorials/authz_cert_attributes.html)
+  // Country field
+  X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char*)"US", -1,
+                             -1, 0);
+  // Organization field
+  X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC,
+                             (unsigned char*)"Test, Inc", -1, -1, 0);
+
+  X509_set_issuer_name(x509, name);
+
+  // sign cert with pub key using MD5 algorithm
+  if (!X509_sign(x509, pkey, EVP_md5())) {
+    X509_free(x509);
+    return nullptr;
+  }
+  return x509;
+}
+
 char* convertPkeyToString(EVP_PKEY* pkey) {
   if (pkey == nullptr) {
     return nullptr;
@@ -379,12 +424,13 @@ char* convertPkeyToString(EVP_PKEY* pkey) {
   }
 
   // Writing the private key to the BIO in PEM-encoded form
-  if (!PEM_write_bio_PrivateKey(bio, pkey, nullptr, nullptr, 0, 0, nullptr)) {
+  if (!PEM_write_bio_PrivateKey(bio, pkey, nullptr, nullptr, 0, nullptr,
+                                nullptr)) {
     BIO_free(bio);
     return nullptr;
   }
 
-  char* pemString{(char*)malloc(bio->num_write + 1)};
+  char* pemString{static_cast<char*>(malloc(bio->num_write + 1))};
 
   if (pemString == nullptr) {
     BIO_free(bio);
@@ -408,7 +454,7 @@ EVP_PKEY* convertPemStringToPkey(const char* pkeyString) {
     return nullptr;
   }
 
-  EVP_PKEY* pkey{PEM_read_bio_PrivateKey(pkeyBio, NULL, NULL, NULL)};
+  EVP_PKEY* pkey{PEM_read_bio_PrivateKey(pkeyBio, nullptr, NULL, NULL)};
   BIO_free(pkeyBio);
 
   return pkey;
@@ -444,23 +490,23 @@ char* convertX509ToString(X509* x509) {
   return pemString;
 }
 
-X509 *convertPemStringToX509(const char *x509String) {
-    if (x509String == nullptr) {
-        return nullptr;
-    }
+X509* convertPemStringToX509(const char* x509String) {
+  if (x509String == nullptr) {
+    return nullptr;
+  }
 
-    BIO *pkeyBio{BIO_new_mem_buf(x509String, strlen(x509String))};
-    if (pkeyBio == nullptr) {
-        return nullptr;
-    }
+  BIO* pkeyBio{BIO_new_mem_buf(x509String, strlen(x509String))};
+  if (pkeyBio == nullptr) {
+    return nullptr;
+  }
 
-    X509 *x509{PEM_read_bio_X509(pkeyBio, NULL, NULL, NULL)};
-    BIO_free(pkeyBio);
+  X509* x509{PEM_read_bio_X509(pkeyBio, nullptr, nullptr, nullptr)};
+  BIO_free(pkeyBio);
 
-    return x509;
+  return x509;
 }
 
-void freeKeyString(const char* pkeyString) { free((void*)pkeyString); }
+void freePEMString(const char* pkeyString) { free((void*)pkeyString); }
 
 bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b) {
   int result{EVP_PKEY_cmp(a, b)};
