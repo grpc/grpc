@@ -112,8 +112,12 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
+# Create reports directory.
+mkdir -p runner
+
 # Run tests.
 time ../test-infra/bin/runner \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
-    -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2"
+    -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
+    -o "runner/sponge_log.xml"
