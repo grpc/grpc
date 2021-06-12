@@ -2006,7 +2006,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-  if (options->crl_directory != nullptr && options->crl_directory != "") {
+  if (options->crl_directory != nullptr &&
+      strcmp(options->crl_directory, "") != 0) {
     gpr_log(GPR_INFO, "enabling client CRL checking with path: %s",
             options->crl_directory);
     X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
@@ -2184,7 +2185,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      if (options->crl_directory != nullptr && options->crl_directory != "") {
+      if (options->crl_directory != nullptr &&
+          strcmp(options->crl_directory, "") != 0) {
         gpr_log(GPR_INFO, "enabling server CRL checking with path %s.",
                 options->crl_directory);
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
