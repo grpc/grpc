@@ -1065,7 +1065,11 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       gpr_log(GPR_ERROR, "Completion queue next failed: %s",
               grpc_error_std_string(err).c_str());
       GRPC_ERROR_UNREF(err);
-      ret.type = GRPC_QUEUE_TIMEOUT;
+      if (err == GRPC_ERROR_CANCELLED) {
+        ret.type = GRPC_QUEUE_SHUTDOWN;
+      } else {
+        ret.type = GRPC_QUEUE_TIMEOUT;
+      }
       ret.success = 0;
       dump_pending_tags(cq);
       break;

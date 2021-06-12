@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -238,7 +239,10 @@ finish:
     grpc_channel_args_destroy(ac->channel_args);
     delete ac;
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
+  // Push async connect closure to the executor since this may actually be
+  // called during the shutdown process, in which case a deadlock could form
+  // between the core shutdown mu and the connector mu (b/188239051)
+  grpc_core::Executor::Run(closure, error);
 }
 
 grpc_error_handle grpc_tcp_client_prepare_fd(

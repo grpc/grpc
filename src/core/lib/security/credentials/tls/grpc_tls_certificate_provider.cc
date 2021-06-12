@@ -397,6 +397,10 @@ char* convertPkeyToString(EVP_PKEY* pkey) {
   return pemString;
 }
 
+void freeKeyString(const char* pkeyString){
+  free((void *)pkeyString);
+}
+
 EVP_PKEY *convertPemStringToPkey(const char *pkeyString) {
     if (pkeyString == nullptr) {
         return nullptr;
@@ -411,10 +415,6 @@ EVP_PKEY *convertPemStringToPkey(const char *pkeyString) {
     BIO_free(pkeyBio);
 
     return pkey;
-}
-
-void freeKeyString(const char* pkeyString){
-  free((void *)pkeyString);
 }
 
 bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b) {

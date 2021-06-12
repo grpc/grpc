@@ -246,7 +246,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     elif "linux" in sys.platform:
         EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
     elif "darwin" in sys.platform:
-        EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions'
+        EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions -DHAVE_UNISTD_H'
 
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ''
@@ -311,8 +311,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
     EXTENSION_LIBRARIES += (
         'advapi32',
-        'ws2_32',
+        'bcrypt',
         'dbghelp',
+        'ws2_32',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (

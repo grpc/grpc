@@ -502,10 +502,10 @@ TEST_F(GrpcTlsCertificateProviderTest, ConvertPkeyToStringHandlesEVP_PKEY_RSA) {
   const char* isContextNull{boolToString(context == nullptr)};
   gpr_log(GPR_ERROR, "Is context null: %s", isContextNull);
 
-  int initResult = EVP_PKEY_keygen_init(context);
+  int initResult{EVP_PKEY_keygen_init(context)};
   EXPECT_EQ(initResult, 1) << "Context not initialised for key generation!";
 
-  int genResult = EVP_PKEY_keygen(context, &testPkey);
+  int genResult{EVP_PKEY_keygen(context, &testPkey)};
   EXPECT_EQ(genResult, 1) << "Key generation failed!";
   // Generated key is of expected type
   EXPECT_EQ(EVP_PKEY_id(testPkey), EVP_PKEY_RSA);
