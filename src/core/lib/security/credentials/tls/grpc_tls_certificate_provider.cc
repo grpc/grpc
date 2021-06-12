@@ -28,6 +28,7 @@
 #include "src/core/lib/surface/api_trace.h"
 
 #define KEYS_MATCH 1
+#define CERTS_MATCH 0
 
 namespace grpc_core {
 
@@ -397,8 +398,6 @@ char* convertPkeyToString(EVP_PKEY* pkey) {
   return pemString;
 }
 
-void freeKeyString(const char* pkeyString) { free((void*)pkeyString); }
-
 EVP_PKEY* convertPemStringToPkey(const char* pkeyString) {
   if (pkeyString == nullptr) {
     return nullptr;
@@ -415,9 +414,62 @@ EVP_PKEY* convertPemStringToPkey(const char* pkeyString) {
   return pkey;
 }
 
+char* convertX509ToString(X509* x509) {
+  if (x509 == nullptr) {
+    return nullptr;
+  }
+
+  BIO* bio{BIO_new(BIO_s_mem())};
+  if (bio == nullptr) {
+    return nullptr;
+  }
+
+  // Writing the X.509 cert to the BIO in PEM-encoded form
+  if (!PEM_write_bio_X509(bio, x509)) {
+    BIO_free(bio);
+    return nullptr;
+  }
+
+  char* pemString{(char*)malloc(bio->num_write + 1)};
+
+  if (pemString == nullptr) {
+    BIO_free(bio);
+    return nullptr;
+  }
+
+  memset(pemString, 0, bio->num_write + 1);
+  // Read the PEM-encoded data from the BIO into the string buffer
+  BIO_read(bio, pemString, bio->num_write);
+  BIO_free(bio);
+  return pemString;
+}
+
+X509 *convertPemStringToX509(const char *x509String) {
+    if (x509String == nullptr) {
+        return nullptr;
+    }
+
+    BIO *pkeyBio{BIO_new_mem_buf(x509String, strlen(x509String))};
+    if (pkeyBio == nullptr) {
+        return nullptr;
+    }
+
+    X509 *x509{PEM_read_bio_X509(pkeyBio, NULL, NULL, NULL)};
+    BIO_free(pkeyBio);
+
+    return x509;
+}
+
+void freeKeyString(const char* pkeyString) { free((void*)pkeyString); }
+
 bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b) {
   int result{EVP_PKEY_cmp(a, b)};
   return result == KEYS_MATCH;
+}
+
+bool compareCerts(const X509* a, const X509* b) {
+  int result{X509_cmp(a, b)};
+  return result == CERTS_MATCH;
 }
 
 const char* boolToString(bool b) { return b ? "true" : "false"; }

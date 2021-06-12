@@ -136,16 +136,28 @@ class FileWatcherCertificateProvider final
 // A function for converting EVP_PKEY to C style string
 char* convertPkeyToString(EVP_PKEY* pkey);
 
-// A function for freeing the the buffer allocated in convertPkeyToString()
-void freeKeyString(const char* pkeyString);
-
-// A function for converting C style string to EVP_PKEY
+// A function for converting C style PEM-encoded string to EVP_PKEY
 EVP_PKEY* convertPemStringToPkey(const char* pkeyString);
 
-// A function for comparing EVP_PKEY keys which takes into consideration that
+// A function for converting X509 to C style string
+char* convertX509ToString(X509* x509);
+
+// A function for converting C style PEM-encoded string to X509
+X509 *convertPemStringToX509(const char *x509String);
+
+// A function for freeing the the buffer allocated in convertPkeyToString()
+// TODO: Change to freePEMString for both cert and key strings
+void freeKeyString(const char* pkeyString);
+
+// A function for comparing EVP_PKEY keys that takes into consideration that
 // EVP_PKEY_cmp() returns 1 if the keys match, 0 if they don't match, -1 if the
 // key types are different and -2 if the operation is not supported.
 bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b);
+
+// A function for comparing X509 certificates that takes into consideration
+// that X509_cmp() returns -1, 0, or 1 if object a is found to be less than,
+// to match, or be greater than object b, respectively
+bool compareCerts(const X509* a, const X509* b);
 
 const char* boolToString(bool b);
 }  // namespace grpc_core
