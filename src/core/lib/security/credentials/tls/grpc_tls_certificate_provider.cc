@@ -397,35 +397,30 @@ char* convertPkeyToString(EVP_PKEY* pkey) {
   return pemString;
 }
 
-void freeKeyString(const char* pkeyString){
-  free((void *)pkeyString);
-}
+void freeKeyString(const char* pkeyString) { free((void*)pkeyString); }
 
-EVP_PKEY *convertPemStringToPkey(const char *pkeyString) {
-    if (pkeyString == nullptr) {
-        return nullptr;
-    }
+EVP_PKEY* convertPemStringToPkey(const char* pkeyString) {
+  if (pkeyString == nullptr) {
+    return nullptr;
+  }
 
-    BIO *pkeyBio{BIO_new_mem_buf(pkeyString, strlen(pkeyString))};
-    if (pkeyBio == nullptr) {
-        return nullptr;
-    }
+  BIO* pkeyBio{BIO_new_mem_buf(pkeyString, strlen(pkeyString))};
+  if (pkeyBio == nullptr) {
+    return nullptr;
+  }
 
-    EVP_PKEY *pkey{PEM_read_bio_PrivateKey(pkeyBio, NULL, NULL, NULL)};
-    BIO_free(pkeyBio);
+  EVP_PKEY* pkey{PEM_read_bio_PrivateKey(pkeyBio, NULL, NULL, NULL)};
+  BIO_free(pkeyBio);
 
-    return pkey;
+  return pkey;
 }
 
 bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b) {
-  int result {EVP_PKEY_cmp(a, b)};
+  int result{EVP_PKEY_cmp(a, b)};
   return result == KEYS_MATCH;
 }
 
-const char * boolToString(bool b)
-{
-  return b ? "true" : "false";
-}
+const char* boolToString(bool b) { return b ? "true" : "false"; }
 }  // namespace grpc_core
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
