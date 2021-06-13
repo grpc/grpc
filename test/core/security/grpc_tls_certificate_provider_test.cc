@@ -501,8 +501,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
 
 TEST_F(GrpcTlsCertificateProviderTest, ConvertPkeyToStringHandlesEVP_PKEY_RSA) {
   EVP_PKEY_CTX* context = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
-  const char* isContextNull{boolToString(context == nullptr)};
-  gpr_log(GPR_ERROR, "Is context null: %s", isContextNull);
+  EXPECT_TRUE(context != nullptr)
+      << "The EVP_PKEY_CTX pointer variable is null";
 
   int initResult{EVP_PKEY_keygen_init(context)};
   EXPECT_EQ(initResult, 1) << "Context not initialised for key generation!";
@@ -514,12 +514,10 @@ TEST_F(GrpcTlsCertificateProviderTest, ConvertPkeyToStringHandlesEVP_PKEY_RSA) {
 
   // Convert test private key to PEM string
   const char* keyString{convertPkeyToString(testPkey)};
-  gpr_log(GPR_ERROR, "\n%s\n", keyString);
 
   // Pass test string to function being tested
   EVP_PKEY* returnedKey{convertPemStringToPkey(keyString)};
-  const char* isReturnedKeyNull{boolToString(returnedKey == nullptr)};
-  gpr_log(GPR_ERROR, "Is returned key string null: %s", isReturnedKeyNull);
+  EXPECT_TRUE(returnedKey != nullptr) << "The returned key string is null";
 
   bool result{compareKeys(returnedKey, testPkey)};
   EXPECT_TRUE(result)
@@ -531,21 +529,36 @@ TEST_F(GrpcTlsCertificateProviderTest, ConvertPkeyToStringHandlesEVP_PKEY_RSA) {
   freePEMString(keyString);
 }
 
-//TODO: Should we remove newlines before comparing the strings
+// TODO:
+// 1. Should we remove newlines before comparing the strings?
+// 2. Remove boolToString
 TEST_F(GrpcTlsCertificateProviderTest, ConvertPemStringToX509) {
-  const char* x509String {cert_chain_2_.c_str()};
-  gpr_log(GPR_ERROR, "Cert: \n%slol", x509String);
+  const char* x509String{cert_chain_2_.c_str()};
   testX509 = convertPemStringToX509(x509String);
   EXPECT_TRUE(testX509 != nullptr) << "convertPemStringToX509 returned null";
 
-  const char* returnedString {convertX509ToString(testX509)};
+  const char* returnedString{convertX509ToString(testX509)};
   EXPECT_TRUE(returnedString != nullptr) << "convertX509ToString returned null";
-  gpr_log(GPR_ERROR, "Cert: \n%slol", returnedString);
 
   EXPECT_TRUE(strcmp(x509String, returnedString) == 0) << "blah";
 
   X509_free(testX509);
   freePEMString(returnedString);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       CertifyingServer0WithPrivateKeyPublicKeyMatch) {
+  const char* x509String{cert_chain_2_.c_str()};
+  EXPECT_TRUE(x509String != nullptr) << "certificate string is null";
+
+  const char* privateKeyString{private_key_2_.c_str()};
+  EXPECT_TRUE(privateKeyString != nullptr) << "private key string is null";
+
+  grpc_error_handle handlePtr{nullptr};
+  bool match{privateKeyPublicKeyMatch(privateKeyString, x509String,
+                                      GRPC_ERROR_REF(handlePtr))};
+  EXPECT_TRUE(match) << "privateKeyPublicKeyMatch() failed";
+  GRPC_ERROR_UNREF(handlePtr);
 }
 
 }  // namespace testing
