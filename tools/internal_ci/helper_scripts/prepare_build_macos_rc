@@ -127,11 +127,6 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
 then
-  # install dotnet SDK 3.x
-  # no need to install dotnet SDK 2.x since it's already installed on Kokoro MacOS workers.
-  time curl -sSL -O https://download.visualstudio.microsoft.com/download/pr/964ae449-a8b8-46d1-b944-c54f6e1bf8fc/f0cbcb2df3409d865b62f0c02a9ebbb9/dotnet-sdk-3.1.409-osx-x64.pkg
-  time sudo installer -pkg ./dotnet-sdk-3.1.409-osx-x64.pkg -target /
-
   # Disable some unwanted dotnet options
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
