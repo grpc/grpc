@@ -15862,6 +15862,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
+  "gpr openssl absl_base absl_bind_front absl_flat_hash_map absl_flat_hash_set absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
@@ -15881,6 +15882,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
+  "grpc absl_base absl_bind_front absl_flat_hash_map absl_flat_hash_set absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc++"
   ""
   "grpc++.pc")
