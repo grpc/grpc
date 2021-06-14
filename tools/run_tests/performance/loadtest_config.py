@@ -63,9 +63,9 @@ def now_string() -> str:
 
 def validate_loadtest_name(name: str) -> None:
     """Validates that a LoadTest name is in the expected format."""
-    if len(name) > 63:
+    if len(name) > 253:
         raise ValueError(
-            'LoadTest name must be less than 63 characters long: %s' % name)
+            'LoadTest name must be less than 253 characters long: %s' % name)
     if not all((s.isalnum() for s in name.split('-'))):
         raise ValueError('Invalid elements in LoadTest name: %s' % name)
 
@@ -85,7 +85,7 @@ def loadtest_name(prefix: str, scenario_name: str,
     name_elements = []
     if prefix:
         name_elements.append(prefix)
-    name_elements.append(str(uuid.uuid5(uuid.NAMESPACE_DNS, base_name)))
+    name_elements.append(base_name)
     name = '-'.join(name_elements)
     validate_loadtest_name(name)
     return name
