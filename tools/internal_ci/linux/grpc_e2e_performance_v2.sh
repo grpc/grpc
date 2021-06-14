@@ -15,7 +15,7 @@
 set -ex
 
 # Enter the gRPC repo root.
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
@@ -73,8 +73,8 @@ popd
 
 # Build test configurations.
 buildConfigs() {
-    local pool="$1"
-    local table="$2"
+    local -r pool="$1"
+    local -r table="$2"
     shift 2
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
@@ -89,8 +89,8 @@ buildConfigs() {
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l python -l ruby
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l go -l java -l python -l ruby
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l go -l java
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -104,7 +104,6 @@ trap deleteImages EXIT
 # Build and push prebuilt images for running tests.
 time ../test-infra/bin/prepare_prebuilt_workers \
     -l "cxx:${GRPC_CORE_GITREF}" \
-    -l "csharp:${GRPC_CORE_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
     -l "python:${GRPC_CORE_GITREF}" \
@@ -113,8 +112,12 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
+# Create reports directory.
+mkdir -p runner
+
 # Run tests.
 time ../test-infra/bin/runner \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
-    -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2"
+    -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
+    -o "runner/sponge_log.xml"

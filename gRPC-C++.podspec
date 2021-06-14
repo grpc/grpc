@@ -149,6 +149,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/auth_context.h',
                       'include/grpcpp/security/auth_metadata_processor.h',
+                      'include/grpcpp/security/authorization_policy_provider.h',
                       'include/grpcpp/security/credentials.h',
                       'include/grpcpp/security/server_credentials.h',
                       'include/grpcpp/security/tls_certificate_provider.h',
@@ -193,6 +194,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -633,6 +635,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/matchers/matchers.h',
                       'src/core/lib/profiling/timers.h',
+                      'src/core/lib/security/authorization/authorization_engine.h',
+                      'src/core/lib/security/authorization/authorization_policy_provider.h',
+                      'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1274,6 +1279,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/matchers/matchers.h',
                               'src/core/lib/profiling/timers.h',
+                              'src/core/lib/security/authorization/authorization_engine.h',
+                              'src/core/lib/security/authorization/authorization_policy_provider.h',
+                              'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',

@@ -181,6 +181,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -1103,6 +1104,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/basic_timers.cc',
                       'src/core/lib/profiling/stap_timers.cc',
                       'src/core/lib/profiling/timers.h',
+                      'src/core/lib/security/authorization/authorization_engine.h',
+                      'src/core/lib/security/authorization/authorization_policy_provider.h',
+                      'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
+                      'src/core/lib/security/authorization/evaluate_args.cc',
+                      'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/context/security_context.cc',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.cc',
@@ -1835,6 +1841,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/matchers/matchers.h',
                               'src/core/lib/profiling/timers.h',
+                              'src/core/lib/security/authorization/authorization_engine.h',
+                              'src/core/lib/security/authorization/authorization_policy_provider.h',
+                              'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
