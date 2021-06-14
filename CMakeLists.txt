@@ -272,6 +272,12 @@ else()
   set(_gRPC_CORE_NOSTDCXX_FLAGS "")
 endif()
 
+if (gRPC_XDS_USER_AGENT_IS_CSHARP)
+  # The value of the defines needs to contain quotes.
+  # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.39.0-dev\"")
+endif()
+
 include(cmake/abseil-cpp.cmake)
 include(cmake/address_sorting.cmake)
 include(cmake/benchmark.cmake)
