@@ -230,8 +230,8 @@ EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS = ' -std=c++11'
-    EXTRA_ENV_COMPILE_ARGS += ' -DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\\\"Python\\\"'
-    EXTRA_ENV_COMPILE_ARGS += ' -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\\\"{}\\\"'.format(
+    EXTRA_ENV_COMPILE_ARGS += ' \'-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"\\\"Python\\\"\"\''
+    EXTRA_ENV_COMPILE_ARGS += ' \'-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"\\\"{}\\\"\"\''.format(
         _metadata.__version__)
     if 'win32' in sys.platform:
         if sys.version_info < (3, 5):
