@@ -82,19 +82,12 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Install dotnet SDK
-ENV DOTNET_SDK_VERSION 3.1.301
+ENV DOTNET_SDK_VERSION 2.1.816
 RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
     && mkdir -p /usr/share/dotnet \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
     && rm dotnet.tar.gz \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
-
-# dotnet SDK 2.1 required to run netcoreapp2.1 targets
-ENV DOTNET_SDK_OLD_VERSION 2.1.802
-RUN curl -sSL -o dotnet_old.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_OLD_VERSION/dotnet-sdk-$DOTNET_SDK_OLD_VERSION-linux-x64.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet_old.tar.gz -C /usr/share/dotnet \
-    && rm dotnet_old.tar.gz
 
 # Trigger the population of the local package cache
 ENV NUGET_XMLDOC_MODE skip
