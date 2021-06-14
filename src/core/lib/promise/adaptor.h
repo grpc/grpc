@@ -31,14 +31,15 @@ struct IsPoll<Poll<T>> {
   static constexpr bool value() { return true; }
 };
 
-template <typename Arg, typename F, typename Ignored = void>
+template <typename A, typename F, typename Ignored = void>
 class Factory;
 
-template <typename Arg, typename F>
-class Factory<Arg, F,
+template <typename A, typename F>
+class Factory<A, F,
               typename std::enable_if<IsPoll<decltype(
-                  std::declval<F>()(std::declval<Arg>()))>::value()>::type> {
+                  std::declval<F>()(std::declval<A>()))>::value()>::type> {
  public:
+  using Arg = A;
   class Promise {
    public:
     Promise(F f, Arg arg) : f_(std::move(f)), arg_(std::move(arg)) {}
@@ -61,12 +62,13 @@ class Factory<Arg, F,
   [[no_unique_address]] F f_;
 };
 
-template <typename Arg, typename F>
-class Factory<Arg, F,
+template <typename A, typename F>
+class Factory<A, F,
               typename std::enable_if<
                   IsPoll<decltype(std::declval<F>()())>::value()>::type> {
  public:
   using Promise = F;
+  using Arg = A;
   Promise Once(Arg arg) { return std::move(f_); }
   Promise Repeated(Arg arg) { return f_; }
   explicit Factory(F f) : f_(std::move(f)) {}
@@ -80,6 +82,7 @@ class Factory<void, F,
               typename std::enable_if<
                   IsPoll<decltype(std::declval<F>()())>::value()>::type> {
  public:
+  using Arg = void;
   using Promise = F;
   Promise Once() { return std::move(f_); }
   Promise Repeated() { return f_; }
@@ -89,11 +92,12 @@ class Factory<void, F,
   [[no_unique_address]] F f_;
 };
 
-template <typename Arg, typename F>
-class Factory<Arg, F,
+template <typename A, typename F>
+class Factory<A, F,
               typename std::enable_if<IsPoll<decltype(
-                  std::declval<F>()(std::declval<Arg>())())>::value()>::type> {
+                  std::declval<F>()(std::declval<A>())())>::value()>::type> {
  public:
+  using Arg = A;
   using Promise = decltype(std::declval<F>()(std::declval<Arg>()));
   Promise Once(Arg arg) { return f_(std::move(arg)); }
   Promise Repeated(Arg arg) { return f_(std::move(arg)); }
@@ -103,11 +107,12 @@ class Factory<Arg, F,
   [[no_unique_address]] F f_;
 };
 
-template <typename Arg, typename F>
-class Factory<Arg, F,
+template <typename A, typename F>
+class Factory<A, F,
               typename std::enable_if<
                   IsPoll<decltype(std::declval<F>()()())>::value()>::type> {
  public:
+  using Arg = A;
   using Promise = decltype(std::declval<F>()());
   Promise Once(Arg arg) { return f_(); }
   Promise Repeated(Arg arg) { return f_(); }
@@ -122,6 +127,7 @@ class Factory<void, F,
               typename std::enable_if<
                   IsPoll<decltype(std::declval<F>()()())>::value()>::type> {
  public:
+  using Arg = void;
   using Promise = decltype(std::declval<F>()());
   Promise Once() { return f_(); }
   Promise Repeated() { return f_(); }

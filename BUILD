@@ -754,8 +754,8 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/promise/adaptor.h",
         "src/core/lib/promise/activity.cc",
-        "src/core/lib/promise/seq_switch.h",
-        "src/core/lib/promise/switch.h",
+        "src/core/lib/promise/detail/switch.h",
+        "src/core/lib/promise/detail/seq.h",
         "src/core/lib/promise/join_switch.h",
         "src/core/lib/promise/try_join_switch.h",
     ],

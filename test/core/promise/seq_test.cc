@@ -28,13 +28,21 @@ TEST(PromiseTest, OneThen) {
             7);
 }
 
+TEST(PromiseTest, TwoTypedThens) {
+  struct A {};
+  struct B {};
+  struct C {};
+  auto initial = [] { return ready(A{}); };
+  auto next1 = [](A) { return []() { return ready(B{}); }; };
+  auto next2 = [](B) { return []() { return ready(C{}); }; };
+  Seq(initial, next1, next2)().take();
+}
+
 TEST(PromiseTest, TwoThens) {
-  EXPECT_EQ(
-      Seq([] { return ready(std::string("a")); },
-          [](std::string i) { return [i]() { return ready(i + "b"); }; },
-          [](std::string i) { return [i]() { return ready(i + "c"); }; })()
-          .take(),
-      "abc");
+  auto initial = [] { return ready(std::string("a")); };
+  auto next1 = [](std::string i) { return [i]() { return ready(i + "b"); }; };
+  auto next2 = [](std::string i) { return [i]() { return ready(i + "c"); }; };
+  EXPECT_EQ(Seq(initial, next1, next2)().take(), "abc");
 }
 
 TEST(PromiseTest, ThreeThens) {

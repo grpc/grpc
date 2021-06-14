@@ -23,9 +23,7 @@ TEST(PromiseTest, Works) {
   EXPECT_EQ(x().take(), 42);
 }
 
-TEST(PromiseTest, Immediate) {
-  EXPECT_EQ(Immediate(42)().take(), 42);
-}
+TEST(PromiseTest, Immediate) { EXPECT_EQ(Immediate(42)().take(), 42); }
 
 TEST(PromiseTest, WithResult) {
   EXPECT_EQ(WithResult<int>(Immediate(42))().take(), 42);
