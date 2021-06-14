@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/authorization/authorization_filter.h"
+#include "src/core/lib/security/authorization/sdk_server_authz_filter.h"
 
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
@@ -32,6 +32,7 @@ struct channel_data {
 
   ~channel_data() {
     auth_context.reset(DEBUG_LOCATION, "sdk_server_authz_filter");
+    provider.reset(DEBUG_LOCATION, "sdk_server_authz_filter");
   }
 
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
@@ -45,7 +46,7 @@ static void recv_trailing_metadata_ready(void* user_data,
 
 struct call_data {
   call_data(grpc_call_element* elem, const grpc_call_element_args& args)
-      : call_combiner(args.call_combiner), owning_call(args.call_stack) {
+      : call_combiner(args.call_combiner) {
     GRPC_CLOSURE_INIT(&recv_initial_metadata_ready,
                       ::recv_initial_metadata_ready, elem,
                       grpc_schedule_on_exec_ctx);
@@ -71,7 +72,6 @@ struct call_data {
   ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_error); }
 
   grpc_core::CallCombiner* call_combiner;
-  grpc_call_stack* owning_call;
   grpc_transport_stream_op_batch* recv_initial_metadata_batch;
   grpc_closure* original_recv_initial_metadata_ready;
   grpc_closure recv_initial_metadata_ready;
@@ -107,42 +107,47 @@ grpc_find_authorization_policy_provider_in_args(const grpc_channel_args* args) {
   return nullptr;
 }
 
+bool is_authorized(channel_data* chand, grpc_transport_stream_op_batch* batch) {
+  if (chand->provider == nullptr) {
+    // Authorization checks are disabled.
+    return true;
+  }
+  // TODO(ashithasantosh): Check for allow and deny engine. Should not be
+  // nullptr.
+  grpc_core::EvaluateArgs args(
+      batch->payload->recv_initial_metadata.recv_initial_metadata,
+      chand->channel_args.get());
+  if (chand->provider->deny_engine() != nullptr) {
+    grpc_core::AuthorizationEngine::Decision decision =
+        chand->provider->deny_engine()->Evaluate(args);
+    if (decision.type ==
+        grpc_core::AuthorizationEngine::Decision::Type::kDeny) {
+      return false;
+    }
+  }
+  if (chand->provider->allow_engine() != nullptr) {
+    grpc_core::AuthorizationEngine::Decision decision =
+        chand->provider->allow_engine()->Evaluate(args);
+    if (decision.type ==
+        grpc_core::AuthorizationEngine::Decision::Type::kDeny) {
+      return false;
+    }
+  }
+  return true;
+}
+
 static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
-    if (chand->provider != nullptr) {
-      grpc_core::EvaluateArgs args(
-          batch->payload->recv_initial_metadata.recv_initial_metadata,
-          chand->channel_args.get());
-      if (chand->provider->deny_engine() != nullptr) {
-        grpc_core::AuthorizationEngine::Decision decision =
-            chand->provider->deny_engine()->Evaluate(args);
-        if (decision.type ==
-            grpc_core::AuthorizationEngine::Decision::Type::kDeny) {
-          error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                         "Unauthorized RPC request rejected."),
-                                     GRPC_ERROR_INT_GRPC_STATUS,
-                                     GRPC_STATUS_PERMISSION_DENIED);
-          calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
-        }
-      }
-      if (error == GRPC_ERROR_NONE) {
-        if (chand->provider->allow_engine() != nullptr) {
-          grpc_core::AuthorizationEngine::Decision decision =
-              chand->provider->allow_engine()->Evaluate(args);
-          if (decision.type ==
-              grpc_core::AuthorizationEngine::Decision::Type::kDeny) {
-            error = grpc_error_set_int(
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "Unauthorized RPC request rejected."),
-                GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED);
-            calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
-          }
-        }
-      }
+    if (!is_authorized(chand, batch)) {
+      error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                     "Unauthorized RPC request rejected."),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 GRPC_STATUS_PERMISSION_DENIED);
+      calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
     }
   } else {
     GRPC_ERROR_REF(error);
@@ -225,6 +230,7 @@ static grpc_error_handle server_authz_init_channel_elem(
     gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
     return error;
   }
+  GPR_ASSERT(auth_context != nullptr);
   grpc_transport* transport = args->optional_transport;
   GPR_ASSERT(transport != nullptr);
   grpc_endpoint* endpoint = grpc_transport_get_endpoint(transport);

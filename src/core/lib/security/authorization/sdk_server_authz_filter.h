@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_FILTER_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_FILTER_H
+#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_SDK_SERVER_AUTHZ_FILTER_H
+#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_SDK_SERVER_AUTHZ_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -21,4 +21,4 @@
 
 extern const grpc_channel_filter grpc_sdk_server_authz_filter;
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_FILTER_H
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_SDK_SERVER_AUTHZ_FILTER_H
