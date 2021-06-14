@@ -384,7 +384,6 @@
       'dependencies': [
         'absl/base:base',
         'absl/memory:memory',
-        'absl/random:random',
         'absl/status:status',
         'absl/strings:str_format',
         'absl/strings:strings',
