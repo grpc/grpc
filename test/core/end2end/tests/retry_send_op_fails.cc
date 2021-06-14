@@ -232,10 +232,11 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
-  cq_verify(cqv);
 
-  // Client recv ops should complete.
+  // In principle, the server batch should complete before the client
+  // recv ops batch, but in the proxy fixtures, there are multiple threads
+  // involved, so the completion order tends to be a little racy.
+  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
   CQ_EXPECT_COMPLETION(cqv, tag(2), true);
   cq_verify(cqv);
 
