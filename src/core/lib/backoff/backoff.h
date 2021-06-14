@@ -79,7 +79,7 @@ class BackOff {
 
  private:
   const Options options_;
-  absl::BitGen rand_gen_;
+  absl::InsecureBitGen rand_gen_;
   bool initial_;
   /// current delay before retries
   grpc_millis current_backoff_;

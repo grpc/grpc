@@ -166,7 +166,16 @@ def resolve_hdrs(files):
 
 
 def resolve_srcs(files):
-  return [ABSEIL_PATH + "/" + f for f in files if f.endswith(".cc")]
+  srcs = [ABSEIL_PATH + "/" + f for f in files if f.endswith(".cc")]
+  # Replace absl/random/internal/randen_hwaes.cc with
+  #         src/abseil-cpp/randen_hwaes_nohw.c
+  # to disable HWAES completely. (https://github.com/grpc/grpc/issues/26478)
+  try:
+    i = srcs.index(ABSEIL_PATH + "/absl/random/internal/randen_hwaes.cc")
+    srcs[i] = "src/abseil-cpp/randen_hwaes_nohw.cc"
+  except ValueError:
+    pass
+  return srcs
 
 
 def resolve_deps(targets):

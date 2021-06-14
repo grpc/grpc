@@ -6,6 +6,7 @@ ARG_WITH("grpc", "grpc support", "no");
 if (PHP_GRPC != "no") {
 
   EXTENSION("grpc",
+    "src\\abseil-cpp\\randen_hwaes_nohw.cc " +
     "src\\core\\ext\\filters\\census\\grpc_context.cc " +
     "src\\core\\ext\\filters\\client_channel\\backend_metric.cc " +
     "src\\core\\ext\\filters\\client_channel\\backup_poller.cc " +
@@ -673,7 +674,6 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\random\\internal\\pool_urbg.cc " +
     "third_party\\abseil-cpp\\absl\\random\\internal\\randen.cc " +
     "third_party\\abseil-cpp\\absl\\random\\internal\\randen_detect.cc " +
-    "third_party\\abseil-cpp\\absl\\random\\internal\\randen_hwaes.cc " +
     "third_party\\abseil-cpp\\absl\\random\\internal\\randen_round_keys.cc " +
     "third_party\\abseil-cpp\\absl\\random\\internal\\randen_slow.cc " +
     "third_party\\abseil-cpp\\absl\\random\\internal\\seed_material.cc " +
@@ -1070,6 +1070,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\abseil-cpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters");

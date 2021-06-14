@@ -88,6 +88,7 @@
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
+    <file baseinstalldir="/" name="src/abseil-cpp/randen_hwaes_nohw.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/census/grpc_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backend_metric.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backend_metric.h" role="src" />
@@ -1440,7 +1441,6 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_detect.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_detect.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_engine.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_hwaes.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_round_keys.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/random/internal/randen_slow.cc" role="src" />
