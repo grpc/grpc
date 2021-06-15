@@ -495,27 +495,15 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, ValidPrivateKeyCertChainPairOne) {
+TEST_F(GrpcTlsCertificateProviderTest, ValidPrivateKeyCertChainPair) {
   absl::Status match_status(
       PrivateKeyPublicKeyMatches(private_key_2_, cert_chain_2_));
   EXPECT_TRUE(match_status.ok());
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, ValidPrivateKeyCertChainPairTwo) {
-  absl::Status match_status(
-      PrivateKeyPublicKeyMatches(private_key_, cert_chain_));
-  EXPECT_TRUE(match_status.ok());
-}
-
-TEST_F(GrpcTlsCertificateProviderTest, InvalidPrivateKeyCertChainPairOne) {
+TEST_F(GrpcTlsCertificateProviderTest, InvalidPrivateKeyCertChainPair) {
   absl::Status match_status(
       PrivateKeyPublicKeyMatches(private_key_2_, cert_chain_));
-  EXPECT_FALSE(match_status.ok());
-}
-
-TEST_F(GrpcTlsCertificateProviderTest, InvalidPrivateKeyCertChainPairTwo) {
-  absl::Status match_status(
-      PrivateKeyPublicKeyMatches(private_key_, cert_chain_2_));
   EXPECT_FALSE(match_status.ok());
 }
 }  // namespace testing
