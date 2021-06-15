@@ -365,8 +365,8 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
-absl::Status privateKeyPublicKeyMatch(const std::string& privateKeyString,
-                                      const std::string& certString) {
+absl::Status PrivateKeyPublicKeyMatches(const std::string& privateKeyString,
+                                        const std::string& certString) {
   if (certString.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty!");
   }
