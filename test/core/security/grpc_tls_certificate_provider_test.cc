@@ -169,8 +169,6 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     root_cert_2_ = GetFileContents(CA_CERT_PATH_2);
     cert_chain_2_ = GetFileContents(SERVER_CERT_PATH_2);
     private_key_2_ = GetFileContents(SERVER_KEY_PATH_2);
-    testPkey = nullptr;
-    testX509 = nullptr;
   }
 
   WatcherState* MakeWatcher(
@@ -210,8 +208,6 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   std::list<WatcherState> watchers_;
   // This is to make watchers_ thread-safe.
   Mutex mu_;
-  EVP_PKEY* testPkey;
-  X509* testX509;
 };
 
 TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
@@ -301,9 +297,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderOnBothCertsRefreshed) {
   // Create temporary files and copy cert data into them.
-  TmpFile tmp_root_cert((root_cert_));
+  TmpFile tmp_root_cert(root_cert_);
   TmpFile tmp_identity_key(private_key_);
-  TmpFile tmp_identity_cert((cert_chain_));
+  TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -338,7 +334,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Create temporary files and copy cert data into them.
   TmpFile tmp_root_cert(root_cert_);
   TmpFile tmp_identity_key(private_key_);
-  TmpFile tmp_identity_cert((cert_chain_));
+  TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -438,8 +434,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodAtFirstThenDeletedRootCerts) {
   // Create temporary files and copy cert data into it.
   auto tmp_root_cert = absl::make_unique<TmpFile>(root_cert_);
-  TmpFile tmp_identity_key((private_key_));
-  TmpFile tmp_identity_cert((cert_chain_));
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
   FileWatcherCertificateProvider provider(tmp_identity_key.name(),
                                           tmp_identity_cert.name(),
@@ -500,22 +496,25 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, CertifyServer0CredentialsPairMatch) {
-  absl::Status matchStatus{privateKeyPublicKeyMatch(private_key_2_, cert_chain_2_)};
+  absl::Status matchStatus(
+      privateKeyPublicKeyMatch(private_key_2_, cert_chain_2_));
   EXPECT_TRUE(matchStatus.ok()) << matchStatus.ToString().c_str();
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, CertifyServer1CredentialsPairMatch) {
-  absl::Status matchStatus{privateKeyPublicKeyMatch(private_key_, cert_chain_)};
+  absl::Status matchStatus(privateKeyPublicKeyMatch(private_key_, cert_chain_));
   EXPECT_TRUE(matchStatus.ok()) << matchStatus.ToString().c_str();
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, CertifyServer0KeyServer1CertMismatch) {
-  absl::Status matchStatus{privateKeyPublicKeyMatch(private_key_2_, cert_chain_)};
+  absl::Status matchStatus(
+      privateKeyPublicKeyMatch(private_key_2_, cert_chain_));
   EXPECT_FALSE(matchStatus.ok()) << matchStatus.ToString().c_str();
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, CertifyServer1KeyServer1CertMismatch) {
-  absl::Status matchStatus{privateKeyPublicKeyMatch(private_key_, cert_chain_2_)};
+  absl::Status matchStatus(
+      privateKeyPublicKeyMatch(private_key_, cert_chain_2_));
   EXPECT_FALSE(matchStatus.ok()) << matchStatus.ToString().c_str();
 }
 
