@@ -147,7 +147,7 @@ bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b);
 // A function for checking for a match between a private key and a certificate's
 // public key
 absl::Status privateKeyPublicKeyMatch(const std::string& private_key,
-                              const std::string& cert);
+                                      const std::string& cert);
 
 }  // namespace grpc_core
 
