@@ -96,7 +96,7 @@ static int compare_test_mutator(grpc_socket_mutator* a,
 }
 
 static const grpc_socket_mutator_vtable mutator_vtable = {
-    mutate_fd, compare_test_mutator, destroy_test_mutator};
+    mutate_fd, compare_test_mutator, destroy_test_mutator, nullptr};
 
 static const grpc_socket_mutator_vtable mutator_vtable2 = {
     nullptr, compare_test_mutator, destroy_test_mutator, mutate_fd_2};
@@ -106,7 +106,7 @@ static void test_with_vtable(const grpc_socket_mutator_vtable* vtable) {
   GPR_ASSERT(sock > 0);
 
   struct test_socket_mutator mutator;
-  grpc_socket_mutator_init(&mutator.base, &mutator_vtable);
+  grpc_socket_mutator_init(&mutator.base, vtable);
 
   mutator.option_value = IPTOS_LOWDELAY;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
