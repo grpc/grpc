@@ -495,31 +495,30 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, CertifyServer0CredentialsPairMatch) {
+TEST_F(GrpcTlsCertificateProviderTest, ValidPrivateKeyCertChainPairOne) {
   absl::Status matchStatus(
-      privateKeyPublicKeyMatch(private_key_2_, cert_chain_2_));
-  EXPECT_TRUE(matchStatus.ok()) << matchStatus.ToString().c_str();
+      PrivateKeyPublicKeyMatches(private_key_2_, cert_chain_2_));
+  EXPECT_TRUE(matchStatus.ok());
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, CertifyServer1CredentialsPairMatch) {
-  absl::Status matchStatus(privateKeyPublicKeyMatch(private_key_, cert_chain_));
-  EXPECT_TRUE(matchStatus.ok()) << matchStatus.ToString().c_str();
-}
-
-TEST_F(GrpcTlsCertificateProviderTest, CertifyServer0KeyServer1CertMismatch) {
+TEST_F(GrpcTlsCertificateProviderTest, ValidPrivateKeyCertChainPairTwo) {
   absl::Status matchStatus(
-      privateKeyPublicKeyMatch(private_key_2_, cert_chain_));
-  EXPECT_FALSE(matchStatus.ok()) << matchStatus.ToString().c_str();
+      PrivateKeyPublicKeyMatches(private_key_, cert_chain_));
+  EXPECT_TRUE(matchStatus.ok());
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, CertifyServer1KeyServer1CertMismatch) {
+TEST_F(GrpcTlsCertificateProviderTest, InvalidPrivateKeyCertChainPairOne) {
   absl::Status matchStatus(
-      privateKeyPublicKeyMatch(private_key_, cert_chain_2_));
-  EXPECT_FALSE(matchStatus.ok()) << matchStatus.ToString().c_str();
+      PrivateKeyPublicKeyMatches(private_key_2_, cert_chain_));
+  EXPECT_FALSE(matchStatus.ok());
 }
 
+TEST_F(GrpcTlsCertificateProviderTest, InvalidPrivateKeyCertChainPairTwo) {
+  absl::Status matchStatus(
+      PrivateKeyPublicKeyMatches(private_key_, cert_chain_2_));
+  EXPECT_FALSE(matchStatus.ok());
+}
 }  // namespace testing
-
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

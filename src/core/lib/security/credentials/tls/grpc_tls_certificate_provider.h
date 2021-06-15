@@ -132,10 +132,10 @@ class FileWatcherCertificateProvider final
   // information.
   std::map<std::string, WatcherInfo> watcher_info_;
 };
-// A function for checking for a match between a private key and a certificate's
-// public key
-absl::Status privateKeyPublicKeyMatch(const std::string& privateKeyString,
-                                      const std::string& certString);
+//  Checks if the private key matches certificate's public key. Returns error
+//  status on failure.
+absl::Status PrivateKeyPublicKeyMatches(const std::string& privateKeyString,
+                                        const std::string& certString);
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
