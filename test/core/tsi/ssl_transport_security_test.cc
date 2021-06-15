@@ -458,6 +458,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     // Return early if we used crl supported certs since the rest of the
     // checks are for tsi_test_certs
     if (key_cert_lib->use_crl_supported_certs) {
+      tsi_peer_destruct(&peer);
       return;
     }
     if (ssl_fixture->server_name_indication == nullptr ||
