@@ -14,7 +14,7 @@ changes to this codebase at the moment.
 - [ ] Make framework.infrastructure.gcp resources [first-class
       citizen](https://en.wikipedia.org/wiki/First-class_citizen), support
       simpler CRUD
-- [ ] Security: manage `roles/iam.workloadIdentityUser` role grant lifecycle for
+- [x] Security: manage `roles/iam.workloadIdentityUser` role grant lifecycle for
       dynamically-named namespaces 
 - [ ] Restructure `framework.test_app` and `framework.xds_k8s*` into a module
       containing xDS-interop-specific logic
@@ -48,9 +48,9 @@ export PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value
 # The zone name your cluster, f.e. xds-k8s-test-cluster
 export CLUSTER_NAME="xds-k8s-test-cluster"
 # The zone of your cluster, f.e. us-central1-a
-export ZONE="us-central1-a"
-# K8S namespace you'll use to run the cluster, f.e.
-export K8S_NAMESPACE="interop-psm-security" 
+export ZONE="us-central1-a" 
+# Dedicated GCP Service Account to use with workload identity.
+export WORKLOAD_SERVICE_ACCOUNT="xds-k8s-interop-tests@${PROJECT_ID}.iam.gserviceaccount.com"
 ```
 
 ##### Create the cluster 
@@ -70,23 +70,53 @@ Allow [health checking mechanisms](https://cloud.google.com/traffic-director/doc
 to query the workloads health.  
 This step can be skipped, if the driver is executed with `--ensure_firewall`.
 ```shell
-gcloud compute firewall-rules create "${K8S_NAMESPACE}-allow-health-checks" \
+gcloud compute firewall-rules create "xds-k8s-interop-tests-allow-health-checks" \
   --network=default --action=allow --direction=INGRESS \
   --source-ranges="35.191.0.0/16,130.211.0.0/22" \
   --target-tags=allow-health-checks \
   --rules=tcp:8080-8100
 ```
 
-##### Allow workload identities to talk to Traffic Director APIs
-```shell
-gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-  --role roles/iam.workloadIdentityUser \
-  --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${K8S_NAMESPACE}/psm-grpc-client]"
+##### Setup GCP Service Account
 
-gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
-  --role roles/iam.workloadIdentityUser \
-  --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${K8S_NAMESPACE}/psm-grpc-server]"
-``` 
+Create dedicated GCP Service Account to use
+with [workload identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity).
+
+```shell
+gcloud iam service-accounts create "${WORKLOAD_SERVICE_ACCOUNT}" \
+  --display-name="xDS K8S Interop Tests Workload Identity Service Account"
+```
+
+Enable the service account to [access the Traffic Director API](https://cloud.google.com/traffic-director/docs/prepare-for-envoy-setup#enable-service-account).
+```shell
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+   --member="serviceAccount:${WORKLOAD_SERVICE_ACCOUNT}" \
+   --role="roles/trafficdirector.client"
+```
+
+##### Allow test driver to configure workload identity automatically
+Test driver will automatically grant `roles/iam.workloadIdentityUser` to 
+allow the Kubernetes service account to impersonate the dedicated GCP workload
+service account (corresponds to the step 5
+of [Authenticating to Google Cloud](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity#authenticating_to)).
+This action requires the test framework to have `iam.serviceAccounts.create`
+permission on the project.
+
+If you're running test framework locally, and you have `roles/owner` to your
+project, **you can skip this step**.  
+If you're configuring the test framework to run on a CI: use `roles/owner`
+account once to allow test framework to grant `roles/iam.workloadIdentityUser`.
+
+```shell
+# Assuming CI is using Compute Engine default service account.
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountAdmin" \
+  --condition="^:^title=allow_workload_identity_only:\
+description=Restrict serviceAccountAdmin to granting role iam.workloadIdentityUser:\
+expression=api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', [])\
+.hasOnly(['roles/iam.workloadIdentityUser'])"
+```
 
 ##### Configure GKE cluster access
 ```shell
