@@ -177,9 +177,11 @@ inline bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                            const std::string& field_name,
                                            grpc_millis* output,
                                            ErrorVectorType* error_list,
-                                           bool required = true) {
+                                           bool required = true,
+                                           bool* found = nullptr) {
   auto it = object.find(field_name);
   if (it == object.end()) {
+    if (found != nullptr) *found = false;
     if (required) {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("field:", field_name, " error:does not exist.")
@@ -187,6 +189,7 @@ inline bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
     }
     return false;
   }
+  if (found != nullptr) *found = true;
   if (!ParseDurationFromJson(it->second, output)) {
     *output = GRPC_MILLIS_INF_PAST;
     error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(

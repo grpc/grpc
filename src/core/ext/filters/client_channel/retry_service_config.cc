@@ -158,11 +158,11 @@ RetryServiceConfigParser::ParseGlobalParams(const grpc_channel_args* /*args*/,
 
 namespace {
 
-grpc_error_handle ParseRetryPolicy(const Json& json, int* max_attempts,
-                                   grpc_millis* initial_backoff,
-                                   grpc_millis* max_backoff,
-                                   float* backoff_multiplier,
-                                   StatusCodeSet* retryable_status_codes) {
+grpc_error_handle ParseRetryPolicy(
+    const Json& json, int* max_attempts, grpc_millis* initial_backoff,
+    grpc_millis* max_backoff, float* backoff_multiplier,
+    StatusCodeSet* retryable_status_codes,
+    absl::optional<grpc_millis>* per_attempt_timeout) {
   if (json.type() != Json::Type::OBJECT) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:retryPolicy error:should be of type object");
@@ -248,10 +248,31 @@ grpc_error_handle ParseRetryPolicy(const Json& json, int* max_attempts,
       };
     }
   }
+  // Parse perAttemptTimeout.
+  grpc_millis per_attempt_timeout_value;
+  bool found = false;
+  if (ParseJsonObjectFieldAsDuration(json.object_value(), "perAttemptTimeout",
+                                     &per_attempt_timeout_value, &error_list,
+                                     /*required=*/false, &found) &&
+      found) {
+    *per_attempt_timeout = per_attempt_timeout_value;
+    // TODO(roth): As part of implementing hedging, relax this check such
+    // that we allow a value of 0 if a hedging policy is specified.
+    if (per_attempt_timeout_value == 0) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:perAttemptTimeout error:should be greater than 0"));
+    }
+  }
+  // If perAttemptTimeout not present, retryableStatusCodes must be non-empty.
+  if (!per_attempt_timeout->has_value() && retryable_status_codes->Empty()) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:retryableStatusCodes error:must be present if perAttemptTimeout "
+        "not present");
+  }
   // Make sure required fields are set.
   if (error_list.empty()) {
     if (*max_attempts == 0 || *initial_backoff == 0 || *max_backoff == 0 ||
-        *backoff_multiplier == 0 || retryable_status_codes->Empty()) {
+        *backoff_multiplier == 0) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:retryPolicy error:Missing required field(s)");
     }
@@ -274,13 +295,14 @@ RetryServiceConfigParser::ParsePerMethodParams(
   grpc_millis max_backoff = 0;
   float backoff_multiplier = 0;
   StatusCodeSet retryable_status_codes;
+  absl::optional<grpc_millis> per_attempt_timeout;
   *error = ParseRetryPolicy(it->second, &max_attempts, &initial_backoff,
                             &max_backoff, &backoff_multiplier,
-                            &retryable_status_codes);
+                            &retryable_status_codes, &per_attempt_timeout);
   if (*error != GRPC_ERROR_NONE) return nullptr;
-  return absl::make_unique<RetryMethodConfig>(max_attempts, initial_backoff,
-                                              max_backoff, backoff_multiplier,
-                                              retryable_status_codes);
+  return absl::make_unique<RetryMethodConfig>(
+      max_attempts, initial_backoff, max_backoff, backoff_multiplier,
+      retryable_status_codes, per_attempt_timeout);
 }
 
 }  // namespace internal
