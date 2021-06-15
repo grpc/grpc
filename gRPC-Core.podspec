@@ -183,7 +183,6 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
-    ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
@@ -2132,6 +2131,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc',
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
                       'test/core/end2end/tests/retry_recv_message.cc',
+                      'test/core/end2end/tests/retry_send_op_fails.cc',
                       'test/core/end2end/tests/retry_server_pushback_delay.cc',
                       'test/core/end2end/tests/retry_server_pushback_disabled.cc',
                       'test/core/end2end/tests/retry_streaming.cc',
