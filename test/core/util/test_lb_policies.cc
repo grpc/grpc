@@ -229,8 +229,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       // Do pick.
       PickResult result = delegate_picker_->Pick(args);
       // Intercept trailing metadata.
-      if (result.type == PickResult::PICK_COMPLETE &&
-          result.subchannel != nullptr) {
+      if (result.type == PickResult::kComplete) {
         new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
             TrailingMetadataHandler(&result, cb_);
       }
@@ -280,16 +279,15 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     TrailingMetadataHandler(PickResult* result,
                             InterceptRecvTrailingMetadataCallback cb)
         : cb_(std::move(cb)) {
-      result->recv_trailing_metadata_ready = [this](grpc_error_handle error,
+      result->recv_trailing_metadata_ready = [this](absl::Status /*status*/,
                                                     MetadataInterface* metadata,
                                                     CallState* call_state) {
-        RecordRecvTrailingMetadata(error, metadata, call_state);
+        RecordRecvTrailingMetadata(metadata, call_state);
       };
     }
 
    private:
-    void RecordRecvTrailingMetadata(grpc_error_handle /*error*/,
-                                    MetadataInterface* recv_trailing_metadata,
+    void RecordRecvTrailingMetadata(MetadataInterface* recv_trailing_metadata,
                                     CallState* call_state) {
       TrailingMetadataArgsSeen args_seen;
       args_seen.backend_metric_data = call_state->GetBackendMetricData();

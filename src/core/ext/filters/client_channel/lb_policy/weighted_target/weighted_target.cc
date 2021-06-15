@@ -387,12 +387,9 @@ void WeightedTargetLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      grpc_error_handle error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "weighted_target: all children report state TRANSIENT_FAILURE"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-      status = grpc_error_to_absl_status(error);
-      picker = absl::make_unique<TransientFailurePicker>(error);
+      status = absl::UnavailableError(
+          "weighted_target: all children report state TRANSIENT_FAILURE");
+      picker = absl::make_unique<TransientFailurePicker>(status);
   }
   channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));

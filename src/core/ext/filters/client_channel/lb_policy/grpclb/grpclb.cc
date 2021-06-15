@@ -606,7 +606,6 @@ const char* GrpcLb::Serverlist::ShouldDrop() {
 //
 
 GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
-  PickResult result;
   // Check if we should drop the call.
   const char* drop_token =
       serverlist_ == nullptr ? nullptr : serverlist_->ShouldDrop();
@@ -619,14 +618,13 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     if (client_stats_ != nullptr) {
       client_stats_->AddCallDropped(drop_token);
     }
-    result.type = PickResult::PICK_COMPLETE;
-    return result;
+    return PickResult::Drop(
+        absl::UnavailableError("drop directed by grpclb balancer"));
   }
   // Forward pick to child policy.
-  result = child_picker_->Pick(args);
+  PickResult result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
-  if (result.type == PickResult::PICK_COMPLETE &&
-      result.subchannel != nullptr) {
+  if (result.type == PickResult::kComplete) {
     const SubchannelWrapper* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(result.subchannel.get());
     // Encode client stats object into metadata for use by

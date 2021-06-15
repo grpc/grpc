@@ -92,6 +92,40 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 }
 
 //
+// LoadBalancingPolicy::PickResult
+//
+
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Complete(
+    RefCountedPtr<SubchannelInterface> subchannel) {
+  PickResult result;
+  result.type = kComplete;
+  result.subchannel = std::move(subchannel);
+  return result;
+}
+
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Queue() {
+  PickResult result;
+  result.type = kQueue;
+  return result;
+}
+
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Fail(
+    absl::Status status) {
+  PickResult result;
+  result.type = kFail;
+  result.status = status;
+  return result;
+}
+
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Drop(
+    absl::Status status) {
+  PickResult result;
+  result.type = kDrop;
+  result.status = status;
+  return result;
+}
+
+//
 // LoadBalancingPolicy::QueuePicker
 //
 
@@ -125,21 +159,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                      parent, nullptr),
                  GRPC_ERROR_NONE);
   }
-  PickResult result;
-  result.type = PickResult::PICK_QUEUE;
-  return result;
-}
-
-//
-// LoadBalancingPolicy::TransientFailurePicker
-//
-
-LoadBalancingPolicy::PickResult
-LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs /*args*/) {
-  PickResult result;
-  result.type = PickResult::PICK_FAILED;
-  result.error = GRPC_ERROR_REF(error_);
-  return result;
+  return PickResult::Queue();
 }
 
 }  // namespace grpc_core

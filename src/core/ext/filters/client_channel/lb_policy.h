@@ -205,34 +205,35 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// The result of picking a subchannel for a call.
   struct PickResult {
     enum ResultType {
-      /// Pick complete.  If \a subchannel is non-null, the client channel
-      /// will immediately proceed with the call on that subchannel;
-      /// otherwise, it will drop the call.
-      PICK_COMPLETE,
+      /// Pick complete.  The call will be sent to \a subchannel, which must
+      /// be non-null.
+      kComplete,
       /// Pick cannot be completed until something changes on the control
       /// plane.  The client channel will queue the pick and try again the
       /// next time the picker is updated.
-      PICK_QUEUE,
+      kQueue,
       /// Pick failed.  If the call is wait_for_ready, the client channel
       /// will wait for the next picker and try again; otherwise, it
       /// will immediately fail the call with the status indicated via
-      /// \a error (although the call may be retried if the client channel
+      /// \a status (although the call may be retried if the client channel
       /// is configured to do so).
-      PICK_FAILED,
+      kFail,
+      /// Pick will be dropped with the status specified in \a status.
+      /// Unlike kFail, the call will be dropped even if it is
+      /// wait_for_ready, and retries (if configured) will be inhibited.
+      kDrop,
     };
     ResultType type;
 
-    /// Used only if type is PICK_COMPLETE.  Will be set to the selected
+    /// Used only if type is kComplete.  Will be set to the selected
     /// subchannel, or nullptr if the LB policy decides to drop the call.
     RefCountedPtr<SubchannelInterface> subchannel;
 
-    /// Used only if type is PICK_FAILED.
-    /// Error to be set when returning a failure.
-    // TODO(roth): Replace this with something similar to grpc::Status,
-    // so that we don't expose grpc_error to this API.
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    /// Used only if type is kFailed or kDrop.
+    /// The status used to fail the call.
+    absl::Status status;
 
-    /// Used only if type is PICK_COMPLETE.
+    /// Used only if type is kComplete.
     /// Callback set by LB policy to be notified of trailing metadata.
     /// If set by LB policy, the client channel will invoke the callback
     /// when trailing metadata is returned.
@@ -243,8 +244,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // TODO(roth): The arguments to this callback should be moved into a
     // struct, so that we can later add new fields without breaking
     // existing implementations.
-    std::function<void(grpc_error_handle, MetadataInterface*, CallState*)>
+    std::function<void(absl::Status, MetadataInterface*, CallState*)>
         recv_trailing_metadata_ready;
+
+    /// Factory functions for convenience.
+    static PickResult Complete(RefCountedPtr<SubchannelInterface> subchannel);
+    static PickResult Queue();
+    static PickResult Fail(absl::Status status);
+    static PickResult Drop(absl::Status status);
   };
 
   /// A subchannel picker is the object used to pick the subchannel to
@@ -387,13 +394,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // A picker that returns PICK_TRANSIENT_FAILURE for all picks.
   class TransientFailurePicker : public SubchannelPicker {
    public:
-    explicit TransientFailurePicker(grpc_error_handle error) : error_(error) {}
-    ~TransientFailurePicker() override { GRPC_ERROR_UNREF(error_); }
+    explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 
-    PickResult Pick(PickArgs args) override;
+    PickResult Pick(PickArgs args) override { return PickResult::Fail(status_); }
 
    private:
-    grpc_error_handle error_;
+    absl::Status status_;
   };
 
  protected:
