@@ -1,7 +1,6 @@
 The test credentials have been generated with the following
 commands:
 
-
 The ca is self-signed:
 ----------------------
 
@@ -47,3 +46,9 @@ Clean up:
 $ rm *.rsa
 $ rm *.csr
 $ rm ca.srl
+
+demoCA folder:
+----------------------------------------------------------------------------
+
+The demoCA folder contains files used by the openssl CA commands to revoke 
+credentials and create CRL files.
