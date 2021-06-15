@@ -12,7 +12,7 @@ Server should accept these arguments:
 *   --port=PORT
     *   The port the test server will run on.
 *   --maintenance_port=PORT
-    *   The port for the maintenance server running admin, health and reflection services.
+    *   The port for the maintenance server running health, channelz, and admin(CSDS) services.
 *   --secure_mode=BOOLEAN
     *   When set to true it uses XdsServerCredentials with the test server for security test cases.
         In case of secure mode, port and maintenance_port should be different.
