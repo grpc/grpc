@@ -45,6 +45,7 @@ class EvaluateArgs {
 
     absl::string_view transport_security_type;
     absl::string_view spiffe_id;
+    std::vector<absl::string_view> uri_sans;
     std::vector<absl::string_view> dns_sans;
     absl::string_view common_name;
     Address local_address;
@@ -76,6 +77,7 @@ class EvaluateArgs {
   int GetPeerPort() const;
   absl::string_view GetTransportSecurityType() const;
   absl::string_view GetSpiffeId() const;
+  std::vector<absl::string_view> GetUriSans() const;
   std::vector<absl::string_view> GetDnsSans() const;
   absl::string_view GetCommonName() const;
 

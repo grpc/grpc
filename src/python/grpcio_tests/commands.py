@@ -257,7 +257,7 @@ class TestGevent(setuptools.Command):
 
         import tests
         loader = tests.Loader()
-        loader.loadTestsFromNames(['tests'])
+        loader.loadTestsFromNames(['tests', 'tests_gevent'])
         runner = tests.Runner()
         if sys.platform == 'win32':
             runner.skip_tests(self.BANNED_TESTS + self.BANNED_WINDOWS_TESTS)

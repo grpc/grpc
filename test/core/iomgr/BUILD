@@ -29,7 +29,10 @@ grpc_cc_library(
     srcs = ["endpoint_tests.cc"],
     hdrs = ["endpoint_tests.h"],
     language = "C++",
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//test:__subpackages__",
+        "@grpc:endpoint_tests",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",

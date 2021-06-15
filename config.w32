@@ -489,6 +489,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\matchers\\matchers.cc " +
     "src\\core\\lib\\profiling\\basic_timers.cc " +
     "src\\core\\lib\\profiling\\stap_timers.cc " +
+    "src\\core\\lib\\security\\authorization\\authorization_policy_provider_vtable.cc " +
+    "src\\core\\lib\\security\\authorization\\evaluate_args.cc " +
     "src\\core\\lib\\security\\context\\security_context.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
@@ -1271,6 +1273,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\authorization");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\context");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\alts");
