@@ -121,7 +121,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_endian
   absl_errno_saver
   absl_exponential_biased
-  absl_fast_type_id
   absl_fixed_array
   absl_flat_hash_map
   absl_function_ref
@@ -142,29 +141,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_memory
   absl_numeric_representation
   absl_optional
-  absl_random_distributions
-  absl_random_internal_distribution_caller
-  absl_random_internal_fast_uniform_bits
-  absl_random_internal_fastmath
-  absl_random_internal_generate_real
-  absl_random_internal_iostream_state_saver
-  absl_random_internal_nonsecure_base
-  absl_random_internal_pcg_engine
-  absl_random_internal_platform
-  absl_random_internal_pool_urbg
-  absl_random_internal_randen
-  absl_random_internal_randen_engine
-  absl_random_internal_randen_hwaes
-  absl_random_internal_randen_hwaes_impl
-  absl_random_internal_randen_slow
-  absl_random_internal_salted_seed_seq
-  absl_random_internal_seed_material
-  absl_random_internal_traits
-  absl_random_internal_uniform_helper
-  absl_random_internal_wide_multiply
-  absl_random_random
-  absl_random_seed_gen_exception
-  absl_random_seed_sequences
   absl_raw_hash_map
   absl_raw_hash_set
   absl_raw_logging_internal
@@ -1449,7 +1425,6 @@ target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::base
   absl::memory
-  absl::random_random
   absl::status
   absl::str_format
   absl::strings
@@ -15847,7 +15822,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_base absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time"
+  "absl_base absl_memory absl_optional absl_status absl_str_format absl_strings absl_synchronization absl_time"
   "-lgpr"
   ""
   "gpr.pc")
@@ -15857,7 +15832,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl absl_base absl_bind_front absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "gpr openssl absl_base absl_bind_front absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
@@ -15867,7 +15842,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "gpr absl_base absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "gpr absl_base absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc_unsecure"
   ""
   "grpc_unsecure.pc")
@@ -15877,7 +15852,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "grpc absl_base absl_bind_front absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "grpc absl_base absl_bind_front absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc++"
   ""
   "grpc++.pc")
@@ -15887,7 +15862,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "grpc_unsecure absl_base absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "grpc_unsecure absl_base absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc++_unsecure"
   ""
   "grpc++_unsecure.pc")
