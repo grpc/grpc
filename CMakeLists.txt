@@ -272,6 +272,12 @@ else()
   set(_gRPC_CORE_NOSTDCXX_FLAGS "")
 endif()
 
+if (gRPC_XDS_USER_AGENT_IS_CSHARP)
+  # The value of the defines needs to contain quotes.
+  # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.39.0-dev\"")
+endif()
+
 include(cmake/abseil-cpp.cmake)
 include(cmake/address_sorting.cmake)
 include(cmake/benchmark.cmake)
@@ -1150,6 +1156,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   test/core/end2end/tests/retry_recv_initial_metadata.cc
   test/core/end2end/tests/retry_recv_message.cc
+  test/core/end2end/tests/retry_send_op_fails.cc
   test/core/end2end/tests/retry_server_pushback_delay.cc
   test/core/end2end/tests/retry_server_pushback_disabled.cc
   test/core/end2end/tests/retry_streaming.cc
@@ -1285,6 +1292,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   test/core/end2end/tests/retry_recv_initial_metadata.cc
   test/core/end2end/tests/retry_recv_message.cc
+  test/core/end2end/tests/retry_send_op_fails.cc
   test/core/end2end/tests/retry_server_pushback_delay.cc
   test/core/end2end/tests/retry_server_pushback_disabled.cc
   test/core/end2end/tests/retry_streaming.cc

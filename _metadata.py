@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2021 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,16 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/_metadata.py.template`!!!
 
-# cd to repository root
-cd "$(dirname "$0")/../../.."
-
-mkdir -p cmake/build
-cd cmake/build
-
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON ../..
-
-cd ../../src/csharp
-
-dotnet restore Grpc.sln
+__version__ = """1.39.0.dev0"""
