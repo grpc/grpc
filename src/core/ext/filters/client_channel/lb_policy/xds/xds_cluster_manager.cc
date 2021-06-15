@@ -212,9 +212,8 @@ XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
   if (it != cluster_map_.end()) {
     return it->second->Pick(args);
   }
-  return PickResult::Fail(absl::InternalError(
-      absl::StrCat("xds cluster manager picker: unknown cluster \"",
-                   cluster_name, "\"")));
+  return PickResult::Fail(absl::InternalError(absl::StrCat(
+      "xds cluster manager picker: unknown cluster \"", cluster_name, "\"")));
 }
 
 //

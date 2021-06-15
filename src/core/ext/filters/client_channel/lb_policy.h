@@ -396,7 +396,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 
-    PickResult Pick(PickArgs args) override { return PickResult::Fail(status_); }
+    PickResult Pick(PickArgs args) override {
+      return PickResult::Fail(status_);
+    }
 
    private:
     absl::Status status_;

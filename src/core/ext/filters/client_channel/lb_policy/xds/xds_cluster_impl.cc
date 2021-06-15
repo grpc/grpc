@@ -298,7 +298,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   if (picker_ == nullptr) {  // Should never happen.
     call_counter_->Decrement();
     return PickResult::Fail(absl::InternalError(
-            "xds_cluster_impl picker not given any child picker"));
+        "xds_cluster_impl picker not given any child picker"));
   }
   // Not dropping, so delegate to child picker.
   PickResult result = picker_->Pick(args);
