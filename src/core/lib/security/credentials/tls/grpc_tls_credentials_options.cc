@@ -149,12 +149,10 @@ void grpc_tls_credentials_options_set_server_authorization_check_config(
 }
 
 void grpc_tls_credentials_options_set_crl_directory(
-    grpc_tls_credentials_options* options,
-    const char* crl_directory) {
+    grpc_tls_credentials_options* options, const char* crl_directory) {
   GPR_ASSERT(options != nullptr);
   options->set_crl_directory(crl_directory);
 }
-
 
 grpc_tls_server_authorization_check_config*
 grpc_tls_server_authorization_check_config_create(
