@@ -97,32 +97,21 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Complete(
     RefCountedPtr<SubchannelInterface> subchannel) {
-  PickResult result;
-  result.type = kComplete;
-  result.subchannel = std::move(subchannel);
-  return result;
+  return {PickResult::CompletePick{std::move(subchannel), nullptr}};
 }
 
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Queue() {
-  PickResult result;
-  result.type = kQueue;
-  return result;
+  return {PickResult::QueuePick()};
 }
 
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Fail(
     absl::Status status) {
-  PickResult result;
-  result.type = kFail;
-  result.status = status;
-  return result;
+  return {PickResult::FailPick{status}};
 }
 
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Drop(
     absl::Status status) {
-  PickResult result;
-  result.type = kDrop;
-  result.status = status;
-  return result;
+  return {PickResult::DropPick{status}};
 }
 
 //

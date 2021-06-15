@@ -26,6 +26,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
@@ -204,48 +205,46 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   /// The result of picking a subchannel for a call.
   struct PickResult {
-    enum ResultType {
-      /// Pick complete.  The call will be sent to \a subchannel, which must
-      /// be non-null.
-      kComplete,
-      /// Pick cannot be completed until something changes on the control
-      /// plane.  The client channel will queue the pick and try again the
-      /// next time the picker is updated.
-      kQueue,
-      /// Pick failed.  If the call is wait_for_ready, the client channel
-      /// will wait for the next picker and try again; otherwise, it
-      /// will immediately fail the call with the status indicated via
-      /// \a status (although the call may be retried if the client channel
-      /// is configured to do so).
-      kFail,
-      /// Pick will be dropped with the status specified in \a status.
-      /// Unlike kFail, the call will be dropped even if it is
-      /// wait_for_ready, and retries (if configured) will be inhibited.
-      kDrop,
+    /// A successful pick.
+    struct CompletePick {
+      /// The subchannel to be used for the call.  Must be non-null.
+      RefCountedPtr<SubchannelInterface> subchannel;
+
+      /// Callback set by LB policy to be notified of trailing metadata.
+      /// If non-null, the client channel will invoke the callback
+      /// when trailing metadata is returned.
+      /// The metadata may be modified by the callback.  However, the callback
+      /// does not take ownership, so any data that needs to be used after
+      /// returning must be copied.
+      /// The call state can be used to obtain backend metric data.
+      // TODO(roth): The arguments to this callback should be moved into a
+      // struct, so that we can later add new fields without breaking
+      // existing implementations.
+      std::function<void(absl::Status, MetadataInterface*, CallState*)>
+          recv_trailing_metadata_ready;
     };
-    ResultType type;
 
-    /// Used only if type is kComplete.  Will be set to the selected
-    /// subchannel, or nullptr if the LB policy decides to drop the call.
-    RefCountedPtr<SubchannelInterface> subchannel;
+    /// Pick cannot be completed until something changes on the control
+    /// plane.  The client channel will queue the pick and try again the
+    /// next time the picker is updated.
+    struct QueuePick {};
 
-    /// Used only if type is kFailed or kDrop.
-    /// The status used to fail the call.
-    absl::Status status;
+    /// Pick failed.  If the call is wait_for_ready, the client channel
+    /// will wait for the next picker and try again; otherwise, it
+    /// will immediately fail the call with the status indicated (although
+    /// the call may be retried if the client channel is configured to do so).
+    struct FailPick {
+      absl::Status status;
+    };
 
-    /// Used only if type is kComplete.
-    /// Callback set by LB policy to be notified of trailing metadata.
-    /// If set by LB policy, the client channel will invoke the callback
-    /// when trailing metadata is returned.
-    /// The metadata may be modified by the callback.  However, the callback
-    /// does not take ownership, so any data that needs to be used after
-    /// returning must be copied.
-    /// The call state can be used to obtain backend metric data.
-    // TODO(roth): The arguments to this callback should be moved into a
-    // struct, so that we can later add new fields without breaking
-    // existing implementations.
-    std::function<void(absl::Status, MetadataInterface*, CallState*)>
-        recv_trailing_metadata_ready;
+    /// Pick will be dropped with the status specified.
+    /// Unlike FailPick, the call will be dropped even if it is
+    /// wait_for_ready, and retries (if configured) will be inhibited.
+    struct DropPick {
+      absl::Status status;
+    };
+
+    absl::variant<CompletePick, QueuePick, FailPick, DropPick> result;
 
     /// Factory functions for convenience.
     static PickResult Complete(RefCountedPtr<SubchannelInterface> subchannel);

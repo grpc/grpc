@@ -301,8 +301,9 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
         "xds_cluster_impl picker not given any child picker"));
   }
   // Not dropping, so delegate to child picker.
-  PickResult result = picker_->Pick(args);
-  if (result.type == result.kComplete) {
+  PickResult pick_result = picker_->Pick(args);
+  if (absl::holds_alternative<PickResult::CompletePick>(pick_result.result)) {
+    auto& result = absl::get<PickResult::CompletePick>(pick_result.result);
     XdsClusterLocalityStats* locality_stats = nullptr;
     if (drop_stats_ != nullptr) {  // If load reporting is enabled.
       auto* subchannel_wrapper =
@@ -344,7 +345,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     // failure for the same wait_for_ready RPC.
     call_counter_->Decrement();
   }
-  return result;
+  return pick_result;
 }
 
 //
