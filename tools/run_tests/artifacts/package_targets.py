@@ -90,11 +90,11 @@ class CSharpPackage:
     def build_jobspec(self):
         if self.unity:
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/test/csharp_stretch_x64',
+                self.name, 'tools/dockerfile/test/csharp_buster_x64',
                 'src/csharp/build_unitypackage.sh')
         else:
             return create_docker_jobspec(
-                self.name, 'tools/dockerfile/test/csharp_stretch_x64',
+                self.name, 'tools/dockerfile/test/csharp_buster_x64',
                 'src/csharp/build_nuget.sh')
 
     def __str__(self):
