@@ -411,6 +411,7 @@ class RetryFilter::CallData {
     RefCountedPtr<BatchData> on_complete_deferred_batch_;
     grpc_error_handle on_complete_error_ = GRPC_ERROR_NONE;
     RefCountedPtr<BatchData> recv_trailing_metadata_internal_batch_;
+    grpc_error_handle recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
     bool seen_recv_trailing_metadata_from_surface_ : 1;
     // NOTE: Do not move this next to the metadata bitfields above. That would
     //       save space but will also result in a data race because compiler
@@ -840,9 +841,8 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
         // the application.  Otherwise, just unref the internally started
         // batch, since we'll propagate the completion when it completes.
         if (completed_recv_trailing_metadata_) {
-          // Batches containing recv_trailing_metadata always succeed.
           closures->Add(
-              &recv_trailing_metadata_ready_, GRPC_ERROR_NONE,
+              &recv_trailing_metadata_ready_, recv_trailing_metadata_error_,
               "re-executing recv_trailing_metadata_ready to propagate "
               "internally triggered result");
           // Ref will be released by callback.
@@ -852,7 +852,9 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
               DEBUG_LOCATION,
               "internally started recv_trailing_metadata batch pending and "
               "recv_trailing_metadata started from surface");
+          GRPC_ERROR_UNREF(recv_trailing_metadata_error_);
         }
+        recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
       }
       continue;
     }
@@ -1334,7 +1336,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   // If we generated the recv_trailing_metadata op internally via
   // StartInternalRecvTrailingMetadata(), then there will be no pending batch.
   if (pending == nullptr) {
-    GRPC_ERROR_UNREF(error);
+    call_attempt_->recv_trailing_metadata_error_ = error;
     return;
   }
   // Return metadata.
@@ -1467,6 +1469,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
           "internal recv_trailing_metadata completed before that op was "
           "started from the surface");
     }
+    GRPC_ERROR_UNREF(call_attempt->recv_trailing_metadata_error_);
+    call_attempt->recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
     call_attempt->recv_initial_metadata_ready_deferred_batch_.reset(
         DEBUG_LOCATION,
         "unref deferred recv_initial_metadata_ready batch due to retry");
