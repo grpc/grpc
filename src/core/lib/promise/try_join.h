@@ -16,37 +16,51 @@
 #define GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 
 #include "absl/status/statusor.h"
-#include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/detail/join.h"
 
 namespace grpc_core {
 
-namespace try_join_detail {
-
-struct Empty {};
+namespace promise_detail {
 
 template <typename T>
 T IntoResult(absl::StatusOr<T>* status) {
   return std::move(**status);
 }
 
+struct Empty {};
 inline Empty IntoResult(absl::Status* status) { return Empty{}; }
+
+struct TryJoinTraits {
+  template <typename T>
+  using ResultType =
+      decltype(IntoResult(std::declval<absl::remove_reference_t<T>*>()));
+  template <typename T, typename F>
+  static auto OnResult(T result, F kontinue)
+      -> decltype(kontinue(IntoResult(&result))) {
+    using Result = typename decltype(kontinue(IntoResult(&result)))::Type;
+    if (!result.ok()) {
+      return ready(Result(IntoStatus(&result)));
+    }
+    return kontinue(IntoResult(&result));
+  }
+  template <typename T>
+  static absl::StatusOr<T> Wrap(T x) {
+    return absl::StatusOr<T>(std::move(x));
+  }
+};
 
 // Implementation of TryJoin combinator.
 template <typename... Promises>
-class TryJoin;
+using TryJoin = Join<TryJoinTraits, Promises...>;
 
-#include "try_join_switch.h"
-
-}  // namespace try_join_detail
+}  // namespace promise_detail
 
 // Run all promises.
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok(tuple-of-results).
 template <typename... Promises>
-try_join_detail::TryJoin<Promises...> TryJoin(Promises... promises) {
-  return try_join_detail::TryJoin<Promises...>(std::move(promises)...);
+promise_detail::TryJoin<Promises...> TryJoin(Promises... promises) {
+  return promise_detail::TryJoin<Promises...>(std::move(promises)...);
 }
 
 }  // namespace grpc_core

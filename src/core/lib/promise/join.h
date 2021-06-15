@@ -15,57 +15,35 @@
 #ifndef GRPC_CORE_LIB_PROMISE_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_JOIN_H
 
-#include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/detail/join.h"
 
 namespace grpc_core {
+namespace promise_detail {
 
-namespace join_detail {
-
-// The combined promise.
-template <typename... Promise>
-class Join;
-
-template <typename F>
-union Fused {
-  Fused() {}
-  ~Fused() {}
-
-  using Result = typename decltype(std::declval<F>()())::Type;
-  [[no_unique_address]] F pending;
-  [[no_unique_address]] Result ready;
-
-  void CallDestruct(bool ready) {
-    if (ready) {
-      Destruct(&ready);
-    } else {
-      Destruct(&pending);
-    }
-  }
-
+struct InfallibleJoinTraits {
   template <typename T>
-  void Poll(T* state, T control_bit) {
-    if ((*state & control_bit) == 0) {
-      auto r = pending();
-      if (auto* p = r.get_ready()) {
-        *state |= control_bit;
-        Destruct(&pending);
-        Construct(&ready, std::move(*p));
-      }
-    }
+  using ResultType = absl::remove_reference_t<T>;
+  template <typename T, typename F>
+  static auto OnResult(T result, F kontinue)
+      -> decltype(kontinue(std::move(result))) {
+    return kontinue(std::move(result));
+  }
+  template <typename T>
+  static T Wrap(T x) {
+    return x;
   }
 };
 
-#include "join_switch.h"
+template <typename... Promises>
+using InfallibleJoin = Join<InfallibleJoinTraits, Promises...>;
 
-}  // namespace join_detail
+}  // namespace promise_detail
 
 /// Combinator to run all promises to completion, and return a tuple
 /// of their results.
 template <typename... Promise>
-join_detail::Join<Promise...> Join(Promise... promises) {
-  return join_detail::Join<Promise...>(std::move(promises)...);
+promise_detail::InfallibleJoin<Promise...> Join(Promise... promises) {
+  return promise_detail::InfallibleJoin<Promise...>(std::move(promises)...);
 }
 
 }  // namespace grpc_core

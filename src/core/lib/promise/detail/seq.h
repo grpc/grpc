@@ -81,15 +81,11 @@ struct SeqState<Traits, 0, Fs...> {
 };
 
 template <typename Traits, char I, typename... Fs, typename T>
-auto CallNext(SeqState<Traits, I, Fs...>* state,
-              T&& arg)
+auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
     -> decltype(SeqState<Traits, I, Fs...>::NextArg::CallFactory(
-        &state->next,
-        std::forward<T>(
-            arg))) {
-  return SeqState<Traits, I, Fs...>::NextArg::CallFactory(
-      &state->next,
-      std::forward<T>(arg));
+        &state->next, std::forward<T>(arg))) {
+  return SeqState<Traits, I, Fs...>::NextArg::CallFactory(&state->next,
+                                                          std::forward<T>(arg));
 }
 
 template <typename Traits, typename... Fs>
@@ -112,7 +108,7 @@ class Seq {
       return &PenultimateState::template Get<I + 1>::f(&s->p_)->prior;
     }
 
-    static typename SeqState<Traits, I+1, Fs...>::F* next_f(Seq* s) {
+    static typename SeqState<Traits, I + 1, Fs...>::F* next_f(Seq* s) {
       return &PenultimateState::template Get<I + 1>::f(&s->p_)->f;
     }
   };
