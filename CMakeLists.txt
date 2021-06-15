@@ -2073,7 +2073,7 @@ add_library(grpc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-        )
+)
 
 set_target_properties(grpc PROPERTIES
   VERSION ${gRPC_CORE_VERSION}
