@@ -374,7 +374,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // Note: This must be invoked while holding the work_serializer.
   void Orphan() override;
 
-  // A picker that returns PICK_QUEUE for all picks.
+  // A picker that returns kQueue for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the
   // first pick is seen.
   class QueuePicker : public SubchannelPicker {
@@ -391,7 +391,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     bool exit_idle_called_ = false;
   };
 
-  // A picker that returns PICK_TRANSIENT_FAILURE for all picks.
+  // A picker that returns kFail for all picks.
   class TransientFailurePicker : public SubchannelPicker {
    public:
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}

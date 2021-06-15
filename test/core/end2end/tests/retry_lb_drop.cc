@@ -60,9 +60,8 @@ class DropPolicy : public LoadBalancingPolicy {
   class DropPicker : public SubchannelPicker {
    public:
     PickResult Pick(PickArgs /*args*/) override {
-      PickResult result;
-      result.type = PickResult::PICK_COMPLETE;
-      return result;
+      return PickResult::Drop(
+          absl::UnavailableError("call dropped by drop picker"));
     }
   };
 };

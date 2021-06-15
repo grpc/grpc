@@ -380,7 +380,6 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
 }
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
-  // Initialize to PICK_FAILED.
   auto hash =
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
   uint64_t h;
