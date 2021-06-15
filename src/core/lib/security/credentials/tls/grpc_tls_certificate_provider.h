@@ -132,23 +132,10 @@ class FileWatcherCertificateProvider final
   // information.
   std::map<std::string, WatcherInfo> watcher_info_;
 };
-
-// A function for converting PEM-encoded C style string to EVP_PKEY
-EVP_PKEY* convertPemStringToPkey(const std::string& pkeyString);
-
-// A function for converting PEM-encoded C style string to X509
-X509* convertPemStringToX509(const std::string& x509String);
-
-// A function for comparing EVP_PKEY keys that takes into consideration that
-// EVP_PKEY_cmp() returns 1 if the keys match, 0 if they don't match, -1 if the
-// key types are different and -2 if the operation is not supported.
-bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b);
-
 // A function for checking for a match between a private key and a certificate's
 // public key
-absl::Status privateKeyPublicKeyMatch(const std::string& private_key,
-                                      const std::string& cert);
-
+absl::Status privateKeyPublicKeyMatch(const std::string& privateKeyString,
+                                      const std::string& certString);
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H

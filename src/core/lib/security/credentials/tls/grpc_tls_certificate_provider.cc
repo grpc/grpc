@@ -365,66 +365,44 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
-EVP_PKEY* convertPemStringToPkey(const std::string& pkeyString) {
-  if (pkeyString.empty()) {
-    return nullptr;
+absl::Status privateKeyPublicKeyMatch(const std::string& privateKeyString,
+                                      const std::string& certString) {
+  if (certString.empty()) {
+    return absl::InvalidArgumentError("Certificate string is empty!");
   }
-
   // -1 indicates a null-terminated string
-  BIO* pkeyBio(BIO_new_mem_buf(pkeyString.c_str(), -1));
-  if (pkeyBio == nullptr) {
-    return nullptr;
+  BIO* privateStringBio(BIO_new_mem_buf(certString.c_str(), -1));
+  if (privateStringBio == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from certificate string to BIO failed!");
   }
-
-  EVP_PKEY* pkey(PEM_read_bio_PrivateKey(pkeyBio, nullptr, nullptr, nullptr));
-  BIO_free(pkeyBio);
-
-  return pkey;
-}
-
-X509* convertPemStringToX509(const std::string& x509String) {
-  if (x509String.empty()) {
-    return nullptr;
-  }
-
-  // -1 indicates a null-terminated string
-  BIO* pkeyBio(BIO_new_mem_buf(x509String.c_str(), -1));
-  if (pkeyBio == nullptr) {
-    return nullptr;
-  }
-
-  X509* x509(PEM_read_bio_X509(pkeyBio, nullptr, nullptr, nullptr));
-  BIO_free(pkeyBio);
-
-  return x509;
-}
-
-bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b) {
-  return EVP_PKEY_cmp(a, b) == 1;
-}
-
-absl::Status privateKeyPublicKeyMatch(const std::string& private_key,
-                                      const std::string& cert) {
-  X509* x509(convertPemStringToX509(cert));
+  X509* x509(PEM_read_bio_X509(privateStringBio, nullptr, nullptr, nullptr));
+  BIO_free(privateStringBio);
   if (x509 == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 failed!");
   }
-
   EVP_PKEY* publicKey(X509_get_pubkey(x509));
   if (publicKey == nullptr) {
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed!");
   }
-
-  EVP_PKEY* privateKey(convertPemStringToPkey(private_key));
+  if (privateKeyString.empty()) {
+    return absl::InvalidArgumentError("Private key string is empty!");
+  }
+  BIO* certStringBio(BIO_new_mem_buf(privateKeyString.c_str(), -1));
+  if (certStringBio == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from private key string to BIO failed!");
+  }
+  EVP_PKEY* privateKey(
+      PEM_read_bio_PrivateKey(certStringBio, nullptr, nullptr, nullptr));
+  BIO_free(certStringBio);
   if (privateKey == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed!");
   }
-
-  bool result(compareKeys(privateKey, publicKey));
-
+  bool result(EVP_PKEY_cmp(privateKey, publicKey) == 1);
   X509_free(x509);
   EVP_PKEY_free(privateKey);
   EVP_PKEY_free(publicKey);
