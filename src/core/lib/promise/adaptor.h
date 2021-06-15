@@ -31,8 +31,26 @@ struct IsPoll<Poll<T>> {
   static constexpr bool value() { return true; }
 };
 
+template <typename A, typename F>
+struct ArgIsCompatibleWithFunctionError {
+  static constexpr bool value() { return false; }
+};
+
 template <typename A, typename F, typename Ignored = void>
-class Factory;
+class Factory {
+ public:
+  using Arg = A;
+  class Promise {
+    public:
+    struct X{};
+    Poll<X> operator()();
+  };
+  Factory(F f) {
+    static_assert(ArgIsCompatibleWithFunctionError<A, F>::value(), "Factory method is incompatible with argument passed");
+  }
+  Promise Once(Arg arg);
+  Promise Repeated(Arg arg);
+};
 
 template <typename A, typename F>
 class Factory<A, F,

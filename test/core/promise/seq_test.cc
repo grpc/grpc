@@ -38,6 +38,16 @@ TEST(PromiseTest, TwoTypedThens) {
   Seq(initial, next1, next2)().take();
 }
 
+/* This does not compile, but is useful for testing error messages generated
+TEST(PromiseTest, MisTypedThen) {
+  struct A {};
+  struct B {};
+  auto initial = [] { return ready(A{}); };
+  auto next = [](B) { return []() { return ready(B{}); }; };
+  Seq(initial, next)().take();
+}
+*/
+
 TEST(PromiseTest, TwoThens) {
   auto initial = [] { return ready(std::string("a")); };
   auto next1 = [](std::string i) { return [i]() { return ready(i + "b"); }; };
