@@ -305,7 +305,8 @@ class InjectStatusFilter {
                         RecvTrailingMetadataReady, this, nullptr);
     }
 
-    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
+    static void RecvTrailingMetadataReady(void* arg,
+                                          grpc_error_handle /*error*/) {
       auto* calld = static_cast<CallData*>(arg);
       grpc_core::Closure::Run(
           DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
@@ -323,7 +324,7 @@ class InjectStatusFilter {
     return GRPC_ERROR_NONE;
   }
 
-  static void Destroy(grpc_channel_element* elem) {}
+  static void Destroy(grpc_channel_element* /*elem*/) {}
 };
 
 grpc_channel_filter InjectStatusFilter::kFilterVtable = {
