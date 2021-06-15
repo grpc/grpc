@@ -499,66 +499,24 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, ConvertPkeyToStringHandlesEVP_PKEY_RSA) {
-  EVP_PKEY_CTX* context = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
-  EXPECT_TRUE(context != nullptr)
-      << "The EVP_PKEY_CTX pointer variable is null";
-
-  int initResult{EVP_PKEY_keygen_init(context)};
-  EXPECT_EQ(initResult, 1) << "Context not initialised for key generation!";
-
-  int genResult{EVP_PKEY_keygen(context, &testPkey)};
-  EXPECT_EQ(genResult, 1) << "Key generation failed!";
-  // Generated key is of expected type
-  EXPECT_EQ(EVP_PKEY_id(testPkey), EVP_PKEY_RSA);
-
-  // Convert test private key to PEM string
-  const char* keyString{convertPkeyToString(testPkey)};
-
-  // Pass test string to function being tested
-  EVP_PKEY* returnedKey{convertPemStringToPkey(keyString)};
-  EXPECT_TRUE(returnedKey != nullptr) << "The returned key string is null";
-
-  bool result{compareKeys(returnedKey, testPkey)};
-  EXPECT_TRUE(result)
-      << "convertPkeyToString() failed the EVP_PKEY_RSA type test";
-
-  EVP_PKEY_free(testPkey);
-  EVP_PKEY_free(returnedKey);
-  EVP_PKEY_CTX_free(context);
-  freePEMString(keyString);
+TEST_F(GrpcTlsCertificateProviderTest, CertifyServer0CredentialsPairMatch) {
+  absl::Status matchStatus{privateKeyPublicKeyMatch(private_key_2_, cert_chain_2_)};
+  EXPECT_TRUE(matchStatus.ok()) << matchStatus.ToString().c_str();
 }
 
-// TODO:
-// 1. Should we remove newlines before comparing the strings?
-// 2. Remove boolToString
-TEST_F(GrpcTlsCertificateProviderTest, ConvertPemStringToX509) {
-  const char* x509String{cert_chain_2_.c_str()};
-  testX509 = convertPemStringToX509(x509String);
-  EXPECT_TRUE(testX509 != nullptr) << "convertPemStringToX509 returned null";
-
-  const char* returnedString{convertX509ToString(testX509)};
-  EXPECT_TRUE(returnedString != nullptr) << "convertX509ToString returned null";
-
-  EXPECT_TRUE(strcmp(x509String, returnedString) == 0) << "blah";
-
-  X509_free(testX509);
-  freePEMString(returnedString);
+TEST_F(GrpcTlsCertificateProviderTest, CertifyServer1CredentialsPairMatch) {
+  absl::Status matchStatus{privateKeyPublicKeyMatch(private_key_, cert_chain_)};
+  EXPECT_TRUE(matchStatus.ok()) << matchStatus.ToString().c_str();
 }
 
-TEST_F(GrpcTlsCertificateProviderTest,
-       CertifyingServer0WithPrivateKeyPublicKeyMatch) {
-  const char* x509String{cert_chain_2_.c_str()};
-  EXPECT_TRUE(x509String != nullptr) << "certificate string is null";
+TEST_F(GrpcTlsCertificateProviderTest, CertifyServer0KeyServer1CertMismatch) {
+  absl::Status matchStatus{privateKeyPublicKeyMatch(private_key_2_, cert_chain_)};
+  EXPECT_FALSE(matchStatus.ok()) << matchStatus.ToString().c_str();
+}
 
-  const char* privateKeyString{private_key_2_.c_str()};
-  EXPECT_TRUE(privateKeyString != nullptr) << "private key string is null";
-
-  grpc_error_handle handlePtr{nullptr};
-  bool match{privateKeyPublicKeyMatch(privateKeyString, x509String,
-                                      GRPC_ERROR_REF(handlePtr))};
-  EXPECT_TRUE(match) << "privateKeyPublicKeyMatch() failed";
-  GRPC_ERROR_UNREF(handlePtr);
+TEST_F(GrpcTlsCertificateProviderTest, CertifyServer1KeyServer1CertMismatch) {
+  absl::Status matchStatus{privateKeyPublicKeyMatch(private_key_, cert_chain_2_)};
+  EXPECT_FALSE(matchStatus.ok()) << matchStatus.ToString().c_str();
 }
 
 }  // namespace testing

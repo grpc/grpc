@@ -28,7 +28,6 @@
 #include "src/core/lib/surface/api_trace.h"
 
 #define KEYS_MATCH 1
-#define CERTS_MATCH 0
 
 namespace grpc_core {
 
@@ -368,43 +367,13 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
-char* convertPkeyToString(EVP_PKEY* pkey) {
-  if (pkey == nullptr) {
+EVP_PKEY* convertPemStringToPkey(const std::string& pkeyString) {
+  if (pkeyString.empty()) {
     return nullptr;
   }
 
-  BIO* bio{BIO_new(BIO_s_mem())};
-  if (bio == nullptr) {
-    return nullptr;
-  }
-
-  // Writing the private key to the BIO in PEM-encoded form
-  if (!PEM_write_bio_PrivateKey(bio, pkey, nullptr, nullptr, 0, nullptr,
-                                nullptr)) {
-    BIO_free(bio);
-    return nullptr;
-  }
-
-  char* pemString{static_cast<char*>(malloc(bio->num_write + 1))};
-
-  if (pemString == nullptr) {
-    BIO_free(bio);
-    return nullptr;
-  }
-
-  memset(pemString, 0, bio->num_write + 1);
-  // Read the PEM-encoded data from the BIO into the string buffer
-  BIO_read(bio, pemString, bio->num_write);
-  BIO_free(bio);
-  return pemString;
-}
-
-EVP_PKEY* convertPemStringToPkey(const char* pkeyString) {
-  if (pkeyString == nullptr) {
-    return nullptr;
-  }
-
-  BIO* pkeyBio{BIO_new_mem_buf(pkeyString, strlen(pkeyString))};
+  // -1 indicates a null-terminated string
+  BIO* pkeyBio{BIO_new_mem_buf(pkeyString.c_str(), -1)};
   if (pkeyBio == nullptr) {
     return nullptr;
   }
@@ -415,42 +384,13 @@ EVP_PKEY* convertPemStringToPkey(const char* pkeyString) {
   return pkey;
 }
 
-char* convertX509ToString(X509* x509) {
-  if (x509 == nullptr) {
+X509* convertPemStringToX509(const std::string& x509String) {
+  if (x509String.empty()) {
     return nullptr;
   }
 
-  BIO* bio{BIO_new(BIO_s_mem())};
-  if (bio == nullptr) {
-    return nullptr;
-  }
-
-  // Writing the X.509 cert to the BIO in PEM-encoded form
-  if (!PEM_write_bio_X509(bio, x509)) {
-    BIO_free(bio);
-    return nullptr;
-  }
-
-  char* pemString{static_cast<char*>(malloc(bio->num_write + 1))};
-
-  if (pemString == nullptr) {
-    BIO_free(bio);
-    return nullptr;
-  }
-
-  memset(pemString, 0, bio->num_write + 1);
-  // Read the PEM-encoded data from the BIO into the string buffer
-  BIO_read(bio, pemString, bio->num_write);
-  BIO_free(bio);
-  return pemString;
-}
-
-X509* convertPemStringToX509(const char* x509String) {
-  if (x509String == nullptr) {
-    return nullptr;
-  }
-
-  BIO* pkeyBio{BIO_new_mem_buf(x509String, strlen(x509String))};
+  // -1 indicates a null-terminated string
+  BIO* pkeyBio{BIO_new_mem_buf(x509String.c_str(), -1)};
   if (pkeyBio == nullptr) {
     return nullptr;
   }
@@ -461,48 +401,39 @@ X509* convertPemStringToX509(const char* x509String) {
   return x509;
 }
 
-void freePEMString(const char* pkeyString) { free((void*)pkeyString); }
-
 bool compareKeys(const EVP_PKEY* a, const EVP_PKEY* b) {
   int result{EVP_PKEY_cmp(a, b)};
   return result == KEYS_MATCH;
 }
 
-bool compareCerts(const X509* a, const X509* b) {
-  int result{X509_cmp(a, b)};
-  return result == CERTS_MATCH;
-}
-
-bool privateKeyPublicKeyMatch(const char* private_key, const char* cert,
-                              grpc_error_handle error_handle) {
-  //error_handle will be null for now
-  // until Johann decides what error strings he wants
-  error_handle = GRPC_ERROR_NONE;
-
+absl::Status privateKeyPublicKeyMatch(const std::string& private_key,
+                                      const std::string& cert) {
   X509* x509{convertPemStringToX509(cert)};
   if (x509 == nullptr) {
-    return false;
+    return absl::InvalidArgumentError(
+        "Conversion from PEM string to X509 failed!");
   }
 
-  EVP_PKEY* pubKey{X509_get_pubkey(x509)};
-  if (pubKey == nullptr) {
-    return false;
+  EVP_PKEY* publicKey{X509_get_pubkey(x509)};
+  if (publicKey == nullptr) {
+    return absl::InvalidArgumentError(
+        "Extraction of public key from x.509 certificate failed!");
   }
 
-  EVP_PKEY* privKey{convertPemStringToPkey(private_key)};
-  if (privKey == nullptr) {
-    return false;
+  EVP_PKEY* privateKey{convertPemStringToPkey(private_key)};
+  if (privateKey == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from PEM string to EVP_PKEY failed!");
   }
 
-  bool result{compareKeys(privKey, pubKey)};
+  bool result{compareKeys(privateKey, publicKey)};
 
   X509_free(x509);
-  EVP_PKEY_free(privKey);
-  EVP_PKEY_free(pubKey);
-  return result;
+  EVP_PKEY_free(privateKey);
+  EVP_PKEY_free(publicKey);
+  return result ? absl::OkStatus()
+                : absl::InvalidArgumentError("Invalid credentials pair!");
 }
-
-const char* boolToString(bool b) { return b ? "true" : "false"; }
 
 }  // namespace grpc_core
 
