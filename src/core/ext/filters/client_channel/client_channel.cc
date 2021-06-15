@@ -3016,12 +3016,8 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
       MaybeAddCallToLbQueuedCallsLocked();
       return false;
     case LoadBalancingPolicy::PickResult::kDrop: {
-      grpc_error_handle lb_error = absl_status_to_grpc_error(result.status);
-      *error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Call dropped by load balancing policy", &lb_error, 1),
-          GRPC_ERROR_INT_LB_POLICY_DROP, 1);
-      GRPC_ERROR_UNREF(lb_error);
+      *error = grpc_error_set_int(absl_status_to_grpc_error(result.status),
+                                  GRPC_ERROR_INT_LB_POLICY_DROP, 1);
       MaybeRemoveCallFromLbQueuedCallsLocked();
       return true;
     }
