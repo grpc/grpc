@@ -155,6 +155,7 @@ EXPORTS
     grpc_tls_credentials_options_watch_identity_key_cert_pairs
     grpc_tls_credentials_options_set_identity_cert_name
     grpc_tls_credentials_options_set_server_authorization_check_config
+    grpc_tls_credentials_options_set_crl_directory
     grpc_tls_server_authorization_check_config_create
     grpc_tls_server_authorization_check_config_release
     grpc_xds_credentials_create
