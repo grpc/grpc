@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <random>
+
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
@@ -297,8 +299,11 @@ void GoogleCloud2ProdResolver::IPv6QueryDone(bool ipv6_supported) {
 
 void GoogleCloud2ProdResolver::StartXdsResolver() {
   // Construct bootstrap JSON.
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_int_distribution<uint64_t> dist(1, UINT64_MAX);
   Json::Object node = {
-      {"id", "C2P"},
+      {"id", absl::StrCat("C2P-", dist(mt))},
   };
   if (!zone_->empty()) {
     node["locality"] = Json::Object{
