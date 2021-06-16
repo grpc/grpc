@@ -11,25 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
+#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_POLLSET_H
+#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_POLLSET_H
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
+#ifdef GRPC_USE_EVENT_ENGINE
 
-#include "src/core/lib/iomgr/resolve_address.h"
+/// Signals pollset_work that some work has been done.
+void grpc_pollset_ee_broadcast_event();
 
-namespace grpc_event_engine {
-namespace experimental {
-
-EventEngine::ResolvedAddress CreateResolvedAddress(
-    const grpc_resolved_address& addr);
-
-grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress& ra);
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
-
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
+#endif
+#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_POLLSET_H

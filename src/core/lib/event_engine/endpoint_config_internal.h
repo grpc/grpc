@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_ENDPOINT_CONFIG_INTERNAL_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_ENDPOINT_CONFIG_INTERNAL_H
+
+#include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/endpoint_config.h>
 
@@ -29,12 +29,12 @@ namespace experimental {
 class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
   explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
-      : args_(args){};
+      : args_(args) {}
   ~ChannelArgsEndpointConfig() override = default;
   Setting Get(absl::string_view key) const override;
 
  private:
-  const grpc_channel_args* args_ = nullptr;
+  const grpc_channel_args* args_;
 };
 
 }  // namespace experimental

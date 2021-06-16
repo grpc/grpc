@@ -995,6 +995,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/event_engine/closure.h",
         "src/core/lib/iomgr/event_engine/endpoint.h",
+        "src/core/lib/iomgr/event_engine/pollset.h",
+        "src/core/lib/iomgr/event_engine/promise.h",
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",

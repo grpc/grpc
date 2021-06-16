@@ -17,9 +17,9 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/transport/error_utils.h"
 
-void pollset_ee_broadcast_event();
 extern void exec_ctx_run(grpc_closure* closure, grpc_error_handle error);
 
 namespace grpc_event_engine {
@@ -31,7 +31,7 @@ EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
     grpc_error_handle new_error =
         grpc_error_add_child(error, absl_status_to_grpc_error(status));
     exec_ctx_run(closure, new_error);
-    pollset_ee_broadcast_event();
+    grpc_pollset_ee_broadcast_event();
   };
 }
 

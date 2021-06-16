@@ -1828,6 +1828,8 @@ src/core/lib/iomgr/event_engine/endpoint.cc \
 src/core/lib/iomgr/event_engine/endpoint.h \
 src/core/lib/iomgr/event_engine/iomgr.cc \
 src/core/lib/iomgr/event_engine/pollset.cc \
+src/core/lib/iomgr/event_engine/pollset.h \
+src/core/lib/iomgr/event_engine/promise.h \
 src/core/lib/iomgr/event_engine/resolved_address_internal.cc \
 src/core/lib/iomgr/event_engine/resolved_address_internal.h \
 src/core/lib/iomgr/event_engine/resolver.cc \

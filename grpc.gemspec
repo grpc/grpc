@@ -895,6 +895,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/event_engine/endpoint.h )
   s.files += %w( src/core/lib/iomgr/event_engine/iomgr.cc )
   s.files += %w( src/core/lib/iomgr/event_engine/pollset.cc )
+  s.files += %w( src/core/lib/iomgr/event_engine/pollset.h )
+  s.files += %w( src/core/lib/iomgr/event_engine/promise.h )
   s.files += %w( src/core/lib/iomgr/event_engine/resolved_address_internal.cc )
   s.files += %w( src/core/lib/iomgr/event_engine/resolved_address_internal.h )
   s.files += %w( src/core/lib/iomgr/event_engine/resolver.cc )

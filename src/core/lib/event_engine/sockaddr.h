@@ -11,10 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/port.h>

@@ -219,31 +219,6 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
   bool released_ = false;
 };
 
-/// A minimal promise implementation.
-///
-/// This is light-duty, syntactical sugar around cv wait & signal, which is
-/// useful in some cases. A more robust implementation is being worked on
-/// separately.
-template <typename T>
-class Promise {
- public:
-  T& Get() {
-    absl::MutexLock lock(&mu_);
-    cv_.Wait(&mu_);
-    return val_;
-  }
-  void Set(T&& val) {
-    absl::MutexLock lock(&mu_);
-    val_ = std::move(val);
-    cv_.Signal();
-  }
-
- private:
-  absl::Mutex mu_;
-  absl::CondVar cv_;
-  T val_;
-};
-
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_SYNC_H */

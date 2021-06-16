@@ -22,6 +22,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
+#include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -32,13 +33,12 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
+using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
-
-void pollset_ee_broadcast_event();
 
 struct grpc_tcp_server {
   grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener,
@@ -86,7 +86,7 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(endpoint.status()));
     exec_ctx.Flush();
-    pollset_ee_broadcast_event();
+    grpc_pollset_ee_broadcast_event();
   };
 }
 
@@ -106,9 +106,9 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                                   addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
-  ChannelArgsEndpointConfig ecfg(channel_args);
-  absl::Status connected = g_event_engine->Connect(ee_on_connect, ra, ecfg,
-                                                   std::move(sa), ee_deadline);
+  ChannelArgsEndpointConfig endpoint_config(channel_args);
+  absl::Status connected = DefaultEventEngineFactory()->Connect(
+      ee_on_connect, ra, endpoint_config, std::move(sa), ee_deadline);
   if (!connected.ok()) {
     // EventEngine failed to start an asynchronous connect.
     grpc_endpoint_destroy(*endpoint);
@@ -121,13 +121,14 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
 grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                               const grpc_channel_args* args,
                               grpc_tcp_server** server) {
-  ChannelArgsEndpointConfig ecfg(args);
+  ChannelArgsEndpointConfig endpoint_config(args);
   grpc_resource_quota* rq = grpc_resource_quota_from_channel_args(args);
   if (rq == nullptr) {
     rq = grpc_resource_quota_create(nullptr);
   }
+  std::shared_ptr<EventEngine> event_engine = DefaultEventEngineFactory();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
-      g_event_engine->CreateListener(
+      event_engine->CreateListener(
           [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
             grpc_core::ExecCtx exec_ctx;
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
@@ -142,14 +143,14 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                           &iomgr_endpoint->base, nullptr,
                                           acceptor);
             exec_ctx.Flush();
-            pollset_ee_broadcast_event();
+            grpc_pollset_ee_broadcast_event();
           },
-          GrpcClosureToCallback(shutdown_complete, GRPC_ERROR_NONE), ecfg,
-          SliceAllocatorFactory(rq));
+          GrpcClosureToCallback(shutdown_complete, GRPC_ERROR_NONE),
+          endpoint_config, SliceAllocatorFactory(rq));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
-  *server = new grpc_tcp_server(std::move(*listener), g_event_engine, rq);
+  *server = new grpc_tcp_server(std::move(*listener), event_engine, rq);
   return GRPC_ERROR_NONE;
 }
 

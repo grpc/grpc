@@ -20,6 +20,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine/promise.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/work_serializer.h"
@@ -29,6 +30,7 @@
 namespace {
 using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::Promise;
 
 /// A fire-and-forget class representing an individual DNS request.
 ///
@@ -75,7 +77,9 @@ void resolve_address(const char* addr, const char* default_port,
                      grpc_pollset_set* /* interested_parties */,
                      grpc_closure* on_done,
                      grpc_resolved_addresses** addresses) {
-  auto dns_resolver = g_event_engine->GetDNSResolver();
+  auto dns_resolver =
+      grpc_event_engine::experimental::DefaultEventEngineFactory()
+          ->GetDNSResolver();
   if (!dns_resolver.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done,
                             absl_status_to_grpc_error(dns_resolver.status()));
@@ -86,13 +90,13 @@ void resolve_address(const char* addr, const char* default_port,
 }
 
 void blocking_handle_async_resolve_done(void* arg, grpc_error_handle error) {
-  static_cast<grpc_core::Promise<grpc_error*>*>(arg)->Set(std::move(error));
+  static_cast<Promise<grpc_error_handle>*>(arg)->Set(std::move(error));
 }
 
 grpc_error* blocking_resolve_address(const char* name, const char* default_port,
                                      grpc_resolved_addresses** addresses) {
   grpc_closure on_done;
-  grpc_core::Promise<grpc_error*> evt;
+  Promise<grpc_error_handle> evt;
   GRPC_CLOSURE_INIT(&on_done, blocking_handle_async_resolve_done, &evt,
                     grpc_schedule_on_exec_ctx);
   resolve_address(name, default_port, nullptr, &on_done, addresses);

@@ -27,12 +27,10 @@
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 
 TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
-  const grpc_arg arg =
-      grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  ChannelArgsEndpointConfig config(args);
+  grpc_arg arg = grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
+  const grpc_channel_args args = {1, &arg};
+  ChannelArgsEndpointConfig config(&args);
   EXPECT_EQ(absl::get<int>(config.Get("arst")), 3);
-  grpc_channel_args_destroy(args);
 }
 
 TEST(EndpointConfigTest, ReturnsMonostateForMissingKeys) {

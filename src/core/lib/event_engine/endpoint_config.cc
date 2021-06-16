@@ -33,7 +33,7 @@ EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
   }
   switch (arg->type) {
     case GRPC_ARG_STRING:
-      return std::string(arg->value.string);
+      return absl::string_view(arg->value.string);
     case GRPC_ARG_INTEGER:
       return arg->value.integer;
     case GRPC_ARG_POINTER:

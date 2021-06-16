@@ -31,8 +31,8 @@ extern grpc_pollset_vtable grpc_event_engine_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable;
 extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling"); /* Disabled by default */
+// Disabled by default
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");
 
 namespace {
 
@@ -45,7 +45,8 @@ void iomgr_platform_shutdown(void) {}
 void iomgr_platform_shutdown_background_closure(void) {}
 
 bool iomgr_platform_is_any_background_poller_thread(void) {
-  return g_event_engine->IsWorkerThread();
+  return grpc_event_engine::experimental::DefaultEventEngineFactory()
+      ->IsWorkerThread();
 }
 
 bool iomgr_platform_add_closure_to_background_poller(

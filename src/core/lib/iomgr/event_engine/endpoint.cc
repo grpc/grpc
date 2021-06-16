@@ -27,12 +27,11 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
+#include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
-
-void pollset_ee_broadcast_event();
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -58,7 +57,7 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                                 absl_status_to_grpc_error(status));
         exec_ctx.Flush();
-        pollset_ee_broadcast_event();
+        grpc_pollset_ee_broadcast_event();
       },
       read_buffer, absl::InfiniteFuture());
 }
@@ -82,7 +81,7 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                                 absl_status_to_grpc_error(status));
         exec_ctx.Flush();
-        pollset_ee_broadcast_event();
+        grpc_pollset_ee_broadcast_event();
       },
       write_buffer, absl::InfiniteFuture());
 }

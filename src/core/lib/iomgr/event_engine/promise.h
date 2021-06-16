@@ -11,25 +11,40 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
+#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_PROMISE_H
+#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_PROMISE_H
 
-#include <grpc/support/port_platform.h>
-
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::ResolvedAddress CreateResolvedAddress(
-    const grpc_resolved_address& addr);
+/// A minimal promise implementation.
+///
+/// This is light-duty, syntactical sugar around cv wait & signal, which is
+/// useful in some cases. A more robust implementation is being worked on
+/// separately.
+template <typename T>
+class Promise {
+ public:
+  T& Get() {
+    absl::MutexLock lock(&mu_);
+    cv_.Wait(&mu_);
+    return val_;
+  }
+  void Set(T&& val) {
+    absl::MutexLock lock(&mu_);
+    val_ = std::move(val);
+    cv_.Signal();
+  }
 
-grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress& ra);
+ private:
+  absl::Mutex mu_;
+  absl::CondVar cv_;
+  T val_;
+};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
+#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_PROMISE_H

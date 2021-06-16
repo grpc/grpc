@@ -15,11 +15,10 @@
  * limitations under the License.
  *
  */
-
-#include <grpc/support/port_platform.h>
-
 #ifndef GRPC_CORE_LIB_IOMGR_PORT_H
 #define GRPC_CORE_LIB_IOMGR_PORT_H
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GRPC_UV
 #ifndef GRPC_CUSTOM_SOCKET

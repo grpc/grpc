@@ -28,15 +28,17 @@ using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
 void timer_init(grpc_timer* timer, grpc_millis deadline,
                 grpc_closure* closure) {
-  timer->ee_task_handle = g_event_engine->RunAt(
-      grpc_core::ToAbslTime(
-          grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
-      GrpcClosureToCallback(closure, GRPC_ERROR_NONE), {});
+  timer->ee_task_handle =
+      grpc_event_engine::experimental::DefaultEventEngineFactory()->RunAt(
+          grpc_core::ToAbslTime(
+              grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
+          GrpcClosureToCallback(closure, GRPC_ERROR_NONE), {});
 }
 
 void timer_cancel(grpc_timer* timer) {
   auto handle = timer->ee_task_handle;
-  g_event_engine->TryCancel(handle);
+  grpc_event_engine::experimental::DefaultEventEngineFactory()->TryCancel(
+      handle);
 }
 
 /* Internal API */

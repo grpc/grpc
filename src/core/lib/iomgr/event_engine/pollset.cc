@@ -16,6 +16,7 @@
 #ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -69,7 +70,7 @@ void pollset_set_del_pollset_set(grpc_pollset_set* bag,
 
 }  // namespace
 
-void pollset_ee_broadcast_event() { gpr_cv_signal(&g_cv); }
+void grpc_pollset_ee_broadcast_event() { gpr_cv_signal(&g_cv); }
 
 // --- vtables ---
 grpc_pollset_vtable grpc_event_engine_pollset_vtable = {

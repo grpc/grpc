@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
-#include <grpc/support/port_platform.h>
-
 #ifndef GRPC_CORE_LIB_SURFACE_INIT_H
 #define GRPC_CORE_LIB_SURFACE_INIT_H
+
+#include <grpc/support/port_platform.h>
 
 #include <memory>
 
@@ -32,8 +32,5 @@ void grpc_register_security_filters(void);
 void grpc_security_pre_init(void);
 void grpc_security_init(void);
 void grpc_maybe_wait_for_async_shutdown(void);
-
-extern std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-    g_event_engine;
 
 #endif /* GRPC_CORE_LIB_SURFACE_INIT_H */

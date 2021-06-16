@@ -875,6 +875,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/iomgr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/pollset.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/pollset.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolved_address_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolved_address_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolver.cc" role="src" />
