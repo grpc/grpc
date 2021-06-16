@@ -10,7 +10,12 @@ The code for the xDS test server can be found at:
 Server should accept these arguments:
 
 *   --port=PORT
-    *   The port the server will run on.
+    *   The port the test server will run on.
+*   --maintenance_port=PORT
+    *   The port for the maintenance server running health, channelz, and admin(CSDS) services.
+*   --secure_mode=BOOLEAN
+    *   When set to true it uses XdsServerCredentials with the test server for security test cases.
+        In case of secure mode, port and maintenance_port should be different.
 
 ## Client
 
@@ -41,6 +46,8 @@ Clients should accept these arguments:
         implementation.
 *   --rpc_timeout_sec=SEC
     *   The timeout to set on all outbound RPCs. Default is 20.
+*   --secure_mode=BOOLEAN
+    *   When set to true it uses XdsChannelCredentials with the test client for security test cases.
 
 ### XdsUpdateClientConfigureService
 

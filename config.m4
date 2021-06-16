@@ -1038,7 +1038,9 @@ if test "$PHP_GRPC" != "no"; then
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
-    -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
+    -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
+    -DGRPC_XDS_USER_AGENT_SUFFIX="\"PHP\"" \
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.39.0dev\"")
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
