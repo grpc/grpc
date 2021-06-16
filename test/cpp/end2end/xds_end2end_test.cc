@@ -2680,18 +2680,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       ConcurrentRpc* rpc = &rpcs[i];
       rpc_options.SetupRpc(&rpc->context, &request);
       grpc_millis t0 = NowFromCycleCounter();
-      stub->experimental_async()->Echo(
-          &rpc->context, &request, &rpc->response,
-          [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
-            rpc->status = s;
-            rpc->elapsed_time = NowFromCycleCounter() - t0;
-            bool done;
-            {
-              absl::MutexLock lock(&mu);
-              done = (++completed) == num_rpcs;
-            }
-            if (done) cv.Signal();
-          });
+      stub->async()->Echo(&rpc->context, &request, &rpc->response,
+                          [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
+                            rpc->status = s;
+                            rpc->elapsed_time = NowFromCycleCounter() - t0;
+                            bool done;
+                            {
+                              absl::MutexLock lock(&mu);
+                              done = (++completed) == num_rpcs;
+                            }
+                            if (done) cv.Signal();
+                          });
     }
     {
       absl::MutexLock lock(&mu);
