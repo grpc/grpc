@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2021 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -65,40 +65,34 @@ RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv==16.7.9
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
 
-#================
-# C# dependencies
+# Google Cloud platform API libraries
+RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
-# cmake >=3.6 needed to build grpc_csharp_ext
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+
+#=================
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+
 RUN apt-get update && apt-get install -y cmake && apt-get clean
-
-# Install mono
-RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
-RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
-RUN apt-get update && apt-get install -y \
-    mono-devel \
-    ca-certificates-mono \
-    nuget \
-    && apt-get clean
-
-# Install dotnet SDK
-ENV DOTNET_SDK_VERSION 2.1.816
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz \
-    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
-
-# Trigger the population of the local package cache
-ENV NUGET_XMLDOC_MODE skip
-RUN mkdir warmup \
-    && cd warmup \
-    && dotnet new \
-    && cd .. \
-    && rm -rf warmup
 
 
 RUN mkdir /var/local/jenkins
+
+
+# Install openssl 1.0.2 from source
+RUN apt-get update && apt-get install -y build-essential zlib1g-dev
+RUN cd /tmp && \
+    wget https://www.openssl.org/source/old/1.0.2/openssl-1.0.2u.tar.gz && \
+    tar -xf openssl-1.0.2u.tar.gz && \
+    cd openssl-1.0.2u && \
+    ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
+    make -j 4 && \
+    make install && \
+    rm -rf /tmp/openssl-1.0.2u*
+ENV OPENSSL_ROOT_DIR=/usr/local/ssl
 
 # Define the default command.
 CMD ["bash"]

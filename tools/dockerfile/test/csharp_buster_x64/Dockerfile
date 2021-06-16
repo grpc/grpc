@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM debian:buster
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -77,7 +77,7 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 # Install mono
 RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
 RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb https://download.mono-project.com/repo/debian stable-stretch main" | tee /etc/apt/sources.list.d/mono-official-stable.list
+RUN echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
 RUN apt-get update && apt-get install -y \
     mono-devel \
     ca-certificates-mono \
@@ -85,22 +85,12 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Install dotnet SDK
-ENV DOTNET_SDK_VERSION 2.1.500
+ENV DOTNET_SDK_VERSION 2.1.816
 RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
     && mkdir -p /usr/share/dotnet \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
     && rm dotnet.tar.gz \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
-
-
-# Install .NET Core 1.1.10 runtime (required to run netcoreapp1.1)
-RUN curl -sSL -o dotnet_old.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Runtime/1.1.10/dotnet-debian.9-x64.1.1.10.tar.gz \
-    && mkdir -p dotnet_old \
-    && tar zxf dotnet_old.tar.gz -C dotnet_old \
-    && cp -r dotnet_old/shared/Microsoft.NETCore.App/1.1.10/ /usr/share/dotnet/shared/Microsoft.NETCore.App/ \
-    && rm -rf dotnet_old/ dotnet_old.tar.gz
-RUN apt-get update && apt-get install -y libunwind8 && apt-get clean
-
 
 # Trigger the population of the local package cache
 ENV NUGET_XMLDOC_MODE skip

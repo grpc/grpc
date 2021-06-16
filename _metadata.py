@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2021 gRPC authors.
+# Copyright 2021 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,14 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/_metadata.py.template`!!!
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
-
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
-export DOCKERFILE_DIR=tools/dockerfile/test/csharp_buster_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_xds_v3_csharp_test_in_docker.sh
-export OUTPUT_DIR=reports
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+__version__ = """1.39.0.dev0"""

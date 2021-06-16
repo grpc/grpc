@@ -66,8 +66,10 @@ def validate_loadtest_name(name: str) -> None:
     if len(name) > 253:
         raise ValueError(
             'LoadTest name must be less than 253 characters long: %s' % name)
-    if not all((s.isalnum() for s in name.split('-'))):
-        raise ValueError('Invalid elements in LoadTest name: %s' % name)
+    if not all(c.isalnum() and not c.isupper() for c in name if c != '-'):
+        raise ValueError('Invalid characters in LoadTest name: %s' % name)
+    if not name or not name[0].isalpha() or name[-1] == '-':
+        raise ValueError('Invalid format for LoadTest name: %s' % name)
 
 
 def loadtest_base_name(scenario_name: str,
@@ -75,7 +77,7 @@ def loadtest_base_name(scenario_name: str,
     """Constructs and returns the base name for a LoadTest resource."""
     name_elements = scenario_name.split('_')
     name_elements.extend(uniquifier_elements)
-    return '-'.join(name_elements)
+    return '-'.join(element.lower() for element in name_elements)
 
 
 def loadtest_name(prefix: str, scenario_name: str,
