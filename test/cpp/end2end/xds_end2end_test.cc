@@ -2008,11 +2008,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return true;
   }
 
-  void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
-                       int* num_drops,
-                       const RpcOptions& rpc_options = RpcOptions(),
-                       const char* drop_error_message_prefix =
-                           "EDS-configured drop: ") {
+  void SendRpcAndCount(
+      int* num_total, int* num_ok, int* num_failure, int* num_drops,
+      const RpcOptions& rpc_options = RpcOptions(),
+      const char* drop_error_message_prefix = "EDS-configured drop: ") {
     const Status status = SendRpc(rpc_options);
     if (status.ok()) {
       ++*num_ok;
