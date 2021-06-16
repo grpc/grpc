@@ -251,6 +251,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     static PickResult Queue();
     static PickResult Fail(absl::Status status);
     static PickResult Drop(absl::Status status);
+
+    // Convenience function for evaluating a PickResult.
+    // Calls the appropriate function for the type of result.
+    template <typename T>
+    T Handle(std::function<T(CompletePick&)> complete_func,
+             std::function<T(QueuePick&)> queue_func,
+             std::function<T(FailPick&)> fail_func,
+             std::function<T(DropPick&)> drop_func);
   };
 
   /// A subchannel picker is the object used to pick the subchannel to
@@ -425,6 +433,33 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Channel control helper.
   std::unique_ptr<ChannelControlHelper> channel_control_helper_;
 };
+
+//
+// Implementation
+//
+
+template <typename T>
+T LoadBalancingPolicy::PickResult::Handle(
+    std::function<T(CompletePick&)> complete_func,
+    std::function<T(QueuePick&)> queue_func,
+    std::function<T(FailPick&)> fail_func,
+    std::function<T(DropPick&)> drop_func) {
+  auto* complete_pick = absl::get_if<CompletePick>(&result);
+  if (complete_pick != nullptr) {
+    return complete_func(*complete_pick);
+  }
+  auto* queue_pick = absl::get_if<QueuePick>(&result);
+  if (queue_pick != nullptr) {
+    return queue_func(*queue_pick);
+  }
+  auto* fail_pick = absl::get_if<FailPick>(&result);
+  if (fail_pick != nullptr) {
+    return fail_func(*fail_pick);
+  }
+  auto* drop_pick = absl::get_if<DropPick>(&result);
+  GPR_ASSERT(drop_pick != nullptr);
+  return drop_func(*drop_pick);
+}
 
 }  // namespace grpc_core
 

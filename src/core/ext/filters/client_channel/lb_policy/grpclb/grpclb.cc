@@ -624,10 +624,10 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
   // Forward pick to child policy.
   PickResult result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
-  if (absl::holds_alternative<PickResult::CompletePick>(result.result)) {
-    auto& complete_pick = absl::get<PickResult::CompletePick>(result.result);
+  auto* complete_pick = absl::get_if<PickResult::CompletePick>(&result.result);
+  if (complete_pick != nullptr) {
     const SubchannelWrapper* subchannel_wrapper =
-        static_cast<SubchannelWrapper*>(complete_pick.subchannel.get());
+        static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
     // Encode client stats object into metadata for use by
     // client_load_reporting filter.
     GrpcLbClientStats* client_stats = subchannel_wrapper->client_stats();
@@ -653,7 +653,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       args.initial_metadata->Add(kGrpcLbLbTokenMetadataKey, lb_token);
     }
     // Unwrap subchannel to pass up to the channel.
-    complete_pick.subchannel = subchannel_wrapper->wrapped_subchannel();
+    complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
   }
   return result;
 }

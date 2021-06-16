@@ -302,25 +302,25 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
         "xds_cluster_impl picker not given any child picker"));
   }
   // Not dropping, so delegate to child picker.
-  PickResult pick_result = picker_->Pick(args);
-  if (absl::holds_alternative<PickResult::CompletePick>(pick_result.result)) {
-    auto& result = absl::get<PickResult::CompletePick>(pick_result.result);
+  PickResult result = picker_->Pick(args);
+  auto* complete_pick = absl::get_if<PickResult::CompletePick>(&result.result);
+  if (complete_pick != nullptr) {
     XdsClusterLocalityStats* locality_stats = nullptr;
     if (drop_stats_ != nullptr) {  // If load reporting is enabled.
       auto* subchannel_wrapper =
-          static_cast<StatsSubchannelWrapper*>(result.subchannel.get());
+          static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
       // Handle load reporting.
       locality_stats = subchannel_wrapper->locality_stats()->Ref().release();
       // Record a call started.
       locality_stats->AddCallStarted();
       // Unwrap subchannel to pass back up the stack.
-      result.subchannel = subchannel_wrapper->wrapped_subchannel();
+      complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     }
     // Intercept the recv_trailing_metadata op to record call completion.
     auto* call_counter = call_counter_->Ref(DEBUG_LOCATION, "call").release();
     auto original_recv_trailing_metadata_ready =
-        result.recv_trailing_metadata_ready;
-    result.recv_trailing_metadata_ready =
+        complete_pick->recv_trailing_metadata_ready;
+    complete_pick->recv_trailing_metadata_ready =
         // Note: This callback does not run in either the control plane
         // work serializer or in the data plane mutex.
         [locality_stats, original_recv_trailing_metadata_ready, call_counter](
@@ -346,7 +346,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     // failure for the same wait_for_ready RPC.
     call_counter_->Decrement();
   }
-  return pick_result;
+  return result;
 }
 
 //

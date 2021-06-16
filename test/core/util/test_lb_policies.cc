@@ -229,10 +229,11 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       // Do pick.
       PickResult result = delegate_picker_->Pick(args);
       // Intercept trailing metadata.
-      if (absl::holds_alternative<PickResult::CompletePick>(result.result)) {
-        auto& complete_pick = absl::get<PickResult::CompletePick>(result.result);
+      auto* complete_pick =
+          absl::get_if<PickResult::CompletePick>(&result.result);
+      if (complete_pick != nullptr) {
         new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
-            TrailingMetadataHandler(&complete_pick, cb_);
+            TrailingMetadataHandler(complete_pick, cb_);
       }
       return result;
     }
