@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/random/random.h"
+
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
   GPR_ASSERT(a.clock_type == b.clock_type);
@@ -260,4 +262,39 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
   // function in unit tests. (e.g. https://github.com/grpc/grpc/pull/22655)
   return gpr_time_add(gpr_now(clock_type),
                       gpr_time_sub(t, gpr_now(t.clock_type)));
+}
+
+void temp_random_test() {
+  std::vector<int> objs = {1, 2, 3, 4, 5};
+
+  absl::BitGen gen;
+
+  // Choose an element from a set.
+  auto elem = objs[absl::Uniform(gen, 0u, objs.size())];
+
+  // Generate a uniform value between 1 and 6.
+  auto dice_roll = absl::Uniform<int>(absl::IntervalClosedClosed, gen, 1, 6);
+
+  // Generate a random byte.
+  auto byte = absl::Uniform<uint8_t>(gen);
+
+  // Generate a fractional value from [0.0f, 1.0f).
+  auto fraction = absl::Uniform<float>(gen, 0, 1);
+
+  // Toss a fair coin; 50/50 probability.
+  bool coin_toss = absl::Bernoulli(gen, 0.5);
+
+  // Select a file size between 1k and 10MB, biased towards
+  // smaller file sizes.
+  auto file_size = absl::LogUniform<size_t>(gen, 1000, 10 * 1000 * 1000);
+
+  // Randomize (shuffle) a collection.
+  std::shuffle(std::begin(objs), std::end(objs), gen);
+
+  printf("%d\n", elem);
+  printf("%d\n", dice_roll);
+  printf("%d\n", byte);
+  printf("%f\n", fraction);
+  printf("%d\n", coin_toss);
+  printf("%d\n", (int)file_size);
 }
