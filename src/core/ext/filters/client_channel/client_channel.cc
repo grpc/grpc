@@ -1359,11 +1359,12 @@ void ClientChannel::OnResolverErrorLocked(grpc_error_handle error) {
     grpc_error_handle state_error =
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "Resolver transient failure", &error, 1);
+    absl::Status status = grpc_error_to_absl_status(state_error);
     {
       MutexLock lock(&resolution_mu_);
       // Update resolver transient failure.
       GRPC_ERROR_UNREF(resolver_transient_failure_error_);
-      resolver_transient_failure_error_ = GRPC_ERROR_REF(state_error);
+      resolver_transient_failure_error_ = state_error;
       // Process calls that were queued waiting for the resolver result.
       for (ResolverQueuedCall* call = resolver_queued_calls_; call != nullptr;
            call = call->next) {
@@ -1376,7 +1377,6 @@ void ClientChannel::OnResolverErrorLocked(grpc_error_handle error) {
       }
     }
     // Update connectivity state.
-    absl::Status status = grpc_error_to_absl_status(state_error);
     UpdateStateAndPickerLocked(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status, "resolver failure",
         absl::make_unique<LoadBalancingPolicy::TransientFailurePicker>(status));
