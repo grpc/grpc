@@ -32,16 +32,13 @@ namespace experimental {
 /// integer, string, or void pointer. Each EE impl should define the set of
 /// Settings that it supports being passed into it, along with the corresponding
 /// type.
-///
-/// The EndpointConfig is not responsible for cleanup of any of the objects
-/// pointed to by the void* values it contains.
 class EndpointConfig {
  public:
   virtual ~EndpointConfig() = default;
   using Setting = absl::variant<absl::monostate, int, absl::string_view, void*>;
   /// Returns an EndpointConfig Setting. If there is no Setting associated with
   /// \a key in the EndpointConfig, an \a absl::monostate type will be
-  /// returned.
+  /// returned. Caller does not take ownership of resulting value.
   virtual Setting Get(absl::string_view key) const = 0;
 };
 

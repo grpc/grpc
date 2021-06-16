@@ -30,7 +30,6 @@ class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
   explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
       : args_(args) {}
-  ~ChannelArgsEndpointConfig() override = default;
   Setting Get(absl::string_view key) const override;
 
  private:

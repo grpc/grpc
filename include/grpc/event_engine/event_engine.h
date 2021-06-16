@@ -324,6 +324,8 @@ class EventEngine {
   virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
+// TODO(hork): finalize the API and document it. We need to firm up the story
+// around user-provided EventEngines.
 std::shared_ptr<EventEngine> DefaultEventEngineFactory();
 
 }  // namespace experimental

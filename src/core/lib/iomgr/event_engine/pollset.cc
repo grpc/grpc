@@ -24,7 +24,7 @@
 namespace {
 
 static gpr_mu g_mu;
-static gpr_mu g_cv;
+static gpr_cv g_cv;
 
 // --- pollset vtable API ---
 void pollset_global_init(void) {

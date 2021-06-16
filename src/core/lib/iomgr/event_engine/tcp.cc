@@ -22,6 +22,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
+#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -33,7 +34,6 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
@@ -97,7 +97,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  const grpc_resolved_address* addr, grpc_millis deadline) {
   grpc_event_engine_endpoint* ee_endpoint =
       reinterpret_cast<grpc_event_engine_endpoint*>(
-          grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
+          grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr).c_str()));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, endpoint);
@@ -107,7 +107,9 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
   ChannelArgsEndpointConfig endpoint_config(channel_args);
-  absl::Status connected = DefaultEventEngineFactory()->Connect(
+  // TODO(hork): Establish how to take a user-supplied EventEngine here instead
+  // of using a global default.
+  absl::Status connected = grpc_iomgr_event_engine()->Connect(
       ee_on_connect, ra, endpoint_config, std::move(sa), ee_deadline);
   if (!connected.ok()) {
     // EventEngine failed to start an asynchronous connect.
@@ -126,7 +128,9 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   if (rq == nullptr) {
     rq = grpc_resource_quota_create(nullptr);
   }
-  std::shared_ptr<EventEngine> event_engine = DefaultEventEngineFactory();
+  // TODO(hork): Establish how to take a user-supplied EventEngine here instead
+  // of using a global default.
+  std::shared_ptr<EventEngine> event_engine = grpc_iomgr_event_engine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       event_engine->CreateListener(
           [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {

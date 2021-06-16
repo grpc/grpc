@@ -20,6 +20,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/event_engine/promise.h"
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -77,9 +78,7 @@ void resolve_address(const char* addr, const char* default_port,
                      grpc_pollset_set* /* interested_parties */,
                      grpc_closure* on_done,
                      grpc_resolved_addresses** addresses) {
-  auto dns_resolver =
-      grpc_event_engine::experimental::DefaultEventEngineFactory()
-          ->GetDNSResolver();
+  auto dns_resolver = grpc_iomgr_event_engine()->GetDNSResolver();
   if (!dns_resolver.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done,
                             absl_status_to_grpc_error(dns_resolver.status()));
