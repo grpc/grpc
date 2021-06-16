@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H
 #define GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 namespace grpc {
 #ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
