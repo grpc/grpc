@@ -284,7 +284,8 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   const std::string* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
     if (drop_stats_ != nullptr) drop_stats_->AddCallDropped(*drop_category);
-    return PickResult::Drop(absl::UnavailableError("EDS-configured drop"));
+    return PickResult::Drop(absl::UnavailableError(
+        absl::StrCat("EDS-configured drop: ", *drop_category)));
   }
   // Handle circuit breaking.
   uint32_t current = call_counter_->Load();
