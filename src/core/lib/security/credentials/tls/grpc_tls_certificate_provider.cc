@@ -367,34 +367,34 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
 
 absl::Status PrivateKeyPublicKeyMatches(const std::string& private_key_string,
                                         const std::string& cert_string) {
-  if (private_key_string.empty()) {  // test - done
+  if (private_key_string.empty()) {
     return absl::InvalidArgumentError("Private key string is empty.");
   }
-  if (cert_string.empty()) {  // test - done
+  if (cert_string.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
   BIO* cert_bio = BIO_new_mem_buf(cert_string.c_str(), cert_string.size());
   if (cert_bio == nullptr) {
-    return absl::InvalidArgumentError(  // test - no idea how to
+    return absl::InvalidArgumentError(
         "Conversion from certificate string to BIO failed.");
   }
   X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
   BIO_free(cert_bio);
   if (x509 == nullptr) {
-    return absl::InvalidArgumentError(  // test - done
+    return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 failed.");
   }
   EVP_PKEY* public_key = X509_get_pubkey(x509);
   X509_free(x509);
   if (public_key == nullptr) {
-    return absl::InvalidArgumentError(  // test - no idea how to
+    return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
   BIO* private_key_bio =
       BIO_new_mem_buf(private_key_string.c_str(), private_key_string.size());
   if (private_key_bio == nullptr) {
     EVP_PKEY_free(public_key);
-    return absl::InvalidArgumentError(  // test - no idea how to
+    return absl::InvalidArgumentError(
         "Conversion from private key string to BIO failed.");
   }
   EVP_PKEY* private_key =
@@ -402,15 +402,14 @@ absl::Status PrivateKeyPublicKeyMatches(const std::string& private_key_string,
   BIO_free(private_key_bio);
   if (private_key == nullptr) {
     EVP_PKEY_free(public_key);
-    return absl::InvalidArgumentError(  // test - done
+    return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
   bool result = EVP_PKEY_cmp(private_key, public_key) == 1;
   EVP_PKEY_free(private_key);
   EVP_PKEY_free(public_key);
-  return result ? absl::OkStatus()  // test - done
-                : absl::InvalidArgumentError(
-                      "Invalid credentials pair.");  // test - done
+  return result ? absl::OkStatus()
+                : absl::InvalidArgumentError("Invalid credentials pair.");
 }
 
 }  // namespace grpc_core
