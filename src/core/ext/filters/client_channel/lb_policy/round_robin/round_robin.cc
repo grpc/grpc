@@ -213,7 +213,7 @@ RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
             parent_, this, last_picked_index_,
             subchannels_[last_picked_index_].get());
   }
-  return PickResult::Complete(subchannels_[last_picked_index_]);
+  return PickResult::Complete{subchannels_[last_picked_index_]};
 }
 
 //

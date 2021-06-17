@@ -206,7 +206,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// The result of picking a subchannel for a call.
   struct PickResult {
     /// A successful pick.
-    struct CompletePick {
+    struct Complete {
       /// The subchannel to be used for the call.  Must be non-null.
       RefCountedPtr<SubchannelInterface> subchannel;
 
@@ -227,38 +227,43 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Pick cannot be completed until something changes on the control
     /// plane.  The client channel will queue the pick and try again the
     /// next time the picker is updated.
-    struct QueuePick {};
+    struct Queue {};
 
     /// Pick failed.  If the call is wait_for_ready, the client channel
     /// will wait for the next picker and try again; otherwise, it
     /// will immediately fail the call with the status indicated (although
     /// the call may be retried if the client channel is configured to do so).
-    struct FailPick {
+    struct Fail {
       absl::Status status;
     };
 
     /// Pick will be dropped with the status specified.
     /// Unlike FailPick, the call will be dropped even if it is
     /// wait_for_ready, and retries (if configured) will be inhibited.
-    struct DropPick {
+    struct Drop {
       absl::Status status;
     };
 
-    absl::variant<CompletePick, QueuePick, FailPick, DropPick> result;
+    // A pick result must be one of these types.
+    absl::variant<Complete, Queue, Fail, Drop> result;
 
-    /// Factory functions for convenience.
-    static PickResult Complete(RefCountedPtr<SubchannelInterface> subchannel);
-    static PickResult Queue();
-    static PickResult Fail(absl::Status status);
-    static PickResult Drop(absl::Status status);
+    PickResult() = default;
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Complete complete) : result(std::move(complete)) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Queue queue) : result(std::move(queue)) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Fail fail) : result(std::move(fail)) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    PickResult(Drop drop) : result(std::move(drop)) {}
 
     // Convenience function for evaluating a PickResult.
     // Calls the appropriate function for the type of result.
     template <typename T>
-    T Handle(std::function<T(CompletePick&)> complete_func,
-             std::function<T(QueuePick&)> queue_func,
-             std::function<T(FailPick&)> fail_func,
-             std::function<T(DropPick&)> drop_func);
+    T Handle(std::function<T(Complete&)> complete_func,
+             std::function<T(Queue&)> queue_func,
+             std::function<T(Fail&)> fail_func,
+             std::function<T(Drop&)> drop_func);
   };
 
   /// A subchannel picker is the object used to pick the subchannel to
@@ -404,7 +409,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 
     PickResult Pick(PickArgs /*args*/) override {
-      return PickResult::Fail(status_);
+      return PickResult::Fail{status_};
     }
 
    private:
@@ -440,23 +445,23 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
 template <typename T>
 T LoadBalancingPolicy::PickResult::Handle(
-    std::function<T(CompletePick&)> complete_func,
-    std::function<T(QueuePick&)> queue_func,
-    std::function<T(FailPick&)> fail_func,
-    std::function<T(DropPick&)> drop_func) {
-  auto* complete_pick = absl::get_if<CompletePick>(&result);
+    std::function<T(Complete&)> complete_func,
+    std::function<T(Queue&)> queue_func,
+    std::function<T(Fail&)> fail_func,
+    std::function<T(Drop&)> drop_func) {
+  auto* complete_pick = absl::get_if<Complete>(&result);
   if (complete_pick != nullptr) {
     return complete_func(*complete_pick);
   }
-  auto* queue_pick = absl::get_if<QueuePick>(&result);
+  auto* queue_pick = absl::get_if<Queue>(&result);
   if (queue_pick != nullptr) {
     return queue_func(*queue_pick);
   }
-  auto* fail_pick = absl::get_if<FailPick>(&result);
+  auto* fail_pick = absl::get_if<Fail>(&result);
   if (fail_pick != nullptr) {
     return fail_func(*fail_pick);
   }
-  auto* drop_pick = absl::get_if<DropPick>(&result);
+  auto* drop_pick = absl::get_if<Drop>(&result);
   GPR_ASSERT(drop_pick != nullptr);
   return drop_func(*drop_pick);
 }

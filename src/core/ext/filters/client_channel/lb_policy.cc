@@ -92,29 +92,6 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 }
 
 //
-// LoadBalancingPolicy::PickResult
-//
-
-LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Complete(
-    RefCountedPtr<SubchannelInterface> subchannel) {
-  return {PickResult::CompletePick{std::move(subchannel), nullptr}};
-}
-
-LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Queue() {
-  return {PickResult::QueuePick()};
-}
-
-LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Fail(
-    absl::Status status) {
-  return {PickResult::FailPick{status}};
-}
-
-LoadBalancingPolicy::PickResult LoadBalancingPolicy::PickResult::Drop(
-    absl::Status status) {
-  return {PickResult::DropPick{status}};
-}
-
-//
 // LoadBalancingPolicy::QueuePicker
 //
 

@@ -284,26 +284,26 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   const std::string* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
     if (drop_stats_ != nullptr) drop_stats_->AddCallDropped(*drop_category);
-    return PickResult::Drop(absl::UnavailableError(
-        absl::StrCat("EDS-configured drop: ", *drop_category)));
+    return PickResult::Drop{absl::UnavailableError(
+        absl::StrCat("EDS-configured drop: ", *drop_category))};
   }
   // Handle circuit breaking.
   uint32_t current = call_counter_->Load();
   // Check and see if we exceeded the max concurrent requests count.
   if (current >= max_concurrent_requests_) {
     if (drop_stats_ != nullptr) drop_stats_->AddUncategorizedDrops();
-    return PickResult::Drop(absl::UnavailableError("circuit breaker drop"));
+    return PickResult::Drop{absl::UnavailableError("circuit breaker drop")};
   }
   call_counter_->Increment();
   // If we're not dropping the call, we should always have a child picker.
   if (picker_ == nullptr) {  // Should never happen.
     call_counter_->Decrement();
-    return PickResult::Fail(absl::InternalError(
-        "xds_cluster_impl picker not given any child picker"));
+    return PickResult::Fail{absl::InternalError(
+        "xds_cluster_impl picker not given any child picker")};
   }
   // Not dropping, so delegate to child picker.
   PickResult result = picker_->Pick(args);
-  auto* complete_pick = absl::get_if<PickResult::CompletePick>(&result.result);
+  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     XdsClusterLocalityStats* locality_stats = nullptr;
     if (drop_stats_ != nullptr) {  // If load reporting is enabled.

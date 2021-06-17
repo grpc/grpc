@@ -114,7 +114,7 @@ class PickFirst : public LoadBalancingPolicy {
         : subchannel_(std::move(subchannel)) {}
 
     PickResult Pick(PickArgs /*args*/) override {
-      return PickResult::Complete(subchannel_);
+      return PickResult::Complete{subchannel_};
     }
 
    private:
