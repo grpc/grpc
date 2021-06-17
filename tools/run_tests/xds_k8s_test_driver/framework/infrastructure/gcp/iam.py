@@ -109,7 +109,7 @@ class Expr:
         return dataclasses.asdict(self)
 
 
-@dataclasses.dataclass(eq=False, frozen=True)
+@dataclasses.dataclass(frozen=True)
 class Policy:
     """An Identity and Access Management (IAM) policy, which specifies
     access controls for Google Cloud resources.
