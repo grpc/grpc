@@ -634,17 +634,20 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
         ExecCtx::Get()->Now() + *calld->retry_policy_->per_attempt_timeout();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(GPR_INFO,
-              "chand=%p calld=%p attempt=%p: retrying failed call in %"
-              PRId64 " ms",
+              "chand=%p calld=%p attempt=%p: per-attempt timeout in %" PRId64
+              " ms",
               calld->chand_, calld, this,
               *calld->retry_policy_->per_attempt_timeout());
     }
     // Schedule retry after computed delay.
     GRPC_CLOSURE_INIT(&on_per_attempt_timer_, OnPerAttemptTimer, this, nullptr);
     GRPC_CALL_STACK_REF(calld->owning_call_, "OnPerAttemptTimer");
+    Ref(DEBUG_LOCATION, "OnPerAttemptTimer").release();
     per_attempt_timer_pending_ = true;
     grpc_timer_init(&per_attempt_timer_, next_attempt_time,
                     &on_per_attempt_timer_);
+// FIXME: set deadline based on per_attempt_timeout -- but maybe skip
+// that if this is the last call attempt?
   }
 }
 
@@ -979,6 +982,7 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
     grpc_mdelem* server_pushback_md, grpc_millis* server_pushback_ms) {
   // LB drops always inhibit retries.
   if (is_lb_drop) return false;
+  // TODO(roth): Handle transparent retries here.
   // Get retry policy.
   if (calld_->retry_policy_ == nullptr) return false;
   // Check status.
@@ -1004,21 +1008,21 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
       }
       return false;
     }
-    // Record the failure and check whether retries are throttled.
-    // Note that it's important for this check to come after the status
-    // code check above, since we should only record failures whose statuses
-    // match the configured retryable status codes, so that we don't count
-    // things like failures due to malformed requests (INVALID_ARGUMENT).
-    // Conversely, it's important for this to come before the remaining
-    // checks, so that we don't fail to record failures due to other factors.
-    if (calld_->retry_throttle_data_ != nullptr &&
-        !calld_->retry_throttle_data_->RecordFailure()) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-        gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: retries throttled",
-                calld_->chand_, calld_, this);
-      }
-      return false;
+  }
+  // Record the failure and check whether retries are throttled.
+  // Note that it's important for this check to come after the status
+  // code check above, since we should only record failures whose statuses
+  // match the configured retryable status codes, so that we don't count
+  // things like failures due to malformed requests (INVALID_ARGUMENT).
+  // Conversely, it's important for this to come before the remaining
+  // checks, so that we don't fail to record failures due to other factors.
+  if (calld_->retry_throttle_data_ != nullptr &&
+      !calld_->retry_throttle_data_->RecordFailure()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: retries throttled",
+              calld_->chand_, calld_, this);
     }
+    return false;
   }
   // Check whether the call is committed.
   if (calld_->retry_committed_) {
@@ -1117,38 +1121,29 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptTimerLocked(
     void* arg, grpc_error_handle error) {
   auto* call_attempt = static_cast<CallAttempt*>(arg);
   auto* calld = call_attempt->calld_;
+  CallCombinerClosureList closures;
   if (error == GRPC_ERROR_NONE && call_attempt->per_attempt_timer_pending_) {
     call_attempt->per_attempt_timer_pending_ = false;
-    // TODO(roth): When implementing hedging, if the policy allows additional
-    // hedging attempts, we should create a new call attempt here instead
-    // of doing what we do below.
-    //
     // Check whether we should retry.
     if (call_attempt->ShouldRetry(/*status=*/absl::nullopt, /*is_lb_drop=*/false,
                                   /*server_pushback_md=*/nullptr,
                                   /*server_pushback_ms=*/nullptr)) {
-      // We should retry.
+      // We are retrying.  Start backoff timer.
+      calld->StartRetryTimer(/*server_pushback_ms=*/0);
       // Cancel this attempt.
-      CallCombinerClosureList closures;
+      // TODO(roth): When implementing hedging, we should not cancel the
+      // current attempt.
       call_attempt->Cancel(&closures);
-      closures.RunClosuresWithoutYielding(calld->call_combiner_);
-      // Create a new call attempt.  Yields call combiner.
-      calld->CreateCallAttempt();
     } else {
       // Not retrying, so commit the call.
       calld->RetryCommit(call_attempt);
       // If retry state is no longer needed, switch to fast path for
       // subsequent batches.
       call_attempt->MaybeSwitchToFastPath();
-      // Yeild call combiner.
-      GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                              "per-attempt timer fired but not retrying");
     }
-  } else {
-    // Yeild call combiner.
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "per-attempt timer cancelled");
   }
+  closures.RunClosures(calld->call_combiner_);
+  call_attempt->Unref(DEBUG_LOCATION, "OnPerAttemptTimer");
   GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnPerAttemptTimer");
 }
 
