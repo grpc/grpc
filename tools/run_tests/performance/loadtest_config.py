@@ -383,7 +383,17 @@ def main() -> None:
     if args.runs_per_test < 1:
         argp.error('runs_per_test must be greater than zero.')
 
-    substitutions = parse_key_value_args(args.substitutions)
+    # Config generation ignores environment variables that are passed by the
+    # controller at runtime.
+    substitutions = {
+        'DRIVER_PORT': '${DRIVER_PORT}',
+        'KILL_AFTER': '${KILL_AFTER}',
+        'POD_TIMEOUT': '${POD_TIMEOUT}',
+    }
+
+    # The user can override the ignored variables above by passing them in as
+    # substitution keys.
+    substitutions.update(parse_key_value_args(args.substitutions))
 
     uniquifier_elements = args.uniquifier_elements
     if args.d:

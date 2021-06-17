@@ -257,6 +257,11 @@ The script `loadtest_config.py` takes the following options:
 - `-t`, `--template`<br> Template file. A template is a configuration file that
   may contain multiple client and server configuration, and may also include
   substitution keys.
+- `-s`, `--substitution` Substitution keys, in the format `key=value`. These
+  keys are substituted while processing the template. Environment variables that
+  are set by the load test controller at runtime are ignored by default
+  (`DRIVER_PORT`, `KILL_AFTER`, `POD_TIMEOUT`). The user can override this
+  behavior by specifying these variables as keys.
 - `-p`, `--prefix`<br> Test names consist of a prefix_joined with a uuid with a
   dash. Test names are stored in `metadata.name`. The prefix is also added as
   the `prefix` label in `metadata.labels`. The prefix defaults to the user name
