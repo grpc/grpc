@@ -276,8 +276,8 @@ class IamV1(gcp.api.GcpProjectApiResource):
         updated_policy: Policy = _replace_binding(policy, binding,
                                                   updated_binding)
         self.set_service_account_iam_policy(account, updated_policy)
-        logger.info('Role %s granted to member %s for Service Account %s', role,
-                    member, account)
+        logger.debug('Role %s granted to member %s for Service Account %s',
+                     role, member, account)
 
     @handle_etag_conflict
     def remove_service_account_iam_policy_binding(self, account: str, role: str,
@@ -307,5 +307,5 @@ class IamV1(gcp.api.GcpProjectApiResource):
         updated_policy: Policy = _replace_binding(policy, binding,
                                                   updated_binding)
         self.set_service_account_iam_policy(account, updated_policy)
-        logger.info('Role %s revoked from member %s for Service Account %s',
-                    role, member, account)
+        logger.debug('Role %s revoked from member %s for Service Account %s',
+                     role, member, account)
