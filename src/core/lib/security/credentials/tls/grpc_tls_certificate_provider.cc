@@ -365,9 +365,9 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
-absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key_,
+absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
                                            const std::string& cert) {
-  if (private_key_.empty()) {
+  if (private_key.empty()) {
     return absl::InvalidArgumentError("Private key string is empty.");
   }
   if (cert.empty()) {
@@ -391,7 +391,7 @@ absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key_,
         "Extraction of public key from x.509 certificate failed.");
   }
   BIO* private_key_bio =
-      BIO_new_mem_buf(private_key_.c_str(), private_key_.size());
+      BIO_new_mem_buf(private_key.c_str(), private_key.size());
   if (private_key_bio == nullptr) {
     EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(
