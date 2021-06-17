@@ -139,6 +139,20 @@ class GcpApiManager:
 
         raise NotImplementedError(f'Secret Manager {version} not supported')
 
+    @functools.lru_cache(None)
+    def iam(self, version: str) -> discovery.Resource:
+        """Identity and Access Management (IAM) API.
+
+        https://cloud.google.com/iam/docs/reference/rest
+        https://googleapis.github.io/google-api-python-client/docs/dyn/iam_v1.html
+        """
+        api_name = 'iam'
+        if version == 'v1':
+            return self._build_from_discovery_v1(api_name, version)
+
+        raise NotImplementedError(
+            f'Identity and Access Management (IAM) {version} not supported')
+
     def _build_from_discovery_v1(self, api_name, version):
         api = discovery.build(api_name,
                               version,
