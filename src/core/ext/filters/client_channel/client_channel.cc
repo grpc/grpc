@@ -2995,7 +2995,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
         return true;
       },
       // QueuePick
-      [this](LoadBalancingPolicy::PickResult::QueuePick& queue_pick)
+      [this](LoadBalancingPolicy::PickResult::QueuePick& /*queue_pick*/)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
           gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick queued", chand_, this);
