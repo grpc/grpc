@@ -81,6 +81,8 @@ basic_example() {
     ${LOADTEST_CONFIG} \
         -l "${language}" \
         -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
+        -s KILL_AFTER="\${KILL_AFTER}" -s POD_TIMEOUT="\${POD_TIMEOUT}" \
+        -s DRIVER_PORT="\${DRIVER_PORT}" \
         -s client_pool= -s server_pool= -s big_query_table= \
         -s timeout_seconds=900 --prefix=examples -u basic -r "^${scenario}$" \
         --allow_client_language=c++ --allow_server_language=c++ \
@@ -99,6 +101,8 @@ prebuilt_example() {
     ${LOADTEST_CONFIG} \
         -l "${language}" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
+        -s KILL_AFTER="\${KILL_AFTER}" -s POD_TIMEOUT="\${POD_TIMEOUT}" \
+        -s DRIVER_PORT="\${DRIVER_PORT}" \
         -s driver_pool="\${driver_pool}" -s driver_image="\${driver_image}" \
         -s client_pool="\${workers_pool}" -s server_pool="\${workers_pool}" \
         -s big_query_table="\${big_query_table}" -s timeout_seconds=900 \
