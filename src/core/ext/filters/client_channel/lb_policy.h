@@ -222,6 +222,13 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       // existing implementations.
       std::function<void(absl::Status, MetadataInterface*, CallState*)>
           recv_trailing_metadata_ready;
+
+      explicit Complete(
+          RefCountedPtr<SubchannelInterface> sc,
+          std::function<void(absl::Status, MetadataInterface*, CallState*)> cb
+              = nullptr)
+          : subchannel(std::move(sc)),
+            recv_trailing_metadata_ready(std::move(cb)) {}
     };
 
     /// Pick cannot be completed until something changes on the control
@@ -235,6 +242,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// the call may be retried if the client channel is configured to do so).
     struct Fail {
       absl::Status status;
+
+      explicit Fail(absl::Status s) : status(s) {}
     };
 
     /// Pick will be dropped with the status specified.
@@ -242,10 +251,13 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// wait_for_ready, and retries (if configured) will be inhibited.
     struct Drop {
       absl::Status status;
+
+      explicit Drop(absl::Status s) : status(s) {}
     };
 
     // A pick result must be one of these types.
-    absl::variant<Complete, Queue, Fail, Drop> result;
+    // Default to Queue, just to allow default construction.
+    absl::variant<Complete, Queue, Fail, Drop> result = Queue();
 
     PickResult() = default;
     // NOLINTNEXTLINE(google-explicit-constructor)
@@ -409,7 +421,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 
     PickResult Pick(PickArgs /*args*/) override {
-      return PickResult::Fail{status_};
+      return PickResult::Fail(status_);
     }
 
    private:

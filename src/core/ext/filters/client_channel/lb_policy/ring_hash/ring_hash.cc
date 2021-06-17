@@ -384,8 +384,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
-    return PickResult::Fail{
-        absl::InternalError("xds ring hash value is not a number")};
+    return PickResult::Fail(
+        absl::InternalError("xds ring hash value is not a number"));
   }
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
@@ -425,12 +425,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       };
   switch (ring_[first_index].connectivity_state) {
     case GRPC_CHANNEL_READY:
-      return PickResult::Complete{ring_[first_index].subchannel};
+      return PickResult::Complete(ring_[first_index].subchannel);
     case GRPC_CHANNEL_IDLE:
       ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
       // fallthrough
     case GRPC_CHANNEL_CONNECTING:
-      return PickResult::Queue{};
+      return PickResult::Queue();
     default:  // GRPC_CHANNEL_TRANSIENT_FAILURE
       break;
   }
@@ -446,7 +446,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       continue;
     }
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
-      return PickResult::Complete{entry.subchannel};
+      return PickResult::Complete(entry.subchannel);
     }
     if (!found_second_subchannel) {
       switch (entry.connectivity_state) {
@@ -454,7 +454,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
           ScheduleSubchannelConnectionAttempt(entry.subchannel);
           // fallthrough
         case GRPC_CHANNEL_CONNECTING:
-          return PickResult::Queue{};
+          return PickResult::Queue();
         default:
           break;
       }
@@ -471,8 +471,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       }
     }
   }
-  return PickResult::Fail{absl::UnavailableError(
-      "xds ring hash found a subchannel that is in TRANSIENT_FAILURE state")};
+  return PickResult::Fail(absl::UnavailableError(
+      "xds ring hash found a subchannel that is in TRANSIENT_FAILURE state"));
 }
 
 //

@@ -618,8 +618,8 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     if (client_stats_ != nullptr) {
       client_stats_->AddCallDropped(drop_token);
     }
-    return PickResult::Drop{
-        absl::UnavailableError("drop directed by grpclb balancer")};
+    return PickResult::Drop(
+        absl::UnavailableError("drop directed by grpclb balancer"));
   }
   // Forward pick to child policy.
   PickResult result = child_picker_->Pick(args);
