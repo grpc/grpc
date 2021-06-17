@@ -46,13 +46,15 @@ export PROJECT_ID="your-project-id"
 export PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
 # Compute Engine default service account
 export GCE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+# The prefix to name GCP resources used by the framework
+export RESOURCE_PREFIX="xds-k8s-interop-tests"
 
 # The zone name your cluster, f.e. xds-k8s-test-cluster
-export CLUSTER_NAME="xds-k8s-test-cluster"
+export CLUSTER_NAME="${RESOURCE_PREFIX}-cluster"
 # The zone of your cluster, f.e. us-central1-a
 export ZONE="us-central1-a" 
 # Dedicated GCP Service Account to use with workload identity.
-export WORKLOAD_SA_NAME="xds-k8s-interop-tests"
+export WORKLOAD_SA_NAME="${RESOURCE_PREFIX}"
 export WORKLOAD_SA_EMAIL="${WORKLOAD_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 ```
 
@@ -73,7 +75,7 @@ Allow [health checking mechanisms](https://cloud.google.com/traffic-director/doc
 to query the workloads health.  
 This step can be skipped, if the driver is executed with `--ensure_firewall`.
 ```shell
-gcloud compute firewall-rules create "xds-k8s-interop-tests-allow-health-checks" \
+gcloud compute firewall-rules create "${RESOURCE_PREFIX}-allow-health-checks" \
   --network=default --action=allow --direction=INGRESS \
   --source-ranges="35.191.0.0/16,130.211.0.0/22" \
   --target-tags=allow-health-checks \
