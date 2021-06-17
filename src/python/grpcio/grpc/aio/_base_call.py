@@ -86,7 +86,7 @@ class Call(RpcContext, metaclass=ABCMeta):
     """The abstract base class of an RPC on the client-side."""
 
     @abstractmethod
-    async def initial_metadata(self) -> Metadata:
+    async def initial_metadata(self) -> Optional[Metadata]:
         """Accesses the initial metadata sent by the server.
 
         Returns:
@@ -94,7 +94,7 @@ class Call(RpcContext, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    async def trailing_metadata(self) -> Metadata:
+    async def trailing_metadata(self) -> Optional[Metadata]:
         """Accesses the trailing metadata sent by the server.
 
         Returns:
