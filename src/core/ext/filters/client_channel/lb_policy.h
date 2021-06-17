@@ -263,7 +263,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // NOLINTNEXTLINE(google-explicit-constructor)
     PickResult(Complete complete) : result(std::move(complete)) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
-    PickResult(Queue queue) : result(std::move(queue)) {}
+    PickResult(Queue queue) : result(queue) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
     PickResult(Fail fail) : result(std::move(fail)) {}
     // NOLINTNEXTLINE(google-explicit-constructor)
