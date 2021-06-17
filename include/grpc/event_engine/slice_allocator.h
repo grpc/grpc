@@ -47,8 +47,6 @@ class SliceAllocator {
   SliceAllocator& operator=(SliceAllocator&& other) noexcept;
   ~SliceAllocator();
 
-  void* GetResourceUser() { return resource_user_; }
-
   using AllocateCallback =
       std::function<void(absl::Status, SliceBuffer* buffer)>;
   /// Requests \a size bytes from gRPC, and populates \a dest with the allocated
