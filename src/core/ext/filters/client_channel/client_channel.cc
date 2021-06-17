@@ -1169,7 +1169,10 @@ ClientChannel::~ClientChannel() {
   GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
 }
 
-Promise<absl::Status> ClientChannel::CreatePromise() {
+// Note: CallCompletion is a move-only struct containing both status and
+// trailing metadata.
+Promise<CallCompletion> ClientChannel::CreatePromise(
+    InitialMetadata initial_metadata) {
   // If we're still in IDLE, we need to start resolving.
   chand->CheckConnectivityState(true);
   // Construct promise to get service config and apply it to the call.
@@ -1223,7 +1226,7 @@ Promise<absl::Status> ClientChannel::CreatePromise() {
           // This needs to be a lambda wrapping the TryJoin() because we
           // need the config_selector parameter from the previous promise
           // to *construct* this promise.
-          [GRPC_CAPTURE(channel)](
+          [GRPC_CAPTURE(channel), GRPC_CAPTURE(initial_metadata)](
                RefCountedPtr<ConfigSelector> config_selector) {
             // - all promises in seq must return StatusOr<>
             // - StatusOr<> will be stripped off for next promise in seq
@@ -1235,21 +1238,27 @@ Promise<absl::Status> ClientChannel::CreatePromise() {
                 // TrySeq(), we are still guaranteed that the service
                 // config will be applied to the call before anything
                 // else happens.
-                ApplyServiceConfigPromise(std::move(config_selector)),
+                // Note: initial_metadata should be used here before it
+                // is moved away in the next promise due to C++ ordering
+                // guarantees about elements in an argument list.
+                ApplyServiceConfigPromise(initial_metadata,
+                                          std::move(config_selector)),
                 // Send call to dynamic call.
                 // (returned promise must hold a ref to whatever it
                 // needs -- in this case, to dynamic_filters_.  but
                 // this decision might be made on a filter-by-filter basis)
-                dynamic_filters_->CreatePromise()));
+                dynamic_filters_->CreatePromise(std::move(initial_metadata))));
           }));
 }
 
 Promise<absl::Status> ClientChannel::ApplyServiceConfigPromise(
+    const InitialMetadata& initial_metadata,
     RefCountedPtr<ConfigSelector> config_selector) {
   grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
   // Use the ConfigSelector to determine the config for the call.
   ConfigSelector::CallConfig call_config =
-      config_selector->GetCallConfig(GetContext<ClientContext>());
+      config_selector->GetCallConfig(initial_metadata,
+                                     GetContext<ClientContext>());
   if (call_config.error != GRPC_ERROR_NONE) {
     return grpc_error_to_absl_status(call_config.error);
   }
@@ -2823,42 +2832,15 @@ void ClientChannel::LoadBalancedCall::PendingBatchesResume() {
   closures.RunClosures(call_combiner_);
 }
 
-void ClientChannel::LoadBalancedCall::CreatePromise() {
-  // Intercept recv_trailing_metadata_ready for LB callback.
-  auto InterceptTrailingMetadata =
-      [](std::function<void()> lb_recv_trailing_metadata_cb) {
-        // FIXME: is ClientContext right here?
-        GetContext<ClientContext>().GetIncomingPipe().Filter(
-            // Promise that takes an absl::variant<> and picks the
-            // appropriate lambda from its arguments to invoke based on the
-            // type in the variant.
-            Visitor(
-                [](InitialMetadata*) { return absl::OkStatus(); },
-                [](Message*) { return absl::OkStatus(); },
-                [GRPC_CAPTURE(lb_recv_trailing_metadata_cb)](
-                    TrailingMetadata* metadata) {
-                  if (lb_recv_trailing_metadata_cb != nullptr) {
-                    // Invoke callback to LB policy.
-                    Metadata trailing_metadata(this, metadata);
-                    LbCallState lb_call_state(this);
-                    // FIXME: this isn't the right place to get the
-                    // call's status -- may need to use Finish() combinator
-                    lb_recv_trailing_metadata_cb(call_status, &trailing_metadata,
-                                                 &lb_call_state);
-                  }
-                  return absl::OkStatus();
-                }
-            )
-        );
-      };
-
+Promise<CallCompletion> ClientChannel::LoadBalancedCall::CreatePromise(
+    InitialMetadata initial_metadata) {
   // Construct promise to get picker and pick for the call.
   auto picker_observer = picker_observable_.MakeObserver();
   auto GetSubchannel =
       // Get service config.
       // - all promises in seq must return optional<StatusOr<>>
       // - optional<> will be stripped off for next promise in seq
-      // - While() will return StatusOr<> to its caller
+      // - TryUntil() will return StatusOr<> to its caller
       TryUntil(
           // - all promises in seq must return StatusOr<>
           // - StatusOr<> will be stripped off for next promise in seq
@@ -2874,25 +2856,34 @@ void ClientChannel::LoadBalancedCall::CreatePromise() {
               picker_observer.TryNext(),
               // Check the result.
               DoPick));
-
   // - all promises in seq must return StatusOr<>
   // - StatusOr<> will be stripped off for next promise in seq
   // - TrySeq() will return StatusOr<> to its caller
   return TrySeq(
     GetSubchannel,
-    [](std::pair<RefCountedPtr<ConnectedSubchannel>, std::function<void()>> r) {
-      // - all promises in join must return StatusOr<>
-      // - TryJoin() returns a tuple of responses
-      return TryJoin(
-        InterceptTrailingMetadata(r.second),
-        r.first->CreatePromise()
+    [this, GRPC_CAPTURE(initial_metadata)](PickResult::Complete complete_pick) {
+      auto recv_trailing_metadata_cb =
+          std::move(complete_pick.recv_trailing_metadata_cb);
+      // Once subchannel call is complete, invoke LB policy callback with
+      // trailing metadata and status.
+      return Seq(
+        complete_pick.subchannel->CreatePromise(std::move(initial_metadata)),
+        [this, GRPC_CAPTURE(recv_trailing_metadata_cb)](
+            CallCompletion call_completion) {
+          // Invoke callback to LB policy, if any.
+          if (recv_trailing_metadata_cb != nullptr) {
+            Metadata trailing_metadata(this, call_completion.trailing_metadata);
+            LbCallState lb_call_state(this);
+            recv_trailing_metadata_cb(call_completion.status, &trailing_metadata,
+                                      &lb_call_state);
+          }
+          return call_completion;
+        }
       );
     });
 }
 
-// FIXME: use a custom struct instead of std::pair<>
-LoopControl<absl::StatusOr<std::pair<RefCountedPtr<ConnectedSubchannel>,
-                                     std::function<void()>>>
+LoopControl<absl::StatusOr<PickResult::Complete>>
 ClientChannel::LoadBalancedCall::DoPick(
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
   GPR_ASSERT(connected_subchannel_ == nullptr);
@@ -2919,19 +2910,18 @@ ClientChannel::LoadBalancedCall::DoPick(
       grpc_error_handle disconnect_error = chand_->disconnect_error();
       if (disconnect_error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(result.error);
-        // FIXME: convert to absl::Status
-        return disconnect_error;
+        return grpc_error_to_absl_status(disconnect_error);
       }
       // If wait_for_ready is false, then the error indicates the RPC
       // attempt's final status.
       if (GetContext<ClientContext>().wait_for_ready()) {
-        // FIXME: return absl::Status
         grpc_error_handle new_error =
             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                 "Failed to pick subchannel", &result.error, 1);
         GRPC_ERROR_UNREF(result.error);
-        *error = new_error;
-        return true;
+        absl::Status status = grpc_error_to_absl_status(new_error);
+        GRPC_ERROR_UNREF(new_error);
+        return status;
       }
       // If wait_for_ready is true, then queue to retry when we get a new
       // picker.
@@ -2943,21 +2933,17 @@ ClientChannel::LoadBalancedCall::DoPick(
     default:  // PICK_COMPLETE
       // Handle drops.
       if (GPR_UNLIKELY(result.subchannel == nullptr)) {
-        // FIXME: absl::Status
-        return grpc_error_set_int(
+        grpc_error_handle error = grpc_error_set_int(
             grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                    "Call dropped by load balancing policy"),
                                GRPC_ERROR_INT_GRPC_STATUS,
                                GRPC_STATUS_UNAVAILABLE),
             GRPC_ERROR_INT_LB_POLICY_DROP, 1);
+        absl::Status status = grpc_error_to_absl_status(error);
+        GRPC_ERROR_UNREF(error);
+        return status;
       }
-      // Grab a ref to the connected subchannel while we're still
-      // holding the data plane mutex.
-      connected_subchannel_ =
-          chand_->GetConnectedSubchannelInDataPlane(result.subchannel.get());
-      GPR_ASSERT(connected_subchannel_ != nullptr);
-      lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
-      return true;
+      return result.complete_pick;
   }
 }
 
