@@ -79,6 +79,7 @@ class MessageAllocator {
 #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
 namespace experimental {
 
+// NOLINTNEXTLINE(misc-unused-using-decls)
 using ::grpc::RpcAllocatorState;
 
 template <typename RequestT, typename ResponseT>
