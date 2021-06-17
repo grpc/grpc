@@ -105,8 +105,6 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
   ChannelArgsEndpointConfig endpoint_config(channel_args);
-  // TODO(hork): Establish how to take a user-supplied EventEngine here instead
-  // of using a global default.
   absl::Status connected = grpc_iomgr_event_engine()->Connect(
       ee_on_connect, ra, endpoint_config, std::move(sa), ee_deadline);
   if (!connected.ok()) {
@@ -126,8 +124,6 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   if (rq == nullptr) {
     rq = grpc_resource_quota_create(nullptr);
   }
-  // TODO(hork): Establish how to take a user-supplied EventEngine here instead
-  // of using a global default.
   EventEngine* event_engine = grpc_iomgr_event_engine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       event_engine->CreateListener(

@@ -117,8 +117,6 @@ class EventEngine {
     /// The Endpoint destructor is responsible for shutting down all connections
     /// and invoking all pending read or write callbacks with an error status.
     virtual ~Endpoint() = default;
-    /// Return the SliceAllocator's ResourceUser (for internal usage)
-    virtual void* GetResourceUser() = 0;
     /// Read data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the

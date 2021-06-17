@@ -168,8 +168,7 @@ grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
-  endpoint->ru =
-      static_cast<grpc_resource_user*>(ee_endpoint->GetResourceUser());
+  // TODO(hork): populate endpoint->ru from the uvEngine's subclass
   endpoint->endpoint = std::move(ee_endpoint);
   return endpoint;
 }
