@@ -30,8 +30,7 @@
 #include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
 
-// This method should only be used within this file, and in EventEngine code.
-void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
+static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (grpc_trace_closure.enabled()) {

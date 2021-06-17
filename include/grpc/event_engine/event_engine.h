@@ -279,6 +279,8 @@ class EventEngine {
 
   virtual ~EventEngine() = default;
 
+  // TODO(nnoble): consider whether we can remove this method before we
+  // de-experimentalize this API.
   virtual bool IsWorkerThread() = 0;
 
   // TODO(hork): define return status codes

@@ -47,7 +47,7 @@ grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
 /// has yet been created. This is used in client code before connections are
 /// established.
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
-                               const char* peer_address);
+                               absl::string_view peer_address);
 
 #endif
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H

@@ -186,9 +186,8 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
   } else {
     resource_quota = grpc_resource_quota_create(nullptr);
   }
-  endpoint->peer_address = std::string(peer_address);
-  endpoint->ru =
-      grpc_resource_user_create(resource_quota, endpoint->peer_address.c_str());
+  endpoint->ru = grpc_resource_user_create(resource_quota,
+                                           std::string(peer_address).c_str());
   grpc_resource_quota_unref_internal(resource_quota);
   return &endpoint->base;
 }

@@ -62,6 +62,7 @@ void iomgr_platform_shutdown(void) {
   auto shutdown_status = shutdown_status_promise.Get();
   GPR_ASSERT(shutdown_status.ok());
   delete g_event_engine;
+  g_event_engine = nullptr;
 }
 
 void iomgr_platform_shutdown_background_closure(void) {}
@@ -97,9 +98,8 @@ void grpc_set_default_iomgr_platform() {
 
 bool grpc_iomgr_run_in_background() { return false; }
 
-std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-grpc_iomgr_event_engine() {
-  return *g_event_engine;
+grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine() {
+  return g_event_engine->get();
 }
 
 #endif  // GRPC_USE_EVENT_ENGINE

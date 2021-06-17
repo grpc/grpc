@@ -19,7 +19,6 @@
 
 // This can be called anywhere in the EE-based iomgr impl where we need to
 // access the global EE instance.
-std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-grpc_iomgr_event_engine();
+grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine();
 
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_H
