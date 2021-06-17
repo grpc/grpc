@@ -225,8 +225,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
       explicit Complete(
           RefCountedPtr<SubchannelInterface> sc,
-          std::function<void(absl::Status, MetadataInterface*, CallState*)> cb
-              = nullptr)
+          std::function<void(absl::Status, MetadataInterface*, CallState*)> cb =
+              nullptr)
           : subchannel(std::move(sc)),
             recv_trailing_metadata_ready(std::move(cb)) {}
     };
