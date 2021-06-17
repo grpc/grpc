@@ -540,9 +540,8 @@ void CdsLb::OnError(const std::string& name, grpc_error_handle error) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
-  } else {
-    GRPC_ERROR_UNREF(error);
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 void CdsLb::OnResourceDoesNotExist(const std::string& name) {
