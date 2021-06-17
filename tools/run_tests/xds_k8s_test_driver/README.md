@@ -44,13 +44,16 @@ Pre-populate environment variables for convenience. To find project id, refer to
 ```shell
 export PROJECT_ID="your-project-id"
 export PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
+# Compute Engine default service account
+export GCE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
 # The zone name your cluster, f.e. xds-k8s-test-cluster
 export CLUSTER_NAME="xds-k8s-test-cluster"
 # The zone of your cluster, f.e. us-central1-a
 export ZONE="us-central1-a" 
 # Dedicated GCP Service Account to use with workload identity.
-export WORKLOAD_SERVICE_ACCOUNT="xds-k8s-interop-tests@${PROJECT_ID}.iam.gserviceaccount.com"
+export WORKLOAD_SA_NAME="xds-k8s-interop-tests"
+export WORKLOAD_SA_EMAIL="${WORKLOAD_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 ```
 
 ##### Create the cluster 
@@ -83,7 +86,7 @@ Create dedicated GCP Service Account to use
 with [workload identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity).
 
 ```shell
-gcloud iam service-accounts create "${WORKLOAD_SERVICE_ACCOUNT}" \
+gcloud iam service-accounts create "${WORKLOAD_SA_NAME}" \
   --display-name="xDS K8S Interop Tests Workload Identity Service Account"
 ```
 
@@ -110,12 +113,17 @@ account once to allow test framework to grant `roles/iam.workloadIdentityUser`.
 ```shell
 # Assuming CI is using Compute Engine default service account.
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
-  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --member="serviceAccount:${GCE_SA}" \
   --role="roles/iam.serviceAccountAdmin" \
-  --condition="^:^title=allow_workload_identity_only:\
-description=Restrict serviceAccountAdmin to granting role iam.workloadIdentityUser:\
-expression=api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', [])\
-.hasOnly(['roles/iam.workloadIdentityUser'])"
+  --condition-from-file=<(cat <<-END
+---
+title: allow_workload_identity_only
+description: Restrict serviceAccountAdmin to granting role iam.workloadIdentityUser
+expression: |-
+  api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', [])
+        .hasOnly(['roles/iam.workloadIdentityUser'])
+END
+)
 ```
 
 ##### Configure GKE cluster access

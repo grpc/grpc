@@ -18,8 +18,8 @@ from absl import flags
 
 from framework import xds_flags
 from framework import xds_k8s_flags
-from framework.infrastructure import k8s
 from framework.infrastructure import gcp
+from framework.infrastructure import k8s
 from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)

@@ -23,7 +23,8 @@ import logging
 from typing import Iterator, Optional
 
 from framework.helpers import retryers
-from framework.infrastructure import k8s, gcp
+from framework.infrastructure import gcp
+from framework.infrastructure import k8s
 import framework.rpc
 from framework.rpc import grpc_channelz
 from framework.rpc import grpc_csds
