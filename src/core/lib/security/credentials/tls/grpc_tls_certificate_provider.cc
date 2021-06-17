@@ -384,33 +384,33 @@ absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key_,
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 failed.");
   }
-  EVP_PKEY* public_key = X509_get_pubkey(x509);
+  EVP_PKEY* public_evp_pkey = X509_get_pubkey(x509);
   X509_free(x509);
-  if (public_key == nullptr) {
+  if (public_evp_pkey == nullptr) {
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
   BIO* private_key_bio =
       BIO_new_mem_buf(private_key_.c_str(), private_key_.size());
   if (private_key_bio == nullptr) {
-    EVP_PKEY_free(public_key);
+    EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(
         "Conversion from private key string to BIO failed.");
   }
-  EVP_PKEY* private_key =
+  EVP_PKEY* private_evp_pkey =
       PEM_read_bio_PrivateKey(private_key_bio, nullptr, nullptr, nullptr);
   BIO_free(private_key_bio);
-  if (private_key == nullptr) {
-    EVP_PKEY_free(public_key);
+  if (private_evp_pkey == nullptr) {
+    EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
   absl::Status result =
-      EVP_PKEY_cmp(private_key, public_key) == 1
+      EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1
           ? absl::OkStatus()
           : absl::InvalidArgumentError("Invalid credentials pair.");
-  EVP_PKEY_free(private_key);
-  EVP_PKEY_free(public_key);
+  EVP_PKEY_free(private_evp_pkey);
+  EVP_PKEY_free(public_evp_pkey);
   return result;
 }
 

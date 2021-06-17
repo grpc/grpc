@@ -524,13 +524,13 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_EQ(status.message(), "Conversion from PEM string to EVP_PKEY failed.");
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, ValidPrivateKeyCertPair) {
+TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
   absl::Status status =
       PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_2_);
   EXPECT_TRUE(status.ok());
 }
 
-TEST_F(GrpcTlsCertificateProviderTest, InvalidPrivateKeyCertPair) {
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
   absl::Status status =
       PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_);
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
