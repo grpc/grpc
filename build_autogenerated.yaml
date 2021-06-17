@@ -3408,18 +3408,6 @@ targets:
   - linux
   - posix
   - mac
-- name: handshake_verify_peer_options_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/handshake/verify_peer_options.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: histogram_test
   build: test
   language: c
