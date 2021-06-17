@@ -365,15 +365,15 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
-absl::Status PrivateKeyPublicKeyMatches(const std::string& private_key_string,
-                                        const std::string& cert_string) {
-  if (private_key_string.empty()) {
+absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key_,
+                                           const std::string& cert) {
+  if (private_key_.empty()) {
     return absl::InvalidArgumentError("Private key string is empty.");
   }
-  if (cert_string.empty()) {
+  if (cert.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  BIO* cert_bio = BIO_new_mem_buf(cert_string.c_str(), cert_string.size());
+  BIO* cert_bio = BIO_new_mem_buf(cert.c_str(), cert.size());
   if (cert_bio == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from certificate string to BIO failed.");
@@ -391,7 +391,7 @@ absl::Status PrivateKeyPublicKeyMatches(const std::string& private_key_string,
         "Extraction of public key from x.509 certificate failed.");
   }
   BIO* private_key_bio =
-      BIO_new_mem_buf(private_key_string.c_str(), private_key_string.size());
+      BIO_new_mem_buf(private_key_.c_str(), private_key_.size());
   if (private_key_bio == nullptr) {
     EVP_PKEY_free(public_key);
     return absl::InvalidArgumentError(
@@ -405,11 +405,13 @@ absl::Status PrivateKeyPublicKeyMatches(const std::string& private_key_string,
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
-  bool result = EVP_PKEY_cmp(private_key, public_key) == 1;
+  absl::Status result =
+      EVP_PKEY_cmp(private_key, public_key) == 1
+          ? absl::OkStatus()
+          : absl::InvalidArgumentError("Invalid credentials pair.");
   EVP_PKEY_free(private_key);
   EVP_PKEY_free(public_key);
-  return result ? absl::OkStatus()
-                : absl::InvalidArgumentError("Invalid credentials pair.");
+  return result;
 }
 
 }  // namespace grpc_core
