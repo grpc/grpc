@@ -446,8 +446,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 template <typename T>
 T LoadBalancingPolicy::PickResult::Handle(
     std::function<T(Complete&)> complete_func,
-    std::function<T(Queue&)> queue_func,
-    std::function<T(Fail&)> fail_func,
+    std::function<T(Queue&)> queue_func, std::function<T(Fail&)> fail_func,
     std::function<T(Drop&)> drop_func) {
   auto* complete_pick = absl::get_if<Complete>(&result);
   if (complete_pick != nullptr) {
