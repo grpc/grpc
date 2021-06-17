@@ -373,14 +373,13 @@ absl::Status PrivateKeyPublicKeyMatches(const std::string& private_key_string,
   if (cert_string.empty()) {  // test - done
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  BIO* cert_string_bio =
-      BIO_new_mem_buf(cert_string.c_str(), cert_string.size());
-  if (cert_string_bio == nullptr) {
+  BIO* cert_bio = BIO_new_mem_buf(cert_string.c_str(), cert_string.size());
+  if (cert_bio == nullptr) {
     return absl::InvalidArgumentError(  // test - no idea how to
         "Conversion from certificate string to BIO failed.");
   }
-  X509* x509 = PEM_read_bio_X509(cert_string_bio, nullptr, nullptr, nullptr);
-  BIO_free(cert_string_bio);
+  X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
+  BIO_free(cert_bio);
   if (x509 == nullptr) {
     return absl::InvalidArgumentError(  // test - done
         "Conversion from PEM string to X509 failed.");
