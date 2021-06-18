@@ -331,10 +331,20 @@ if BUILD_WITH_SYSTEM_RE2:
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
 
+
+# Quotes on Windows build macros are evaluated differently from other platforms,
+# so we must apply quotes asymmetrically in order to yield the proper result in
+# the binary.
+def _quote_build_define(argument):
+    if "win32" in sys.platform:
+        return '"\\\"{}\\\""'.format(argument)
+    return '"{}"'.format(argument)
+
+
 DEFINE_MACROS += (
-    ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", '"Python"'),
+    ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", _quote_build_define("Python")),
     ("GRPC_XDS_USER_AGENT_VERSION_SUFFIX",
-     '"{}"'.format(_metadata.__version__)),
+     _quote_build_define(_metadata.__version__)),
 )
 
 asm_key = ''
