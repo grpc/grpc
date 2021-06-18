@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -40,7 +41,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET

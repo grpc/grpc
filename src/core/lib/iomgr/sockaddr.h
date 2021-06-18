@@ -30,4 +30,8 @@
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 
+#if defined(AF_UNIX) && !defined(GPR_WINDOWS)
+#define GRPC_HAVE_UNIX_SOCKET 1
+#endif
+
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */

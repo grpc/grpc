@@ -24,6 +24,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 
 #include "test/core/util/test_config.h"

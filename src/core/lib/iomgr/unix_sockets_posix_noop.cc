@@ -17,6 +17,7 @@
  */
 
 #include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 

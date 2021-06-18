@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
