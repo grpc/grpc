@@ -76,6 +76,22 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+    ],
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        ":transport_security_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:tsi",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "crl_ssl_transport_security_test",
+    srcs = ["crl_ssl_transport_security_test.cc"],
+    data = [
         "//src/core/tsi/test_creds/crl_supported:ab06acdd.r0",
         "//src/core/tsi/test_creds/crl_supported:ca.pem",
         "//src/core/tsi/test_creds/crl_supported:revoked.key",
