@@ -68,4 +68,8 @@ fi
 
 cd "${XDS_K8S_DRIVER_DIR}"
 export PYTHONPATH="${XDS_K8S_DRIVER_DIR}"
-exec python "$@" --flagfile="${XDS_K8S_CONFIG}"
+# Split path to python file from the rest of the args.
+readonly PY_FILE="$1"
+shift
+# Append args after --flagfile, so they take higher priority.
+exec python "${PY_FILE}" --flagfile="${XDS_K8S_CONFIG}" "$@"

@@ -41,6 +41,9 @@ EndpointConfigSelector = _NetworkServicesV1Alpha1.EndpointConfigSelector
 
 class TrafficDirectorManager:
     compute: _ComputeV1
+    resource_prefix: str
+    resource_suffix: str
+
     BACKEND_SERVICE_NAME = "backend-service"
     HEALTH_CHECK_NAME = "health-check"
     URL_MAP_NAME = "url-map"
@@ -55,6 +58,7 @@ class TrafficDirectorManager:
         project: str,
         *,
         resource_prefix: str,
+        resource_suffix: str,
         network: str = 'default',
     ):
         # API
@@ -64,6 +68,7 @@ class TrafficDirectorManager:
         self.project: str = project
         self.network: str = network
         self.resource_prefix: str = resource_prefix
+        self.resource_suffix: str = resource_suffix
 
         # Managed resources
         self.health_check: Optional[GcpResource] = None
@@ -117,8 +122,13 @@ class TrafficDirectorManager:
         self.delete_backend_service(force=force)
         self.delete_health_check(force=force)
 
-    def _ns_name(self, name):
-        return f'{self.resource_prefix}-{name}'
+    def _make_resource_name(self, name):
+        """Make dash-separated resource name with resource prefix and suffix."""
+        parts = [self.resource_prefix, name]
+        # Avoid trailing dash when the suffix is an empty string.
+        if self.resource_suffix != '':
+            parts.append(self.resource_suffix)
+        return '-'.join(parts)
 
     def create_health_check(
             self,
@@ -131,14 +141,14 @@ class TrafficDirectorManager:
         if protocol is None:
             protocol = _HealthCheckGRPC
 
-        name = self._ns_name(self.HEALTH_CHECK_NAME)
+        name = self._make_resource_name(self.HEALTH_CHECK_NAME)
         logger.info('Creating %s Health Check "%s"', protocol.name, name)
         resource = self.compute.create_health_check(name, protocol, port=port)
         self.health_check = resource
 
     def delete_health_check(self, force=False):
         if force:
-            name = self._ns_name(self.HEALTH_CHECK_NAME)
+            name = self._make_resource_name(self.HEALTH_CHECK_NAME)
         elif self.health_check:
             name = self.health_check.name
         else:
@@ -152,7 +162,7 @@ class TrafficDirectorManager:
         if protocol is None:
             protocol = _BackendGRPC
 
-        name = self._ns_name(self.BACKEND_SERVICE_NAME)
+        name = self._make_resource_name(self.BACKEND_SERVICE_NAME)
         logger.info('Creating %s Backend Service "%s"', protocol.name, name)
         resource = self.compute.create_backend_service_traffic_director(
             name, health_check=self.health_check, protocol=protocol)
@@ -160,13 +170,13 @@ class TrafficDirectorManager:
         self.backend_service_protocol = protocol
 
     def load_backend_service(self):
-        name = self._ns_name(self.BACKEND_SERVICE_NAME)
+        name = self._make_resource_name(self.BACKEND_SERVICE_NAME)
         resource = self.compute.get_backend_service_traffic_director(name)
         self.backend_service = resource
 
     def delete_backend_service(self, force=False):
         if force:
-            name = self._ns_name(self.BACKEND_SERVICE_NAME)
+            name = self._make_resource_name(self.BACKEND_SERVICE_NAME)
         elif self.backend_service:
             name = self.backend_service.name
         else:
@@ -208,8 +218,8 @@ class TrafficDirectorManager:
         src_port: int,
     ) -> GcpResource:
         src_address = f'{src_host}:{src_port}'
-        name = self._ns_name(self.URL_MAP_NAME)
-        matcher_name = self._ns_name(self.URL_MAP_PATH_MATCHER_NAME)
+        name = self._make_resource_name(self.URL_MAP_NAME)
+        matcher_name = self._make_resource_name(self.URL_MAP_PATH_MATCHER_NAME)
         logger.info('Creating URL map "%s": %s -> %s', name, src_address,
                     self.backend_service.name)
         resource = self.compute.create_url_map(name, matcher_name,
@@ -220,7 +230,7 @@ class TrafficDirectorManager:
 
     def delete_url_map(self, force=False):
         if force:
-            name = self._ns_name(self.URL_MAP_NAME)
+            name = self._make_resource_name(self.URL_MAP_NAME)
         elif self.url_map:
             name = self.url_map.name
         else:
@@ -230,7 +240,7 @@ class TrafficDirectorManager:
         self.url_map = None
 
     def create_target_proxy(self):
-        name = self._ns_name(self.TARGET_PROXY_NAME)
+        name = self._make_resource_name(self.TARGET_PROXY_NAME)
         if self.backend_service_protocol is BackendServiceProtocol.GRPC:
             target_proxy_type = 'GRPC'
             create_proxy_fn = self.compute.create_target_grpc_proxy
@@ -248,7 +258,7 @@ class TrafficDirectorManager:
 
     def delete_target_grpc_proxy(self, force=False):
         if force:
-            name = self._ns_name(self.TARGET_PROXY_NAME)
+            name = self._make_resource_name(self.TARGET_PROXY_NAME)
         elif self.target_proxy:
             name = self.target_proxy.name
         else:
@@ -260,7 +270,7 @@ class TrafficDirectorManager:
 
     def delete_target_http_proxy(self, force=False):
         if force:
-            name = self._ns_name(self.TARGET_PROXY_NAME)
+            name = self._make_resource_name(self.TARGET_PROXY_NAME)
         elif self.target_proxy:
             name = self.target_proxy.name
         else:
@@ -271,7 +281,7 @@ class TrafficDirectorManager:
         self.target_proxy_is_http = False
 
     def create_forwarding_rule(self, src_port: int):
-        name = self._ns_name(self.FORWARDING_RULE_NAME)
+        name = self._make_resource_name(self.FORWARDING_RULE_NAME)
         src_port = int(src_port)
         logging.info(
             'Creating forwarding rule "%s" in network "%s": 0.0.0.0:%s -> %s',
@@ -284,7 +294,7 @@ class TrafficDirectorManager:
 
     def delete_forwarding_rule(self, force=False):
         if force:
-            name = self._ns_name(self.FORWARDING_RULE_NAME)
+            name = self._make_resource_name(self.FORWARDING_RULE_NAME)
         elif self.forwarding_rule:
             name = self.forwarding_rule.name
         else:
@@ -294,7 +304,7 @@ class TrafficDirectorManager:
         self.forwarding_rule = None
 
     def create_firewall_rule(self, allowed_ports: List[str]):
-        name = self._ns_name(self.FIREWALL_RULE_NAME)
+        name = self._make_resource_name(self.FIREWALL_RULE_NAME)
         logging.info(
             'Creating firewall rule "%s" in network "%s" with allowed ports %s',
             name, self.network, allowed_ports)
@@ -306,7 +316,7 @@ class TrafficDirectorManager:
     def delete_firewall_rule(self, force=False):
         """The firewall rule won't be automatically removed."""
         if force:
-            name = self._ns_name(self.FIREWALL_RULE_NAME)
+            name = self._make_resource_name(self.FIREWALL_RULE_NAME)
         elif self.firewall_rule:
             name = self.firewall_rule.name
         else:
@@ -329,11 +339,13 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         project: str,
         *,
         resource_prefix: str,
+        resource_suffix: Optional[str] = None,
         network: str = 'default',
     ):
         super().__init__(gcp_api_manager,
                          project,
                          resource_prefix=resource_prefix,
+                         resource_suffix=resource_suffix,
                          network=network)
 
         # API
@@ -375,7 +387,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.delete_client_tls_policy(force=force)
 
     def create_server_tls_policy(self, *, tls, mtls):
-        name = self._ns_name(self.SERVER_TLS_POLICY_NAME)
+        name = self._make_resource_name(self.SERVER_TLS_POLICY_NAME)
         logger.info('Creating Server TLS Policy %s', name)
         if not tls and not mtls:
             logger.warning(
@@ -398,7 +410,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
 
     def delete_server_tls_policy(self, force=False):
         if force:
-            name = self._ns_name(self.SERVER_TLS_POLICY_NAME)
+            name = self._make_resource_name(self.SERVER_TLS_POLICY_NAME)
         elif self.server_tls_policy:
             name = self.server_tls_policy.name
         else:
@@ -409,7 +421,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
 
     def create_endpoint_config_selector(self, server_namespace, server_name,
                                         server_port):
-        name = self._ns_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
+        name = self._make_resource_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
         logger.info('Creating Endpoint Config Selector %s', name)
         endpoint_matcher_labels = [{
             "labelName": "app",
@@ -441,7 +453,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
 
     def delete_endpoint_config_selector(self, force=False):
         if force:
-            name = self._ns_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
+            name = self._make_resource_name(self.ENDPOINT_CONFIG_SELECTOR_NAME)
         elif self.ecs:
             name = self.ecs.name
         else:
@@ -451,7 +463,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
         self.ecs = None
 
     def create_client_tls_policy(self, *, tls, mtls):
-        name = self._ns_name(self.CLIENT_TLS_POLICY_NAME)
+        name = self._make_resource_name(self.CLIENT_TLS_POLICY_NAME)
         logger.info('Creating Client TLS Policy %s', name)
         if not tls and not mtls:
             logger.warning(
@@ -472,7 +484,7 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
 
     def delete_client_tls_policy(self, force=False):
         if force:
-            name = self._ns_name(self.CLIENT_TLS_POLICY_NAME)
+            name = self._make_resource_name(self.CLIENT_TLS_POLICY_NAME)
         elif self.client_tls_policy:
             name = self.client_tls_policy.name
         else:
