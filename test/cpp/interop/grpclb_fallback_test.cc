@@ -151,7 +151,7 @@ void TcpUserTimeoutDestroy(grpc_socket_mutator* mutator) { gpr_free(mutator); }
 
 const grpc_socket_mutator_vtable kTcpUserTimeoutMutatorVtable =
     grpc_socket_mutator_vtable{TcpUserTimeoutMutateFd, TcpUserTimeoutCompare,
-                               TcpUserTimeoutDestroy};
+                               TcpUserTimeoutDestroy, nullptr};
 
 std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
   grpc::ChannelArguments channel_args;
