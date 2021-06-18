@@ -47,25 +47,29 @@ class ObservableState {
 
   void Close() {
     // Publish that we're closed.
-    waiters_.mu()->Lock();
+    mu_.Lock();
     version_ = kTombstoneVersion;
     value_.reset();
-    waiters_.WakeAllAndUnlock();
+    auto wakeup = waiters_.TakeWakeupSet();
+    mu_.Unlock();
+    wakeup.Wakeup();
   }
 
   void Push(T value) {
-    waiters_.mu()->Lock();
+    mu_.Lock();
     version_++;
     value_ = std::move(value);
-    waiters_.WakeAllAndUnlock();
+    auto wakeup = waiters_.TakeWakeupSet();
+    mu_.Unlock();
+    wakeup.Wakeup();
   }
 
   Poll<absl::optional<T>> PollGet(Version* version_seen) {
-    absl::MutexLock lock(waiters_.mu());
+    absl::MutexLock lock(&mu_);
     if (!value_.has_value()) {
       if (version_ != kTombstoneVersion) {
         // We allow initial no-value, which does not indicate closure.
-        return waiters_.pending();
+        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
       }
     }
     *version_seen = version_;
@@ -73,15 +77,15 @@ class ObservableState {
   }
 
   Poll<absl::optional<T>> PollNext(Version* version_seen) {
-    absl::MutexLock lock(waiters_.mu());
+    absl::MutexLock lock(&mu_);
     if (!value_.has_value()) {
       if (version_ != kTombstoneVersion) {
         // We allow initial no-value, which does not indicate closure.
-        return waiters_.pending();
+        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
       }
     }
     if (version_ == *version_seen) {
-      return waiters_.pending();
+      return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
     }
     *version_seen = version_;
     return ready(value_);
@@ -92,26 +96,27 @@ class ObservableState {
       return kPending;
     }
 
-    absl::MutexLock lock(waiters_.mu());
+    absl::MutexLock lock(&mu_);
     if (!value_.has_value()) {
       if (version_ != kTombstoneVersion) {
         // We allow initial no-value, which does not indicate closure.
-        return waiters_.pending();
+        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
       }
     }
     if (version_ == *version_seen) {
-      return waiters_.pending();
+      return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
     }
     *version_seen = version_;
     // Watch needs to be woken up if the value changes even if it's ready now.
-    waiters_.pending();
+    waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
     return ready(value_);
   }
 
  private:
-  WaitSet waiters_;
-  Version version_ GUARDED_BY(waiters_.mu()) = 1;
-  absl::optional<T> value_ GUARDED_BY(waiters_.mu());
+  absl::Mutex mu_;
+  WaitSet waiters_ ABSL_GUARDED_BY(mu_);
+  Version version_ ABSL_GUARDED_BY(mu_) = 1;
+  absl::optional<T> value_ ABSL_GUARDED_BY(mu_);
 };
 
 // Promise implementation for Observer::Get.

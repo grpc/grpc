@@ -268,10 +268,10 @@ static void BM_ActivityStack_Passthrough3_Unary(benchmark::State& state) {
           auto one = []() { return ready(absl::OkStatus()); };
           return TrySeq(one, one, one);
         },
+        NoCallbackScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
-        },
-        nullptr);
+        });
   });
 }
 BENCHMARK(BM_ActivityStack_Passthrough3_Unary);
@@ -283,10 +283,10 @@ static void BM_ActivityStack_Passthrough10_Unary(benchmark::State& state) {
           auto one = []() { return ready(absl::OkStatus()); };
           return TrySeq(one, one, one, one, one, one, one, one, one, one);
         },
+        NoCallbackScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
-        },
-        nullptr);
+        });
   });
 }
 BENCHMARK(BM_ActivityStack_Passthrough10_Unary);
@@ -306,10 +306,11 @@ static void BM_ActivityStack_Interject3Latches_Unary(benchmark::State& state) {
                           }),
                      []() { return ready(absl::OkStatus()); });
         },
+        NoCallbackScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
-        nullptr, std::move(rpcio));
+        std::move(rpcio));
   });
 }
 BENCHMARK(BM_ActivityStack_Interject3Latches_Unary);
@@ -330,10 +331,11 @@ static void BM_ActivityStack_Interject10Latches_Unary(benchmark::State& state) {
                           }),
                      []() { return ready(absl::OkStatus()); });
         },
+        NoCallbackScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
-        nullptr, std::move(rpcio));
+        std::move(rpcio));
   });
 }
 BENCHMARK(BM_ActivityStack_Interject10Latches_Unary);
@@ -357,10 +359,11 @@ static void BM_ActivityStack_Interject30Latches_Unary(benchmark::State& state) {
                    }),
               []() { return ready(absl::OkStatus()); });
         },
+        NoCallbackScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
-        nullptr, std::move(rpcio));
+        std::move(rpcio));
   });
 }
 BENCHMARK(BM_ActivityStack_Interject30Latches_Unary);
@@ -390,10 +393,11 @@ static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return ready(absl::OkStatus()); }));
         },
+        NoCallbackScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
-        nullptr, std::move(rpcio));
+        std::move(rpcio));
   });
 }
 BENCHMARK(BM_ActivityStack_Interject3Filters_Unary);
@@ -424,10 +428,11 @@ static void BM_ActivityStack_Interject10Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return ready(absl::OkStatus()); }));
         },
+        NoCallbackScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
-        nullptr, std::move(rpcio));
+        std::move(rpcio));
   });
 }
 BENCHMARK(BM_ActivityStack_Interject10Filters_Unary);
@@ -460,10 +465,11 @@ static void BM_ActivityStack_Interject30Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return ready(absl::OkStatus()); }));
         },
+        NoCallbackScheduler(),
         [](absl::Status status) {
           if (!status.ok()) abort();
         },
-        nullptr, std::move(rpcio));
+        std::move(rpcio));
   });
 }
 BENCHMARK(BM_ActivityStack_Interject30Filters_Unary);

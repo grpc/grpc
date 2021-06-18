@@ -30,24 +30,27 @@ class Barrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      absl::MutexLock lock(wait_set_.mu());
+      absl::MutexLock lock(&mu_);
       if (cleared_) {
         return ready(Result{});
       } else {
-        return wait_set_.pending();
+        return wait_set_.AddPending(Activity::current()->MakeOwningWaker());
       }
     };
   }
 
   void Clear() {
-    wait_set_.mu()->Lock();
+    mu_.Lock();
     cleared_ = true;
-    wait_set_.WakeAllAndUnlock();
+    auto wakeup = wait_set_.TakeWakeupSet();
+    mu_.Unlock();
+    wakeup.Wakeup();
   }
 
  private:
-  WaitSet wait_set_;
-  bool cleared_ GUARDED_BY(wait_set_.mu()) = false;
+  absl::Mutex mu_;
+  WaitSet wait_set_ ABSL_GUARDED_BY(mu_);
+  bool cleared_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 TEST(ObservableTest, CanPushAndGet) {
@@ -61,8 +64,8 @@ TEST(ObservableTest, CanPushAndGet) {
                                : absl::UnknownError("expected 42"));
         });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   observable.Push(42);
 }
@@ -84,8 +87,8 @@ TEST(ObservableTest, CanNext) {
                                   : absl::UnknownError("expected 1"));
             });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   observable.Push(42);
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   observable.Push(1);
@@ -108,8 +111,8 @@ TEST(ObservableTest, CanWatch) {
               }
             });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   observable.Push(1);
   observable.Push(2);
   observable.Push(3);

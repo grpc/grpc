@@ -39,8 +39,8 @@ TEST(LatchTest, Works) {
                      return ready(absl::OkStatus());
                    });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
 }  // namespace grpc_core

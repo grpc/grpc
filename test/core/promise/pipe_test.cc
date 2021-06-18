@@ -38,8 +38,8 @@ TEST(PipeTest, CanSendAndReceive) {
                      return ready(absl::OkStatus());
                    });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
 TEST(PipeTest, CanReceiveAndSend) {
@@ -55,8 +55,8 @@ TEST(PipeTest, CanReceiveAndSend) {
                      return ready(absl::OkStatus());
                    });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
 TEST(PipeTest, CanSeeClosedOnSend) {
@@ -80,8 +80,8 @@ TEST(PipeTest, CanSeeClosedOnSend) {
                      return ready(absl::OkStatus());
                    });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
 TEST(PipeTest, CanSeeClosedOnReceive) {
@@ -103,8 +103,8 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
                      return ready(absl::OkStatus());
                    });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
 TEST(PipeTest, CanFilter) {
@@ -132,8 +132,8 @@ TEST(PipeTest, CanFilter) {
               return ready(absl::OkStatus());
             });
       },
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      nullptr);
+      NoCallbackScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
 }  // namespace grpc_core

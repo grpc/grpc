@@ -41,12 +41,13 @@ class Factory {
  public:
   using Arg = A;
   class Promise {
-    public:
-    struct X{};
+   public:
+    struct X {};
     Poll<X> operator()();
   };
   Factory(F f) {
-    static_assert(ArgIsCompatibleWithFunctionError<A, F>::value(), "Factory method is incompatible with argument passed");
+    static_assert(ArgIsCompatibleWithFunctionError<A, F>::value(),
+                  "Factory method is incompatible with argument passed");
   }
   Promise Once(Arg arg);
   Promise Repeated(Arg arg);
