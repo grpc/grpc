@@ -827,9 +827,11 @@ void ClientChannel::ExternalConnectivityWatcher::Notify(
   // automatically remove all watchers in that case.
   if (state != GRPC_CHANNEL_SHUTDOWN) {
     chand_->work_serializer_->Run(
-        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
-          RemoveWatcherLocked();
-        },
+        [pThis = Ref()]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
+              static_cast<ExternalConnectivityWatcher*>(pThis.get())
+                  ->RemoveWatcherLocked();
+            },
         DEBUG_LOCATION);
   }
 }
