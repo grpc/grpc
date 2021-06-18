@@ -38,6 +38,8 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
 
   Rbac::Action action() { return action_; }
 
+  int num_policies() { return policies_.size(); }
+
   // Evaluates incoming request against RBAC policy and makes a decision to
   // whether allow/deny this request.
   Decision Evaluate(const EvaluateArgs& args) const override;

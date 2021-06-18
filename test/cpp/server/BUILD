@@ -82,6 +82,11 @@ grpc_cc_test(
 grpc_cc_test(
     name = "authorization_policy_provider_test",
     srcs = ["authorization_policy_provider_test.cc"],
+    data = [
+        "//src/core/lib/security/authorization/test_policies:invalid_policy.json",
+        "//src/core/lib/security/authorization/test_policies:valid_policy_1.json",
+        "//src/core/lib/security/authorization/test_policies:valid_policy_2.json",
+    ],
     external_deps = [
         "gtest",
     ],

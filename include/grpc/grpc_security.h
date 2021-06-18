@@ -1111,6 +1111,44 @@ grpc_authorization_policy_provider_static_data_create(
 
 /**
  * EXPERIMENTAL - Subject to change.
+ * Creates a grpc_authorization_policy_provider by watching for SDK
+ * authorization policy changes in filesystem.
+ * - authz_policy is the file path of SDK authorization policy.
+ * - refresh_interval_sec is the amount of time the internal thread would wait
+ *   before checking for file updates.
+ * - code is the error status code on failure. On success, it equals
+ *   GRPC_STATUS_OK.
+ * - error_details contains details about the error if any. If the
+ *   initialization is successful, it will be null. Caller must use gpr_free to
+ *   destroy this string.
+ */
+GRPCAPI grpc_authorization_policy_provider*
+grpc_authorization_policy_provider_file_watcher_create(
+    const char* authz_policy_path, unsigned int refresh_interval_sec,
+    grpc_status_code* code, const char** error_details);
+
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Callback function that is executed when reading policy from file path fails
+ * due to I/O error/invalid policy. This is specific to
+ * |FileWatcherAuthorizationPolicyProvider|.
+ * - code is the error status code on failure.
+ * - error_details contains details about the error.
+ */
+typedef void (*grpc_authorization_policy_provider_file_watcher_on_error_cb)(
+    grpc_status_code status, const char* error_details);
+
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Sets callback function to be executed when reading policy from file path
+ * fails. This is specific to |FileWatcherAuthorizationPolicyProvider|.
+ */
+GRPCAPI void grpc_authorization_policy_provider_file_watcher_set_error_callback(
+    grpc_authorization_policy_provider* provider,
+    grpc_authorization_policy_provider_file_watcher_on_error_cb cb);
+
+/**
+ * EXPERIMENTAL - Subject to change.
  * Releases grpc_authorization_policy_provider object. The creator of
  * grpc_authorization_policy_provider is responsible for its release.
  */

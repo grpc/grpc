@@ -24,6 +24,8 @@
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
 typedef struct grpc_authorization_policy_provider
     grpc_authorization_policy_provider;
+typedef void (*grpc_authorization_policy_provider_file_watcher_on_error_cb)(
+    grpc_status_code status, const char* error_details);
 
 namespace grpc {
 namespace experimental {
@@ -52,6 +54,36 @@ class StaticDataAuthorizationPolicyProvider
       : c_provider_(provider) {}
 
   ~StaticDataAuthorizationPolicyProvider() override;
+
+  grpc_authorization_policy_provider* c_provider() override {
+    return c_provider_;
+  }
+
+ private:
+  grpc_authorization_policy_provider* c_provider_ = nullptr;
+};
+
+// Implementation obtains authorization policy by watching for changes in
+// filesystem.
+class FileWatcherAuthorizationPolicyProvider
+    : public AuthorizationPolicyProviderInterface {
+ public:
+  static std::shared_ptr<FileWatcherAuthorizationPolicyProvider> Create(
+      const std::string& authz_policy_path, unsigned int refresh_interval_sec,
+      grpc::Status* status);
+
+  // Use factory method "Create" to create an instance of
+  // FileWatcherAuthorizationPolicyProvider.
+  explicit FileWatcherAuthorizationPolicyProvider(
+      grpc_authorization_policy_provider* provider)
+      : c_provider_(provider) {}
+
+  ~FileWatcherAuthorizationPolicyProvider() override;
+
+  // Sets callback to be executed anytime reloading fails due to I/O errors or
+  // invalid policy.
+  void SetErrorStatusCallback(
+      grpc_authorization_policy_provider_file_watcher_on_error_cb on_error_cb);
 
   grpc_authorization_policy_provider* c_provider() override {
     return c_provider_;
