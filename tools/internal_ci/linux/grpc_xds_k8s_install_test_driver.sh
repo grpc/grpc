@@ -19,9 +19,8 @@ set -eo pipefail
 readonly PYTHON_VERSION="3.6"
 # Test driver
 readonly TEST_DRIVER_REPO_NAME="grpc"
-# [DO-NOT-MERGE] test-only
-readonly TEST_DRIVER_REPO_URL="https://github.com/lidizheng/grpc.git"
-readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-port-tests}"
+readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
+readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
 readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
 readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
 
