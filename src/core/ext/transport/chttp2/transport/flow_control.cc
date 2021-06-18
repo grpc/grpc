@@ -266,9 +266,14 @@ grpc_error_handle StreamFlowControl::RecvData(int64_t incoming_frame_size) {
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   FlowControlTrace trace("s updt sent", tfc_, this);
+  uint32_t max_window_delta =
+      kMaxWindowUpdateSize -
+      tfc_->transport()->settings[GRPC_SENT_SETTINGS]
+                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
   if (local_window_delta_ > announced_window_delta_) {
     uint32_t announce = static_cast<uint32_t> GPR_CLAMP(
-        local_window_delta_ - announced_window_delta_, 0, kMaxWindowUpdateSize);
+        local_window_delta_ - announced_window_delta_, 0,
+        max_window_delta - announced_window_delta_);
     UpdateAnnouncedWindowDelta(tfc_, announce);
     return announce;
   }

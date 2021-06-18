@@ -366,7 +366,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                            {true, true}},
                           {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
                            GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                           {-1, 128, INT32_MAX},
+                           {-1, 5, INT32_MAX},
                            {true, true}}};
       for (j = 0; j < static_cast<int> GPR_ARRAY_SIZE(settings_map); j++) {
         if (0 == strcmp(channel_args->args[i].key,
