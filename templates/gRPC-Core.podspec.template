@@ -59,30 +59,21 @@
         files.update(lib.get(field, []))
     return list(sorted(files))
 
-  # Wrapped languages don't need to access EventEngine APIs. `port.h` is a
-  # special case - it's needed in some security code.
-  event_engine_files = [
-      file
-      for file in list_lib_files("grpc", ("public_headers", "headers", "src"))
-      if '/event_engine/' in file
-      and not file.endswith('/port.h')
-  ]
-
   # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
   address_sorting_unwanted_files = list_lib_files("address_sorting", ("public_headers", "headers", "src"))
 
   # ObjectiveC needs to obtain re2 explicitly unlike other languages; TODO @donnadionne make ObjC more consistent with others
   grpc_private_files = list(
       sorted((set(list_lib_files("grpc", ("headers", "src"))) -
-              set(address_sorting_unwanted_files) - set(event_engine_files))
+              set(address_sorting_unwanted_files))
             | set(list_lib_files("re2", ("headers", "src")))))
   grpc_public_headers = list(
       sorted((set(list_lib_files("grpc", ("public_headers", ))) -
-              set(address_sorting_unwanted_files)) - set(event_engine_files)
+              set(address_sorting_unwanted_files))
              | set(list_lib_files("re2", ("public_headers", )))))
   grpc_private_headers = list(
       sorted((set(list_lib_files("grpc", ("headers", ))) -
-              set(address_sorting_unwanted_files)) - set(event_engine_files)
+              set(address_sorting_unwanted_files))
              | set(list_lib_files("re2", ("headers", )))))
   grpc_abseil_specs = list_abseil_specs("grpc")
   grpc_tests_abseil_specs = list(sorted(set(list_abseil_specs("end2end_tests")) - set(grpc_abseil_specs)))
@@ -109,7 +100,6 @@
     set(list_lib_files("end2end_tests", ("src", "headers")))
     - set(grpc_private_files)
     - set(address_sorting_unwanted_files)
-    - set(event_engine_files)
     - set([
       # Subprocess is not supported in tvOS and not needed by our tests.
       "test/core/util/subprocess_posix.cc",

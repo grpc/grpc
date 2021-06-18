@@ -14,27 +14,20 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include <string.h>
+#include "src/core/lib/iomgr/port.h"
 
-#include "grpc/event_engine/event_engine.h"
-#include "grpc/event_engine/port.h"
-#include "grpc/support/log.h"
+#include <stdlib.h>
 
-uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
+#include <grpc/support/log.h>
 
-uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
+#include "src/core/lib/iomgr/endpoint_pair.h"
 
-uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
-
-uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
-
-int grpc_inet_pton(int af, const char* src, void* dst) {
-  return inet_pton(af, src, dst);
-}
-
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  inet_ntop(af, src, dst, size);
-  return dst;
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
+    const char* /* name */, grpc_channel_args* /* args */) {
+  // TODO(hork): determine what's needed here in the long run
+  GPR_ASSERT(
+      false &&
+      "grpc_iomgr_create_endpoint_pair is not suppoted with event_engine");
 }
 
 #endif  // GRPC_USE_EVENT_ENGINE

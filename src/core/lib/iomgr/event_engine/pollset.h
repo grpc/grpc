@@ -11,30 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_POLLSET_H
+#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_POLLSET_H
+
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
-#include <string.h>
 
-#include "grpc/event_engine/event_engine.h"
-#include "grpc/event_engine/port.h"
-#include "grpc/support/log.h"
+/// Signals pollset_work that some work has been done.
+void grpc_pollset_ee_broadcast_event();
 
-uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
-
-uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
-
-uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
-
-uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
-
-int grpc_inet_pton(int af, const char* src, void* dst) {
-  return inet_pton(af, src, dst);
-}
-
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  inet_ntop(af, src, dst, size);
-  return dst;
-}
-
-#endif  // GRPC_USE_EVENT_ENGINE
+#endif
+#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_POLLSET_H

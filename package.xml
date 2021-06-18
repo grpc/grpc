@@ -33,7 +33,7 @@
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/event_engine/channel_args.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/slice_allocator.h" role="src" />
@@ -157,11 +157,13 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
@@ -736,8 +738,12 @@
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/endpoint_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/endpoint_config_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
@@ -843,6 +849,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_cfstream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.cc" role="src" />
@@ -862,6 +869,20 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/closure.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/closure.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/endpoint.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/iomgr.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/iomgr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/pollset.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/pollset.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/promise.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolved_address_internal.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolved_address_internal.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/tcp.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.cc" role="src" />
