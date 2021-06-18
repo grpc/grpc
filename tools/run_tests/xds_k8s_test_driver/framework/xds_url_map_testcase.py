@@ -61,8 +61,6 @@ _TEST_FILTER = flags.DEFINE_string(
 # Test configs
 _URL_MAP_PROPAGATE_TIMEOUT_SEC = 1800
 _URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 2
-_K8S_NAMESPACE_DELETE_DEADLINE_SEC = 600
-_K8S_NAMESPACE_DELETE_CHECK_INTERVAL_SEC = 10
 _RPC_DISTRIBUTION_READY_TIMEOUT_SEC = 600
 
 # Global states of this module
@@ -83,20 +81,8 @@ RpcTypeEmptyCall = 'EMPTY_CALL'
 
 def _split_camel(s: str, delimiter: str = '-') -> str:
     """Turn camel case name to snake-case-like name."""
-    return ''.join([delimiter + c.lower() if c.isupper() else c for c in s
-                   ]).lstrip(delimiter)
-
-
-def _ensure_k8s_namespace_removed(namespace: k8s.KubernetesNamespace):
-    try:
-        # Start deletion
-        namespace.delete(0)
-    except Exception as e:
-        # Maybe the namespace doesn't exist at all, that's okay
-        logging.info('Namespace deletion failed with %s: %s', type(e), e)
-    namespace.wait_for_namespace_deleted()
-    # Deletion succeed!
-    logging.info('K8s namespace "%s" deleted', xds_flags.NAMESPACE.value)
+    return ''.join(delimiter + c.lower() if c.isupper() else c
+                   for c in s).lstrip(delimiter)
 
 
 class GcpResourceManager:
@@ -147,7 +133,7 @@ class GcpResourceManager:
                      _STRATEGY.value)
         if _STRATEGY.value in ['create', 'keep']:
             self.td.cleanup(force=True)
-            _ensure_k8s_namespace_removed(self.k8s_namespace)
+            self.test_client_runner.delete_namespace()
 
     @staticmethod
     def default_backend_service() -> str:
@@ -368,7 +354,7 @@ class ExpectedResult:
 
 class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
     """XdsUrlMapTestCase is the base class for urlMap related tests.
-    
+
     The subclass is expected to implement 3 methods:
     - url_map_change: Updates the urlMap components for this test case
     - xds_config_validate: Validates if the client received legit xDS configs
