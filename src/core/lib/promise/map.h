@@ -49,8 +49,8 @@ class Map {
 }  // namespace map_detail
 
 // Mapping combinator.
-// Takes a promise, and a synchronous function to mutate it's result, and returns a 
-// promise.
+// Takes a promise, and a synchronous function to mutate it's result, and
+// returns a promise.
 template <typename Promise, typename Fn>
 map_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
   return map_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));

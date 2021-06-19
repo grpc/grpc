@@ -148,7 +148,7 @@ class ObservableNext {
   }
 
  private:
- ObservableVersion* version_seen_;
+  ObservableVersion* version_seen_;
   ObservableState<T>* state_;
 };
 
