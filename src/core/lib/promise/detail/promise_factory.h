@@ -75,7 +75,7 @@ class PromiseFactory {
     struct X {};
     Poll<X> operator()();
   };
-  PromiseFactory(F f) {
+  explicit PromiseFactory(F f) {
     static_assert(ArgIsCompatibleWithFunctionError<A, F>::value(),
                   "PromiseFactory method is incompatible with argument passed");
   }

@@ -27,10 +27,11 @@ namespace promise_detail {
 template <typename Traits, char I, typename... Fs>
 struct SeqState {
   using PriorState = SeqState<Traits, I - 1, Fs...>;
-  SeqState(std::tuple<Fs*...> fs) : next(std::move(*std::get<I + 1>(fs))) {
+  explicit SeqState(std::tuple<Fs*...> fs)
+      : next(std::move(*std::get<I + 1>(fs))) {
     new (&prior) PriorState(fs);
   }
-  SeqState(SeqState&& other)
+  SeqState(SeqState&& other) noexcept
       : prior(std::move(other.prior)), next(std::move(other.next)) {}
   SeqState(const SeqState& other) : prior(other.prior), next(other.next) {}
   ~SeqState() = delete;
@@ -59,9 +60,9 @@ struct SeqState {
 
 template <typename Traits, typename... Fs>
 struct SeqState<Traits, 0, Fs...> {
-  SeqState(std::tuple<Fs*...> args)
+  explicit SeqState(std::tuple<Fs*...> args)
       : f(std::move(*std::get<0>(args))), next(std::move(*std::get<1>(args))) {}
-  SeqState(SeqState&& other)
+  SeqState(SeqState&& other) noexcept
       : f(std::move(other.f)), next(std::move(other.next)) {}
   SeqState(const SeqState& other) : f(other.f), next(other.next) {}
   ~SeqState() = delete;
@@ -196,13 +197,13 @@ class Seq {
   }
 
  public:
-  Seq(Fs... fs) : p_(std::make_tuple(&fs...)) {}
+  explicit Seq(Fs... fs) : p_(std::make_tuple(&fs...)) {}
   Seq& operator=(const Seq&) = delete;
   Seq(const Seq& other) {
     assert(other.state_ == 0);
     new (&p_) PenultimateState(other.p_);
   }
-  Seq(Seq&& other) {
+  Seq(Seq&& other) noexcept {
     assert(other.state_ == 0);
     new (&p_) PenultimateState(std::move(other.p_));
   }

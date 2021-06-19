@@ -414,7 +414,8 @@ class Filter final : private FilterInterface<T> {
   Filter(PipeReceiver<T>* receiver, F f)
       : active_{receiver, promise_detail::PromiseFactory<T, F>(std::move(f))},
         index_(this->AllocIndex(receiver)){};
-  Filter(absl::Status already_finished) : done_(std::move(already_finished)) {}
+  explicit Filter(absl::Status already_finished)
+      : done_(std::move(already_finished)) {}
   ~Filter() {
     if (index_ != kTombstoneIndex) {
       this->SetReceiverIndex(active_.receiver, index_, nullptr);
@@ -423,7 +424,7 @@ class Filter final : private FilterInterface<T> {
       done_.~Status();
     }
   }
-  Filter(Filter&& other) : index_(other.index_) {
+  Filter(Filter&& other) noexcept : index_(other.index_) {
     if (index_ != kTombstoneIndex) {
       new (&active_) Active(std::move(other.active_));
       other.active_.~Active();

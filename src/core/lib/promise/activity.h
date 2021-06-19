@@ -45,10 +45,10 @@ class Waker {
   ~Waker() { wakeable_->Drop(); }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
-  Waker(Waker&& other) : wakeable_(other.wakeable_) {
+  Waker(Waker&& other) noexcept : wakeable_(other.wakeable_) {
     other.wakeable_ = &unwakeable_;
   }
-  Waker& operator=(Waker&& other) {
+  Waker& operator=(Waker&& other) noexcept {
     std::swap(wakeable_, other.wakeable_);
     return *this;
   }
@@ -266,7 +266,7 @@ class PromiseActivity final
     }
   }
 
-  ~PromiseActivity() {
+  ~PromiseActivity() override {
     // We shouldn't destruct without calling Cancel() first, and that must get
     // us to be done_, so we assume that and have no logic to destruct the
     // promise here.

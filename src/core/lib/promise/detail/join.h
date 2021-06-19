@@ -26,7 +26,7 @@ namespace promise_detail {
 
 template <typename Traits, typename F>
 union Fused {
-  Fused(F f) : f(std::move(f)) {}
+  explicit Fused(F f) : f(std::move(f)) {}
   ~Fused() {}
   [[no_unique_address]] F f;
   using Result =
@@ -41,15 +41,15 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
   using Fsd = Fused<Traits, F>;
   using Bits = std::bitset<sizeof...(Fs)>;
   [[no_unique_address]] Fsd fused;
-  Joint(std::tuple<Fs*...> fs)
+  explicit Joint(std::tuple<Fs*...> fs)
       : Joint<Traits, I + 1, Fs...>(fs), fused(std::move(*std::get<I>(fs))) {}
   Joint(const Joint& j) : Joint<Traits, I + 1, Fs...>(j), fused(j.fused.f) {}
-  Joint(Joint&& j)
+  Joint(Joint&& j) noexcept
       : Joint<Traits, I + 1, Fs...>(
             std::forward<Joint<Traits, I + 1, Fs...>>(j)),
         fused(std::move(j.fused.f)) {}
   void DestructAll(const Bits& bits) {
-    if (bits[I] == false) {
+    if (!static_cast<bool>(bits[I])) {
       Destruct(&fused.f);
     } else {
       Destruct(&fused.result);
@@ -58,7 +58,7 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
   }
   template <typename F>
   auto Run(Bits* bits, F finally) -> decltype(finally()) {
-    if ((*bits)[I] == false) {
+    if (!static_cast<bool>((*bits)[I])) {
       auto r = fused.f();
       if (auto* p = r.get_ready()) {
         return Traits::OnResult(
@@ -76,8 +76,9 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
 
 template <typename Traits, typename... Fs>
 struct Joint<Traits, sizeof...(Fs), Fs...> {
-  template <typename T>
-  Joint(T&&) {}
+  explicit Joint(std::tuple<Fs*...>) {}
+  Joint(const Joint&) {}
+  Joint(Joint&&) noexcept {}
   template <typename T>
   void DestructAll(const T&) {}
   template <typename F>
@@ -109,13 +110,13 @@ class Join {
   }
 
  public:
-  Join(Fs&&... fs) : joints_(std::tuple<Fs*...>(&fs...)) {}
+  explicit Join(Fs&&... fs) : joints_(std::tuple<Fs*...>(&fs...)) {}
   Join& operator=(const Join&) = delete;
   Join(const Join& other) {
     assert(other.state_.none());
     Construct(&joints_, other.joints_);
   }
-  Join(Join&& other) {
+  Join(Join&& other) noexcept {
     assert(other.state_.none());
     Construct(&joints_, std::move(other.joints_));
   }
