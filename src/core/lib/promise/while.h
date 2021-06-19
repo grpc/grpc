@@ -18,7 +18,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -76,7 +76,7 @@ absl::optional<absl::StatusOr<T>> Step(
 template <typename F>
 class While {
  private:
-  using Factory = adaptor_detail::Factory<void, F>;
+  using Factory = promise_detail::PromiseFactory<void, F>;
   using Promise = decltype(std::declval<Factory>().Repeated());
   using PromiseResult = typename decltype(std::declval<Promise>()())::Type;
 

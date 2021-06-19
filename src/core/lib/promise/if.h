@@ -17,7 +17,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -54,9 +54,9 @@ typename CallPoll::PollResult Choose(CallPoll call_poll,
 template <typename C, typename T, typename F>
 class If {
  private:
-  using ConditionFactory = adaptor_detail::Factory<void, C>;
-  using TrueFactory = adaptor_detail::Factory<void, T>;
-  using FalseFactory = adaptor_detail::Factory<void, F>;
+  using ConditionFactory = promise_detail::PromiseFactory<void, C>;
+  using TrueFactory = promise_detail::PromiseFactory<void, T>;
+  using FalseFactory = promise_detail::PromiseFactory<void, F>;
   using ConditionPromise = typename ConditionFactory::Promise;
   using TruePromise = typename TrueFactory::Promise;
   using FalsePromise = typename FalseFactory::Promise;

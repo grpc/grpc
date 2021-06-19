@@ -17,7 +17,7 @@
 
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -47,7 +47,7 @@ class ForEach {
   using ReaderNext = decltype(std::declval<Reader>().Next());
   using ReaderResult =
       typename decltype(std::declval<ReaderNext>()())::Type::value_type;
-  using ActionFactory = adaptor_detail::Factory<ReaderResult, Action>;
+  using ActionFactory = promise_detail::PromiseFactory<ReaderResult, Action>;
   using ActionPromise = typename ActionFactory::Promise;
 
  public:

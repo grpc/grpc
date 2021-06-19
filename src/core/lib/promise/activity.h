@@ -234,10 +234,10 @@ class ContextHolder<Context*> {
 };
 
 template <typename... Contexts>
-class EnterContexts : public context_detail::Context<Contexts>... {
+class EnterContexts : public promise_detail::Context<Contexts>... {
  public:
   explicit EnterContexts(Contexts*... contexts)
-      : context_detail::Context<Contexts>(contexts)... {}
+      : promise_detail::Context<Contexts>(contexts)... {}
 };
 
 // Implementation details for an Activity of an arbitrary type of promise.

@@ -69,8 +69,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "adaptor_test",
-    srcs = ["adaptor_test.cc"],
+    name = "promise_factory_test",
+    srcs = ["promise_factory_test.cc"],
     language = "c++",
     uses_polling = False,
     deps = ["//:promise"],

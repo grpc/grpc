@@ -21,11 +21,12 @@ namespace grpc_core {
 
 // To avoid accidentally creating context types, we require an explicit
 // specialization of this template per context type. The specialization need
-// not contain any members.
+// not contain any members, only exist.
+// The reason for avoiding this is that context types each use a thread local.
 template <typename T>
 struct ContextType;
 
-namespace context_detail {
+namespace promise_detail {
 
 template <typename T>
 class Context : public ContextType<T> {
@@ -60,18 +61,18 @@ class WithContext {
   F f_;
 };
 
-}  // namespace context_detail
+}  // namespace promise_detail
 
 // Retrieve the current value of a context.
 template <typename T>
 T* GetContext() {
-  return context_detail::Context<T>::get();
+  return promise_detail::Context<T>::get();
 }
 
 // Given a promise and a context, return a promise that has that context set.
 template <typename T, typename F>
-context_detail::WithContext<T, F> WithContext(F f, T* context) {
-  return context_detail::WithContext<T, F>(f, context);
+promise_detail::WithContext<T, F> WithContext(F f, T* context) {
+  return promise_detail::WithContext<T, F>(f, context);
 }
 
 }  // namespace grpc_core

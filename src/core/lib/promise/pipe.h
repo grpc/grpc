@@ -19,7 +19,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -412,7 +412,7 @@ template <typename T, typename F>
 class Filter final : private FilterInterface<T> {
  public:
   Filter(PipeReceiver<T>* receiver, F f)
-      : active_{receiver, adaptor_detail::Factory<T, F>(std::move(f))},
+      : active_{receiver, promise_detail::PromiseFactory<T, F>(std::move(f))},
         index_(this->AllocIndex(receiver)){};
   Filter(absl::Status already_finished) : done_(std::move(already_finished)) {}
   ~Filter() {
@@ -449,7 +449,7 @@ class Filter final : private FilterInterface<T> {
   static constexpr char kTombstoneIndex = -1;
   struct Active {
     [[no_unique_address]] PipeReceiver<T>* receiver;
-    [[no_unique_address]] adaptor_detail::Factory<T, F> factory;
+    [[no_unique_address]] promise_detail::PromiseFactory<T, F> factory;
   };
   union {
     [[no_unique_address]] Active active_;
@@ -458,7 +458,7 @@ class Filter final : private FilterInterface<T> {
   [[no_unique_address]] char index_;
 
   class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
-    using PF = typename adaptor_detail::Factory<T, F>::Promise;
+    using PF = typename promise_detail::PromiseFactory<T, F>::Promise;
 
    public:
     PromiseImpl(PF f, Filter* filter) : f_(std::move(f)), filter_(filter) {}

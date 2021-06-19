@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include <gtest/gtest.h>
 #include "absl/functional/bind_front.h"
+#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
-namespace adaptor_detail {
+namespace promise_detail {
 namespace testing {
 
 TEST(AdaptorTest, IsItPoll) {
@@ -31,8 +32,8 @@ TEST(AdaptorTest, IsItPoll) {
 }
 
 template <typename Arg, typename F>
-Factory<Arg, F> MakeFactory(F f) {
-  return Factory<Arg, F>(std::move(f));
+PromiseFactory<Arg, F> MakeFactory(F f) {
+  return PromiseFactory<Arg, F>(std::move(f));
 }
 
 TEST(AdaptorTest, FactoryFromPromise) {
@@ -68,7 +69,7 @@ TEST(AdaptorTest, FactoryFromCapturePromise) {
 }
 
 }  // namespace testing
-}  // namespace adaptor_detail
+}  // namespace promise_detail
 
 }  // namespace grpc_core
 

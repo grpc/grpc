@@ -16,7 +16,7 @@
 #define GRPC_CORE_LIB_PROMISE_VISITOR_H
 
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -71,7 +71,7 @@ template <typename... Cases>
 class OverloadFactory {
  public:
   template <typename T>
-  using AdaptorFactory = adaptor_detail::Factory<T, Overload<Cases...>>;
+  using AdaptorFactory = promise_detail::PromiseFactory<T, Overload<Cases...>>;
 
   explicit OverloadFactory(Cases... cases) : overload_(std::move(cases)...) {}
 

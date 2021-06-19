@@ -20,9 +20,14 @@
 
 namespace grpc_core {
 
+// Latch provides a single set waitable object.
+// Initially the Latch is unset.
+// It can be waited upon by the Wait method, which produces a Promise that
+// resolves when the Latch is Set to a value of type T.
 template <typename T>
 class Latch {
  public:
+  // This is the type of the promise returned by Wait.
   class WaitPromise {
    public:
     Poll<T*> operator()() const {
@@ -51,11 +56,13 @@ class Latch {
     return *this;
   }
 
+  // Produce a promise to wait for a value from this latch.
   WaitPromise Wait() {
     has_had_waiters_ = true;
     return WaitPromise(this);
   }
 
+  // Set the value of the latch. Can only be called once.
   void Set(T value) {
     assert(!value_.has_value());
     value_ = std::move(value);
@@ -63,6 +70,9 @@ class Latch {
   }
 
  private:
+  // TODO(ctiller): consider ditching optional here and open coding the bool
+  // and optionally constructed value - because in doing so we likely save a
+  // few bytes per latch, and it's likely we'll have many of these.
   absl::optional<T> value_;
   bool has_had_waiters_ = false;
   IntraActivityWaiter waiter_;

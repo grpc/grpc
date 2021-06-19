@@ -17,6 +17,7 @@
 
 #include "absl/types/variant.h"
 #include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -41,7 +42,7 @@ struct SeqState {
   using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
   using FNext = typename std::tuple_element<I + 1, std::tuple<Fs...>>::type;
   using NextArg = typename Traits::template NextArg<FResult>;
-  using Next = adaptor_detail::Factory<typename NextArg::Type, FNext>;
+  using Next = promise_detail::PromiseFactory<typename NextArg::Type, FNext>;
   [[no_unique_address]] Next next;
 
   template <int J>
@@ -69,7 +70,7 @@ struct SeqState<Traits, 0, Fs...> {
   [[no_unique_address]] F f;
   using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
   using NextArg = typename Traits::template NextArg<FResult>;
-  using Next = adaptor_detail::Factory<typename NextArg::Type, FNext>;
+  using Next = promise_detail::PromiseFactory<typename NextArg::Type, FNext>;
   [[no_unique_address]] Next next;
 
   template <int I>
