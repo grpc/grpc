@@ -16,6 +16,8 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/core/event_engine")
 
+licenses(["notice"])
+
 grpc_cc_test(
     name = "endpoint_config_test",
     srcs = ["endpoint_config_test.cc"],
