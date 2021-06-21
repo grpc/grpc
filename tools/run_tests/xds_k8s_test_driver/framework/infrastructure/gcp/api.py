@@ -15,7 +15,7 @@ import abc
 import contextlib
 import functools
 import logging
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 # Workaround: `grpc` must be imported before `google.protobuf.json_format`,
 # to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
@@ -27,6 +27,7 @@ from google.longrunning import operations_pb2
 from google.protobuf import json_format
 from google.rpc import code_pb2
 from googleapiclient import discovery
+import googleapiclient.http
 import googleapiclient.errors
 import tenacity
 import yaml
@@ -49,7 +50,10 @@ COMPUTE_V1_DISCOVERY_FILE = flags.DEFINE_string(
     help="Load compute v1 from discovery file")
 
 # Type aliases
+_HttpError = googleapiclient.errors.HttpError
+_HttpLib2Error = googleapiclient.http.httplib2.HttpLib2Error
 Operation = operations_pb2.Operation
+HttpRequest = googleapiclient.http.HttpRequest
 
 
 class GcpApiManager:
@@ -194,7 +198,46 @@ class GcpApiManager:
 
 
 class Error(Exception):
-    """Base error class for GCP API errors"""
+    """Base error class for GCP API errors."""
+
+
+class ResponseError(Error):
+    """The response was not a 2xx."""
+    reason: str
+    uri: str
+    error_details: Optional[str]
+    status: Optional[int]
+    cause: _HttpError
+
+    def __init__(self, cause: _HttpError):
+        # TODO(sergiitk): cleanup when we upgrade googleapiclient:
+        #  - remove _get_reason()
+        #  - remove error_details note
+        #  - use status_code()
+        self.reason = cause._get_reason().strip()  # noqa
+        self.uri = cause.uri
+        self.error_details = cause.error_details  # NOTE: Must after _get_reason
+        self.status = None
+        if cause.resp and cause.resp.status:
+            self.status = cause.resp.status
+        self.cause = cause
+        super().__init__()
+
+    def __repr__(self):
+        return (f'<ResponseError {self.status} when requesting {self.uri} '
+                f'returned "{self.reason}". Details: "{self.error_details}">')
+
+
+class TransportError(Error):
+    """A transport error has occurred."""
+    cause: _HttpLib2Error
+
+    def __init__(self, cause: _HttpLib2Error):
+        self.cause = cause
+        super().__init__()
+
+    def __repr__(self):
+        return f'<TransportError cause: {self.cause!r}>'
 
 
 class OperationError(Error):
@@ -229,6 +272,31 @@ class GcpProjectApiResource:
     def __init__(self, api: discovery.Resource, project: str):
         self.api: discovery.Resource = api
         self.project: str = project
+
+    # TODO(sergiitk): in upcoming GCP refactoring, differentiate between
+    #   _execute for LRO (Long Running Operations), and immediate operations.
+    def _execute(
+            self,
+            request: HttpRequest,
+            *,
+            num_retries: Optional[int] = _GCP_API_RETRIES) -> Dict[str, Any]:
+        """Execute the immediate request.
+
+        Returns:
+          Unmarshalled response as a dictionary.
+
+        Raises:
+          ResponseError if the response was not a 2xx.
+          TransportError if a transport error has occurred.
+        """
+        if num_retries is None:
+            num_retries = self._GCP_API_RETRIES
+        try:
+            return request.execute(num_retries=num_retries)
+        except _HttpError as error:
+            raise ResponseError(error)
+        except _HttpLib2Error as error:
+            raise TransportError(error)
 
     @staticmethod
     def wait_for_operation(operation_request,
@@ -292,15 +360,16 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
         try:
             self._execute(collection.delete(name=full_name))
             return True
-        except googleapiclient.errors.HttpError as error:
+        except _HttpError as error:
             if error.resp and error.resp.status == 404:
                 logger.info('%s not deleted since it does not exist', full_name)
             else:
                 logger.warning('Failed to delete %s, %r', full_name, error)
         return False
 
+    # TODO(sergiitk): Use ResponseError and TransportError
     def _execute(self,
-                 request,
+                 request: HttpRequest,
                  timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         self._wait(operation, timeout_sec)

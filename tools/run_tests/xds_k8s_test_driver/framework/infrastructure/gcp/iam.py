@@ -17,8 +17,6 @@ import functools
 import logging
 from typing import Any, Dict, FrozenSet, Optional
 
-import googleapiclient.errors
-
 from framework.helpers import retryers
 from framework.infrastructure import gcp
 
@@ -26,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Type aliases
 _timedelta = datetime.timedelta
+_HttpRequest = gcp.api.HttpRequest
 
 
 class EtagConflict(gcp.api.Error):
@@ -41,7 +40,7 @@ def handle_etag_conflict(func):
 
     def wrap_retry_on_etag_conflict(*args, **kwargs):
         retryer = retryers.exponential_retryer_with_timeout(
-            retry_on_exceptions=(EtagConflict,),
+            retry_on_exceptions=(EtagConflict, gcp.api.TransportError),
             wait_min=_timedelta(seconds=1),
             wait_max=_timedelta(seconds=10),
             timeout=_timedelta(minutes=2))
@@ -198,7 +197,7 @@ class IamV1(gcp.api.GcpProjectApiResource):
         # Shortcut to projects/*/serviceAccounts/ endpoints
         self._service_accounts = self.api.projects().serviceAccounts()
 
-    def service_account_resource_name(self, account):
+    def service_account_resource_name(self, account) -> str:
         """
         Returns full resource name of the service account.
 
@@ -214,16 +213,19 @@ class IamV1(gcp.api.GcpProjectApiResource):
         return f'projects/{self.project}/serviceAccounts/{account}'
 
     def get_service_account(self, account: str) -> ServiceAccount:
-        response: Dict[str, Any] = self._service_accounts.get(
-            name=self.service_account_resource_name(account)).execute()
+        resource_name = self.service_account_resource_name(account)
+        request: _HttpRequest = self._service_accounts.get(name=resource_name)
+        response: Dict[str, Any] = self._execute(request)
         logger.debug('Loaded Service Account:\n%s',
                      self._resource_pretty_format(response))
         return ServiceAccount.from_response(response)
 
     def get_service_account_iam_policy(self, account: str) -> Policy:
-        response: Dict[str, Any] = self._service_accounts.getIamPolicy(
-            resource=self.service_account_resource_name(account),
-            options_requestedPolicyVersion=self.POLICY_VERSION).execute()
+        resource_name = self.service_account_resource_name(account)
+        request: _HttpRequest = self._service_accounts.getIamPolicy(
+            resource=resource_name,
+            options_requestedPolicyVersion=self.POLICY_VERSION)
+        response: Dict[str, Any] = self._execute(request)
         logger.debug('Loaded Service Account Policy:\n%s',
                      self._resource_pretty_format(response))
         return Policy.from_response(response)
@@ -234,22 +236,21 @@ class IamV1(gcp.api.GcpProjectApiResource):
 
         https://cloud.google.com/iam/docs/reference/rest/v1/projects.serviceAccounts/setIamPolicy
         """
+        resource_name = self.service_account_resource_name(account)
         body = {'policy': policy.as_dict()}
         logger.debug('Updating Service Account %s policy:\n%s', account,
                      self._resource_pretty_format(body))
         try:
-            response: Dict[str, Any] = self._service_accounts.setIamPolicy(
-                resource=self.service_account_resource_name(account),
-                body=body).execute()
+            request: _HttpRequest = self._service_accounts.setIamPolicy(
+                resource=resource_name, body=body)
+            response: Dict[str, Any] = self._execute(request)
             return Policy.from_response(response)
-        except googleapiclient.errors.HttpError as error:
-            # TODO(sergiitk) use status_code() when we upgrade googleapiclient
-            if error.resp and error.resp.status == 409:
+        except gcp.api.ResponseError as error:
+            if error.status == 409:
                 # https://cloud.google.com/iam/docs/policies#etag
                 logger.debug(error)
                 raise EtagConflict from error
-            else:
-                raise gcp.api.Error from error
+            raise
 
     @handle_etag_conflict
     def add_service_account_iam_policy_binding(self, account: str, role: str,
