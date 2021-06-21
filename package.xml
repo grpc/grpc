@@ -1747,7 +1747,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/tls/kdf.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/hpke/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/hrss/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/internal.h" role="src" />
@@ -1814,7 +1813,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/t_req.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/vpm_int.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c" role="src" />
@@ -1923,6 +1921,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/ex_data.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hkdf.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hmac.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hpke.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hrss.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/is_boringssl.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/lhash.h" role="src" />
