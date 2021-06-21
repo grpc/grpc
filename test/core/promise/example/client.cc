@@ -201,61 +201,65 @@ class RetryFilter final : public Filter {
     };
     bool* retry_data = NewFromArena<RetryData>();
     auto retry_policy = retry_policy_;
+    auto apply_pushback = [retry_data]() {
+      // If the server has requested some pushback time, then sleep here.
+      return Wait(retry_data->server_pushback_ms);
+    };
+    // Actual send attempt:
+    auto make_one_attempt = [next, GRPC_CAPTURE(incoming_pipe),
+                             GRPC_CAPTURE(initial_metadata),
+                             GRPC_CAPTURE(buffered_pipe)]() {
+      // Make a new pipe to interject on received messages.
+      Pipe<Capsule> receive_pipe;
+      // And another to send outgoing messages (that may or may not
+      // already be buffered).
+      auto outgoing = buffered_pipe.MakeSender();
+      // New pipes and initial metadata to go down the stack.
+      auto promise_args = PromiseArgs(initial_metadata.Clone(),
+                                      std::move(outgoing.receive_pipe),
+                                      std::move(receive_pipe.sender));
+      return TryJoin(
+          // BufferedPipe gives us a promise to run to forward outgoing
+          // messages.
+          std::move(outgoing.proxy_promise),
+          // For each capsule received from the server, forward it up
+          // the stack. We also become committed after receiving the
+          // first capsule - meaning that no further retries will occur.
+          ForEach(std::move(receive_pipe.receiver),
+                  [retry_data, GRPC_CAPTURE(incoming_pipe)](Capsule c) {
+                    retry_data->committed = true;
+                    return incoming_pipe.Send(std::move(c))
+                  }),
+          // Ask the next filter along to create a promise that will
+          // ultimately run the request and return some status.
+          next->CreatePromise(std::move(promise_args)));
+    };
+    // Post running an attempt, we have some call status.
+    // Interpret that and decide what to do.
+    auto evaluate_result_and_maybe_continue =
+        [retry_data, retry_policy](CallStatus status) {
+          ++retry_data->attempts;
+          // If the call succeeded or we became committed, or if the call is
+          // not retryable (due to status code or too many attempts), then
+          // just return the status we received up the stack.
+          if (status.ok() || retry_data->committed ||
+              !retry_policy->retryable_status_codes().Contains(status) ||
+              retry_data->attempts >= retry_policy->max_attempts()) {
+            return status;
+          }
+          // Capture the server pushback from trailing metadata.
+          retry_data->server_pushback_ms =
+              status.trailing_metadata().server_pushback_ms;
+          // Continue with the next attempt.
+          return kContinue;
+        };
     return TryJoin(
         // Take messages being sent, and add them to our internal buffer so that
         // we can resend them at will.
         buffered_pipe.BufferFrom(std::move(outgoing_pipe)),
         // Main retry loop:
-        Until(Seq(
-            // If the server has requested some pushback time, then sleep here.
-            // Placing this here makes for marginally easier code later on.
-            [retry_data]() { return Wait(retry_data->server_pushback_ms); },
-            // Actual send attempt:
-            [next, GRPC_CAPTURE(incoming_pipe), GRPC_CAPTURE(initial_metadata),
-             GRPC_CAPTURE(buffered_pipe)]() {
-              // Make a new pipe to interject on received messages.
-              Pipe<Capsule> receive_pipe;
-              // And another to send outgoing messages (that may or may not
-              // already be buffered).
-              auto outgoing = buffered_pipe.MakeSender();
-              // New pipes and initial metadata to go down the stack.
-              auto promise_args = PromiseArgs(initial_metadata.Clone(),
-                                              std::move(outgoing.receive_pipe),
-                                              std::move(receive_pipe.sender));
-              return TryJoin(
-                  // BufferedPipe gives us a promise to run to forward outgoing
-                  // messages.
-                  std::move(outgoing.proxy_promise),
-                  // For each capsule received from the server, forward it up
-                  // the stack. We also become committed after receiving the
-                  // first capsule - meaning that no further retries will occur.
-                  ForEach(std::move(receive_pipe.receiver),
-                          [retry_data, GRPC_CAPTURE(incoming_pipe)](Capsule c) {
-                            retry_data->committed = true;
-                            return incoming_pipe.Send(std::move(c))
-                          }),
-                  // Ask the next filter along to create a promise that will
-                  // ultimately run the request and return some status.
-                  next->CreatePromise(std::move(promise_args)));
-            },
-            // Post running an attempt, we have some call status.
-            // Interpret that and decide what to do.
-            [retry_data, retry_policy](CallStatus status) {
-              ++retry_data->attempts;
-              // If the call succeeded or we became committed, or if the call is
-              // not retryable (due to status code or too many attempts), then
-              // just return the status we received up the stack.
-              if (status.ok() || retry_data->committed ||
-                  !retry_policy->retryable_status_codes().Contains(status) ||
-                  retry_data->attempts >= retry_policy->max_attempts()) {
-                return status;
-              }
-              // Capture the server pushback from trailing metadata.
-              retry_data->server_pushback_ms =
-                  status.trailing_metadata().server_pushback_ms;
-              // Continue with the next attempt.
-              return kContinue;
-            })))
+        Until(Seq(apply_pushback, make_one_attempt,
+                  evaluate_result_and_maybe_continue)))
   }
 
  private:
