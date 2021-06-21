@@ -176,6 +176,9 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   refresh_thread_.Join();
 }
 
+absl::Status FileWatcherCertificateProvider::privateKeyPublicKeyMatch(const std::string& private_key, 
+                                                                      const std::string& cert){}
+
 void FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -249,6 +252,14 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     }
     GRPC_ERROR_UNREF(root_cert_error);
     GRPC_ERROR_UNREF(identity_cert_error);
+    absl::Status key_cert_match = privateKeyPublicKeyMatch();
+    grpc_error_handle cert_key_error = GRPC_ERROR_NONE;
+    if (!keyCertMatch.ok()){
+      cert_key_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "private key and certificate match failed");
+      GRPC_ERROR_REF(certKeyMatch);
+    }
+    GRPC_ERROR_UNREF(cert_key_error);
   }
 }
 
