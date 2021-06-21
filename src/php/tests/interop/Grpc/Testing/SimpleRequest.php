@@ -179,7 +179,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     public function getPayload()
     {
-        return isset($this->payload) ? $this->payload : null;
+        return $this->payload;
     }
 
     public function hasPayload()
@@ -270,7 +270,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     public function getResponseCompressed()
     {
-        return isset($this->response_compressed) ? $this->response_compressed : null;
+        return $this->response_compressed;
     }
 
     public function hasResponseCompressed()
@@ -309,7 +309,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     public function getResponseStatus()
     {
-        return isset($this->response_status) ? $this->response_status : null;
+        return $this->response_status;
     }
 
     public function hasResponseStatus()
@@ -345,7 +345,7 @@ class SimpleRequest extends \Google\Protobuf\Internal\Message
      */
     public function getExpectCompressed()
     {
-        return isset($this->expect_compressed) ? $this->expect_compressed : null;
+        return $this->expect_compressed;
     }
 
     public function hasExpectCompressed()
