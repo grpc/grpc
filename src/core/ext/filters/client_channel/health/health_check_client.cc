@@ -269,11 +269,8 @@ HealthCheckClient::CallState::~CallState() {
   // Unset the call combiner cancellation closure.  This has the
   // effect of scheduling the previously set cancellation closure, if
   // any, so that it can release any internal references it may be
-  // holding to the call stack. Also flush the closures on exec_ctx so that
-  // filters that schedule cancel notification closures on exec_ctx do not
-  // need to take a ref of the call stack to guarantee closure liveness.
+  // holding to the call stack.
   call_combiner_.SetNotifyOnCancel(nullptr);
-  ExecCtx::Get()->Flush();
   arena_->Destroy();
 }
 
