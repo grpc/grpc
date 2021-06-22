@@ -219,14 +219,21 @@ def gen_loadtest_configs(
             # Set servers to named instances.
             spec['servers'] = servers
 
+            # Add driver, if needed.
+            if 'driver' not in spec:
+                spec['driver'] = dict()
+
+            # Ensure driver has language and run fields.
+            driver = spec['driver']
+            if 'language' not in driver:
+                driver['language'] = safe_name('c++')
+            if 'run' not in driver:
+                driver['run'] = dict()
+
             # Name the driver with an index for consistency with workers.
             # There is only one driver, so the index is zero.
-            if 'driver' in spec and 'run' in spec['driver']:
-                driver = spec['driver']
-                if 'language' not in driver:
-                    driver['language'] = safe_name('c++')
-                if 'name' not in driver or not driver['name']:
-                    driver['name'] = '0'
+            if 'name' not in driver or not driver['name']:
+                driver['name'] = '0'
 
             spec['scenariosJSON'] = scenario_str
 
@@ -261,12 +268,9 @@ def clear_empty_fields(config: Dict[str, Any]) -> None:
         driver = spec['driver']
         if 'pool' in driver and not driver['pool']:
             del driver['pool']
-        if 'run' in driver and 'image' not in driver['run']:
-            del driver['run']
-        if not set(driver).difference({'language'}):
-            del spec['driver']
-        else:
-            spec['driver'] = driver
+        if ('run' in driver and 'image' in driver['run'] and
+                not driver['run']['image']):
+            del driver['run']['image']
     if 'results' in spec and not ('bigQueryTable' in spec['results'] and
                                   spec['results']['bigQueryTable']):
         del spec['results']
