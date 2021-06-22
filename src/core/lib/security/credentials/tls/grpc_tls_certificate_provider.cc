@@ -128,6 +128,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
+    // The body below is that of the callable being passed to
+    // SetWatchStatusCallback
     grpc_core::MutexLock lock(&mu_);
     absl::optional<std::string> root_certificate;
     absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -177,6 +179,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   refresh_thread_.Join();
 }
 
+//
 void FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -187,6 +190,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     pem_key_cert_pairs = ReadIdentityKeyCertPairFromFiles(
         private_key_path_, identity_certificate_path_);
   }
+  // https://abseil.io/docs/cpp/guides/synchronization
   grpc_core::MutexLock lock(&mu_);
   const bool root_cert_changed =
       (!root_certificate.has_value() && !root_certificate_.empty()) ||
@@ -210,7 +214,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     }
   }
   if (root_cert_changed || identity_cert_changed) {
-    ExecCtx exec_ctx;
+    ExecCtx exec_ctx;  // TODO: What does this mean? - itsemmanuel@
     grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Unable to get latest root certificates.");
     grpc_error_handle identity_cert_error =
@@ -363,6 +367,55 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   gpr_log(GPR_ERROR,
           "All retry attempts failed. Will try again after the next interval.");
   return absl::nullopt;
+}
+
+InMemoryCertificateProvider::InMemoryCertificateProvider(
+    std::string root_certificate,
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs)
+    : StaticDataCertificateProvider(root_certificate, pem_key_cert_pairs) {}
+
+absl::Status InMemoryCertificateProvider::ReloadRootCertificate(
+    const std::string& root_certificate) {
+  if (root_certificate.empty()) {
+    return absl::InvalidArgumentError("Root Certificate string is empty.");
+  }
+  grpc_core::MutexLock lock(&mu_);
+  if (!root_certificate.empty() && root_certificate_ != root_certificate) {
+    root_certificate_ = std::move(root_certificate);
+    ExecCtx exec_ctx;
+    grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Unable to get latest root certificates.");
+    for (const auto& p : watcher_info_) {
+      const std::string& cert_name = p.first;
+      const WatcherInfo& info = p.second;
+      absl::optional<std::string> root_to_report;
+      if (info.root_being_watched) {
+        root_to_report = root_certificate_;
+      }
+      if (root_to_report.has_value()) {
+        distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
+                                      absl::nullopt);
+      }
+      if (info.root_being_watched && root_certificate_.empty()) {
+        distributor_->SetErrorForCert(
+            cert_name, GRPC_ERROR_REF(root_cert_error), absl::nullopt);
+      }
+    }
+    GRPC_ERROR_UNREF(root_cert_error);
+    return absl::OkStatus();
+  }
+  return absl::InvalidArgumentError("Root Certificate has not changed.");
+}
+absl::Status InMemoryCertificateProvider::ReloadKeyCertificatePair(
+    const std::string& private_key, const std::string& identity_certificate) {
+  absl::Status status =
+      PrivateKeyAndCertificateMatch(private_key, identity_certificate);
+  // TODO: Check for empty strings
+  if (status.ok()) {
+    absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs;
+  }
+
+  return absl::InvalidArgumentError("Invalid credentials pair.");
 }
 
 absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,

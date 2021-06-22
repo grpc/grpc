@@ -54,8 +54,7 @@ namespace grpc_core {
 
 // A basic provider class that will get credentials from string during
 // initialization.
-class StaticDataCertificateProvider final
-    : public grpc_tls_certificate_provider {
+class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
  public:
   StaticDataCertificateProvider(
       std::string root_certificate,
@@ -67,13 +66,16 @@ class StaticDataCertificateProvider final
     return distributor_;
   }
 
- private:
+ protected:
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
   };
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
+  // An `absl::InlinedVector` (PemKeyCertPairList) is designed to be a drop-in
+  // replacement for `std::vector` for use cases where the vector's size is
+  // sufficiently small that it can be inlined.
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
   grpc_core::Mutex mu_;
@@ -131,6 +133,18 @@ class FileWatcherCertificateProvider final
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_;
+};
+
+class InMemoryCertificateProvider : public StaticDataCertificateProvider {
+ public:
+  InMemoryCertificateProvider(std::string root_certificate,
+                              grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+
+ private:
+  absl::Status ReloadRootCertificate(const std::string& root_certificate);
+
+  absl::Status ReloadKeyCertificatePair(
+      const std::string& private_key, const std::string& identity_certificate);
 };
 
 //  Checks if the private key matches certificate's public key. Returns error
