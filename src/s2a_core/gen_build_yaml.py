@@ -43,15 +43,12 @@ out['libs'] = [{
             for src_file in glob.glob('third_party/s2a_core/src/**/*.cc')
             if ((not os.path.basename(src_file).endswith('_test.cc')) and
                 (src_file not in _SOURCE_FILES_TO_IGNORE))
-        ] + glob.glob('third_party/s2a_core/src/proto/upb-generated/proto/*.c')
-          + glob.glob('third_party/s2a_core/src/**/*.h') +
-            glob.glob('third_party/s2a_core/src/proto/upb-generated/proto/*.h')
-        ),
+        ] + glob.glob('third_party/s2a_core/src/proto/upb-generated/proto/*.c')),
     'headers':
         sorted(
-            glob.glob('third_party/s2a_core/include/*.h') #+
-            #glob.glob('third_party/s2a_core/src/**/*.h') +
-            #glob.glob('third_party/s2a_core/src/proto/upb-generated/proto/*.h')
+            glob.glob('third_party/s2a_core/include/*.h') +
+            glob.glob('third_party/s2a_core/src/**/*.h') +
+            glob.glob('third_party/s2a_core/src/proto/upb-generated/proto/*.h')
         ),
 }]
 

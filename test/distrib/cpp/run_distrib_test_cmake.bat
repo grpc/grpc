@@ -63,7 +63,7 @@ cd "third_party/s2a_core"
 git submodule update --init
 cd ../..
 pushd third_party\s2a_core\cmake\build
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
