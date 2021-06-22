@@ -43,22 +43,17 @@ class SliceAllocator {
   SliceAllocator& operator=(SliceAllocator&& other) noexcept;
   ~SliceAllocator();
 
-  void* GetResourceUser() { return resource_user_; }
-
-  using AllocateCallback = std::function<void(absl::Status)>;
+  using AllocateCallback =
+      std::function<void(absl::Status)>;
   /// Requests \a size bytes from gRPC, and populates \a dest with the allocated
-  /// slices.
+  /// slices. Ownership of the \a SliceBuffer is not transferred.
   ///
-  /// Slice allocation may be done synchronously or asynchronously. If the
-  /// allocation can be done inline, then the callback \a cb will be
-  /// executed immediately in the same thread, and this method will return OK.
-  /// If the \a ResourceQuota system determines that memory needs to be
-  /// reclaimed before allocation is done, then this method returns
-  /// RESOURCE_EXHAUSTED, meaning that the callback \a cb will be called once
-  /// the slices have been allocated.
-  ///
-  /// Ownership of the \a SliceBuffer is not transferred.
-  absl::Status Allocate(size_t size, size_t count, SliceBuffer* dest,
+  /// gRPC provides a ResourceQuota system to cap the amount of memory used by
+  /// the library. When a memory limit has been reached, slice allocation is
+  /// interrupted to attempt to reclaim memory from participating gRPC
+  /// internals. When there is sufficient memory available, slice allocation
+  /// proceeds as normal.
+  absl::Status Allocate(size_t size, SliceBuffer* dest,
                         SliceAllocator::AllocateCallback cb);
 
  private:

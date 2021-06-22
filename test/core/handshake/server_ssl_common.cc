@@ -269,7 +269,6 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   SSL_free(ssl);
   gpr_free(alpn_protos);
   SSL_CTX_free(ctx);
-  EVP_cleanup();
   close(sock);
 
   thd.Join();
@@ -278,3 +277,5 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
 
   return success;
 }
+
+void CleanupSslLibrary() { EVP_cleanup(); }

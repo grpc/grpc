@@ -14,12 +14,10 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
 
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
-#include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resource_quota.h"
@@ -39,9 +37,15 @@ struct grpc_event_engine_endpoint {
       alignof(grpc_event_engine::experimental::SliceBuffer)>::type write_buffer;
 };
 
-grpc_event_engine_endpoint* grpc_tcp_create(
+/// Creates an internal grpc_endpoint struct from an EventEngine Endpoint.
+/// Server code needs to create grpc_endpoints after the EventEngine has made
+/// connections.
+grpc_event_engine_endpoint* grpc_tcp_server_endpoint_create(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint> ee);
 
+/// Creates a new internal grpc_endpoint struct, when no EventEngine Endpoint
+/// has yet been created. This is used in client code before connections are
+/// established.
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address);
 

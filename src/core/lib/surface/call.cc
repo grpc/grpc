@@ -2023,7 +2023,11 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 }
 
 bool grpc_call_is_trailers_only(const grpc_call* call) {
-  return call->is_trailers_only;
+  bool result = call->is_trailers_only;
+  GPR_DEBUG_ASSERT(
+      !result || call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */]
+                         .list.count == 0);
+  return result;
 }
 
 bool grpc_call_failed_before_recv_message(const grpc_call* c) {

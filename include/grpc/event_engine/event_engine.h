@@ -23,11 +23,10 @@
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 
-#include "grpc/event_engine/channel_args.h"
+#include "grpc/event_engine/endpoint_config.h"
 #include "grpc/event_engine/port.h"
 #include "grpc/event_engine/slice_allocator.h"
 
-// TODO(hork): explicitly define lifetimes and ownership of all objects.
 // TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
 namespace experimental {
@@ -118,8 +117,6 @@ class EventEngine {
     /// The Endpoint destructor is responsible for shutting down all connections
     /// and invoking all pending read or write callbacks with an error status.
     virtual ~Endpoint() = default;
-    /// Return the SliceAllocator's ResourceUser (for internal usage)
-    virtual void* GetResourceUser() = 0;
     /// Read data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
@@ -199,7 +196,7 @@ class EventEngine {
   /// for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
-      const ChannelArgs& args,
+      const EndpointConfig& args,
       SliceAllocatorFactory slice_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
@@ -216,7 +213,7 @@ class EventEngine {
   /// SliceAllocator API for more information.
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
-                               const ChannelArgs& args,
+                               const EndpointConfig& args,
                                SliceAllocator slice_allocator,
                                absl::Time deadline) = 0;
 
@@ -280,6 +277,8 @@ class EventEngine {
 
   virtual ~EventEngine() = default;
 
+  // TODO(nnoble): consider whether we can remove this method before we
+  // de-experimentalize this API.
   virtual bool IsWorkerThread() = 0;
 
   // TODO(hork): define return status codes
@@ -288,7 +287,6 @@ class EventEngine {
 
   /// Intended for future expansion of Task run functionality.
   struct RunOptions {};
-  // TODO(hork): consider recommendation to make TaskHandle an output arg
   /// Run a callback as soon as possible.
   ///
   /// The \a fn callback's \a status argument is used to indicate whether it was
@@ -326,6 +324,8 @@ class EventEngine {
   virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
+// TODO(hork): finalize the API and document it. We need to firm up the story
+// around user-provided EventEngines.
 std::shared_ptr<EventEngine> DefaultEventEngineFactory();
 
 }  // namespace experimental

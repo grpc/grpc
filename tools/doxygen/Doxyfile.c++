@@ -881,7 +881,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
-include/grpc/event_engine/channel_args.h \
+include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/port.h \
 include/grpc/event_engine/slice_allocator.h \
@@ -1013,6 +1013,7 @@ include/grpcpp/impl/service_type.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
+include/grpcpp/security/authorization_policy_provider.h \
 include/grpcpp/security/credentials.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \

@@ -54,5 +54,6 @@ int main(int argc, char* argv[]) {
   // and sanity checks the server_ssl_test.
   const char* fake_alpn_list[] = {"foo"};
   GPR_ASSERT(!server_ssl_test(fake_alpn_list, 1, "foo"));
+  CleanupSslLibrary();
   return 0;
 }

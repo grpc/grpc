@@ -16,12 +16,15 @@
  *
  */
 
-#include "src/core/lib/iomgr/resolve_address.h"
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-void pollset_ee_broadcast_event();
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
+#include "src/core/lib/iomgr/resolve_address.h"
+
+namespace grpc_core {
+const char* kDefaultSecurePort = "https";
+}  // namespace grpc_core
 
 grpc_address_resolver_vtable* grpc_resolve_address_impl;
 

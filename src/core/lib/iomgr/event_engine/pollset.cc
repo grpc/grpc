@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -24,7 +24,7 @@
 namespace {
 
 static gpr_mu g_mu;
-static gpr_mu g_cv;
+static gpr_cv g_cv;
 
 // --- pollset vtable API ---
 void pollset_global_init(void) {
@@ -70,7 +70,7 @@ void pollset_set_del_pollset_set(grpc_pollset_set* bag,
 
 }  // namespace
 
-void pollset_ee_broadcast_event() { gpr_cv_signal(&g_cv); }
+void grpc_pollset_ee_broadcast_event() { gpr_cv_signal(&g_cv); }
 
 // --- vtables ---
 grpc_pollset_vtable grpc_event_engine_pollset_vtable = {
@@ -84,4 +84,4 @@ grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable = {
     pollset_set_add_pollset,     pollset_set_del_pollset,
     pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif  // GRPC_USE_EVENT_ENGINE

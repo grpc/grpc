@@ -881,7 +881,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
-include/grpc/event_engine/channel_args.h \
+include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/port.h \
 include/grpc/event_engine/slice_allocator.h \
@@ -1013,6 +1013,7 @@ include/grpcpp/impl/service_type.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
+include/grpcpp/security/authorization_policy_provider.h \
 include/grpcpp/security/credentials.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \
@@ -1690,6 +1691,8 @@ src/core/lib/debug/stats_data.cc \
 src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
+src/core/lib/event_engine/endpoint_config.cc \
+src/core/lib/event_engine/endpoint_config_internal.h \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/slice_allocator.cc \
 src/core/lib/event_engine/sockaddr.cc \
@@ -1824,7 +1827,10 @@ src/core/lib/iomgr/event_engine/closure.h \
 src/core/lib/iomgr/event_engine/endpoint.cc \
 src/core/lib/iomgr/event_engine/endpoint.h \
 src/core/lib/iomgr/event_engine/iomgr.cc \
+src/core/lib/iomgr/event_engine/iomgr.h \
 src/core/lib/iomgr/event_engine/pollset.cc \
+src/core/lib/iomgr/event_engine/pollset.h \
+src/core/lib/iomgr/event_engine/promise.h \
 src/core/lib/iomgr/event_engine/resolved_address_internal.cc \
 src/core/lib/iomgr/event_engine/resolved_address_internal.h \
 src/core/lib/iomgr/event_engine/resolver.cc \
@@ -1971,6 +1977,11 @@ src/core/lib/matchers/matchers.h \
 src/core/lib/profiling/basic_timers.cc \
 src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \
+src/core/lib/security/authorization/authorization_engine.h \
+src/core/lib/security/authorization/authorization_policy_provider.h \
+src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
+src/core/lib/security/authorization/evaluate_args.cc \
+src/core/lib/security/authorization/evaluate_args.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \

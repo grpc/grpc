@@ -14,136 +14,130 @@ metadata:
   name: prebuilt_all_languages
 spec:
   clients:
-    - language: csharp
-      pool: ${client_pool}
-      run:
-        args:
-          - exec
-          - /execute/qps_worker/Grpc.IntegrationTesting.QpsWorker.dll
-        command:
-          - dotnet
-        image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
-    - language: cxx
-      pool: ${client_pool}
-      run:
-        command:
-          - /source/code/bazel-bin/test/cpp/qps/qps_worker
-        image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
-    - language: go
-      pool: ${client_pool}
-      run:
-        command:
-          - /executable/bin/worker
-        image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
-    - language: java
-      pool: ${client_pool}
-      run:
-        command:
-          - /execute/bin/benchmark_worker
-        image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
-    - language: node
-      pool: ${client_pool}
-      run:
-        command:
-          - /execute/worker-linux
-          - --benchmark_impl=grpc
-        image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
-    - language: php
-      pool: ${client_pool}
-      run:
-        command:
-          - bash
-          - /run_scripts/run_worker.sh
-        image: ${prebuilt_image_prefix}/php:${prebuilt_image_tag}
-    - language: python
-      pool: ${client_pool}
-      run:
-        command:
-          - /execute/qps_worker
-        image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
-    - language: python_asyncio
-      pool: ${client_pool}
-      run:
-        command:
-          - /execute/benchmark_worker
-        image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
-    - language: ruby
-      pool: ${client_pool}
-      run:
-        args:
-          - /execute/src/ruby/qps/worker.rb
-        command:
-          - ruby
-        image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
+  - language: csharp
+    pool: ${client_pool}
+    run:
+      args:
+      - exec
+      - /execute/qps_worker/Grpc.IntegrationTesting.QpsWorker.dll
+      command:
+      - dotnet
+      image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
+  - language: cxx
+    pool: ${client_pool}
+    run:
+      command:
+      - /source/code/bazel-bin/test/cpp/qps/qps_worker
+      image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
+  - language: go
+    pool: ${client_pool}
+    run:
+      command:
+      - /executable/bin/worker
+      image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
+  - language: java
+    pool: ${client_pool}
+    run:
+      command:
+      - /execute/bin/benchmark_worker
+      image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
+  - language: node
+    pool: ${client_pool}
+    run:
+      command:
+      - /execute/worker-linux
+      - --benchmark_impl=grpc
+      image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
+  - language: php7
+    pool: ${client_pool}
+    run:
+      command:
+      - bash
+      - /run_scripts/run_worker.sh
+      image: ${prebuilt_image_prefix}/php:${prebuilt_image_tag}
+  - language: python
+    pool: ${client_pool}
+    run:
+      command:
+      - /execute/qps_worker
+      image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+  - language: python_asyncio
+    pool: ${client_pool}
+    run:
+      command:
+      - /execute/benchmark_worker
+      image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+  - language: ruby
+    pool: ${client_pool}
+    run:
+      args:
+      - /execute/src/ruby/qps/worker.rb
+      command:
+      - ruby
+      image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
+  driver:
+    language: cxx
+    pool: ${driver_pool}
+    run:
+      image: ${driver_image}
   results:
     bigQueryTable: ${big_query_table}
-  drivers:
-    - language: cxx
-      image: ${driver_image}
-      pool: ${driver_pool}
   servers:
-    - language: csharp
-      pool: ${server_pool}
-      run:
-        args:
-          - exec
-          - /execute/qps_worker/Grpc.IntegrationTesting.QpsWorker.dll
-        command:
-          - dotnet
-        image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
-    - language: cxx
-      pool: ${server_pool}
-      run:
-        args:
-          - --server_port=10010
-        command:
-          - /source/code/bazel-bin/test/cpp/qps/qps_worker
-        image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
-    - language: go
-      pool: ${server_pool}
-      run:
-        command:
-          - /executable/bin/worker
-        image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
-    - language: java
-      pool: ${server_pool}
-      run:
-        command:
-          - /execute/bin/benchmark_worker
-        image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
-    - language: node
-      pool: ${server_pool}
-      run:
-        command:
-          - /execute/worker-linux
-          - --benchmark_impl=grpc
-        image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
-    - language: php
-      pool: ${server_pool}
-      run:
-        command:
-          - bash
-          - /run_scripts/run_worker.sh
-        image: ${prebuilt_image_prefix}/php:${prebuilt_image_tag}
-    - language: python
-      pool: ${server_pool}
-      run:
-        command:
-          - /execute/qps_worker
-        image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
-    - language: python_asyncio
-      pool: ${server_pool}
-      run:
-        command:
-          - /execute/benchmark_worker
-        image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
-    - language: ruby
-      pool: ${server_pool}
-      run:
-        args:
-          - /execute/src/ruby/qps/worker.rb
-        command:
-          - ruby
-        image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
+  - language: csharp
+    pool: ${server_pool}
+    run:
+      args:
+      - exec
+      - /execute/qps_worker/Grpc.IntegrationTesting.QpsWorker.dll
+      command:
+      - dotnet
+      image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
+  - language: cxx
+    pool: ${server_pool}
+    run:
+      args:
+      - --server_port=10010
+      command:
+      - /source/code/bazel-bin/test/cpp/qps/qps_worker
+      image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
+  - language: go
+    pool: ${server_pool}
+    run:
+      command:
+      - /executable/bin/worker
+      image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
+  - language: java
+    pool: ${server_pool}
+    run:
+      command:
+      - /execute/bin/benchmark_worker
+      image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
+  - language: node
+    pool: ${server_pool}
+    run:
+      command:
+      - /execute/worker-linux
+      - --benchmark_impl=grpc
+      image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
+  - language: python
+    pool: ${server_pool}
+    run:
+      command:
+      - /execute/qps_worker
+      image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+  - language: python_asyncio
+    pool: ${server_pool}
+    run:
+      command:
+      - /execute/benchmark_worker
+      image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+  - language: ruby
+    pool: ${server_pool}
+    run:
+      args:
+      - /execute/src/ruby/qps/worker.rb
+      command:
+      - ruby
+      image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
   timeoutSeconds: ${timeout_seconds}
   ttlSeconds: 86400

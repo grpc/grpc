@@ -19,11 +19,13 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure);
+EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
+                                            grpc_error_handle error);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

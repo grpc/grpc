@@ -73,11 +73,11 @@ SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) noexcept {
   return *this;
 }
 
-absl::Status SliceAllocator::Allocate(size_t size, size_t count,
-                                      SliceBuffer* dest, AllocateCallback cb) {
+absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
+                                      AllocateCallback cb) {
   cb_ = cb;
   dest->clear();
-  if (grpc_resource_user_alloc_slices(slice_allocator_, size, count,
+  if (grpc_resource_user_alloc_slices(slice_allocator_, size, 1,
                                       dest->raw_slice_buffer())) {
     // allocated inline
     cb(absl::OkStatus());

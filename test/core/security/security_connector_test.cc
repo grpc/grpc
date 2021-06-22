@@ -487,6 +487,23 @@ static void test_dns_peer_to_auth_context(void) {
   ctx.reset(DEBUG_LOCATION, "test");
 }
 
+static void test_uri_peer_to_auth_context(void) {
+  tsi_peer peer;
+  const std::vector<std::string> expected_uri = {"uri1", "uri2", "uri3"};
+  GPR_ASSERT(tsi_construct_peer(expected_uri.size(), &peer) == TSI_OK);
+  for (size_t i = 0; i < expected_uri.size(); ++i) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_URI_PEER_PROPERTY, expected_uri[i].c_str(),
+                   &peer.properties[i]) == TSI_OK);
+  }
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(ctx != nullptr);
+  GPR_ASSERT(check_sans(ctx.get(), GRPC_PEER_URI_PROPERTY_NAME, expected_uri));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
 static void test_email_peer_to_auth_context(void) {
   tsi_peer peer;
   const std::vector<std::string> expected_emails = {"email1", "email2"};
@@ -753,6 +770,7 @@ int main(int argc, char** argv) {
   test_cn_and_multiple_sans_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
   test_dns_peer_to_auth_context();
+  test_uri_peer_to_auth_context();
   test_email_peer_to_auth_context();
   test_ip_peer_to_auth_context();
   test_spiffe_id_peer_to_auth_context();

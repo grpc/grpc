@@ -11,17 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/endpoint_config_internal.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
+#include "src/core/lib/iomgr/event_engine/iomgr.h"
+#include "src/core/lib/iomgr/event_engine/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -31,21 +33,18 @@
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
-using ::grpc_event_engine::experimental::ChannelArgs;
+using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
 
-void pollset_ee_broadcast_event();
-
 struct grpc_tcp_server {
   grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener,
-                  std::shared_ptr<EventEngine> ee, grpc_resource_quota* rq)
+                  grpc_resource_quota* rq)
       : refcount(1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr),
         listener(std::move(listener)),
-        engine(std::move(ee)),
         resource_quota(rq) {
     shutdown_starting.head = nullptr;
     shutdown_starting.tail = nullptr;
@@ -59,7 +58,6 @@ struct grpc_tcp_server {
   grpc_core::RefCount refcount;
   grpc_core::Mutex mu;
   std::unique_ptr<EventEngine::Listener> listener;
-  std::shared_ptr<EventEngine> engine;
   grpc_closure_list shutdown_starting ABSL_GUARDED_BY(mu);
   grpc_resource_quota* resource_quota;
   grpc_tcp_server_cb on_accept_internal;
@@ -68,10 +66,8 @@ struct grpc_tcp_server {
 
 namespace {
 
-// NOTE: the closure is already initialized, and does not take an Endpoint.
-// See Chttp2Connector::Connect. Instead, the closure arg contains a ptr to the
-// endpoint that iomgr is expected to populate. When gRPC eventually uses the
-// EventEngine directly, closures will be replaced with EE callback types.
+/// Converts a grpc_closure to an EventEngine Callback. The closure is expected
+/// to already be initialized.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
   return [closure, endpoint_ptr](
@@ -88,11 +84,11 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(endpoint.status()));
     exec_ctx.Flush();
-    pollset_ee_broadcast_event();
+    grpc_pollset_ee_broadcast_event();
   };
 }
 
-/// Note: this method does not take ownership of any pointer arguments.
+/// Usage note: this method does not take ownership of any pointer arguments.
 void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
@@ -108,10 +104,9 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                                   addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
-  // TODO(hork): Convert channel_args to ChannelArgs
-  ChannelArgs ca;
-  absl::Status connected = g_event_engine->Connect(ee_on_connect, ra, ca,
-                                                   std::move(sa), ee_deadline);
+  ChannelArgsEndpointConfig endpoint_config(channel_args);
+  absl::Status connected = grpc_iomgr_event_engine()->Connect(
+      ee_on_connect, ra, endpoint_config, std::move(sa), ee_deadline);
   if (!connected.ok()) {
     // EventEngine failed to start an asynchronous connect.
     grpc_endpoint_destroy(*endpoint);
@@ -124,19 +119,19 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
 grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                               const grpc_channel_args* args,
                               grpc_tcp_server** server) {
-  // TODO(hork): Convert channel_args to ChannelArgs
-  ChannelArgs ca;
+  ChannelArgsEndpointConfig endpoint_config(args);
   grpc_resource_quota* rq = grpc_resource_quota_from_channel_args(args);
   if (rq == nullptr) {
     rq = grpc_resource_quota_create(nullptr);
   }
+  EventEngine* event_engine = grpc_iomgr_event_engine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
-      g_event_engine->CreateListener(
+      event_engine->CreateListener(
           [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
             grpc_core::ExecCtx exec_ctx;
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
             grpc_event_engine_endpoint* iomgr_endpoint =
-                grpc_tcp_create(std::move(ee_endpoint));
+                grpc_tcp_server_endpoint_create(std::move(ee_endpoint));
             grpc_tcp_server_acceptor* acceptor =
                 static_cast<grpc_tcp_server_acceptor*>(
                     gpr_zalloc(sizeof(*acceptor)));
@@ -146,14 +141,14 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                           &iomgr_endpoint->base, nullptr,
                                           acceptor);
             exec_ctx.Flush();
-            pollset_ee_broadcast_event();
+            grpc_pollset_ee_broadcast_event();
           },
-          GrpcClosureToCallback(shutdown_complete), ca,
-          SliceAllocatorFactory(rq));
+          GrpcClosureToCallback(shutdown_complete, GRPC_ERROR_NONE),
+          endpoint_config, SliceAllocatorFactory(rq));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
-  *server = new grpc_tcp_server(std::move(*listener), g_event_engine, rq);
+  *server = new grpc_tcp_server(std::move(*listener), rq);
   return GRPC_ERROR_NONE;
 }
 
@@ -198,7 +193,6 @@ int tcp_server_port_fd(grpc_tcp_server* /* s */, unsigned /* port_index */,
 }
 
 grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
-  // TODO(hork): add macro helper to manage debuglocation. See tcp_posix
   s->refcount.Ref(DEBUG_LOCATION, "server ref");
   return s;
 }
@@ -246,4 +240,4 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
   return nullptr;
 }
 
-#endif
+#endif  // GRPC_USE_EVENT_ENGINE

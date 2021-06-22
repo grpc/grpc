@@ -11,13 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
+
+#ifdef GRPC_USE_EVENT_ENGINE
+#include "src/core/lib/iomgr/event_engine/iomgr.h"
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/event_engine/promise.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -31,20 +34,41 @@ extern grpc_pollset_vtable grpc_event_engine_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable;
 extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 
+// Disabled by default. grpc_polling_trace must be defined in all iomgr
+// implementations due to its usage in lockfree_event.
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");
+
 namespace {
 
-void iomgr_platform_init(void) {}
+using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::Promise;
 
-void iomgr_platform_flush(void) {
-  // TODO(hork): Do we need EventEngine::Flush??
+// Note: This is a pointer to a shared_ptr, so it's trivially destructible.
+std::shared_ptr<EventEngine>* g_event_engine;
+
+void iomgr_platform_init(void) {
+  g_event_engine =
+      new std::shared_ptr<EventEngine>(DefaultEventEngineFactory());
 }
 
-void iomgr_platform_shutdown(void) {}
+void iomgr_platform_flush(void) {}
+
+void iomgr_platform_shutdown(void) {
+  Promise<absl::Status> shutdown_status_promise;
+  (*g_event_engine)->Shutdown([&shutdown_status_promise](absl::Status status) {
+    shutdown_status_promise.Set(std::move(status));
+  });
+  auto shutdown_status = shutdown_status_promise.Get();
+  GPR_ASSERT(shutdown_status.ok());
+  delete g_event_engine;
+  g_event_engine = nullptr;
+}
 
 void iomgr_platform_shutdown_background_closure(void) {}
 
 bool iomgr_platform_is_any_background_poller_thread(void) {
-  return g_event_engine->IsWorkerThread();
+  return (*g_event_engine)->IsWorkerThread();
 }
 
 bool iomgr_platform_add_closure_to_background_poller(
@@ -74,4 +98,8 @@ void grpc_set_default_iomgr_platform() {
 
 bool grpc_iomgr_run_in_background() { return false; }
 
-#endif
+grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine() {
+  return g_event_engine->get();
+}
+
+#endif  // GRPC_USE_EVENT_ENGINE

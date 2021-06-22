@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
+#include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -28,19 +29,15 @@ using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
 void timer_init(grpc_timer* timer, grpc_millis deadline,
                 grpc_closure* closure) {
-  // Note: post-iomgr, callers will find their own EventEngine
-  // TODO(hork): EventEngine and gRPC need to use the same clock type for
-  // deadlines.
-  timer->ee_task_handle =
-      g_event_engine->RunAt(grpc_core::ToAbslTime(grpc_millis_to_timespec(
-                                deadline, GPR_CLOCK_REALTIME)),
-                            GrpcClosureToCallback(closure), {});
+  timer->ee_task_handle = grpc_iomgr_event_engine()->RunAt(
+      grpc_core::ToAbslTime(
+          grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
+      GrpcClosureToCallback(closure, GRPC_ERROR_NONE), {});
 }
 
 void timer_cancel(grpc_timer* timer) {
-  // Note: post-iomgr, callers will find their own EventEngine
   auto handle = timer->ee_task_handle;
-  g_event_engine->TryCancel(handle);
+  grpc_iomgr_event_engine()->TryCancel(handle);
 }
 
 /* Internal API */
@@ -57,4 +54,4 @@ grpc_timer_vtable grpc_event_engine_timer_vtable = {
     timer_init,      timer_cancel,        timer_check,
     timer_list_init, timer_list_shutdown, timer_consume_kick};
 
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif  // GRPC_USE_EVENT_ENGINE
