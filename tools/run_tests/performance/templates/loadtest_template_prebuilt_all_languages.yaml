@@ -18,35 +18,61 @@ spec:
     pool: ${client_pool}
     run:
       args:
-      - exec
-      - /execute/qps_worker/Grpc.IntegrationTesting.QpsWorker.dll
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
+            /execute/qps_worker/Grpc.IntegrationTesting.QpsWorker.dll \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - dotnet
+      - bash
       image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
   - language: cxx
     pool: ${client_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /source/code/bazel-bin/test/cpp/qps/qps_worker \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /source/code/bazel-bin/test/cpp/qps/qps_worker
+      - bash
       image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
   - language: go
     pool: ${client_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /executable/bin/worker \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /executable/bin/worker
+      - bash
       image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
   - language: java
     pool: ${client_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /executable/bin/worker \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /execute/bin/benchmark_worker
+      - bash
       image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
   - language: node
     pool: ${client_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/worker-linux --benchmark_impl=grpc \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /execute/worker-linux
-      - --benchmark_impl=grpc
+      - bash
       image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
   - language: php7
     pool: ${client_pool}
@@ -58,22 +84,38 @@ spec:
   - language: python
     pool: ${client_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/qps_worker \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /execute/qps_worker
+      - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
   - language: python_asyncio
     pool: ${client_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/benchmark_worker \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /execute/benchmark_worker
+      - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
   - language: ruby
     pool: ${client_pool}
     run:
       args:
-      - /execute/src/ruby/qps/worker.rb
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/src/ruby/qps/worker.rb \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - ruby
+      - bash
       image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
   driver:
     language: cxx
@@ -87,57 +129,97 @@ spec:
     pool: ${server_pool}
     run:
       args:
-      - exec
-      - /execute/qps_worker/Grpc.IntegrationTesting.QpsWorker.dll
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
+            /execute/qps_worker/Grpc.IntegrationTesting.QpsWorker.dll \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - dotnet
+      - bash
       image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
   - language: cxx
     pool: ${server_pool}
     run:
       args:
-      - --server_port=10010
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /source/code/bazel-bin/test/cpp/qps/qps_worker \
+            --driver_port="${DRIVER_PORT}" --server_port=10010
       command:
-      - /source/code/bazel-bin/test/cpp/qps/qps_worker
+      - bash
       image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
   - language: go
     pool: ${server_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /executable/bin/worker \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /executable/bin/worker
+      - bash
       image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
   - language: java
     pool: ${server_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /executable/bin/worker \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /execute/bin/benchmark_worker
+      - bash
       image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
   - language: node
     pool: ${server_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/worker-linux --benchmark_impl=grpc \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /execute/worker-linux
-      - --benchmark_impl=grpc
+      - bash
       image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
   - language: python
     pool: ${server_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/qps_worker \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - /execute/qps_worker
+      - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
   - language: python_asyncio
     pool: ${server_pool}
     run:
       command:
-      - /execute/benchmark_worker
+      - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      rgs:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/benchmark_worker \
+            --driver_port="${DRIVER_PORT}"
   - language: ruby
     pool: ${server_pool}
     run:
       args:
-      - /execute/src/ruby/qps/worker.rb
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/src/ruby/qps/worker.rb \
+            --driver_port="${DRIVER_PORT}"
       command:
-      - ruby
+      - bash
       image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
   timeoutSeconds: ${timeout_seconds}
   ttlSeconds: 86400
