@@ -406,15 +406,52 @@ absl::Status InMemoryCertificateProvider::ReloadRootCertificate(
   }
   return absl::InvalidArgumentError("Root Certificate has not changed.");
 }
+
 absl::Status InMemoryCertificateProvider::ReloadKeyCertificatePair(
     const std::string& private_key, const std::string& identity_certificate) {
   absl::Status status =
       PrivateKeyAndCertificateMatch(private_key, identity_certificate);
-  // TODO: Check for empty strings
-  if (status.ok()) {
-    absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs;
+  grpc_core::MutexLock lock(&mu_);
+  if (status.ok() && !private_key.empty() && !identity_certificate.empty()) {
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+    pem_key_cert_pairs.emplace_back(private_key, identity_certificate);
+    if (pem_key_cert_pairs != pem_key_cert_pairs_ &&
+        !pem_key_cert_pairs.empty()) {
+      pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
+      ExecCtx exec_ctx;
+      grpc_error_handle identity_cert_error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Unable to get latest identity certificates.");
+      for (const auto& p : watcher_info_) {
+        const std::string& cert_name = p.first;
+        const WatcherInfo& info = p.second;
+        absl::optional<grpc_core::PemKeyCertPairList> identity_to_report;
+        if (info.identity_being_watched) {
+          identity_to_report = pem_key_cert_pairs_;
+        }
+        if (identity_to_report.has_value()) {
+          distributor_->SetKeyMaterials(cert_name, absl::nullopt,
+                                        std::move(identity_to_report));
+        }
+        if (info.identity_being_watched && pem_key_cert_pairs_.empty()) {
+          distributor_->SetErrorForCert(cert_name, absl::nullopt,
+                                        GRPC_ERROR_REF(identity_cert_error));
+        }
+      }
+      GRPC_ERROR_UNREF(identity_cert_error);
+      return absl::OkStatus();
+    }
+    return absl::InvalidArgumentError(
+        "The credential pair strings have not changed.");
+  } else if (private_key.empty()) {
+    if (identity_certificate.empty()) {
+      return absl::InvalidArgumentError(
+          "The credential pair strings are empty.");
+    }
+    return absl::InvalidArgumentError("Private key string is empty.");
+  } else if (identity_certificate.empty()) {
+    return absl::InvalidArgumentError("Certificate string is empty.");
   }
-
   return absl::InvalidArgumentError("Invalid credentials pair.");
 }
 
@@ -497,6 +534,23 @@ grpc_tls_certificate_provider_file_watcher_create(
       private_key_path == nullptr ? "" : private_key_path,
       identity_certificate_path == nullptr ? "" : identity_certificate_path,
       root_cert_path == nullptr ? "" : root_cert_path, refresh_interval_sec);
+}
+
+grpc_tls_certificate_provider* grpc_tls_certificate_provider_in_memory_create(
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
+  GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::PemKeyCertPairList identity_pairs_core;
+  if (pem_key_cert_pairs != nullptr) {
+    identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
+    delete pem_key_cert_pairs;
+  }
+  std::string root_cert_core;
+  if (root_certificate != nullptr) {
+    root_cert_core = root_certificate;
+  }
+  return new grpc_core::InMemoryCertificateProvider(
+      std::move(root_cert_core), std::move(identity_pairs_core));
 }
 
 void grpc_tls_certificate_provider_release(

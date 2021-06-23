@@ -135,6 +135,7 @@ class FileWatcherCertificateProvider final
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 
+// TODO: Add necessary comments.
 class InMemoryCertificateProvider : public StaticDataCertificateProvider {
  public:
   InMemoryCertificateProvider(std::string root_certificate,
