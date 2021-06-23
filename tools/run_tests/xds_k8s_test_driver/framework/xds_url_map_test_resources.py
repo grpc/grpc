@@ -176,6 +176,14 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             logging.info('GcpResourceManager: skipping setup for strategy [%s]',
                          self.strategy)
             return
+        # Construct UrlMap from test classes
+        # This is the step that mostly likely to go wrong. Lifting it to be the
+        # first task ensures fail fast.
+        aggregator = _UrlMapChangeAggregator(
+            url_map_name="%s-%s" % (self.namespace, self.td.URL_MAP_NAME))
+        for test_case_class in test_case_classes:
+            aggregator.apply_change(test_case_class)
+        final_url_map = aggregator.get_map()
         # Cleanup existing debris
         logging.info('GcpResourceManager: pre clean-up')
         self.td.cleanup(force=True)
@@ -191,12 +199,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # Backend Services
         self.td.create_backend_service()
         self.td.create_alternative_backend_service()
-        # Construct and create UrlMap
-        aggregator = _UrlMapChangeAggregator(
-            url_map_name="%s-%s" % (self.namespace, self.td.URL_MAP_NAME))
-        for test_case_class in test_case_classes:
-            aggregator.apply_change(test_case_class)
-        final_url_map = aggregator.get_map()
+        # UrlMap
         self.td.create_url_map_with_content(final_url_map)
         # Target Proxy
         self.td.create_target_proxy()

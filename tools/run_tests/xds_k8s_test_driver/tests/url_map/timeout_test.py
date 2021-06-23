@@ -47,7 +47,7 @@ _LENGTH_OF_RPC_SENDING_SEC = 10
 _ERROR_TOLERANCE = 0.1
 
 
-class _XdsTimeOutTestCommonMixin:
+class _XdsTimeOutTestCommon(abc.ABC, XdsUrlMapTestCase):
 
     @staticmethod
     def url_map_change(
@@ -84,7 +84,7 @@ class _XdsTimeOutTestCommonMixin:
 # should always use Java server as backend.
 @absltest.skipUnless('java-server' in xds_k8s_flags.SERVER_IMAGE.value,
                      'Only Java server supports the rpc-behavior metadata.')
-class TestTimeoutInRouteRule(XdsUrlMapTestCase, _XdsTimeOutTestCommonMixin):
+class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
@@ -111,7 +111,7 @@ class TestTimeoutInRouteRule(XdsUrlMapTestCase, _XdsTimeOutTestCommonMixin):
 
 @absltest.skipUnless('java-server' in xds_k8s_flags.SERVER_IMAGE.value,
                      'Only Java server supports the rpc-behavior metadata.')
-class TestTimeoutInApplication(XdsUrlMapTestCase, _XdsTimeOutTestCommonMixin):
+class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
@@ -130,7 +130,7 @@ class TestTimeoutInApplication(XdsUrlMapTestCase, _XdsTimeOutTestCommonMixin):
             tolerance=_ERROR_TOLERANCE)
 
 
-class TestTimeoutNotExceeded(XdsUrlMapTestCase, _XdsTimeOutTestCommonMixin):
+class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
