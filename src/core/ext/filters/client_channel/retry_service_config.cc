@@ -170,7 +170,10 @@ grpc_error_handle ParseRetryPolicy(
   std::vector<grpc_error_handle> error_list;
   // Parse maxAttempts.
   auto it = json.object_value().find("maxAttempts");
-  if (it != json.object_value().end()) {
+  if (it == json.object_value().end()) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:maxAttempts error:required field missing"));
+  } else {
     if (it->second.type() != Json::Type::NUMBER) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:maxAttempts error:should be of type number"));
@@ -200,11 +203,14 @@ grpc_error_handle ParseRetryPolicy(
                                      max_backoff, &error_list) &&
       *max_backoff == 0) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:maxBackoff error:should be greater than 0"));
+        "field:maxBackoff error:must be greater than 0"));
   }
   // Parse backoffMultiplier.
   it = json.object_value().find("backoffMultiplier");
-  if (it != json.object_value().end()) {
+  if (it == json.object_value().end()) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:backoffMultiplier error:required field missing"));
+  } else {
     if (it->second.type() != Json::Type::NUMBER) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:backoffMultiplier error:should be of type number"));
@@ -215,7 +221,7 @@ grpc_error_handle ParseRetryPolicy(
             "field:backoffMultiplier error:failed to parse"));
       } else if (*backoff_multiplier <= 0) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:backoffMultiplier error:should be greater than 0"));
+            "field:backoffMultiplier error:must be greater than 0"));
       }
     }
   }
@@ -224,7 +230,7 @@ grpc_error_handle ParseRetryPolicy(
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::ARRAY) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:retryableStatusCodes error:should be of type array"));
+          "field:retryableStatusCodes error:must be of type array"));
     } else {
       for (const Json& element : it->second.array_value()) {
         if (element.type() != Json::Type::STRING) {
@@ -242,43 +248,31 @@ grpc_error_handle ParseRetryPolicy(
         }
         retryable_status_codes->Add(status);
       }
-      if (retryable_status_codes->Empty()) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:retryableStatusCodes error:should be non-empty"));
-      };
     }
   }
   // Parse perAttemptRecvTimeout.
-  grpc_millis per_attempt_recv_timeout_value;
-  bool found = false;
-  if (ParseJsonObjectFieldAsDuration(
-          json.object_value(), "perAttemptRecvTimeout",
-          &per_attempt_recv_timeout_value, &error_list, /*required=*/false,
-          &found) &&
-      found) {
-    *per_attempt_recv_timeout = per_attempt_recv_timeout_value;
-    // TODO(roth): As part of implementing hedging, relax this check such
-    // that we allow a value of 0 if a hedging policy is specified.
-    if (per_attempt_recv_timeout_value == 0) {
+  it = json.object_value().find("perAttemptRecvTimeout");
+  if (it != json.object_value().end()) {
+    grpc_millis per_attempt_recv_timeout_value;
+    if (!ParseDurationFromJson(it->second, &per_attempt_recv_timeout_value)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:perAttemptRecvTimeout error:should be greater than 0"));
+          "field:perAttemptRecvTimeout error:type must be STRING of the "
+          "form given by google.proto.Duration."));
+    } else {
+      *per_attempt_recv_timeout = per_attempt_recv_timeout_value;
+      // TODO(roth): As part of implementing hedging, relax this check such
+      // that we allow a value of 0 if a hedging policy is specified.
+      if (per_attempt_recv_timeout_value == 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:perAttemptRecvTimeout error:must be greater than 0"));
+      }
     }
-  }
-  // If perAttemptRecvTimeout not present, retryableStatusCodes must be
-  // non-empty.
-  if (!per_attempt_recv_timeout->has_value() &&
-      retryable_status_codes->Empty()) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:retryableStatusCodes error:must be present if "
-        "perAttemptRecvTimeout not present");
-  }
-  // Make sure required fields are set.
-  if (error_list.empty()) {
-    if (*max_attempts == 0 || *initial_backoff == 0 || *max_backoff == 0 ||
-        *backoff_multiplier == 0) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:retryPolicy error:Missing required field(s)");
-    }
+  } else if (retryable_status_codes->Empty()) {
+    // If perAttemptRecvTimeout not present, retryableStatusCodes must be
+    // non-empty.
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:retryableStatusCodes error:must be non-empty if "
+        "perAttemptRecvTimeout not present"));
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("retryPolicy", &error_list);
 }
