@@ -1056,10 +1056,9 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
   if (calld_->num_attempts_completed_ >=
       calld_->retry_policy_->max_attempts()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p attempt=%p: exceeded %d retry attempts",
-              calld_->chand_, calld_, this,
-              calld_->retry_policy_->max_attempts());
+      gpr_log(
+          GPR_INFO, "chand=%p calld=%p attempt=%p: exceeded %d retry attempts",
+          calld_->chand_, calld_, this, calld_->retry_policy_->max_attempts());
     }
     return false;
   }
@@ -2118,8 +2117,8 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   }
   // Send batches to call attempt.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on attempt=%p",
-            chand_, this, call_attempt_.get());
+    gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on attempt=%p", chand_,
+            this, call_attempt_.get());
   }
   call_attempt_->StartRetriableBatches();
 }
