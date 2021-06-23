@@ -177,9 +177,6 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   refresh_thread_.Join();
 }
 
-absl::Status FileWatcherCertificateProvider::privateKeyPublicKeyMatch(const std::string& private_key, 
-                                                                      const std::string& cert){}
-
 void FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -206,7 +203,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
-    absl::Status key_cert_match = privateKeyPublicKeyMatch(primary_key_path_, identity_certificate_path_);
+    absl::Status key_cert_match = PrivateKeyAndCertificateMatch(primary_key_path_, identity_certificate_path_);
     if (key_cert_match.ok()){
       if (pem_key_cert_pairs.has_value()) {
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
