@@ -17,6 +17,7 @@ import json
 import logging
 import sys
 import time
+import unittest
 from typing import Iterable, Tuple
 
 import grpc
@@ -47,7 +48,7 @@ _LENGTH_OF_RPC_SENDING_SEC = 10
 _ERROR_TOLERANCE = 0.1
 
 
-class _XdsTimeOutTestCommon(abc.ABC, XdsUrlMapTestCase):
+class _BaseXdsTimeOutTestCase(XdsUrlMapTestCase):
 
     @staticmethod
     def url_map_change(
@@ -144,6 +145,17 @@ class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
                                      status_code=grpc.StatusCode.OK),),
                                  length=_LENGTH_OF_RPC_SENDING_SEC,
                                  tolerance=_ERROR_TOLERANCE)
+
+
+def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
+    suite = unittest.TestSuite()
+    test_cases = [
+        TestTimeoutInRouteRule, TestTimeoutInApplication, TestTimeoutNotExceeded
+    ]
+    for test_class in test_cases:
+        tests = loader.loadTestsFromTestCase(test_class)
+        suite.addTests(tests)
+    return suite
 
 
 if __name__ == '__main__':

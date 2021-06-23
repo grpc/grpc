@@ -167,7 +167,7 @@ class ExpectedResult:
     ratio: float = 1
 
 
-class MetaXdsUrlMapTestCase(type):
+class _MetaXdsUrlMapTestCase(type):
     """Tracking test case subclasses."""
 
     # Automatic discover of all subclasses
@@ -201,7 +201,7 @@ class MetaXdsUrlMapTestCase(type):
         return new_class
 
 
-class XdsUrlMapTestCase(absltest.TestCase, metaclass=MetaXdsUrlMapTestCase):
+class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     """XdsUrlMapTestCase is the base class for urlMap related tests.
 
     The subclass is expected to implement 3 methods:
