@@ -280,14 +280,11 @@ int main(int argc, char** argv) {
     abort();
   }
 }
-
 #else
-
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_ERROR,
           "This test requires TCP_USER_TIMEOUT, which isn't available");
   abort();
 }
-
 #endif  // SOCKET_SUPPORTS_TCP_USER_TIMEOUT
