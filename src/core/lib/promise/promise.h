@@ -41,7 +41,7 @@ auto NowOrNever(Promise promise)
 // A promise that never completes.
 template <typename T>
 struct Never {
-  Poll<T> operator()() { return kPending; }
+  Poll<T> operator()() { return Pending(); }
 };
 
 namespace promise_detail {

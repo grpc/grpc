@@ -18,7 +18,7 @@
 namespace grpc_core {
 
 TEST(PollTest, Pending) {
-  Poll<int> i = kPending;
+  Poll<int> i = Pending();
   EXPECT_EQ(i.pending(), true);
   EXPECT_EQ(i.ready(), false);
   EXPECT_EQ(i.get_ready(), nullptr);

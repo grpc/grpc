@@ -94,7 +94,7 @@ class ObservableState {
 
   Poll<absl::optional<T>> PollWatch(ObservableVersion* version_seen) {
     if (*version_seen == kTombstoneVersion) {
-      return kPending;
+      return Pending();
     }
 
     absl::MutexLock lock(&mu_);
@@ -179,7 +179,7 @@ class ObservableWatch final : private WatchCommitter {
     if (promise_.has_value()) {
       return (*promise_)();
     } else {
-      return kPending;
+      return Pending();
     }
   }
 

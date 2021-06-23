@@ -20,9 +20,9 @@
 namespace grpc_core {
 
 // A type that signals a Promise is still pending and not yet completed.
-// Allows writing 'return kPending' and with automatic conversions gets upgraded
+// Allows writing 'return Pending{}' and with automatic conversions gets upgraded
 // to a Poll<> object.
-enum Pending { kPending };
+struct Pending {};
 
 // The result of polling a Promise once.
 //
@@ -56,7 +56,7 @@ class Poll {
     if (auto* p = get_ready()) {
       return Poll<Result>(std::move(f(*p)));
     } else {
-      return Poll<Result>(kPending);
+      return Poll<Result>(Pending());
     }
   }
 

@@ -88,7 +88,7 @@ class ForEach {
       if (kSetState) {
         self->state_.template emplace<ReaderNext>(std::move(reader_next));
       }
-      return kPending;
+      return Pending();
     }
 
     Poll<Result> operator()(ActionPromise& promise) {
@@ -99,7 +99,7 @@ class ForEach {
       if (kSetState) {
         self->state_.template emplace<ActionPromise>(std::move(promise));
       }
-      return kPending;
+      return Pending();
     }
   };
 };

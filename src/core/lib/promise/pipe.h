@@ -362,7 +362,7 @@ class Next {
             return ready(absl::optional<T>());
           }
         } else {
-          return kPending;
+          return Pending();
         }
       }
       while (true) {
@@ -386,7 +386,7 @@ class Next {
                    reinterpret_cast<Promise<T>*>(uintptr_t(true))) {
           current_promise_ = nullptr;
         } else {
-          return kPending;
+          return Pending();
         }
       }
     }
@@ -443,7 +443,7 @@ class Filter final : private FilterInterface<T> {
     if (index_ == kTombstoneIndex) {
       return ready(std::move(done_));
     }
-    return kPending;
+    return Pending();
   }
 
  private:
@@ -480,7 +480,7 @@ class Filter final : private FilterInterface<T> {
           return ready(false);
         }
       } else {
-        return kPending;
+        return Pending();
       }
     }
 

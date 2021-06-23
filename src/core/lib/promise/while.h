@@ -100,7 +100,7 @@ class While {
         }
         // Continue iteration.
       } else {
-        return kPending;
+        return Pending();
       }
     }
   }

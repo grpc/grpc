@@ -110,7 +110,7 @@ class If {
       if (kSetState) {
         self->state_.template emplace<Evaluating>(std::move(evaluating));
       }
-      return kPending;
+      return Pending();
     }
 
     template <class Promise>

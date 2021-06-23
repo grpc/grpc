@@ -127,7 +127,7 @@ class Join {
       if (state_.all()) {
         return ready(Traits::Wrap(Finish(absl::make_index_sequence<N>())));
       } else {
-        return kPending;
+        return Pending();
       }
     });
   }

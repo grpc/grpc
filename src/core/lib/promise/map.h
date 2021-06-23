@@ -38,7 +38,7 @@ class Map {
     if (auto* p = r.get_ready()) {
       return ready(fn_(std::move(*p)));
     }
-    return kPending;
+    return Pending();
   }
 
  private:

@@ -75,7 +75,7 @@ class SingleBarrier {
         return ready(Result{});
       } else {
         waker_ = Activity::current()->MakeOwningWaker();
-        return kPending;
+        return Pending();
       }
     };
   }
@@ -116,7 +116,7 @@ TEST(ActivityTest, DropImmediately) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
   MakeActivity(
-      [] { return []() -> Poll<absl::Status> { return kPending; }; },
+      [] { return []() -> Poll<absl::Status> { return Pending(); }; },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
@@ -124,7 +124,7 @@ TEST(ActivityTest, DropImmediately) {
 TEST(ActivityTest, Cancel) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   auto activity = MakeActivity(
-      [] { return []() -> Poll<absl::Status> { return kPending; }; },
+      [] { return []() -> Poll<absl::Status> { return Pending(); }; },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
   EXPECT_CALL(on_done, Call(absl::CancelledError()));

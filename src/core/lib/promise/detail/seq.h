@@ -145,7 +145,7 @@ class Seq {
       auto r = state->f();
       auto* p = r.get_ready();
       if (p == nullptr) {
-        return kPending;
+        return Pending();
       }
       return Traits::template CheckResultAndRunNext<Result>(std::move(*p),
                                                             RunNext<I>{s});

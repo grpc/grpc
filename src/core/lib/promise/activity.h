@@ -422,7 +422,7 @@ ActivityPtr MakeActivity(Factory promise_factory,
 // Typically the external state should be guarded by mu_, and a call to
 // WakeAllAndUnlock should be made when the state changes.
 // Promises should bottom out polling inside pending(), which will register for
-// wakeup and return kPending.
+// wakeup and return Pending().
 // Queues handles to Activities, and not Activities themselves, meaning that if
 // an Activity is destroyed prior to wakeup we end up holding only a small
 // amount of memory (around 16 bytes + malloc overhead) until the next wakeup
@@ -431,11 +431,11 @@ class WaitSet final {
   using WakerSet = absl::flat_hash_set<Waker>;
 
  public:
-  // Register for wakeup, return kPending. If state is not ready to proceed,
+  // Register for wakeup, return Pending(). If state is not ready to proceed,
   // Promises should bottom out here.
   Pending AddPending(Waker waker) {
     pending_.emplace(std::move(waker));
-    return kPending;
+    return Pending();
   }
 
   class WakeupSet {
@@ -466,11 +466,11 @@ class WaitSet final {
 // Can be fairly fast as no ref counting or locking needs to occur.
 class IntraActivityWaiter {
  public:
-  // Register for wakeup, return kPending. If state is not ready to proceed,
+  // Register for wakeup, return Pending(). If state is not ready to proceed,
   // Promises should bottom out here.
   Pending pending() {
     waiting_ = true;
-    return kPending;
+    return Pending();
   }
   // Wake the activity
   void Wake() {
