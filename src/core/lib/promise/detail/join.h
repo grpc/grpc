@@ -29,9 +29,8 @@ union Fused {
   explicit Fused(F f) : f(std::move(f)) {}
   ~Fused() {}
   [[no_unique_address]] F f;
-  using Result =
-      absl::remove_reference_t<typename Traits::template ResultType<decltype(
-          std::move(*f().get_ready()))>>;
+  using Result = absl::remove_reference_t<typename Traits::template ResultType<
+      decltype(std::move(*absl::get_if<1>(f())))>>;
   [[no_unique_address]] Result result;
 };
 
@@ -101,8 +100,9 @@ class Join {
     return static_cast<Joint<Traits, I, Fs...>*>(&joints_);
   }
 
-  using Tuple = std::tuple<typename Traits::template ResultType<decltype(
-      std::move(*std::declval<Fs>()().get_ready()))>...>;
+  using Tuple =
+      std::tuple<typename Traits::template ResultType<decltype(std::move(
+          *std::declval<Fs>()().get_ready()))>...>;
 
   template <size_t... I>
   Tuple Finish(absl::index_sequence<I...>) {

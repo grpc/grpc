@@ -155,8 +155,8 @@ class ObservableNext {
 template <typename T, typename F>
 class ObservableWatch final : private WatchCommitter {
  private:
-  using Promise = decltype(
-      std::declval<F>()(std::declval<T>(), std::declval<WatchCommitter*>()));
+  using Promise = decltype(std::declval<F>()(std::declval<T>(),
+                                             std::declval<WatchCommitter*>()));
   using Result = typename decltype(std::declval<Promise>()())::Type;
 
  public:

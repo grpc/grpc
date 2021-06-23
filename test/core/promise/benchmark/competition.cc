@@ -265,7 +265,7 @@ static void BM_ActivityStack_Passthrough3_Unary(benchmark::State& state) {
   unary(state, []() {
     return MakeActivity(
         []() {
-          auto one = []() { return ready(absl::OkStatus()); };
+          auto one = []() { return absl::OkStatus(); };
           return TrySeq(one, one, one);
         },
         NoCallbackScheduler(),
@@ -280,7 +280,7 @@ static void BM_ActivityStack_Passthrough10_Unary(benchmark::State& state) {
   unary(state, []() {
     return MakeActivity(
         []() {
-          auto one = []() { return ready(absl::OkStatus()); };
+          auto one = []() { return absl::OkStatus(); };
           return TrySeq(one, one, one, one, one, one, one, one, one, one);
         },
         NoCallbackScheduler(),
@@ -302,9 +302,9 @@ static void BM_ActivityStack_Interject3Latches_Unary(benchmark::State& state) {
           return Seq(Join(one(), one(), one(),
                           []() {
                             GetContext<RPCIO>()->recv_initial_metadata.Set(42);
-                            return ready(true);
+                            return true;
                           }),
-                     []() { return ready(absl::OkStatus()); });
+                     []() { return absl::OkStatus(); });
         },
         NoCallbackScheduler(),
         [](absl::Status status) {
@@ -327,9 +327,9 @@ static void BM_ActivityStack_Interject10Latches_Unary(benchmark::State& state) {
                           one(), one(), one(),
                           []() {
                             GetContext<RPCIO>()->recv_initial_metadata.Set(42);
-                            return ready(true);
+                            return true;
                           }),
-                     []() { return ready(absl::OkStatus()); });
+                     []() { return absl::OkStatus(); });
         },
         NoCallbackScheduler(),
         [](absl::Status status) {
@@ -355,9 +355,9 @@ static void BM_ActivityStack_Interject30Latches_Unary(benchmark::State& state) {
                    one(), one(), one(), one(), one(), one(),
                    []() {
                      GetContext<RPCIO>()->recv_initial_metadata.Set(42);
-                     return ready(true);
+                     return true;
                    }),
-              []() { return ready(absl::OkStatus()); });
+              []() { return absl::OkStatus(); });
         },
         NoCallbackScheduler(),
         [](absl::Status status) {
@@ -375,7 +375,7 @@ static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
         []() {
           auto one = []() {
             return GetContext<RPCP>()->pipe.sender.Filter(
-                [](int i) { return ready(absl::StatusOr<int>(i)); });
+                [](int i) { return absl::StatusOr<int>(i); });
           };
           return TryJoin(
               one(), one(), one(),
@@ -385,13 +385,13 @@ static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.sender.Push(44); },
                   []() {
                     auto x = std::move(GetContext<RPCP>()->pipe.sender);
-                    return ready(absl::OkStatus());
+                    return absl::OkStatus();
                   }),
               Seq(
                   GetContext<RPCP>()->pipe.receiver.Next(),
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
-                  []() { return ready(absl::OkStatus()); }));
+                  []() { return absl::OkStatus(); }));
         },
         NoCallbackScheduler(),
         [](absl::Status status) {
@@ -409,7 +409,7 @@ static void BM_ActivityStack_Interject10Filters_Unary(benchmark::State& state) {
         []() {
           auto one = []() {
             return GetContext<RPCP>()->pipe.sender.Filter(
-                [](int i) { return ready(absl::StatusOr<int>(i)); });
+                [](int i) { return absl::StatusOr<int>(i); });
           };
           return TryJoin(
               one(), one(), one(), one(), one(), one(), one(), one(), one(),
@@ -420,13 +420,13 @@ static void BM_ActivityStack_Interject10Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.sender.Push(44); },
                   []() {
                     auto x = std::move(GetContext<RPCP>()->pipe.sender);
-                    return ready(absl::OkStatus());
+                    return absl::OkStatus();
                   }),
               Seq(
                   GetContext<RPCP>()->pipe.receiver.Next(),
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
-                  []() { return ready(absl::OkStatus()); }));
+                  []() { return absl::OkStatus(); }));
         },
         NoCallbackScheduler(),
         [](absl::Status status) {
@@ -444,7 +444,7 @@ static void BM_ActivityStack_Interject30Filters_Unary(benchmark::State& state) {
         []() {
           auto one = []() {
             return GetContext<RPCP>()->pipe.sender.Filter(
-                [](int i) { return ready(absl::StatusOr<int>(i)); });
+                [](int i) { return absl::StatusOr<int>(i); });
           };
           return TryJoin(
               one(), one(), one(), one(), one(), one(), one(), one(), one(),
@@ -457,13 +457,13 @@ static void BM_ActivityStack_Interject30Filters_Unary(benchmark::State& state) {
                   []() { return GetContext<RPCP>()->pipe.sender.Push(44); },
                   []() {
                     auto x = std::move(GetContext<RPCP>()->pipe.sender);
-                    return ready(absl::OkStatus());
+                    return absl::OkStatus();
                   }),
               Seq(
                   GetContext<RPCP>()->pipe.receiver.Next(),
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
                   []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
-                  []() { return ready(absl::OkStatus()); }));
+                  []() { return absl::OkStatus(); }));
         },
         NoCallbackScheduler(),
         [](absl::Status status) {

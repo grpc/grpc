@@ -12,28 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/promise.h"
-#include <gtest/gtest.h>
-#include "src/core/lib/promise/map.h"
+#ifndef GRPC_CORE_LIB_PROMISE_LOOPCTL_H
+#define GRPC_CORE_LIB_PROMISE_LOOPCTL_H
 
 namespace grpc_core {
 
-TEST(PromiseTest, Works) {
-  Promise<int> x = []() { return 42; };
-  EXPECT_EQ(x(), Poll<int>(42));
-}
+template <typename T>
+struct LoopStep {
+  T next_value;
+};
 
-TEST(PromiseTest, Immediate) { EXPECT_EQ(Immediate(42)(), Poll<int>(42)); }
+struct LoopContinue {};
 
-TEST(PromiseTest, WithResult) {
-  EXPECT_EQ(WithResult<int>(Immediate(42))(), Poll<int>(42));
-  // Fails to compile: WithResult<int>(Immediate(std::string("hello")));
-  // Fails to compile: WithResult<int>(Immediate(42.9));
-}
+template <typename T>
+struct LoopBreak {
+  T result;
+};
+
+template <typename T, typename N = void>
+using LoopCtl = absl::variant<LoopContinue, LoopStep<N>, LoopBreak<T>>;
 
 }  // namespace grpc_core
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+#endif

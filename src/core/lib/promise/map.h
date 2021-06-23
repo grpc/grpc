@@ -30,8 +30,8 @@ class Map {
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
   using PromiseResult = typename decltype(std::declval<Promise>()())::Type;
-  using Result = absl::remove_reference_t<decltype(
-      std::declval<Fn>()(std::declval<PromiseResult>()))>;
+  using Result = absl::remove_reference_t<decltype(std::declval<Fn>()(
+      std::declval<PromiseResult>()))>;
 
   Poll<Result> operator()() {
     auto r = promise_();

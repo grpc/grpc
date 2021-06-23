@@ -37,8 +37,8 @@ class Race<Promise, Promises...> {
   Result operator()() {
     // Check our own promise.
     auto r = promise_();
-    if (r.ready()) {
-      return r;
+    if (auto* p = absl::get_if<1>(&r)) {
+      return std::move(*p);
     }
     // Check the rest of them.
     return next_();

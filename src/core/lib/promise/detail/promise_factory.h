@@ -47,13 +47,40 @@
 namespace grpc_core {
 namespace promise_detail {
 
-template <typename T>
-struct IsPoll {
-  static constexpr bool value() { return false; }
+template <typename T, typename Ignored = void>
+class PromiseLike;
+
+template <typename F>
+class PromiseLike<F, typename std::enable_if<PollTraits<
+                         decltype(std::declval<F>()())>::is_poll()>::type> {
+ private:
+  F f_;
+
+ public:
+  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
+  using Result = typename decltype(f_())::Type;
+  Poll<Result> operator()() { return f_(); }
 };
-template <typename T>
-struct IsPoll<Poll<T>> {
-  static constexpr bool value() { return true; }
+
+template <typename F>
+class PromiseLike<F, typename std::enable_if<!PollTraits<
+                         decltype(std::declval<F>()())>::is_poll()>::type> {
+ private:
+  F f_;
+
+ public:
+  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
+  using Result = decltype(f_());
+  Poll<Result> operator()() { return f_(); }
+};
+
+template <typename T, typename Ignored = void>
+struct IsVoidCallableT {
+  static constexpr bool value = false;
+};
+template <typename F>
+struct IsVoidCallableT<F, absl::void_t<decltype(std::declval<F>()())>> {
+  static constexpr bool value = true;
 };
 
 template <typename A, typename F>
@@ -61,48 +88,56 @@ struct ArgIsCompatibleWithFunctionError {
   static constexpr bool value() { return false; }
 };
 
+template <typename T>
+T Make();
+
+template <typename T, typename Ignored = void>
+struct ResultOfT;
+
+template <typename F, typename... Args>
+struct ResultOfT<F(Args...),
+                 absl::void_t<decltype(Make<F>()(Make<Args>()...))>> {
+  using T = decltype(Make<F>()(Make<Args>()...));
+};
+
+template <typename T>
+using ResultOf = typename ResultOfT<T>::T;
+
+template <typename T>
+constexpr bool IsVoidCallable() {
+  return IsVoidCallableT<T>::value;
+}
+
 // Error case - we don't know what the heck to do.
 // Also defines arguments:
 //  A - the argument type for the PromiseFactory.
 //  F - the callable that we're promoting to a PromiseFactory.
 //  Ignored - must be void, here to make the enable_if machinery work.
 template <typename A, typename F, typename Ignored = void>
-class PromiseFactory {
- public:
-  using Arg = A;
-  class Promise {
-   public:
-    struct X {};
-    Poll<X> operator()();
-  };
-  explicit PromiseFactory(F f) {
-    static_assert(ArgIsCompatibleWithFunctionError<A, F>::value(),
-                  "PromiseFactory method is incompatible with argument passed");
-  }
-  Promise Once(Arg arg);
-  Promise Repeated(Arg arg);
-};
+class PromiseFactory;
 
-// Promote a callable(A) -> Poll<T> to a PromiseFactory(A) -> Promise<T> by
+// Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
 // capturing A.
 template <typename A, typename F>
 class PromiseFactory<A, F,
-                     typename std::enable_if<IsPoll<decltype(std::declval<F>()(
-                         std::declval<A>()))>::value()>::type> {
+                     absl::enable_if_t<!IsVoidCallable<ResultOf<F(A)>>()>> {
  public:
   using Arg = A;
-  class Promise {
+
+ private:
+  class Curried {
    public:
-    Promise(F f, Arg arg) : f_(std::move(f)), arg_(std::move(arg)) {}
-
+    Curried(F f, Arg arg) : f_(std::move(f)), arg_(std::move(arg)) {}
     using Result = decltype(std::declval<F>()(std::declval<Arg>()));
-
     Result operator()() { return f_(arg_); }
 
    private:
     [[no_unique_address]] F f_;
     [[no_unique_address]] Arg arg_;
   };
+
+ public:
+  using Promise = PromiseLike<Curried>;
 
   Promise Once(Arg arg) { return Promise(std::move(f_), std::move(arg)); }
   Promise Repeated(Arg arg) { return Promise(f_, std::move(arg)); }
@@ -113,49 +148,46 @@ class PromiseFactory<A, F,
   [[no_unique_address]] F f_;
 };
 
-// Promote a callable() -> Poll<T> to a PromiseFactory(A) -> Promise<T>
+// Promote a callable() -> T|Poll<T> to a PromiseFactory(A) -> Promise<T>
 // by dropping the argument passed to the factory.
 template <typename A, typename F>
 class PromiseFactory<A, F,
-                     typename std::enable_if<IsPoll<decltype(
-                         std::declval<F>()())>::value()>::type> {
+                     absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>()>> {
  public:
-  using Promise = F;
+  using Promise = PromiseLike<F>;
   using Arg = A;
   Promise Once(Arg arg) { return std::move(f_); }
   Promise Repeated(Arg arg) { return f_; }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  [[no_unique_address]] PromiseLike<F> f_;
 };
 
-// Promote a callable() -> Poll<T> to a PromiseFactory() -> Promise<T>
+// Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
 template <typename F>
 class PromiseFactory<void, F,
-                     typename std::enable_if<IsPoll<decltype(
-                         std::declval<F>()())>::value()>::type> {
+                     absl::enable_if_t<!IsVoidCallable<ResultOf<F()>>()>> {
  public:
   using Arg = void;
-  using Promise = F;
+  using Promise = PromiseLike<F>;
   Promise Once() { return std::move(f_); }
   Promise Repeated() { return f_; }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  [[no_unique_address]] PromiseLike<F> f_;
 };
 
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
 template <typename A, typename F>
 class PromiseFactory<A, F,
-                     typename std::enable_if<IsPoll<decltype(std::declval<F>()(
-                         std::declval<A>())())>::value()>::type> {
+                     absl::enable_if_t<IsVoidCallable<ResultOf<F(A)>>()>> {
  public:
   using Arg = A;
-  using Promise = decltype(std::declval<F>()(std::declval<Arg>()));
-  Promise Once(Arg arg) { return f_(std::move(arg)); }
-  Promise Repeated(Arg arg) { return f_(std::move(arg)); }
+  using Promise = PromiseLike<decltype(std::declval<F>()(std::declval<Arg>()))>;
+  Promise Once(Arg arg) { return Promise(f_(std::move(arg))); }
+  Promise Repeated(Arg arg) { return Promise(f_(std::move(arg))); }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
@@ -165,14 +197,12 @@ class PromiseFactory<A, F,
 // Given a callable() -> Promise<T>, promote it to a
 // PromiseFactory(A) -> Promise<T> by dropping the first argument.
 template <typename A, typename F>
-class PromiseFactory<A, F,
-                     typename std::enable_if<IsPoll<decltype(
-                         std::declval<F>()()())>::value()>::type> {
+class PromiseFactory<A, F, absl::enable_if_t<IsVoidCallable<ResultOf<F()>>()>> {
  public:
   using Arg = A;
-  using Promise = decltype(std::declval<F>()());
-  Promise Once(Arg arg) { return f_(); }
-  Promise Repeated(Arg arg) { return f_(); }
+  using Promise = PromiseLike<decltype(std::declval<F>()())>;
+  Promise Once(Arg arg) { return Promise(f_()); }
+  Promise Repeated(Arg arg) { return Promise(f_()); }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
@@ -182,11 +212,10 @@ class PromiseFactory<A, F,
 // Given a callable() -> Promise<T>, name it a PromiseFactory and use it.
 template <typename F>
 class PromiseFactory<void, F,
-                     typename std::enable_if<IsPoll<decltype(
-                         std::declval<F>()()())>::value()>::type> {
+                     absl::enable_if_t<IsVoidCallable<ResultOf<F()>>()>> {
  public:
   using Arg = void;
-  using Promise = decltype(std::declval<F>()());
+  using Promise = PromiseLike<decltype(std::declval<F>()())>;
   Promise Once() { return f_(); }
   Promise Repeated() { return f_(); }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}

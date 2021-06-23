@@ -15,81 +15,37 @@
 #ifndef GRPC_CORE_LIB_PROMISE_POLL_H
 #define GRPC_CORE_LIB_PROMISE_POLL_H
 
-#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 namespace grpc_core {
 
 // A type that signals a Promise is still pending and not yet completed.
-// Allows writing 'return Pending{}' and with automatic conversions gets upgraded
-// to a Poll<> object.
-struct Pending {};
+// Allows writing 'return Pending{}' and with automatic conversions gets
+// upgraded to a Poll<> object.
+struct Pending {
+  constexpr bool operator==(Pending) const { return true; }
+};
 
 // The result of polling a Promise once.
 //
 // Can be either pending - the Promise has not yet completed, or ready -
 // indicating that the Promise has completed AND should not be polled again.
 template <typename T>
-class Poll {
- public:
-  using Type = T;
+using Poll = absl::variant<Pending, T>;
 
-  // Disable clang-tidy lint for explicit construction here: the pending type is
-  // intended to make it easy to construct an arbitrarily typed Poll instance
-  // based on context and having this be an implicit constructor greatly
-  // increases the ergonomics of code using this library.
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Poll(Pending) : value_() {}
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  Poll(T value) : value_(std::move(value)) {}
+// Variant of Poll that serves as a ready value
+static constexpr size_t kPollReadyIdx = 1;
 
-  // Was the poll pending?
-  bool pending() const { return !ready(); }
-  // Was the poll complete?
-  bool ready() const { return value_.has_value(); }
-
-  // If the poll was ready, moves out of this instance and applies f,
-  //   returning a ready with the result of f.
-  // If the poll was pending, returns pending.
-  template <class F>
-  auto Map(F f) -> Poll<decltype(f(std::declval<T&>()))> {
-    using Result = decltype(f(value_.value()));
-    if (auto* p = get_ready()) {
-      return Poll<Result>(std::move(f(*p)));
-    } else {
-      return Poll<Result>(Pending());
-    }
-  }
-
-  // Move the ready result out of this object.
-  T take() {
-    auto out = std::move(*get_ready());
-    value_.reset();
-    return out;
-  }
-
-  // Return nullptr if pending, or a pointer to the result if not.
-  T* get_ready() {
-    if (value_.has_value()) {
-      return &*value_;
-    } else {
-      return nullptr;
-    }
-  }
-
- private:
-  // Empty if pending, result if not.
-  absl::optional<T> value_;
+template <typename T>
+struct PollTraits {
+  static constexpr bool is_poll() { return false; }
 };
 
-// Add a Poll<Pending> instance to make the constructors for Poll safer.
-template <>
-class Poll<Pending>;
-
-// Helper to return a Poll<T> of some value when ready.
 template <typename T>
-Poll<absl::remove_reference_t<T>> ready(T value) {
-  return Poll<absl::remove_reference_t<T>>(std::move(value));
-}
+struct PollTraits<Poll<T>> {
+  using Type = T;
+  static constexpr bool is_poll() { return true; }
+};
 
 }  // namespace grpc_core
 

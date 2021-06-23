@@ -18,51 +18,48 @@
 namespace grpc_core {
 
 TEST(PromiseTest, Immediate) {
-  EXPECT_EQ(Seq([] { return ready(3); })().take(), 3);
+  EXPECT_EQ(Seq([] { return 3; })(), 3);
 }
 
 TEST(PromiseTest, OneThen) {
-  EXPECT_EQ(Seq([] { return ready(3); },
-                [](int i) { return [i]() { return ready(i + 4); }; })()
-                .take(),
-            7);
+  auto initial = [] { return 3; };
+  auto then = [](int i) { return [i]() { return i + 4; }; };
+  EXPECT_EQ(Seq(initial, then)(), Poll<int>(7));
 }
 
 TEST(PromiseTest, TwoTypedThens) {
   struct A {};
   struct B {};
   struct C {};
-  auto initial = [] { return ready(A{}); };
-  auto next1 = [](A) { return []() { return ready(B{}); }; };
-  auto next2 = [](B) { return []() { return ready(C{}); }; };
-  Seq(initial, next1, next2)().take();
+  auto initial = [] { return A{}; };
+  auto next1 = [](A) { return []() { return B{}; }; };
+  auto next2 = [](B) { return []() { return C{}; }; };
+  EXPECT_FALSE(absl::holds_alternative<Pending>(Seq(initial, next1, next2)()));
 }
 
 /* This does not compile, but is useful for testing error messages generated
 TEST(PromiseTest, MisTypedThen) {
   struct A {};
   struct B {};
-  auto initial = [] { return ready(A{}); };
-  auto next = [](B) { return []() { return ready(B{}); }; };
+  auto initial = [] { return A{}; };
+  auto next = [](B) { return []() { return B{}; }; };
   Seq(initial, next)().take();
 }
 */
 
 TEST(PromiseTest, TwoThens) {
-  auto initial = [] { return ready(std::string("a")); };
-  auto next1 = [](std::string i) { return [i]() { return ready(i + "b"); }; };
-  auto next2 = [](std::string i) { return [i]() { return ready(i + "c"); }; };
-  EXPECT_EQ(Seq(initial, next1, next2)().take(), "abc");
+  auto initial = [] { return std::string("a"); };
+  auto next1 = [](std::string i) { return [i]() { return i + "b"; }; };
+  auto next2 = [](std::string i) { return [i]() { return i + "c"; }; };
+  EXPECT_EQ(Seq(initial, next1, next2)(), Poll<std::string>("abc"));
 }
 
 TEST(PromiseTest, ThreeThens) {
-  EXPECT_EQ(
-      Seq([] { return ready(std::string("a")); },
-          [](std::string i) { return [i]() { return ready(i + "b"); }; },
-          [](std::string i) { return [i]() { return ready(i + "c"); }; },
-          [](std::string i) { return [i]() { return ready(i + "d"); }; })()
-          .take(),
-      "abcd");
+  EXPECT_EQ(Seq([] { return std::string("a"); },
+                [](std::string i) { return [i]() { return i + "b"; }; },
+                [](std::string i) { return [i]() { return i + "c"; }; },
+                [](std::string i) { return [i]() { return i + "d"; }; })(),
+            Poll<std::string>("abcd"));
 }
 
 struct Big {
@@ -75,13 +72,13 @@ TEST(PromiseTest, SaneSizes) {
   auto p1 = Seq(
       [x] {
         x.YesItIsUnused();
-        return ready(1);
+        return 1;
       },
       [](int i) {
         auto y = Big();
         return [y]() {
           y.YesItIsUnused();
-          return ready(2);
+          return 2;
         };
       });
   EXPECT_GE(sizeof(p1), sizeof(Big));

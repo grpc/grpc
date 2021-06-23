@@ -19,34 +19,12 @@ namespace grpc_core {
 
 TEST(PollTest, Pending) {
   Poll<int> i = Pending();
-  EXPECT_EQ(i.pending(), true);
-  EXPECT_EQ(i.ready(), false);
-  EXPECT_EQ(i.get_ready(), nullptr);
-  EXPECT_EQ(i.Map([](int i) -> int { abort(); }).pending(), true);
+  EXPECT_TRUE(absl::holds_alternative<Pending>(i));
 }
 
 TEST(PollTest, Ready) {
   Poll<int> i = 1;
-  EXPECT_EQ(i.pending(), false);
-  EXPECT_EQ(i.ready(), true);
-  EXPECT_EQ(*i.get_ready(), 1);
-  EXPECT_EQ(*i.Map([](int i) { return i + 1; }).get_ready(), 2);
-  EXPECT_EQ(i.pending(), false);
-  EXPECT_EQ(i.ready(), true);
-}
-
-TEST(PollTest, Take) {
-  Poll<int> i = 1;
-  EXPECT_EQ(i.pending(), false);
-  EXPECT_EQ(i.ready(), true);
-  EXPECT_EQ(*i.get_ready(), 1);
-  Poll<int> j = i.take();
-  EXPECT_EQ(j.pending(), false);
-  EXPECT_EQ(j.ready(), true);
-  EXPECT_EQ(*j.get_ready(), 1);
-  EXPECT_EQ(i.pending(), true);
-  EXPECT_EQ(i.ready(), false);
-  EXPECT_EQ(i.get_ready(), nullptr);
+  EXPECT_TRUE(absl::holds_alternative<int>(i));
 }
 
 }  // namespace grpc_core

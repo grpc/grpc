@@ -18,35 +18,29 @@
 namespace grpc_core {
 
 TEST(VisitorTest, Visit1) {
-  EXPECT_EQ(
-      Visitor([](int) { return ready(1); },
-              [](double) { return ready(2); })(absl::variant<int, double>(1))()
-          .take(),
-      1);
+  EXPECT_EQ(Visitor([](int) { return 1; },
+                    [](double) { return 2; })(absl::variant<int, double>(1))(),
+            Poll<int>(1));
 }
 
 TEST(VisitorTest, Visit2) {
-  EXPECT_EQ(
-      Visitor([](int) { return ready(1); }, [](double) { return ready(2); })(
-          absl::variant<int, double>(1.0))()
-          .take(),
-      2);
+  EXPECT_EQ(Visitor([](int) { return 1; }, [](double) { return 2; })(
+                absl::variant<int, double>(1.0))(),
+            Poll<int>(2));
 }
 
 TEST(VisitorTest, VisitFactory1) {
-  EXPECT_EQ(Visitor([](int) { return []() { return ready(1); }; },
-                    [](double) { return []() { return ready(2); }; })(
-                absl::variant<int, double>(1))()
-                .take(),
-            1);
+  EXPECT_EQ(Visitor([](int) { return []() { return 1; }; },
+                    [](double) { return []() { return 2; }; })(
+                absl::variant<int, double>(1))(),
+            Poll<int>(1));
 }
 
 TEST(VisitorTest, VisitFactory2) {
-  EXPECT_EQ(Visitor([](int) { return []() { return ready(1); }; },
-                    [](double) { return []() { return ready(2); }; })(
-                absl::variant<int, double>(1.0))()
-                .take(),
-            2);
+  EXPECT_EQ(Visitor([](int) { return []() { return 1; }; },
+                    [](double) { return []() { return 2; }; })(
+                absl::variant<int, double>(1.0))(),
+            Poll<int>(2));
 }
 
 }  // namespace grpc_core

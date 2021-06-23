@@ -35,7 +35,7 @@ struct ResultOf;
 
 template <typename Promise, typename... Promises>
 struct ResultOf<Promise, Promises...> {
-  using Type = typename decltype(std::declval<Promise>()())::Type;
+  using Type = typename PollTraits<decltype(std::declval<Promise>()())>::Type;
 };
 
 template <typename... Promises>

@@ -16,6 +16,7 @@
 #define GRPC_CORE_LIB_PROMISE_PROMISE_H
 
 #include <functional>
+#include "absl/types/optional.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -51,7 +52,7 @@ class Immediate {
  public:
   explicit Immediate(T value) : value_(std::move(value)) {}
 
-  Poll<T> operator()() { return ready(std::move(value_)); }
+  Poll<T> operator()() { return std::move(value_); }
 
  private:
   T value_;
@@ -66,7 +67,7 @@ promise_detail::Immediate<T> Immediate(T value) {
 }
 
 // Typecheck that a promise returns the expected return type.
-// usage: auto promise = WithResult<int>([]() { return ready(3); });
+// usage: auto promise = WithResult<int>([]() { return 3; });
 // NOTE: there are tests in promise_test.cc that are commented out because they
 // should fail to compile. When modifying this code these should be uncommented
 // and their miscompilation verified.

@@ -40,7 +40,8 @@ struct SeqState {
     [[no_unique_address]] PriorState prior;
     [[no_unique_address]] F f;
   };
-  using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
+  using FResult =
+      absl::remove_reference_t<typename PollTraits<decltype(f())>::Type>;
   using FNext = typename std::tuple_element<I + 1, std::tuple<Fs...>>::type;
   using NextArg = typename Traits::template NextArg<FResult>;
   using Next = promise_detail::PromiseFactory<typename NextArg::Type, FNext>;
@@ -66,10 +67,11 @@ struct SeqState<Traits, 0, Fs...> {
       : f(std::move(other.f)), next(std::move(other.next)) {}
   SeqState(const SeqState& other) : f(other.f), next(other.next) {}
   ~SeqState() = delete;
-  using F = typename std::tuple_element<0, std::tuple<Fs...>>::type;
+  using F =
+      PromiseLike<typename std::tuple_element<0, std::tuple<Fs...>>::type>;
   using FNext = typename std::tuple_element<1, std::tuple<Fs...>>::type;
   [[no_unique_address]] F f;
-  using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;
+  using FResult = typename F::Result;
   using NextArg = typename Traits::template NextArg<FResult>;
   using Next = promise_detail::PromiseFactory<typename NextArg::Type, FNext>;
   [[no_unique_address]] Next next;
@@ -102,7 +104,7 @@ class Seq {
     [[no_unique_address]] PenultimateState p_;
     [[no_unique_address]] FLast f_;
   };
-  using Result = typename decltype(f_())::Type;
+  using Result = typename PollTraits<decltype(f_())>::Type;
 
   template <char I>
   struct Get {
@@ -143,7 +145,7 @@ class Seq {
     Poll<Result> operator()() {
       auto* state = Get<I>::state(s);
       auto r = state->f();
-      auto* p = r.get_ready();
+      auto* p = absl::get_if<kPollReadyIdx>(&r);
       if (p == nullptr) {
         return Pending();
       }

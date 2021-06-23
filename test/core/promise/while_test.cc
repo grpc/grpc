@@ -28,12 +28,10 @@ TEST(WhileTest, CountToFive) {
 
 TEST(WhileTest, CountToFiveWithResult) {
   int i = 0;
-  auto j =
-      While([&i]() -> Poll<absl::optional<int>> {
-        i++;
-        return ready(i < 5 ? absl::optional<int>{} : absl::optional<int>{i});
-      })()
-          .take();
+  auto j = While([&i]() -> Poll<absl::optional<int>> {
+    i++;
+    return ready(i < 5 ? absl::optional<int>{} : absl::optional<int>{i});
+  })();
   EXPECT_EQ(j, 5);
 }
 
@@ -43,7 +41,7 @@ TEST(WhileTest, CountToFiveWithStatus) {
                 i++;
                 return ready(absl::StatusOr<bool>(i < 5));
               })()
-                  .take()
+
                   .ok());
   EXPECT_EQ(i, 5);
 }
@@ -51,23 +49,21 @@ TEST(WhileTest, CountToFiveWithStatus) {
 TEST(WhileTest, CountToFiveWithStatusAndResult) {
   int i = 0;
   EXPECT_EQ(*While([&i]() {
-               i++;
-               return ready(absl::StatusOr<absl::optional<int>>(
-                   i < 5 ? absl::optional<int>{} : absl::optional<int>{i}));
-             })()
-                 .take(),
+    i++;
+    return ready(absl::StatusOr<absl::optional<int>>(
+        i < 5 ? absl::optional<int>{} : absl::optional<int>{i}));
+  })(),
             5);
 }
 
 TEST(WhileTest, Failure) {
-  EXPECT_FALSE(
-      While([]() { return ready(absl::StatusOr<bool>()); })().take().ok());
+  EXPECT_FALSE(While([]() { return ready(absl::StatusOr<bool>()); })().ok());
 }
 
 TEST(WhileTest, FailureWithResult) {
   EXPECT_FALSE(
       While([]() { return ready(absl::StatusOr<absl::optional<int>>()); })()
-          .take()
+
           .ok());
 }
 
@@ -84,14 +80,12 @@ TEST(WhileTest, FactoryCountToFive) {
 
 TEST(WhileTest, FactoryCountToFiveWithResult) {
   int i = 0;
-  auto j =
-      While([&i]() {
-        return [&i]() -> Poll<absl::optional<int>> {
-          i++;
-          return ready(i < 5 ? absl::optional<int>{} : absl::optional<int>{i});
-        };
-      })()
-          .take();
+  auto j = While([&i]() {
+    return [&i]() -> Poll<absl::optional<int>> {
+      i++;
+      return ready(i < 5 ? absl::optional<int>{} : absl::optional<int>{i});
+    };
+  })();
   EXPECT_EQ(j, 5);
 }
 
@@ -103,7 +97,7 @@ TEST(WhileTest, FactoryCountToFiveWithStatus) {
                   return ready(absl::StatusOr<bool>(i < 5));
                 };
               })()
-                  .take()
+
                   .ok());
   EXPECT_EQ(i, 5);
 }
@@ -111,20 +105,19 @@ TEST(WhileTest, FactoryCountToFiveWithStatus) {
 TEST(WhileTest, FactoryCountToFiveWithStatusAndResult) {
   int i = 0;
   EXPECT_EQ(*While([&i]() {
-               return [&i]() {
-                 i++;
-                 return ready(absl::StatusOr<absl::optional<int>>(
-                     i < 5 ? absl::optional<int>{} : absl::optional<int>{i}));
-               };
-             })()
-                 .take(),
+    return [&i]() {
+      i++;
+      return ready(absl::StatusOr<absl::optional<int>>(
+          i < 5 ? absl::optional<int>{} : absl::optional<int>{i}));
+    };
+  })(),
             5);
 }
 
 TEST(WhileTest, FactoryFailure) {
   EXPECT_FALSE(
       While([]() { return []() { return ready(absl::StatusOr<bool>()); }; })()
-          .take()
+
           .ok());
 }
 
@@ -134,7 +127,7 @@ TEST(WhileTest, FactoryFailureWithResult) {
                    return ready(absl::StatusOr<absl::optional<int>>());
                  };
                })()
-                   .take()
+
                    .ok());
 }
 
