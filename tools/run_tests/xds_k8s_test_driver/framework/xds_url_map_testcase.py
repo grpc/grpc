@@ -322,6 +322,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=MetaXdsUrlMapTestCase):
                             last_exception = e
                     else:
                         # No exception raised, test PASSED!
+                        logging.info('valid xDS config: %s',
+                                     json.dumps(json_config, indent=2))
                         return
                 # Wait a while until next attempt.
                 time.sleep(_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC)

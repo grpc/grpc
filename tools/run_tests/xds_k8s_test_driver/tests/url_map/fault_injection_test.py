@@ -43,7 +43,6 @@ flags.adopt_module_key_flags(xds_url_map_testcase)
 # The first batch of RPCs don't count towards the result of test case. They are
 # meant to prove the communication between driver and client is fine.
 _NUM_RPCS = 10
-# 16 seconds * 25 QPS = 400 RPCs
 _LENGTH_OF_RPC_SENDING_SEC = 16
 # We are using sleep to synchronize test driver and the client... Even though
 # the client is sending at QPS rate, we can't assert that exactly QPS *

@@ -79,10 +79,7 @@ class _UrlMapChangeAggregator:
 
 
 def _package_flags() -> Mapping[str, Any]:
-    """Automatically load Abseil flags into key-value pairs.
-
-    For example, xds_flags.PROJECT.value -> ('project', 'grpc-testing').
-    """
+    """Automatically parse Abseil flags into a dictionary."""
     res = {}
     for flag_module in [xds_flags, xds_k8s_flags]:
         for key, value in inspect.getmembers(flag_module):
@@ -95,7 +92,7 @@ def _package_flags() -> Mapping[str, Any]:
 class _MetaSingletonAndAbslFlags(type):
     """Ensures singleton and injects flag values."""
 
-    # Allow different subclass to create different singletons.
+    # Allow different subclasses to create different singletons.
     _instances = {}
     # But we only parse Abseil flags once.
     _flags = None
