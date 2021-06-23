@@ -14,65 +14,40 @@
 """A test framework built for urlMap related xDS test cases."""
 
 import abc
-import unittest
 import json
+import os
+import sys
 import time
-import inspect
-import collections
-import threading
 from dataclasses import dataclass
-import functools
-from typing import Any, Union, Tuple, Mapping, Iterable, Optional
-
-from framework import xds_flags
-from framework import xds_k8s_flags
-from framework import xds_k8s_testcase
-from framework.infrastructure import gcp
-from framework.infrastructure import k8s
-from framework.infrastructure import traffic_director
-from framework.test_app import client_app
-from framework.test_app import server_app
+from typing import Any, Iterable, Mapping, Optional, Tuple, Union
 
 import grpc
-from absl import flags
-from absl import logging
+from absl import flags, logging
 from absl.testing import absltest
 from google.protobuf import json_format
-import googleapiclient
+
+from framework import xds_k8s_testcase, xds_url_map_test_resources
 from framework.rpc import grpc_testing
+from framework.test_app import client_app
 
 # Load existing flags
-flags.adopt_module_key_flags(xds_flags)
-flags.adopt_module_key_flags(xds_k8s_flags)
 flags.adopt_module_key_flags(xds_k8s_testcase)
+flags.adopt_module_key_flags(xds_url_map_test_resources)
 
 # Define urlMap specific flags
 QPS = flags.DEFINE_integer('qps', default=25, help='The QPS client is sending')
-_STRATEGY = flags.DEFINE_enum('strategy',
-                              default='reuse',
-                              enum_values=['create', 'keep', 'reuse'],
-                              help='Strategy of GCP resources management')
-# TODO(lidiz) find a better way to filter test cases; e.g., Bazel
-_TEST_FILTER = flags.DEFINE_string(
-    'test_filter',
-    default='',
-    help='Only run test case which match the given substring')
 
 # Test configs
-_URL_MAP_PROPAGATE_TIMEOUT_SEC = 1800
+_URL_MAP_PROPAGATE_TIMEOUT_SEC = 600
 _URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 2
-_RPC_DISTRIBUTION_READY_TIMEOUT_SEC = 600
-
-# Global states of this module
-_url_map_change_aggregator = None
-_gcp_resource_manager = None
 
 # Type aliases
-JsonType = Any
-HostRule = JsonType
-PathMatcher = JsonType
 LoadBalancerAccumulatedStatsResponse = grpc_testing.LoadBalancerAccumulatedStatsResponse
 XdsTestClient = client_app.XdsTestClient
+GcpResourceManager = xds_url_map_test_resources.GcpResourceManager
+HostRule = xds_url_map_test_resources.HostRule
+PathMatcher = xds_url_map_test_resources.PathMatcher
+JsonType = Any
 
 # ProtoBuf translatable RpcType enums
 RpcTypeUnaryCall = 'UNARY_CALL'
@@ -85,187 +60,21 @@ def _split_camel(s: str, delimiter: str = '-') -> str:
                    for c in s).lstrip(delimiter)
 
 
-class GcpResourceManager:
-    """Manages the lifecycle of GCP resources created by urlMap testcases."""
-    lock: threading.Lock
-    setup_finished: bool
-    ref_count: int
-
-    k8s_api_manager: k8s.KubernetesApiManager
-    gcp_api_manager: gcp.api.GcpApiManager
-    td: traffic_director.TrafficDirectorManager
-
-    k8s_namespace: k8s.KubernetesNamespace
-    test_client_runner: client_app.KubernetesClientRunner
-
-    def __init__(self):
-        # Instance states
-        self.lock = threading.Lock()
-        self.setup_finished = False
-        self.ref_count = 0
-        # API managers
-        self.k8s_api_manager = k8s.KubernetesApiManager(
-            xds_k8s_flags.KUBE_CONTEXT.value)
-        self.gcp_api_manager = gcp.api.GcpApiManager()
-        self.td = traffic_director.TrafficDirectorManager(
-            self.gcp_api_manager,
-            xds_flags.PROJECT.value,
-            resource_prefix=xds_flags.NAMESPACE.value,
-            network=xds_flags.NETWORK.value,
-        )
-        # Kubernetes namespace
-        self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,
-                                                     xds_flags.NAMESPACE.value)
-        # Kubernetes Test Client
-        self.test_client_runner = client_app.KubernetesClientRunner(
-            self.k8s_namespace,
-            deployment_name=xds_flags.CLIENT_NAME.value,
-            image_name=xds_k8s_flags.CLIENT_IMAGE.value,
-            gcp_project=xds_flags.PROJECT.value,
-            gcp_api_manager=self.gcp_api_manager,
-            gcp_service_account=xds_k8s_flags.GCP_SERVICE_ACCOUNT.value,
-            td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
-            network=xds_flags.NETWORK.value,
-            debug_use_port_forwarding=xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.
-            value,
-            stats_port=xds_flags.CLIENT_PORT.value,
-            reuse_namespace=True)
-        # Cleanup existing debris
-        logging.info('Strategy of GCP resources management: %s',
-                     _STRATEGY.value)
-        if _STRATEGY.value in ['create', 'keep']:
-            self.td.cleanup(force=True)
-            self.test_client_runner.delete_namespace()
-
-    @staticmethod
-    def default_backend_service() -> str:
-        """Returns default backend service URL without GCP interaction."""
-        return f'https://www.googleapis.com/compute/v1/projects/{xds_flags.PROJECT.value}/global/backendServices/{xds_flags.NAMESPACE.value}-{traffic_director.TrafficDirectorManager.BACKEND_SERVICE_NAME}'
-
-    @staticmethod
-    def alternative_backend_service() -> str:
-        """Returns alternative backend service URL without GCP interaction."""
-        return f'https://www.googleapis.com/compute/v1/projects/{xds_flags.PROJECT.value}/global/backendServices/{xds_flags.NAMESPACE.value}-{traffic_director.TrafficDirectorManager.ALTERNATIVE_BACKEND_SERVICE_NAME}'
-
-    def _create_reusable_resources(self) -> None:
-        """Create the reuseable resources.
-        
-        The GCP resources including:
-        - 2 K8s deployment (backends, alternative backends)
-        - Full set of the Traffic Director ritual
-        - Merged gigantic urlMap from all imported test cases
-
-        These resources are intended to be used across test cases and multiple runs.
-        """
-        # Firewall
-        if xds_flags.ENSURE_FIREWALL.value:
-            self.td.create_firewall_rule(
-                allowed_ports=xds_flags.FIREWALL_ALLOWED_PORTS.value)
-        # Health Checks
-        self.td.create_health_check()
-        # Backend Services
-        self.td.create_backend_service()
-        self.td.create_alternative_backend_service()
-        # UrlMap
-        final_url_map = _url_map_change_aggregator.get_map()
-        self.td.create_url_map_with_content(final_url_map)
-        # Target Proxy
-        self.td.create_target_proxy()
-        # Forwarding Rule
-        self.td.create_forwarding_rule(xds_flags.SERVER_XDS_PORT.value)
-        # Kubernetes Test Server
-        self.test_server_runner = server_app.KubernetesServerRunner(
-            self.k8s_namespace,
-            deployment_name=xds_flags.SERVER_NAME.value,
-            image_name=xds_k8s_flags.SERVER_IMAGE.value,
-            gcp_project=xds_flags.PROJECT.value,
-            gcp_api_manager=self.gcp_api_manager,
-            gcp_service_account=xds_k8s_flags.GCP_SERVICE_ACCOUNT.value,
-            td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
-            network=xds_flags.NETWORK.value)
-        self.test_server = self.test_server_runner.run(
-            replica_count=1,
-            test_port=xds_flags.SERVER_PORT.value,
-            maintenance_port=xds_flags.SERVER_MAINTENANCE_PORT.value)
-        # Kubernetes Test Server Alternative
-        self.test_server_alternative_runner = server_app.KubernetesServerRunner(
-            self.k8s_namespace,
-            deployment_name=xds_flags.SERVER_NAME.value + '-alternative',
-            image_name=xds_k8s_flags.SERVER_IMAGE.value,
-            gcp_project=xds_flags.PROJECT.value,
-            gcp_api_manager=self.gcp_api_manager,
-            gcp_service_account=xds_k8s_flags.GCP_SERVICE_ACCOUNT.value,
-            td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
-            network=xds_flags.NETWORK.value,
-            reuse_namespace=True)
-        self.test_server_alternative = self.test_server_alternative_runner.run(
-            replica_count=1,
-            test_port=xds_flags.SERVER_PORT.value,
-            maintenance_port=xds_flags.SERVER_MAINTENANCE_PORT.value)
-        # Add backend to default backend service
-        neg_name, neg_zones = self.k8s_namespace.get_service_neg(
-            self.test_server_runner.service_name, xds_flags.SERVER_PORT.value)
-        self.td.backend_service_add_neg_backends(neg_name, neg_zones)
-        # Add backend to alternative backend service
-        neg_name, neg_zones = self.k8s_namespace.get_service_neg(
-            self.test_server_alternative_runner.service_name,
-            xds_flags.SERVER_PORT.value)
-        self.td.alternative_backend_service_add_neg_backends(
-            neg_name, neg_zones)
-        # Wait for healthy backends
-        self.td.wait_for_backends_healthy_status()
-        self.td.wait_for_alternative_backends_healthy_status()
-
-    def ensure_setup(self):
-        """A thread-safe method to ensure the GCP resources are up."""
-        with self.lock:
-            self.ref_count += 1
-            if self.setup_finished:
-                return
-            logging.info('GcpResourceManager: start setup')
-            if _STRATEGY.value in ['create', 'keep']:
-                self._create_reusable_resources()
-            # Flip flag
-            self.setup_finished = True
-
-    def maybe_tear_down(self):
-        """A thread-safe method to remove resources when refcount reaches 0."""
-        with self.lock:
-            self.ref_count -= 1
-            if self.ref_count == 0:
-                if _STRATEGY.value == 'create':
-                    self.cleanup()
-                else:
-                    logging.info('Skipping GCP resource cleanup')
-
-    def cleanup(self):
-        logging.info('GcpResourceManager: cleanup')
-        if hasattr(self, 'td'):
-            self.td.cleanup(force=True)
-        if hasattr(self, 'test_client_runner'):
-            self.test_client_runner.cleanup(force=True)
-        if hasattr(self, 'test_server_runner'):
-            self.test_server_runner.cleanup(force=True)
-        if hasattr(self, 'test_server_alternative_runner'):
-            self.test_server_alternative_runner.cleanup(force=True,
-                                                        force_namespace=True)
-
-
 class DumpedXdsConfig(dict):
     """A convenience class to check xDS config.
 
     Feel free to add more pre-compute fields.
     """
 
-    def __init__(self, json_config: JsonType):
-        super().__init__(json_config)
-        self.json_config = json_config
+    def __init__(self, xds_json: JsonType):
+        super().__init__(xds_json)
+        self.json_config = xds_json
         self.lds = None
         self.rds = None
         self.cds = []
         self.eds = []
         self.endpoints = []
-        for xds_config in json_config['xdsConfig']:
+        for xds_config in self['xdsConfig']:
             try:
                 if 'listenerConfig' in xds_config:
                     self.lds = xds_config['listenerConfig']['dynamicListeners'][
@@ -299,7 +108,7 @@ class DumpedXdsConfig(dict):
                                       type(e), e)
 
     def __str__(self) -> str:
-        return json.dumps(self.json_config, indent=2)
+        return json.dumps(self, indent=2)
 
 
 class RpcDistributionStats:
@@ -358,10 +167,44 @@ class ExpectedResult:
     ratio: float = 1
 
 
-class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
+class MetaXdsUrlMapTestCase(type):
+    """Tracking test case subclasses."""
+
+    # Automatic discover of all subclasses
+    _test_case_classes = []
+    _test_case_names = set()
+    # Keep track of started and finished test cases, so we know when to setup
+    # and tear down GCP resources.
+    _started_test_cases = set()
+    _finished_test_cases = set()
+
+    def __new__(cls, name: str, bases: Iterable[Any],
+                attrs: Mapping[str, Any]) -> Any:
+        # Hand over the tracking objects
+        attrs['test_case_classes'] = cls._test_case_classes
+        attrs['test_case_names'] = cls._test_case_names
+        attrs['started_test_cases'] = cls._started_test_cases
+        attrs['finished_test_cases'] = cls._finished_test_cases
+        # Handle the test name reflection
+        module_name = os.path.split(
+            sys.modules[attrs['__module__']].__file__)[-1]
+        if module_name.endswith('_test.py'):
+            module_name = module_name.replace('_test.py', '')
+        attrs['short_module_name'] = module_name.replace('_', '-')
+        # Create the class and track
+        new_class = type.__new__(cls, name, bases, attrs)
+        if not name.startswith('_'):
+            # Skip private classes
+            cls._test_case_names.add(name)
+            cls._test_case_classes.append(new_class)
+        return new_class
+
+
+class XdsUrlMapTestCase(absltest.TestCase, metaclass=MetaXdsUrlMapTestCase):
     """XdsUrlMapTestCase is the base class for urlMap related tests.
 
     The subclass is expected to implement 3 methods:
+
     - url_map_change: Updates the urlMap components for this test case
     - xds_config_validate: Validates if the client received legit xDS configs
     - rpc_distribution_validate: Validates if the routing behavior is correct
@@ -381,7 +224,7 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
         Args:
             host_rule: A HostRule GCP resource as a JSON dict.
             path_matcher: A PathMatcher GCP resource as a JSON dict.
-        
+
         Returns:
             A tuple contains the updated version of given HostRule and
             PathMatcher.
@@ -390,8 +233,11 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
 
     @abc.abstractmethod
     def xds_config_validate(self, xds_config: DumpedXdsConfig) -> None:
-        """Validates received xDS config, if any is wrong, raise.
-        
+        """Validates received xDS config, if anything is wrong, raise.
+
+        This stage only ends when the control plane failed to send a valid
+        config within a given time range, like 600s.
+
         Args:
             xds_config: A DumpedXdsConfig instance can be used as a JSON dict,
               but also provides helper fields for commonly checked xDS config.
@@ -399,53 +245,40 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
         pass
 
     @abc.abstractmethod
-    def rpc_distribution_validate(self,
-                                  client: client_app.XdsTestClient) -> None:
+    def rpc_distribution_validate(self, client: XdsTestClient) -> None:
         """Validates the routing behavior, if any is wrong, raise.
-        
+
         Args:
             client: A XdsTestClient instance for all sorts of end2end testing.
         """
         pass
 
     @classmethod
-    def set_module_name(cls, name: str) -> None:
-        # E.g.: tests.url_map.header_matching_test
-        cls.module_name = name
+    def hostname(cls):
+        return "%s.%s:%s" % (cls.short_module_name, _split_camel(
+            cls.__name__), GcpResourceManager().server_xds_port)
 
     @classmethod
-    @functools.lru_cache(None)
-    def _shorter_module_name(cls) -> str:
-        # E.g.: tests.url_map.header_matching_test -> header-matching
-        return cls.module_name.split('.')[-1].replace('_test',
-                                                      '').replace('_', '-')
-
-    @classmethod
-    @functools.lru_cache(None)
-    def hostname(cls) -> str:
-        return cls._shorter_module_name() + '.' + _split_camel(
-            cls.__name__) + f':{xds_flags.SERVER_XDS_PORT.value}'
-
-    @classmethod
-    @functools.lru_cache(None)
-    def path_matcher(cls) -> str:
+    def path_matcher_name(cls):
         # Path matcher name must match r'(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)'
-        return cls._shorter_module_name() + '-' + _split_camel(
-            cls.__name__) + '-pm'
+        path_matcher_name = "%s-%s-pm" % (cls.short_module_name,
+                                          _split_camel(cls.__name__))
 
     @classmethod
     def setUpClass(cls):
-        cls.resource = _gcp_resource_manager
-        cls.resource.ensure_setup()
+        if len(cls.started_test_cases) == 0:
+            # Create the GCP resource once before the first test start
+            GcpResourceManager().setup(cls.test_case_classes)
+        cls.started_test_cases.add(cls.__name__)
         # TODO(lidiz) technically, we should be able to create deployments for
         # each individual test cases to allow them to be run concurrently.
         # However, the framework uses workload identity to connect to TD. The
         # workload identity requires IAM policy binding with (Kubernetes
         # Namespace, Kubernetes Deployment, Kubernetes Workload). This demands
         # admin permission.
-        cls.resource.test_client_runner.cleanup(force=True)
+        GcpResourceManager().test_client_runner.cleanup(force=True)
         # Sending both RPCs when starting.
-        cls.test_client = cls.resource.test_client_runner.run(
+        cls.test_client = GcpResourceManager().test_client_runner.run(
             server_target=f'xds:///{cls.hostname()}',
             rpc='UnaryCall,EmptyCall',
             qps=QPS.value,
@@ -453,30 +286,14 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.resource.test_client_runner.cleanup(force=True)
-        cls.resource.maybe_tear_down()
-
-    def test_rpc_distribution(self):
-        # TODO(https://github.com/grpc/grpc-java/issues/8213)
-        # We need this call because there is a possible race: xDS config is
-        # ready, but the client channel is still not READY. Or the client
-        # channel turned READY but only connects to one of the backends.
-        # When we find a better way, remove this.
-        deadline = time.time() + _RPC_DISTRIBUTION_READY_TIMEOUT_SEC
-        while time.time() < deadline:
-            result = self.configure_and_send(
-                self.test_client,
-                rpc_types=[RpcTypeUnaryCall, RpcTypeEmptyCall],
-                num_rpcs=QPS.value)
-            if result.num_oks:
-                break
-        if time.time() >= deadline:
-            raise RuntimeError('failed to send any OK RPC within %s seconds',
-                               _RPC_DISTRIBUTION_READY_TIMEOUT_SEC)
-        # Runs test case logic
-        self.rpc_distribution_validate(self.test_client)
+        GcpResourceManager().test_client_runner.cleanup(force=True)
+        cls.finished_test_cases.add(cls.__name__)
+        if cls.finished_test_cases == cls.test_case_names:
+            # Tear down the GCP resource after all tests finished
+            GcpResourceManager().tear_down()
 
     def test_client_config(self):
+        """Continuously check if the latest client config is valid yet."""
         config = None
         json_config = None
         last_exception = None
@@ -486,31 +303,44 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
                 config = self.test_client.csds.fetch_client_status(
                     log_level=logging.INFO)
                 if config is None:
+                    # Client config is empty, skip this run
                     json_config = None
                 else:
+                    # Found client config, testing it.
                     json_config = json_format.MessageToDict(config)
                     try:
                         self.xds_config_validate(DumpedXdsConfig(json_config))
                     except Exception as e:
+                        # It's okay to fail, the xDS config might be
+                        # incomplete/obsolete during the 600s time frame.
                         logging.info('xDS config check failed: %s: %s', type(e),
                                      e)
                         if type(last_exception) != type(e) or str(
                                 last_exception) != str(e):
+                            # Suppress repetitive exception logs
                             logging.exception(e)
                             last_exception = e
                     else:
+                        # No exception raised, test PASSED!
                         return
+                # Wait a while until next attempt.
                 time.sleep(_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC)
             except KeyboardInterrupt:
+                # For active development, this clause allow developer to view
+                # the failing xDS config quicker.
                 logging.info('latest xDS config: %s',
                              json.dumps(json_config, indent=2))
                 raise
+        # Test FAILED!
         raise RuntimeError(
             'failed to receive valid xDS config within %s seconds, latest: %s' %
             (_URL_MAP_PROPAGATE_TIMEOUT_SEC, json.dumps(json_config, indent=2)))
 
+    def test_rpc_distribution(self):
+        self.rpc_distribution_validate(self.test_client)
+
     @staticmethod
-    def configure_and_send(test_client: client_app.XdsTestClient,
+    def configure_and_send(test_client: XdsTestClient,
                            *,
                            rpc_types: Iterable[str],
                            metadata: Optional[Iterable[Tuple[str, str,
@@ -566,109 +396,3 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
                 'Expect rpc [%s] to return [%s] at %.2f ratio: seen=%d want=%d total=%d diff_ratio=%.4f > %.2f'
                 % (rpc, expected_result.status_code, expected_result.ratio,
                    seen, want, total, abs(seen - want) / total, tolerance))
-
-
-class UrlMapChangeAggregator:
-    """Where all the urlMap change happens."""
-    _map: JsonType
-
-    def __init__(self):
-        self._map = {
-            "name":
-                f"{xds_flags.NAMESPACE.value}-{traffic_director.TrafficDirectorManager.URL_MAP_NAME}",
-            "defaultService":
-                GcpResourceManager.default_backend_service(),
-            "hostRules": [],
-            "pathMatchers": [],
-        }
-
-    def get_map(self) -> JsonType:
-        return self._map
-
-    def apply_change(self, test_case: XdsUrlMapTestCase):
-        logging.info('Apply urlMap change for test case: %s.%s',
-                     test_case.module_name, test_case.__name__)
-        url_map_parts = test_case.url_map_change(
-            *self._get_test_case_url_map(test_case))
-        self._set_test_case_url_map(*url_map_parts)
-
-    def _get_test_case_url_map(
-            self, test_case: XdsUrlMapTestCase) -> Tuple[JsonType, JsonType]:
-        host_rule = {
-            "hosts": [test_case.hostname()],
-            "pathMatcher": test_case.path_matcher(),
-        }
-        path_matcher = {
-            "name": test_case.path_matcher(),
-            "defaultService": GcpResourceManager.default_backend_service(),
-        }
-        return host_rule, path_matcher
-
-    def _set_test_case_url_map(self, host_rule: JsonType,
-                               path_matcher: JsonType) -> None:
-        self._map["hostRules"].append(host_rule)
-        self._map["pathMatchers"].append(path_matcher)
-
-
-def load_tests(
-        loader: absltest.TestLoader,
-        *modules: 'Module',
-        module_name_override: Optional[str] = None) -> unittest.TestSuite:
-    """The implementation of the load_tests protocol of unittest.
-
-    TODO(lidiz) parallelize the test case run. After the resource creation, each
-    test case should be able to be run in a dedicated thread. But this might
-    amplify the complexity of existing API managers. So, maybe parallelize the
-    test runs in a separate attempt.
-
-    Args:
-        loader: A TestLoader instance fetches test case methods from the test
-          case classes, then build TestSuite instances.
-        modules: A list of Python modules for this function to search for test
-          case classes.
-        module_name_override: A temporary solution to get consistent module name
-          instead of "__main__" if a test is invoked directly.
-
-    Returns:
-        A TestSuite instances which contains all test cases, and controls how
-        they will be executed.
-    """
-    # Prepares global variables for merging resources
-    global _gcp_resource_manager
-    global _url_map_change_aggregator
-    if _gcp_resource_manager is None:
-        _gcp_resource_manager = GcpResourceManager()
-    if _url_map_change_aggregator is None:
-        _url_map_change_aggregator = UrlMapChangeAggregator()
-    # Validates input arguments
-    if module_name_override is not None:
-        assert len(modules) == 1
-    # Crafting test cases
-    suite = unittest.TestSuite()
-    for module in modules:
-        for key, value in inspect.getmembers(module):
-            if not key.startswith('Test'):
-                # A test class name needs to start with 'Test' in camel case
-                continue
-            test_class = value
-            if not isinstance(test_class, type):
-                # This is not a class
-                continue
-            if module_name_override is not None:
-                module_name = module_name_override
-            else:
-                module_name = module.__name__
-            # Prepares global states.
-            # NOTE(lidiz) We want this to happen before skipping tests, so the
-            # created resources can be reused widely.
-            test_class.set_module_name(module_name)
-            _url_map_change_aggregator.apply_change(test_class)
-            # Skip unwanted test cases if test filter is given
-            if _TEST_FILTER.value != '':
-                if _TEST_FILTER.value not in (module_name + '.' +
-                                              test_class.__name__):
-                    continue
-            # Load tests from the given test case class
-            tests = loader.loadTestsFromTestCase(test_class)
-            suite.addTests(tests)
-    return suite

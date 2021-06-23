@@ -12,27 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import importlib
-
-from framework import xds_url_map_testcase
+import os
 
 from absl import logging
 from absl.testing import absltest
+from framework import xds_url_map_testcase  # Needed for xDS flags
 
 _TEST_CASE_FOLDER = os.path.join(os.path.dirname(__file__), 'url_map')
 
 
 def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
-    test_modules = []
-    for file_name in os.listdir(_TEST_CASE_FOLDER):
-        if not file_name.endswith('_test.py'):
-            continue
-        module_name = 'tests.url_map.' + file_name[:-3]
-        test_modules.append(importlib.import_module(module_name, package=None))
-        logging.info('Loading test module: %s', module_name)
-
-    return xds_url_map_testcase.load_tests(loader, *test_modules)
+    return loader.discover(_TEST_CASE_FOLDER, pattern='*_test.py')
 
 
 if __name__ == '__main__':

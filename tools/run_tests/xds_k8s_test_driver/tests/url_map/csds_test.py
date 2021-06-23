@@ -11,14 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import sys
-import logging
 import json
+import logging
+import sys
 from typing import Tuple
 
 from absl import flags
 from absl.testing import absltest
-
 from framework import xds_url_map_testcase
 from framework.test_app import client_app
 from google.protobuf import json_format
@@ -48,9 +47,8 @@ class TestBasicCsds(xds_url_map_testcase.XdsUrlMapTestCase):
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         # Validate Node
-        self.assertEqual(
-            self.test_client.ip,
-            xds_config.json_config['node']['metadata']['INSTANCE_IP'])
+        self.assertEqual(self.test_client.ip,
+                         xds_config['node']['metadata']['INSTANCE_IP'])
         # Validate Listeners
         self.assertIsNotNone(xds_config.lds)
         self.assertEqual(self.hostname(), xds_config.lds['name'])
@@ -68,12 +66,6 @@ class TestBasicCsds(xds_url_map_testcase.XdsUrlMapTestCase):
             rpc_types=[RpcTypeUnaryCall, RpcTypeEmptyCall],
             num_rpcs=_NUM_RPCS)
         self.assertEqual(_NUM_RPCS, rpc_distribution.num_oks)
-
-
-def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
-    return xds_url_map_testcase.load_tests(loader,
-                                           sys.modules[__name__],
-                                           module_name_override='csds_test')
 
 
 if __name__ == '__main__':

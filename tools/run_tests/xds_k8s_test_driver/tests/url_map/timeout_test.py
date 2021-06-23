@@ -22,8 +22,7 @@ from typing import Iterable, Tuple
 import grpc
 from absl import flags
 from absl.testing import absltest
-from framework import xds_k8s_flags
-from framework import xds_url_map_testcase
+from framework import xds_k8s_flags, xds_url_map_testcase
 from framework.test_app import client_app
 from google.protobuf import json_format
 
@@ -144,12 +143,6 @@ class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
                                      status_code=grpc.StatusCode.OK),),
                                  length=_LENGTH_OF_RPC_SENDING_SEC,
                                  tolerance=_ERROR_TOLERANCE)
-
-
-def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
-    return xds_url_map_testcase.load_tests(loader,
-                                           sys.modules[__name__],
-                                           module_name_override='timeout_test')
 
 
 if __name__ == '__main__':

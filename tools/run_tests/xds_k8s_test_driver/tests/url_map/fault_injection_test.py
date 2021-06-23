@@ -362,12 +362,5 @@ class TestAbortHalf(xds_url_map_testcase.XdsUrlMapTestCase):
             tolerance=_ERROR_TOLERANCE)
 
 
-def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
-    return xds_url_map_testcase.load_tests(
-        loader,
-        sys.modules[__name__],
-        module_name_override='fault_injection_test')
-
-
 if __name__ == '__main__':
     absltest.main(failfast=True)
