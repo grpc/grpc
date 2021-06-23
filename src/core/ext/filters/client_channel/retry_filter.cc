@@ -362,6 +362,7 @@ class RetryFilter::CallData {
                      grpc_mdelem* server_pushback_md,
                      grpc_millis* server_pushback_ms);
 
+    // Cancels the call attempt.  Unrefs any deferred batches.
     // Adds a batch to closures to cancel this call attempt.
     void Cancel(CallCombinerClosureList* closures);
 
@@ -465,7 +466,7 @@ class RetryFilter::CallData {
   void RetryCommit(CallAttempt* call_attempt);
 
   // Starts a timer to retry after appropriate back-off.
-  // If server_pushback_ms is 0, retry_backoff_ is used.
+  // If server_pushback_ms is -1, retry_backoff_ is used.
   void StartRetryTimer(grpc_millis server_pushback_ms);
 
   static void OnRetryTimer(void* arg, grpc_error_handle error);
@@ -1091,6 +1092,8 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
 
 void RetryFilter::CallData::CallAttempt::Cancel(
     CallCombinerClosureList* closures) {
+  // Record that this attempt has been cancelled.
+  cancelled_ = true;
   // Unref batches for deferred completion callbacks that will now never
   // be invoked.
   if (started_recv_trailing_metadata_ &&
@@ -1115,8 +1118,6 @@ void RetryFilter::CallData::CallAttempt::Cancel(
       DEBUG_LOCATION, "unref deferred on_complete batch due to retry");
   GRPC_ERROR_UNREF(on_complete_error_);
   on_complete_error_ = GRPC_ERROR_NONE;
-  // Record that this attempt has been cancelled.
-  cancelled_ = true;
   // Start a cancellation op on this call attempt to make sure the
   // transport knows that this call should be cleaned up, even if it
   // hasn't received any ops.
@@ -1601,7 +1602,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
   }
   call_attempt->completed_recv_trailing_metadata_ = true;
   // If this attempt has been cancelled, then we're not going to use the
-  // result of this recv_message op, so do nothing.
+  // result of this recv_trailing_metadata op, so do nothing.
   if (call_attempt->cancelled_) {
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
                             "recv_trailing_metadata_ready after cancellation");
