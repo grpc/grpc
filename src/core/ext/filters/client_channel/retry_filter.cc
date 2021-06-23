@@ -727,9 +727,8 @@ void RetryFilter::CallData::CallAttempt::MaybeSwitchToFastPath() {
   // Switch to fast path.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
-            "chand=%p calld=%p attempt=%p: call committed and no more "
-            "send ops to replay; moving LB call to parent and unreffing "
-            "the call attempt",
+            "chand=%p calld=%p attempt=%p: retry state no longer needed; "
+            "moving LB call to parent and unreffing the call attempt",
             calld_->chand_, calld_, this);
   }
   calld_->committed_call_ = std::move(lb_call_);
@@ -1141,6 +1140,14 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     void* arg, grpc_error_handle error) {
   auto* call_attempt = static_cast<CallAttempt*>(arg);
   auto* calld = call_attempt->calld_;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p attempt=%p: perAttemptRecvTimeout timer fired: "
+            "error=%s, per_attempt_recv_timer_pending_=%d",
+            calld->chand_, calld, call_attempt,
+            grpc_error_std_string(error).c_str(),
+            call_attempt->per_attempt_recv_timer_pending_);
+  }
   CallCombinerClosureList closures;
   if (error == GRPC_ERROR_NONE &&
       call_attempt->per_attempt_recv_timer_pending_) {
@@ -1154,7 +1161,7 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
             /*status=*/absl::nullopt, /*is_lb_drop=*/false,
             /*server_pushback_md=*/nullptr, /*server_pushback_ms=*/nullptr)) {
       // We are retrying.  Start backoff timer.
-      calld->StartRetryTimer(/*server_pushback_ms=*/0);
+      calld->StartRetryTimer(/*server_pushback_ms=*/-1);
     } else {
       // Not retrying, so commit the call.
       calld->RetryCommit(call_attempt);
@@ -1170,6 +1177,12 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
 
 void RetryFilter::CallData::CallAttempt::MaybeCancelPerAttemptRecvTimer() {
   if (per_attempt_recv_timer_pending_) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p attempt=%p: cancelling "
+              "perAttemptRecvTimeout timer",
+              calld_->chand_, calld_, this);
+    }
     per_attempt_recv_timer_pending_ = false;
     grpc_timer_cancel(&per_attempt_recv_timer_);
   }
@@ -1299,9 +1312,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvInitialMetadataReady(
   // If this attempt has been cancelled, then we're not going to use the
   // result of this recv_initial_metadata op, so do nothing.
   if (call_attempt->cancelled_) {
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner_,
-        "recv_initial_metadata_ready after retry dispatched");
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
+                            "recv_initial_metadata_ready after cancellation");
     return;
   }
   // Cancel per-attempt recv timer, if any.
@@ -1394,7 +1406,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
   // result of this recv_message op, so do nothing.
   if (call_attempt->cancelled_) {
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "recv_message_ready after retry dispatched");
+                            "recv_message_ready after cancellation");
     return;
   }
   // Cancel per-attempt recv timer, if any.
@@ -1588,6 +1600,15 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
             grpc_error_std_string(error).c_str());
   }
   call_attempt->completed_recv_trailing_metadata_ = true;
+  // If this attempt has been cancelled, then we're not going to use the
+  // result of this recv_message op, so do nothing.
+  if (call_attempt->cancelled_) {
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
+                            "recv_trailing_metadata_ready after cancellation");
+    return;
+  }
+  // Cancel per-attempt recv timer, if any.
+  call_attempt->MaybeCancelPerAttemptRecvTimer();
   // Get the call's status and check for server pushback metadata.
   grpc_status_code status = GRPC_STATUS_OK;
   grpc_mdelem* server_pushback_md = nullptr;
@@ -1603,8 +1624,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
         calld->chand_, calld, call_attempt, grpc_status_code_to_string(status),
         is_lb_drop);
   }
-  // Cancel per-attempt recv timer, if any.
-  call_attempt->MaybeCancelPerAttemptRecvTimer();
   // Check if we should retry.
   grpc_millis server_pushback_ms = -1;
   if (call_attempt->ShouldRetry(status, is_lb_drop, server_pushback_md,
@@ -1702,7 +1721,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(
   // the completion of this batch, so do nothing.
   if (call_attempt->cancelled_) {
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "on_complete after retry dispatched");
+                            "on_complete after cancellation");
     return;
   }
   // If we got an error and have not yet gotten the
