@@ -35,6 +35,7 @@ RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 ExpectedResult = xds_url_map_testcase.ExpectedResult
 XdsTestClient = client_app.XdsTestClient
+XdsUrlMapTestCase = xds_url_map_testcase.XdsUrlMapTestCase
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -46,7 +47,7 @@ _LENGTH_OF_RPC_SENDING_SEC = 10
 _ERROR_TOLERANCE = 0.1
 
 
-class _BaseXdsTimeOutTestCase(xds_url_map_testcase.XdsUrlMapTestCase):
+class _XdsTimeOutTestCommonMixin:
 
     @staticmethod
     def url_map_change(
@@ -83,7 +84,7 @@ class _BaseXdsTimeOutTestCase(xds_url_map_testcase.XdsUrlMapTestCase):
 # should always use Java server as backend.
 @absltest.skipUnless('java-server' in xds_k8s_flags.SERVER_IMAGE.value,
                      'Only Java server supports the rpc-behavior metadata.')
-class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
+class TestTimeoutInRouteRule(XdsUrlMapTestCase, _XdsTimeOutTestCommonMixin):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
@@ -110,7 +111,7 @@ class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
 
 @absltest.skipUnless('java-server' in xds_k8s_flags.SERVER_IMAGE.value,
                      'Only Java server supports the rpc-behavior metadata.')
-class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
+class TestTimeoutInApplication(XdsUrlMapTestCase, _XdsTimeOutTestCommonMixin):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
@@ -129,7 +130,7 @@ class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
             tolerance=_ERROR_TOLERANCE)
 
 
-class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
+class TestTimeoutNotExceeded(XdsUrlMapTestCase, _XdsTimeOutTestCommonMixin):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(

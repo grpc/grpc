@@ -193,10 +193,11 @@ class MetaXdsUrlMapTestCase(type):
         attrs['short_module_name'] = module_name.replace('_', '-')
         # Create the class and track
         new_class = type.__new__(cls, name, bases, attrs)
-        if not name.startswith('_'):
-            # Skip private classes
+        if name.startswith('Test'):
             cls._test_case_names.add(name)
             cls._test_case_classes.append(new_class)
+        else:
+            logging.info('Skipping test case class: %s', name)
         return new_class
 
 
@@ -211,7 +212,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=MetaXdsUrlMapTestCase):
     """
 
     @staticmethod
-    @abc.abstractstaticmethod
+    @abc.abstractmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -261,8 +262,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=MetaXdsUrlMapTestCase):
     @classmethod
     def path_matcher_name(cls):
         # Path matcher name must match r'(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)'
-        path_matcher_name = "%s-%s-pm" % (cls.short_module_name,
-                                          _split_camel(cls.__name__))
+        return "%s-%s-pm" % (cls.short_module_name, _split_camel(cls.__name__))
 
     @classmethod
     def setUpClass(cls):
@@ -270,12 +270,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=MetaXdsUrlMapTestCase):
             # Create the GCP resource once before the first test start
             GcpResourceManager().setup(cls.test_case_classes)
         cls.started_test_cases.add(cls.__name__)
-        # TODO(lidiz) technically, we should be able to create deployments for
-        # each individual test cases to allow them to be run concurrently.
-        # However, the framework uses workload identity to connect to TD. The
-        # workload identity requires IAM policy binding with (Kubernetes
-        # Namespace, Kubernetes Deployment, Kubernetes Workload). This demands
-        # admin permission.
+        # TODO(lidiz) concurrency is possible, pending multiple-instance change
         GcpResourceManager().test_client_runner.cleanup(force=True)
         # Sending both RPCs when starting.
         cls.test_client = GcpResourceManager().test_client_runner.run(

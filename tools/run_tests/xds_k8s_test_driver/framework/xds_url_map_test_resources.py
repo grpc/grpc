@@ -54,7 +54,7 @@ class _UrlMapChangeAggregator:
 
     def apply_change(self, test_case: 'XdsUrlMapTestCase') -> None:
         logging.info('Apply urlMap change for test case: %s.%s',
-                     test_case.module_name, test_case.__name__)
+                     test_case.short_module_name, test_case.__name__)
         url_map_parts = test_case.url_map_change(
             *self._get_test_case_url_map(test_case))
         self._set_test_case_url_map(*url_map_parts)
@@ -161,7 +161,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             network=self.network)
         self.test_server_alternative_runner = server_app.KubernetesServerRunner(
             self.k8s_namespace,
-            deployment_name=self.server_name,
+            deployment_name=self.server_name + '-alternative',
             image_name=self.server_image,
             gcp_project=self.project,
             gcp_api_manager=self.gcp_api_manager,
@@ -249,7 +249,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # TrafficDirectorManager, so we can fetch the URL in the most correct
         # way. However, the URL scheme won't change easily, and this is more
         # stable.
-        return '%s/projects/{%s}/global/backendServices/{%s}-{%s}' % (
+        return '%s/projects/%s/global/backendServices/%s-%s' % (
             _COMPUTE_V1_URL_PREFIX,
             xds_flags.PROJECT.value,
             xds_flags.NAMESPACE.value,
@@ -259,7 +259,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
     @staticmethod
     def alternative_backend_service() -> str:
         """Returns alternative backend service URL without GCP interaction."""
-        return '%s/projects/{%s}/global/backendServices/{%s}-{%s}' % (
+        return '%s/projects/%s/global/backendServices/%s-%s' % (
             _COMPUTE_V1_URL_PREFIX,
             xds_flags.PROJECT.value,
             xds_flags.NAMESPACE.value,
