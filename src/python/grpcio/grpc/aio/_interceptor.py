@@ -169,7 +169,7 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_stream_unary(
         self,
         continuation: Callable[[ClientCallDetails, RequestType],
-                               UnaryStreamCall],
+                               StreamUnaryCall],
         client_call_details: ClientCallDetails,
         request_iterator: RequestIterableType,
     ) -> StreamUnaryCall:
@@ -210,7 +210,7 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     async def intercept_stream_stream(
         self,
         continuation: Callable[[ClientCallDetails, RequestType],
-                               UnaryStreamCall],
+                               StreamStreamCall],
         client_call_details: ClientCallDetails,
         request_iterator: RequestIterableType,
     ) -> Union[ResponseIterableType, StreamStreamCall]:

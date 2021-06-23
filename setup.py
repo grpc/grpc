@@ -230,9 +230,6 @@ EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS = ' -std=c++11'
-    EXTRA_ENV_COMPILE_ARGS += ' \'-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"\\\"Python\\\"\"\''
-    EXTRA_ENV_COMPILE_ARGS += ' \'-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"\\\"{}\\\"\"\''.format(
-        _metadata.__version__)
     if 'win32' in sys.platform:
         if sys.version_info < (3, 5):
             EXTRA_ENV_COMPILE_ARGS += ' -D_hypot=hypot'
@@ -333,6 +330,22 @@ if BUILD_WITH_SYSTEM_RE2:
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
+
+
+# Quotes on Windows build macros are evaluated differently from other platforms,
+# so we must apply quotes asymmetrically in order to yield the proper result in
+# the binary.
+def _quote_build_define(argument):
+    if "win32" in sys.platform:
+        return '"\\\"{}\\\""'.format(argument)
+    return '"{}"'.format(argument)
+
+
+DEFINE_MACROS += (
+    ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", _quote_build_define("Python")),
+    ("GRPC_XDS_USER_AGENT_VERSION_SUFFIX",
+     _quote_build_define(_metadata.__version__)),
+)
 
 asm_key = ''
 if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
