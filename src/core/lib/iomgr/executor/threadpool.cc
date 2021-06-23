@@ -41,8 +41,7 @@ void ThreadPoolWorker::Run() {
       break;
     }
     // Runs closure
-    auto* closure =
-        static_cast<grpc_experimental_completion_queue_functor*>(elem);
+    auto* closure = static_cast<grpc_completion_queue_functor*>(elem);
     closure->functor_run(closure, closure->internal_success);
   }
 }
@@ -120,7 +119,7 @@ ThreadPool::~ThreadPool() {
   delete queue_;
 }
 
-void ThreadPool::Add(grpc_experimental_completion_queue_functor* closure) {
+void ThreadPool::Add(grpc_completion_queue_functor* closure) {
   AssertHasNotBeenShutDown();
   queue_->Put(static_cast<void*>(closure));
 }
