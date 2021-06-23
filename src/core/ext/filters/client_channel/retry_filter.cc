@@ -631,7 +631,6 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
             calld->chand_, calld, this, lb_call_.get());
   }
   // If per_attempt_recv_timeout is set, start a timer.
-  // TODO(roth): Don't do this if hedging is enabled.
   if (calld->retry_policy_ != nullptr &&
       calld->retry_policy_->per_attempt_recv_timeout().has_value()) {
     grpc_millis per_attempt_recv_deadline =
