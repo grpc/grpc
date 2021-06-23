@@ -205,10 +205,15 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
-    if (pem_key_cert_pairs.has_value()) {
-      pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+    absl::Status key_cert_match = privateKeyPublicKeyMatch(primary_key_path_, identity_certificate_path_);
+    if (key_cert_match.ok()){
+      if (pem_key_cert_pairs.has_value()) {
+        pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+      } else {
+        pem_key_cert_pairs_ = {};
+      }
     } else {
-      pem_key_cert_pairs_ = {};
+      identity_cert_changed = false;
     }
   }
   if (root_cert_changed || identity_cert_changed) {
@@ -252,14 +257,6 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     }
     GRPC_ERROR_UNREF(root_cert_error);
     GRPC_ERROR_UNREF(identity_cert_error);
-    absl::Status key_cert_match = privateKeyPublicKeyMatch();
-    grpc_error_handle cert_key_error = GRPC_ERROR_NONE;
-    if (!keyCertMatch.ok()){
-      cert_key_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "private key and certificate match failed");
-      GRPC_ERROR_REF(certKeyMatch);
-    }
-    GRPC_ERROR_UNREF(cert_key_error);
   }
 }
 
