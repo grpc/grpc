@@ -46,6 +46,8 @@ class TestBasicCsds(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
+        # Validate Endpoint Configs
+        self.assertNumEndpoints(xds_config, 1)
         # Validate Node
         self.assertEqual(self.test_client.ip,
                          xds_config['node']['metadata']['INSTANCE_IP'])
@@ -57,8 +59,6 @@ class TestBasicCsds(xds_url_map_testcase.XdsUrlMapTestCase):
         # Validate Clusters
         self.assertEqual(1, len(xds_config.cds))
         self.assertEqual('EDS', xds_config.cds[0]['type'])
-        # Validate Endpoint Configs
-        self.assertNumEndpoints(xds_config, 1)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(
