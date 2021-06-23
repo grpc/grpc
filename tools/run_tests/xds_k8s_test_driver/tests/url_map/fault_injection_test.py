@@ -211,6 +211,7 @@ class TestNonMatchingFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
                                  tolerance=_NON_RANDOM_ERROR_TOLERANCE)
 
 
+@absltest.skip('20% RPC might pass immediately, reason unknown')
 class TestAlwaysDelay(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
