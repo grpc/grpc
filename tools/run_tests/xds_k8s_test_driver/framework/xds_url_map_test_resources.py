@@ -79,7 +79,14 @@ class _UrlMapChangeAggregator:
 
 
 def _package_flags() -> Mapping[str, Any]:
-    """Automatically parse Abseil flags into a dictionary."""
+    """Automatically parse Abseil flags into a dictionary.
+
+    Abseil flag is only available after the Abseil app initialization. If we use
+    __new__ in our metaclass, the flag value parse will happen during the
+    initialization of modules, hence will fail. That's why we are using __call__
+    to inject metaclass magics, and the flag parsing will be delayed until the
+    class is about to be instantiated.
+    """
     res = {}
     for flag_module in [xds_flags, xds_k8s_flags]:
         for key, value in inspect.getmembers(flag_module):
@@ -100,8 +107,6 @@ class _MetaSingletonAndAbslFlags(type):
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             if cls._flags is None:
-                # Abseil flag is only available after the Abseil app
-                # initialization, around the first invocation of setUpClass.
                 cls._flags = _package_flags()
             obj = super().__call__(cls._flags, *args, **kwargs)
             cls._instances[cls] = obj

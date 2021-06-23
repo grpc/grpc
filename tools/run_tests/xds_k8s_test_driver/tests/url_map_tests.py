@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
 import os
 
-from absl import logging
 from absl.testing import absltest
 from framework import xds_url_map_testcase  # Needed for xDS flags
 

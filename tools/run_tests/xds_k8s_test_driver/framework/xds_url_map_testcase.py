@@ -42,7 +42,6 @@ _URL_MAP_PROPAGATE_TIMEOUT_SEC = 600
 _URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 2
 
 # Type aliases
-LoadBalancerAccumulatedStatsResponse = grpc_testing.LoadBalancerAccumulatedStatsResponse
 XdsTestClient = client_app.XdsTestClient
 GcpResourceManager = xds_url_map_test_resources.GcpResourceManager
 HostRule = xds_url_map_test_resources.HostRule
