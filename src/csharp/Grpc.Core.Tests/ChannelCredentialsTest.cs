@@ -31,9 +31,9 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void SecureCredentials_IsNonComposable()
+        public void SecureCredentials_IsComposable()
         {
-            Assert.IsFalse(ChannelCredentials.Secure.IsComposable);
+            Assert.IsTrue(ChannelCredentials.SecureSsl.IsComposable);
         }
 
         [Test]
@@ -59,8 +59,9 @@ namespace Grpc.Core.Tests
             var nativeCreds2 = creds.ToNativeCredentials();
             Assert.AreSame(nativeCreds1, nativeCreds2);
 
-            var nativeCreds3 = ChannelCredentials.Secure.ToNativeCredentials();
-            Assert.AreSame(nativeCreds1, nativeCreds3);
+            var nativeCreds3 = ChannelCredentials.SecureSsl.ToNativeCredentials();
+            var nativeCreds4 = ChannelCredentials.SecureSsl.ToNativeCredentials();
+            Assert.AreSame(nativeCreds3, nativeCreds4);
         }
     }
 }
