@@ -209,10 +209,12 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       if (key_cert_match.ok()){
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
       } else {
-        /*for a certificate-key mismatch, the update is considered unsuccessful
-        * Thus the identity certificate should not change
-        */
+        //for a certificate-key mismatch, the update is unsuccessful: identity certificate does not change
         identity_cert_changed = false;
+        gpr_log(
+          GPR_ERROR,
+          key_cert_match.ToString()
+        );
       }
     } else {
       pem_key_cert_pairs_ = {};
