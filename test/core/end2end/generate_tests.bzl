@@ -299,6 +299,9 @@ END2END_TESTS = {
         # See b/151617965
         short_name = "retry_non_retriable_status2",
     ),
+    "retry_per_attempt_recv_timeout": _test_options(
+        needs_client_channel = True,
+    ),
     "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
     "retry_recv_message": _test_options(needs_client_channel = True),
     "retry_recv_trailing_metadata_error": _test_options(
