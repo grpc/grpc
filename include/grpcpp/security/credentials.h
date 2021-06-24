@@ -60,6 +60,10 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds);
 }  // namespace experimental
 
+/// Builds XDS Credentials.
+std::shared_ptr<ChannelCredentials> XdsCredentials(
+    const std::shared_ptr<ChannelCredentials>& fallback_creds);
+
 /// A channel credentials object encapsulates all the state needed by a client
 /// to authenticate with a server for a given channel.
 /// It can make various assertions, e.g., about the client’s identity, role
@@ -80,7 +84,7 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   // AsSecureCredentials(). Once we are able to remove insecure builds from gRPC
   // (and also internal dependencies on the indirect method of creating a
   // channel through credentials), we would be able to remove this.
-  friend std::shared_ptr<ChannelCredentials> grpc::experimental::XdsCredentials(
+  friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
       const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;

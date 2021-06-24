@@ -27,6 +27,13 @@
  *  - some syscalls to be made directly
  */
 
+// [[deprecated]] attribute is only available since C++14
+#if __cplusplus >= 201402L
+#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
+#else
+#define GRPC_DEPRECATED(reason)
+#endif  // __cplusplus >= 201402L
+
 /*
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
  */

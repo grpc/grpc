@@ -19,7 +19,6 @@
 #include "src/cpp/server/secure_server_credentials.h"
 
 namespace grpc {
-namespace experimental {
 
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials) {
@@ -35,6 +34,13 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
   return std::make_shared<SecureServerCredentials>(
       grpc_xds_server_credentials_create(
           fallback_credentials->AsSecureServerCredentials()->c_creds()));
+}
+
+namespace experimental {
+
+std::shared_ptr<ServerCredentials> XdsServerCredentials(
+    const std::shared_ptr<ServerCredentials>& fallback_credentials) {
+  return grpc::XdsServerCredentials(fallback_credentials);
 }
 
 }  // namespace experimental

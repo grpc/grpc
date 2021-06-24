@@ -60,6 +60,10 @@ struct SslServerCredentialsOptions {
   grpc_ssl_client_certificate_request_type client_certificate_request;
 };
 
+/// Builds Xds ServerCredentials given fallback credentials
+std::shared_ptr<ServerCredentials> XdsServerCredentials(
+    const std::shared_ptr<ServerCredentials>& fallback_credentials);
+
 namespace experimental {
 /// Builds Xds ServerCredentials given fallback credentials
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
@@ -83,8 +87,7 @@ class ServerCredentials : private grpc::GrpcLibraryCodegen {
   // We need this friend declaration for access to Insecure() and
   // AsSecureServerCredentials(). When these two functions are no longer
   // necessary, this friend declaration can be removed too.
-  friend std::shared_ptr<ServerCredentials>
-  grpc::experimental::XdsServerCredentials(
+  friend std::shared_ptr<ServerCredentials> grpc::XdsServerCredentials(
       const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
   /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
