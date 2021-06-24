@@ -732,6 +732,23 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "promise",
+    srcs = [
+        "src/core/lib/promise/activity.cc",
+        "src/core/lib/promise/adaptor.h",
+        "src/core/lib/promise/detail/join.h",
+        "src/core/lib/promise/detail/promise_factory.h",
+        "src/core/lib/promise/detail/seq.h",
+        "src/core/lib/promise/detail/switch.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+        "absl/types:variant",
+        "absl/synchronization",
+        "absl/container:flat_hash_set",
+        "absl/container:inlined_vector",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/activity.h",
@@ -751,23 +768,6 @@ grpc_cc_library(
         "src/core/lib/promise/latch.h",
         "src/core/lib/promise/map.h",
         "src/core/lib/promise/visitor.h",
-    ],
-    srcs = [
-        "src/core/lib/promise/adaptor.h",
-        "src/core/lib/promise/activity.cc",
-        "src/core/lib/promise/detail/switch.h",
-        "src/core/lib/promise/detail/seq.h",
-        "src/core/lib/promise/detail/join.h",
-        "src/core/lib/promise/detail/promise_factory.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-        "absl/types:optional",
-        "absl/types:variant",
-        "absl/synchronization",
-	"absl/container:flat_hash_set",
-	"absl/container:inlined_vector",
     ],
 )
 

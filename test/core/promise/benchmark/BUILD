@@ -18,16 +18,20 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 grpc_cc_test(
     name = "competition",
-    srcs = ["competition.cc", "filter_stack.h", "filter_stack.cc"],
-    tags = [
-        "no_mac",
-        "no_windows",
+    srcs = [
+        "competition.cc",
+        "filter_stack.cc",
+        "filter_stack.h",
     ],
     external_deps = [
         "benchmark",
         "absl/synchronization",
     ],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [
         "//:promise",
-    ]
+    ],
 )
