@@ -2049,14 +2049,11 @@
     <file baseinstalldir="/" name="third_party/s2a_core/src/crypto/s2a_aead_constants.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/crypto/s2a_aead_crypter.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/crypto/s2a_aead_crypter.h" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/src/crypto/s2a_aead_crypter_test_util.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/src/crypto/s2a_aead_crypter_test_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/crypto/s2a_aead_crypter_util.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/crypto/s2a_aead_crypter_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/frame_protector/s2a_frame_protector.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_context.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_proxy.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_proxy_test_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_util.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/options/s2a_options.cc" role="src" />
@@ -2076,9 +2073,6 @@
     <file baseinstalldir="/" name="third_party/s2a_core/src/record_protocol/s2a_half_connection.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/record_protocol/s2a_ticket_sender.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/record_protocol/s2a_upb_ticket_sender.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/src/test_util/s2a_test_data.h" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/src/test_util/s2a_test_util.h" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/src/token_manager/fake_access_token_manager.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/token_manager/single_token_access_token_manager.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/token_manager/single_token_access_token_manager.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/third_party/wyhash/wyhash.h" role="src" />

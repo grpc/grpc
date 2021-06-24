@@ -1966,7 +1966,6 @@
         'third_party/s2a_core/src/crypto/chacha_poly_crypter_openssl.cc',
         'third_party/s2a_core/src/crypto/hkdf.cc',
         'third_party/s2a_core/src/crypto/s2a_aead_crypter.cc',
-        'third_party/s2a_core/src/crypto/s2a_aead_crypter_test_util.cc',
         'third_party/s2a_core/src/crypto/s2a_aead_crypter_util.cc',
         'third_party/s2a_core/src/frame_protector/s2a_frame_protector.cc',
         'third_party/s2a_core/src/handshaker/s2a_context.cc',
