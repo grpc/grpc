@@ -78,12 +78,12 @@ class ForEach {
 
     Poll<Result> operator()(ReaderNext& reader_next) {
       auto r = reader_next();
-      if (auto* p = r.get_ready()) {
+      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         if (p->has_value()) {
           auto action = self->action_factory_.Repeated(std::move(**p));
           return CallPoll<true>{self}(action);
         } else {
-          return ready(Done<Result>::Make());
+          return Done<Result>::Make();
         }
       }
       if (kSetState) {
@@ -94,7 +94,7 @@ class ForEach {
 
     Poll<Result> operator()(ActionPromise& promise) {
       auto r = promise();
-      if (auto* p = r.get_ready()) {
+      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         return FinishIteration(p, &self->reader_, CallPoll<true>{self});
       }
       if (kSetState) {
