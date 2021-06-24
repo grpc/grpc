@@ -303,10 +303,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         try:
             self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
         except Exception as e:
-            # Log the failure reason, since it might indicate different stages
-            # of control plane update. It could be handy for debugging in
-            # future.
-            logging.info('xDS config check failed: %s: %s', type(e), e)
+            # Log the exception for debugging purposes.
             if type(self._last_xds_config_exception) != type(e) or str(
                     self._last_xds_config_exception) != str(e):
                 # Suppress repetitive exception logs
@@ -316,6 +313,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         return
 
     def test_client_config(self):
+        self._test_client_config_failed = False
         self._last_xds_config_exception = None
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
@@ -325,6 +323,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             log_level=logging.INFO)
         try:
             retryer(self._fetch_and_check_xds_config)
+        except retryers.RetryError:
+            self._test_client_config_failed = True
         finally:
             logging.info(
                 'latest xDS config:\n%s',
@@ -332,6 +332,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
                     self._xds_json_config))
 
     def test_rpc_distribution(self):
+        if self._test_client_config_failed:
+            self.skipTest(
+                'invalid xDS config: skipping RPC distribution validation')
         self.rpc_distribution_validate(self.test_client)
 
     @staticmethod

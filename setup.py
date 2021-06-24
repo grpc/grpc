@@ -20,7 +20,6 @@ import setuptools
 # Monkey Patch the unix compiler to accept ASM
 # files used by boring SSL.
 from distutils.unixccompiler import UnixCCompiler
-
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
 
