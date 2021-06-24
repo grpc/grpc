@@ -1,4 +1,3 @@
-# Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,10 +23,6 @@ from google.protobuf import json_format
 from google.rpc import code_pb2
 from googleapiclient import discovery
 import googleapiclient.errors
-# Workaround: `grpc` must be imported before `google.protobuf.json_format`,
-# to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
-# TODO(sergiitk): Remove after #24897 is solved
-import grpc  # noqa pylint: disable=unused-import
 import tenacity
 import yaml
 

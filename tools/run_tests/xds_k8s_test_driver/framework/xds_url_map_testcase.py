@@ -327,7 +327,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             retryer(self._fetch_and_check_xds_config)
         finally:
             logging.info(
-                'latest xDS config: %s',
+                'latest xDS config:\n%s',
                 GcpResourceManager().td.compute.resource_pretty_format(
                     self._xds_json_config))
 
