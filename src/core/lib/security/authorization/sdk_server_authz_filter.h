@@ -19,6 +19,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-extern const grpc_channel_filter grpc_sdk_server_authz_filter;
+extern const grpc_channel_filter SdkServerAuthzFilter;
 
 #endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_SDK_SERVER_AUTHZ_FILTER_H
