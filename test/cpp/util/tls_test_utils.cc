@@ -22,11 +22,18 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+namespace {
+
+using ::grpc::experimental::ExternalCertificateVerifier;
+using ::grpc::experimental::TlsCustomVerificationCheckRequest;
+
+}  // namespace
+
 namespace grpc {
 namespace testing {
 
-bool SyncCertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
-                                     std::function<void(grpc::Status)> callback,
+bool SyncCertificateVerifier::Verify(TlsCustomVerificationCheckRequest*,
+                                     std::function<void(grpc::Status)>,
                                      grpc::Status* sync_status) {
   if (!success_) {
     *sync_status = grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
@@ -55,7 +62,7 @@ AsyncCertificateVerifier::~AsyncCertificateVerifier() {
 
 bool AsyncCertificateVerifier::Verify(
     TlsCustomVerificationCheckRequest* request,
-    std::function<void(grpc::Status)> callback, grpc::Status* sync_status) {
+    std::function<void(grpc::Status)> callback, grpc::Status*) {
   internal::MutexLock lock(&mu_);
   queue_.push_back(Request{request, std::move(callback), false});
   return false;  // Asynchronous call
