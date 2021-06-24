@@ -58,10 +58,10 @@ class TlsCustomVerificationCheckRequest {
 
   // TODO(ZhenLian): change the return type to absl::string_view if we wind up
   // being able to use absl in the C++ API before de-experimentalizing this API.
-  const std::string target_name() const;
-  const std::string peer_cert() const;
-  const std::string peer_cert_full_chain() const;
-  const std::string common_name() const;
+  std::string target_name() const;
+  std::string peer_cert() const;
+  std::string peer_cert_full_chain() const;
+  std::string common_name() const;
   std::vector<std::string> uri_names() const;
   std::vector<std::string> dns_names() const;
   std::vector<std::string> email_names() const;
@@ -82,7 +82,8 @@ class TlsCustomVerificationCheckRequest {
 // to an instance of that class.
 class CertificateVerifier {
  public:
-  CertificateVerifier(grpc_tls_certificate_verifier* v) : verifier_(v) {}
+  explicit CertificateVerifier(grpc_tls_certificate_verifier* v)
+      : verifier_(v) {}
 
   ~CertificateVerifier();
 
