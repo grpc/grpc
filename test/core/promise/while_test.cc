@@ -21,7 +21,7 @@ TEST(WhileTest, CountToFive) {
   int i = 0;
   While([&i]() {
     i++;
-    return ready(i < 5);
+    return i < 5;
   })();
   EXPECT_EQ(i, 5);
 }
@@ -30,18 +30,17 @@ TEST(WhileTest, CountToFiveWithResult) {
   int i = 0;
   auto j = While([&i]() -> Poll<absl::optional<int>> {
     i++;
-    return ready(i < 5 ? absl::optional<int>{} : absl::optional<int>{i});
+    return i < 5 ? absl::optional<int>{} : absl::optional<int>{i};
   })();
-  EXPECT_EQ(j, 5);
+  EXPECT_EQ(j, Poll<int>(5));
 }
 
 TEST(WhileTest, CountToFiveWithStatus) {
   int i = 0;
   EXPECT_TRUE(While([&i]() {
                 i++;
-                return ready(absl::StatusOr<bool>(i < 5));
+                return absl::StatusOr<bool>(i < 5);
               })()
-
                   .ok());
   EXPECT_EQ(i, 5);
 }
@@ -50,21 +49,19 @@ TEST(WhileTest, CountToFiveWithStatusAndResult) {
   int i = 0;
   EXPECT_EQ(*While([&i]() {
     i++;
-    return ready(absl::StatusOr<absl::optional<int>>(
-        i < 5 ? absl::optional<int>{} : absl::optional<int>{i}));
+    return absl::StatusOr<absl::optional<int>>(i < 5 ? absl::optional<int>{}
+                                                     : absl::optional<int>{i});
   })(),
             5);
 }
 
 TEST(WhileTest, Failure) {
-  EXPECT_FALSE(While([]() { return ready(absl::StatusOr<bool>()); })().ok());
+  EXPECT_FALSE(While([]() { return absl::StatusOr<bool>(); })().ok());
 }
 
 TEST(WhileTest, FailureWithResult) {
   EXPECT_FALSE(
-      While([]() { return ready(absl::StatusOr<absl::optional<int>>()); })()
-
-          .ok());
+      While([]() { return absl::StatusOr<absl::optional<int>>(); })().ok());
 }
 
 TEST(WhileTest, FactoryCountToFive) {
@@ -117,7 +114,6 @@ TEST(WhileTest, FactoryCountToFiveWithStatusAndResult) {
 TEST(WhileTest, FactoryFailure) {
   EXPECT_FALSE(
       While([]() { return []() { return ready(absl::StatusOr<bool>()); }; })()
-
           .ok());
 }
 
@@ -127,7 +123,6 @@ TEST(WhileTest, FactoryFailureWithResult) {
                    return ready(absl::StatusOr<absl::optional<int>>());
                  };
                })()
-
                    .ok());
 }
 

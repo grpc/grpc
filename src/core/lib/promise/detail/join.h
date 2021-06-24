@@ -19,6 +19,7 @@
 #include <utility>
 #include "absl/utility/utility.h"
 #include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -26,11 +27,12 @@ namespace promise_detail {
 
 template <typename Traits, typename F>
 union Fused {
-  explicit Fused(F f) : f(std::move(f)) {}
+  explicit Fused(F&& f) : f(std::forward<F>(f)) {}
+  explicit Fused(PromiseLike<F>&& f) : f(std::forward<PromiseLike<F>>(f)) {}
   ~Fused() {}
-  [[no_unique_address]] F f;
-  using Result = absl::remove_reference_t<typename Traits::template ResultType<
-      decltype(std::move(*absl::get_if<1>(f())))>>;
+  using Promise = PromiseLike<F>;
+  [[no_unique_address]] Promise f;
+  using Result = typename Traits::template ResultType<typename Promise::Result>;
   [[no_unique_address]] Result result;
 };
 
@@ -59,7 +61,7 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
   auto Run(Bits* bits, F finally) -> decltype(finally()) {
     if (!static_cast<bool>((*bits)[I])) {
       auto r = fused.f();
-      if (auto* p = r.get_ready()) {
+      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         return Traits::OnResult(
             std::move(*p), [this, bits, &finally](typename Fsd::Result result) {
               bits->set(I);
@@ -100,9 +102,7 @@ class Join {
     return static_cast<Joint<Traits, I, Fs...>*>(&joints_);
   }
 
-  using Tuple =
-      std::tuple<typename Traits::template ResultType<decltype(std::move(
-          *std::declval<Fs>()().get_ready()))>...>;
+  using Tuple = std::tuple<typename Fused<Traits, Fs>::Result...>;
 
   template <size_t... I>
   Tuple Finish(absl::index_sequence<I...>) {
@@ -125,7 +125,7 @@ class Join {
   Poll<Result> operator()() {
     return joints_.Run(&state_, [this]() -> Poll<Result> {
       if (state_.all()) {
-        return ready(Traits::Wrap(Finish(absl::make_index_sequence<N>())));
+        return Traits::Wrap(Finish(absl::make_index_sequence<N>()));
       } else {
         return Pending();
       }

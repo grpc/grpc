@@ -18,19 +18,18 @@
 namespace grpc_core {
 
 TEST(JoinTest, Join1) {
-  EXPECT_EQ(Join([] { return ready(3); })().take(), std::make_tuple(3));
+  EXPECT_EQ(Join([] { return 3; })(),
+            (Poll<std::tuple<int>>(std::make_tuple(3))));
 }
 
 TEST(JoinTest, Join2) {
-  EXPECT_EQ(Join([] { return ready(3); }, [] { return ready(4); })().take(),
-            std::make_tuple(3, 4));
+  EXPECT_EQ(Join([] { return 3; }, [] { return 4; })(),
+            (Poll<std::tuple<int, int>>(std::make_tuple(3, 4))));
 }
 
 TEST(JoinTest, Join3) {
-  EXPECT_EQ(Join([] { return ready(3); }, [] { return ready(4); },
-                 [] { return ready(5); })()
-                .take(),
-            std::make_tuple(3, 4, 5));
+  EXPECT_EQ(Join([] { return 3; }, [] { return 4; }, [] { return 5; })(),
+            (Poll<std::tuple<int, int, int>>(std::make_tuple(3, 4, 5))));
 }
 
 }  // namespace grpc_core

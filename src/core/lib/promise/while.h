@@ -36,7 +36,7 @@ struct Empty {};
 
 inline absl::optional<Poll<Empty>> Step(bool cont) {
   if (!cont) {
-    return ready(Empty{});
+    return Empty{};
   } else {
     return {};
   }
@@ -92,11 +92,11 @@ class While {
         promise_.emplace(factory_.Repeated());
       }
       auto promise_result = (*promise_)();
-      if (auto* p = promise_result.get_ready()) {
+      if (auto* p = absl::get_if<kPollReadyIdx>(&promise_result)) {
         promise_.reset();
         auto step_result = Step(std::move(*p));
         if (step_result.has_value()) {
-          return ready(std::move(*step_result));
+          return std::move(*step_result);
         }
         // Continue iteration.
       } else {

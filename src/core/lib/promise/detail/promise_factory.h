@@ -54,7 +54,7 @@ template <typename F>
 class PromiseLike<F, typename std::enable_if<PollTraits<
                          decltype(std::declval<F>()())>::is_poll()>::type> {
  private:
-  F f_;
+  [[no_unique_address]] F f_;
 
  public:
   explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
@@ -66,7 +66,7 @@ template <typename F>
 class PromiseLike<F, typename std::enable_if<!PollTraits<
                          decltype(std::declval<F>()())>::is_poll()>::type> {
  private:
-  F f_;
+  [[no_unique_address]] F f_;
 
  public:
   explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
@@ -139,8 +139,10 @@ class PromiseFactory<A, F,
  public:
   using Promise = PromiseLike<Curried>;
 
-  Promise Once(Arg arg) { return Promise(std::move(f_), std::move(arg)); }
-  Promise Repeated(Arg arg) { return Promise(f_, std::move(arg)); }
+  Promise Once(Arg arg) {
+    return Promise(Curried(std::move(f_), std::move(arg)));
+  }
+  Promise Repeated(Arg arg) { return Promise(Curried(f_, std::move(arg))); }
 
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
