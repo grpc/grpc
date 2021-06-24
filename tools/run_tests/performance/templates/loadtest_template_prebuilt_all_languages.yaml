@@ -57,7 +57,7 @@ spec:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            /executable/bin/worker \
+            /execute/bin/benchmark_worker \
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
@@ -168,7 +168,7 @@ spec:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            /executable/bin/worker \
+            /execute/bin/benchmark_worker \
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
