@@ -1083,10 +1083,12 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
@@ -1367,6 +1369,8 @@ LIBGRPC_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/endpoint_config.cc \
+    src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/slice_allocator.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/http/format_request.cc \
@@ -1380,6 +1384,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/dualstack_socket_posix.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_cfstream.cc \
+    src/core/lib/iomgr/endpoint_pair_event_engine.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
@@ -1391,6 +1396,14 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/event_engine/closure.cc \
+    src/core/lib/iomgr/event_engine/endpoint.cc \
+    src/core/lib/iomgr/event_engine/iomgr.cc \
+    src/core/lib/iomgr/event_engine/pollset.cc \
+    src/core/lib/iomgr/event_engine/resolved_address_internal.cc \
+    src/core/lib/iomgr/event_engine/resolver.cc \
+    src/core/lib/iomgr/event_engine/tcp.cc \
+    src/core/lib/iomgr/event_engine/timer.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -1470,6 +1483,8 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/matchers/matchers.cc \
+    src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
+    src/core/lib/security/authorization/evaluate_args.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -1597,7 +1612,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
     include/grpc/compression.h \
-    include/grpc/event_engine/channel_args.h \
+    include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/port.h \
     include/grpc/event_engine/slice_allocator.h \
@@ -1743,10 +1758,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
@@ -1840,6 +1857,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/endpoint_config.cc \
+    src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/slice_allocator.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/http/format_request.cc \
@@ -1852,6 +1871,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/dualstack_socket_posix.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_cfstream.cc \
+    src/core/lib/iomgr/endpoint_pair_event_engine.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
@@ -1863,6 +1883,14 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/event_engine/closure.cc \
+    src/core/lib/iomgr/event_engine/endpoint.cc \
+    src/core/lib/iomgr/event_engine/iomgr.cc \
+    src/core/lib/iomgr/event_engine/pollset.cc \
+    src/core/lib/iomgr/event_engine/resolved_address_internal.cc \
+    src/core/lib/iomgr/event_engine/resolver.cc \
+    src/core/lib/iomgr/event_engine/tcp.cc \
+    src/core/lib/iomgr/event_engine/timer.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -1941,6 +1969,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -1989,7 +2018,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
     include/grpc/compression.h \
-    include/grpc/event_engine/channel_args.h \
+    include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/port.h \
     include/grpc/event_engine/slice_allocator.h \
@@ -2863,6 +2892,8 @@ src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/authorization_policy_provider_vtable.cc: $(OPENSSL_DEP)
+src/core/lib/security/authorization/evaluate_args.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)

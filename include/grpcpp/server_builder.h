@@ -33,6 +33,7 @@
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
 
@@ -55,13 +56,7 @@ namespace internal {
 class ExternalConnectionAcceptorImpl;
 }  // namespace internal
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-namespace experimental {
-#endif
 class CallbackGenericService;
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-}  // namespace experimental
-#endif
 
 namespace experimental {
 // EXPERIMENTAL API:
@@ -269,20 +264,6 @@ class ServerBuilder {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    /// Set the allocator for creating and releasing callback server context.
-    /// Takes the owndership of the allocator.
-    ServerBuilder& SetContextAllocator(
-        std::unique_ptr<grpc::ContextAllocator> context_allocator);
-
-    /// Register a generic service that uses the callback API.
-    /// Matches requests with any :authority
-    /// This is mostly useful for writing generic gRPC Proxies where the exact
-    /// serialization format is unknown
-    ServerBuilder& RegisterCallbackGenericService(
-        grpc::experimental::CallbackGenericService* service);
-#endif
-
     enum class ExternalConnectionType {
       FROM_FD = 0  // in the form of a file descriptor
     };
@@ -295,11 +276,16 @@ class ServerBuilder {
     AddExternalConnectionAcceptor(ExternalConnectionType type,
                                   std::shared_ptr<ServerCredentials> creds);
 
+    /// Sets server authorization policy provider in
+    /// GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.
+    void SetAuthorizationPolicyProvider(
+        std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+            provider);
+
    private:
     ServerBuilder* builder_;
   };
 
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   /// Set the allocator for creating and releasing callback server context.
   /// Takes the owndership of the allocator.
   ServerBuilder& SetContextAllocator(
@@ -311,7 +297,6 @@ class ServerBuilder {
   /// serialization format is unknown
   ServerBuilder& RegisterCallbackGenericService(
       grpc::CallbackGenericService* service);
-#endif
 
   /// NOTE: The function experimental() is not stable public API. It is a view
   /// to the experimental components of this class. It may be changed or removed
@@ -403,12 +388,7 @@ class ServerBuilder {
   grpc_resource_quota* resource_quota_;
   grpc::AsyncGenericService* generic_service_{nullptr};
   std::unique_ptr<ContextAllocator> context_allocator_;
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   grpc::CallbackGenericService* callback_generic_service_{nullptr};
-#else
-  grpc::experimental::CallbackGenericService* callback_generic_service_{
-      nullptr};
-#endif
 
   struct {
     bool is_set;
@@ -425,6 +405,8 @@ class ServerBuilder {
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
   grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
+  std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+      authorization_provider_;
 };
 
 }  // namespace grpc
