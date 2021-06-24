@@ -238,6 +238,12 @@ static void on_read(void* arg, grpc_error_handle err) {
 
     grpc_set_socket_no_sigpipe_if_possible(fd);
 
+    err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_CONNECTION_USAGE,
+                                            sp->server->channel_args);
+    if (err != GRPC_ERROR_NONE) {
+      goto error;
+    }
+
     std::string addr_str = grpc_sockaddr_to_uri(&addr);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",

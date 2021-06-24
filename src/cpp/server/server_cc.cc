@@ -114,15 +114,6 @@ class UnimplementedAsyncRequestContext {
   GenericServerAsyncReaderWriter generic_stream_;
 };
 
-// TODO(vjpai): Just for this file, use some contents of the experimental
-// namespace here to make the code easier to read below. Remove this when
-// de-experimentalized fully.
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-using ::grpc::experimental::CallbackGenericService;
-using ::grpc::experimental::CallbackServerContext;
-using ::grpc::experimental::GenericCallbackServerContext;
-#endif
-
 }  // namespace
 
 ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
