@@ -225,6 +225,7 @@ from your dev environment. You need:
 4. Run tests with `--debug_use_port_forwarding` argument. The test driver 
    will automatically start and stop port forwarding using
    `kubectl` subprocesses. (experimental)
+5. Install additional dev packages: `pip install -r requirements-dev.txt`
 
 ### Setup test configuration
 
