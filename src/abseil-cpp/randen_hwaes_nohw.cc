@@ -20,6 +20,12 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace random_internal {
 
+// This module is a custome implementation of RandenHwAes forarding all ops
+// to RandenSlow. This is devised to address the issue where some build
+// targets (e.g. php) which cannot specify the compiler options to allow to
+// understand instrinsics used in the actual RandenHwAes implementation.
+// (https://github.com/grpc/grpc/issues/26478)
+
 void RandenHwAes::Generate(const void* keys, void* state_void) {
   return RandenSlow::Generate(keys, state_void);
 }
