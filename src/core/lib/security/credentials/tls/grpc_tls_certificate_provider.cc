@@ -203,15 +203,19 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
-    absl::Status key_cert_match = PrivateKeyAndCertificateMatch(primary_key_path_, identity_certificate_path_);
-    if (key_cert_match.ok()){
-      if (pem_key_cert_pairs.has_value()) {
+    if (pem_key_cert_pairs.has_value()) {
+      absl::Status key_cert_match = 
+          PrivateKeyAndCertificateMatch(pem_key_cert_pairs.private_key(), pem_key_cert_pairs.cert_chain());
+      if (key_cert_match.ok()){
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
       } else {
-        pem_key_cert_pairs_ = {};
+        /*for a certificate-key mismatch, the update is considered unsuccessful
+        * Thus the identity certificate should not change
+        */
+        identity_cert_changed = false;
       }
     } else {
-      identity_cert_changed = false;
+      pem_key_cert_pairs_ = {};
     }
   }
   if (root_cert_changed || identity_cert_changed) {
