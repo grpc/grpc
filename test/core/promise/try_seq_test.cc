@@ -22,17 +22,18 @@ TEST(PromiseTest, SucceedAndThen) {
                    [](int i) {
                      return [i]() { return absl::StatusOr<int>(i + 1); };
                    })(),
-            absl::StatusOr<int>(2));
+            Poll<absl::StatusOr<int>>(absl::StatusOr<int>(2)));
 }
 
 TEST(PromiseTest, SucceedAndThenChangeType) {
-  EXPECT_EQ(TrySeq([] { return absl::StatusOr<int>(42); },
-                   [](int i) {
-                     return [i]() {
-                       return absl::StatusOr<std::string>(std::to_string(i));
-                     };
-                   })(),
-            absl::StatusOr<std::string>("42"));
+  EXPECT_EQ(
+      TrySeq([] { return absl::StatusOr<int>(42); },
+             [](int i) {
+               return [i]() {
+                 return absl::StatusOr<std::string>(std::to_string(i));
+               };
+             })(),
+      Poll<absl::StatusOr<std::string>>(absl::StatusOr<std::string>("42")));
 }
 
 TEST(PromiseTest, FailAndThen) {
@@ -40,25 +41,26 @@ TEST(PromiseTest, FailAndThen) {
                    [](int i) {
                      return []() -> Poll<absl::StatusOr<double>> { abort(); };
                    })(),
-            absl::StatusOr<double>(absl::CancelledError()));
+            Poll<absl::StatusOr<double>>(
+                absl::StatusOr<double>(absl::CancelledError())));
 }
 
 TEST(PromiseTest, RawSucceedAndThen) {
   EXPECT_EQ(TrySeq([] { return absl::OkStatus(); },
                    [] { return []() { return absl::OkStatus(); }; })(),
-            absl::OkStatus());
+            Poll<absl::Status>(absl::OkStatus()));
 }
 
 TEST(PromiseTest, RawFailAndThen) {
   EXPECT_EQ(TrySeq([] { return absl::CancelledError(); },
                    []() { return []() -> Poll<absl::Status> { abort(); }; })(),
-            absl::CancelledError());
+            Poll<absl::Status>(absl::CancelledError()));
 }
 
 TEST(PromiseTest, RawSucceedAndThenValue) {
   EXPECT_EQ(TrySeq([] { return absl::OkStatus(); },
                    [] { return []() { return absl::StatusOr<int>(42); }; })(),
-            absl::StatusOr<int>(42));
+            Poll<absl::StatusOr<int>>(absl::StatusOr<int>(42)));
 }
 
 }  // namespace grpc_core

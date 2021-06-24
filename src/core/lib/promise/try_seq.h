@@ -51,7 +51,7 @@ struct TrySeqTraits {
   template <typename Result, typename PriorResult, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(PriorResult prior,
                                             RunNext run_next) {
-    if (!prior.ok()) return ready(Result(IntoStatus(&prior)));
+    if (!prior.ok()) return Result(IntoStatus(&prior));
     return run_next(std::move(prior));
   }
 };

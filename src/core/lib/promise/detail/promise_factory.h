@@ -58,7 +58,7 @@ class PromiseLike<F, typename std::enable_if<PollTraits<
 
  public:
   explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  using Result = typename decltype(f_())::Type;
+  using Result = typename PollTraits<decltype(f_())>::Type;
   Poll<Result> operator()() { return f_(); }
 };
 
@@ -216,8 +216,8 @@ class PromiseFactory<void, F,
  public:
   using Arg = void;
   using Promise = PromiseLike<decltype(std::declval<F>()())>;
-  Promise Once() { return f_(); }
-  Promise Repeated() { return f_(); }
+  Promise Once() { return Promise(f_()); }
+  Promise Repeated() { return Promise(f_()); }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
