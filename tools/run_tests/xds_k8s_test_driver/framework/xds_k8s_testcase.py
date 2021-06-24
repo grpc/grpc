@@ -17,10 +17,10 @@ import hashlib
 import logging
 import time
 from typing import Optional, Tuple
-from google.protobuf import json_format
 
 from absl import flags
 from absl.testing import absltest
+from google.protobuf import json_format
 
 from framework import xds_flags
 from framework import xds_k8s_flags
