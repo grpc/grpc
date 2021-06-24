@@ -56,7 +56,7 @@ class _BaseXdsTimeOutTestCase(XdsUrlMapTestCase):
             'matchRules': [{
                 'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
             }],
-            'service': GcpResourceManager.default_backend_service(),
+            'service': GcpResourceManager().default_backend_service(),
             'routeAction': {
                 'maxStreamDuration': {
                     'seconds': 3,

@@ -65,7 +65,7 @@ class TestExactMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                     'exactMatch': _TEST_METADATA_VALUE_EMPTY
                 }]
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -107,7 +107,7 @@ class TestPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                     'prefixMatch': _TEST_METADATA_VALUE_UNARY[:2]
                 }]
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -148,7 +148,7 @@ class TestSuffixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                     'suffixMatch': _TEST_METADATA_VALUE_EMPTY[-2:]
                 }]
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -189,7 +189,7 @@ class TestPresentMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                     'presentMatch': True
                 }]
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -232,7 +232,7 @@ class TestInvertMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                     'invertMatch': True
                 }]
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -279,7 +279,7 @@ class TestRangeMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                     }
                 }]
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -329,7 +329,7 @@ class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                                       _TEST_METADATA_VALUE_EMPTY[-2:])
                 }]
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }],
         return host_rule, path_matcher
 

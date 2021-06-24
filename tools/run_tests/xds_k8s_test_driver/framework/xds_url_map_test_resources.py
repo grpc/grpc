@@ -50,7 +50,7 @@ class _UrlMapChangeAggregator:
     def __init__(self, url_map_name: str):
         self._map = {
             "name": url_map_name,
-            "defaultService": GcpResourceManager.default_backend_service(),
+            "defaultService": GcpResourceManager().default_backend_service(),
             "hostRules": [],
             "pathMatchers": [],
         }
@@ -74,7 +74,7 @@ class _UrlMapChangeAggregator:
         }
         path_matcher = {
             "name": test_case.path_matcher_name(),
-            "defaultService": GcpResourceManager.default_backend_service(),
+            "defaultService": GcpResourceManager().default_backend_service(),
         }
         return host_rule, path_matcher
 

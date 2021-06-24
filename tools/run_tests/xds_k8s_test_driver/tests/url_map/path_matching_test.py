@@ -47,7 +47,7 @@ class TestFullPathMatchEmptyCall(xds_url_map_testcase.XdsUrlMapTestCase):
             'matchRules': [{
                 'fullPathMatch': '/grpc.testing.TestService/EmptyCall'
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -78,7 +78,7 @@ class TestFullPathMatchUnaryCall(xds_url_map_testcase.XdsUrlMapTestCase):
             'matchRules': [{
                 'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -114,7 +114,7 @@ class TestTwoRoutesAndPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                 'matchRules': [{
                     'prefixMatch': '/grpc.testing.TestService/Unary'
                 }],
-                'service': GcpResourceManager.default_backend_service()
+                'service': GcpResourceManager().default_backend_service()
             },
             {
                 'priority': 1,
@@ -122,7 +122,7 @@ class TestTwoRoutesAndPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                 'matchRules': [{
                     'fullPathMatch': '/grpc.testing.TestService/EmptyCall'
                 }],
-                'service': GcpResourceManager.alternative_backend_service()
+                'service': GcpResourceManager().alternative_backend_service()
             }
         ]
         return host_rule, path_matcher
@@ -161,7 +161,7 @@ class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                 'regexMatch':
                     '^\/.*\/UnaryCall$'  # Unary methods with any services.
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 
@@ -194,7 +194,7 @@ class TestCaseInsensitiveMatch(xds_url_map_testcase.XdsUrlMapTestCase):
                 'fullPathMatch': '/gRpC.tEsTinG.tEstseRvice/empTycaLl',
                 'ignoreCase': True,
             }],
-            'service': GcpResourceManager.alternative_backend_service()
+            'service': GcpResourceManager().alternative_backend_service()
         }]
         return host_rule, path_matcher
 

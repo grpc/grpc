@@ -61,7 +61,7 @@ def _build_fault_injection_route_rule(abort_percentage: int = 0,
         'matchRules': [{
             'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
         }],
-        'service': GcpResourceManager.default_backend_service(),
+        'service': GcpResourceManager().default_backend_service(),
         'routeAction': {
             'faultInjectionPolicy': {
                 'abort': {
