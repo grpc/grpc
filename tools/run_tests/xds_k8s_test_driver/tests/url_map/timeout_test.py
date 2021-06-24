@@ -156,4 +156,4 @@ def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
 
 
 if __name__ == '__main__':
-    absltest.main(failfast=True)
+    absltest.main()

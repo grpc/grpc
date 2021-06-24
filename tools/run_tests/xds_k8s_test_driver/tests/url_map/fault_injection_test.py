@@ -359,4 +359,4 @@ class TestAbortHalf(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 if __name__ == '__main__':
-    absltest.main(failfast=True)
+    absltest.main()

@@ -18,6 +18,7 @@ from dataclasses import dataclass
 import datetime
 import json
 import os
+import unittest
 import sys
 import time
 from typing import Any, Iterable, Mapping, Optional, Tuple, Union
@@ -312,8 +313,18 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             raise
         return
 
+    def run(self, result: unittest.TestResult = None) -> None:
+        """Abort this test case if CSDS check is failed.
+
+        This prevents the test runner to waste time on RPC distribution test,
+        and yields clearer signal.
+        """
+        if result.failures or result.errors:
+            logging.info('Aborting %s', self.__class__.__name__)
+        else:
+            super().run(result)
+
     def test_client_config(self):
-        self._test_client_config_failed = False
         self._last_xds_config_exception = None
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
@@ -323,8 +334,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             log_level=logging.INFO)
         try:
             retryer(self._fetch_and_check_xds_config)
-        except retryers.RetryError:
-            self._test_client_config_failed = True
         finally:
             logging.info(
                 'latest xDS config:\n%s',
@@ -332,9 +341,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
                     self._xds_json_config))
 
     def test_rpc_distribution(self):
-        if self._test_client_config_failed:
-            self.skipTest(
-                'invalid xDS config: skipping RPC distribution validation')
         self.rpc_distribution_validate(self.test_client)
 
     @staticmethod
