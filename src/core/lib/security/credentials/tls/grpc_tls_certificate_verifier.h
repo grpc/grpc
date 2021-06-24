@@ -39,7 +39,7 @@ struct grpc_tls_certificate_verifier
  public:
   grpc_tls_certificate_verifier() = default;
 
-  virtual ~grpc_tls_certificate_verifier() = default;
+  ~grpc_tls_certificate_verifier() override = default;
   // Verifies the specific request. It can be processed in sync or async mode.
   // If the caller want it to be processed asynchronously, return false
   // immediately, and at the end of the async operation, invoke the callback
@@ -64,7 +64,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
       grpc_tls_certificate_verifier_external* external_verifier)
       : external_verifier_(external_verifier) {}
 
-  ~ExternalCertificateVerifier() {
+  ~ExternalCertificateVerifier() override {
     if (external_verifier_->destruct != nullptr) {
       external_verifier_->destruct(external_verifier_->user_data);
     }

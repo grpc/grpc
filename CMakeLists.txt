@@ -15817,6 +15817,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/cpp/server/csds/csds.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds_end2end_test.cc
+    test/cpp/util/tls_test_utils.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )

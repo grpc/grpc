@@ -73,10 +73,11 @@ std::string GetFileContents(const char* path) {
   return credential;
 }
 
-int SyncExternalVerifier::Verify(
-    void* user_data, grpc_tls_custom_verification_check_request* request,
-    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
-    grpc_status_code* sync_status, char** sync_error_details) {
+int SyncExternalVerifier::Verify(void* user_data,
+                                 grpc_tls_custom_verification_check_request*,
+                                 grpc_tls_on_custom_verification_check_done_cb,
+                                 void*, grpc_status_code* sync_status,
+                                 char** sync_error_details) {
   auto* self = static_cast<SyncExternalVerifier*>(user_data);
   if (self->success_) {
     *sync_status = GRPC_STATUS_OK;
@@ -105,7 +106,7 @@ AsyncExternalVerifier::~AsyncExternalVerifier() {
 int AsyncExternalVerifier::Verify(
     void* user_data, grpc_tls_custom_verification_check_request* request,
     grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
-    grpc_status_code* sync_status, char** sync_error_details) {
+    grpc_status_code*, char**) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
   // Add request to queue to be picked up by worker thread.
   MutexLock lock(&self->mu_);

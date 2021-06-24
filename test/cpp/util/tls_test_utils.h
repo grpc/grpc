@@ -25,48 +25,43 @@
 
 #include "src/core/lib/gprpp/thd.h"
 
-namespace {
-
-using ::grpc::experimental::CertificateVerifier;
-using ::grpc::experimental::ExternalCertificateVerifier;
-using ::grpc::experimental::HostNameCertificateVerifier;
-using ::grpc::experimental::TlsCustomVerificationCheckRequest;
-
-}  // namespace
-
 namespace grpc {
 namespace testing {
 
-class SyncCertificateVerifier : public ExternalCertificateVerifier {
+class SyncCertificateVerifier
+    : public ::grpc::experimental::ExternalCertificateVerifier {
  public:
   explicit SyncCertificateVerifier(bool success) : success_(success) {}
 
-  bool Verify(TlsCustomVerificationCheckRequest* request,
+  bool Verify(::grpc::experimental::TlsCustomVerificationCheckRequest* request,
               std::function<void(grpc::Status)> callback,
               grpc::Status* sync_status) override;
 
-  void Cancel(TlsCustomVerificationCheckRequest* request) override {}
+  void Cancel(
+      ::grpc::experimental::TlsCustomVerificationCheckRequest*) override {}
 
  private:
   bool success_ = false;
 };
 
-class AsyncCertificateVerifier : public ExternalCertificateVerifier {
+class AsyncCertificateVerifier
+    : public ::grpc::experimental::ExternalCertificateVerifier {
  public:
   explicit AsyncCertificateVerifier(bool success);
 
-  ~AsyncCertificateVerifier();
+  ~AsyncCertificateVerifier() override;
 
-  bool Verify(TlsCustomVerificationCheckRequest* request,
+  bool Verify(::grpc::experimental::TlsCustomVerificationCheckRequest* request,
               std::function<void(grpc::Status)> callback,
               grpc::Status* sync_status) override;
 
-  void Cancel(TlsCustomVerificationCheckRequest* request) override {}
+  void Cancel(
+      ::grpc::experimental::TlsCustomVerificationCheckRequest*) override {}
 
  private:
   // A request to pass to the worker thread.
   struct Request {
-    TlsCustomVerificationCheckRequest* request;
+    ::grpc::experimental::TlsCustomVerificationCheckRequest* request;
     std::function<void(grpc::Status)> callback;
     bool shutdown;  // If true, thread will exit.
   };
