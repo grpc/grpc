@@ -15,13 +15,16 @@
 import os
 
 from absl.testing import absltest
+
 from framework import xds_url_map_testcase  # Needed for xDS flags
 
-_TEST_CASE_FOLDER = os.path.join(os.path.dirname(__file__), 'url_map')
+_TEST_CASE_FOLDER = os.path.dirname(__file__)
 
 
 def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
-    return loader.discover(_TEST_CASE_FOLDER, pattern='*_test.py')
+    return loader.discover(
+        _TEST_CASE_FOLDER,
+        pattern='*' + xds_url_map_testcase.URL_MAP_TESTCASE_FILE_SUFFIX)
 
 
 if __name__ == '__main__':

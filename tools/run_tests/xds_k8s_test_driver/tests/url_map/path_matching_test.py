@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import json
-import sys
 from typing import Tuple
 
 from absl import flags
@@ -21,7 +19,6 @@ from absl.testing import absltest
 
 from framework import xds_url_map_testcase
 from framework.test_app import client_app
-from google.protobuf import json_format
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule

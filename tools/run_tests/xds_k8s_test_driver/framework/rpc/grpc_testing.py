@@ -16,13 +16,13 @@ This contains helpers for gRPC services defined in
 https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
 """
 import logging
-from typing import Optional, Iterable, Tuple
+from typing import Iterable, Optional, Tuple
 
 import grpc
 
 import framework.rpc
-from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 # Type aliases
 _LoadBalancerStatsRequest = messages_pb2.LoadBalancerStatsRequest

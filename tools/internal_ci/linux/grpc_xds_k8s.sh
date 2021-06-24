@@ -132,9 +132,6 @@ run_test() {
 main() {
   local script_dir
   script_dir="$(dirname "$0")"
-  # [DO-NOT-MERGE] Test-only
-  export TEST_DRIVER_REPO_OWNER=lidizheng
-  export TEST_DRIVER_BRANCH=port-tests
   # shellcheck source=tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh
   source "${script_dir}/grpc_xds_k8s_install_test_driver.sh"
   set -x
@@ -146,13 +143,11 @@ main() {
   build_docker_images_if_needed
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
-  # [DO-NOT-MERGE] Test-only
-  # run_test baseline_test
-  # run_test security_test
-  run_test url_map_tests \
+  run_test baseline_test
+  run_test security_test
+  run_test url_map \
     --namespace=interop-psm-url-map \
     --server_xds_port=8848 \
-    --gcp_service_account=interop-psm-url-map-sa@grpc-testing.iam.gserviceaccount.com \
     --debug_use_port_forwarding
 }
 

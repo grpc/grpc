@@ -84,7 +84,7 @@ def constant_retryer(*,
     if attempts > 0:
         stops.append(_stop_after_attempt(attempts))
     if timeout is not None:
-        stops.append(_stop_after_delay.total_seconds())
+        stops.append(_stop_after_delay(timeout.total_seconds()))
 
     return Retrying(retry=_retry_on_exceptions(retry_on_exceptions),
                     wait=_wait_fixed(wait_fixed.total_seconds()),

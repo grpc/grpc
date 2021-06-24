@@ -217,7 +217,7 @@ class IamV1(gcp.api.GcpProjectApiResource):
         response: Dict[str, Any] = self._service_accounts.get(
             name=self.service_account_resource_name(account)).execute()
         logger.debug('Loaded Service Account:\n%s',
-                     self._resource_pretty_format(response))
+                     self.resource_pretty_format(response))
         return ServiceAccount.from_response(response)
 
     def get_service_account_iam_policy(self, account: str) -> Policy:
@@ -225,7 +225,7 @@ class IamV1(gcp.api.GcpProjectApiResource):
             resource=self.service_account_resource_name(account),
             options_requestedPolicyVersion=self.POLICY_VERSION).execute()
         logger.debug('Loaded Service Account Policy:\n%s',
-                     self._resource_pretty_format(response))
+                     self.resource_pretty_format(response))
         return Policy.from_response(response)
 
     def set_service_account_iam_policy(self, account: str,
@@ -236,7 +236,7 @@ class IamV1(gcp.api.GcpProjectApiResource):
         """
         body = {'policy': policy.as_dict()}
         logger.debug('Updating Service Account %s policy:\n%s', account,
-                     self._resource_pretty_format(body))
+                     self.resource_pretty_format(body))
         try:
             response: Dict[str, Any] = self._service_accounts.setIamPolicy(
                 resource=self.service_account_resource_name(account),

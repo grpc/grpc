@@ -14,19 +14,23 @@
 """A test framework built for urlMap related xDS test cases."""
 
 import abc
+from dataclasses import dataclass
+import datetime
 import json
 import os
 import sys
 import time
-from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Optional, Tuple, Union
 
-import grpc
-from absl import flags, logging
+from absl import flags
+from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
+import grpc
 
-from framework import xds_k8s_testcase, xds_url_map_test_resources
+from framework import xds_k8s_testcase
+from framework import xds_url_map_test_resources
+from framework.helpers import retryers
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
 
@@ -40,6 +44,7 @@ QPS = flags.DEFINE_integer('qps', default=25, help='The QPS client is sending')
 # Test configs
 _URL_MAP_PROPAGATE_TIMEOUT_SEC = 600
 _URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 2
+URL_MAP_TESTCASE_FILE_SUFFIX = '_test.py'
 
 # Type aliases
 XdsTestClient = client_app.XdsTestClient
@@ -187,8 +192,8 @@ class _MetaXdsUrlMapTestCase(type):
         # Handle the test name reflection
         module_name = os.path.split(
             sys.modules[attrs['__module__']].__file__)[-1]
-        if module_name.endswith('_test.py'):
-            module_name = module_name.replace('_test.py', '')
+        if module_name.endswith(URL_MAP_TESTCASE_FILE_SUFFIX):
+            module_name = module_name.replace(URL_MAP_TESTCASE_FILE_SUFFIX, '')
         attrs['short_module_name'] = module_name.replace('_', '-')
         # Create the class and track
         new_class = type.__new__(cls, name, bases, attrs)
@@ -196,7 +201,7 @@ class _MetaXdsUrlMapTestCase(type):
             cls._test_case_names.add(name)
             cls._test_case_classes.append(new_class)
         else:
-            logging.info('Skipping test case class: %s', name)
+            logging.debug('Skipping test case class: %s', name)
         return new_class
 
 
@@ -265,7 +270,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def setUpClass(cls):
-        if len(cls.started_test_cases) == 0:
+        if not cls.started_test_cases:
             # Create the GCP resource once before the first test start
             GcpResourceManager().setup(cls.test_case_classes)
         cls.started_test_cases.add(cls.__name__)
@@ -284,53 +289,47 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         cls.finished_test_cases.add(cls.__name__)
         if cls.finished_test_cases == cls.test_case_names:
             # Tear down the GCP resource after all tests finished
-            GcpResourceManager().tear_down()
+            GcpResourceManager().cleanup()
+
+    def _fetch_and_check_xds_config(self):
+        # Cleanup state for this attempt
+        self._xds_json_config = None
+        # Fetch client config
+        config = self.test_client.csds.fetch_client_status(
+            log_level=logging.INFO)
+        self.assertIsNotNone(config)
+        # Found client config, test it.
+        self._xds_json_config = json_format.MessageToDict(config)
+        try:
+            self.xds_config_validate(DumpedXdsConfig(self._xds_json_config))
+        except Exception as e:
+            # Log the failure reason, since it might indicate different stages
+            # of control plane update. It could be handy for debugging in
+            # future.
+            logging.info('xDS config check failed: %s: %s', type(e), e)
+            if type(self._last_xds_config_exception) != type(e) or str(
+                    self._last_xds_config_exception) != str(e):
+                # Suppress repetitive exception logs
+                logging.exception(e)
+                self._last_xds_config_exception = e
+            raise
+        return
 
     def test_client_config(self):
-        """Continuously check if the latest client config is valid yet."""
-        config = None
-        json_config = None
-        last_exception = None
-        deadline = time.time() + _URL_MAP_PROPAGATE_TIMEOUT_SEC
-        while time.time() < deadline:
-            try:
-                config = self.test_client.csds.fetch_client_status(
-                    log_level=logging.INFO)
-                if config is None:
-                    # Client config is empty, skip this run
-                    json_config = None
-                else:
-                    # Found client config, testing it.
-                    json_config = json_format.MessageToDict(config)
-                    try:
-                        self.xds_config_validate(DumpedXdsConfig(json_config))
-                    except Exception as e:
-                        # It's okay to fail, the xDS config might be
-                        # incomplete/obsolete during the 600s time frame.
-                        logging.info('xDS config check failed: %s: %s', type(e),
-                                     e)
-                        if type(last_exception) != type(e) or str(
-                                last_exception) != str(e):
-                            # Suppress repetitive exception logs
-                            logging.exception(e)
-                            last_exception = e
-                    else:
-                        # No exception raised, test PASSED!
-                        logging.info('valid xDS config: %s',
-                                     json.dumps(json_config, indent=2))
-                        return
-                # Wait a while until next attempt.
-                time.sleep(_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC)
-            except KeyboardInterrupt:
-                # For active development, this clause allow developer to view
-                # the failing xDS config quicker.
-                logging.info('latest xDS config: %s',
-                             json.dumps(json_config, indent=2))
-                raise
-        # Test FAILED!
-        raise RuntimeError(
-            'failed to receive valid xDS config within %s seconds, latest: %s' %
-            (_URL_MAP_PROPAGATE_TIMEOUT_SEC, json.dumps(json_config, indent=2)))
+        self._last_xds_config_exception = None
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(
+                seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC),
+            timeout=datetime.timedelta(seconds=_URL_MAP_PROPAGATE_TIMEOUT_SEC),
+            logger=logging,
+            log_level=logging.INFO)
+        try:
+            retryer(self._fetch_and_check_xds_config)
+        finally:
+            logging.info(
+                'latest xDS config: %s',
+                GcpResourceManager().td.compute.resource_pretty_format(
+                    self._xds_json_config))
 
     def test_rpc_distribution(self):
         self.rpc_distribution_validate(self.test_client)
@@ -354,8 +353,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         return RpcDistributionStats(json_lb_stats)
 
     def assertNumEndpoints(self, xds_config: DumpedXdsConfig, k: int) -> None:
-        self.assertEqual(
-            k, len(xds_config.endpoints),
+        self.assertLen(
+            xds_config.endpoints, k,
             f'insufficient endpoints in EDS: want={k} seen={xds_config.endpoints}'
         )
 
@@ -373,22 +372,32 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         logging.info(
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
             test_client.ip, after_stats)
+
         # Validate the diff
-        expected_total = length * QPS.value
         for expected_result in expected:
             rpc = expected_result.rpc_type
             status = expected_result.status_code.value[0]
-            seen = after_stats.stats_per_method.get(rpc, {}).result.get(
-                status, 0) - before_stats.stats_per_method.get(
-                    rpc, {}).result.get(status, 0)
-            total = sum(x[1]
-                        for x in after_stats.stats_per_method.get(
-                            rpc, {}).result.items()) - sum(
-                                x[1] for x in before_stats.stats_per_method.get(
-                                    rpc, {}).result.items())
+            # Compute observation
+            seen_after = after_stats.stats_per_method.get(rpc, {}).result.get(
+                status, 0)
+            seen_before = before_stats.stats_per_method.get(rpc, {}).result.get(
+                status, 0)
+            seen = seen_after - seen_before
+            # Compute total number of RPC started
+            stats_per_method_after = after_stats.stats_per_method.get(
+                rpc, {}).result.items()
+            total_after = sum(
+                x[1] for x in stats_per_method_after)  # (status_code, count)
+            stats_per_method_before = before_stats.stats_per_method.get(
+                rpc, {}).result.items()
+            total_before = sum(
+                x[1] for x in stats_per_method_before)  # (status_code, count)
+            total = total_after - total_before
+            # Compute and validate the number
             want = total * expected_result.ratio
+            diff_ratio = abs(seen - want) / total
             self.assertLessEqual(
-                abs(seen - want) / total, tolerance,
+                diff_ratio, tolerance,
                 'Expect rpc [%s] to return [%s] at %.2f ratio: seen=%d want=%d total=%d diff_ratio=%.4f > %.2f'
                 % (rpc, expected_result.status_code, expected_result.ratio,
-                   seen, want, total, abs(seen - want) / total, tolerance))
+                   seen, want, total, diff_ratio, tolerance))

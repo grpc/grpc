@@ -15,12 +15,8 @@ import abc
 import contextlib
 import functools
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
-# Workaround: `grpc` must be imported before `google.protobuf.json_format`,
-# to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
-# TODO(sergiitk): Remove after #24897 is solved
-import grpc  # noqa pylint: disable=unused-import
 from absl import flags
 from google.cloud import secretmanager_v1
 from google.longrunning import operations_pb2
@@ -28,6 +24,10 @@ from google.protobuf import json_format
 from google.rpc import code_pb2
 from googleapiclient import discovery
 import googleapiclient.errors
+# Workaround: `grpc` must be imported before `google.protobuf.json_format`,
+# to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
+# TODO(sergiitk): Remove after #24897 is solved
+import grpc  # noqa pylint: disable=unused-import
 import tenacity
 import yaml
 
@@ -245,7 +245,7 @@ class GcpProjectApiResource:
         return retryer(operation_request.execute)
 
     @staticmethod
-    def _resource_pretty_format(body: dict) -> str:
+    def resource_pretty_format(body: dict) -> str:
         """Return a string with pretty-printed resource body."""
         return yaml.dump(body, explicit_start=True, explicit_end=True)
 
@@ -264,7 +264,7 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
     def _create_resource(self, collection: discovery.Resource, body: dict,
                          **kwargs):
         logger.info("Creating %s resource:\n%s", self.api_name,
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         create_req = collection.create(parent=self.parent(),
                                        body=body,
                                        **kwargs)
@@ -283,7 +283,7 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
     def _get_resource(self, collection: discovery.Resource, full_name):
         resource = collection.get(name=full_name).execute()
         logger.info('Loaded %s:\n%s', full_name,
-                    self._resource_pretty_format(resource))
+                    self.resource_pretty_format(resource))
         return resource
 
     def _delete_resource(self, collection: discovery.Resource,

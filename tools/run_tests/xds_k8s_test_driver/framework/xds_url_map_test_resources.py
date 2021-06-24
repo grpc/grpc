@@ -14,13 +14,19 @@
 """A test framework built for urlMap related xDS test cases."""
 
 import inspect
+import functools
 from typing import Any, Iterable, List, Mapping, Tuple
 
-from absl import flags, logging
+from absl import flags
+from absl import logging
 
-from framework import xds_flags, xds_k8s_flags
-from framework.infrastructure import gcp, k8s, traffic_director
-from framework.test_app import client_app, server_app
+from framework import xds_flags
+from framework import xds_k8s_flags
+from framework.infrastructure import gcp
+from framework.infrastructure import k8s
+from framework.infrastructure import traffic_director
+from framework.test_app import client_app
+from framework.test_app import server_app
 
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
@@ -176,6 +182,12 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             reuse_namespace=True)
         logging.info('Strategy of GCP resources management: %s', self.strategy)
 
+    def _pre_cleanup(self):
+        # Cleanup existing debris
+        logging.info('GcpResourceManager: pre clean-up')
+        self.td.cleanup(force=True)
+        self.test_client_runner.delete_namespace()
+
     def setup(self, test_case_classes: 'Iterable[XdsUrlMapTestCase]') -> None:
         if self.strategy not in ['create', 'keep']:
             logging.info('GcpResourceManager: skipping setup for strategy [%s]',
@@ -189,10 +201,8 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         for test_case_class in test_case_classes:
             aggregator.apply_change(test_case_class)
         final_url_map = aggregator.get_map()
-        # Cleanup existing debris
-        logging.info('GcpResourceManager: pre clean-up')
-        self.td.cleanup(force=True)
-        self.test_client_runner.delete_namespace()
+        # Clean up debris from previous runs
+        self._pre_cleanup()
         # Start creating GCP resources
         logging.info('GcpResourceManager: start setup')
         # Firewall
@@ -212,12 +222,10 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         self.td.create_forwarding_rule(self.server_xds_port)
         # Kubernetes Test Server
         self.test_server_runner.run(
-            replica_count=1,
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port)
         # Kubernetes Test Server Alternative
         self.test_server_alternative_runner.run(
-            replica_count=1,
             test_port=self.server_port,
             maintenance_port=self.server_maintenance_port)
         # Add backend to default backend service
@@ -233,7 +241,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         self.td.wait_for_backends_healthy_status()
         self.td.wait_for_alternative_backends_healthy_status()
 
-    def tear_down(self) -> None:
+    def cleanup(self) -> None:
         if self.strategy not in ['create']:
             logging.info(
                 'GcpResourceManager: skipping tear down for strategy [%s]',
@@ -250,27 +258,14 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             self.test_server_alternative_runner.cleanup(force=True,
                                                         force_namespace=True)
 
-    @staticmethod
-    def default_backend_service() -> str:
-        """Returns default backend service URL without GCP interaction."""
-        # NOTE(lidiz) ideally, we should add an get_backend_service method to
-        # TrafficDirectorManager, so we can fetch the URL in the most correct
-        # way. However, the URL scheme won't change easily, and this is more
-        # stable.
-        return '%s/projects/%s/global/backendServices/%s-%s' % (
-            _COMPUTE_V1_URL_PREFIX,
-            xds_flags.PROJECT.value,
-            xds_flags.NAMESPACE.value,
-            traffic_director.TrafficDirectorManager.BACKEND_SERVICE_NAME,
-        )
+    @functools.lru_cache(None)
+    def default_backend_service(self) -> str:
+        """Returns default backend service URL."""
+        self.td.load_backend_service()
+        return self.td.backend_service.url
 
-    @staticmethod
-    def alternative_backend_service() -> str:
-        """Returns alternative backend service URL without GCP interaction."""
-        return '%s/projects/%s/global/backendServices/%s-%s' % (
-            _COMPUTE_V1_URL_PREFIX,
-            xds_flags.PROJECT.value,
-            xds_flags.NAMESPACE.value,
-            traffic_director.TrafficDirectorManager.
-            ALTERNATIVE_BACKEND_SERVICE_NAME,
-        )
+    @functools.lru_cache(None)
+    def alternative_backend_service(self) -> str:
+        """Returns alternative backend service URL."""
+        self.td.load_alternative_backend_service()
+        return self.td.alternative_backend_service.url

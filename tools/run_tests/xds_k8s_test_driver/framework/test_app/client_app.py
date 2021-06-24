@@ -22,10 +22,13 @@ import functools
 import logging
 from typing import Iterable, Optional, Tuple
 
-import framework.rpc
 from framework.helpers import retryers
-from framework.infrastructure import gcp, k8s
-from framework.rpc import grpc_channelz, grpc_csds, grpc_testing
+from framework.infrastructure import gcp
+from framework.infrastructure import k8s
+import framework.rpc
+from framework.rpc import grpc_channelz
+from framework.rpc import grpc_csds
+from framework.rpc import grpc_testing
 from framework.test_app import base_runner
 
 logger = logging.getLogger(__name__)

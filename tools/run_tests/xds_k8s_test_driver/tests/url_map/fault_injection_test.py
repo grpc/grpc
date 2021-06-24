@@ -11,21 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import abc
-import collections
-import json
 import logging
-import sys
 import time
-from typing import Iterable, Tuple
+from typing import Tuple
 
-import grpc
 from absl import flags
 from absl.testing import absltest
+import grpc
+
 from framework import xds_url_map_testcase
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
-from google.protobuf import json_format
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule
