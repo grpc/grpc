@@ -120,7 +120,10 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                               const grpc_channel_args* args,
                               grpc_tcp_server** server) {
   ChannelArgsEndpointConfig endpoint_config(args);
-  grpc_resource_quota* rq = grpc_resource_quota_from_channel_args(args);
+
+  grpc_resource_quota* rq = args == nullptr
+                                ? grpc_resource_quota_create(nullptr)
+                                : grpc_resource_quota_from_channel_args(args);
   if (rq == nullptr) {
     rq = grpc_resource_quota_create(nullptr);
   }
