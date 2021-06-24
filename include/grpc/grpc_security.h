@@ -938,7 +938,7 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
  * is always available inside schedule() or cancel() call, and will destroy the
  * object at the end of custom verification.
  */
-struct grpc_tls_custom_verification_check_request {
+typedef struct grpc_tls_custom_verification_check_request {
   /* The target name of the server when the client initiates the connection. */
   /* This field will be nullptr if on the server side. */
   const char* target_name;
@@ -966,7 +966,7 @@ struct grpc_tls_custom_verification_check_request {
      * TODO(ZhenLian): Consider fixing this in the future. */
     const char* peer_cert_full_chain;
   } peer_info;
-};
+} grpc_tls_custom_verification_check_request;
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -994,7 +994,7 @@ typedef struct grpc_tls_certificate_verifier grpc_tls_certificate_verifier;
  * A struct containing all the necessary functions a custom external verifier
  * needs to implement to be able to be converted to an internal verifier.
  */
-struct grpc_tls_certificate_verifier_external {
+typedef struct grpc_tls_certificate_verifier_external {
   void* user_data;
   /**
    * A function pointer containing the verification logic that will be
@@ -1069,7 +1069,7 @@ struct grpc_tls_certificate_verifier_external {
    *            can be retrieved later here.
    */
   void (*destruct)(void* user_data);
-};
+} grpc_tls_certificate_verifier_external;
 
 /**
  * EXPERIMENTAL API - Subject to change

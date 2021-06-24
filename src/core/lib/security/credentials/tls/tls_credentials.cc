@@ -48,7 +48,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     gpr_log(GPR_INFO,
             "Client's credentials options should not set cert_request_type.");
   }
-  if (!is_client && options->verify_server_cert() != true) {
+  if (!is_client && !options->verify_server_cert()) {
     gpr_log(GPR_INFO,
             "Server's credentials options should not set verify_server_cert.");
   }
@@ -56,7 +56,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
   if (is_client && options->certificate_verifier() == nullptr) {
     // If no verifier is specified on the client side, use the hostname verifier
     // as default. Users who want to bypass all the verifier check should
-    // implement a dummy external verifier instead.
+    // implement an external verifier instead.
     gpr_log(GPR_INFO,
             "No verifier specified on the client side. Using default hostname "
             "verifier");

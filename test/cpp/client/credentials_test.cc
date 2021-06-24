@@ -45,12 +45,10 @@ constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
-using ::grpc::experimental::CertificateVerifier;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::HostNameCertificateVerifier;
 using ::grpc::experimental::StaticDataCertificateProvider;
-using ::grpc::experimental::TlsCustomVerificationCheckRequest;
 
 }  // namespace
 

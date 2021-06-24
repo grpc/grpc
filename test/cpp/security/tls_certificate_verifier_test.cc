@@ -25,7 +25,6 @@
 
 namespace {
 
-using ::grpc::experimental::CertificateVerifier;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::HostNameCertificateVerifier;
 using ::grpc::experimental::TlsCustomVerificationCheckRequest;

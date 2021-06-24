@@ -465,7 +465,7 @@ TlsChannelSecurityConnector::ChannelPendingVerifierRequest::
         grpc_closure* on_peer_checked, tsi_peer peer, const char* target_name)
     : security_connector_(std::move(security_connector)),
       on_peer_checked_(on_peer_checked) {
-  PendingVerifierRequestInit(target_name, std::move(peer), &request_);
+  PendingVerifierRequestInit(target_name, peer, &request_);
   tsi_peer_destruct(&peer);
 }
 
@@ -735,7 +735,7 @@ TlsServerSecurityConnector::ServerPendingVerifierRequest::
         grpc_closure* on_peer_checked, tsi_peer peer)
     : security_connector_(std::move(security_connector)),
       on_peer_checked_(on_peer_checked) {
-  PendingVerifierRequestInit(nullptr, std::move(peer), &request_);
+  PendingVerifierRequestInit(nullptr, peer, &request_);
   tsi_peer_destruct(&peer);
 }
 
