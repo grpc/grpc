@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -135,8 +136,8 @@ class FileWatcherCertificateProvider final
 
 //  Checks if the private key matches certificate's public key. Returns error
 //  status on failure.
-absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
-                                           const std::string& cert);
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    absl::string_view private_key, absl::string_view cert);
 
 }  // namespace grpc_core
 

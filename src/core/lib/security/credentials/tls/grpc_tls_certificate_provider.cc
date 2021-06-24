@@ -365,15 +365,16 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
-absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
-                                           const std::string& cert) {
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    absl::string_view private_key, absl::string_view cert) {
   if (private_key.empty()) {
     return absl::InvalidArgumentError("Private key string is empty.");
   }
   if (cert.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  BIO* cert_bio = BIO_new_mem_buf(cert.c_str(), cert.size());
+  std::string temp = std::string(cert);
+  BIO* cert_bio = BIO_new_mem_buf(temp.c_str(), temp.size());
   if (cert_bio == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from certificate string to BIO failed.");
@@ -390,8 +391,8 @@ absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
-  BIO* private_key_bio =
-      BIO_new_mem_buf(private_key.c_str(), private_key.size());
+  temp = std::string(private_key);
+  BIO* private_key_bio = BIO_new_mem_buf(temp.c_str(), temp.size());
   if (private_key_bio == nullptr) {
     EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(
@@ -405,10 +406,8 @@ absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
-  absl::Status result =
-      EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1
-          ? absl::OkStatus()
-          : absl::InvalidArgumentError("Invalid credentials pair.");
+  absl::StatusOr<bool> result =
+      EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1;
   EVP_PKEY_free(private_evp_pkey);
   EVP_PKEY_free(public_evp_pkey);
   return result;
