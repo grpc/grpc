@@ -74,7 +74,7 @@ class ObservableState {
       }
     }
     *version_seen = version_;
-    return ready(value_);
+    return value_;
   }
 
   Poll<absl::optional<T>> PollNext(ObservableVersion* version_seen) {
@@ -89,7 +89,7 @@ class ObservableState {
       return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
     }
     *version_seen = version_;
-    return ready(value_);
+    return value_;
   }
 
   Poll<absl::optional<T>> PollWatch(ObservableVersion* version_seen) {
@@ -110,7 +110,7 @@ class ObservableState {
     *version_seen = version_;
     // Watch needs to be woken up if the value changes even if it's ready now.
     waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
-    return ready(value_);
+    return value_;
   }
 
  private:
@@ -155,9 +155,9 @@ class ObservableNext {
 template <typename T, typename F>
 class ObservableWatch final : private WatchCommitter {
  private:
-  using Promise = decltype(std::declval<F>()(std::declval<T>(),
-                                             std::declval<WatchCommitter*>()));
-  using Result = typename decltype(std::declval<Promise>()())::Type;
+  using Promise = PromiseLike<decltype(std::declval<F>()(std::declval<T>(),
+                                             std::declval<WatchCommitter*>()))>;
+  using Result = typename Promise::Result;
 
  public:
   explicit ObservableWatch(F factory, std::shared_ptr<ObservableState<T>> state)
@@ -169,9 +169,9 @@ class ObservableWatch final : private WatchCommitter {
 
   Poll<Result> operator()() {
     auto r = state_->PollWatch(&version_seen_);
-    if (auto* p = r.get_ready()) {
+    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
       if (p->has_value()) {
-        promise_ = factory_(std::move(**p), this);
+        promise_ = Promise(factory_(std::move(**p), this));
       } else {
         promise_ = {};
       }

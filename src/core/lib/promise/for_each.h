@@ -45,13 +45,14 @@ template <typename Reader, typename Action>
 class ForEach {
  private:
   using ReaderNext = decltype(std::declval<Reader>().Next());
-  using ReaderResult =
-      typename decltype(std::declval<ReaderNext>()())::Type::value_type;
+  using ReaderResult = typename PollTraits<
+      decltype(std::declval<ReaderNext>()())>::Type::value_type;
   using ActionFactory = promise_detail::PromiseFactory<ReaderResult, Action>;
   using ActionPromise = typename ActionFactory::Promise;
 
  public:
-  using Result = typename decltype(std::declval<ActionPromise>()())::Type;
+  using Result =
+      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
   ForEach(Reader reader, Action action)
       : reader_(std::move(reader)),
         action_factory_(std::move(action)),

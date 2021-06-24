@@ -32,11 +32,11 @@ TEST(LatchTest, Works) {
         return Seq(Join(latch.Wait(),
                         [&latch]() {
                           latch.Set(42);
-                          return ready(true);
+                          return true;
                         }),
                    [](std::tuple<int*, bool> result) {
                      EXPECT_EQ(*std::get<0>(result), 42);
-                     return ready(absl::OkStatus());
+                     return absl::OkStatus();
                    });
       },
       NoCallbackScheduler(),

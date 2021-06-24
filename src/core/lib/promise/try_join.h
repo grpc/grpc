@@ -37,7 +37,8 @@ struct TryJoinTraits {
   template <typename T, typename F>
   static auto OnResult(T result, F kontinue)
       -> decltype(kontinue(IntoResult(&result))) {
-    using Result = typename PollTraits<decltype(kontinue(IntoResult(&result)))>::Type;
+    using Result =
+        typename PollTraits<decltype(kontinue(IntoResult(&result)))>::Type;
     if (!result.ok()) {
       return Result(IntoStatus(&result));
     }

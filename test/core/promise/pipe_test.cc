@@ -35,7 +35,7 @@ TEST(PipeTest, CanSendAndReceive) {
                    [](std::tuple<bool, absl::optional<int>> result) {
                      EXPECT_EQ(result,
                                std::make_tuple(true, absl::optional<int>(42)));
-                     return ready(absl::OkStatus());
+                     return absl::OkStatus();
                    });
       },
       NoCallbackScheduler(),
@@ -52,7 +52,7 @@ TEST(PipeTest, CanReceiveAndSend) {
                    [](std::tuple<absl::optional<int>, bool> result) {
                      EXPECT_EQ(result,
                                std::make_tuple(absl::optional<int>(42), true));
-                     return ready(absl::OkStatus());
+                     return absl::OkStatus();
                    });
       },
       NoCallbackScheduler(),
@@ -72,12 +72,12 @@ TEST(PipeTest, CanSeeClosedOnSend) {
         return Seq(Join(sender.Push(43),
                         [&receiver] {
                           receiver.reset();
-                          return ready(absl::OkStatus());
+                          return absl::OkStatus();
                         }),
                    [](std::tuple<bool, absl::Status> result) {
                      EXPECT_EQ(result,
                                std::make_tuple(false, absl::OkStatus()));
-                     return ready(absl::OkStatus());
+                     return absl::OkStatus();
                    });
       },
       NoCallbackScheduler(),
@@ -95,12 +95,12 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
         return Seq(Join(receiver.Next(),
                         [&sender] {
                           sender.reset();
-                          return ready(absl::OkStatus());
+                          return absl::OkStatus();
                         }),
                    [](std::tuple<absl::optional<int>, absl::Status> result) {
                      EXPECT_EQ(result, std::make_tuple(absl::optional<int>(),
                                                        absl::OkStatus()));
-                     return ready(absl::OkStatus());
+                     return absl::OkStatus();
                    });
       },
       NoCallbackScheduler(),
@@ -115,21 +115,21 @@ TEST(PipeTest, CanFilter) {
       [&pipe] {
         return Seq(
             Join(pipe.sender.Push(42), pipe.receiver.Filter([](int p) {
-              return ready(absl::StatusOr<int>(p * 2));
+              return absl::StatusOr<int>(p * 2);
             }),
                  pipe.sender.Filter(
-                     [](int p) { return ready(absl::StatusOr<int>(p + 1)); }),
+                     [](int p) { return absl::StatusOr<int>(p + 1); }),
                  Seq(pipe.receiver.Next(),
                      [&pipe](absl::optional<int> i) {
                        auto x = std::move(pipe.receiver);
-                       return ready(i);
+                       return i;
                      })),
             [](std::tuple<bool, absl::Status, absl::Status, absl::optional<int>>
                    result) {
               EXPECT_EQ(result, std::make_tuple(true, absl::OkStatus(),
                                                 absl::OkStatus(),
                                                 absl::optional<int>(85)));
-              return ready(absl::OkStatus());
+              return absl::OkStatus();
             });
       },
       NoCallbackScheduler(),

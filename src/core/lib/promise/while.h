@@ -78,7 +78,8 @@ class While {
  private:
   using Factory = promise_detail::PromiseFactory<void, F>;
   using Promise = decltype(std::declval<Factory>().Repeated());
-  using PromiseResult = typename decltype(std::declval<Promise>()())::Type;
+  using PromiseResult =
+      typename PollTraits<decltype(std::declval<Promise>()())>::Type;
 
  public:
   using Result =

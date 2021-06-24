@@ -29,7 +29,8 @@ class Map {
   Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
-  using PromiseResult = typename decltype(std::declval<Promise>()())::Type;
+  using PromiseResult =
+      typename PollTraits<decltype(std::declval<Promise>()())>::Type;
   using Result = absl::remove_reference_t<decltype(std::declval<Fn>()(
       std::declval<PromiseResult>()))>;
 

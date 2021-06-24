@@ -32,7 +32,7 @@ class Barrier {
     return [this]() -> Poll<Result> {
       absl::MutexLock lock(&mu_);
       if (cleared_) {
-        return ready(Result{});
+        return Result{};
       } else {
         return wait_set_.AddPending(Activity::current()->MakeOwningWaker());
       }
@@ -60,8 +60,7 @@ TEST(ObservableTest, CanPushAndGet) {
   auto activity = MakeActivity(
       [&observer]() {
         return Seq(observer.Get(), [](absl::optional<int> i) {
-          return ready(i == 42 ? absl::OkStatus()
-                               : absl::UnknownError("expected 42"));
+          return i == 42 ? absl::OkStatus() : absl::UnknownError("expected 42");
         });
       },
       NoCallbackScheduler(),
@@ -83,8 +82,8 @@ TEST(ObservableTest, CanNext) {
               return observer.Next();
             },
             [](absl::optional<int> i) {
-              return ready(i == 1 ? absl::OkStatus()
-                                  : absl::UnknownError("expected 1"));
+              return i == 1 ? absl::OkStatus()
+                            : absl::UnknownError("expected 1");
             });
       },
       NoCallbackScheduler(),

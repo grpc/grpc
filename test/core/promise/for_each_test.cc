@@ -40,13 +40,13 @@ TEST(ForEachTest, SendThriceWithPipe) {
                             [&pipe] { return pipe.sender.Push(3); },
                             [&pipe] {
                               auto drop = std::move(pipe.sender);
-                              return ready(absl::OkStatus());
+                              return absl::OkStatus();
                             }),
                         ForEach(std::move(pipe.receiver),
                                 [&num_received](int i) {
                                   num_received++;
                                   EXPECT_EQ(num_received, i);
-                                  return ready(absl::OkStatus());
+                                  return absl::OkStatus();
                                 })),
                    JustElem<1>());
       },

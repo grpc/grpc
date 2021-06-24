@@ -285,7 +285,7 @@ class Push {
   Poll<bool> operator()() {
     auto* receiver = sender_->receiver_;
     if (receiver == nullptr) {
-      return ready(false);
+      return false;
     }
     if (receiver->pending_.has_value()) {
       return receiver->waiting_to_send_.pending();
@@ -294,7 +294,7 @@ class Push {
     receiver->waiting_to_receive_.Wake();
     sender_->push_ = nullptr;
     sender_ = nullptr;
-    return ready(true);
+    return true;
   }
 
  private:
@@ -354,12 +354,12 @@ class Next {
       auto* pending = &*receiver_->pending_;
       if (current_promise_ != nullptr) {
         auto r = current_promise_->Step(pending);
-        if (auto* p = r.get_ready()) {
+        if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
           current_promise_->Stop();
           current_promise_ = nullptr;
           if (!*p) {
             receiver_->MarkClosed();
-            return ready(absl::optional<T>());
+            return absl::optional<T>();
           }
         } else {
           return Pending();
@@ -367,7 +367,7 @@ class Next {
       }
       while (true) {
         if (next_filter_ >= receiver_->filters_.size()) {
-          auto result = ready(absl::optional<T>(std::move(*pending)));
+          auto result = absl::optional<T>(std::move(*pending));
           receiver_->pending_.reset();
           receiver_->waiting_to_send_.Wake();
           receiver_->next_ = nullptr;
@@ -381,7 +381,7 @@ class Next {
             reinterpret_cast<Promise<T>*>(uintptr_t(false))) {
           current_promise_ = nullptr;
           receiver_->MarkClosed();
-          return ready(absl::optional<T>());
+          return absl::optional<T>();
         } else if (current_promise_ ==
                    reinterpret_cast<Promise<T>*>(uintptr_t(true))) {
           current_promise_ = nullptr;
@@ -391,7 +391,7 @@ class Next {
       }
     }
     if (receiver_->sender_ == nullptr) {
-      return ready(absl::optional<T>());
+      return absl::optional<T>();
     }
     return receiver_->waiting_to_receive_.pending();
   }
@@ -441,7 +441,7 @@ class Filter final : private FilterInterface<T> {
 
   Poll<absl::Status> operator()() {
     if (index_ == kTombstoneIndex) {
-      return ready(std::move(done_));
+      return std::move(done_);
     }
     return Pending();
   }
@@ -466,10 +466,10 @@ class Filter final : private FilterInterface<T> {
 
     Poll<bool> Step(T* output) final {
       auto r = f_();
-      if (auto* p = r.get_ready()) {
+      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         if (p->ok()) {
           *output = std::move(**p);
-          return ready(true);
+          return true;
         } else {
           filter_->SetReceiverIndex(filter_->active_.receiver, filter_->index_,
                                     nullptr);
@@ -477,7 +477,7 @@ class Filter final : private FilterInterface<T> {
           filter_->index_ = kTombstoneIndex;
           new (&filter_->done_) absl::Status(std::move(p->status()));
           Activity::WakeupCurrent();
-          return ready(false);
+          return false;
         }
       } else {
         return Pending();
@@ -495,7 +495,7 @@ class Filter final : private FilterInterface<T> {
     if (index_ != kTombstoneIndex) {
       PromiseImpl promise(active_.factory.Repeated(std::move(*p)), this);
       auto r = promise.Step(p);
-      if (auto* result = r.get_ready()) {
+      if (auto* result = absl::get_if<kPollReadyIdx>(&r)) {
         return reinterpret_cast<Promise<T>*>(uintptr_t(*result));
       }
       static_assert(sizeof(promise) <= sizeof(Scratch),

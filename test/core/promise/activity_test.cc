@@ -41,7 +41,7 @@ class Barrier {
     return [this]() -> Poll<Result> {
       absl::MutexLock lock(&mu_);
       if (cleared_) {
-        return ready(Result{});
+        return Result{};
       } else {
         return wait_set_.AddPending(Activity::current()->MakeOwningWaker());
       }
@@ -72,7 +72,7 @@ class SingleBarrier {
     return [this]() -> Poll<Result> {
       absl::MutexLock lock(&mu_);
       if (cleared_) {
-        return ready(Result{});
+        return Result{};
       } else {
         waker_ = Activity::current()->MakeOwningWaker();
         return Pending();
@@ -98,8 +98,7 @@ TEST(ActivityTest, ImmediatelyCompleteWithSuccess) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
-      [] { return [] { return ready(absl::OkStatus()); }; },
-      NoCallbackScheduler(),
+      [] { return [] { return absl::OkStatus(); }; }, NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
@@ -107,7 +106,7 @@ TEST(ActivityTest, ImmediatelyCompleteWithFailure) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
   MakeActivity(
-      [] { return [] { return ready(absl::CancelledError()); }; },
+      [] { return [] { return absl::CancelledError(); }; },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
@@ -148,7 +147,7 @@ TYPED_TEST(BarrierTest, Barrier) {
   auto activity = MakeActivity(
       [&b] {
         return Seq(b.Wait(), [](typename TestFixture::Type::Result) {
-          return ready(absl::OkStatus());
+          return absl::OkStatus();
         });
       },
       NoCallbackScheduler(),
@@ -170,7 +169,7 @@ TYPED_TEST(BarrierTest, BarrierPing) {
         return Seq(b1.Wait(), [&b2](typename TestFixture::Type::Result) {
           // Clear the barrier whilst executing an activity
           b2.Clear();
-          return ready(absl::OkStatus());
+          return absl::OkStatus();
         });
       },
       [&scheduler](std::function<void()> f) { scheduler.Schedule(f); },
@@ -178,7 +177,7 @@ TYPED_TEST(BarrierTest, BarrierPing) {
   auto activity2 = MakeActivity(
       [&b2] {
         return Seq(b2.Wait(), [](typename TestFixture::Type::Result) {
-          return ready(absl::OkStatus());
+          return absl::OkStatus();
         });
       },
       [&scheduler](std::function<void()> f) { scheduler.Schedule(f); },
@@ -203,10 +202,10 @@ TYPED_TEST(BarrierTest, WakeSelf) {
         return Seq(Join(b.Wait(),
                         [&b] {
                           b.Clear();
-                          return ready(1);
+                          return 1;
                         }),
                    [](std::tuple<typename TestFixture::Type::Result, int>) {
-                     return ready(absl::OkStatus());
+                     return absl::OkStatus();
                    });
       },
       NoCallbackScheduler(),
@@ -221,7 +220,7 @@ TYPED_TEST(BarrierTest, WakeAfterDestruction) {
     MakeActivity(
         [&b] {
           return Seq(b.Wait(), [](typename TestFixture::Type::Result) {
-            return ready(absl::OkStatus());
+            return absl::OkStatus();
           });
         },
         NoCallbackScheduler(),

@@ -17,6 +17,7 @@
 
 #include <functional>
 #include "absl/types/optional.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -31,9 +32,9 @@ using Promise = std::function<Poll<T>()>;
 // nothing.
 template <typename Promise>
 auto NowOrNever(Promise promise)
-    -> absl::optional<typename decltype(promise())::Type> {
-  auto r = promise();
-  if (auto* p = r.get_ready()) {
+    -> absl::optional<typename promise_detail::PromiseLike<Promise>::Result> {
+  auto r = promise_detail::PromiseLike<Promise>(std::move(promise))();
+  if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
     return std::move(*p);
   }
   return {};

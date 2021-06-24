@@ -32,7 +32,7 @@ class Latch {
    public:
     Poll<T*> operator()() const {
       if (latch_->value_.has_value()) {
-        return ready(&*latch_->value_);
+        return &*latch_->value_;
       } else {
         return latch_->waiter_.pending();
       }

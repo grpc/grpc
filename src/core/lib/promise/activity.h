@@ -22,6 +22,7 @@
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -211,7 +212,7 @@ class Activity : private Wakeable {
 // Owned pointer to one Activity.
 using ActivityPtr = std::unique_ptr<Activity, Activity::Deleter>;
 
-namespace activity_detail {
+namespace promise_detail {
 
 template <typename Context>
 class ContextHolder {
@@ -241,13 +242,13 @@ class EnterContexts : public promise_detail::Context<Contexts>... {
 };
 
 // Implementation details for an Activity of an arbitrary type of promise.
-template <class Factory, class CallbackScheduler, class OnDone,
-          typename... Contexts>
+template <class F, class CallbackScheduler, class OnDone, typename... Contexts>
 class PromiseActivity final
     : public Activity,
-      private activity_detail::ContextHolder<Contexts>... {
+      private promise_detail::ContextHolder<Contexts>... {
  public:
-  PromiseActivity(Factory promise_factory, CallbackScheduler callback_scheduler,
+  using Factory = PromiseFactory<void, F>;
+  PromiseActivity(F promise_factory, CallbackScheduler callback_scheduler,
                   OnDone on_done, Contexts... contexts)
       : Activity(),
         ContextHolder<Contexts>(std::move(contexts))...,
@@ -258,7 +259,7 @@ class PromiseActivity final
     // threads, meaning we do need to hold this mutex even though we're still
     // constructing.
     mu_.Lock();
-    auto status = Start(std::move(promise_factory));
+    auto status = Start(Factory(std::move(promise_factory)));
     mu_.Unlock();
     // We may complete immediately.
     if (status.has_value()) {
@@ -361,7 +362,7 @@ class PromiseActivity final
     ScopedActivity scoped_activity(this);
     EnterContexts<Contexts...> contexts(
         static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
-    Construct(&promise_holder_.promise, promise_factory());
+    Construct(&promise_holder_.promise, promise_factory.Once());
     return StepLoop();
   }
 
@@ -373,7 +374,7 @@ class PromiseActivity final
       // Run the promise.
       assert(!done_);
       auto r = promise_holder_.promise();
-      if (auto* status = r.get_ready()) {
+      if (auto* status = absl::get_if<kPollReadyIdx>(&r)) {
         // If complete, destroy the promise, flag done, and exit this loop.
         MarkDone();
         return IntoStatus(status);
@@ -383,7 +384,7 @@ class PromiseActivity final
     return {};
   }
 
-  using Promise = decltype(std::declval<Factory>()());
+  using Promise = typename Factory::Promise;
   // We wrap the promise in a union to allow control over the construction
   // simultaneously with annotating mutex requirements and noting that the
   // promise contained may not use any memory.
@@ -401,7 +402,7 @@ class PromiseActivity final
   [[no_unique_address]] bool done_ ABSL_GUARDED_BY(mu_) = false;
 };
 
-}  // namespace activity_detail
+}  // namespace promise_detail
 
 // Given a functor that returns a promise (a promise factory), a callback for
 // completion, and a callback scheduler, construct an activity.
@@ -411,8 +412,8 @@ ActivityPtr MakeActivity(Factory promise_factory,
                          CallbackScheduler callback_scheduler, OnDone on_done,
                          Contexts... contexts) {
   return ActivityPtr(
-      new activity_detail::PromiseActivity<Factory, CallbackScheduler, OnDone,
-                                           Contexts...>(
+      new promise_detail::PromiseActivity<Factory, CallbackScheduler, OnDone,
+                                          Contexts...>(
           std::move(promise_factory), std::move(callback_scheduler),
           std::move(on_done), std::move(contexts)...));
 }
