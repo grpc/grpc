@@ -17,7 +17,7 @@ set -eo pipefail
 
 display_usage() {
   cat <<EOF >/dev/stderr
-A helper to run yapf formatter.
+A helper to run isort import sorter.
 
 USAGE: $0 [--diff]
    --diff: Do not apply changes, only show the diff
@@ -45,10 +45,13 @@ source "./bin/ensure_venv.sh"
 if [[ "$1" == "--diff" ]]; then
   readonly MODE="--diff"
 else
-  readonly MODE="--in-place"
-  readonly VERBOSE="--verbose" # print out file names while processing
+  readonly MODE="--overwrite-in-place"
 fi
 
-exec python -m yapf "${MODE}" ${VERBOSE:-} \
-  --parallel --recursive --style=../../../setup.cfg \
+# typing is the only module allowed to put imports on the same line:
+# https://google.github.io/styleguide/pyguide.html#313-imports-formatting
+exec python -m isort "${MODE}" \
+  --force-sort-within-sections \
+  --force-single-line-imports --single-line-exclusions=typing \
   framework bin tests
+
