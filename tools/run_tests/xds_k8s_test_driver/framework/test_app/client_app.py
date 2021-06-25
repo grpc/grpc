@@ -20,7 +20,7 @@ modules.
 import datetime
 import functools
 import logging
-from typing import Iterator, Optional
+from typing import Iterable, Optional, Tuple
 
 from framework.helpers import retryers
 from framework.infrastructure import gcp
@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 # Type aliases
 _timedelta = datetime.timedelta
 _LoadBalancerStatsServiceClient = grpc_testing.LoadBalancerStatsServiceClient
+_XdsUpdateClientConfigureServiceClient = grpc_testing.XdsUpdateClientConfigureServiceClient
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 _ChannelzChannel = grpc_channelz.Channel
 _ChannelzChannelState = grpc_channelz.ChannelState
@@ -71,6 +72,12 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
     @property
     @functools.lru_cache(None)
+    def update_config(self):
+        return _XdsUpdateClientConfigureServiceClient(
+            self._make_channel(self.rpc_port))
+
+    @property
+    @functools.lru_cache(None)
     def channelz(self) -> _ChannelzServiceClient:
         return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
 
@@ -90,6 +97,15 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         """
         return self.load_balancer_stats.get_client_stats(
             num_rpcs=num_rpcs, timeout_sec=timeout_sec)
+
+    def get_load_balancer_accumulated_stats(
+        self,
+        *,
+        timeout_sec: Optional[int] = None,
+    ) -> grpc_testing.LoadBalancerAccumulatedStatsResponse:
+        """Shortcut to LoadBalancerStatsServiceClient.get_client_accumulated_stats()"""
+        return self.load_balancer_stats.get_client_accumulated_stats(
+            timeout_sec=timeout_sec)
 
     def wait_for_active_server_channel(self) -> _ChannelzChannel:
         """Wait for the channel to the server to transition to READY.
@@ -181,7 +197,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             f'Client has no {_ChannelzChannelState.Name(state)} channel with '
             'the server')
 
-    def get_server_channels(self, **kwargs) -> Iterator[_ChannelzChannel]:
+    def get_server_channels(self, **kwargs) -> Iterable[_ChannelzChannel]:
         return self.channelz.find_channels_for_target(self.server_target,
                                                       **kwargs)
 

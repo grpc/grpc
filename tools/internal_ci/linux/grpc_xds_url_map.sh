@@ -20,8 +20,7 @@ readonly GITHUB_REPOSITORY_NAME="grpc"
 # GKE Cluster
 readonly GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
 readonly GKE_CLUSTER_ZONE="us-central1-a"
-## xDS test server/client Docker images
-readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
+## xDS test client Docker images
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
@@ -30,7 +29,6 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 # Builds test app Docker images and pushes them to GCR
 # Globals:
 #   BUILD_APP_PATH
-#   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
 # Arguments:
@@ -41,16 +39,13 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 build_test_app_docker_images() {
   echo "Building C++ xDS interop test app Docker images"
   docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
-  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_server" -t "${SERVER_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
   gcloud -q auth configure-docker
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
-  docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
 }
 
 #######################################
 # Builds test app and its docker images unless they already exist
 # Globals:
-#   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
 #   FORCE_IMAGE_BUILD
@@ -61,16 +56,12 @@ build_test_app_docker_images() {
 #######################################
 build_docker_images_if_needed() {
   # Check if images already exist
-  server_tags="$(gcloud_gcr_list_image_tags "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}")"
-  printf "Server image: %s:%s\n" "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}"
-  echo "${server_tags:-Server image not found}"
-
   client_tags="$(gcloud_gcr_list_image_tags "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}")"
   printf "Client image: %s:%s\n" "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}"
   echo "${client_tags:-Client image not found}"
 
   # Build if any of the images are missing, or FORCE_IMAGE_BUILD=1
-  if [[ "${FORCE_IMAGE_BUILD}" == "1" || -z "${server_tags}" || -z "${client_tags}" ]]; then
+  if [[ "${FORCE_IMAGE_BUILD}" == "1" || -z "${client_tags}" ]]; then
     build_test_app_docker_images
   else
     echo "Skipping C++ test app build"
@@ -83,7 +74,6 @@ build_docker_images_if_needed() {
 #   TEST_DRIVER_FLAGFILE: Relative path to test driver flagfile
 #   KUBE_CONTEXT: The name of kubectl context with GKE cluster access
 #   TEST_XML_OUTPUT_DIR: Output directory for the test xUnit XML report
-#   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
 # Arguments:
@@ -97,15 +87,18 @@ run_test() {
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
   set -x
+  # NOTE(lidiz) we pin the server image to java-server because: 1. only Java
+  # server understands the rpc-behavior metadata; 2. all UrlMap tests today are
+  # testing client-side logic.
   python -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
-    --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
+    --namespace="interop-psm-url-map" \
+    --server_xds_port=8848 \
+    --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    --force_cleanup \
-    --nocheck_local_certs \
-    ${@:2}
+    --strategy="reuse"
   set +x
 }
 
@@ -143,12 +136,7 @@ main() {
   build_docker_images_if_needed
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
-  run_test baseline_test
-  run_test security_test
-  run_test url_map \
-    --namespace=interop-psm-url-map \
-    --server_xds_port=8848 \
-    --debug_use_port_forwarding
+  run_test url_map
 }
 
 main "$@"

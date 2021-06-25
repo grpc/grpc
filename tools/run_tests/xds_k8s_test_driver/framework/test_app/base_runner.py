@@ -55,7 +55,7 @@ class KubernetesBaseRunner:
 
     def cleanup(self, *, force=False):
         if (self.namespace and not self.reuse_namespace) or force:
-            self._delete_namespace()
+            self.delete_namespace()
             self.namespace = None
 
     @staticmethod
@@ -249,7 +249,7 @@ class KubernetesBaseRunner:
             self.k8s_namespace.wait_for_service_account_deleted(name)
         logger.debug('Service account %s deleted', name)
 
-    def _delete_namespace(self, wait_for_deletion=True):
+    def delete_namespace(self, wait_for_deletion=True):
         logger.info('Deleting namespace %s', self.k8s_namespace.name)
         try:
             self.k8s_namespace.delete()

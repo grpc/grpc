@@ -181,6 +181,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 }],
             })
 
+    def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
+        return self._insert_resource(self.api.urlMaps(), url_map_body)
+
     def delete_url_map(self, name):
         self._delete_resource(self.api.urlMaps(), 'urlMap', name)
 
@@ -323,19 +326,19 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                       **kwargs) -> GcpResource:
         resp = collection.get(project=self.project, **kwargs).execute()
         logger.info('Loaded compute resource:\n%s',
-                    self._resource_pretty_format(resp))
+                    self.resource_pretty_format(resp))
         return self.GcpResource(resp['name'], resp['selfLink'])
 
     def _insert_resource(self, collection: discovery.Resource,
                          body: Dict[str, Any]) -> GcpResource:
         logger.info('Creating compute resource:\n%s',
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         resp = self._execute(collection.insert(project=self.project, body=body))
         return self.GcpResource(body['name'], resp['targetLink'])
 
     def _patch_resource(self, collection, body, **kwargs):
         logger.info('Patching compute resource:\n%s',
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         self._execute(
             collection.patch(project=self.project, body=body, **kwargs))
 

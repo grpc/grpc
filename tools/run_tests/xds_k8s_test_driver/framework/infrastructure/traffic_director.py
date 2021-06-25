@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import List, Optional, Set
+from typing import Any, List, Optional, Set
 
 from framework import xds_flags
 from framework.infrastructure import gcp
@@ -42,6 +42,7 @@ EndpointConfigSelector = _NetworkServicesV1Alpha1.EndpointConfigSelector
 class TrafficDirectorManager:
     compute: _ComputeV1
     BACKEND_SERVICE_NAME = "backend-service"
+    ALTERNATIVE_BACKEND_SERVICE_NAME = "alternative-backend-service"
     HEALTH_CHECK_NAME = "health-check"
     URL_MAP_NAME = "url-map"
     URL_MAP_PATH_MATCHER_NAME = "path-matcher"
@@ -77,6 +78,11 @@ class TrafficDirectorManager:
         self.target_proxy_is_http: bool = False
         self.forwarding_rule: Optional[GcpResource] = None
         self.backends: Set[ZonalGcpResource] = set()
+        self.alternative_backend_service: Optional[GcpResource] = None
+        # TODO(sergiitk): remove this flag once backend service resource loaded
+        self.alternative_backend_service_protocol: Optional[
+            BackendServiceProtocol] = None
+        self.alternative_backends: Set[ZonalGcpResource] = set()
 
     @property
     def network_url(self):
@@ -115,6 +121,7 @@ class TrafficDirectorManager:
             self.delete_target_grpc_proxy(force=force)
         self.delete_url_map(force=force)
         self.delete_backend_service(force=force)
+        self.delete_alternative_backend_service(force=force)
         self.delete_health_check(force=force)
 
     def _ns_name(self, name):
@@ -202,6 +209,63 @@ class TrafficDirectorManager:
         self.compute.wait_for_backends_healthy_status(self.backend_service,
                                                       self.backends)
 
+    def create_alternative_backend_service(
+            self, protocol: Optional[BackendServiceProtocol] = _BackendGRPC):
+        if protocol is None:
+            protocol = _BackendGRPC
+        name = self._ns_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
+        logger.info('Creating %s Alternative Backend Service "%s"',
+                    protocol.name, name)
+        resource = self.compute.create_backend_service_traffic_director(
+            name, health_check=self.health_check, protocol=protocol)
+        self.alternative_backend_service = resource
+        self.alternative_backend_service_protocol = protocol
+
+    def load_alternative_backend_service(self):
+        name = self._ns_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
+        resource = self.compute.get_backend_service_traffic_director(name)
+        self.alternative_backend_service = resource
+
+    def delete_alternative_backend_service(self, force=False):
+        if force:
+            name = self._ns_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
+        elif self.alternative_backend_service:
+            name = self.alternative_backend_service.name
+        else:
+            return
+        logger.info('Deleting Alternative Backend Service "%s"', name)
+        self.compute.delete_backend_service(name)
+        self.alternative_backend_service = None
+
+    def alternative_backend_service_add_neg_backends(self, name, zones):
+        logger.info('Waiting for Network Endpoint Groups to load endpoints.')
+        for zone in zones:
+            backend = self.compute.wait_for_network_endpoint_group(name, zone)
+            logger.info('Loaded NEG "%s" in zone %s', backend.name,
+                        backend.zone)
+            self.alternative_backends.add(backend)
+        self.alternative_backend_service_add_backends()
+
+    def alternative_backend_service_add_backends(self):
+        logging.info('Adding backends to Backend Service %s: %r',
+                     self.alternative_backend_service.name,
+                     self.alternative_backends)
+        self.compute.backend_service_add_backends(
+            self.alternative_backend_service, self.alternative_backends)
+
+    def alternative_backend_service_remove_all_backends(self):
+        logging.info('Removing backends from Backend Service %s',
+                     self.alternative_backend_service.name)
+        self.compute.backend_service_remove_all_backends(
+            self.alternative_backend_service)
+
+    def wait_for_alternative_backends_healthy_status(self):
+        logger.debug(
+            "Waiting for Backend Service %s to report all backends healthy %r",
+            self.alternative_backend_service, self.alternative_backends)
+        self.compute.wait_for_backends_healthy_status(
+            self.alternative_backend_service, self.alternative_backends)
+
     def create_url_map(
         self,
         src_host: str,
@@ -215,6 +279,12 @@ class TrafficDirectorManager:
         resource = self.compute.create_url_map(name, matcher_name,
                                                [src_address],
                                                self.backend_service)
+        self.url_map = resource
+        return resource
+
+    def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
+        logger.info('Creating URL map: %s', url_map_body)
+        resource = self.compute.create_url_map_with_content(url_map_body)
         self.url_map = resource
         return resource
 
