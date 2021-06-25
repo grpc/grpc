@@ -16,6 +16,7 @@
 #define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 
 // PromiseFactory is an adaptor class.
 //
@@ -46,33 +47,6 @@
 
 namespace grpc_core {
 namespace promise_detail {
-
-template <typename T, typename Ignored = void>
-class PromiseLike;
-
-template <typename F>
-class PromiseLike<F, typename std::enable_if<PollTraits<
-                         decltype(std::declval<F>()())>::is_poll()>::type> {
- private:
-  [[no_unique_address]] F f_;
-
- public:
-  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  using Result = typename PollTraits<decltype(f_())>::Type;
-  Poll<Result> operator()() { return f_(); }
-};
-
-template <typename F>
-class PromiseLike<F, typename std::enable_if<!PollTraits<
-                         decltype(std::declval<F>()())>::is_poll()>::type> {
- private:
-  [[no_unique_address]] F f_;
-
- public:
-  explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
-  using Result = decltype(f_());
-  Poll<Result> operator()() { return f_(); }
-};
 
 template <typename T, typename Ignored = void>
 struct IsVoidCallableT {
