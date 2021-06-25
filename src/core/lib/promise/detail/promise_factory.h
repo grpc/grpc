@@ -15,8 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/poll.h"
 
 // PromiseFactory is an adaptor class.
 //

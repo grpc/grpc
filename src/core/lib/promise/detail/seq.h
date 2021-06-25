@@ -24,7 +24,7 @@
 namespace grpc_core {
 namespace promise_detail {
 
-template <typename Traits, char I, typename... Fs>
+template <template <typename> class Traits, char I, typename... Fs>
 struct SeqState {
   using PriorState = SeqState<Traits, I - 1, Fs...>;
   explicit SeqState(std::tuple<Fs*...> fs)
@@ -42,9 +42,11 @@ struct SeqState {
   };
   using FResult =
       absl::remove_reference_t<typename PollTraits<decltype(f())>::Type>;
+  using FResultTraits = Traits<FResult>;
   using FNext = typename std::tuple_element<I + 1, std::tuple<Fs...>>::type;
-  using NextArg = typename Traits::template NextArg<FResult>;
-  using Next = promise_detail::PromiseFactory<typename NextArg::Type, FNext>;
+  using Next =
+      promise_detail::PromiseFactory<typename FResultTraits::UnwrappedType,
+                                     FNext>;
   [[no_unique_address]] Next next;
 
   template <int J>
@@ -59,7 +61,7 @@ struct SeqState {
   };
 };
 
-template <typename Traits, typename... Fs>
+template <template <typename> class Traits, typename... Fs>
 struct SeqState<Traits, 0, Fs...> {
   explicit SeqState(std::tuple<Fs*...> args)
       : f(std::move(*std::get<0>(args))), next(std::move(*std::get<1>(args))) {}
@@ -72,8 +74,10 @@ struct SeqState<Traits, 0, Fs...> {
   using FNext = typename std::tuple_element<1, std::tuple<Fs...>>::type;
   [[no_unique_address]] F f;
   using FResult = typename F::Result;
-  using NextArg = typename Traits::template NextArg<FResult>;
-  using Next = promise_detail::PromiseFactory<typename NextArg::Type, FNext>;
+  using FResultTraits = Traits<FResult>;
+  using Next =
+      promise_detail::PromiseFactory<typename FResultTraits::UnwrappedType,
+                                     FNext>;
   [[no_unique_address]] Next next;
 
   template <int I>
@@ -84,15 +88,15 @@ struct SeqState<Traits, 0, Fs...> {
   };
 };
 
-template <typename Traits, char I, typename... Fs, typename T>
+template <template <typename> class Traits, char I, typename... Fs, typename T>
 auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
-    -> decltype(SeqState<Traits, I, Fs...>::NextArg::CallFactory(
+    -> decltype(SeqState<Traits, I, Fs...>::FResultTraits::CallFactory(
         &state->next, std::forward<T>(arg))) {
-  return SeqState<Traits, I, Fs...>::NextArg::CallFactory(&state->next,
-                                                          std::forward<T>(arg));
+  return SeqState<Traits, I, Fs...>::FResultTraits::CallFactory(
+      &state->next, std::forward<T>(arg));
 }
 
-template <typename Traits, typename... Fs>
+template <template <typename> class Traits, typename... Fs>
 class Seq {
  private:
   static constexpr char N = sizeof...(Fs);
@@ -104,7 +108,8 @@ class Seq {
     [[no_unique_address]] PenultimateState p_;
     [[no_unique_address]] FLast f_;
   };
-  using Result = typename PollTraits<decltype(f_())>::Type;
+  using FLastResult = typename PollTraits<decltype(f_())>::Type;
+  using Result = typename Traits<FLastResult>::WrappedType;
 
   template <char I>
   struct Get {
@@ -149,15 +154,23 @@ class Seq {
       if (p == nullptr) {
         return Pending();
       }
-      return Traits::template CheckResultAndRunNext<Result>(std::move(*p),
-                                                            RunNext<I>{s});
+      return Traits<
+          typename absl::remove_reference_t<decltype(*state)>::FResult>::
+          template CheckResultAndRunNext<Result>(std::move(*p), RunNext<I>{s});
     }
   };
 
   template <>
   struct RunState<N - 1> {
     Seq* s;
-    Poll<Result> operator()() { return s->f_(); }
+    Poll<Result> operator()() {
+      auto r = s->f_();
+      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+        return Result(std::move(*p));
+      } else {
+        return Pending();
+      }
+    }
   };
 
   template <char I>

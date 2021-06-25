@@ -153,8 +153,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "while_test",
-    srcs = ["while_test.cc"],
+    name = "loop_test",
+    srcs = ["loop_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,

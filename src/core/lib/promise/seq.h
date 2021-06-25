@@ -24,16 +24,15 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+template <typename T>
 struct InfallibleSeqTraits {
-  template <typename T>
-  struct NextArg {
-    using Type = T;
-    template <typename Next>
-    static auto CallFactory(Next* next, T&& value)
-        -> decltype(next->Once(std::forward<T>(value))) {
-      return next->Once(std::forward<T>(value));
-    }
-  };
+  using UnwrappedType = T;
+  using WrappedType = T;
+  template <typename Next>
+  static auto CallFactory(Next* next, T&& value)
+      -> decltype(next->Once(std::forward<T>(value))) {
+    return next->Once(std::forward<T>(value));
+  }
 
   template <typename Result, typename PriorResult, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(PriorResult prior,

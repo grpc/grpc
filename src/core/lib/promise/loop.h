@@ -15,6 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_LOOP_H
 #define GRPC_CORE_LIB_PROMISE_LOOP_H
 
+#include "absl/types/variant.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
+
 namespace grpc_core {
 
 struct Continue {};
@@ -24,29 +27,36 @@ using LoopCtl = absl::variant<Continue, T>;
 
 namespace promise_detail {
 
+template <typename T>
+struct LoopTraits;
+template <typename T>
+struct LoopTraits<LoopCtl<T>> {
+  using Result = T;
+};
+
 template <typename F>
 class Loop {
  private:
   using Factory = promise_detail::PromiseFactory<void, F>;
   using Promise = decltype(std::declval<Factory>().Repeated());
-  using PromiseResult =
-      typename PollTraits<decltype(std::declval<Promise>()())>::Type;
+  using PromiseResult = typename Promise::Result;
 
  public:
-  using Result =
-      typename decltype(Step(std::declval<PromiseResult>()))::value_type;
+  using Result = typename LoopTraits<PromiseResult>::Result;
 
   explicit Loop(F f) : factory_(std::move(f)), promise_(factory_.Repeated()) {}
+  ~Loop() { promise_.~Promise(); }
 
   Poll<Result> operator()() {
     while (true) {
-      auto promise_result = (*promise_)();
+      auto promise_result = promise_();
       if (auto* p = absl::get_if<kPollReadyIdx>(&promise_result)) {
         if (absl::holds_alternative<Continue>(*p)) {
-            promise_ = factory_.Repeated();
-            continue;
+          promise_.~Promise();
+          new (&promise_) Promise(factory_.Repeated());
+          continue;
         }
-        return std::move(*absl::get<Result>())
+        return absl::get<Result>(*p);
       } else {
         return Pending();
       }
@@ -55,10 +65,15 @@ class Loop {
 
  private:
   [[no_unique_address]] Factory factory_;
-  [[no_unique_address]] Promise promise_;
+  [[no_unique_address]] union { [[no_unique_address]] Promise promise_; };
 };
 
 }  // namespace promise_detail
+
+template <typename F>
+promise_detail::Loop<F> Loop(F f) {
+  return promise_detail::Loop<F>(std::move(f));
+}
 
 }  // namespace grpc_core
 

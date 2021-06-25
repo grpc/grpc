@@ -26,32 +26,50 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+template <typename T>
 struct TrySeqTraits {
-  template <typename T>
-  struct NextArg;
-  template <typename T>
-  struct NextArg<absl::StatusOr<T>> {
-    using Type = T;
-    template <typename Next>
-    static auto CallFactory(Next* next, absl::StatusOr<T>&& status)
-        -> decltype(next->Once(std::move(*status))) {
-      return next->Once(std::move(*status));
-    }
-  };
-  template <>
-  struct NextArg<absl::Status> {
-    using Type = void;
-    template <typename Next>
-    static auto CallFactory(Next* next, absl::Status&& status)
-        -> decltype(next->Once()) {
-      return next->Once();
-    }
-  };
+  using UnwrappedType = T;
+  using WrappedType = absl::StatusOr<T>;
+  template <typename Next>
+  static auto CallFactory(Next* next, T&& value)
+      -> decltype(next->Once(std::forward<T>(value))) {
+    return next->Once(std::forward<T>(value));
+  }
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
+    return run_next(std::move(prior));
+  }
+};
 
-  template <typename Result, typename PriorResult, typename RunNext>
-  static Poll<Result> CheckResultAndRunNext(PriorResult prior,
+template <typename T>
+struct TrySeqTraits<absl::StatusOr<T>> {
+  using UnwrappedType = T;
+  using WrappedType = absl::StatusOr<T>;
+  template <typename Next>
+  static auto CallFactory(Next* next, absl::StatusOr<T>&& status)
+      -> decltype(next->Once(std::move(*status))) {
+    return next->Once(std::move(*status));
+  }
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(absl::StatusOr<T> prior,
                                             RunNext run_next) {
-    if (!prior.ok()) return Result(IntoStatus(&prior));
+    if (!prior.ok()) return Result(prior.status());
+    return run_next(std::move(prior));
+  }
+};
+template <>
+struct TrySeqTraits<absl::Status> {
+  using UnwrappedType = void;
+  using WrappedType = absl::Status;
+  template <typename Next>
+  static auto CallFactory(Next* next, absl::Status&& status)
+      -> decltype(next->Once()) {
+    return next->Once();
+  }
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(absl::Status prior,
+                                            RunNext run_next) {
+    if (!prior.ok()) return Result(prior);
     return run_next(std::move(prior));
   }
 };

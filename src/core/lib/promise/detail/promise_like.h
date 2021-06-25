@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
-#define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
+#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
+#define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H
 
 #include "src/core/lib/promise/poll.h"
 
@@ -53,8 +53,8 @@ template <typename T, typename Ignored = void>
 class PromiseLike;
 
 template <typename F>
-class PromiseLike<F, typename std::enable_if<PollTraits<
-                         decltype(std::declval<F>()())>::is_poll()>::type> {
+class PromiseLike<F, typename absl::enable_if_t<PollTraits<
+                         decltype(std::declval<F>()())>::is_poll()>> {
  private:
   [[no_unique_address]] F f_;
 
@@ -65,8 +65,8 @@ class PromiseLike<F, typename std::enable_if<PollTraits<
 };
 
 template <typename F>
-class PromiseLike<F, typename std::enable_if<!PollTraits<
-                         decltype(std::declval<F>()())>::is_poll()>::type> {
+class PromiseLike<F, typename absl::enable_if_t<!PollTraits<
+                         decltype(std::declval<F>()())>::is_poll()>> {
  private:
   [[no_unique_address]] F f_;
 
@@ -75,9 +75,6 @@ class PromiseLike<F, typename std::enable_if<!PollTraits<
   using Result = decltype(f_());
   Poll<Result> operator()() { return f_(); }
 };
-
-template <typename F, template <typename> typename Wrapper>
-class WrappedPromiseLike;
 
 }  // namespace promise_detail
 }  // namespace grpc_core

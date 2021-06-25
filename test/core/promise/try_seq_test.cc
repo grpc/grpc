@@ -25,6 +25,12 @@ TEST(PromiseTest, SucceedAndThen) {
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>(2)));
 }
 
+TEST(PromiseTest, SucceedDirectlyAndThenDirectly) {
+  EXPECT_EQ(
+      TrySeq([] { return 1; }, [](int i) { return [i]() { return i + 1; }; })(),
+      Poll<absl::StatusOr<int>>(absl::StatusOr<int>(2)));
+}
+
 TEST(PromiseTest, SucceedAndThenChangeType) {
   EXPECT_EQ(
       TrySeq([] { return absl::StatusOr<int>(42); },
