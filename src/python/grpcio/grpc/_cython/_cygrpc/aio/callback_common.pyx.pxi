@@ -49,7 +49,7 @@ cdef class CallbackWrapper:
 
     @staticmethod
     cdef void functor_run(
-            grpc_experimental_completion_queue_functor* functor,
+            grpc_completion_queue_functor* functor,
             int success):
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
@@ -60,7 +60,7 @@ cdef class CallbackWrapper:
                 waiter.set_result(None)
         cpython.Py_DECREF(<object>context.callback_wrapper)
 
-    cdef grpc_experimental_completion_queue_functor *c_functor(self):
+    cdef grpc_completion_queue_functor *c_functor(self):
         return &self.context.functor
 
 

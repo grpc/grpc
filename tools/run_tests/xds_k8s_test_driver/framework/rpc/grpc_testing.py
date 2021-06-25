@@ -21,8 +21,8 @@ from typing import Optional
 import grpc
 
 import framework.rpc
-from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 # Type aliases
 _LoadBalancerStatsRequest = messages_pb2.LoadBalancerStatsRequest

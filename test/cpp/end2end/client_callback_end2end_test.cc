@@ -1406,11 +1406,10 @@ TEST_P(ClientCallbackEnd2endTest, TestTrailersOnlyOnError) {
   }
 
   ResetStub();
-  class Reactor : public grpc::experimental::ClientBidiReactor<EchoRequest,
-                                                               EchoResponse> {
+  class Reactor : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
    public:
     explicit Reactor(grpc::testing::EchoTestService::Stub* stub) {
-      stub->experimental_async()->UnimplementedBidi(&context_, this);
+      stub->async()->UnimplementedBidi(&context_, this);
       StartCall();
     }
     void Await() {

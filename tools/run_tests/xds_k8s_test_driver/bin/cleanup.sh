@@ -41,7 +41,8 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
   display_usage
 fi
 
-readonly SCRIPT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+SCRIPT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+readonly SCRIPT_DIR
 readonly XDS_K8S_DRIVER_DIR="${SCRIPT_DIR}/.."
 
 cd "${XDS_K8S_DRIVER_DIR}"

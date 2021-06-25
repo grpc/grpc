@@ -318,6 +318,12 @@
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
   endif()
 
+  if (gRPC_XDS_USER_AGENT_IS_CSHARP)
+    # The value of the defines needs to contain quotes.
+    # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
+    add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
+  endif()
+
   include(cmake/abseil-cpp.cmake)
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
@@ -389,7 +395,7 @@
              --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
              <%text>${_protobuf_include_path}</%text>
              <%text>${REL_FIL}</%text>
-        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
+        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> <%text>${_gRPC_CPP_PLUGIN}</%text>
         WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)

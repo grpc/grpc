@@ -19,6 +19,7 @@ from typing import Optional
 import mako.template
 import yaml
 
+from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class RunnerError(Exception):
 class KubernetesBaseRunner:
     TEMPLATE_DIR_NAME = 'kubernetes-manifests'
     TEMPLATE_DIR_RELATIVE_PATH = f'../../{TEMPLATE_DIR_NAME}'
+    ROLE_WORKLOAD_IDENTITY_USER = 'roles/iam.workloadIdentityUser'
 
     def __init__(self,
                  k8s_namespace,
@@ -128,6 +130,46 @@ class KubernetesBaseRunner:
                      namespace.metadata.self_link,
                      namespace.metadata.creation_timestamp)
         return namespace
+
+    @staticmethod
+    def _get_workload_identity_member_name(project, namespace_name,
+                                           service_account_name):
+        """
+        Returns workload identity member name used to authenticate Kubernetes
+        service accounts.
+
+        https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+        """
+        return (f'serviceAccount:{project}.svc.id.goog'
+                f'[{namespace_name}/{service_account_name}]')
+
+    def _grant_workload_identity_user(self, *, gcp_iam, gcp_service_account,
+                                      service_account_name):
+        workload_identity_member = self._get_workload_identity_member_name(
+            gcp_iam.project, self.k8s_namespace.name, service_account_name)
+        logger.info('Granting %s to %s for GCP Service Account %s',
+                    self.ROLE_WORKLOAD_IDENTITY_USER, workload_identity_member,
+                    gcp_service_account)
+
+        gcp_iam.add_service_account_iam_policy_binding(
+            gcp_service_account, self.ROLE_WORKLOAD_IDENTITY_USER,
+            workload_identity_member)
+
+    def _revoke_workload_identity_user(self, *, gcp_iam, gcp_service_account,
+                                       service_account_name):
+        workload_identity_member = self._get_workload_identity_member_name(
+            gcp_iam.project, self.k8s_namespace.name, service_account_name)
+        logger.info('Revoking %s from %s for GCP Service Account %s',
+                    self.ROLE_WORKLOAD_IDENTITY_USER, workload_identity_member,
+                    gcp_service_account)
+        try:
+            gcp_iam.remove_service_account_iam_policy_binding(
+                gcp_service_account, self.ROLE_WORKLOAD_IDENTITY_USER,
+                workload_identity_member)
+        except gcp.api.Error as error:
+            logger.warning('Failed  %s from %s for Service Account %s: %r',
+                           self.ROLE_WORKLOAD_IDENTITY_USER,
+                           workload_identity_member, gcp_service_account, error)
 
     def _create_service_account(self, template,
                                 **kwargs) -> k8s.V1ServiceAccount:

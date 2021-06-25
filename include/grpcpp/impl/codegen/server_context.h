@@ -110,13 +110,8 @@ typedef ::grpc::CallbackServerContext CallbackServerContext;
 
 }  // namespace experimental
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-namespace experimental {
-#endif
 class GenericCallbackServerContext;
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-}  // namespace experimental
-#endif
+
 namespace internal {
 class Call;
 }  // namespace internal
@@ -299,10 +294,7 @@ class ServerContextBase {
   /// NOTE: This is an API for advanced users who need custom allocators.
   /// Get and maybe mutate the allocator state associated with the current RPC.
   /// Currently only applicable for callback unary RPC methods.
-  /// WARNING: This is experimental API and could be changed or removed.
-  ::grpc::experimental::RpcAllocatorState* GetRpcAllocatorState() {
-    return message_allocator_state_;
-  }
+  RpcAllocatorState* GetRpcAllocatorState() { return message_allocator_state_; }
 
   /// Get a library-owned default unary reactor for use in minimal reaction
   /// cases. This supports typical unary RPC usage of providing a response and
@@ -394,11 +386,7 @@ class ServerContextBase {
   friend class ::grpc::internal::FinishOnlyReactor;
   friend class ::grpc::ClientContext;
   friend class ::grpc::GenericServerContext;
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
   friend class ::grpc::GenericCallbackServerContext;
-#else
-  friend class ::grpc::experimental::GenericCallbackServerContext;
-#endif
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -429,8 +417,7 @@ class ServerContextBase {
     return rpc_info_;
   }
 
-  void set_message_allocator_state(
-      ::grpc::experimental::RpcAllocatorState* allocator_state) {
+  void set_message_allocator_state(RpcAllocatorState* allocator_state) {
     message_allocator_state_ = allocator_state;
   }
 
@@ -471,7 +458,7 @@ class ServerContextBase {
   bool has_pending_ops_ = false;
 
   ::grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
-  ::grpc::experimental::RpcAllocatorState* message_allocator_state_ = nullptr;
+  RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
 
   class Reactor : public ::grpc::ServerUnaryReactor {
@@ -638,24 +625,13 @@ class ContextAllocator {
 
   virtual CallbackServerContext* NewCallbackServerContext() { return nullptr; }
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-  virtual experimental::GenericCallbackServerContext*
-  NewGenericCallbackServerContext() {
-    return nullptr;
-  }
-#else
   virtual GenericCallbackServerContext* NewGenericCallbackServerContext() {
     return nullptr;
   }
-#endif
 
   virtual void Release(CallbackServerContext*) {}
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-  virtual void Release(experimental::GenericCallbackServerContext*) {}
-#else
   virtual void Release(GenericCallbackServerContext*) {}
-#endif
 };
 
 }  // namespace grpc
