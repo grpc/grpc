@@ -193,6 +193,8 @@ void TlsChannelSecurityConnector::add_handshakers(
   // BlockOnInitialCredentialHandshaker) when certificates are not ready.
   gpr_log(GPR_ERROR, "%s not supported yet.",
           "Client BlockOnInitialCredentialHandshaker");
+  // Add a handshaker that always fails.
+  handshake_mgr->Add(SecurityHandshakerCreate(nullptr, nullptr, nullptr));
 }
 
 void TlsChannelSecurityConnector::check_peer(
@@ -567,6 +569,8 @@ void TlsServerSecurityConnector::add_handshakers(
   // BlockOnInitialCredentialHandshaker) when certificates are not ready.
   gpr_log(GPR_ERROR, "%s not supported yet.",
           "Server BlockOnInitialCredentialHandshaker");
+  // Add a handshaker that always fails.
+  handshake_mgr->Add(SecurityHandshakerCreate(nullptr, nullptr, nullptr));
 }
 
 void TlsServerSecurityConnector::check_peer(
