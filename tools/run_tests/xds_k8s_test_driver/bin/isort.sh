@@ -17,22 +17,17 @@ set -eo pipefail
 
 display_usage() {
   cat <<EOF >/dev/stderr
-Performs full TD and K8S resource cleanup
+A helper to run isort import sorter.
 
-USAGE: $0 [--nosecure] [arguments]
-   --nosecure: Skip cleanup for the resources specific for PSM Security
-   arguments ...: additional arguments passed to ./run.sh
+USAGE: $0 [--diff]
+   --diff: Do not apply changes, only show the diff
 
 ENVIRONMENT:
-   XDS_K8S_CONFIG: file path to the config flagfile, relative to
-                   driver root folder. Default: config/local-dev.cfg
-                   Will be appended as --flagfile="config_absolute_path" argument
    XDS_K8S_DRIVER_VENV_DIR: the path to python virtual environment directory
                             Default: $XDS_K8S_DRIVER_DIR/venv
 EXAMPLES:
 $0
-$0 --secure
-XDS_K8S_CONFIG=./path-to-flagfile.cfg $0 --namespace=override-namespace
+$0 --diff
 EOF
   exit 1
 }
@@ -47,13 +42,20 @@ readonly XDS_K8S_DRIVER_DIR="${SCRIPT_DIR}/.."
 
 cd "${XDS_K8S_DRIVER_DIR}"
 
-if [[ "$1" == "--nosecure" ]]; then
-  shift
-  ./run.sh bin/run_td_setup.py --cmd=cleanup "$@" && \
-  ./run.sh bin/run_test_client.py --cmd=cleanup "$@" && \
-  ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace "$@"
+# Relative paths not yet supported by shellcheck.
+# shellcheck source=/dev/null
+source "${XDS_K8S_DRIVER_DIR}/bin/ensure_venv.sh"
+
+if [[ "$1" == "--diff" ]]; then
+  readonly MODE="--diff"
 else
-  ./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls "$@" && \
-  ./run.sh bin/run_test_client.py --cmd=cleanup --secure "$@" && \
-  ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure "$@"
+  readonly MODE="--overwrite-in-place"
 fi
+
+# typing is the only module allowed to put imports on the same line:
+# https://google.github.io/styleguide/pyguide.html#313-imports-formatting
+exec python -m isort "${MODE}" \
+  --force-sort-within-sections \
+  --force-single-line-imports --single-line-exclusions=typing \
+  framework bin tests
+

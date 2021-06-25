@@ -19,7 +19,7 @@ changes to this codebase at the moment.
 - [ ] Restructure `framework.test_app` and `framework.xds_k8s*` into a module
       containing xDS-interop-specific logic
 - [ ] Address inline TODOs in code
-- [ ] Improve README.md documentation, explain helpers in bin/ folder
+- [x] Improve README.md documentation, explain helpers in bin/ folder
 
 ## Installation
 
@@ -225,6 +225,10 @@ from your dev environment. You need:
 4. Run tests with `--debug_use_port_forwarding` argument. The test driver 
    will automatically start and stop port forwarding using
    `kubectl` subprocesses. (experimental)
+
+### Making changes to the driver
+1. Install additional dev packages: `pip install -r requirements-dev.txt`
+2. Use `./bin/yapf.sh` and `./bin/isort.sh` helpers to auto-format code.
 
 ### Setup test configuration
 

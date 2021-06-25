@@ -15,8 +15,8 @@
 
 set -eo pipefail
 
-readonly XDS_K8S_DRIVER_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-readonly XDS_K8S_DRIVER_VENV_DIR="${XDS_K8S_DRIVER_VENV_DIR:-$XDS_K8S_DRIVER_DIR/venv}"
+XDS_K8S_DRIVER_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+readonly XDS_K8S_DRIVER_DIR
 readonly XDS_K8S_CONFIG="${XDS_K8S_CONFIG:-$XDS_K8S_DRIVER_DIR/config/local-dev.cfg}"
 
 display_usage() {
@@ -54,17 +54,9 @@ if [[ "$#" -eq 0 || "$1" = "-h" || "$1" = "--help" ]]; then
   display_usage
 fi
 
-if [[ -z "${VIRTUAL_ENV}" ]]; then
-  if [[ -d "${XDS_K8S_DRIVER_VENV_DIR}" ]]; then
-    # Intentional: No need to check python venv activate script.
-    # shellcheck source=/dev/null
-    source "${XDS_K8S_DRIVER_VENV_DIR}/bin/activate"
-  else
-    echo "Missing python virtual environment directory: ${XDS_K8S_DRIVER_VENV_DIR}" >&2
-    echo "Follow README.md installation steps first." >&2
-    exit 1
-  fi
-fi
+# Relative paths not yet supported by shellcheck.
+# shellcheck source=/dev/null
+source "${XDS_K8S_DRIVER_DIR}/bin/ensure_venv.sh"
 
 cd "${XDS_K8S_DRIVER_DIR}"
 export PYTHONPATH="${XDS_K8S_DRIVER_DIR}"

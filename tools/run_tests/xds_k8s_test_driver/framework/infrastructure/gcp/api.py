@@ -15,20 +15,16 @@ import abc
 import contextlib
 import functools
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-# Workaround: `grpc` must be imported before `google.protobuf.json_format`,
-# to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
-# TODO(sergiitk): Remove after #24897 is solved
-import grpc  # noqa pylint: disable=unused-import
 from absl import flags
 from google.cloud import secretmanager_v1
 from google.longrunning import operations_pb2
 from google.protobuf import json_format
 from google.rpc import code_pb2
 from googleapiclient import discovery
-import googleapiclient.http
 import googleapiclient.errors
+import googleapiclient.http
 import tenacity
 import yaml
 
