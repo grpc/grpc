@@ -87,7 +87,7 @@ bool IsAuthorized(ChannelData* chand, grpc_transport_stream_op_batch* batch) {
     if (decision.type ==
         grpc_core::AuthorizationEngine::Decision::Type::kDeny) {
       gpr_log(GPR_DEBUG, "Request denied. Matching policy name: %s.",
-              decision.matching_policy_name);
+              decision.matching_policy_name.c_str());
       return false;
     }
   }
@@ -97,7 +97,7 @@ bool IsAuthorized(ChannelData* chand, grpc_transport_stream_op_batch* batch) {
     if (decision.type ==
         grpc_core::AuthorizationEngine::Decision::Type::kAllow) {
       gpr_log(GPR_DEBUG, "Request allowed. Matching policy name: %s.",
-              decision.matching_policy_name);
+              decision.matching_policy_name.c_str());
       return true;
     }
   }
