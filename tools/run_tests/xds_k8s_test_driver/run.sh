@@ -15,7 +15,8 @@
 
 set -eo pipefail
 
-readonly XDS_K8S_DRIVER_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+XDS_K8S_DRIVER_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+readonly XDS_K8S_DRIVER_DIR
 readonly XDS_K8S_CONFIG="${XDS_K8S_CONFIG:-$XDS_K8S_DRIVER_DIR/config/local-dev.cfg}"
 
 display_usage() {
@@ -53,7 +54,9 @@ if [[ "$#" -eq 0 || "$1" = "-h" || "$1" = "--help" ]]; then
   display_usage
 fi
 
-source "./bin/ensure_venv.sh"
+# Relative paths not yet supported by shellcheck.
+# shellcheck source=/dev/null
+source "${XDS_K8S_DRIVER_DIR}/bin/ensure_venv.sh"
 
 cd "${XDS_K8S_DRIVER_DIR}"
 export PYTHONPATH="${XDS_K8S_DRIVER_DIR}"
