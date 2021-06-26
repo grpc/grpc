@@ -49,15 +49,21 @@ class Loop {
 
   Poll<Result> operator()() {
     while (true) {
+      // Poll the inner promise.
       auto promise_result = promise_();
+      // If it returns a value:
       if (auto* p = absl::get_if<kPollReadyIdx>(&promise_result)) {
+        //  - then if it's Continue, destroy the promise and recreate a new one
+        //  from our factory.
         if (absl::holds_alternative<Continue>(*p)) {
           promise_.~Promise();
           new (&promise_) Promise(factory_.Repeated());
           continue;
         }
+        //  - otherwise there's our result... return it out.
         return absl::get<Result>(*p);
       } else {
+        // Otherwise the inner promise was pending, so we are pending.
         return Pending();
       }
     }
@@ -70,6 +76,9 @@ class Loop {
 
 }  // namespace promise_detail
 
+// Looping combinator.
+// Expects F returns LoopCtl<T> - if it's Continue, then run the loop again -
+// otherwise yield the returned value as the result of the loop.
 template <typename F>
 promise_detail::Loop<F> Loop(F f) {
   return promise_detail::Loop<F>(std::move(f));

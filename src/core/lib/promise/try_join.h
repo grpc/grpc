@@ -22,14 +22,19 @@ namespace grpc_core {
 
 namespace promise_detail {
 
+// Extract the T from a StatusOr<T>
 template <typename T>
 T IntoResult(absl::StatusOr<T>* status) {
   return std::move(**status);
 }
 
+// TryJoin returns a StatusOr<tuple<A,B,C>> for f()->Poll<StatusOr<A>>,
+// g()->Poll<StatusOr<B>>, h()->Poll<StatusOr<C>>. If one of those should be a
+// Status instead, we need a placeholder type to return, and this is it.
 struct Empty {};
 inline Empty IntoResult(absl::Status* status) { return Empty{}; }
 
+// Traits object to pass to BasicJoin
 struct TryJoinTraits {
   template <typename T>
   using ResultType =
@@ -52,7 +57,7 @@ struct TryJoinTraits {
 
 // Implementation of TryJoin combinator.
 template <typename... Promises>
-using TryJoin = Join<TryJoinTraits, Promises...>;
+using TryJoin = BasicJoin<TryJoinTraits, Promises...>;
 
 }  // namespace promise_detail
 

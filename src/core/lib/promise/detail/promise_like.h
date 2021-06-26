@@ -46,6 +46,11 @@
 
 #include <utility>
 
+// PromiseLike helps us deal with functors that return immediately.
+// PromiseLike<F> if F returns Poll<T> is basically a no-op, where-as if F
+// returns anything else, PromiseLike wraps the return of F to return a ready
+// value immediately.
+
 namespace grpc_core {
 namespace promise_detail {
 

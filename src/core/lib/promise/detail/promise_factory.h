@@ -48,6 +48,7 @@
 namespace grpc_core {
 namespace promise_detail {
 
+// Helper trait: given a T, and T x, is calling x() legal?
 template <typename T, typename Ignored = void>
 struct IsVoidCallableT {
   static constexpr bool value = false;
@@ -57,30 +58,23 @@ struct IsVoidCallableT<F, absl::void_t<decltype(std::declval<F>()())>> {
   static constexpr bool value = true;
 };
 
-template <typename A, typename F>
-struct ArgIsCompatibleWithFunctionError {
-  static constexpr bool value() { return false; }
-};
-
-template <typename T>
-T Make();
-
-template <typename T, typename Ignored = void>
-struct ResultOfT;
-
-template <typename F, typename... Args>
-struct ResultOfT<F(Args...),
-                 absl::void_t<decltype(Make<F>()(Make<Args>()...))>> {
-  using T = decltype(Make<F>()(Make<Args>()...));
-};
-
-template <typename T>
-using ResultOf = typename ResultOfT<T>::T;
-
+// Wrap that trait in some nice syntax.
 template <typename T>
 constexpr bool IsVoidCallable() {
   return IsVoidCallableT<T>::value;
 }
+
+// Given F(A,B,C,...), what's the return type?
+template <typename T, typename Ignored = void>
+struct ResultOfT;
+template <typename F, typename... Args>
+struct ResultOfT<F(Args...), absl::void_t<decltype(std::declval<F>()(
+                                 std::declval<Args>()...))>> {
+  using T = decltype(std::declval<F>()(std::declval<Args>()...));
+};
+
+template <typename T>
+using ResultOf = typename ResultOfT<T>::T;
 
 // Error case - we don't know what the heck to do.
 // Also defines arguments:
@@ -99,6 +93,8 @@ class PromiseFactory<A, F,
   using Arg = A;
 
  private:
+  // Captures the promise functor and the argument passed.
+  // Provides the interface of a promise.
   class Curried {
    public:
     Curried(F f, Arg arg) : f_(std::move(f)), arg_(std::move(arg)) {}

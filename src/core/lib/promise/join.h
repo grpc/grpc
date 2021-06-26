@@ -20,7 +20,7 @@
 namespace grpc_core {
 namespace promise_detail {
 
-struct InfallibleJoinTraits {
+struct JoinTraits {
   template <typename T>
   using ResultType = absl::remove_reference_t<T>;
   template <typename T, typename F>
@@ -35,15 +35,15 @@ struct InfallibleJoinTraits {
 };
 
 template <typename... Promises>
-using InfallibleJoin = Join<InfallibleJoinTraits, Promises...>;
+using Join = BasicJoin<JoinTraits, Promises...>;
 
 }  // namespace promise_detail
 
 /// Combinator to run all promises to completion, and return a tuple
 /// of their results.
 template <typename... Promise>
-promise_detail::InfallibleJoin<Promise...> Join(Promise... promises) {
-  return promise_detail::InfallibleJoin<Promise...>(std::move(promises)...);
+promise_detail::Join<Promise...> Join(Promise... promises) {
+  return promise_detail::Join<Promise...>(std::move(promises)...);
 }
 
 }  // namespace grpc_core
