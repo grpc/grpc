@@ -80,6 +80,8 @@ SERVER_XDS_HOST = flags.DEFINE_string(
     help=("The xDS hostname of the test server.\n"
           "Together with `server_xds_port` makes test server target URI, "
           "xds:///hostname:port"))
+# Note: port 0 known to represent a request for dynamically-allocated port
+# https://en.wikipedia.org/wiki/List_of_TCP_and_UDP_port_numbers#Well-known_ports
 SERVER_XDS_PORT = flags.DEFINE_integer(
     "server_xds_port",
     default=8080,

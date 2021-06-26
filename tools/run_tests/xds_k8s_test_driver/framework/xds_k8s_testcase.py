@@ -63,16 +63,17 @@ _timedelta = datetime.timedelta
 
 
 class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
-    td: TrafficDirectorManager
-    server_runner: KubernetesServerRunner
-    client_runner: KubernetesClientRunner
-    resource_prefix: str
     _resource_suffix_randomize: bool = True
+    client_namespace: str
+    client_runner: KubernetesClientRunner
+    gcp_api_manager: gcp.api.GcpApiManager
+    k8s_api_manager: k8s.KubernetesApiManager
+    resource_prefix: str
     resource_suffix: str = ''
     server_namespace: str
-    client_namespace: str
-    k8s_api_manager: k8s.KubernetesApiManager
-    gcp_api_manager: gcp.api.GcpApiManager
+    server_runner: KubernetesServerRunner
+    server_xds_port: int
+    td: TrafficDirectorManager
 
     @classmethod
     def setUpClass(cls):
@@ -146,8 +147,14 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                 allowed_ports=self.firewall_allowed_ports)
 
         # Randomize xds port, when it's set to 0
-        # if self.server_xds_port == 0:
-        #     self.server_xds_port =
+        if self.server_xds_port == 0:
+            # TODO(sergiitk): this is prone to race conditions:
+            #  The port might not me taken now, but there's not guarantee
+            #  it won't be taken until the tests get to creating
+            #  forwarding rule. This check is better than nothing,
+            #  but we should find a better approach.
+            self.server_xds_port = self.td.find_unused_forwarding_rule_port()
+            logger.info('Found unused xds port: %s', self.server_xds_port)
 
     @abc.abstractmethod
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:

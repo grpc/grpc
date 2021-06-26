@@ -49,7 +49,7 @@ _CMD = flags.DEFINE_enum('cmd',
                          default='create',
                          enum_values=[
                              'cycle', 'create', 'cleanup', 'backends-add',
-                             'backends-cleanup'
+                             'backends-cleanup', 'unused-xds-port'
                          ],
                          help='Command')
 _SECURITY = flags.DEFINE_enum('security',
@@ -224,6 +224,13 @@ def main(argv):
     elif command == 'backends-cleanup':
         td.load_backend_service()
         td.backend_service_remove_all_backends()
+    elif command == 'unused-xds-port':
+        try:
+            unused_xds_port = td.find_unused_forwarding_rule_port()
+            logger.info('Found unused forwarding rule port: %s',
+                        unused_xds_port)
+        except Exception:  # noqa pylint: disable=broad-except
+            logger.exception("Couldn't find unused forwarding rule port")
 
 
 if __name__ == '__main__':

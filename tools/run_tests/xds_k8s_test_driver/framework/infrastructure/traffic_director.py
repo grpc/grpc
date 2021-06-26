@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import functools
 import logging
+import random
 from typing import Any, List, Optional, Set
 
 from framework import xds_flags
@@ -129,7 +131,8 @@ class TrafficDirectorManager:
         self.delete_alternative_backend_service(force=force)
         self.delete_health_check(force=force)
 
-    def _make_resource_name(self, name):
+    @functools.lru_cache(None)
+    def _make_resource_name(self, name: str) -> str:
         """Make dash-separated resource name with resource prefix and suffix."""
         parts = [self.resource_prefix, name]
         # Avoid trailing dash when the suffix is an empty string.
@@ -350,6 +353,18 @@ class TrafficDirectorManager:
         self.compute.delete_target_http_proxy(name)
         self.target_proxy = None
         self.target_proxy_is_http = False
+
+    def find_unused_forwarding_rule_port(self,
+                                         lo: int = 1,
+                                         hi: int = 65535,
+                                         *,
+                                         attempts: int = 25) -> int:
+        for attempts in range(attempts):
+            src_port = random.randint(lo, hi)
+            if not (self.compute.exists_forwarding_rule(src_port)):
+                return src_port
+        # TODO(sergiitk): custom exception
+        raise RuntimeError("Couldn't find unused forwarding rule port")
 
     def create_forwarding_rule(self, src_port: int):
         name = self._make_resource_name(self.FORWARDING_RULE_NAME)
