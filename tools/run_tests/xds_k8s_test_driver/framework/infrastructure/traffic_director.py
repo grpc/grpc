@@ -400,7 +400,8 @@ class TrafficDirectorSecureManager(TrafficDirectorManager):
     netsec: Optional[_NetworkSecurityV1Alpha1]
     SERVER_TLS_POLICY_NAME = "server-tls-policy"
     CLIENT_TLS_POLICY_NAME = "client-tls-policy"
-    ENDPOINT_CONFIG_SELECTOR_NAME = "endpoint-config-selector"
+    # TODO(sergiitk): Rename to ENDPOINT_POLICY_NAME when upgraded to v1beta
+    ENDPOINT_CONFIG_SELECTOR_NAME = "endpoint-policy"
     CERTIFICATE_PROVIDER_INSTANCE = "google_cloud_private_spiffe"
 
     def __init__(

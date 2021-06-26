@@ -134,10 +134,9 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
     @staticmethod
     def _random_resource_suffix() -> str:
-        # Date and time suffix for debugging. Seconds skipped, not as relevant.
-        # Format example: 2021-06-26-1859
-        datetime_suffix: str = framework.helpers.datetime.datetime_suffix(
-            seconds=False)
+        # Date and time suffix for debugging. Seconds skipped, not as relevant
+        # Format example: 20210626-1859
+        datetime_suffix: str = framework.helpers.datetime.datetime_suffix()
         # Use lowercase chars because some resource names won't allow uppercase.
         unique_hash: str = framework.helpers.rand.rand_string(lowercase=True)
         return f'{datetime_suffix}-{unique_hash}'

@@ -24,16 +24,16 @@ def utc_now() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc)
 
 
-def datetime_suffix(*, seconds: bool = True) -> str:
+def datetime_suffix(*, seconds: bool = False) -> str:
     """Return current UTC date, and time in a format useful for resource naming.
 
     Examples:
-        - 2021-06-26-185942 (seconds=True)
-        - 2021-06-26-1859   (seconds=False)
+        - 20210626-1859   (seconds=False)
+        - 20210626-185942 (seconds=True)
     Use in resources names incompatible with ISO 8601, e.g. some GCP resources
     that only allow lowercase alphanumeric chars and dashes.
 
     Hours and minutes are joined together for better readability, so time is
     visually distinct from dash-separated date.
     """
-    return utc_now().strftime('%Y-%m-%d-%H%M' + ('%S' if seconds else ''))
+    return utc_now().strftime('%Y%m%d-%H%M' + ('%S' if seconds else ''))
