@@ -24,19 +24,16 @@ def utc_now() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc)
 
 
-def shorten_utc_zone(utc_datetime_str: str) -> str:
-    """Replace ±00:00 timezone designator with Z (zero offset AKA Zulu time)."""
-    return RE_ZERO_OFFSET.sub('Z', utc_datetime_str)
+def datetime_suffix(*, seconds: bool = True) -> str:
+    """Return current UTC date, and time in a format useful for resource naming.
 
+    Examples:
+        - 2021-06-26-185942 (seconds=True)
+        - 2021-06-26-1859   (seconds=False)
+    Use in resources names incompatible with ISO 8601, e.g. some GCP resources
+    that only allow lowercase alphanumeric chars and dashes.
 
-def iso8601_basic_time() -> str:
-    """Return current UTC datetime in ISO-8601 format with "basic" time format.
-
-    Basic time format is is T[hh][mm][ss] (no colon separator)
-    Ref https://en.wikipedia.org/wiki/ISO_8601#Times
-
-    Example: TODO
-    Useful in naming resources, where ":" and "+" chars aren't allowed.
+    Hours and minutes are joined together for better readability, so time is
+    visually distinct from dash-separated date.
     """
-    iso8601_extended_time: str = utc_now().isoformat(timespec='seconds')
-    return shorten_utc_zone(iso8601_extended_time).replace(':', '')
+    return utc_now().strftime('%Y-%m-%d-%H%M' + ('%S' if seconds else ''))

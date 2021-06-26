@@ -134,10 +134,13 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
     @staticmethod
     def _random_resource_suffix() -> str:
+        # Date and time suffix for debugging. Seconds skipped, not as relevant.
+        # Format example: 2021-06-26-1859
+        datetime_suffix: str = framework.helpers.datetime.datetime_suffix(
+            seconds=False)
         # Use lowercase chars because some resource names won't allow uppercase.
-        iso_datetime: str = framework.helpers.datetime.iso8601_basic_time()
         unique_hash: str = framework.helpers.rand.rand_string(lowercase=True)
-        return f'{iso_datetime.lower()}-{unique_hash}'
+        return f'{datetime_suffix}-{unique_hash}'
 
     @classmethod
     def tearDownClass(cls):
