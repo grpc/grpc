@@ -223,7 +223,7 @@ class TrafficDirectorManager:
             self, protocol: Optional[BackendServiceProtocol] = _BackendGRPC):
         if protocol is None:
             protocol = _BackendGRPC
-        name = self._ns_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
+        name = self._make_resource_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
         logger.info('Creating %s Alternative Backend Service "%s"',
                     protocol.name, name)
         resource = self.compute.create_backend_service_traffic_director(
@@ -232,13 +232,14 @@ class TrafficDirectorManager:
         self.alternative_backend_service_protocol = protocol
 
     def load_alternative_backend_service(self):
-        name = self._ns_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
+        name = self._make_resource_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
         resource = self.compute.get_backend_service_traffic_director(name)
         self.alternative_backend_service = resource
 
     def delete_alternative_backend_service(self, force=False):
         if force:
-            name = self._ns_name(self.ALTERNATIVE_BACKEND_SERVICE_NAME)
+            name = self._make_resource_name(
+                self.ALTERNATIVE_BACKEND_SERVICE_NAME)
         elif self.alternative_backend_service:
             name = self.alternative_backend_service.name
         else:
