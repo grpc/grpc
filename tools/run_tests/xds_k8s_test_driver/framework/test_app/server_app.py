@@ -319,5 +319,6 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         Note: the idea is to intentionally produce different namespace name for
         the test server, and the test client, as that closely mimics real-world
         deployments.
+        :rtype: object
         """
         return cls._make_namespace_name(resource_prefix, resource_suffix, name)

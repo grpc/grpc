@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import abc
 import datetime
 import enum
 import hashlib
@@ -25,8 +26,8 @@ from google.protobuf import json_format
 from framework import xds_flags
 from framework import xds_k8s_flags
 from framework.helpers import retryers
-import framework.helpers.rand
 import framework.helpers.datetime
+import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -50,6 +51,8 @@ flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
 # Type aliases
+TrafficDirectorManager = traffic_director.TrafficDirectorManager
+TrafficDirectorSecureManager = traffic_director.TrafficDirectorSecureManager
 XdsTestServer = server_app.XdsTestServer
 XdsTestClient = client_app.XdsTestClient
 KubernetesServerRunner = server_app.KubernetesServerRunner
@@ -59,7 +62,10 @@ _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
 
 
-class XdsKubernetesTestCase(absltest.TestCase):
+class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
+    td: TrafficDirectorManager
+    server_runner: KubernetesServerRunner
+    client_runner: KubernetesClientRunner
     resource_prefix: str
     _resource_suffix_randomize: bool = True
     resource_suffix: str = ''
@@ -121,25 +127,39 @@ class XdsKubernetesTestCase(absltest.TestCase):
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
 
+        # TD Manager
+        self.td = self.initTrafficDirectorManager()
+
+        # Test Server runner
         self.server_namespace = KubernetesServerRunner.make_namespace_name(
             self.resource_prefix, self.resource_suffix)
+        self.server_runner = self.initKubernetesServerRunner()
+
+        # Test Client runner
         self.client_namespace = KubernetesClientRunner.make_namespace_name(
             self.resource_prefix, self.resource_suffix)
+        self.client_runner = self.initKubernetesClientRunner()
 
-        # Init this in child class
-        # TODO(sergiitk): consider making a method to be less error-prone
-        self.server_runner = None
-        self.client_runner = None
-        self.td = None
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=self.firewall_allowed_ports)
 
-    @staticmethod
-    def _random_resource_suffix() -> str:
-        # Date and time suffix for debugging. Seconds skipped, not as relevant
-        # Format example: 20210626-1859
-        datetime_suffix: str = framework.helpers.datetime.datetime_suffix()
-        # Use lowercase chars because some resource names won't allow uppercase.
-        unique_hash: str = framework.helpers.rand.rand_string(lowercase=True)
-        return f'{datetime_suffix}-{unique_hash}'
+        # Randomize xds port, when it's set to 0
+        # if self.server_xds_port == 0:
+        #     self.server_xds_port =
+
+    @abc.abstractmethod
+    def initTrafficDirectorManager(self) -> TrafficDirectorManager:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
+        raise NotImplementedError
 
     @classmethod
     def tearDownClass(cls):
@@ -161,6 +181,15 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,
                                    force_namespace=self.force_cleanup)
+
+    @staticmethod
+    def _random_resource_suffix() -> str:
+        # Date and time suffix for debugging. Seconds skipped, not as relevant
+        # Format example: 20210626-1859
+        datetime_suffix: str = framework.helpers.datetime.datetime_suffix()
+        # Use lowercase chars because some resource names won't allow uppercase.
+        unique_hash: str = framework.helpers.rand.rand_string(lowercase=True)
+        return f'{datetime_suffix}-{unique_hash}'
 
     def setupTrafficDirectorGrpc(self):
         self.td.setup_for_grpc(self.server_xds_host,
@@ -243,25 +272,15 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
         if cls.server_maintenance_port is None:
             cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
 
-    def setUp(self):
-        """Hook method for setting up the test fixture before exercising it."""
-        super().setUp()
+    def initTrafficDirectorManager(self) -> TrafficDirectorManager:
+        return TrafficDirectorManager(self.gcp_api_manager,
+                                      project=self.project,
+                                      resource_prefix=self.resource_prefix,
+                                      resource_suffix=self.resource_suffix,
+                                      network=self.network)
 
-        # Traffic Director Configuration
-        self.td = traffic_director.TrafficDirectorManager(
-            self.gcp_api_manager,
-            project=self.project,
-            resource_prefix=self.resource_prefix,
-            resource_suffix=self.resource_suffix,
-            network=self.network)
-
-        # Ensures the firewall exist
-        if self.ensure_firewall:
-            self.td.create_firewall_rule(
-                allowed_ports=self.firewall_allowed_ports)
-
-        # Test Server Runner
-        self.server_runner = KubernetesServerRunner(
+    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
+        return KubernetesServerRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.server_namespace),
             deployment_name=self.server_name,
@@ -273,8 +292,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             xds_server_uri=self.xds_server_uri,
             network=self.network)
 
-        # Test Client Runner
-        self.client_runner = KubernetesClientRunner(
+    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
+        return KubernetesClientRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.client_namespace),
             deployment_name=self.client_name,
@@ -307,6 +326,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
 
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
+    td: TrafficDirectorSecureManager
 
     class SecurityMode(enum.Enum):
         MTLS = enum.auto()
@@ -327,25 +347,16 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             # Backend Health Checks are created on a fixed port.
             cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
-    def setUp(self):
-        """Hook method for setting up the test fixture before exercising it."""
-        super().setUp()
-
-        # Traffic Director Configuration
-        self.td = traffic_director.TrafficDirectorSecureManager(
+    def initTrafficDirectorManager(self) -> TrafficDirectorSecureManager:
+        return TrafficDirectorSecureManager(
             self.gcp_api_manager,
             project=self.project,
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
             network=self.network)
 
-        # Ensures the firewall exist
-        if self.ensure_firewall:
-            self.td.create_firewall_rule(
-                allowed_ports=self.firewall_allowed_ports)
-
-        # Test Server Runner
-        self.server_runner = KubernetesServerRunner(
+    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
+        return KubernetesServerRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.server_namespace),
             deployment_name=self.server_name,
@@ -359,8 +370,8 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             deployment_template='server-secure.deployment.yaml',
             debug_use_port_forwarding=self.debug_use_port_forwarding)
 
-        # Test Client Runner
-        self.client_runner = KubernetesClientRunner(
+    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
+        return KubernetesClientRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.client_namespace),
             deployment_name=self.client_name,
