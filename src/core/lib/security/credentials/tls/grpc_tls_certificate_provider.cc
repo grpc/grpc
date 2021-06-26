@@ -408,51 +408,47 @@ absl::Status InMemoryCertificateProvider::ReloadRootCertificate(
 }
 
 absl::Status InMemoryCertificateProvider::ReloadKeyCertificatePair(
-    const std::string& private_key, const std::string& identity_certificate) {
-  absl::Status status =
-      PrivateKeyAndCertificateMatch(private_key, identity_certificate);
-  grpc_core::MutexLock lock(&mu_);
-  if (status.ok() && !private_key.empty() && !identity_certificate.empty()) {
-    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
-    pem_key_cert_pairs.emplace_back(private_key, identity_certificate);
-    if (pem_key_cert_pairs != pem_key_cert_pairs_ &&
-        !pem_key_cert_pairs.empty()) {
-      pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
-      ExecCtx exec_ctx;
-      grpc_error_handle identity_cert_error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Unable to get latest identity certificates.");
-      for (const auto& p : watcher_info_) {
-        const std::string& cert_name = p.first;
-        const WatcherInfo& info = p.second;
-        absl::optional<grpc_core::PemKeyCertPairList> identity_to_report;
-        if (info.identity_being_watched) {
-          identity_to_report = pem_key_cert_pairs_;
-        }
-        if (identity_to_report.has_value()) {
-          distributor_->SetKeyMaterials(cert_name, absl::nullopt,
-                                        std::move(identity_to_report));
-        }
-        if (info.identity_being_watched && pem_key_cert_pairs_.empty()) {
-          distributor_->SetErrorForCert(cert_name, absl::nullopt,
-                                        GRPC_ERROR_REF(identity_cert_error));
-        }
-      }
-      GRPC_ERROR_UNREF(identity_cert_error);
-      return absl::OkStatus();
-    }
-    return absl::InvalidArgumentError(
-        "The credential pair strings have not changed.");
-  } else if (private_key.empty()) {
-    if (identity_certificate.empty()) {
-      return absl::InvalidArgumentError(
-          "The credential pair strings are empty.");
-    }
-    return absl::InvalidArgumentError("Private key string is empty.");
-  } else if (identity_certificate.empty()) {
-    return absl::InvalidArgumentError("Certificate string is empty.");
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs) {
+  if (pem_key_cert_pairs.empty()) {
+    return absl::InvalidArgumentError("Empty Credentials pair list.");
   }
-  return absl::InvalidArgumentError("Invalid credentials pair.");
+  for (int i = 0; i < pem_key_cert_pairs.size(); i++) {
+    absl::Status status =
+        PrivateKeyAndCertificateMatch(pem_key_cert_pairs[i].private_key(),
+                                      pem_key_cert_pairs[i].cert_chain());
+    if (!status.ok()) {
+      return absl::InvalidArgumentError("Invalid credentials pair.");
+    }
+  }
+  grpc_core::MutexLock lock(&mu_);
+  if (pem_key_cert_pairs != pem_key_cert_pairs_ &&
+      !pem_key_cert_pairs.empty()) {
+    pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
+    ExecCtx exec_ctx;
+    grpc_error_handle identity_cert_error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Unable to get latest identity certificates.");
+    for (const auto& p : watcher_info_) {
+      const std::string& cert_name = p.first;
+      const WatcherInfo& info = p.second;
+      absl::optional<grpc_core::PemKeyCertPairList> identity_to_report;
+      if (info.identity_being_watched) {
+        identity_to_report = pem_key_cert_pairs_;
+      }
+      if (identity_to_report.has_value()) {
+        distributor_->SetKeyMaterials(cert_name, absl::nullopt,
+                                      std::move(identity_to_report));
+      }
+      if (info.identity_being_watched && pem_key_cert_pairs_.empty()) {
+        distributor_->SetErrorForCert(cert_name, absl::nullopt,
+                                      GRPC_ERROR_REF(identity_cert_error));
+      }
+    }
+    GRPC_ERROR_UNREF(identity_cert_error);
+    return absl::OkStatus();
+  }
+  return absl::InvalidArgumentError(
+      "The credential pair strings have not changed.");
 }
 
 absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,

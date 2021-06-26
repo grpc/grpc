@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -141,11 +142,11 @@ class InMemoryCertificateProvider : public StaticDataCertificateProvider {
   InMemoryCertificateProvider(std::string root_certificate,
                               grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
- private:
+ public:
   absl::Status ReloadRootCertificate(const std::string& root_certificate);
 
   absl::Status ReloadKeyCertificatePair(
-      const std::string& private_key, const std::string& identity_certificate);
+      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 
 //  Checks if the private key matches certificate's public key. Returns error

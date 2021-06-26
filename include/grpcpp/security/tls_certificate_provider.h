@@ -74,6 +74,33 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
 
+// A CertificateProviderInterface implementation that supports reloading
+class InMemoryCertificateProvider : public CertificateProviderInterface {
+ public:
+  InMemoryCertificateProvider(
+      const std::string& root_certificate,
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+
+  explicit InMemoryCertificateProvider(const std::string& root_certificate)
+      : InMemoryCertificateProvider(root_certificate, {}) {}
+
+  explicit InMemoryCertificateProvider(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
+      : InMemoryCertificateProvider("", identity_key_cert_pairs) {}
+
+  ~InMemoryCertificateProvider() override;
+
+  grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+  grpc::Status ReloadRootCertificate(const std::string& root_certificate);
+
+  grpc::Status ReloadKeyCertificatePair(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+
+ private:
+  grpc_tls_certificate_provider* c_provider_ = nullptr;
+};
+
 // A CertificateProviderInterface implementation that will watch the credential
 // changes on the file system. This provider will always return the up-to-date
 // cert data for all the cert names callers set through |TlsCredentialsOptions|.
