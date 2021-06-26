@@ -24,7 +24,9 @@ from google.protobuf import json_format
 
 from framework import xds_flags
 from framework import xds_k8s_flags
-from framework.helpers import retryers, rand
+from framework.helpers import retryers
+import framework.helpers.rand
+import framework.helpers.datetime
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -133,7 +135,9 @@ class XdsKubernetesTestCase(absltest.TestCase):
     @staticmethod
     def _random_resource_suffix() -> str:
         # Use lowercase chars because some resource names won't allow uppercase.
-        return rand.rand_string(lowercase=True)
+        iso_datetime: str = framework.helpers.datetime.iso8601_basic_time()
+        unique_hash: str = framework.helpers.rand.rand_string(lowercase=True)
+        return f'{iso_datetime.lower()}-{unique_hash}'
 
     @classmethod
     def tearDownClass(cls):

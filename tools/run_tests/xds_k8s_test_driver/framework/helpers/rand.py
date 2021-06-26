@@ -23,7 +23,7 @@ ALPHANUM_LOWERCASE = string.ascii_lowercase + string.digits
 
 
 def rand_string(length: int = 8, *, lowercase: bool = False) -> str:
-    """Returns random alphanumeric string of given length.
+    """Return random alphanumeric string of given length.
 
     Space for default arguments: alphabet^length
        lowercase and uppercase = (26*2 + 10)^8 = 2.18e14 = 218 trillion.
