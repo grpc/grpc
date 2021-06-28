@@ -68,8 +68,8 @@ constexpr bool IsVoidCallable() {
 template <typename T, typename Ignored = void>
 struct ResultOfT;
 template <typename F, typename... Args>
-struct ResultOfT<F(Args...), absl::void_t<decltype(std::declval<F>()(
-                                 std::declval<Args>()...))>> {
+struct ResultOfT<F(Args...), absl::void_t<decltype(
+                                 std::declval<F>()(std::declval<Args>()...))>> {
   using T = decltype(std::declval<F>()(std::declval<Args>()...));
 };
 

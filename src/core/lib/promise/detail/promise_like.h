@@ -58,8 +58,8 @@ template <typename T, typename Ignored = void>
 class PromiseLike;
 
 template <typename F>
-class PromiseLike<F, typename absl::enable_if_t<PollTraits<
-                         decltype(std::declval<F>()())>::is_poll()>> {
+class PromiseLike<F, typename absl::enable_if_t<PollTraits<decltype(
+                         std::declval<F>()())>::is_poll()>> {
  private:
   [[no_unique_address]] F f_;
 
@@ -70,8 +70,8 @@ class PromiseLike<F, typename absl::enable_if_t<PollTraits<
 };
 
 template <typename F>
-class PromiseLike<F, typename absl::enable_if_t<!PollTraits<
-                         decltype(std::declval<F>()())>::is_poll()>> {
+class PromiseLike<F, typename absl::enable_if_t<!PollTraits<decltype(
+                         std::declval<F>()())>::is_poll()>> {
  private:
   [[no_unique_address]] F f_;
 

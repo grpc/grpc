@@ -31,8 +31,8 @@ class Map {
 
   using PromiseResult =
       typename PollTraits<decltype(std::declval<Promise>()())>::Type;
-  using Result = absl::remove_reference_t<decltype(std::declval<Fn>()(
-      std::declval<PromiseResult>()))>;
+  using Result = absl::remove_reference_t<decltype(
+      std::declval<Fn>()(std::declval<PromiseResult>()))>;
 
   Poll<Result> operator()() {
     auto r = promise_();
