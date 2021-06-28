@@ -18,11 +18,12 @@
 #include <functional>
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/inlined_vector.h"
-#include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -495,4 +496,4 @@ struct NoCallbackScheduler {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_ACTIVITY_H

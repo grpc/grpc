@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_JOIN_H
-#define GRPC_CORE_LIB_PROMISE_DETAIL_JOIN_H
+#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
+#define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
 
 #include <bitset>
 #include <utility>
 #include "absl/utility/utility.h"
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
@@ -182,4 +183,4 @@ class BasicJoin {
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H

@@ -86,4 +86,4 @@ promise_detail::Loop<F> Loop(F f) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_LOOP_H

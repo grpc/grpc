@@ -84,4 +84,4 @@ class PromiseLike<F, typename absl::enable_if_t<!PollTraits<decltype(
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H

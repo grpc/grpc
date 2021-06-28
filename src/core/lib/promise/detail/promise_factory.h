@@ -199,4 +199,4 @@ class PromiseFactory<void, F,
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H

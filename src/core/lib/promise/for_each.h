@@ -116,4 +116,4 @@ for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_JOIN_H
+#endif  // GRPC_CORE_LIB_PROMISE_FOR_EACH_H

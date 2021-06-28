@@ -125,4 +125,4 @@ promise_detail::If<C, T, F> If(C condition, T if_true, F if_false) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_IF_H

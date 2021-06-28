@@ -77,4 +77,4 @@ promise_detail::WithContext<T, F> WithContext(F f, T* context) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_JOIN_H
+#endif  // GRPC_CORE_LIB_PROMISE_CONTEXT_H

@@ -272,4 +272,4 @@ class Observable {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_OBSERVABLE_H

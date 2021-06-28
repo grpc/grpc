@@ -80,4 +80,4 @@ class Latch {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_LATCH_H

@@ -15,8 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/promise/detail/basic_join.h"
+#include "src/core/lib/promise/detail/status.h"
 
 namespace grpc_core {
 

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_FACTORY_H
-#define GRPC_CORE_LIB_PROMISE_FACTORY_H
+#ifndef GRPC_CORE_LIB_PROMISE_ADAPTOR_H
+#define GRPC_CORE_LIB_PROMISE_ADAPTOR_H
 
 #include "absl/status/statusor.h"
 #include "src/core/lib/promise/poll.h"
@@ -53,25 +53,6 @@ adaptor_detail::Capture<F, Captures...> Capture(F f, Captures... captures) {
                                                  std::move(captures)...);
 }
 
-template <typename T>
-void Destruct(T* p) {
-  p->~T();
-}
-
-template <typename T>
-void Construct(T* p, T&& move_from) {
-  new (p) T(std::forward<T>(move_from));
-}
-
-template <typename T>
-absl::Status IntoStatus(absl::StatusOr<T>* status) {
-  return std::move(status->status());
-}
-
-inline absl::Status IntoStatus(absl::Status* status) {
-  return std::move(*status);
-}
-
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_ADAPTOR_H

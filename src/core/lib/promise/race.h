@@ -37,11 +37,12 @@ class Race<Promise, Promises...> {
   Result operator()() {
     // Check our own promise.
     auto r = promise_();
-    if (auto* p = absl::get_if<1>(&r)) {
-      return std::move(*p);
+    if (absl::holds_alternative<Pending>(r)) {
+      // Check the rest of them.
+      return next_();
     }
-    // Check the rest of them.
-    return next_();
+    // Return the first ready result.
+    return std::move(absl::get<kPollReadyIdx>(std::move(r)));
   }
 
  private:

@@ -629,6 +629,7 @@ grpc_cc_library(
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
+        "src/core/lib/gprpp/construct_destruct.h",
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
@@ -639,6 +640,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
+        "src/core/lib/gprpp/overload.h",
         "src/core/lib/gprpp/stat.h",
         "src/core/lib/gprpp/status_helper.h",
         "src/core/lib/gprpp/sync.h",
@@ -736,9 +738,10 @@ grpc_cc_library(
         "src/core/lib/promise/activity.cc",
         "src/core/lib/promise/adaptor.h",
         "src/core/lib/promise/detail/basic_join.h",
+        "src/core/lib/promise/detail/basic_seq.h",
         "src/core/lib/promise/detail/promise_factory.h",
         "src/core/lib/promise/detail/promise_like.h",
-        "src/core/lib/promise/detail/basic_seq.h",
+        "src/core/lib/promise/detail/status.h",
         "src/core/lib/promise/detail/switch.h",
     ],
     external_deps = [
@@ -769,6 +772,9 @@ grpc_cc_library(
         "src/core/lib/promise/latch.h",
         "src/core/lib/promise/map.h",
         "src/core/lib/promise/visitor.h",
+    ],
+    deps = [
+        ":gpr_base",
     ],
 )
 

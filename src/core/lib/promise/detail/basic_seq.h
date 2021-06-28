@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_SEQ_H
-#define GRPC_CORE_LIB_PROMISE_DETAIL_SEQ_H
+#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
+#define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
 #include "absl/types/variant.h"
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/switch.h"
@@ -387,4 +388,4 @@ class BasicSeq {
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_SEQ_H
+#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
