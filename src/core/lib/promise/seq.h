@@ -17,7 +17,7 @@
 
 #include "absl/types/variant.h"
 #include "src/core/lib/promise/adaptor.h"
-#include "src/core/lib/promise/detail/seq.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -25,7 +25,7 @@ namespace grpc_core {
 namespace promise_detail {
 
 template <typename T>
-struct InfallibleSeqTraits {
+struct SeqTraits {
   using UnwrappedType = T;
   using WrappedType = T;
   template <typename Next>
@@ -42,7 +42,7 @@ struct InfallibleSeqTraits {
 };
 
 template <typename... Fs>
-using InfallibleSeq = Seq<InfallibleSeqTraits, Fs...>;
+using Seq = BasicSeq<SeqTraits, Fs...>;
 
 }  // namespace promise_detail
 
@@ -53,8 +53,8 @@ using InfallibleSeq = Seq<InfallibleSeqTraits, Fs...>;
 // etc
 // Return the final value.
 template <typename... Functors>
-promise_detail::InfallibleSeq<Functors...> Seq(Functors... functors) {
-  return promise_detail::InfallibleSeq<Functors...>(std::move(functors)...);
+promise_detail::Seq<Functors...> Seq(Functors... functors) {
+  return promise_detail::Seq<Functors...>(std::move(functors)...);
 }
 
 template <typename F>

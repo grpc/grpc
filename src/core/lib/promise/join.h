@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_JOIN_H
 
-#include "src/core/lib/promise/detail/join.h"
+#include "src/core/lib/promise/detail/basic_join.h"
 
 namespace grpc_core {
 namespace promise_detail {

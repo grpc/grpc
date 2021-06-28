@@ -735,10 +735,10 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/promise/activity.cc",
         "src/core/lib/promise/adaptor.h",
-        "src/core/lib/promise/detail/join.h",
+        "src/core/lib/promise/detail/basic_join.h",
         "src/core/lib/promise/detail/promise_factory.h",
         "src/core/lib/promise/detail/promise_like.h",
-        "src/core/lib/promise/detail/seq.h",
+        "src/core/lib/promise/detail/basic_seq.h",
         "src/core/lib/promise/detail/switch.h",
     ],
     external_deps = [

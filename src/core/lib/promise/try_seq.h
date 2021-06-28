@@ -19,7 +19,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
 #include "src/core/lib/promise/adaptor.h"
-#include "src/core/lib/promise/detail/seq.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -75,7 +75,7 @@ struct TrySeqTraits<absl::Status> {
 };
 
 template <typename... Fs>
-using TrySeq = Seq<TrySeqTraits, Fs...>;
+using TrySeq = BasicSeq<TrySeqTraits, Fs...>;
 
 }  // namespace promise_detail
 

@@ -1,0 +1,310 @@
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef GRPC_CORE_LIB_PROMISE_DETAIL_SEQ_H
+#define GRPC_CORE_LIB_PROMISE_DETAIL_SEQ_H
+
+#include "absl/types/variant.h"
+#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/detail/switch.h"
+#include "src/core/lib/promise/poll.h"
+
+namespace grpc_core {
+namespace promise_detail {
+
+// Helper for SeqState to evaluate some common types to all partial specializations.
+template <template <typename> class Traits, typename FPromise, typename FNext>
+struct SeqStateTypes {
+  // Our current promise.
+  using Promise = FPromise;
+  // The result of our current promise.
+  using PromiseResult = typename Promise::Result;
+  // Traits around the result of our promise.
+  using PromiseResultTraits = Traits<PromiseResult>;
+  // Wrap the factory callable in our factory wrapper to deal with common edge cases.
+  // We use the 'unwrapped type' from the traits, so for instance, TrySeq can pass back a T from a StatusOr<T>.
+  using Next =
+      promise_detail::PromiseFactory<typename PromiseResultTraits::UnwrappedType,
+                                     FNext>;
+};
+
+// One state in a sequence.
+// A state contains the current promise, and the promise factory to turn the result of the current promise into the next state's promise.
+// We play a shell game such that the prior state and our current promise are kept in a union, and the next promise factory is kept alongside in the state struct.
+// Recursively this guarantees that the next functions get initialized once, and destroyed once, and don't need to be moved around in between, which avoids a potential O(n**2) loop of next factory moves had we used a variant of states here.
+// The very first state does not have a prior state, and so that state has a partial specialization below.
+// The final state does not have a next state; that state is inlined in BasicSeq since that was simpler to type.
+template <template <typename> class Traits, char I, typename... Fs>
+struct SeqState {
+  // The state evaluated before this state.
+  using PriorState = SeqState<Traits, I - 1, Fs...>;
+  // Initialization from callables.
+  explicit SeqState(std::tuple<Fs*...> fs)
+      : next_factory(std::move(*std::get<I + 1>(fs))) {
+    new (&prior) PriorState(fs);
+  }
+  // Move constructor - assumes we're in the initial state (move prior) as it's illegal to move a promise after polling it.
+  SeqState(SeqState&& other) noexcept
+      : prior(std::move(other.prior)), next_factory(std::move(other.next_factory)) {}
+  // Copy constructor - assumes we're in the initial state (move prior) as it's illegal to move a promise after polling it.
+  SeqState(const SeqState& other) : prior(other.prior), next_factory(other.next_factory) {}
+  // No destructor - we instead destruct the innards in BasicSeq manually depending on state.
+  ~SeqState() = delete;
+  // Helper to get a specific state index.
+  // Calls the prior state, unless it's this state, in which case it returns that.
+  template <int J>
+  struct Get {
+    static SeqState<Traits, J, Fs...>* f(SeqState* p) {
+      return PriorState::template Get<J>::f(&p->prior);
+    }
+  };
+  template <>
+  struct Get<I> {
+    static SeqState* f(SeqState* p) { return p; }
+  };
+  // Evaluate the current promise, next promise factory types for this state.
+  // The current promise is the next promise from the prior state.
+  // The next factory callable is from the callables passed in:
+  // Fs[0] is the initial promise, Fs[1] is the state 0 next factory, Fs[2] is the state 1 next factory, etc...
+  using Types = SeqStateTypes<Traits, typename PriorState::Types::Next::Promise, typename std::tuple_element<I + 1, std::tuple<Fs...>>::type>;
+  // Storage for either the current promise or the prior state.
+  union {
+    // If we're in the prior state.
+    [[no_unique_address]] PriorState prior;
+    // The callables representing our promise.
+    [[no_unique_address]] typename Types::Promise current_promise;
+  };
+  // Storage for the next promise factory.
+  [[no_unique_address]] typename Types::Next next_factory;
+};
+
+// Partial specialization of SeqState above for the first state - it has no prior state, so we take the first callable from the template arg list and use it as a promise.
+template <template <typename> class Traits, typename... Fs>
+struct SeqState<Traits, 0, Fs...> {
+  // Initialization from callables.
+  explicit SeqState(std::tuple<Fs*...> args)
+      : current_promise(std::move(*std::get<0>(args))), next_factory(std::move(*std::get<1>(args))) {}
+  // Move constructor - it's assumed we're in this state (see above).
+  SeqState(SeqState&& other) noexcept
+      : current_promise(std::move(other.current_promise)), next_factory(std::move(other.next_factory)) {}
+  // Copy constructor - it's assumed we're in this state (see above).
+  SeqState(const SeqState& other) : current_promise(other.current_promise), next_factory(other.next_factory) {}
+  // No destructor - we instead destruct the innards in BasicSeq manually depending on state.
+  ~SeqState() = delete;
+  // Accessor for states by index... we return this state for element 0, and leave this undefined for other states.
+  // If you see this being undefined, probably at the top of the recursion a bad index is being passed in.
+  template <int I>
+  struct Get;
+  template <>
+  struct Get<0> {
+    static SeqState* f(SeqState* p) { return p; }
+  };
+  // Evaluate the current promise, next promise factory types for this state.
+  // Our callable is the first element of Fs, wrapped in PromiseLike to handle some common edge cases.
+  // The next factory is the second element.
+  using Types = SeqStateTypes<Traits, PromiseLike<typename std::tuple_element<0, std::tuple<Fs...>>::type>, typename std::tuple_element<1, std::tuple<Fs...>>::type>;
+  [[no_unique_address]] typename Types::Promise current_promise;
+  [[no_unique_address]] typename Types::Next next_factory;
+};
+
+template <template <typename> class Traits, char I, typename... Fs, typename T>
+auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
+    -> decltype(SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
+        &state->next_factory, std::forward<T>(arg))) {
+  return SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
+      &state->next_factory, std::forward<T>(arg));
+}
+
+template <template <typename> class Traits, typename... Fs>
+class BasicSeq {
+ private:
+ // Number of states in the sequence - we'll refer to this some!
+  static constexpr char N = sizeof...(Fs);
+
+  // Current state.
+  static_assert(N < 128, "Long sequence... please revisit BasicSeq");
+  char state_ = 0;
+  // The penultimate state contains all the preceding states too.
+  using PenultimateState = SeqState<Traits, N - 2, Fs...>;
+  // The final state is simply the final promise, which is the next promise from the penultimate state.
+  using FinalPromise = typename PenultimateState::Types::Next::Promise;
+  union {
+    [[no_unique_address]] PenultimateState penultimate_state_;
+    [[no_unique_address]] FinalPromise final_promise_;
+  };
+  using FinalPromiseResult = typename FinalPromise::Result;
+  using Result = typename Traits<FinalPromiseResult>::WrappedType;
+
+  // Accessor for various pieces, by index.
+  template <char I>
+  struct Get {
+    // Get a state by index.
+    static SeqState<Traits, I, Fs...>* state(BasicSeq* s) {
+      return PenultimateState::template Get<I>::f(&s->penultimate_state_);
+    }
+
+    // Get the next state's promise.
+    static typename SeqState<Traits, I + 1, Fs...>::Types::Promise* next_promise(BasicSeq* s) {
+      return &PenultimateState::template Get<I + 1>::f(&s->penultimate_state_)->current_promise;
+    }
+  };
+  // Specialization for the penultimate state since otherwise we hit overflow errors getting the next_promise.
+  template <>
+  struct Get<N - 2> {
+    static PenultimateState* state(BasicSeq* s) { return &s->penultimate_state_; }
+    static FinalPromise* next_promise(BasicSeq* s) { return &s->final_promise_; }
+  };
+
+  // Callable to advance the state to the next one after I given the result from state I.
+  template <char I>
+  struct RunNext {
+    BasicSeq* s;
+    template <typename T>
+    Poll<Result> operator()(T&& value) {
+      auto* prior = Get<I>::state(s);
+      using StateType = absl::remove_reference_t<decltype(*prior)>;
+      // Destroy the promise that just completed.
+      Destruct(&prior->current_promise);
+      // Construct the next promise by calling the next promise factory.
+      // We need to ask the traits to do this to deal with value wrapping/unwrapping.
+      auto n = StateType::Types::PromiseResultTraits::CallFactory(&prior->next_factory, std::forward<T>(value));
+      // Now we also no longer need the factory, so we can destroy that.
+      Destruct(&prior->next_factory);
+      // Constructing the promise for the new state will use the memory previously occupied by the promise & next factory of the old state.
+      Construct(Get<I>::next_promise(s), std::move(n));
+      // Store the state counter.
+      s->state_ = I + 1;
+      // Recursively poll the new current state.
+      return RunState<I + 1>{s}();
+    }
+  };
+
+// Poll the current state, advance it if necessary.
+  template <char I>
+  struct RunState {
+    BasicSeq* s;
+    Poll<Result> operator()() {
+      // Get a pointer to the state object.
+      auto* state = Get<I>::state(s);
+      // Poll the current promise in this state.
+      auto r = state->current_promise();
+      // If we are still pending, say so by returning.
+      if (absl::holds_alternative<Pending>(r)) {
+        return Pending();
+      }
+      // Current promise is ready, as the traits to do the next thing.
+      // That may be returning - eg if TrySeq sees an error.
+      // Or it may be by calling the callable we hand down - RunNext - which will advance the state and call the next promise.
+      return Traits<
+          typename absl::remove_reference_t<decltype(*state)>::Types::PromiseResult>::
+          template CheckResultAndRunNext<Result>(std::move(absl::get<kPollReadyIdx>(std::move(r))), RunNext<I>{s});
+    }
+  };
+
+// Specialization of RunState to run the final state.
+  template <>
+  struct RunState<N - 1> {
+    BasicSeq* s;
+    Poll<Result> operator()() {
+      // Poll the final promise.
+      auto r = s->final_promise_();
+      // If we are still pending, say so by returning.
+      if (absl::holds_alternative<Pending>(r)) {
+        return Pending();
+      }
+      // We are complete, return the (wrapped) result.
+      return Result(std::move(absl::get<kPollReadyIdx>(std::move(r))));
+    }
+  };
+
+  // For state numbered I, destruct the current promise and the next promise factory, and recursively destruct the next promise factories for future states (since they also still exist).
+  template <char I>
+  struct DestructCurrentPromiseAndSubsequentFactories {
+    BasicSeq* s;
+    void operator()() {
+      Destruct(&PenultimateState::template Get<I>::f(&s->penultimate_state_)->current_promise);
+      DestructSubsequentFactories<I>::Run(s);
+    }
+  };
+
+// For state I, destruct the next promise factory, and recursively the next promise factories after.
+  template <char I>
+  struct DestructSubsequentFactories {
+    static void Run(BasicSeq* s) {
+      Destruct(&PenultimateState::template Get<I>::f(&s->penultimate_state_)->next_factory);
+      DestructSubsequentFactories<I + 1>::Run(s);
+    }
+  };
+
+// Terminator for the above recursion.
+  template <>
+  struct DestructSubsequentFactories<N - 1> {
+    static void Run(BasicSeq* s) {}
+  };
+
+// Specialization for the final state - there are no subsequent factories.
+  template <>
+  struct DestructCurrentPromiseAndSubsequentFactories<N - 1> {
+    BasicSeq* s;
+    void operator()() { Destruct(&s->final_promise_); }
+  };
+
+// Run the current state (and possibly later states if that one finishes).
+// Single argument is a type that encodes the integer sequence 0, 1, 2, ..., N-1 as a type, but which uses no memory.
+// This is used to expand out RunState instances using a template unpack to pass to Switch, which encodes a switch statement over the various cases.
+// This ultimately gives us a Duff's device like mechanic for evaluating sequences.
+  template <char... I>
+  Poll<Result> Run(absl::integer_sequence<char, I...>) {
+    return Switch<Poll<Result>>(state_, RunState<I>{this}...);
+  }
+
+// Run the appropriate destructors for a given state.
+// Single argument is a type that encodes the integer sequence 0, 1, 2, ..., N-1 as a type, but which uses no memory.
+// This is used to expand out DestructCurrentPromiseAndSubsequentFactories instances to pass to Switch, which can choose the correct instance at runtime to destroy everything.
+  template <char... I>
+  void RunDestruct(absl::integer_sequence<char, I...>) {
+    Switch<void>(state_, DestructCurrentPromiseAndSubsequentFactories<I>{this}...);
+  }
+
+ public:
+ // Construct a sequence given the callables that will control it.
+  explicit BasicSeq(Fs... fs) : penultimate_state_(std::make_tuple(&fs...)) {}
+  // No assignment... we don't need it (but if we ever find a good case, then it's ok to implement).
+  BasicSeq& operator=(const BasicSeq&) = delete;
+  // Copy construction - only for state 0.
+  // It's illegal to copy a Promise after polling it - if we are in state>0 we *must* have been polled.
+  BasicSeq(const BasicSeq& other) {
+    assert(other.state_ == 0);
+    new (&penultimate_state_) PenultimateState(other.penultimate_state_);
+  }
+  // Move construction - only for state 0.
+  // It's illegal to copy a Promise after polling it - if we are in state>0 we *must* have been polled.
+  BasicSeq(BasicSeq&& other) noexcept {
+    assert(other.state_ == 0);
+    new (&penultimate_state_) PenultimateState(std::move(other.penultimate_state_));
+  }
+  // Destruct based on current state.
+  ~BasicSeq() { RunDestruct(absl::make_integer_sequence<char, N>()); }
+
+  // Poll the sequence once.
+  Poll<Result> operator()() {
+    return Run(absl::make_integer_sequence<char, N>());
+  }
+};
+
+}  // namespace promise_detail
+}  // namespace grpc_core
+
+#endif  // GRPC_CORE_LIB_PROMISE_SEQ_H
