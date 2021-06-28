@@ -67,7 +67,7 @@ class StringMatcher {
 
  private:
   StringMatcher(Type type, absl::string_view matcher, bool case_sensitive);
-  StringMatcher(std::unique_ptr<RE2> regex_matcher);
+  explicit StringMatcher(std::unique_ptr<RE2> regex_matcher);
 
   Type type_ = Type::kExact;
   std::string string_matcher_;
