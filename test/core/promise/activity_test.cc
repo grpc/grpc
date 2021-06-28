@@ -18,6 +18,7 @@
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/wait_set.h"
 
 using testing::_;
 using testing::Mock;

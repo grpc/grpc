@@ -309,6 +309,7 @@ libs:
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
   - src/core/lib/gprpp/fork.h
@@ -3149,34 +3150,32 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
   - src/core/lib/promise/activity.cc
   - test/core/promise/benchmark/competition.cc
   - test/core/promise/benchmark/filter_stack.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/status:status
   - absl/status:statusor
   - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   - benchmark
   benchmark: true
@@ -4193,29 +4192,25 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
+  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
+  - src/core/lib/promise/wait_set.h
   src:
   - src/core/lib/promise/activity.cc
   - test/core/promise/activity_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/status:status
   - absl/status:statusor
   - absl/synchronization:synchronization
@@ -5127,34 +5122,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/context_test.cc
-  deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
-  - absl/types:variant
+  deps: []
   uses_polling: false
 - name: delegating_channel_test
   gtest: true
@@ -5327,33 +5298,32 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
+  - src/core/lib/promise/wait_set.h
   src:
   - src/core/lib/promise/activity.cc
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/status:status
   - absl/status:statusor
   - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: generic_end2end_test
@@ -5736,33 +5706,14 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/if_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
   - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: init_test
@@ -5850,33 +5801,15 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/join_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: json_fuzzer_test
@@ -5921,33 +5854,27 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
+  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
   - src/core/lib/promise/activity.cc
   - test/core/promise/latch_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/status:status
   - absl/status:statusor
   - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: lb_get_cpu_stats_test
@@ -5996,6 +5923,20 @@ targets:
   - test/core/gpr/log_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
+- name: loop_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/loop_test.cc
+  deps:
+  - absl/types:variant
   uses_polling: false
 - name: matchers_test
   gtest: true
@@ -6103,29 +6044,24 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
+  - src/core/lib/promise/wait_set.h
   src:
   - src/core/lib/promise/activity.cc
   - test/core/promise/observable_test.cc
   deps:
   - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/status:status
   - absl/status:statusor
   - absl/synchronization:synchronization
@@ -6196,29 +6132,25 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
+  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
   - src/core/lib/promise/activity.cc
   - test/core/promise/pipe_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/status:status
   - absl/status:statusor
   - absl/synchronization:synchronization
@@ -6230,33 +6162,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/poll_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: port_sharing_end2end_test
@@ -6278,33 +6187,15 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
+  - src/core/lib/gprpp/capture.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/promise_factory_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/functional:bind_front
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
   - absl/types:optional
   - absl/types:variant
   uses_polling: false
@@ -6313,32 +6204,12 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
+  - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/promise_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
   - absl/types:optional
   - absl/types:variant
   uses_polling: false
@@ -6457,33 +6328,13 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/race_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: raw_end2end_test
@@ -6575,33 +6426,16 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/seq_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: server_builder_plugin_test
@@ -7072,33 +6906,18 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/basic_join.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
   - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/try_join_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/status:status
   - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: try_seq_test
@@ -7106,33 +6925,19 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/detail/switch.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/try_seq_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/status:status
   - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: unknown_frame_bad_client_test
@@ -7176,67 +6981,14 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
+  - src/core/lib/gprpp/overload.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
   - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
   src:
-  - src/core/lib/promise/activity.cc
   - test/core/promise/visitor_test.cc
   deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
-  - absl/types:variant
-  uses_polling: false
-- name: while_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/observable.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/try_join.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/visitor.h
-  - src/core/lib/promise/while.h
-  src:
-  - src/core/lib/promise/activity.cc
-  - test/core/promise/while_test.cc
-  deps:
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/synchronization:synchronization
-  - absl/types:optional
   - absl/types:variant
   uses_polling: false
 - name: window_overflow_bad_client_test

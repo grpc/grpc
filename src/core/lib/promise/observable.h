@@ -18,6 +18,7 @@
 #include <limits>
 #include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/wait_set.h"
 
 namespace grpc_core {
 

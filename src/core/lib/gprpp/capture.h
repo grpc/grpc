@@ -15,12 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_ADAPTOR_H
 #define GRPC_CORE_LIB_PROMISE_ADAPTOR_H
 
-#include "absl/status/statusor.h"
-#include "src/core/lib/promise/poll.h"
-
 namespace grpc_core {
 
-namespace adaptor_detail {
+namespace detail {
 
 template <typename F, typename... Captures>
 class Capture {
@@ -45,12 +42,11 @@ class Capture {
   [[no_unique_address]] std::tuple<Captures...> captures_;
 };
 
-}  // namespace adaptor_detail
+}  // namespace detail
 
 template <typename F, typename... Captures>
-adaptor_detail::Capture<F, Captures...> Capture(F f, Captures... captures) {
-  return adaptor_detail::Capture<F, Captures...>(std::move(f),
-                                                 std::move(captures)...);
+detail::Capture<F, Captures...> Capture(F f, Captures... captures) {
+  return detail::Capture<F, Captures...>(std::move(f), std::move(captures)...);
 }
 
 }  // namespace grpc_core

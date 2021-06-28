@@ -16,11 +16,8 @@
 #define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 
 #include <functional>
-#include "absl/container/flat_hash_set.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
@@ -418,73 +415,6 @@ ActivityPtr MakeActivity(Factory promise_factory,
           std::move(promise_factory), std::move(callback_scheduler),
           std::move(on_done), std::move(contexts)...));
 }
-
-// Helper type that can be used to enqueue many Activities waiting for some
-// external state.
-// Typically the external state should be guarded by mu_, and a call to
-// WakeAllAndUnlock should be made when the state changes.
-// Promises should bottom out polling inside pending(), which will register for
-// wakeup and return Pending().
-// Queues handles to Activities, and not Activities themselves, meaning that if
-// an Activity is destroyed prior to wakeup we end up holding only a small
-// amount of memory (around 16 bytes + malloc overhead) until the next wakeup
-// occurs.
-class WaitSet final {
-  using WakerSet = absl::flat_hash_set<Waker>;
-
- public:
-  // Register for wakeup, return Pending(). If state is not ready to proceed,
-  // Promises should bottom out here.
-  Pending AddPending(Waker waker) {
-    pending_.emplace(std::move(waker));
-    return Pending();
-  }
-
-  class WakeupSet {
-   public:
-    void Wakeup() {
-      while (!wakeup_.empty()) {
-        wakeup_.extract(wakeup_.begin()).value().Wakeup();
-      }
-    }
-
-   private:
-    friend class WaitSet;
-    explicit WakeupSet(WakerSet&& wakeup)
-        : wakeup_(std::forward<WakerSet>(wakeup)) {}
-    WakerSet wakeup_;
-  };
-
-  [[nodiscard]] WakeupSet TakeWakeupSet() {
-    return WakeupSet(std::move(pending_));
-  }
-
- private:
-  // Handles to activities that need to be awoken.
-  WakerSet pending_;
-};
-
-// Helper type to track wakeups between objects in the same activity.
-// Can be fairly fast as no ref counting or locking needs to occur.
-class IntraActivityWaiter {
- public:
-  // Register for wakeup, return Pending(). If state is not ready to proceed,
-  // Promises should bottom out here.
-  Pending pending() {
-    waiting_ = true;
-    return Pending();
-  }
-  // Wake the activity
-  void Wake() {
-    if (waiting_) {
-      waiting_ = false;
-      Activity::WakeupCurrent();
-    }
-  }
-
- private:
-  bool waiting_ = false;
-};
 
 // A callback scheduler that simply crashes
 struct NoCallbackScheduler {

@@ -20,7 +20,13 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = [
+        "//:activity",
+        "//:join",
+        "//:promise",
+        "//:seq",
+        "//:wait_set",
+    ],
 )
 
 grpc_cc_test(
@@ -29,7 +35,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:if"],
 )
 
 grpc_cc_test(
@@ -38,7 +44,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:poll"],
 )
 
 grpc_cc_test(
@@ -47,7 +53,14 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = [
+        "//:for_each",
+        "//:join",
+        "//:map",
+        "//:observable",
+        "//:pipe",
+        "//:seq",
+    ],
 )
 
 grpc_cc_test(
@@ -56,7 +69,11 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = [
+        "//:observable",
+        "//:promise",
+        "//:seq",
+    ],
 )
 
 grpc_cc_test(
@@ -65,7 +82,12 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = [
+        "//:join",
+        "//:pipe",
+        "//:promise",
+        "//:seq",
+    ],
 )
 
 grpc_cc_test(
@@ -77,7 +99,11 @@ grpc_cc_test(
     ],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = [
+        "//:capture",
+        "//:promise",
+        "//:promise_factory",
+    ],
 )
 
 grpc_cc_test(
@@ -86,7 +112,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:context"],
 )
 
 grpc_cc_test(
@@ -104,7 +130,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:seq"],
 )
 
 grpc_cc_test(
@@ -113,7 +139,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:try_seq"],
 )
 
 grpc_cc_test(
@@ -122,7 +148,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:join"],
 )
 
 grpc_cc_test(
@@ -131,7 +157,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:try_join"],
 )
 
 grpc_cc_test(
@@ -140,7 +166,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:race"],
 )
 
 grpc_cc_test(
@@ -149,7 +175,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:visitor"],
 )
 
 grpc_cc_test(
@@ -158,7 +184,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:loop"],
 )
 
 grpc_cc_test(
@@ -167,5 +193,9 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = [
+        "//:join",
+        "//:latch",
+        "//:seq",
+    ],
 )

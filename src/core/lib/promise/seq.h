@@ -16,7 +16,6 @@
 #define GRPC_CORE_LIB_PROMISE_SEQ_H
 
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/poll.h"
 

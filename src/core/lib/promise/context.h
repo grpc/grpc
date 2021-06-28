@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_PROMISE_CONTEXT_H
 #define GRPC_CORE_LIB_PROMISE_CONTEXT_H
 
-#include "src/core/lib/promise/poll.h"
+#include <utility>
 
 namespace grpc_core {
 

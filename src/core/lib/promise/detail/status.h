@@ -37,4 +37,4 @@ inline absl::Status IntoStatus(absl::Status* status) {
 }  // namespace promise_detail
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_DETAIL_STATUS_H

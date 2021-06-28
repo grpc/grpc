@@ -16,6 +16,7 @@
 #define GRPC_CORE_LIB_PROMISE_LATCH_H
 
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {

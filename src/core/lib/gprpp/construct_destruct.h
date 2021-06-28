@@ -34,4 +34,4 @@ void Construct(T* p, Args&&... args) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_CONSTRUCT_DESTRUCT_H

@@ -17,6 +17,15 @@
 
 namespace grpc_core {
 
+TEST(PollTest, IsItPoll) {
+  EXPECT_EQ(PollTraits<Poll<int>>::is_poll(), true);
+  EXPECT_EQ(PollTraits<Poll<bool>>::is_poll(), true);
+  EXPECT_EQ(PollTraits<Poll<std::unique_ptr<int>>>::is_poll(), true);
+  EXPECT_EQ(PollTraits<int>::is_poll(), false);
+  EXPECT_EQ(PollTraits<bool>::is_poll(), false);
+  EXPECT_EQ(PollTraits<std::unique_ptr<int>>::is_poll(), false);
+}
+
 TEST(PollTest, Pending) {
   Poll<int> i = Pending();
   EXPECT_TRUE(absl::holds_alternative<Pending>(i));

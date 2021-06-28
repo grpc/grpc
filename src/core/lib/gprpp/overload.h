@@ -46,4 +46,4 @@ OverloadType<Cases...> Overload(Cases... cases) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_GPRPP_OVERLOAD_H

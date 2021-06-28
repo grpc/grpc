@@ -17,7 +17,6 @@
 
 #include "absl/types/variant.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"

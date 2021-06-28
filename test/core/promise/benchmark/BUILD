@@ -32,6 +32,13 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
-        "//:promise",
+        "//:activity",
+        "//:for_each",
+        "//:join",
+        "//:latch",
+        "//:pipe",
+        "//:seq",
+        "//:try_join",
+        "//:try_seq",
     ],
 )

@@ -20,6 +20,7 @@
 #include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {

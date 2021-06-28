@@ -45,6 +45,7 @@
 // for it) be called Repeatedly.
 
 #include <utility>
+#include "src/core/lib/promise/poll.h"
 
 // PromiseLike helps us deal with functors that return immediately.
 // PromiseLike<F> if F returns Poll<T> is basically a no-op, where-as if F

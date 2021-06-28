@@ -16,7 +16,6 @@
 #define GRPC_CORE_LIB_PROMISE_MAP_H
 
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {

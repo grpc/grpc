@@ -15,21 +15,12 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include <gtest/gtest.h>
 #include "absl/functional/bind_front.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
 namespace promise_detail {
 namespace testing {
-
-TEST(AdaptorTest, IsItPoll) {
-  EXPECT_EQ(PollTraits<Poll<int>>::is_poll(), true);
-  EXPECT_EQ(PollTraits<Poll<bool>>::is_poll(), true);
-  EXPECT_EQ(PollTraits<Poll<std::unique_ptr<int>>>::is_poll(), true);
-  EXPECT_EQ(PollTraits<int>::is_poll(), false);
-  EXPECT_EQ(PollTraits<bool>::is_poll(), false);
-  EXPECT_EQ(PollTraits<std::unique_ptr<int>>::is_poll(), false);
-}
 
 template <typename Arg, typename F>
 PromiseFactory<Arg, F> MakeFactory(F f) {
