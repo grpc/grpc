@@ -770,9 +770,6 @@ typedef struct grpc_completion_queue_functor {
   struct grpc_completion_queue_functor* internal_next;
 } grpc_completion_queue_functor;
 
-typedef grpc_completion_queue_functor
-    grpc_experimental_completion_queue_functor;
-
 #define GRPC_CQ_CURRENT_VERSION 2
 #define GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE 2
 typedef struct grpc_completion_queue_attributes {
