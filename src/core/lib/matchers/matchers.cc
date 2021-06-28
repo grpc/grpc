@@ -48,8 +48,7 @@ StringMatcher::StringMatcher(Type type, absl::string_view matcher,
     : type_(type), string_matcher_(matcher), case_sensitive_(case_sensitive) {}
 
 StringMatcher::StringMatcher(std::unique_ptr<RE2> regex_matcher)
-    : type_(Type::kSafeRegex),
-      regex_matcher_(std::move(regex_matcher)) {}
+    : type_(Type::kSafeRegex), regex_matcher_(std::move(regex_matcher)) {}
 
 StringMatcher::StringMatcher(const StringMatcher& other)
     : type_(other.type_), case_sensitive_(other.case_sensitive_) {
