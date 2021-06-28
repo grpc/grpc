@@ -177,7 +177,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   refresh_thread_.Join();
 }
 
-void FileWatcherCertificateProvider::ForceUpdate() {
+absl::Status FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
   if (!root_cert_path_.empty()) {
@@ -198,13 +198,14 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       root_certificate_ = "";
     }
   }
+  absl::Status key_cert_match = absl::OkStatus();
   const bool identity_cert_changed =
       (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
-      absl::Status key_cert_match = 
+      key_cert_match = 
           PrivateKeyAndCertificateMatch(pem_key_cert_pairs.private_key(), pem_key_cert_pairs.cert_chain());
       if (key_cert_match.ok()){
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
@@ -262,6 +263,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     GRPC_ERROR_UNREF(root_cert_error);
     GRPC_ERROR_UNREF(identity_cert_error);
   }
+  return key_cert_match;
 }
 
 absl::optional<std::string>
