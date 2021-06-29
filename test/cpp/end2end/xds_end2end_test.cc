@@ -11572,7 +11572,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
+    EXPECT_THAT(rpc.elapsed_time,
+              ::testing::DoubleNear(kFixedDelaySeconds * 1000, kErrorTolerance));
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
     ++num_aborted;
@@ -11629,7 +11630,8 @@ TEST_P(FaultInjectionTest,
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
+    EXPECT_THAT(rpc.elapsed_time,
+              ::testing::DoubleNear(kFixedDelaySeconds * 1000, kErrorTolerance));
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
     ++num_aborted;
