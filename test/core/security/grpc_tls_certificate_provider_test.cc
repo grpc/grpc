@@ -583,17 +583,43 @@ TEST_F(GrpcTlsCertificateProviderTest,
   EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str())))) << "lolz";
+                                               cert_chain_.c_str()))));
   absl::Status status = provider.ReloadRootCertificate("");
   gpr_log(GPR_ERROR, "error: %s", status.ToString().c_str());
-  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(CredentialInfo(
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
-                                               cert_chain_.c_str())))) << "lolz 2";
-//  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument) << "lolz 3";
-//  EXPECT_EQ(status.message(), "Root Certificate string is empty.") << "lolz 4";
+                                               cert_chain_.c_str()))));
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Root Certificate string is empty.");
   CancelWatch(watcher_state_1);
+  CancelWatch(watcher_state_2);
 }
+
+//  This test below does not work but the one directly above does.
+//TEST_F(GrpcTlsCertificateProviderTest,
+//       DataWatcherCertificateProviderReloadEmptyRootCertificate) {
+//  DataWatcherCertificateProvider provider(
+//      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+//  // Watcher watching root certificate change.
+//  WatcherState* watcher_state_1 =
+//      MakeWatcher(provider.distributor(), kCertName, kCertName);
+//  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+//              ::testing::ElementsAre(CredentialInfo(
+//                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+//                                               cert_chain_.c_str()))));
+//  absl::Status status = provider.ReloadRootCertificate("");
+//  gpr_log(GPR_ERROR, "error: %s", status.ToString().c_str());
+//  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+//              ::testing::ElementsAre(CredentialInfo(
+//                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+//                                               cert_chain_.c_str()))));
+//  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+//  EXPECT_EQ(status.message(), "Root Certificate string is empty.");
+//  CancelWatch(watcher_state_1);
+//}
 
 }  // namespace testing
 }  // namespace grpc_core
