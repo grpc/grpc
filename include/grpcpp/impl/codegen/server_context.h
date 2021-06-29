@@ -101,15 +101,6 @@ class GenericServerContext;
 class Server;
 class ServerInterface;
 class ContextAllocator;
-
-// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
-namespace experimental {
-
-typedef ::grpc::ServerContextBase ServerContextBase;
-typedef ::grpc::CallbackServerContext CallbackServerContext;
-
-}  // namespace experimental
-
 class GenericCallbackServerContext;
 
 namespace internal {
@@ -122,7 +113,7 @@ class ServerContextTestSpouse;
 class DefaultReactorTestPeer;
 }  // namespace testing
 
-/// Base class of ServerContext. Experimental until callback API is final.
+/// Base class of ServerContext.
 class ServerContextBase {
  public:
   virtual ~ServerContextBase();
@@ -310,8 +301,6 @@ class ServerContextBase {
   ///
   /// This method should not be called more than once or called after return
   /// from the method handler.
-  ///
-  /// WARNING: This is experimental API and could be changed or removed.
   ::grpc::ServerUnaryReactor* DefaultReactor() {
     // Short-circuit the case where a default reactor was already set up by
     // the TestPeer.
