@@ -104,6 +104,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     }
   };
 
+  // updates `WatcherState* state_` with latest credetial strings and errors
   class TlsCertificatesTestWatcher : public grpc_tls_certificate_distributor::
                                          TlsCertificatesWatcherInterface {
    public:
@@ -115,6 +116,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     // dtor sets state->watcher to nullptr.
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
+    // updates `state_` with new credential strings
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
         absl::optional<PemKeyCertPairList> key_cert_pairs) override {
@@ -131,6 +133,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
                                              std::move(updated_identity));
     }
 
+    // updates `state_` with new credential error
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
       MutexLock lock(&state_->mu);

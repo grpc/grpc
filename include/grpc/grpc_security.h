@@ -857,6 +857,10 @@ GRPCAPI grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_in_memory_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
 
+//  TODO: Add necessary comments
+GRPCAPI grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_external_create(
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
 /**
  * Releases a grpc_tls_certificate_provider object. The creator of the
  * grpc_tls_certificate_provider object is responsible for its release. It is

@@ -142,11 +142,16 @@ class InMemoryCertificateProvider : public StaticDataCertificateProvider {
   InMemoryCertificateProvider(std::string root_certificate,
                               grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
- public:
   absl::Status ReloadRootCertificate(const std::string& root_certificate);
 
   absl::Status ReloadKeyCertificatePair(
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+};
+
+class ExternalCertificateProvider: public StaticDataCertificateProvider {
+  public:
+  ExternalCertificateProvider(std::string root_certificate,
+                              grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 
 //  Checks if the private key matches certificate's public key. Returns error

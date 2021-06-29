@@ -179,7 +179,6 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   refresh_thread_.Join();
 }
 
-//
 void FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -369,6 +368,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
+// TODO: Consider invalid pair at construction and reflect in design doc
 InMemoryCertificateProvider::InMemoryCertificateProvider(
     std::string root_certificate,
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
@@ -380,31 +380,31 @@ absl::Status InMemoryCertificateProvider::ReloadRootCertificate(
     return absl::InvalidArgumentError("Root Certificate string is empty.");
   }
   grpc_core::MutexLock lock(&mu_);
-  if (!root_certificate.empty() && root_certificate_ != root_certificate) {
-    root_certificate_ = std::move(root_certificate);
-    ExecCtx exec_ctx;
-    grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Unable to get latest root certificates.");
-    for (const auto& p : watcher_info_) {
-      const std::string& cert_name = p.first;
-      const WatcherInfo& info = p.second;
-      absl::optional<std::string> root_to_report;
-      if (info.root_being_watched) {
-        root_to_report = root_certificate_;
-      }
-      if (root_to_report.has_value()) {
-        distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
-                                      absl::nullopt);
-      }
-      if (info.root_being_watched && root_certificate_.empty()) {
-        distributor_->SetErrorForCert(
-            cert_name, GRPC_ERROR_REF(root_cert_error), absl::nullopt);
-      }
-    }
-    GRPC_ERROR_UNREF(root_cert_error);
-    return absl::OkStatus();
+  if (root_certificate_ != root_certificate) {
+    return absl::InvalidArgumentError("Root Certificate has not changed.");
   }
-  return absl::InvalidArgumentError("Root Certificate has not changed.");
+  root_certificate_ = std::move(root_certificate);
+  ExecCtx exec_ctx;
+  grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Unable to get latest root certificates.");
+  for (const auto& p : watcher_info_) {
+    const std::string& cert_name = p.first;
+    const WatcherInfo& info = p.second;
+    absl::optional<std::string> root_to_report;
+    if (info.root_being_watched) {
+      root_to_report = root_certificate_;
+    }
+    if (root_to_report.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
+                                    absl::nullopt);
+    }
+    if (info.root_being_watched && root_certificate_.empty()) {
+      distributor_->SetErrorForCert(
+          cert_name, GRPC_ERROR_REF(root_cert_error), absl::nullopt);
+    }
+  }
+  GRPC_ERROR_UNREF(root_cert_error);
+  return absl::OkStatus();
 }
 
 absl::Status InMemoryCertificateProvider::ReloadKeyCertificatePair(
@@ -500,6 +500,11 @@ absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
   return result;
 }
 
+ExternalCertificateProvider::ExternalCertificateProvider(
+    std::string root_certificate,
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs)
+    : StaticDataCertificateProvider(root_certificate, pem_key_cert_pairs) {}
+
 }  // namespace grpc_core
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
@@ -546,6 +551,23 @@ grpc_tls_certificate_provider* grpc_tls_certificate_provider_in_memory_create(
     root_cert_core = root_certificate;
   }
   return new grpc_core::InMemoryCertificateProvider(
+      std::move(root_cert_core), std::move(identity_pairs_core));
+}
+
+grpc_tls_certificate_provider* grpc_tls_certificate_provider_external_create(
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
+  GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::PemKeyCertPairList identity_pairs_core;
+  if (pem_key_cert_pairs != nullptr) {
+    identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
+    delete pem_key_cert_pairs;
+  }
+  std::string root_cert_core;
+  if (root_certificate != nullptr) {
+    root_cert_core = root_certificate;
+  }
+  return new grpc_core::ExternalCertificateProvider(
       std::move(root_cert_core), std::move(identity_pairs_core));
 }
 
