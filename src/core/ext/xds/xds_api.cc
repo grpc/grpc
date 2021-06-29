@@ -1527,6 +1527,61 @@ grpc_error_handle ParseTypedPerFilterConfig(
   return GRPC_ERROR_NONE;
 }
 
+absl::optional<XdsApi::Route::RetryPolicy> RetryPolicyParse(
+    const envoy_config_route_v3_RetryPolicy* retry_policy) {
+  XdsApi::Route::RetryPolicy retry;
+  retry.retry_on = UpbStringToStdString(
+      envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
+  const google_protobuf_UInt32Value* num_retries =
+      envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
+  if (num_retries != nullptr) {
+    retry.num_retries = google_protobuf_UInt32Value_value(num_retries);
+  } else {
+    gpr_log(GPR_DEBUG, "RouteAction RetryPolicy missing num_retries");
+    return absl::nullopt;
+  }
+  const envoy_config_route_v3_RetryPolicy_RetryBackOff* backoff =
+      envoy_config_route_v3_RetryPolicy_retry_back_off(retry_policy);
+  if (backoff != nullptr) {
+    const google_protobuf_Duration* base_interval =
+        envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
+    if (base_interval != nullptr) {
+      XdsApi::Duration base;
+      base.seconds = google_protobuf_Duration_seconds(base_interval);
+      base.nanos = google_protobuf_Duration_nanos(base_interval);
+      retry.retry_back_off.base_interval = base;
+    } else {
+      gpr_log(GPR_DEBUG,
+              "RouteAction RetryPolicy RetryBackoff missing base interval");
+      return absl::nullopt;
+    }
+    const google_protobuf_Duration* max_interval =
+        envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
+    if (max_interval != nullptr) {
+      XdsApi::Duration max;
+      max.seconds = google_protobuf_Duration_seconds(max_interval);
+      max.nanos = google_protobuf_Duration_nanos(max_interval);
+      retry.retry_back_off.max_interval = max;
+    } else {
+      gpr_log(GPR_DEBUG,
+              "RouteAction RetryPolicy RetryBackoff missing max interval");
+      return absl::nullopt;
+    }
+  } else {
+    gpr_log(GPR_DEBUG, "RetryPolicy missing retry_backoff");
+    return absl::nullopt;
+  }
+  const google_protobuf_Duration* per_try_timeout =
+      envoy_config_route_v3_RetryPolicy_per_try_timeout(retry_policy);
+  if (per_try_timeout != nullptr) {
+    XdsApi::Duration per_try;
+    per_try.seconds = google_protobuf_Duration_seconds(per_try_timeout);
+    per_try.nanos = google_protobuf_Duration_nanos(per_try_timeout);
+    retry.per_try_timeout = per_try;
+  }
+  return retry;
+}
+
 grpc_error_handle RouteActionParse(const EncodingContext& context,
                                    const envoy_config_route_v3_Route* route_msg,
                                    XdsApi::Route* route, bool* ignore_route) {
@@ -1704,6 +1759,13 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
       route->hash_policies.emplace_back(std::move(policy));
     }
   }
+  // Get retry policy
+  const envoy_config_route_v3_RetryPolicy* retry_policy =
+      envoy_config_route_v3_RouteAction_retry_policy(route_action);
+  if (retry_policy != nullptr) {
+    XdsApi::Route::RetryPolicy retry;
+    route->retry_policy = RetryPolicyParse(retry_policy);
+  }
   return GRPC_ERROR_NONE;
 }
 
@@ -1749,6 +1811,14 @@ grpc_error_handle RouteConfigParse(
           &vhost.typed_per_filter_config);
       if (error != GRPC_ERROR_NONE) return error;
     }
+    // Parse retry policy.
+    absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy =
+        absl::nullopt;
+    const envoy_config_route_v3_RetryPolicy* retry_policy =
+        envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
+    if (retry_policy != nullptr) {
+      virtual_host_retry_policy = RetryPolicyParse(retry_policy);
+    }
     // Parse routes.
     size_t num_routes;
     const envoy_config_route_v3_Route* const* routes =
@@ -1783,6 +1853,10 @@ grpc_error_handle RouteConfigParse(
       error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
+      if (route.retry_policy == absl::nullopt) {
+        route.retry_policy = virtual_host_retry_policy;
+        gpr_log(GPR_INFO, "donna add the virtual host one if there is one");
+      }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,

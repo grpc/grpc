@@ -441,6 +441,32 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsApi::Route::ClusterWeight* cluster_weight,
     RefCountedPtr<ServiceConfig>* method_config) {
   std::vector<std::string> fields;
+  // Set retry policy if any.
+  if (route.retry_policy.has_value()) {
+    std::vector<std::string> retry_parts;
+    retry_parts.push_back(absl::StrFormat(
+        "    \"retryPolicy\": {\n"
+        "      \"maxAttempts\": \"%d\",\n"
+        "      \"initialBackoff\": \"%d.%09ds\",\n"
+        "      \"maxBackoff\": \"%d.%09ds\",\n"
+        "      \"backoffMultiplier\": 2,\n",
+        route.retry_policy->num_retries + 1,
+        route.retry_policy->retry_back_off.base_interval.seconds,
+        route.retry_policy->retry_back_off.base_interval.nanos,
+        route.retry_policy->retry_back_off.max_interval.seconds,
+        route.retry_policy->retry_back_off.max_interval.nanos));
+    if (route.retry_policy->per_try_timeout.has_value()) {
+      retry_parts.push_back(
+          absl::StrFormat("        \"perAttemptRecvTimeout\": \"%d.%09ds\",\n",
+                          route.retry_policy->per_try_timeout->seconds,
+                          route.retry_policy->per_try_timeout->nanos));
+    }
+    retry_parts.push_back(
+        absl::StrFormat("      \"retryableStatusCodes\": [ \"%s\" ]\n"
+                        "    }",
+                        route.retry_policy->retry_on));
+    fields.emplace_back(absl::StrJoin(retry_parts, ""));
+  }
   // Set timeout.
   if (route.max_stream_duration.has_value() &&
       (route.max_stream_duration->seconds != 0 ||
@@ -506,7 +532,9 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         "\n  } ]\n"
         "}");
     *method_config = ServiceConfig::Create(args, json.c_str(), &error);
+    gpr_log(GPR_INFO, "donna created method config: %s", json.c_str());
   }
+  gpr_log(GPR_INFO, "donna maybe created method config");
   grpc_channel_args_destroy(args);
   return error;
 }
