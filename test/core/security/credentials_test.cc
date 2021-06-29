@@ -1302,7 +1302,7 @@ static char* encode_and_sign_jwt_success(const grpc_auth_json_key* json_key,
 static char* encode_and_sign_jwt_with_scope_success(
     const grpc_auth_json_key* json_key, const char* /*audience*/,
     gpr_timespec token_lifetime, const char* scope) {
-  if (strcmp(scope, test_scope) == 0 && s) {
+  if (strcmp(scope, test_scope) == 0) {
     validate_jwt_encode_and_sign_params(json_key, scope, token_lifetime);
     return gpr_strdup(test_signed_jwt3);
   }
