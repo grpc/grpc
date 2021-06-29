@@ -137,9 +137,9 @@ class FileWatcherCertificateProvider final
 };
 
 // TODO: Add necessary comments.
-class InMemoryCertificateProvider : public StaticDataCertificateProvider {
+class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
  public:
-  InMemoryCertificateProvider(std::string root_certificate,
+  DataWatcherCertificateProvider(std::string root_certificate,
                               grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
   absl::Status ReloadRootCertificate(const std::string& root_certificate);
@@ -148,9 +148,9 @@ class InMemoryCertificateProvider : public StaticDataCertificateProvider {
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 
-class ExternalCertificateProvider: public StaticDataCertificateProvider {
+class ExternalCertificateProvider : public StaticDataCertificateProvider {
   public:
-  ExternalCertificateProvider(std::string root_certificate,
+   ExternalCertificateProvider(std::string root_certificate,
                               grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 

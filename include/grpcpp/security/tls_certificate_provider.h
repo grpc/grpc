@@ -78,20 +78,20 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
 };
 
 // A CertificateProviderInterface implementation that supports reloading
-class InMemoryCertificateProvider : public CertificateProviderInterface {
+class DataWatcherCertificateProvider : public CertificateProviderInterface {
  public:
-  InMemoryCertificateProvider(
+  DataWatcherCertificateProvider(
       const std::string& root_certificate,
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
-  explicit InMemoryCertificateProvider(const std::string& root_certificate)
-      : InMemoryCertificateProvider(root_certificate, {}) {}
+  explicit DataWatcherCertificateProvider(const std::string& root_certificate)
+      : DataWatcherCertificateProvider(root_certificate, {}) {}
 
-  explicit InMemoryCertificateProvider(
+  explicit DataWatcherCertificateProvider(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
-      : InMemoryCertificateProvider("", identity_key_cert_pairs) {}
+      : DataWatcherCertificateProvider("", identity_key_cert_pairs) {}
 
-  ~InMemoryCertificateProvider() override;
+  ~DataWatcherCertificateProvider() override;
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 

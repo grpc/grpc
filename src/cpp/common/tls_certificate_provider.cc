@@ -42,7 +42,7 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
-InMemoryCertificateProvider::InMemoryCertificateProvider(
+DataWatcherCertificateProvider::DataWatcherCertificateProvider(
     const std::string& root_certificate,
     const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
   GPR_ASSERT(!root_certificate.empty() || !identity_key_cert_pairs.empty());
@@ -61,7 +61,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
       "initial_certificate_chain",  // certificate_chain
   };
   auto identity_pairs = std::vector<IdentityKeyCertPair>(1, identity_pair);
-  auto certificate_provider = std::make_shared<InMemoryCertificateProvider>(
+  auto certificate_provider = std::make_shared<DataWatcherCertificateProvider>(
       root_certificate, identity_pairs);
   test_root_certificate = "updated_root_certificate";
   grpc::Status reload_root_status =
@@ -75,14 +75,14 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
       certificate_provider->ReloadKeyCertificatePair(identity_pairs);
 }
 
-InMemoryCertificateProvider::~InMemoryCertificateProvider() {
+DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 }
 
-grpc::Status InMemoryCertificateProvider::ReloadRootCertificate(
+grpc::Status DataWatcherCertificateProvider::ReloadRootCertificate(
     const string& root_certificate) {
-  grpc_core::InMemoryCertificateProvider* in_memory_provider =
-      dynamic_cast<grpc_core::InMemoryCertificateProvider*>(c_provider_);
+  grpc_core::DataWatcherCertificateProvider* in_memory_provider =
+      dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
   // TODO: replace with status
   GPR_ASSERT(in_memory_provider != nullptr);
   absl::Status status =
@@ -91,15 +91,15 @@ grpc::Status InMemoryCertificateProvider::ReloadRootCertificate(
                       status.message().data());
 }
 
-grpc::Status InMemoryCertificateProvider::ReloadKeyCertificatePair(
+grpc::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
     const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
   for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
     grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
                                      pair.certificate_chain.c_str());
   }
-  grpc_core::InMemoryCertificateProvider* in_memory_provider =
-      dynamic_cast<grpc_core::InMemoryCertificateProvider*>(c_provider_);
+  grpc_core::DataWatcherCertificateProvider* in_memory_provider =
+      dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
   // TODO: replace with status
   GPR_ASSERT(in_memory_provider != nullptr);
   absl::Status status = in_memory_provider->ReloadKeyCertificatePair(
