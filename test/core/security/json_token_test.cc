@@ -316,19 +316,19 @@ static char* service_account_creds_jwt_encode_and_sign(
     const grpc_auth_json_key* key) {
   return grpc_jwt_encode_and_sign(key, GRPC_JWT_OAUTH2_AUDIENCE,
                                   grpc_max_auth_token_lifetime(), test_scope,
-                                  0);
+                                  false);
 }
 
 static char* service_account_creds_no_audience_jwt_encode_and_sign(
     const grpc_auth_json_key* key) {
   return grpc_jwt_encode_and_sign(key, GRPC_JWT_OAUTH2_AUDIENCE,
                                   grpc_max_auth_token_lifetime(), test_scope,
-                                  1);
+                                  true);
 }
 
 static char* jwt_creds_jwt_encode_and_sign(const grpc_auth_json_key* key) {
-  return grpc_jwt_encode_and_sign(key, test_service_url,
-                                  grpc_max_auth_token_lifetime(), nullptr, 0);
+  return grpc_jwt_encode_and_sign(
+      key, test_service_url, grpc_max_auth_token_lifetime(), nullptr, false);
 }
 
 static void service_account_creds_check_jwt_claim(const Json& claim) {
