@@ -142,7 +142,7 @@ spec:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-        /run_scripts/run_worker.sh
+        /run_scripts/run_protobuf_c_worker.sh
       command:
       - bash
   - build:

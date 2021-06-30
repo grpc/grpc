@@ -92,10 +92,10 @@ spec:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-        /run_scripts/run_worker.sh
+        /run_scripts/run_protobuf_c_worker.sh
       command:
       - bash
-      image: ${prebuilt_image_prefix}/php7_protobuf_c:${prebuilt_image_tag}
+      image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
   - language: python
     pool: ${client_pool}
     run:
