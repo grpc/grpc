@@ -16,12 +16,12 @@
 #define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 
 #include <functional>
-#include "absl/synchronization/mutex.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -146,7 +146,7 @@ class Activity : private Wakeable {
   }
 
   // All promise execution occurs under this mutex.
-  absl::Mutex mu_;
+  Mutex mu_;
 
   // Check if this activity is the current activity executing on the current
   // thread.
@@ -277,7 +277,7 @@ class PromiseActivity final
   void Cancel() final {
     bool was_done;
     {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       // Check if we were done, and flag done.
       was_done = done_;
       if (!done_) MarkDone();

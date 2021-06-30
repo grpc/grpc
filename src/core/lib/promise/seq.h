@@ -47,8 +47,8 @@ using Seq = BasicSeq<SeqTraits, Fs...>;
 
 // Sequencing combinator.
 // Run the first promise.
-// Pass it's result to the second, and run the returned promise.
-// Pass it's result to the third, and run the returned promise.
+// Pass its result to the second, and run the returned promise.
+// Pass its result to the third, and run the returned promise.
 // etc
 // Return the final value.
 template <typename... Functors>

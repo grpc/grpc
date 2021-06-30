@@ -80,7 +80,7 @@ using TrySeq = BasicSeq<TrySeqTraits, Fs...>;
 
 // Try a sequence of operations.
 // * Run the first functor as a promise.
-// * Feed the it's success result into the second functor to create a promise,
+// * Feed its success result into the second functor to create a promise,
 //   then run that.
 // * ...
 // * Feed the second-final success result into the final functor to create a

@@ -44,7 +44,7 @@ namespace promise_detail {
 template <typename T>
 class ObservableState {
  public:
-  explicit ObservableState(absl::optional<T> value) : value_(value) {}
+  explicit ObservableState(absl::optional<T> value) : value_(std::move(value)) {}
 
   // Publish that we're closed.
   void Close() {

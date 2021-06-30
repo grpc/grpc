@@ -765,9 +765,6 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/promise/activity.cc",
     ],
-    external_deps = [
-        "absl/synchronization",
-    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/activity.h",
@@ -778,6 +775,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_status",
+        "gpr_base",
     ],
 )
 

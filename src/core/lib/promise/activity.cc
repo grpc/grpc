@@ -45,7 +45,7 @@ class Activity::Handle final : public Wakeable {
 
   // Activity needs to wake up (if it still exists!) - wake it up, and drop the
   // ref that was kept for this handle.
-  void Wakeup() override LOCKS_EXCLUDED(mu_) {
+  void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
@@ -78,8 +78,8 @@ class Activity::Handle final : public Wakeable {
   // Two initial refs: one for the waiter that caused instantiation, one for the
   // activity.
   std::atomic<size_t> refs_{2};
-  absl::Mutex mu_ ACQUIRED_AFTER(activity_->mu_);
-  Activity* activity_ GUARDED_BY(mu_);
+  Mutex mu_ ABSL_ACQUIRED_AFTER(activity_->mu_);
+  Activity* activity_ ABSL_GUARDED_BY(mu_);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

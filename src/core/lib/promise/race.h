@@ -20,7 +20,7 @@
 
 namespace grpc_core {
 
-namespace race_detail {
+namespace promise_detail {
 
 // Implementation type for Race combinator.
 template <typename... Promises>
@@ -29,10 +29,10 @@ class Race;
 template <typename Promise, typename... Promises>
 class Race<Promise, Promises...> {
  public:
+  using Result = decltype(std::declval<Promise>()());
+
   explicit Race(Promise promise, Promises... promises)
       : promise_(std::move(promise)), next_(std::move(promises)...) {}
-
-  using Result = decltype(std::declval<Promise>()());
 
   Result operator()() {
     // Check our own promise.
@@ -55,8 +55,8 @@ class Race<Promise, Promises...> {
 template <typename Promise>
 class Race<Promise> {
  public:
-  explicit Race(Promise promise) : promise_(std::move(promise)) {}
   using Result = decltype(std::declval<Promise>()());
+  explicit Race(Promise promise) : promise_(std::move(promise)) {}
   Result operator()() { return promise_(); }
 
  private:
@@ -69,8 +69,8 @@ class Race<Promise> {
 /// If two results are simultaneously available, bias towards the first result
 /// listed.
 template <typename... Promises>
-race_detail::Race<Promises...> Race(Promises... promises) {
-  return race_detail::Race<Promises...>(std::move(promises)...);
+promise_detail::Race<Promises...> Race(Promises... promises) {
+  return promise_detail::Race<Promises...>(std::move(promises)...);
 }
 
 }  // namespace grpc_core
