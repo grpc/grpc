@@ -47,11 +47,11 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   # Fetch keys per https://rvm.io/rvm/install
-  # Force use of an IPv4 key server to avoid running into https://github.com/rvm/rvm/issues/4215
   gpg_recv_keys_success=0
   for ((i=0;i<5;i++)); do
-    KEYSERVER_IPV4_ADDRESS="$(host pool.sks-keyservers.net | grep 'has address' | head -n1 | awk '{print $4}')"
-    gpg --keyserver "hkp://${KEYSERVER_IPV4_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
+    # Use the Ubuntu keyserver instead of pool.sks-keyservers.net because sks-keyservers is now deprecated.
+    GPG_KEYSERVER_ADDRESS="keyserver.ubuntu.com"
+    gpg --keyserver "hkp://${GPG_KEYSERVER_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
       && gpg_recv_keys_success=1
     [[ "$gpg_recv_keys_success" == 1 ]] && break
     sleep 3

@@ -42,8 +42,8 @@ cdef extern from "grpc/byte_buffer_reader.h":
 
 
 cdef extern from "grpc/impl/codegen/grpc_types.h":
-    ctypedef struct grpc_experimental_completion_queue_functor:
-        void (*functor_run)(grpc_experimental_completion_queue_functor*, int);
+    ctypedef struct grpc_completion_queue_functor:
+        void (*functor_run)(grpc_completion_queue_functor*, int);
 
 
 cdef extern from "grpc/grpc.h":
@@ -358,7 +358,7 @@ cdef extern from "grpc/grpc.h":
   void grpc_completion_queue_destroy(grpc_completion_queue *cq) nogil
 
   grpc_completion_queue *grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
+    grpc_completion_queue_functor* shutdown_callback,
     void *reserved) nogil
 
   grpc_call_error grpc_call_start_batch(
@@ -525,7 +525,7 @@ cdef extern from "grpc/grpc_security.h":
   void grpc_set_ssl_roots_override_callback(
       grpc_ssl_roots_override_callback cb) nogil
 
-  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials, const char *user_provided_audience) nogil
+  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) nogil
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
       verify_peer_options *verify_options, void *reserved) nogil
@@ -551,7 +551,7 @@ cdef extern from "grpc/grpc_security.h":
       void *reserved) nogil
   grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
       const char *json_key,
-      gpr_timespec token_lifetime, const char* user_provided_audience) nogil
+      gpr_timespec token_lifetime, void *reserved) nogil
   grpc_call_credentials *grpc_google_refresh_token_credentials_create(
       const char *json_refresh_token, void *reserved) nogil
   grpc_call_credentials *grpc_google_iam_credentials_create(
