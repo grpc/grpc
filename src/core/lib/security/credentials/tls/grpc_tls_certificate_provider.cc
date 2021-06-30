@@ -366,19 +366,21 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
 }
 
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
-    absl::string_view private_key, absl::string_view cert) {
+    absl::string_view private_key, absl::string_view cert_chain) {
   if (private_key.empty()) {
     return absl::InvalidArgumentError("Private key string is empty.");
   }
-  if (cert.empty()) {
+  if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  std::string temp = std::string(cert);
+  std::string temp = std::string(cert_chain);
   BIO* cert_bio = BIO_new_mem_buf(temp.c_str(), temp.size());
   if (cert_bio == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from certificate string to BIO failed.");
   }
+  // Reads the first cert from the cert_chain which is expected to be the leaf
+  // cert
   X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
   BIO_free(cert_bio);
   if (x509 == nullptr) {

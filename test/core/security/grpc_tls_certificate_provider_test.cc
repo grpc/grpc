@@ -505,7 +505,7 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
 
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyCertificate) {
   absl::StatusOr<bool> status =
-      PrivateKeyAndCertificateMatch(private_key_2_, /*cert=*/"");
+      PrivateKeyAndCertificateMatch(private_key_2_, /*cert_chain=*/"");
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.status().message(), "Certificate string is empty.");
