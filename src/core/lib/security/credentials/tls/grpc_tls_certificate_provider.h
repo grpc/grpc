@@ -137,7 +137,7 @@ class FileWatcherCertificateProvider final
 //  Checks if the private key matches certificate's public key. Returns error
 //  status on failure.
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
-    absl::string_view private_key, absl::string_view cert);
+    absl::string_view private_key, absl::string_view cert_chain);
 
 }  // namespace grpc_core
 
