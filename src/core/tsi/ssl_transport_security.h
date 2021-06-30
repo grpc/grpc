@@ -158,7 +158,8 @@ struct tsi_ssl_client_handshaker_options {
 
   /* The directory where all hashed CRL files enforced by the handshaker are
      located. If the directory is invalid, CRL checking will fail open and just
-     log. An empty directory will not enable crl checking*/
+     log. An empty directory will not enable crl checking. Only OpenSSL version
+     > 1.1 is supported for CRL checking*/
   const char* crl_directory;
 
   tsi_ssl_client_handshaker_options()
@@ -295,7 +296,7 @@ struct tsi_ssl_server_handshaker_options {
   /* The directory where all hashed CRL files are cached in the x.509 store and
    * enforced by the handshaker are located. If the directory is invalid, CRL
    * checking will fail open and just log. An empty directory will not enable
-   * crl checking. */
+   * crl checking. Only OpenSSL version > 1.1 is supported for CRL checking */
   const char* crl_directory;
 
   tsi_ssl_server_handshaker_options()
