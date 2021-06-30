@@ -31,7 +31,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
     def service(self, handler_call_details):
         if handler_call_details.method == _TEST_METHOD:
-            return grpc.unary_unary_rpc_method_handler(lambda x, _: x)
+            return grpc.unary_unary_rpc_method_handler(self._abort_handler)
 
 
 def _start_a_test_server():
@@ -70,7 +70,7 @@ class TestRetry(unittest.TestCase):
             multicallable = channel.unary_unary(_TEST_METHOD)
             response = multicallable(_REQUEST)
             assert _REQUEST == response
-        logging.info("Greeter client received: " + response.message)
+        logging.info("Greeter client received: %s", response)
 
 
 if __name__ == "__main__":
