@@ -373,8 +373,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  std::string temp = std::string(cert_chain);
-  BIO* cert_bio = BIO_new_mem_buf(temp.c_str(), temp.size());
+  BIO* cert_bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
   if (cert_bio == nullptr) {
     return absl::InvalidArgumentError(
         "Conversion from certificate string to BIO failed.");
@@ -393,8 +392,8 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
-  temp = std::string(private_key);
-  BIO* private_key_bio = BIO_new_mem_buf(temp.c_str(), temp.size());
+  BIO* private_key_bio =
+      BIO_new_mem_buf(private_key.data(), private_key.size());
   if (private_key_bio == nullptr) {
     EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(
@@ -408,7 +407,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
-  absl::StatusOr<bool> result =
+  bool result =
       EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1;
   EVP_PKEY_free(private_evp_pkey);
   EVP_PKEY_free(public_evp_pkey);
