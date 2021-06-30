@@ -22,6 +22,7 @@
 #include "channel.h"
 #include "server.h"
 #include "timeval.h"
+#include "version.h"
 #include "channel_credentials.h"
 #include "call_credentials.h"
 #include "server_credentials.h"
@@ -541,6 +542,10 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_CHANNEL_SHUTDOWN,
                          CONST_CS | CONST_PERSISTENT);
 
+  /** grpc version string */
+  REGISTER_STRING_CONSTANT("Grpc\\VERSION", PHP_GRPC_VERSION,
+                           CONST_CS | CONST_PERSISTENT);
+  
   grpc_init_call(TSRMLS_C);
   GRPC_STARTUP(channel);
   grpc_init_server(TSRMLS_C);

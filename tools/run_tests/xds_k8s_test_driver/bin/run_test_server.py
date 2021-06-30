@@ -18,6 +18,7 @@ from absl import flags
 
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.test_app import server_app
 
@@ -45,6 +46,10 @@ def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
 
+    # Flag shortcuts.
+    project: str = xds_flags.PROJECT.value
+    # GCP Service Account email
+    gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
     # Base namespace
     namespace = xds_flags.NAMESPACE.value
     server_namespace = namespace
@@ -52,13 +57,15 @@ def main(argv):
     runner_kwargs = dict(
         deployment_name=xds_flags.SERVER_NAME.value,
         image_name=xds_k8s_flags.SERVER_IMAGE.value,
-        gcp_service_account=xds_k8s_flags.GCP_SERVICE_ACCOUNT.value,
+        td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
+        gcp_project=project,
+        gcp_api_manager=gcp.api.GcpApiManager(),
+        gcp_service_account=gcp_service_account,
         network=xds_flags.NETWORK.value,
         reuse_namespace=_REUSE_NAMESPACE.value)
 
     if _SECURE.value:
         runner_kwargs.update(
-            td_bootstrap_image=xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value,
             xds_server_uri=xds_flags.XDS_SERVER_URI.value,
             deployment_template='server-secure.deployment.yaml')
 

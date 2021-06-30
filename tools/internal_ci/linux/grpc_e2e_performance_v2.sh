@@ -14,8 +14,8 @@
 # limitations under the License.
 set -ex
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
+# Enter the gRPC repo root.
+cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
@@ -29,27 +29,90 @@ gcloud config set project grpc-testing
 gcloud container clusters get-credentials benchmarks-prod \
     --zone us-central1-b --project grpc-testing
 
-# This is subject to change. Runs a single test and does not wait for the
-# result.
-tools/run_tests/performance/loadtest_config.py -l c++ -l go \
-    -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
-    -s client_pool=workers-8core -s server_pool=workers-8core \
-    -s big_query_table=e2e_benchmarks.experimental_results \
-    -s timeout_seconds=900 --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" \
-    -r '(go_generic_sync_streaming_ping_pong_secure|go_protobuf_sync_unary_ping_pong_secure|cpp_protobuf_async_streaming_qps_unconstrained_secure)$' \
-    -o ./loadtest.yaml
+# List tests that have running pods and are in errored state.
+# This is an unexpected condition, and it is logged here for monitoring.
+source tools/internal_ci/helper_scripts/list_leftover_loadtests.sh
 
-# Dump the contents of the loadtest.yaml (since loadtest_config.py doesn't
-# list the scenarios that will be run).
-cat ./loadtest.yaml
+# Set up environment variables.
+LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
+# BEGIN differentiate experimental configuration from master configuration.
+if [[ "${KOKORO_BUILD_INITIATOR}" == kokoro ]]; then
+    LOAD_TEST_PREFIX=kokoro-test
+fi
+BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
+BIGQUERY_TABLE_32CORE=e2e_benchmarks.experimental_results_32core
+# END differentiate experimental configuration from master configuration.
+PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
+UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
+ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
+# Prebuilt workers for core languages are always built from grpc/grpc.
+if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
+    GRPC_CORE_GITREF="${KOKORO_GIT_COMMIT}"
+else
+    GRPC_CORE_GITREF="$(git ls-remote https://github.com/grpc/grpc.git master | cut -f1)"
+fi
+GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -f1)"
+GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
+# Kokoro jobs run on dedicated pools.
+DRIVER_POOL=drivers-ci
+WORKER_POOL_8CORE=workers-8core-ci
+WORKER_POOL_32CORE=workers-32core-ci
 
-# The original version of the client is a bit old, update to the latest release
-# version v1.21.0.
-kubectl version --client
-curl -sSL -O https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-chmod +x kubectl
-sudo mv kubectl $(which kubectl)
-kubectl version --client
+# Clone test-infra repository to one upper level directory than grpc.
+pushd ..
+git clone --recursive https://github.com/grpc/test-infra.git
+cd test-infra
+make all-tools
+popd
 
-kubectl apply -f ./loadtest.yaml
+# Build test configurations.
+buildConfigs() {
+    local -r pool="$1"
+    local -r table="$2"
+    shift 2
+    tools/run_tests/performance/loadtest_config.py "$@" \
+        -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
+        -s driver_pool="${DRIVER_POOL}" -s driver_image= \
+        -s client_pool="${pool}" -s server_pool="${pool}" \
+        -s big_query_table="${table}" -s timeout_seconds=900 \
+        -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
+        -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
+        --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
+        -a pool="${pool}" --category=scalable \
+        --allow_client_language=c++ --allow_server_language=c++ \
+        -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
+}
+
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l python -l ruby
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
+
+# Delete prebuilt images on exit.
+deleteImages() {
+    echo "deleting images on exit"
+    ../test-infra/bin/delete_prebuilt_workers \
+    -p "${PREBUILT_IMAGE_PREFIX}" \
+    -t "${UNIQUE_IDENTIFIER}"
+}
+trap deleteImages EXIT
+
+# Build and push prebuilt images for running tests.
+time ../test-infra/bin/prepare_prebuilt_workers \
+    -l "cxx:${GRPC_CORE_GITREF}" \
+    -l "csharp:${GRPC_CORE_GITREF}" \
+    -l "go:${GRPC_GO_GITREF}" \
+    -l "java:${GRPC_JAVA_GITREF}" \
+    -l "python:${GRPC_CORE_GITREF}" \
+    -l "ruby:${GRPC_CORE_GITREF}" \
+    -p "${PREBUILT_IMAGE_PREFIX}" \
+    -t "${UNIQUE_IDENTIFIER}" \
+    -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
+
+# Create reports directory.
+mkdir -p runner
+
+# Run tests.
+time ../test-infra/bin/runner \
+    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
+    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
+    -o "runner/sponge_log.xml"

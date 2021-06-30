@@ -1,7 +1,7 @@
 Mako~=1.1
 PyYAML~=5.3
 absl-py~=0.11
-dataclasses~=0.8
+dataclasses~=0.8; python_version < '3.7'
 google-api-python-client~=1.12
 google-cloud-secret-manager~=2.1
 grpcio~=1.34
@@ -13,3 +13,4 @@ kubernetes~=12.0
 retrying~=1.3
 tenacity~=6.2
 protobuf~=3.14
+xds-protos~=0.0.8

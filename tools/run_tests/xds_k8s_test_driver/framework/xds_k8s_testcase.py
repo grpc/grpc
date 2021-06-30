@@ -20,6 +20,7 @@ from typing import Optional, Tuple
 
 from absl import flags
 from absl.testing import absltest
+from google.protobuf import json_format
 
 from framework import xds_flags
 from framework import xds_k8s_flags
@@ -68,6 +69,8 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
+        cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
+        cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
 
         # Base namespace
         # TODO(sergiitk): generate for each test
@@ -155,6 +158,22 @@ class XdsKubernetesTestCase(absltest.TestCase):
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
+    def assertXdsConfigExists(self, test_client: XdsTestClient):
+        config = test_client.csds.fetch_client_status(log_level=logging.INFO)
+        self.assertIsNotNone(config)
+        seen = set()
+        want = frozenset([
+            'listener_config',
+            'cluster_config',
+            'route_config',
+            'endpoint_config',
+        ])
+        for xds_config in config.xds_config:
+            seen.add(xds_config.WhichOneof('per_xds_config'))
+        logger.debug('Received xDS config dump: %s',
+                     json_format.MessageToJson(config, indent=2))
+        self.assertSameElements(want, seen)
+
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
                          num_rpcs: Optional[int] = 100):
@@ -185,6 +204,13 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if cls.server_maintenance_port is None:
+            cls.server_maintenance_port = \
+                server_app.KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
+
     def setUp(self):
         super().setUp()
 
@@ -195,14 +221,21 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             resource_prefix=self.namespace,
             network=self.network)
 
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=self.firewall_allowed_ports)
+
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.server_namespace),
             deployment_name=self.server_name,
             image_name=self.server_image,
-            gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network)
 
@@ -212,8 +245,10 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
                                     self.client_namespace),
             deployment_name=self.client_name,
             image_name=self.client_image,
-            gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
@@ -265,15 +300,22 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             resource_prefix=self.namespace,
             network=self.network)
 
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=self.firewall_allowed_ports)
+
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
                                     self.server_namespace),
             deployment_name=self.server_name,
             image_name=self.server_image,
+            td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
             gcp_service_account=self.gcp_service_account,
             network=self.network,
-            td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             deployment_template='server-secure.deployment.yaml',
             debug_use_port_forwarding=self.debug_use_port_forwarding)
@@ -284,8 +326,10 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
                                     self.client_namespace),
             deployment_name=self.client_name,
             image_name=self.client_image,
-            gcp_service_account=self.gcp_service_account,
             td_bootstrap_image=self.td_bootstrap_image,
+            gcp_project=self.project,
+            gcp_api_manager=self.gcp_api_manager,
+            gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
             deployment_template='client-secure.deployment.yaml',

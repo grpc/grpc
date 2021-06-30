@@ -20,6 +20,8 @@
 #define GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include <grpcpp/channel.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>

@@ -20,12 +20,14 @@ modules.
 import datetime
 import functools
 import logging
-from typing import Iterator, Optional
+from typing import Iterable, Optional, Tuple
 
 from framework.helpers import retryers
+from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 import framework.rpc
 from framework.rpc import grpc_channelz
+from framework.rpc import grpc_csds
 from framework.rpc import grpc_testing
 from framework.test_app import base_runner
 
@@ -34,11 +36,13 @@ logger = logging.getLogger(__name__)
 # Type aliases
 _timedelta = datetime.timedelta
 _LoadBalancerStatsServiceClient = grpc_testing.LoadBalancerStatsServiceClient
+_XdsUpdateClientConfigureServiceClient = grpc_testing.XdsUpdateClientConfigureServiceClient
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 _ChannelzChannel = grpc_channelz.Channel
 _ChannelzChannelState = grpc_channelz.ChannelState
 _ChannelzSubchannel = grpc_channelz.Subchannel
 _ChannelzSocket = grpc_channelz.Socket
+_CsdsClient = grpc_csds.CsdsClient
 
 
 class XdsTestClient(framework.rpc.grpc.GrpcApp):
@@ -68,8 +72,19 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
     @property
     @functools.lru_cache(None)
+    def update_config(self):
+        return _XdsUpdateClientConfigureServiceClient(
+            self._make_channel(self.rpc_port))
+
+    @property
+    @functools.lru_cache(None)
     def channelz(self) -> _ChannelzServiceClient:
         return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
+
+    @property
+    @functools.lru_cache(None)
+    def csds(self) -> _CsdsClient:
+        return _CsdsClient(self._make_channel(self.maintenance_port))
 
     def get_load_balancer_stats(
         self,
@@ -82,6 +97,15 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         """
         return self.load_balancer_stats.get_client_stats(
             num_rpcs=num_rpcs, timeout_sec=timeout_sec)
+
+    def get_load_balancer_accumulated_stats(
+        self,
+        *,
+        timeout_sec: Optional[int] = None,
+    ) -> grpc_testing.LoadBalancerAccumulatedStatsResponse:
+        """Shortcut to LoadBalancerStatsServiceClient.get_client_accumulated_stats()"""
+        return self.load_balancer_stats.get_client_accumulated_stats(
+            timeout_sec=timeout_sec)
 
     def wait_for_active_server_channel(self) -> _ChannelzChannel:
         """Wait for the channel to the server to transition to READY.
@@ -173,7 +197,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             f'Client has no {_ChannelzChannelState.Name(state)} channel with '
             'the server')
 
-    def get_server_channels(self, **kwargs) -> Iterator[_ChannelzChannel]:
+    def get_server_channels(self, **kwargs) -> Iterable[_ChannelzChannel]:
         return self.channelz.find_channels_for_target(self.server_target,
                                                       **kwargs)
 
@@ -197,8 +221,10 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                  *,
                  deployment_name,
                  image_name,
-                 gcp_service_account,
                  td_bootstrap_image,
+                 gcp_api_manager: gcp.api.GcpApiManager,
+                 gcp_project: str,
+                 gcp_service_account: str,
                  xds_server_uri=None,
                  network='default',
                  service_account_name=None,
@@ -213,16 +239,22 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         # Settings
         self.deployment_name = deployment_name
         self.image_name = image_name
-        self.gcp_service_account = gcp_service_account
-        self.service_account_name = service_account_name or deployment_name
         self.stats_port = stats_port
         # xDS bootstrap generator
         self.td_bootstrap_image = td_bootstrap_image
         self.xds_server_uri = xds_server_uri
         self.network = network
         self.deployment_template = deployment_template
-        self.service_account_template = service_account_template
         self.debug_use_port_forwarding = debug_use_port_forwarding
+        # Service account settings:
+        # Kubernetes service account
+        self.service_account_name = service_account_name or deployment_name
+        self.service_account_template = service_account_template
+        # GCP service account to map to Kubernetes service account
+        self.gcp_service_account = gcp_service_account
+        # GCP IAM API used to grant allow workload service accounts permission
+        # to use GCP service account identity.
+        self.gcp_iam = gcp.iam.IamV1(gcp_api_manager, gcp_project)
 
         # Mutable state
         self.deployment: Optional[k8s.V1Deployment] = None
@@ -238,6 +270,13 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             print_response=False) -> XdsTestClient:
         super().run()
         # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
+
+        # Allow Kubernetes service account to use the GCP service account
+        # identity.
+        self._grant_workload_identity_user(
+            gcp_iam=self.gcp_iam,
+            gcp_service_account=self.gcp_service_account,
+            service_account_name=self.service_account_name)
 
         # Create service account
         self.service_account = self._create_service_account(
@@ -292,6 +331,10 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             self._delete_deployment(self.deployment_name)
             self.deployment = None
         if self.service_account or force:
+            self._revoke_workload_identity_user(
+                gcp_iam=self.gcp_iam,
+                gcp_service_account=self.gcp_service_account,
+                service_account_name=self.service_account_name)
             self._delete_service_account(self.service_account_name)
             self.service_account = None
         super().cleanup(force=force_namespace and force)

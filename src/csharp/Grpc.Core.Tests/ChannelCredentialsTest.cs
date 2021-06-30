@@ -31,6 +31,12 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void SecureCredentials_IsComposable()
+        {
+            Assert.IsTrue(ChannelCredentials.SecureSsl.IsComposable);
+        }
+
+        [Test]
         public void ChannelCredentials_CreateComposite()
         {
             var composite = ChannelCredentials.Create(new FakeChannelCredentials(true), new FakeCallCredentials());
@@ -52,6 +58,10 @@ namespace Grpc.Core.Tests
             var nativeCreds1 = creds.ToNativeCredentials();
             var nativeCreds2 = creds.ToNativeCredentials();
             Assert.AreSame(nativeCreds1, nativeCreds2);
+
+            var nativeCreds3 = ChannelCredentials.SecureSsl.ToNativeCredentials();
+            var nativeCreds4 = ChannelCredentials.SecureSsl.ToNativeCredentials();
+            Assert.AreSame(nativeCreds3, nativeCreds4);
         }
     }
 }

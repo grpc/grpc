@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -87,7 +88,8 @@ static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  err = grpc_apply_socket_mutator_in_args(fd, channel_args);
+  err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_CLIENT_CONNECTION_USAGE,
+                                          channel_args);
   if (err != GRPC_ERROR_NONE) goto error;
 
   goto done;
@@ -238,7 +240,10 @@ finish:
     grpc_channel_args_destroy(ac->channel_args);
     delete ac;
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
+  // Push async connect closure to the executor since this may actually be
+  // called during the shutdown process, in which case a deadlock could form
+  // between the core shutdown mu and the connector mu (b/188239051)
+  grpc_core::Executor::Run(closure, error);
 }
 
 grpc_error_handle grpc_tcp_client_prepare_fd(

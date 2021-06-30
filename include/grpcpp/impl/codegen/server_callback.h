@@ -158,8 +158,7 @@ class ServerCallbackCall {
 };
 
 template <class Request, class Response>
-class DefaultMessageHolder
-    : public ::grpc::experimental::MessageHolder<Request, Response> {
+class DefaultMessageHolder : public MessageHolder<Request, Response> {
  public:
   DefaultMessageHolder() {
     this->set_request(&request_obj_);

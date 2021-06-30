@@ -126,7 +126,6 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
 }
 
 void grpc_init(void) {
-  int i;
   gpr_once_init(&g_basic_init, do_basic_init);
 
   grpc_core::MutexLock lock(g_init_mu);
@@ -150,7 +149,7 @@ void grpc_init(void) {
     gpr_timers_global_init();
     grpc_core::HandshakerRegistry::Init();
     grpc_security_init();
-    for (i = 0; i < g_number_of_plugins; i++) {
+    for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
       }
@@ -175,7 +174,6 @@ void grpc_shutdown_internal_locked(void) {
     grpc_iomgr_shutdown_background_closure();
     {
       grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-      grpc_core::Executor::ShutdownAll();
       for (i = g_number_of_plugins; i >= 0; i--) {
         if (g_all_of_the_plugins[i].destroy != nullptr) {
           g_all_of_the_plugins[i].destroy();

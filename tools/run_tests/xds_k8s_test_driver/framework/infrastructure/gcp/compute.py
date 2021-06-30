@@ -14,7 +14,7 @@
 import dataclasses
 import enum
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from googleapiclient import discovery
 import googleapiclient.errors
@@ -79,6 +79,34 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def delete_health_check(self, name):
         self._delete_resource(self.api.healthChecks(), 'healthCheck', name)
+
+    def create_firewall_rule(self, name: str, network_url: str,
+                             source_ranges: List[str],
+                             ports: List[str]) -> Optional[GcpResource]:
+        try:
+            return self._insert_resource(
+                self.api.firewalls(), {
+                    "allowed": [{
+                        "IPProtocol": "tcp",
+                        "ports": ports
+                    }],
+                    "direction": "INGRESS",
+                    "name": name,
+                    "network": network_url,
+                    "priority": 1000,
+                    "sourceRanges": source_ranges,
+                    "targetTags": ["allow-health-checks"]
+                })
+        except googleapiclient.errors.HttpError as http_error:
+            # TODO(lidiz) use status_code() when we upgrade googleapiclient
+            if http_error.resp.status == 409:
+                logger.debug('Firewall rule %s already existed', name)
+                return
+            else:
+                raise
+
+    def delete_firewall_rule(self, name):
+        self._delete_resource(self.api.firewalls(), 'firewall', name)
 
     def create_backend_service_traffic_director(
             self,
@@ -152,6 +180,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                     'defaultService': dst_host_rule_match_backend_service.url,
                 }],
             })
+
+    def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
+        return self._insert_resource(self.api.urlMaps(), url_map_body)
 
     def delete_url_map(self, name):
         self._delete_resource(self.api.urlMaps(), 'urlMap', name)
@@ -295,19 +326,19 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                       **kwargs) -> GcpResource:
         resp = collection.get(project=self.project, **kwargs).execute()
         logger.info('Loaded compute resource:\n%s',
-                    self._resource_pretty_format(resp))
+                    self.resource_pretty_format(resp))
         return self.GcpResource(resp['name'], resp['selfLink'])
 
     def _insert_resource(self, collection: discovery.Resource,
                          body: Dict[str, Any]) -> GcpResource:
         logger.info('Creating compute resource:\n%s',
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         resp = self._execute(collection.insert(project=self.project, body=body))
         return self.GcpResource(body['name'], resp['targetLink'])
 
     def _patch_resource(self, collection, body, **kwargs):
         logger.info('Patching compute resource:\n%s',
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         self._execute(
             collection.patch(project=self.project, body=body, **kwargs))
 

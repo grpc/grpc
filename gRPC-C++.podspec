@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.38.0-dev'
+  version = '1.39.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -149,6 +149,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/auth_context.h',
                       'include/grpcpp/security/auth_metadata_processor.h',
+                      'include/grpcpp/security/authorization_policy_provider.h',
                       'include/grpcpp/security/credentials.h',
                       'include/grpcpp/security/server_credentials.h',
                       'include/grpcpp/security/tls_certificate_provider.h',
@@ -514,6 +515,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats.h',
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.h',
+                      'src/core/lib/event_engine/endpoint_config_internal.h',
+                      'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
@@ -572,6 +575,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_epollex_linux.h',
                       'src/core/lib/iomgr/ev_poll_posix.h',
                       'src/core/lib/iomgr/ev_posix.h',
+                      'src/core/lib/iomgr/event_engine/closure.h',
+                      'src/core/lib/iomgr/event_engine/endpoint.h',
+                      'src/core/lib/iomgr/event_engine/iomgr.h',
+                      'src/core/lib/iomgr/event_engine/pollset.h',
+                      'src/core/lib/iomgr/event_engine/promise.h',
+                      'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/executor/mpmcqueue.h',
@@ -632,6 +641,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/matchers/matchers.h',
                       'src/core/lib/profiling/timers.h',
+                      'src/core/lib/security/authorization/authorization_engine.h',
+                      'src/core/lib/security/authorization/authorization_policy_provider.h',
+                      'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1155,6 +1167,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
+                              'src/core/lib/event_engine/endpoint_config_internal.h',
+                              'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
@@ -1213,6 +1227,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_epollex_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
+                              'src/core/lib/iomgr/event_engine/closure.h',
+                              'src/core/lib/iomgr/event_engine/endpoint.h',
+                              'src/core/lib/iomgr/event_engine/iomgr.h',
+                              'src/core/lib/iomgr/event_engine/pollset.h',
+                              'src/core/lib/iomgr/event_engine/promise.h',
+                              'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/executor/mpmcqueue.h',
@@ -1273,6 +1293,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/matchers/matchers.h',
                               'src/core/lib/profiling/timers.h',
+                              'src/core/lib/security/authorization/authorization_engine.h',
+                              'src/core/lib/security/authorization/authorization_policy_provider.h',
+                              'src/core/lib/security/authorization/evaluate_args.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
