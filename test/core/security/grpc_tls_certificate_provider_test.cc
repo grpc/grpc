@@ -584,8 +584,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
               ::testing::ElementsAre(CredentialInfo(
                   root_cert_, MakeCertKeyPairs(private_key_.c_str(),
                                                cert_chain_.c_str()))));
+  CancelWatch(watcher_state_1);
   absl::Status status = provider.ReloadRootCertificate("");
-  gpr_log(GPR_ERROR, "error: %s", status.ToString().c_str());
+//  gpr_log(GPR_ERROR, "error: %s", status.ToString().c_str());
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
@@ -594,7 +595,31 @@ TEST_F(GrpcTlsCertificateProviderTest,
                                                cert_chain_.c_str()))));
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(), "Root Certificate string is empty.");
+  CancelWatch(watcher_state_2);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadUnchangedRootCertificate) {
+  DataWatcherCertificateProvider provider(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  // Watcher watching root certificate change.
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
   CancelWatch(watcher_state_1);
+  absl::Status status = provider.ReloadRootCertificate(root_cert_);
+//  gpr_log(GPR_ERROR, "error: %s", status.ToString().c_str());
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Root Certificate has not changed.");
   CancelWatch(watcher_state_2);
 }
 

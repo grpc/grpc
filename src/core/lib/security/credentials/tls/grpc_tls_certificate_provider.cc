@@ -380,7 +380,7 @@ absl::Status DataWatcherCertificateProvider::ReloadRootCertificate(
     return absl::InvalidArgumentError("Root Certificate string is empty.");
   }
   grpc_core::MutexLock lock(&mu_);
-  if (root_certificate_ != root_certificate) {
+  if (root_certificate_ == root_certificate) {
     return absl::InvalidArgumentError("Root Certificate has not changed.");
   }
   root_certificate_ = std::move(root_certificate);
