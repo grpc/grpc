@@ -103,10 +103,13 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 }
 }  // namespace
 
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
+    const grpc::string& user_provided_scope) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return internal::WrapChannelCredentials(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(
+          nullptr,
+          user_provided_scope.empty() ? nullptr : user_provided_scope.c_str()));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
@@ -320,7 +323,8 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
 
 // Builds JWT credentials.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
-    const std::string& json_key, long token_lifetime_seconds) {
+    const std::string& json_key, long token_lifetime_seconds,
+    const grpc::string& user_provided_scope, bool clear_audience) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
@@ -330,7 +334,9 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
   gpr_timespec lifetime =
       gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
   return WrapCallCredentials(grpc_service_account_jwt_access_credentials_create(
-      json_key.c_str(), lifetime, nullptr));
+      json_key.c_str(), lifetime,
+      user_provided_scope.empty() ? nullptr : user_provided_scope.c_str(),
+      clear_audience));
 }
 
 // Builds refresh token credentials.
