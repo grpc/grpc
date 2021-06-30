@@ -39,8 +39,8 @@ constexpr char kMessage[] = "Hello";
 class SdkAuthzEnd2EndTest : public ::testing::Test {
  protected:
   SdkAuthzEnd2EndTest()
-      : server_address_("localhost:" +
-                        std::to_string(grpc_pick_unused_port_or_die())),
+      : server_address_(
+            absl::StrCat("localhost:", grpc_pick_unused_port_or_die())),
         server_creds_(
             std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
                 grpc_fake_transport_security_server_credentials_create()))),
@@ -50,25 +50,24 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
 
   ~SdkAuthzEnd2EndTest() override { server_->Shutdown(); }
 
-  // Creates server with sdk authorization enabled using static data policy
-  // provider.
-  void InitServerWithStaticAuthzProvider(const std::string& policy) {
+  // Creates server with sdk authorization enabled when provider is not null.
+  void InitServer(
+      std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+          provider) {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_, std::move(server_creds_));
-    grpc::Status status;
-    auto provider = experimental::StaticDataAuthorizationPolicyProvider::Create(
-        policy, &status);
-    ASSERT_TRUE(status.ok());
     builder.experimental().SetAuthorizationPolicyProvider(std::move(provider));
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
 
-  void InitServerWithoutAuthorization() {
-    ServerBuilder builder;
-    builder.AddListeningPort(server_address_, std::move(server_creds_));
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
+  std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+  CreateStaticAuthzPolicyProvider(const std::string& policy) {
+    grpc::Status status;
+    auto provider = experimental::StaticDataAuthorizationPolicyProvider::Create(
+        policy, &status);
+    EXPECT_TRUE(status.ok());
+    return provider;
   }
 
   std::shared_ptr<Channel> BuildChannel() {
@@ -92,7 +91,90 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
   std::shared_ptr<ChannelCredentials> channel_creds_;
 };
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestDenyListMatches) {
+TEST_F(SdkAuthzEnd2EndTest,
+       StaticInitAllowsRpcRequestNoMatchInDenyMatchInAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ],"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo1\", \"foo2\"]"
+      "          },"
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar1\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_clientstreamingecho\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/ClientStreamingEcho\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  ClientContext context;
+  context.AddMetadata("key-foo", "foo2");
+  context.AddMetadata("key-bar", "bar1");
+  context.AddMetadata("key-baz", "baz1");
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp.message(), kMessage);
+}
+
+TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestNoMatchInAllowAndDeny) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/foo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"source\": {"
+      "        \"principals\": ["
+      "          \"bar\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  ClientContext context;
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp.message().empty());
+}
+
+TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -112,7 +194,7 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestDenyListMatches) {
       "    }"
       "  ]"
       "}";
-  InitServerWithStaticAuthzProvider(policy);
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
   auto channel = BuildChannel();
   ClientContext context;
   grpc::testing::EchoResponse resp;
@@ -122,7 +204,43 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestDenyListMatches) {
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequest) {
+TEST_F(SdkAuthzEnd2EndTest,
+       StaticInitDeniesRpcRequestMatchInDenyNoMatchInAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_clientstreamingecho\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/ClientStreamingEcho\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  ClientContext context;
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp.message().empty());
+}
+
+TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -135,63 +253,60 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequest) {
       "        ],"
       "        \"headers\": ["
       "          {"
-      "            \"key\": \"foo\","
-      "            \"values\": [\"val-foo1\", \"val-foo2\"]"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo1\", \"foo2\"]"
       "          },"
       "          {"
-      "            \"key\": \"bar\","
-      "            \"values\": [\"val-bar1\"]"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar1\"]"
       "          }"
       "        ]"
       "      }"
       "    }"
       "  ]"
       "}";
-  InitServerWithStaticAuthzProvider(policy);
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
   auto channel = BuildChannel();
   ClientContext context;
-  context.AddMetadata("foo", "val-foo2");
-  context.AddMetadata("bar", "val-bar1");
-  context.AddMetadata("baz", "val-baz");
+  context.AddMetadata("key-foo", "foo2");
+  context.AddMetadata("key-bar", "bar1");
+  context.AddMetadata("key-baz", "baz1");
   grpc::testing::EchoResponse resp;
   grpc::Status status = SendRpc(channel, &context, &resp);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestNoMatchFound) {
+TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
       "    {"
-      "      \"name\": \"policy_1\","
+      "      \"name\": \"allow_echo\","
       "      \"request\": {"
       "        \"paths\": ["
-      "          \"*/SomeMethod\""
+      "          \"*/Echo\""
+      "        ],"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo1\"]"
+      "          }"
       "        ]"
       "      }"
       "    }"
       "  ]"
       "}";
-  InitServerWithStaticAuthzProvider(policy);
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
   auto channel = BuildChannel();
   ClientContext context;
+  context.AddMetadata("key-bar", "bar1");
   grpc::testing::EchoResponse resp;
   grpc::Status status = SendRpc(channel, &context, &resp);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp.message().empty());
-}
-
-TEST_F(SdkAuthzEnd2EndTest, AllowsRpcRequestSdkAuthorizationDisabled) {
-  InitServerWithoutAuthorization();
-  auto channel = BuildChannel();
-  ClientContext context;
-  grpc::testing::EchoResponse resp;
-  grpc::Status status = SendRpc(channel, &context, &resp);
-  EXPECT_TRUE(status.ok());
-  EXPECT_EQ(resp.message(), kMessage);
 }
 
 }  // namespace
