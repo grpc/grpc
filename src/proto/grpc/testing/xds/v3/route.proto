@@ -339,6 +339,7 @@ message RouteAction {
   repeated HashPolicy hash_policy = 15;
 
   RetryPolicy retry_policy = 9;
+  HedgePolicy hedge_policy = 27;
 
   // Specifies the maximum stream duration for this route.
   MaxStreamDuration max_stream_duration = 36;

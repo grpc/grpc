@@ -461,10 +461,17 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
                           route.retry_policy->per_try_timeout->seconds,
                           route.retry_policy->per_try_timeout->nanos));
     }
+    if (route.retry_policy->hedge_policy.has_value()) {
+      retry_parts.push_back(absl::StrFormat(
+          "      \"hedgePolicy\": {\n"
+          "         \"hedgeOnPerAttemptRecvTimeout\": \"%d\"\n"
+          "       },\n",
+          route.retry_policy->hedge_policy->hedge_on_per_try_timeout));
+    }
     retry_parts.push_back(
-        absl::StrFormat("      \"retryableStatusCodes\": [ \"%s\" ]\n"
-                        "    }",
+        absl::StrFormat("      \"retryableStatusCodes\": [ \"%s\" ]\n",
                         route.retry_policy->retry_on));
+    retry_parts.push_back(absl::StrFormat(" }"));
     fields.emplace_back(absl::StrJoin(retry_parts, ""));
   }
   // Set timeout.

@@ -1582,6 +1582,14 @@ absl::optional<XdsApi::Route::RetryPolicy> RetryPolicyParse(
   return retry;
 }
 
+absl::optional<XdsApi::Route::RetryPolicy::HedgePolicy> HedgePolicyParse(
+    const envoy_config_route_v3_HedgePolicy* hedge_policy) {
+  XdsApi::Route::RetryPolicy::HedgePolicy hedge;
+  hedge.hedge_on_per_try_timeout =
+      envoy_config_route_v3_HedgePolicy_hedge_on_per_try_timeout(hedge_policy);
+  return hedge;
+}
+
 grpc_error_handle RouteActionParse(const EncodingContext& context,
                                    const envoy_config_route_v3_Route* route_msg,
                                    XdsApi::Route* route, bool* ignore_route) {
@@ -1765,6 +1773,11 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
   if (retry_policy != nullptr) {
     XdsApi::Route::RetryPolicy retry;
     route->retry_policy = RetryPolicyParse(retry_policy);
+    const envoy_config_route_v3_HedgePolicy* hedge_policy =
+        envoy_config_route_v3_RouteAction_hedge_policy(route_action);
+    if (hedge_policy != nullptr && route->retry_policy != absl::nullopt) {
+      route->retry_policy->hedge_policy = HedgePolicyParse(hedge_policy);
+    }
   }
   return GRPC_ERROR_NONE;
 }
@@ -1818,6 +1831,13 @@ grpc_error_handle RouteConfigParse(
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (retry_policy != nullptr) {
       virtual_host_retry_policy = RetryPolicyParse(retry_policy);
+      const envoy_config_route_v3_HedgePolicy* hedge_policy =
+          envoy_config_route_v3_VirtualHost_hedge_policy(virtual_hosts[i]);
+      if (hedge_policy != nullptr &&
+          virtual_host_retry_policy != absl::nullopt) {
+        virtual_host_retry_policy->hedge_policy =
+            HedgePolicyParse(hedge_policy);
+      }
     }
     // Parse routes.
     size_t num_routes;

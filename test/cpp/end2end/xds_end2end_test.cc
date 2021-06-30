@@ -5672,6 +5672,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicy) {
       retry_policy->mutable_retry_back_off()->mutable_max_interval();
   max_interval->set_seconds(10);
   max_interval->set_nanos(5);
+  auto* hedge_policy = route1->mutable_route()->mutable_hedge_policy();
+  hedge_policy->set_hedge_on_per_try_timeout(true);
   // route 2: Set max_stream_duration of 2.5 seconds
   auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
