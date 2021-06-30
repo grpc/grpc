@@ -148,8 +148,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_service_account_jwt_access_credentials>(
-      key, token_lifetime, std::move(user_provided_scope),
-      clear_audience);
+      key, token_lifetime, std::move(user_provided_scope), clear_audience);
 }
 
 static char* redact_private_key(const char* json_key) {

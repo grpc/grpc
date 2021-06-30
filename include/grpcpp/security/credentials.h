@@ -213,8 +213,7 @@ constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
     long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs,
-    const grpc::string& user_provided_scope = "",
-    bool clear_audience = false);
+    const grpc::string& user_provided_scope = "", bool clear_audience = false);
 
 /// Builds refresh token credentials.
 /// json_refresh_token is the JSON string containing the refresh token along
