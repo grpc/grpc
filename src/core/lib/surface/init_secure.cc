@@ -67,18 +67,17 @@ static bool maybe_prepend_server_auth_filter(
   return true;
 }
 
-static bool maybe_prepend_sdk_server_auth_filter(
+static bool maybe_prepend_sdk_server_authz_filter(
     grpc_channel_stack_builder* builder, void* /*arg*/) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  if (args) {
-    for (size_t i = 0; i < args->num_args; i++) {
-      if (0 ==
-          strcmp(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER, args->args[i].key)) {
-        return grpc_channel_stack_builder_prepend_filter(
-            builder, &SdkServerAuthzFilter, nullptr, nullptr);
-      }
-    }
+  const auto* provider =
+      grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
+          args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
+  if (provider != nullptr) {
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_core::SdkServerAuthzFilter::kFilterVtable, nullptr,
+        nullptr);
   }
   return true;
 }
@@ -97,7 +96,7 @@ void grpc_register_security_filters(void) {
   // server_auth_filter to allow server_auth_filter on which the sdk filter
   // depends on to be higher on the channel stack.
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX - 2,
-                                   maybe_prepend_sdk_server_auth_filter,
+                                   maybe_prepend_sdk_server_authz_filter,
                                    nullptr);
 }
 
