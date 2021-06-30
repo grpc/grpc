@@ -407,6 +407,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
+  // `result` is true if the key-cert pair matches and false otherwise
   bool result =
       EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1;
   EVP_PKEY_free(private_evp_pkey);
