@@ -249,8 +249,6 @@ static void check_jwt_claim(const Json& claim, const char* expected_audience,
   GPR_ASSERT(value.type() == Json::Type::STRING);
   GPR_ASSERT(value.string_value() ==
              "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com");
-  int contain_audience = 0;
-
   if (expected_scope != nullptr) {
     GPR_ASSERT(object.find("sub") == object.end());
     value = object["scope"];
