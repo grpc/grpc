@@ -342,7 +342,8 @@ bool ServerContextBase::IsCancelled() const {
     return completion_op_ && completion_op_->CheckCancelledAsync();
   } else {
     // when using sync API, the result is always valid
-    return completion_op_ && completion_op_->CheckCancelled(cq_);
+    return marked_cancelled_.load(std::memory_order_acquire) ||
+           (completion_op_ && completion_op_->CheckCancelled(cq_));
   }
 }
 
