@@ -3497,6 +3497,7 @@ grpc_cc_library(
         "envoy_type_upbdefs",
         "google_api_upbdefs",
         "proto_gen_validate_upbdefs",
+        "xds_core_upbdefs",
     ],
 )
 
