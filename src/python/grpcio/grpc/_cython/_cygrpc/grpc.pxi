@@ -525,7 +525,7 @@ cdef extern from "grpc/grpc_security.h":
   void grpc_set_ssl_roots_override_callback(
       grpc_ssl_roots_override_callback cb) nogil
 
-  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) nogil
+  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials, const char* user_provided_scope) nogil
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
       verify_peer_options *verify_options, void *reserved) nogil
@@ -551,7 +551,7 @@ cdef extern from "grpc/grpc_security.h":
       void *reserved) nogil
   grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
       const char *json_key,
-      gpr_timespec token_lifetime, void *reserved) nogil
+      gpr_timespec token_lifetime, const char* user_provided_scope, int clear_audience) nogil
   grpc_call_credentials *grpc_google_refresh_token_credentials_create(
       const char *json_refresh_token, void *reserved) nogil
   grpc_call_credentials *grpc_google_iam_credentials_create(
