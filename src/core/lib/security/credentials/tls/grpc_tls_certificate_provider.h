@@ -164,7 +164,7 @@ absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
 //  Returns the passed pair list if the match is successful and an empty one
 //  otherwise
 grpc_core::PemKeyCertPairList GetValidKeyCertPairList(
-    grpc_core::PemKeyCertPairList pair_list);
+    grpc_core::PemKeyCertPairList& pair_list);
 
 }  // namespace grpc_core
 

@@ -78,6 +78,7 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
 };
 
 // A CertificateProviderInterface implementation that supports reloading
+// TODO: Add a more detailed comment
 class DataWatcherCertificateProvider : public CertificateProviderInterface {
  public:
   DataWatcherCertificateProvider(

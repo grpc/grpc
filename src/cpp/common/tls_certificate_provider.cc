@@ -180,9 +180,5 @@ void ExternalCertificateProvider::SetWatchStatusCallback(
   std::unique_ptr<grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface> watcher;
 }
 
-//grpc::Status CustomReloadRootCertificate(const string& root_certificate) {
-//
-//}
-
 }  // namespace experimental
 }  // namespace grpc
