@@ -22,12 +22,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-namespace {
-
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::TlsCustomVerificationCheckRequest;
-
-}  // namespace
 
 namespace grpc {
 namespace testing {
