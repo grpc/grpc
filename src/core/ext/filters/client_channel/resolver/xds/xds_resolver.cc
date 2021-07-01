@@ -445,7 +445,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
   if (route.retry_policy.has_value()) {
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
-        "    \"retryPolicy\": {\n"
+        "\"retryPolicy\": {\n"
         "      \"maxAttempts\": \"%d\",\n"
         "      \"initialBackoff\": \"%d.%09ds\",\n"
         "      \"maxBackoff\": \"%d.%09ds\",\n"
@@ -457,7 +457,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         route.retry_policy->retry_back_off.max_interval.nanos));
     if (route.retry_policy->per_try_timeout.has_value()) {
       retry_parts.push_back(
-          absl::StrFormat("        \"perAttemptRecvTimeout\": \"%d.%09ds\",\n",
+          absl::StrFormat("      \"perAttemptRecvTimeout\": \"%d.%09ds\",\n",
                           route.retry_policy->per_try_timeout->seconds,
                           route.retry_policy->per_try_timeout->nanos));
     }
@@ -471,7 +471,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     retry_parts.push_back(
         absl::StrFormat("      \"retryableStatusCodes\": [ \"%s\" ]\n",
                         route.retry_policy->retry_on));
-    retry_parts.push_back(absl::StrFormat(" }"));
+    retry_parts.push_back(absl::StrFormat("    }"));
     fields.emplace_back(absl::StrJoin(retry_parts, ""));
   }
   // Set timeout.
