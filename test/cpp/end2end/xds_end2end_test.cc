@@ -1615,22 +1615,21 @@ grpc_millis NowFromCycleCounter() {
   return grpc_cycle_counter_to_millis_round_up(now);
 }
 
-// Returns the number of RPCs needed to pass error_tolerance at 99.99994% chance.
-// Rolling dices in drop/fault-injection generates a binomial distribution (if
-// our code is not horribly wrong). Let's make "n" the number of samples, "p"
-// the probabilty. If we have np>5 & n(1-p)>5, we can approximately treat the
-// binomial distribution as a normal distribution.
+// Returns the number of RPCs needed to pass error_tolerance at 99.99994%
+// chance. Rolling dices in drop/fault-injection generates a binomial
+// distribution (if our code is not horribly wrong). Let's make "n" the number
+// of samples, "p" the probabilty. If we have np>5 & n(1-p)>5, we can
+// approximately treat the binomial distribution as a normal distribution.
 //
 // For normal distribution, we can easily look up how many standard deviation we
 // need to reach 99.995%. Based on Wiki's table
-// https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule, we need 5.00 sigma
-// (standard deviation) to cover the probability area of 99.99994%. In another
-// word, for a sample with size "n" probability "p" error-tolerance "k", we want
-// the error always land within 5.00 sigma. The sigma of binominal distribution
-// and be computed as sqrt(np(1-p)). Hence, we have the equation:
+// https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule, we need 5.00
+// sigma (standard deviation) to cover the probability area of 99.99994%. In
+// another word, for a sample with size "n" probability "p" error-tolerance "k",
+// we want the error always land within 5.00 sigma. The sigma of binominal
+// distribution and be computed as sqrt(np(1-p)). Hence, we have the equation:
 //
 //   kn <= 5.00 * sqrt(np(1-p))
-//
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
   GPR_ASSERT(p >= 0 && p <= 1);
   size_t num_rpcs =
