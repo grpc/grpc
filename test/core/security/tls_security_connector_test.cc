@@ -612,7 +612,7 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   const char* expected_error_msg =
       "Custom verification check failed with error: UNAUTHENTICATED: "
-      "AsyncExternalVerifierBadVerify failed";
+      "AsyncExternalVerifier failed";
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),
@@ -1073,7 +1073,7 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   const char* expected_error_msg =
       "Custom verification check failed with error: UNAUTHENTICATED: "
-      "AsyncExternalVerifierBadVerify failed";
+      "AsyncExternalVerifier failed";
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       VerifyExpectedErrorCallback, const_cast<char*>(expected_error_msg),

@@ -45,11 +45,11 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
   // indicate callers are doing something wrong with the API.
   if (is_client && options->cert_request_type() !=
                        GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "Client's credentials options should not set cert_request_type.");
   }
   if (!is_client && !options->verify_server_cert()) {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "Server's credentials options should not set verify_server_cert.");
   }
   // In the following conditions, there could be severe security issues.
