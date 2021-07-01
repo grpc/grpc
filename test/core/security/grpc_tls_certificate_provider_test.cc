@@ -540,9 +540,10 @@ TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyMultipleCertMatch) {
-  absl::Status status = PrivateKeyAndCertificateMatch(
+  absl::StatusOr<bool> status = PrivateKeyAndCertificateMatch(
       private_key_2_, /*cert_chain*/ cert_chain_2_ + cert_chain_);
   EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(*status);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
@@ -712,5 +713,3 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return ret;
 }
-//  grpc_tls_certificate_provider_data_watcher_create
-//  grpc_tls_certificate_provider_in_memory_create

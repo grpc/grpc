@@ -55,8 +55,7 @@ namespace grpc_core {
 
 // A basic provider class that will get credentials from string during
 // initialization.
-class StaticDataCertificateProvider final
-    : public grpc_tls_certificate_provider {
+class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
  public:
   StaticDataCertificateProvider(
       std::string root_certificate,
@@ -68,7 +67,7 @@ class StaticDataCertificateProvider final
     return distributor_;
   }
 
- private:
+ protected:
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
@@ -147,12 +146,6 @@ class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 
-class ExternalCertificateProvider : public StaticDataCertificateProvider {
- public:
-  ExternalCertificateProvider(std::string root_certificate,
-                              grpc_core::PemKeyCertPairList pem_key_cert_pairs);
-};
-
 //  Checks if the private key matches certificate's public key. Returns an error
 //  absl::Status on failure or a bool for `private_key`-`cert_chain` match.
 //  The bool is true if the key-cert pair matches and false otherwise.
@@ -163,7 +156,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 //  Returns the passed pair list if the match is successful and an empty one
 //  otherwise
 grpc_core::PemKeyCertPairList GetValidKeyCertPairList(
-    grpc_core::PemKeyCertPairList& pair_list);
+    const grpc_core::PemKeyCertPairList& pair_list);
 
 }  // namespace grpc_core
 

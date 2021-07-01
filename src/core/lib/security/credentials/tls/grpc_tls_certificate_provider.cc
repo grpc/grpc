@@ -409,10 +409,10 @@ absl::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
     return absl::InvalidArgumentError("Empty Key-Cert pair list.");
   }
   for (int i = 0; i < pem_key_cert_pairs.size(); i++) {
-    absl::Status status =
+    absl::StatusOr<bool> status =
         PrivateKeyAndCertificateMatch(pem_key_cert_pairs[i].private_key(),
                                       pem_key_cert_pairs[i].cert_chain());
-    if (!status.ok()) {
+    if (!(status.ok() && *status)) {
       return absl::InvalidArgumentError("Invalid credentials pair.");
     }
   }
@@ -459,7 +459,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
         "Conversion from certificate string to BIO failed.");
   }
   // Reads the first cert from the cert_chain which is expected to be the leaf
-  // cert
+  // certificate.
   X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
   BIO_free(cert_bio);
   if (x509 == nullptr) {
@@ -487,11 +487,25 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
-  bool result =
-      EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1;
+  bool result = EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1;
   EVP_PKEY_free(private_evp_pkey);
   EVP_PKEY_free(public_evp_pkey);
   return result;
+}
+
+grpc_core::PemKeyCertPairList GetValidKeyCertPairList(
+    const grpc_core::PemKeyCertPairList& pair_list) {
+  if (pair_list.empty()) {
+    return {};
+  }
+  for (int i = 0; i < pair_list.size(); i++) {
+    absl::StatusOr<bool> status = PrivateKeyAndCertificateMatch(
+        pair_list[i].private_key(), pair_list[i].cert_chain());
+    if (!(status.ok() && *status)) {
+      return {};
+    }
+  }
+  return pair_list;
 }
 
 }  // namespace grpc_core
@@ -512,6 +526,23 @@ grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     root_cert_core = root_certificate;
   }
   return new grpc_core::StaticDataCertificateProvider(
+      std::move(root_cert_core), std::move(identity_pairs_core));
+}
+
+grpc_tls_certificate_provider* grpc_tls_certificate_provider_data_watcher_create(
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
+  GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::PemKeyCertPairList identity_pairs_core;
+  if (pem_key_cert_pairs != nullptr) {
+    identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
+    delete pem_key_cert_pairs;
+  }
+  std::string root_cert_core;
+  if (root_certificate != nullptr) {
+    root_cert_core = root_certificate;
+  }
+  return new grpc_core::DataWatcherCertificateProvider(
       std::move(root_cert_core), std::move(identity_pairs_core));
 }
 

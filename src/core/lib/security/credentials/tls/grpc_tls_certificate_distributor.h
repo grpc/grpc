@@ -210,10 +210,4 @@ struct grpc_tls_certificate_distributor
   std::map<std::string, CertificateInfo> certificate_info_map_;
 };
 
-struct grpc_tls_watcher_interface {
-  std::unique_ptr<
-      grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface>
-      watcher;
-};
-
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
