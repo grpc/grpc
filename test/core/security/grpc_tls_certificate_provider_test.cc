@@ -701,7 +701,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
 
 }  // namespace testing
 }  // namespace grpc_core
-//  gpr_log(GPR_ERROR, "error: %s", status.ToString().c_str());
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

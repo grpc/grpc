@@ -141,8 +141,10 @@ class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
       std::string root_certificate,
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
+  // Reloads the root_certificate and updates the distributor.
   absl::Status ReloadRootCertificate(const std::string& root_certificate);
 
+  // Reloads the key-cert pair list and updates the distributor.
   absl::Status ReloadKeyCertificatePair(
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
@@ -155,7 +157,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 
 //  Checks if the private key and leaf cert for all pairs in the list match.
 //  Returns the passed pair list if the match is successful and an empty one
-//  otherwise
+//  otherwise.
 grpc_core::PemKeyCertPairList GetValidKeyCertPairList(
     const grpc_core::PemKeyCertPairList& pair_list);
 
