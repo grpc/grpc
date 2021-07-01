@@ -51,28 +51,9 @@ DataWatcherCertificateProvider::DataWatcherCertificateProvider(
     grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
                                      pair.certificate_chain.c_str());
   }
-  c_provider_ = grpc_tls_certificate_provider_in_memory_create(
+  c_provider_ = grpc_tls_certificate_provider_data_watcher_create(
       root_certificate.c_str(), pairs_core);
   GPR_ASSERT(c_provider_ != nullptr);
-
-  std::string test_root_certificate = "initial_root_certificate";
-  IdentityKeyCertPair identity_pair = {
-      "initial_private_key",        // private_key
-      "initial_certificate_chain",  // certificate_chain
-  };
-  auto identity_pairs = std::vector<IdentityKeyCertPair>(1, identity_pair);
-  auto certificate_provider = std::make_shared<DataWatcherCertificateProvider>(
-      root_certificate, identity_pairs);
-  test_root_certificate = "updated_root_certificate";
-  grpc::Status reload_root_status =
-      certificate_provider->ReloadRootCertificate(test_root_certificate);
-  identity_pair = {
-      "updated_private_key",        // private_key
-      "updated_certificate_chain",  // certificate_chain
-  };
-  identity_pairs.assign(1, identity_pair);
-  grpc::Status reload_key_cert_pair_status =
-      certificate_provider->ReloadKeyCertificatePair(identity_pairs);
 }
 
 DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {

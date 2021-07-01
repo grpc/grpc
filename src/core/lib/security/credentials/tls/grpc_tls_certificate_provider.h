@@ -139,8 +139,9 @@ class FileWatcherCertificateProvider final
 // TODO: Add necessary comments.
 class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
  public:
-  DataWatcherCertificateProvider(std::string root_certificate,
-                              grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+  DataWatcherCertificateProvider(
+      std::string root_certificate,
+      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
   absl::Status ReloadRootCertificate(const std::string& root_certificate);
 
@@ -149,8 +150,8 @@ class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
 };
 
 class ExternalCertificateProvider : public StaticDataCertificateProvider {
-  public:
-   ExternalCertificateProvider(std::string root_certificate,
+ public:
+  ExternalCertificateProvider(std::string root_certificate,
                               grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 
@@ -158,6 +159,12 @@ class ExternalCertificateProvider : public StaticDataCertificateProvider {
 //  status on failure.
 absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
                                            const std::string& cert);
+
+//  Checks if the private key and leaf cert for all pairs in the list match.
+//  Returns the passed pair list if the match is successful and an empty one
+//  otherwise
+grpc_core::PemKeyCertPairList GetValidKeyCertPairList(
+    grpc_core::PemKeyCertPairList pair_list);
 
 }  // namespace grpc_core
 

@@ -854,7 +854,7 @@ grpc_tls_certificate_provider_file_watcher_create(
 
 //  TODO: Add necessary comments
 GRPCAPI grpc_tls_certificate_provider*
-grpc_tls_certificate_provider_in_memory_create(
+grpc_tls_certificate_provider_data_watcher_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
 
 //  TODO: Add necessary comments

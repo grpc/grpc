@@ -23,7 +23,7 @@
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/support/config.h>
 
-#include <src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h>
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include <functional>
 #include <map>
 #include <memory>
