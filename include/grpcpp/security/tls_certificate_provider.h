@@ -77,8 +77,9 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
 
-// A CertificateProviderInterface implementation that supports reloading
-// TODO: Add a more detailed comment
+// A basic CertificateProviderInterface implementation that will load credential
+// data from static string during initialization and supports reloading
+// said data from memory.
 class DataWatcherCertificateProvider : public CertificateProviderInterface {
  public:
   DataWatcherCertificateProvider(

@@ -852,15 +852,18 @@ grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
     const char* root_cert_path, unsigned int refresh_interval_sec);
 
-//  TODO: Add necessary comments
+/**
+ * Creates a grpc_tls_certificate_provider that will load credential data from
+ * static string during initialization and supports reloading said data from
+ * memory. `root_certificate` and `pem_key_cert_pairs` can be nullptr,
+ * indicating the corresponding credential data is not needed.
+ * This function will make a copy of |root_certificate| while
+ * the ownership of |pem_key_cert_pairs| is transferred.
+ */
 GRPCAPI grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_data_watcher_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
 
-//  TODO: Add necessary comments
-GRPCAPI grpc_tls_certificate_provider*
-grpc_tls_certificate_provider_external_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
 /**
  * Releases a grpc_tls_certificate_provider object. The creator of the
  * grpc_tls_certificate_provider object is responsible for its release. It is

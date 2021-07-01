@@ -133,7 +133,8 @@ class FileWatcherCertificateProvider final
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 
-// TODO: Add necessary comments.
+// A provider class that initializes its credentials from strings and supports
+// reloading said credentials from memory.
 class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
  public:
   DataWatcherCertificateProvider(
