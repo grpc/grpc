@@ -93,15 +93,7 @@ void SyncExternalVerifier::Destruct(void* user_data) {
   delete self;
 }
 
-AsyncExternalVerifier::~AsyncExternalVerifier() {
-  // Tell the thread to shut down.
-  {
-    MutexLock lock(&mu_);
-    queue_.push_back(Request{nullptr, nullptr, nullptr, true});
-  }
-  // Wait for thread to exit.
-  thread_.Join();
-}
+AsyncExternalVerifier::~AsyncExternalVerifier() {}
 
 int AsyncExternalVerifier::Verify(
     void* user_data, grpc_tls_custom_verification_check_request* request,
@@ -115,7 +107,15 @@ int AsyncExternalVerifier::Verify(
 }
 
 void AsyncExternalVerifier::Destruct(void* user_data) {
+  // Tell the thread to shut down.
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
+  {
+    MutexLock lock(&self->mu_);
+    self->queue_.push_back(Request{nullptr, nullptr, nullptr, true});
+  }
+  // Wait for thread to exit. The thread shall terminate before we delete
+  // everything.
+  self->thread_.Join();
   delete self;
 }
 
