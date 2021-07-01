@@ -136,7 +136,7 @@ class FileWatcherCertificateProvider final
 
 //  Checks if the private key matches certificate's public key. Returns an error
 //  absl::Status on failure or a bool for `private_key`-`cert_chain` match.
-//  The bool is true if the key-cert pair matches and false otherwise
+//  The bool is true if the key-cert pair matches and false otherwise.
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain);
 
