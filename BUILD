@@ -516,6 +516,7 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/synchronization",
         "absl/container:inlined_vector",
         "absl/strings",
@@ -3228,6 +3229,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/functional:bind_front",
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",

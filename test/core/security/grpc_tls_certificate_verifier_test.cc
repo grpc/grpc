@@ -74,9 +74,13 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
   absl::Status sync_status;
-  auto* async_verifier = new AsyncExternalVerifier(true);
-  ExternalCertificateVerifier core_external_verifier(async_verifier->base());
-  EXPECT_FALSE(core_external_verifier.Verify(
+  gpr_event thread_shutdown_event;
+  gpr_event_init(&thread_shutdown_event);
+  auto* async_verifier =
+      new AsyncExternalVerifier(true, &thread_shutdown_event);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  EXPECT_FALSE(core_external_verifier->Verify(
       &request_,
       [](absl::Status async_status) {
         gpr_log(GPR_INFO, "Callback is invoked.");
@@ -84,13 +88,23 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
             << async_status.code() << " " << async_status.message();
       },
       &sync_status));
+  delete core_external_verifier;
+  void* value =
+      gpr_event_wait(&thread_shutdown_event,
+                     gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  EXPECT_NE(value, nullptr);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
   absl::Status sync_status;
-  auto* async_verifier = new AsyncExternalVerifier(false);
-  ExternalCertificateVerifier core_external_verifier(async_verifier->base());
-  EXPECT_FALSE(core_external_verifier.Verify(
+  gpr_event thread_shutdown_event;
+  gpr_event_init(&thread_shutdown_event);
+  auto* async_verifier =
+      new AsyncExternalVerifier(false, &thread_shutdown_event);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  EXPECT_FALSE(core_external_verifier->Verify(
       &request_,
       [](absl::Status async_status) {
         gpr_log(GPR_INFO, "Callback is invoked.");
@@ -99,6 +113,12 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
                   "UNAUTHENTICATED: AsyncExternalVerifier failed");
       },
       &sync_status));
+  delete core_external_verifier;
+  void* value =
+      gpr_event_wait(&thread_shutdown_event,
+                     gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  EXPECT_NE(value, nullptr);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
