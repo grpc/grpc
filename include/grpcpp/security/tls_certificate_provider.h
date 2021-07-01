@@ -23,6 +23,9 @@
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
+#include <functional>
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -69,6 +72,34 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
   ~StaticDataCertificateProvider() override;
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+ private:
+  grpc_tls_certificate_provider* c_provider_ = nullptr;
+};
+
+// A CertificateProviderInterface implementation that supports reloading
+// TODO: Add a more detailed comment
+class DataWatcherCertificateProvider : public CertificateProviderInterface {
+ public:
+  DataWatcherCertificateProvider(
+      const std::string& root_certificate,
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+
+  explicit DataWatcherCertificateProvider(const std::string& root_certificate)
+      : DataWatcherCertificateProvider(root_certificate, {}) {}
+
+  explicit DataWatcherCertificateProvider(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
+      : DataWatcherCertificateProvider("", identity_key_cert_pairs) {}
+
+  ~DataWatcherCertificateProvider() override;
+
+  grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+  grpc::Status ReloadRootCertificate(const std::string& root_certificate);
+
+  grpc::Status ReloadKeyCertificatePair(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
  private:
   grpc_tls_certificate_provider* c_provider_ = nullptr;
@@ -122,6 +153,51 @@ class FileWatcherCertificateProvider final
 
  private:
   grpc_tls_certificate_provider* c_provider_ = nullptr;
+};
+
+class ExternalCertificateProvider final : public CertificateProviderInterface {
+ public:
+  ExternalCertificateProvider(
+      const std::string& root_certificate,
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+
+  explicit ExternalCertificateProvider(const std::string& root_certificate)
+      : ExternalCertificateProvider(root_certificate, {}) {}
+
+  explicit ExternalCertificateProvider(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
+      : ExternalCertificateProvider("", identity_key_cert_pairs) {}
+
+  ~ExternalCertificateProvider() override;
+
+  grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+  void SetKeyMaterials(
+      const std::string& cert_name, const std::string& root_certificate,
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+
+  bool HasRootCerts(const std::string& cert_name);
+
+  bool HasKeyCertPairs(const std::string& cert_name);
+
+  // empty error string means no error
+  void SetErrorForCert(const std::string& cert_name,
+                       const std::string& root_cert_error,
+                       const std::string& identity_cert_error);
+
+  // empty error string means no error
+  void SetError(const std::string& error);
+
+  void SetWatchStatusCallback(
+      std::function<void(std::string, bool, bool)> callback);
+
+ private:
+  grpc_tls_certificate_provider* c_provider_ = nullptr;
+  struct CertsWatching {
+    bool watching_root = false;
+    bool watching_identity = false;
+  };
+  std::map<std::string /*cert_name*/, CertsWatching> certs_watching_;
 };
 
 }  // namespace experimental

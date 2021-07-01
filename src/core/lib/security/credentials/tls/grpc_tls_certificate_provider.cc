@@ -34,7 +34,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)),
-      pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
+      pem_key_cert_pairs_(GetValidKeyCertPairList(pem_key_cert_pairs)) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
@@ -363,6 +363,86 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   gpr_log(GPR_ERROR,
           "All retry attempts failed. Will try again after the next interval.");
   return absl::nullopt;
+}
+
+DataWatcherCertificateProvider::DataWatcherCertificateProvider(
+    std::string root_certificate,
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs)
+    : StaticDataCertificateProvider(root_certificate, pem_key_cert_pairs) {}
+
+absl::Status DataWatcherCertificateProvider::ReloadRootCertificate(
+    const std::string& root_certificate) {
+  if (root_certificate.empty()) {
+    return absl::InvalidArgumentError("Root Certificate string is empty.");
+  }
+  grpc_core::MutexLock lock(&mu_);
+  if (root_certificate_ == root_certificate) {
+    return absl::InvalidArgumentError("Root Certificate has not changed.");
+  }
+  root_certificate_ = std::move(root_certificate);
+  ExecCtx exec_ctx;
+  grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Unable to get latest root certificates.");
+  for (const auto& p : watcher_info_) {
+    const std::string& cert_name = p.first;
+    const WatcherInfo& info = p.second;
+    absl::optional<std::string> root_to_report;
+    if (info.root_being_watched) {
+      root_to_report = root_certificate_;
+    }
+    if (root_to_report.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
+                                    absl::nullopt);
+    }
+    if (info.root_being_watched && root_certificate_.empty()) {
+      distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(root_cert_error),
+                                    absl::nullopt);
+    }
+  }
+  GRPC_ERROR_UNREF(root_cert_error);
+  return absl::OkStatus();
+}
+
+absl::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
+    grpc_core::PemKeyCertPairList pem_key_cert_pairs) {
+  if (pem_key_cert_pairs.empty()) {
+    return absl::InvalidArgumentError("Empty Key-Cert pair list.");
+  }
+  for (int i = 0; i < pem_key_cert_pairs.size(); i++) {
+    absl::Status status =
+        PrivateKeyAndCertificateMatch(pem_key_cert_pairs[i].private_key(),
+                                      pem_key_cert_pairs[i].cert_chain());
+    if (!status.ok()) {
+      return absl::InvalidArgumentError("Invalid credentials pair.");
+    }
+  }
+  grpc_core::MutexLock lock(&mu_);
+  if (pem_key_cert_pairs == pem_key_cert_pairs_) {
+    return absl::InvalidArgumentError(
+        "The Key-Cert pair list has not changed.");
+  }
+  pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
+  ExecCtx exec_ctx;
+  grpc_error_handle identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Unable to get latest identity certificates.");
+  for (const auto& p : watcher_info_) {
+    const std::string& cert_name = p.first;
+    const WatcherInfo& info = p.second;
+    absl::optional<grpc_core::PemKeyCertPairList> identity_to_report;
+    if (info.identity_being_watched) {
+      identity_to_report = pem_key_cert_pairs_;
+    }
+    if (identity_to_report.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, absl::nullopt,
+                                    std::move(identity_to_report));
+    }
+    if (info.identity_being_watched && pem_key_cert_pairs_.empty()) {
+      distributor_->SetErrorForCert(cert_name, absl::nullopt,
+                                    GRPC_ERROR_REF(identity_cert_error));
+    }
+  }
+  GRPC_ERROR_UNREF(identity_cert_error);
+  return absl::OkStatus();
 }
 
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(

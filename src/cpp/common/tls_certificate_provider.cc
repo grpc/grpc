@@ -19,6 +19,7 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 
 #include "absl/container/inlined_vector.h"
+#include "tls_credentials_options_util.h"
 
 namespace grpc {
 namespace experimental {
@@ -41,6 +42,53 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
+DataWatcherCertificateProvider::DataWatcherCertificateProvider(
+    const std::string& root_certificate,
+    const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
+  GPR_ASSERT(!root_certificate.empty() || !identity_key_cert_pairs.empty());
+  grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
+  for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
+    grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
+                                     pair.certificate_chain.c_str());
+  }
+  c_provider_ = grpc_tls_certificate_provider_data_watcher_create(
+      root_certificate.c_str(), pairs_core);
+  GPR_ASSERT(c_provider_ != nullptr);
+}
+
+DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
+  grpc_tls_certificate_provider_release(c_provider_);
+}
+
+grpc::Status DataWatcherCertificateProvider::ReloadRootCertificate(
+    const string& root_certificate) {
+  grpc_core::DataWatcherCertificateProvider* in_memory_provider =
+      dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
+  // TODO: replace with status
+  GPR_ASSERT(in_memory_provider != nullptr);
+  absl::Status status =
+      in_memory_provider->ReloadRootCertificate(root_certificate);
+  return grpc::Status(static_cast<StatusCode>(status.code()),
+                      status.message().data());
+}
+
+grpc::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
+    const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
+  grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
+  for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
+    grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
+                                     pair.certificate_chain.c_str());
+  }
+  grpc_core::DataWatcherCertificateProvider* in_memory_provider =
+      dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
+  // TODO: replace with status
+  GPR_ASSERT(in_memory_provider != nullptr);
+  absl::Status status = in_memory_provider->ReloadKeyCertificatePair(
+      pairs_core->pem_key_cert_pairs);
+  return grpc::Status(static_cast<StatusCode>(status.code()),
+                      status.message().data());
+}
+
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     const std::string& private_key_path,
     const std::string& identity_certificate_path,
@@ -54,6 +102,83 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
+
+ExternalCertificateProvider::ExternalCertificateProvider(
+    const string& root_certificate,
+    const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
+  GPR_ASSERT(!root_certificate.empty() || !identity_key_cert_pairs.empty());
+  grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
+  for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
+    grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
+                                     pair.certificate_chain.c_str());
+  }
+  c_provider_ = grpc_tls_certificate_provider_external_create(
+      root_certificate.c_str(), pairs_core);
+  GPR_ASSERT(c_provider_ != nullptr);
+}
+
+// c_provider()->distributor()->
+ExternalCertificateProvider::~ExternalCertificateProvider() {
+  grpc_tls_certificate_provider_release(c_provider_);
+}
+
+void ExternalCertificateProvider::SetKeyMaterials(
+    const string& cert_name, const string& root_certificate,
+    const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
+  if (!root_certificate.empty()) {
+    c_provider()->distributor()->SetKeyMaterials(cert_name, root_certificate,
+                                                 absl::nullopt);
+  }
+  if (!identity_key_cert_pairs.empty()) {
+    grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
+    for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
+      grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
+                                       pair.certificate_chain.c_str());
+    }
+    c_provider()->distributor()->SetKeyMaterials(
+        cert_name, absl::nullopt, pairs_core->pem_key_cert_pairs);
+  }
+}
+
+bool ExternalCertificateProvider::HasRootCerts(const std::string& cert_name) {
+  return c_provider()->distributor()->HasRootCerts(cert_name);
+}
+
+bool ExternalCertificateProvider::HasKeyCertPairs(const string& cert_name) {
+  return c_provider()->distributor()->HasKeyCertPairs(cert_name);
+}
+
+void ExternalCertificateProvider::SetErrorForCert(
+    const string& cert_name, const string& root_cert_error,
+    const string& identity_cert_error) {
+  grpc_error_handle root_cert_error_handle =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(root_cert_error.c_str());
+  grpc_error_handle identity_cert_error_handle =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(identity_cert_error.c_str());
+  c_provider()->distributor()->SetErrorForCert(
+      cert_name,
+      root_cert_error.empty() ? GRPC_ERROR_NONE
+                              : GRPC_ERROR_REF(root_cert_error_handle),
+      identity_cert_error.empty() ? GRPC_ERROR_NONE
+                                  : GRPC_ERROR_REF(identity_cert_error_handle));
+  GRPC_ERROR_UNREF(root_cert_error_handle);
+  GRPC_ERROR_UNREF(identity_cert_error_handle);
+}
+
+void ExternalCertificateProvider::SetError(const string& error) {
+  if (!error.empty()) {
+    grpc_error_handle error_handle =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(error.c_str());
+    c_provider()->distributor()->SetError(GRPC_ERROR_REF(error_handle));
+    GRPC_ERROR_UNREF(error_handle);
+  }
+}
+
+void ExternalCertificateProvider::SetWatchStatusCallback(
+    std::function<void(std::string, bool, bool)> callback) {
+  c_provider()->distributor()->SetWatchStatusCallback(callback);
+  std::unique_ptr<grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface> watcher;
+}
 
 }  // namespace experimental
 }  // namespace grpc

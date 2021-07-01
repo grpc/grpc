@@ -46,6 +46,7 @@ constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc::experimental::DataWatcherCertificateProvider;
 using ::grpc::experimental::TlsServerAuthorizationCheckArg;
 using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
 using ::grpc::experimental::TlsServerAuthorizationCheckInterface;
@@ -569,6 +570,82 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
     c_arg->destroy_context(c_arg->context);
   }
   delete c_arg;
+}
+
+TEST(
+    CredentialsTest,
+    TlsChannelCredentialsWithDataWatcherCertificateProviderLoadingRootAndIdentity) {
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = kIdentityCertPrivateKey;
+  key_cert_pair.certificate_chain = kIdentityCertContents;
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto certificate_provider = std::make_shared<DataWatcherCertificateProvider>(
+      kRootCertContents, identity_key_cert_pairs);
+  auto test_server_authorization_check =
+      std::make_shared<TestTlsServerAuthorizationCheck>();
+  auto server_authorization_check_config =
+      std::make_shared<TlsServerAuthorizationCheckConfig>(
+          test_server_authorization_check);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
+  options.set_server_authorization_check_config(
+      server_authorization_check_config);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest,
+     TlsChannelCredentialsWithDataWatcherCertificateProviderLoadingRootOnly) {
+  auto certificate_provider =
+      std::make_shared<DataWatcherCertificateProvider>(kRootCertContents);
+  auto test_server_authorization_check =
+      std::make_shared<TestTlsServerAuthorizationCheck>();
+  auto server_authorization_check_config =
+      std::make_shared<TlsServerAuthorizationCheckConfig>(
+          test_server_authorization_check);
+  GPR_ASSERT(certificate_provider != nullptr);
+  GPR_ASSERT(certificate_provider->c_provider() != nullptr);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
+  options.set_server_authorization_check_config(
+      server_authorization_check_config);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_credentials.get() != nullptr);
+}
+
+TEST(
+    CredentialsTest,
+    TlsChannelCredentialsWithDefaultRootsAndDataWatcherCertificateProviderLoadingIdentityOnly) {
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = kIdentityCertPrivateKey;
+  key_cert_pair.certificate_chain = kIdentityCertContents;
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto certificate_provider =
+      std::make_shared<DataWatcherCertificateProvider>(identity_key_cert_pairs);
+  auto test_server_authorization_check =
+      std::make_shared<TestTlsServerAuthorizationCheck>();
+  auto server_authorization_check_config =
+      std::make_shared<TlsServerAuthorizationCheckConfig>(
+          test_server_authorization_check);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
+  options.set_server_authorization_check_config(
+      server_authorization_check_config);
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
 }  // namespace
