@@ -114,9 +114,30 @@ int AsyncExternalVerifier::Verify(
   return false;  // Asynchronous call
 }
 
+namespace {
+
+void DestroyExternalVerifier(void* arg) {
+  auto* verifier = static_cast<AsyncExternalVerifier*>(arg);
+  delete verifier;
+}
+
+}  // namespace
+
 void AsyncExternalVerifier::Destruct(void* user_data) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
-  delete self;
+  /*// Tell the thread to shut down.
+  {
+    MutexLock lock(&self->mu_);
+    self->queue_.push_back(Request{nullptr, nullptr, nullptr, true});
+  }
+  // Wait for thread to exit.
+  self->thread_.Join();*/
+  // Spawn a detached thread to destroy the verifier, to make sure that we don't
+  // try to join the worker thread from within the worker thread.
+  grpc_core::Thread destroy_thread(
+      "DestroyExternalVerifier", DestroyExternalVerifier, self, nullptr,
+      grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
+  destroy_thread.Start();
 }
 
 void AsyncExternalVerifier::WorkerThread(void* arg) {
