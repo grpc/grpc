@@ -166,7 +166,19 @@ def resolve_hdrs(files):
 
 
 def resolve_srcs(files):
-  return [ABSEIL_PATH + "/" + f for f in files if f.endswith(".cc")]
+  srcs = [ABSEIL_PATH + "/" + f for f in files if f.endswith(".cc")]
+  # Replace absl/random/internal/randen_hwaes.cc with
+  #         src/abseil-cpp/randen_hwaes_nohw.c
+  # Currently abseil doesn't have a simple way to disable it to use instrinsic
+  # instruction. Some build targets, however, cannot understand those resulting
+  # in build failures. Until abseil gets a build flag to ignore them, this hack
+  # is needed. (https://github.com/grpc/grpc/issues/26478)
+  try:
+    i = srcs.index(ABSEIL_PATH + "/absl/random/internal/randen_hwaes.cc")
+    srcs[i] = "src/abseil-cpp/randen_hwaes_nohw.cc"
+  except ValueError:
+    pass
+  return srcs
 
 
 def resolve_deps(targets):

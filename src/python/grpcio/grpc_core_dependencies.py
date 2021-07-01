@@ -15,6 +15,7 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
+    'src/abseil-cpp/randen_hwaes_nohw.cc',
     'src/core/ext/filters/census/grpc_context.cc',
     'src/core/ext/filters/client_channel/backend_metric.cc',
     'src/core/ext/filters/client_channel/backup_poller.cc',
@@ -658,6 +659,16 @@ CORE_SOURCE_FILES = [
     'third_party/abseil-cpp/absl/hash/internal/hash.cc',
     'third_party/abseil-cpp/absl/hash/internal/wyhash.cc',
     'third_party/abseil-cpp/absl/numeric/int128.cc',
+    'third_party/abseil-cpp/absl/random/discrete_distribution.cc',
+    'third_party/abseil-cpp/absl/random/gaussian_distribution.cc',
+    'third_party/abseil-cpp/absl/random/internal/pool_urbg.cc',
+    'third_party/abseil-cpp/absl/random/internal/randen.cc',
+    'third_party/abseil-cpp/absl/random/internal/randen_detect.cc',
+    'third_party/abseil-cpp/absl/random/internal/randen_round_keys.cc',
+    'third_party/abseil-cpp/absl/random/internal/randen_slow.cc',
+    'third_party/abseil-cpp/absl/random/internal/seed_material.cc',
+    'third_party/abseil-cpp/absl/random/seed_gen_exception.cc',
+    'third_party/abseil-cpp/absl/random/seed_sequences.cc',
     'third_party/abseil-cpp/absl/status/status.cc',
     'third_party/abseil-cpp/absl/status/status_payload_printer.cc',
     'third_party/abseil-cpp/absl/status/statusor.cc',

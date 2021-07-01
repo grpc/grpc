@@ -1003,7 +1003,7 @@
   - third_party/abseil-cpp/absl/random/internal/randen_hwaes.h
   name: absl/random/internal:randen_hwaes_impl
   src:
-  - third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc
+  - src/abseil-cpp/randen_hwaes_nohw.cc
 - cmake_target: absl::random_internal_randen_slow
   deps:
   - absl/base:config
