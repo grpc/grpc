@@ -91,8 +91,10 @@ class SyncExternalVerifier {
 // ExternalCertificateVerifier implementation.
 class AsyncExternalVerifier {
  public:
-  explicit AsyncExternalVerifier(bool success)
+  explicit AsyncExternalVerifier(bool success,
+                                 gpr_event* thread_shutdown_event = nullptr)
       : success_(success),
+        thread_shutdown_event_(thread_shutdown_event),
         thread_("AsyncExternalVerifierWorkerThread", WorkerThread, this),
         base_{this, Verify, Cancel, Destruct} {
     thread_.Start();
@@ -124,6 +126,7 @@ class AsyncExternalVerifier {
   static void WorkerThread(void* arg);
 
   bool success_ = false;
+  gpr_event* thread_shutdown_event_ = nullptr;
   grpc_core::Thread thread_;
   grpc_tls_certificate_verifier_external base_;
   Mutex mu_;
