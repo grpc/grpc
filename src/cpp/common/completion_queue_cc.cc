@@ -89,8 +89,7 @@ struct CallbackAlternativeCQ {
                 // hold any application locks before executing the callback,
                 // and cannot be entered recursively.
                 auto* functor =
-                    static_cast<grpc_experimental_completion_queue_functor*>(
-                        ev.tag);
+                    static_cast<grpc_completion_queue_functor*>(ev.tag);
                 functor->functor_run(functor, ev.success);
               }
             },

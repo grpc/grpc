@@ -103,10 +103,13 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 }
 }  // namespace
 
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
+    const grpc::string& user_provided_scope) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   return internal::WrapChannelCredentials(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(
+          nullptr,
+          user_provided_scope.empty() ? nullptr : user_provided_scope.c_str()));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
@@ -320,7 +323,8 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
 
 // Builds JWT credentials.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
-    const std::string& json_key, long token_lifetime_seconds) {
+    const std::string& json_key, long token_lifetime_seconds,
+    const grpc::string& user_provided_scope, bool clear_audience) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
@@ -330,7 +334,9 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
   gpr_timespec lifetime =
       gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
   return WrapCallCredentials(grpc_service_account_jwt_access_credentials_create(
-      json_key.c_str(), lifetime, nullptr));
+      json_key.c_str(), lifetime,
+      user_provided_scope.empty() ? nullptr : user_provided_scope.c_str(),
+      clear_audience));
 }
 
 // Builds refresh token credentials.
@@ -492,7 +498,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_metadata md_entry;
     md_entry.key = SliceFromCopiedString(metadatum.first);
     md_entry.value = SliceFromCopiedString(metadatum.second);
-    md_entry.flags = 0;
     md.push_back(md_entry);
   }
   if (creds_md != nullptr) {
@@ -507,7 +512,6 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
       for (const auto& elem : md) {
         creds_md[*num_creds_md].key = elem.key;
         creds_md[*num_creds_md].value = elem.value;
-        creds_md[*num_creds_md].flags = elem.flags;
         ++(*num_creds_md);
       }
       *status_code = static_cast<grpc_status_code>(status.error_code());
