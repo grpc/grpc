@@ -163,7 +163,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
             if loop is context_loop:
                 # Executes callbacks: complete the future
                 CallbackWrapper.functor_run(
-                    <grpc_experimental_completion_queue_functor *>event.tag,
+                    <grpc_completion_queue_functor *>event.tag,
                     event.success
                 )
             else:

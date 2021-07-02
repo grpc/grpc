@@ -37,14 +37,14 @@ typedef struct inproc_fixture_data {
 
 namespace {
 template <typename F>
-class CQDeletingCallback : public grpc_experimental_completion_queue_functor {
+class CQDeletingCallback : public grpc_completion_queue_functor {
  public:
   explicit CQDeletingCallback(F f) : func_(f) {
     functor_run = &CQDeletingCallback::Run;
     inlineable = false;
   }
   ~CQDeletingCallback() {}
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_completion_queue_functor* cb, int ok) {
     auto* callback = static_cast<CQDeletingCallback*>(cb);
     callback->func_(static_cast<bool>(ok));
     delete callback;
@@ -55,11 +55,11 @@ class CQDeletingCallback : public grpc_experimental_completion_queue_functor {
 };
 
 template <typename F>
-grpc_experimental_completion_queue_functor* NewDeletingCallback(F f) {
+grpc_completion_queue_functor* NewDeletingCallback(F f) {
   return new CQDeletingCallback<F>(f);
 }
 
-class ShutdownCallback : public grpc_experimental_completion_queue_functor {
+class ShutdownCallback : public grpc_completion_queue_functor {
  public:
   ShutdownCallback() : done_(false) {
     functor_run = &ShutdownCallback::StaticRun;
@@ -71,8 +71,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
     gpr_mu_destroy(&mu_);
     gpr_cv_destroy(&cv_);
   }
-  static void StaticRun(grpc_experimental_completion_queue_functor* cb,
-                        int ok) {
+  static void StaticRun(grpc_completion_queue_functor* cb, int ok) {
     auto* callback = static_cast<ShutdownCallback*>(cb);
     callback->Run(static_cast<bool>(ok));
   }
@@ -184,7 +183,7 @@ static void verify_tags(gpr_timespec deadline) {
 
 // This function creates a callback functor that emits the
 // desired tag into the global tag set
-static grpc_experimental_completion_queue_functor* tag(intptr_t t) {
+static grpc_completion_queue_functor* tag(intptr_t t) {
   auto func = [t](bool ok) {
     gpr_mu_lock(&tags_mu);
     gpr_log(GPR_DEBUG, "Completing operation %" PRIdPTR, t);

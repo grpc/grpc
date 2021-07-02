@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+
 licenses(["notice"])
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
+grpc_package(name = "test/core/event_engine")
 
-proto_library(
-    name = "authz_policy_proto",
-    srcs = [
-        "authz_policy.proto",
+grpc_cc_test(
+    name = "endpoint_config_test",
+    srcs = ["endpoint_config_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
-    visibility = ["//visibility:public"],
 )

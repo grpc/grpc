@@ -77,10 +77,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
@@ -374,6 +376,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/endpoint_config.cc \
+    src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/slice_allocator.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/gpr/alloc.cc \
@@ -431,6 +435,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/dualstack_socket_posix.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_cfstream.cc \
+    src/core/lib/iomgr/endpoint_pair_event_engine.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
@@ -442,6 +447,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/event_engine/closure.cc \
+    src/core/lib/iomgr/event_engine/endpoint.cc \
+    src/core/lib/iomgr/event_engine/iomgr.cc \
+    src/core/lib/iomgr/event_engine/pollset.cc \
+    src/core/lib/iomgr/event_engine/resolved_address_internal.cc \
+    src/core/lib/iomgr/event_engine/resolver.cc \
+    src/core/lib/iomgr/event_engine/tcp.cc \
+    src/core/lib/iomgr/event_engine/timer.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -680,17 +693,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
     third_party/abseil-cpp/absl/hash/internal/wyhash.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
-    third_party/abseil-cpp/absl/random/discrete_distribution.cc \
-    third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
-    third_party/abseil-cpp/absl/random/internal/pool_urbg.cc \
-    third_party/abseil-cpp/absl/random/internal/randen.cc \
-    third_party/abseil-cpp/absl/random/internal/randen_detect.cc \
-    third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc \
-    third_party/abseil-cpp/absl/random/internal/randen_round_keys.cc \
-    third_party/abseil-cpp/absl/random/internal/randen_slow.cc \
-    third_party/abseil-cpp/absl/random/internal/seed_material.cc \
-    third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
-    third_party/abseil-cpp/absl/random/seed_sequences.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -1049,7 +1051,9 @@ if test "$PHP_GRPC" != "no"; then
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
-    -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
+    -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
+    -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.39.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
@@ -1178,6 +1182,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/executor)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
@@ -1227,8 +1232,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)

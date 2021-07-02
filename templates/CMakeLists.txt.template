@@ -395,7 +395,7 @@
              --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
              <%text>${_protobuf_include_path}</%text>
              <%text>${REL_FIL}</%text>
-        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> grpc_cpp_plugin
+        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> <%text>${_gRPC_CPP_PLUGIN}</%text>
         WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
         COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
         VERBATIM)

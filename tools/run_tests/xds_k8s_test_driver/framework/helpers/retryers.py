@@ -22,7 +22,7 @@ We use tenacity as a general-purpose retrying library.
 """
 import datetime
 import logging
-from typing import Any, List, Optional
+from typing import Any, Optional, Sequence
 
 import tenacity
 
@@ -41,7 +41,7 @@ _wait_exponential = tenacity.wait_exponential
 _wait_fixed = tenacity.wait_fixed
 
 
-def _retry_on_exceptions(retry_on_exceptions: Optional[List[Any]] = None):
+def _retry_on_exceptions(retry_on_exceptions: Optional[Sequence[Any]] = None):
     # Retry on all exceptions by default
     if retry_on_exceptions is None:
         retry_on_exceptions = (Exception,)
@@ -53,7 +53,7 @@ def exponential_retryer_with_timeout(
         wait_min: timedelta,
         wait_max: timedelta,
         timeout: timedelta,
-        retry_on_exceptions: Optional[List[Any]] = None,
+        retry_on_exceptions: Optional[Sequence[Any]] = None,
         logger: Optional[logging.Logger] = None,
         log_level: Optional[int] = logging.DEBUG) -> Retrying:
     if logger is None:
@@ -71,7 +71,7 @@ def constant_retryer(*,
                      wait_fixed: timedelta,
                      attempts: int = 0,
                      timeout: timedelta = None,
-                     retry_on_exceptions: Optional[List[Any]] = None,
+                     retry_on_exceptions: Optional[Sequence[Any]] = None,
                      logger: Optional[logging.Logger] = None,
                      log_level: Optional[int] = logging.DEBUG) -> Retrying:
     if logger is None:
@@ -84,7 +84,7 @@ def constant_retryer(*,
     if attempts > 0:
         stops.append(_stop_after_attempt(attempts))
     if timeout is not None:
-        stops.append(_stop_after_delay.total_seconds())
+        stops.append(_stop_after_delay(timeout.total_seconds()))
 
     return Retrying(retry=_retry_on_exceptions(retry_on_exceptions),
                     wait=_wait_fixed(wait_fixed.total_seconds()),

@@ -349,8 +349,7 @@ class ApplicationCallbackExecCtx {
     }
   }
 
-  static void Enqueue(grpc_experimental_completion_queue_functor* functor,
-                      int is_success) {
+  static void Enqueue(grpc_completion_queue_functor* functor, int is_success) {
     functor->internal_success = is_success;
     functor->internal_next = nullptr;
 
@@ -375,8 +374,8 @@ class ApplicationCallbackExecCtx {
 
  private:
   uintptr_t flags_{0u};
-  grpc_experimental_completion_queue_functor* head_{nullptr};
-  grpc_experimental_completion_queue_functor* tail_{nullptr};
+  grpc_completion_queue_functor* head_{nullptr};
+  grpc_completion_queue_functor* tail_{nullptr};
   GPR_TLS_CLASS_DECL(callback_exec_ctx_);
 };
 }  // namespace grpc_core

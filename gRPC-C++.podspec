@@ -193,9 +193,9 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
-    ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
+    ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
@@ -516,6 +516,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats.h',
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.h',
+                      'src/core/lib/event_engine/endpoint_config_internal.h',
+                      'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
@@ -574,6 +576,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_epollex_linux.h',
                       'src/core/lib/iomgr/ev_poll_posix.h',
                       'src/core/lib/iomgr/ev_posix.h',
+                      'src/core/lib/iomgr/event_engine/closure.h',
+                      'src/core/lib/iomgr/event_engine/endpoint.h',
+                      'src/core/lib/iomgr/event_engine/iomgr.h',
+                      'src/core/lib/iomgr/event_engine/pollset.h',
+                      'src/core/lib/iomgr/event_engine/promise.h',
+                      'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/executor/mpmcqueue.h',
@@ -1160,6 +1168,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats.h',
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
+                              'src/core/lib/event_engine/endpoint_config_internal.h',
+                              'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
@@ -1218,6 +1228,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_epollex_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
+                              'src/core/lib/iomgr/event_engine/closure.h',
+                              'src/core/lib/iomgr/event_engine/endpoint.h',
+                              'src/core/lib/iomgr/event_engine/iomgr.h',
+                              'src/core/lib/iomgr/event_engine/pollset.h',
+                              'src/core/lib/iomgr/event_engine/promise.h',
+                              'src/core/lib/iomgr/event_engine/resolved_address_internal.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/executor/mpmcqueue.h',

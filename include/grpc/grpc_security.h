@@ -160,17 +160,16 @@ GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
    call credentials object based on the Application Default Credentials
    mechanism.
 
-   user_provided_audience is an optional field for user to override the
-   audience in the JWT token if used. If user_provided_audience is nullptr,
-   the service URL will be used as the audience. Note that
-   user_provided_audience will only be used if a service account JWT access
-   credential is created by the application default credentials mechanism. Also
-   note that user_provided_audience will be ignored if the call_credentials is
-   not nullptr.
+   user_provided_scope is an optional field for user to use in the JWT token to
+   represent the scope field. It will only be used if a service account JWT
+   access credential is created by the application default credentials
+   mechanism. If user_provided_scope is not nullptr, the audience (service URL)
+   field in the JWT token will be cleared, which is dictated by
+   https://google.aip.dev/auth/4111. Also note that user_provided_scope will be
+   ignored if the call_credentials is not nullptr.
 */
 GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials,
-    const char* user_provided_audience);
+    grpc_call_credentials* call_credentials, const char* user_provided_scope);
 
 /** Callback for getting the SSL roots override from the application.
    In case of success, *pem_roots_certs must be set to a NULL terminated string
@@ -334,13 +333,15 @@ GRPCAPI gpr_timespec grpc_max_auth_token_lifetime(void);
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.
-   - user_provided_audience is an optional field for user to override the
-     auidence in the JWT token. If user_provided_audience is nullptr, the
-     service URL will be used as the audience.  */
+   - user_provided_scope is an optional field for user to use in the JWT token
+     to represent the scope field.
+   - clear_audience dictating the clearance of audience field when it
+     is set to a non-zero value AND user_provided_scope is not nullptr.
+ */
 GRPCAPI grpc_call_credentials*
 grpc_service_account_jwt_access_credentials_create(
     const char* json_key, gpr_timespec token_lifetime,
-    const char* user_provided_audience);
+    const char* user_provided_scope, int clear_audience);
 
 /** Builds External Account credentials.
  - json_string is the JSON string containing the credentials options.

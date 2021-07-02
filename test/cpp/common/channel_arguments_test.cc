@@ -62,7 +62,8 @@ void test_mutator_destroy(grpc_socket_mutator* mutator) {
 }
 
 grpc_socket_mutator_vtable test_mutator_vtable = {
-    test_mutator_mutate_fd, test_mutator_compare, test_mutator_destroy};
+    test_mutator_mutate_fd, test_mutator_compare, test_mutator_destroy,
+    nullptr};
 
 //
 // TestSocketMutator implementation
