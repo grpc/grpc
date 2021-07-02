@@ -23,14 +23,14 @@ def main
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    'channel_state_client.rb', server_port)
-  # sleep to allow time for the client to get into
-  # the middle of a "watch connectivity state" call
-  sleep 3
-  Process.kill('SIGTERM', client_controller.client_pid)
 
   begin
+    client_controller = ClientController.new(
+      'channel_state_client.rb', server_port)
+    # sleep to allow time for the client to get into
+    # the middle of a "watch connectivity state" call
+    sleep 3
+    Process.kill('SIGTERM', client_controller.client_pid)
     Timeout.timeout(10) { Process.wait(client_controller.client_pid) }
   rescue Timeout::Error
     STDERR.puts "timeout wait for client pid #{client_controller.client_pid}"
@@ -38,7 +38,10 @@ def main
     Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. ' \
-           'It likely freezes when ended abruptly'
+    'It likely freezes when ended abruptly'
+  rescue => e
+    server_runner.stop
+    raise "ClientController creation failed, error: #{e}"
   end
 
   # The interrupt in the child process should cause it to

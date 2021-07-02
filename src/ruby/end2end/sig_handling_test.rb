@@ -25,18 +25,23 @@ def main
   server_runner = ServerRunner.new(echo_service)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    'sig_handling_client.rb', server_port)
-  count = 0
-  while count < 5
-    client_controller.stub.do_echo_rpc(
-      ClientControl::DoEchoRpcRequest.new(request: 'hello'))
-    Process.kill('SIGTERM', client_controller.client_pid)
-    Process.kill('SIGINT', client_controller.client_pid)
-    count += 1
+  begin
+    client_controller = ClientController.new(
+      'sig_handling_client.rb', server_port)
+    count = 0
+    while count < 5
+      client_controller.stub.do_echo_rpc(
+        ClientControl::DoEchoRpcRequest.new(request: 'hello'))
+      Process.kill('SIGTERM', client_controller.client_pid)
+      Process.kill('SIGINT', client_controller.client_pid)
+      count += 1
+    end
+    client_controller.stub.shutdown(ClientControl::Void.new)
+    Process.wait(client_controller.client_pid)
+  rescue => e
+    server_runner.stop
+    raise "ClientController creation failed, error: #{e}"
   end
-  client_controller.stub.shutdown(ClientControl::Void.new)
-  Process.wait(client_controller.client_pid)
   fail "client exit code: #{$CHILD_STATUS}" unless $CHILD_STATUS.to_i.zero?
   server_runner.stop
 end

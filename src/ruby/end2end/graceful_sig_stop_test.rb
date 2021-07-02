@@ -25,10 +25,15 @@ def main
   server_runner = ServerRunner.new(echo_service)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    './graceful_sig_stop_client.rb', server_port)
-  client_controller.stub.shutdown(ClientControl::Void.new)
-  Process.wait(client_controller.client_pid)
+  begin
+    client_controller = ClientController.new(
+      './graceful_sig_stop_client.rb', server_port)
+    client_controller.stub.shutdown(ClientControl::Void.new)
+    Process.wait(client_controller.client_pid)
+  rescue => e
+    server_runner.stop
+    raise "ClientController creation failed, error: #{e}"
+  end
   fail "client exit code: #{$CHILD_STATUS}" unless $CHILD_STATUS.to_i.zero?
   server_runner.stop
 end

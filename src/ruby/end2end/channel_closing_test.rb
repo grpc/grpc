@@ -24,13 +24,13 @@ def main
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    'channel_closing_client.rb', server_port)
-  # sleep to allow time for the client to get into
-  # the middle of a "watch connectivity state" call
-  sleep 3
 
   begin
+    client_controller = ClientController.new(
+      'channel_closing_client.rb', server_port)
+    # sleep to allow time for the client to get into
+    # the middle of a "watch connectivity state" call
+    sleep 3
     Timeout.timeout(20) do
       loop do
         begin
@@ -51,6 +51,9 @@ def main
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. It likely freezes when a ' \
       'channel is closed while connectivity is watched'
+  rescue => e
+    server_runner.stop
+    raise "ClientController creation failed, error: #{e}"
   end
 
   client_exit_code = $CHILD_STATUS

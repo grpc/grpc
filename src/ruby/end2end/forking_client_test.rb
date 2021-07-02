@@ -21,10 +21,10 @@ def main
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    'forking_client_client.rb', server_port)
 
   begin
+    client_controller = ClientController.new(
+      'forking_client_client.rb', server_port)
     Timeout.timeout(10) do
       Process.wait(client_controller.client_pid)
     end
@@ -35,6 +35,9 @@ def main
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. ' \
       'It likely freezes when requiring grpc, then forking, then using grpc '
+  rescue => e
+    server_runner.stop
+    raise "ClientController creation failed, error: #{e}"
   end
 
   client_exit_code = $CHILD_STATUS
