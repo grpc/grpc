@@ -65,7 +65,9 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
 namespace experimental {
-/// Builds Xds ServerCredentials given fallback credentials
+GRPC_DEPRECATED(
+    "Use grpc::XdsServerCredentials instead. The experimental version will be "
+    "deleted after the 1.41 release.")
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials);
 }  // namespace experimental
