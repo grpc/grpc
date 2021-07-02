@@ -873,6 +873,15 @@ GRPCAPI void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider* provider);
 
 /**
+ * Checks if the private key matches the certificate's public key.
+ * Returns a not-OK status on failure, or a bool indicating
+ * whether the key/cert pair matches.
+ */
+//  TODO(itsemmanuel): Take care of this
+//GRPCAPI absl::StatusOr<bool> grpc_tls_private_key_cert_match(const char* private_key,
+//                                                     const char* cert_chain);
+
+/**
  * Creates an grpc_tls_credentials_options.
  * It is used for experimental purpose for now and subject to change.
  */

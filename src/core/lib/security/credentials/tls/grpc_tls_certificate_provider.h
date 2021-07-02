@@ -149,6 +149,7 @@ class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
       grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 };
 
+//  Checks if the private key matches the certificate's public key.
 //  Returns a not-OK status on failure, or a bool indicating
 //  whether the key/cert pair matches.
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(

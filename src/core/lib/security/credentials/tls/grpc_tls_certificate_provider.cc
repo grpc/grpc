@@ -379,7 +379,7 @@ absl::Status DataWatcherCertificateProvider::ReloadRootCertificate(
   if (root_certificate_ == root_certificate) {
     return absl::InvalidArgumentError("Root Certificate has not changed.");
   }
-  root_certificate_ = std::move(root_certificate);
+  root_certificate_ = root_certificate;
   ExecCtx exec_ctx;
   grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Unable to get latest root certificates.");
@@ -529,7 +529,8 @@ grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
       std::move(root_cert_core), std::move(identity_pairs_core));
 }
 
-grpc_tls_certificate_provider* grpc_tls_certificate_provider_data_watcher_create(
+grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_data_watcher_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
   grpc_core::ExecCtx exec_ctx;
@@ -563,4 +564,11 @@ void grpc_tls_certificate_provider_release(
                  (provider));
   grpc_core::ExecCtx exec_ctx;
   if (provider != nullptr) provider->Unref();
+}
+
+absl::StatusOr<bool> grpc_tls_private_key_cert_match(const char* private_key,
+                                                     const char* cert_chain) {
+  return grpc_core::PrivateKeyAndCertificateMatch(
+      absl::NullSafeStringView(private_key),
+      absl::NullSafeStringView(cert_chain));
 }
