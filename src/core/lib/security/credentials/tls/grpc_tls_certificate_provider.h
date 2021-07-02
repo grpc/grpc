@@ -24,6 +24,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
+#include "openssl/ssl.h"
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
