@@ -38,4 +38,4 @@
 - 1.36 'g' stands for ['gummybear'](https://github.com/grpc/grpc/tree/v1.36.x)
 - 1.37 'g' stands for ['gilded'](https://github.com/grpc/grpc/tree/v1.37.x)
 - 1.38 'g' stands for ['guadalupe_river_park_conservancy'](https://github.com/grpc/grpc/tree/v1.38.x)
-- 1.39 'g' stands for ['goofy'](https://github.com/grpc/grpc/tree/master)
+- 1.39 'g' stands for ['goofy'](https://github.com/grpc/grpc/tree/v1.39.x)
