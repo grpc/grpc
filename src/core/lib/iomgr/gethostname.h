@@ -19,8 +19,10 @@
 #ifndef GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H
 #define GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H
 
+#include "src/core/lib/gprpp/memory.h"
+
 // Returns the hostname of the local machine.
 // Caller takes ownership of result.
-char* grpc_gethostname();
+grpc_core::UniquePtr<char> grpc_gethostname();
 
 #endif /* GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H */

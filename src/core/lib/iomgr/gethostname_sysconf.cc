@@ -27,12 +27,12 @@
 
 #include <grpc/support/alloc.h>
 
-char* grpc_gethostname() {
+grpc_core::UniquePtr<char> grpc_gethostname() {
   size_t host_name_max = (size_t)sysconf(_SC_HOST_NAME_MAX);
-  char* hostname = (char*)gpr_malloc(host_name_max);
-  if (gethostname(hostname, host_name_max) != 0) {
-    gpr_free(hostname);
-    return nullptr;
+  grpc_core::UniquePtr<char> hostname(
+      static_cast<char*>(gpr_malloc(host_name_max)));
+  if (gethostname(hostname.get(), host_name_max) != 0) {
+    return grpc_core::UniquePtr<char>{};
   }
   return hostname;
 }
