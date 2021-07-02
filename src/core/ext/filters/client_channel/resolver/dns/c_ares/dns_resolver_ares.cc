@@ -258,9 +258,9 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:clientHostname error:should be of type array"));
       } else {
-        char* hostname = grpc_gethostname();
-        if (hostname == nullptr ||
-            !ValueInJsonArray(it->second.array_value(), hostname)) {
+        absl::StatusOr<std::string> hostname = grpc_core::GetHostName();
+        if (hostname.ok() &&
+            !ValueInJsonArray(it->second.array_value(), hostname->c_str())) {
           continue;
         }
       }

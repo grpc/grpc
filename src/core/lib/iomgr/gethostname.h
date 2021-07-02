@@ -19,8 +19,11 @@
 #ifndef GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H
 #define GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H
 
+#include "absl/status/statusor.h"
+
+namespace grpc_core {
 // Returns the hostname of the local machine.
-// Caller takes ownership of result.
-char* grpc_gethostname();
+absl::StatusOr<std::string> GetHostName();
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_GETHOSTNAME_H */

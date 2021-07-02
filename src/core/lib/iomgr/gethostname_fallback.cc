@@ -23,8 +23,9 @@
 
 #ifdef GRPC_GETHOSTNAME_FALLBACK
 
-#include <stddef.h>
-
-char* grpc_gethostname() { return NULL; }
+absl::StatusOr<std::string> grpc_core::GetHostName() {
+  return absl::UnimplementedError(
+      "Hostname resolution fallback not implemented");
+}
 
 #endif  // GRPC_GETHOSTNAME_FALLBACK

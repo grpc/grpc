@@ -160,8 +160,8 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  char* hostname = grpc_gethostname();
-  if (hostname == nullptr) {
+  absl::StatusOr<std::string> hostname = grpc_core::GetHostName();
+  if (!hostname.ok()) {
     std::cout << "Failed to get hostname, terminating" << std::endl;
     return 1;
   }
@@ -176,7 +176,8 @@ int main(int argc, char** argv) {
     return 1;
   }
   grpc::EnableDefaultHealthCheckService(false);
-  RunServer(absl::GetFlag(FLAGS_secure_mode), port, maintenance_port, hostname);
+  RunServer(absl::GetFlag(FLAGS_secure_mode), port, maintenance_port,
+            *hostname);
 
   return 0;
 }
