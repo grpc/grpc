@@ -56,6 +56,10 @@ class CertificateProviderStore
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
 
+  // Returns true if the instance name \a key is present in the map of plugin
+  // configurations, false otherwise.
+  bool CertificateProviderConfigExists(absl::string_view key);
+
   void Orphan() override { Unref(); }
 
  private:

@@ -90,6 +90,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -1803,24 +1804,37 @@ grpc_error_handle RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
-XdsApi::CommonTlsContext::CertificateProviderInstance
-CertificateProviderInstanceParse(
+grpc_error_handle CertificateProviderInstanceParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
-        certificate_provider_instance_proto) {
-  return {
+        certificate_provider_instance_proto,
+    XdsApi::CommonTlsContext::CertificateProviderInstance*
+        certificate_provider_instance) {
+  *certificate_provider_instance = {
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
               certificate_provider_instance_proto)),
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
               certificate_provider_instance_proto))};
+  if (!context.client->certificate_provider_store()
+           .CertificateProviderConfigExists(
+               certificate_provider_instance->instance_name)) {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unrecognized certificate provider instance name: ",
+                     certificate_provider_instance->instance_name)
+            .c_str());
+  }
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error_handle CommonTlsContextParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) GRPC_MUST_USE_RESULT;
 grpc_error_handle CommonTlsContextParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
@@ -1898,19 +1912,21 @@ grpc_error_handle CommonTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
             combined_validation_context);
     if (validation_context_certificate_provider_instance != nullptr) {
-      common_tls_context->combined_validation_context
-          .validation_context_certificate_provider_instance =
-          CertificateProviderInstanceParse(
-              validation_context_certificate_provider_instance);
+      grpc_error_handle error = CertificateProviderInstanceParse(
+          context, validation_context_certificate_provider_instance,
+          &common_tls_context->combined_validation_context
+               .validation_context_certificate_provider_instance);
+      if (error != GRPC_ERROR_NONE) return error;
     }
   }
   auto* tls_certificate_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
           common_tls_context_proto);
   if (tls_certificate_certificate_provider_instance != nullptr) {
-    common_tls_context->tls_certificate_certificate_provider_instance =
-        CertificateProviderInstanceParse(
-            tls_certificate_certificate_provider_instance);
+    grpc_error_handle error = CertificateProviderInstanceParse(
+        context, tls_certificate_certificate_provider_instance,
+        &common_tls_context->tls_certificate_certificate_provider_instance);
+    if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;
 }
@@ -2097,8 +2113,9 @@ grpc_error_handle DownstreamTlsContextParse(
           envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
               downstream_tls_context_proto);
       if (common_tls_context != nullptr) {
-        grpc_error_handle error = CommonTlsContextParse(
-            common_tls_context, &downstream_tls_context->common_tls_context);
+        grpc_error_handle error =
+            CommonTlsContextParse(context, common_tls_context,
+                                  &downstream_tls_context->common_tls_context);
         if (error != GRPC_ERROR_NONE) return error;
       }
       auto* require_client_certificate =
@@ -3045,7 +3062,7 @@ grpc_error_handle CdsResponseParse(
                     upstream_tls_context);
             if (common_tls_context != nullptr) {
               grpc_error_handle error = CommonTlsContextParse(
-                  common_tls_context, &cds_update.common_tls_context);
+                  context, common_tls_context, &cds_update.common_tls_context);
               if (error != GRPC_ERROR_NONE) {
                 errors.push_back(grpc_error_add_child(
                     GRPC_ERROR_CREATE_FROM_COPIED_STRING(
