@@ -2125,7 +2125,8 @@ grpc_error_handle DownstreamTlsContextParse(
           "provider instance specified for validation.");
     }
   }
-  return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+      absl::StrCat("Unrecognized transport socket: ", name).c_str());
 }
 
 grpc_error_handle CidrRangeParse(
@@ -3077,6 +3078,10 @@ grpc_error_handle CdsResponseParse(
             resource_names_failed->insert(cluster_name);
             continue;
           }
+        } else {
+          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("Unrecognized transport socket: ", name).c_str()));
+          continue;
         }
       }
     }
