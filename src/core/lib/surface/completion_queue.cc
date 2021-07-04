@@ -197,8 +197,7 @@ const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
 struct cq_vtable {
   grpc_cq_completion_type cq_completion_type;
   size_t data_size;
-  void (*init)(void* data,
-               grpc_experimental_completion_queue_functor* shutdown_callback);
+  void (*init)(void* data, grpc_completion_queue_functor* shutdown_callback);
   void (*shutdown)(grpc_completion_queue* cq);
   void (*destroy)(void* data);
   bool (*begin_op)(grpc_completion_queue* cq, void* tag);
@@ -310,8 +309,7 @@ struct cq_pluck_data {
 };
 
 struct cq_callback_data {
-  explicit cq_callback_data(
-      grpc_experimental_completion_queue_functor* shutdown_callback)
+  explicit cq_callback_data(grpc_completion_queue_functor* shutdown_callback)
       : shutdown_callback(shutdown_callback) {}
 
   ~cq_callback_data() {
@@ -332,7 +330,7 @@ struct cq_callback_data {
   bool shutdown_called = false;
 
   /** A callback that gets invoked when the CQ completes shutdown */
-  grpc_experimental_completion_queue_functor* shutdown_callback;
+  grpc_completion_queue_functor* shutdown_callback;
 };
 
 }  // namespace
@@ -397,12 +395,12 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
                            gpr_timespec deadline, void* reserved);
 
 // Note that cq_init_next and cq_init_pluck do not use the shutdown_callback
-static void cq_init_next(
-    void* data, grpc_experimental_completion_queue_functor* shutdown_callback);
-static void cq_init_pluck(
-    void* data, grpc_experimental_completion_queue_functor* shutdown_callback);
-static void cq_init_callback(
-    void* data, grpc_experimental_completion_queue_functor* shutdown_callback);
+static void cq_init_next(void* data,
+                         grpc_completion_queue_functor* shutdown_callback);
+static void cq_init_pluck(void* data,
+                          grpc_completion_queue_functor* shutdown_callback);
+static void cq_init_callback(void* data,
+                             grpc_completion_queue_functor* shutdown_callback);
 static void cq_destroy_next(void* data);
 static void cq_destroy_pluck(void* data);
 static void cq_destroy_callback(void* data);
@@ -513,7 +511,7 @@ grpc_cq_completion* CqEventQueue::Pop() {
 
 grpc_completion_queue* grpc_completion_queue_create_internal(
     grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
-    grpc_experimental_completion_queue_functor* shutdown_callback) {
+    grpc_completion_queue_functor* shutdown_callback) {
   GPR_TIMER_SCOPE("grpc_completion_queue_create_internal", 0);
 
   grpc_completion_queue* cq;
@@ -548,9 +546,8 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
   return cq;
 }
 
-static void cq_init_next(
-    void* data,
-    grpc_experimental_completion_queue_functor* /*shutdown_callback*/) {
+static void cq_init_next(void* data,
+                         grpc_completion_queue_functor* /*shutdown_callback*/) {
   new (data) cq_next_data();
 }
 
@@ -560,8 +557,7 @@ static void cq_destroy_next(void* data) {
 }
 
 static void cq_init_pluck(
-    void* data,
-    grpc_experimental_completion_queue_functor* /*shutdown_callback*/) {
+    void* data, grpc_completion_queue_functor* /*shutdown_callback*/) {
   new (data) cq_pluck_data();
 }
 
@@ -570,8 +566,8 @@ static void cq_destroy_pluck(void* data) {
   cqd->~cq_pluck_data();
 }
 
-static void cq_init_callback(
-    void* data, grpc_experimental_completion_queue_functor* shutdown_callback) {
+static void cq_init_callback(void* data,
+                             grpc_completion_queue_functor* shutdown_callback) {
   new (data) cq_callback_data(shutdown_callback);
 }
 
@@ -836,7 +832,7 @@ static void cq_end_op_for_pluck(
 }
 
 static void functor_callback(void* arg, grpc_error_handle error) {
-  auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(arg);
+  auto* functor = static_cast<grpc_completion_queue_functor*>(arg);
   functor->functor_run(functor, error == GRPC_ERROR_NONE);
 }
 
@@ -880,7 +876,7 @@ static void cq_end_op_for_callback(
   // 2. The callback is marked inlineable and there is an ACEC available
   // 3. We are already running in a background poller thread (which always has
   //    an ACEC available at the base of the stack).
-  auto* functor = static_cast<grpc_experimental_completion_queue_functor*>(tag);
+  auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
   if (((internal || functor->inlineable) &&
        grpc_core::ApplicationCallbackExecCtx::Available()) ||
       grpc_iomgr_is_any_background_poller_thread()) {

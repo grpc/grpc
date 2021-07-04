@@ -127,8 +127,8 @@ class ServiceA final {
       // Method A4 trailing comment 1
     };
     typedef class async_interface experimental_async_interface;
-    virtual class async_interface* async() { return experimental_async(); }
-    virtual class async_interface* experimental_async() { return nullptr; }
+    virtual class async_interface* async() { return nullptr; }
+    class async_interface* experimental_async() { return async(); }
   private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* AsyncMethodA1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* PrepareAsyncMethodA1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
@@ -193,8 +193,7 @@ class ServiceA final {
       Stub* stub() { return stub_; }
       Stub* stub_;
     };
-    class async* async() override { return experimental_async(); }
-    class async* experimental_async() override { return &async_stub_; }
+    class async* async() override { return &async_stub_; }
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
@@ -737,8 +736,8 @@ class ServiceB final {
       // MethodB1 trailing comment 1
     };
     typedef class async_interface experimental_async_interface;
-    virtual class async_interface* async() { return experimental_async(); }
-    virtual class async_interface* experimental_async() { return nullptr; }
+    virtual class async_interface* async() { return nullptr; }
+    class async_interface* experimental_async() { return async(); }
   private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* AsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* PrepareAsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
@@ -764,8 +763,7 @@ class ServiceB final {
       Stub* stub() { return stub_; }
       Stub* stub_;
     };
-    class async* async() override { return experimental_async(); }
-    class async* experimental_async() override { return &async_stub_; }
+    class async* async() override { return &async_stub_; }
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;

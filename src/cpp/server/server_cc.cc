@@ -264,7 +264,7 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
 }
 
 namespace {
-class ShutdownCallback : public grpc_experimental_completion_queue_functor {
+class ShutdownCallback : public grpc_completion_queue_functor {
  public:
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
@@ -280,7 +280,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
 
   // The Run function will get invoked by the completion queue library
   // when the shutdown is actually complete
-  static void Run(grpc_experimental_completion_queue_functor* cb, int) {
+  static void Run(grpc_completion_queue_functor* cb, int) {
     auto* callback = static_cast<ShutdownCallback*>(cb);
     delete callback->cq_;
     delete callback;
@@ -576,7 +576,7 @@ class Server::CallbackRequest final
   // method_name needs to be specialized between named method and generic
   const char* method_name() const;
 
-  class CallbackCallTag : public grpc_experimental_completion_queue_functor {
+  class CallbackCallTag : public grpc_completion_queue_functor {
    public:
     explicit CallbackCallTag(Server::CallbackRequest<ServerContextType>* req)
         : req_(req) {
@@ -599,8 +599,7 @@ class Server::CallbackRequest final
     Server::CallbackRequest<ServerContextType>* req_;
     grpc::internal::Call* call_;
 
-    static void StaticRun(grpc_experimental_completion_queue_functor* cb,
-                          int ok) {
+    static void StaticRun(grpc_completion_queue_functor* cb, int ok) {
       static_cast<CallbackCallTag*>(cb)->Run(static_cast<bool>(ok));
     }
     void Run(bool ok) {

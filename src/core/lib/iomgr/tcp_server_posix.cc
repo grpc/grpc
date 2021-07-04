@@ -405,6 +405,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
 static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
                                              const grpc_resolved_address* addr,
                                              int* out_port) {
+  GPR_ASSERT(addr->len <= GRPC_MAX_SOCKADDR_SIZE);
   grpc_tcp_listener* sp;
   grpc_resolved_address sockname_temp;
   grpc_resolved_address addr6_v4mapped;

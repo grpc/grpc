@@ -58,10 +58,13 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key);
 /* --- json token encoding and signing. --- */
 
 /* Caller is responsible for calling gpr_free on the returned value. May return
-   NULL on invalid input. The scope parameter may be NULL. */
+   NULL on invalid input. The scope parameter may be NULL. The
+   clear_audience parameter dictates the clearing of audience field when
+   it is set to a non-zero value AND scope is not nullptr. */
 char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key,
                                const char* audience,
-                               gpr_timespec token_lifetime, const char* scope);
+                               gpr_timespec token_lifetime, const char* scope,
+                               bool clear_audience);
 
 /* Override encode_and_sign function for testing. */
 typedef char* (*grpc_jwt_encode_and_sign_override)(

@@ -121,9 +121,30 @@ spec:
     language: php7
     pool: ${client_pool}
     run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+        /run_scripts/run_worker.sh
       command:
       - bash
-      - /run_scripts/run_worker.sh
+  - build:
+      command:
+      - bash
+      - /build_scripts/build_qps_worker.sh
+    clone:
+      gitRef: master
+      repo: https://github.com/grpc/grpc.git
+    language: php7_protobuf_c
+    pool: ${client_pool}
+    run:
+      args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+        /run_scripts/run_protobuf_c_worker.sh
+      command:
+      - bash
   - build:
       args:
       - build
@@ -181,6 +202,9 @@ spec:
             src/ruby/qps/worker.rb --driver_port="${DRIVER_PORT}"
       command:
       - bash
+  driver:
+    language: cxx
+    run: {}
   results:
     bigQueryTable: ${big_query_table}
   servers:

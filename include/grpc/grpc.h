@@ -115,8 +115,7 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
     This function is experimental. */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
-    void* reserved);
+    grpc_completion_queue_functor* shutdown_callback, void* reserved);
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(

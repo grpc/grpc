@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.39.0-dev'
+  version = '1.40.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -185,6 +185,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
+    ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
@@ -2135,6 +2136,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_lb_drop.cc',
                       'test/core/end2end/tests/retry_non_retriable_status.cc',
                       'test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc',
+                      'test/core/end2end/tests/retry_per_attempt_recv_timeout.cc',
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
                       'test/core/end2end/tests/retry_recv_message.cc',
                       'test/core/end2end/tests/retry_recv_trailing_metadata_error.cc',

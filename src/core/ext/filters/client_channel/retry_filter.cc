@@ -216,8 +216,6 @@ class RetryFilter::CallData {
     explicit CallAttempt(CallData* calld);
     ~CallAttempt() override;
 
-    ClientChannel::LoadBalancedCall* lb_call() const { return lb_call_.get(); }
-
     // Constructs and starts whatever batches are needed on this call
     // attempt.
     void StartRetriableBatches();
@@ -225,6 +223,9 @@ class RetryFilter::CallData {
     // Frees cached send ops that have already been completed after
     // committing the call.
     void FreeCachedSendOpDataAfterCommit();
+
+    // Cancels the call attempt.
+    void CancelFromSurface(grpc_transport_stream_op_batch* cancel_batch);
 
    private:
     // State used for starting a retryable batch on the call attempt's LB call.
@@ -257,11 +258,6 @@ class RetryFilter::CallData {
       void AddCancelStreamOp();
 
      private:
-      // Returns true if the call should be retried.
-      // Populates server_pushback_ms if appropriate.
-      bool ShouldRetry(grpc_status_code status, grpc_mdelem* server_pushback_md,
-                       bool is_lb_drop, grpc_millis* server_pushback_ms);
-
       // Frees cached send ops that were completed by the completed batch in
       // batch_data.  Used when batches are completed after the call is
       // committed.
@@ -360,8 +356,26 @@ class RetryFilter::CallData {
     // has not yet started its own recv_trailing_metadata op.
     void StartInternalRecvTrailingMetadata();
 
+    // Returns true if the call should be retried.
+    // If server_pushback_md is non-null, sets *server_pushback_ms.
+    bool ShouldRetry(absl::optional<grpc_status_code> status, bool is_lb_drop,
+                     grpc_mdelem* server_pushback_md,
+                     grpc_millis* server_pushback_ms);
+
+    // Cancels the call attempt.  Unrefs any deferred batches.
+    // Adds a batch to closures to cancel this call attempt.
+    void Cancel(CallCombinerClosureList* closures);
+
+    static void OnPerAttemptRecvTimer(void* arg, grpc_error_handle error);
+    static void OnPerAttemptRecvTimerLocked(void* arg, grpc_error_handle error);
+    void MaybeCancelPerAttemptRecvTimer();
+
     CallData* calld_;
     RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call_;
+
+    grpc_timer per_attempt_recv_timer_;
+    grpc_closure on_per_attempt_recv_timer_;
+    bool per_attempt_recv_timer_pending_ = false;
 
     // BatchData.batch.payload points to this.
     grpc_transport_stream_op_batch_payload batch_payload_;
@@ -417,7 +431,7 @@ class RetryFilter::CallData {
     //       save space but will also result in a data race because compiler
     //       will generate a 2 byte store which overwrites the meta-data
     //       fields upon setting this field.
-    bool retry_dispatched_ : 1;
+    bool cancelled_ : 1;
   };
 
   CallData(RetryFilter* chand, const grpc_call_element_args& args);
@@ -452,7 +466,9 @@ class RetryFilter::CallData {
   void RetryCommit(CallAttempt* call_attempt);
 
   // Starts a timer to retry after appropriate back-off.
+  // If server_pushback_ms is -1, retry_backoff_ is used.
   void StartRetryTimer(grpc_millis server_pushback_ms);
+
   static void OnRetryTimer(void* arg, grpc_error_handle error);
   static void OnRetryTimerLocked(void* arg, grpc_error_handle error);
 
@@ -499,7 +515,6 @@ class RetryFilter::CallData {
 
   // Retry state.
   bool retry_committed_ : 1;
-  bool last_attempt_got_server_pushback_ : 1;
   bool retry_timer_pending_ : 1;
   int num_attempts_completed_ = 0;
   grpc_timer retry_timer_;
@@ -609,11 +624,33 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
       started_recv_trailing_metadata_(false),
       completed_recv_trailing_metadata_(false),
       seen_recv_trailing_metadata_from_surface_(false),
-      retry_dispatched_(false) {
+      cancelled_(false) {
   lb_call_ = calld->CreateLoadBalancedCall();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: create lb_call=%p",
             calld->chand_, calld, this, lb_call_.get());
+  }
+  // If per_attempt_recv_timeout is set, start a timer.
+  if (calld->retry_policy_ != nullptr &&
+      calld->retry_policy_->per_attempt_recv_timeout().has_value()) {
+    grpc_millis per_attempt_recv_deadline =
+        ExecCtx::Get()->Now() +
+        *calld->retry_policy_->per_attempt_recv_timeout();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p attempt=%p: per-attempt timeout in %" PRId64
+              " ms",
+              calld->chand_, calld, this,
+              *calld->retry_policy_->per_attempt_recv_timeout());
+    }
+    // Schedule retry after computed delay.
+    GRPC_CLOSURE_INIT(&on_per_attempt_recv_timer_, OnPerAttemptRecvTimer, this,
+                      nullptr);
+    GRPC_CALL_STACK_REF(calld->owning_call_, "OnPerAttemptRecvTimer");
+    Ref(DEBUG_LOCATION, "OnPerAttemptRecvTimer").release();
+    per_attempt_recv_timer_pending_ = true;
+    grpc_timer_init(&per_attempt_recv_timer_, per_attempt_recv_deadline,
+                    &on_per_attempt_recv_timer_);
   }
 }
 
@@ -672,22 +709,30 @@ bool RetryFilter::CallData::CallAttempt::HaveSendOpsToReplay() {
 }
 
 void RetryFilter::CallData::CallAttempt::MaybeSwitchToFastPath() {
-  GPR_ASSERT(calld_->retry_committed_);
-  // We still need to start new batches on this call attempt if (a) there
-  // are still send ops to replay or (b) we started an internal batch for
-  // recv_trailing_metadata but have not yet seen that op from the surface.
-  if (calld_->committed_call_ == nullptr && !HaveSendOpsToReplay() &&
-      recv_trailing_metadata_internal_batch_ == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p attempt=%p: call committed and no more "
-              "send ops to replay; moving LB call to parent and unreffing "
-              "the call attempt",
-              calld_->chand_, calld_, this);
-    }
-    calld_->committed_call_ = std::move(lb_call_);
-    calld_->call_attempt_.reset(DEBUG_LOCATION, "MaybeSwitchToFastPath");
+  // If we're not yet committed, we can't switch yet.
+  // TODO(roth): As part of implementing hedging, this logic needs to
+  // check that *this* call attempt is the one that we've committed to.
+  // Might need to replace cancelled_ with an enum indicating whether we're
+  // in flight, cancelled, or the winning call attempt.
+  if (!calld_->retry_committed_) return;
+  // If we've already switched to fast path, there's nothing to do here.
+  if (calld_->committed_call_ != nullptr) return;
+  // If the perAttemptRecvTimeout timer is pending, we can't switch yet.
+  if (per_attempt_recv_timer_pending_) return;
+  // If there are still send ops to replay, we can't switch yet.
+  if (HaveSendOpsToReplay()) return;
+  // If we started an internal batch for recv_trailing_metadata but have not
+  // yet seen that op from the surface, we can't switch yet.
+  if (recv_trailing_metadata_internal_batch_ != nullptr) return;
+  // Switch to fast path.
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p attempt=%p: retry state no longer needed; "
+            "moving LB call to parent and unreffing the call attempt",
+            calld_->chand_, calld_, this);
   }
+  calld_->committed_call_ = std::move(lb_call_);
+  calld_->call_attempt_.reset(DEBUG_LOCATION, "MaybeSwitchToFastPath");
 }
 
 void RetryFilter::CallData::CallAttempt::StartInternalRecvTrailingMetadata() {
@@ -938,9 +983,208 @@ void RetryFilter::CallData::CallAttempt::StartRetriableBatches() {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p attempt=%p: starting %" PRIuPTR
             " retriable batches on lb_call=%p",
-            calld_->chand_, calld_, this, closures.size(), lb_call());
+            calld_->chand_, calld_, this, closures.size(), lb_call_.get());
   }
   closures.RunClosures(calld_->call_combiner_);
+}
+
+void RetryFilter::CallData::CallAttempt::CancelFromSurface(
+    grpc_transport_stream_op_batch* cancel_batch) {
+  MaybeCancelPerAttemptRecvTimer();
+  // Propagate cancellation to LB call.
+  lb_call_->StartTransportStreamOpBatch(cancel_batch);
+}
+
+bool RetryFilter::CallData::CallAttempt::ShouldRetry(
+    absl::optional<grpc_status_code> status, bool is_lb_drop,
+    grpc_mdelem* server_pushback_md, grpc_millis* server_pushback_ms) {
+  // LB drops always inhibit retries.
+  if (is_lb_drop) return false;
+  // TODO(roth): Handle transparent retries here.
+  // If no retry policy, don't retry.
+  if (calld_->retry_policy_ == nullptr) return false;
+  // Check status.
+  if (status.has_value()) {
+    if (GPR_LIKELY(*status == GRPC_STATUS_OK)) {
+      if (calld_->retry_throttle_data_ != nullptr) {
+        calld_->retry_throttle_data_->RecordSuccess();
+      }
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: call succeeded",
+                calld_->chand_, calld_, this);
+      }
+      return false;
+    }
+    // Status is not OK.  Check whether the status is retryable.
+    if (!calld_->retry_policy_->retryable_status_codes().Contains(*status)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p calld=%p attempt=%p: status %s not configured as "
+                "retryable",
+                calld_->chand_, calld_, this,
+                grpc_status_code_to_string(*status));
+      }
+      return false;
+    }
+  }
+  // Record the failure and check whether retries are throttled.
+  // Note that it's important for this check to come after the status
+  // code check above, since we should only record failures whose statuses
+  // match the configured retryable status codes, so that we don't count
+  // things like failures due to malformed requests (INVALID_ARGUMENT).
+  // Conversely, it's important for this to come before the remaining
+  // checks, so that we don't fail to record failures due to other factors.
+  if (calld_->retry_throttle_data_ != nullptr &&
+      !calld_->retry_throttle_data_->RecordFailure()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: retries throttled",
+              calld_->chand_, calld_, this);
+    }
+    return false;
+  }
+  // Check whether the call is committed.
+  if (calld_->retry_committed_) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p attempt=%p: retries already committed",
+              calld_->chand_, calld_, this);
+    }
+    return false;
+  }
+  // Check whether we have retries remaining.
+  ++calld_->num_attempts_completed_;
+  if (calld_->num_attempts_completed_ >=
+      calld_->retry_policy_->max_attempts()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(
+          GPR_INFO, "chand=%p calld=%p attempt=%p: exceeded %d retry attempts",
+          calld_->chand_, calld_, this, calld_->retry_policy_->max_attempts());
+    }
+    return false;
+  }
+  // Check server push-back.
+  if (server_pushback_md != nullptr) {
+    // If the value is "-1" or any other unparseable string, we do not retry.
+    uint32_t ms;
+    if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(*server_pushback_md), &ms)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p calld=%p attempt=%p: not retrying due to server "
+                "push-back",
+                calld_->chand_, calld_, this);
+      }
+      return false;
+    } else {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(
+            GPR_INFO,
+            "chand=%p calld=%p attempt=%p: server push-back: retry in %u ms",
+            calld_->chand_, calld_, this, ms);
+      }
+      *server_pushback_ms = static_cast<grpc_millis>(ms);
+    }
+  }
+  // We should retry.
+  return true;
+}
+
+void RetryFilter::CallData::CallAttempt::Cancel(
+    CallCombinerClosureList* closures) {
+  // Record that this attempt has been cancelled.
+  cancelled_ = true;
+  // Unref batches for deferred completion callbacks that will now never
+  // be invoked.
+  if (started_recv_trailing_metadata_ &&
+      !seen_recv_trailing_metadata_from_surface_) {
+    recv_trailing_metadata_internal_batch_.reset(
+        DEBUG_LOCATION,
+        "internal recv_trailing_metadata completed before that op was "
+        "started from the surface");
+  }
+  GRPC_ERROR_UNREF(recv_trailing_metadata_error_);
+  recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+  recv_initial_metadata_ready_deferred_batch_.reset(
+      DEBUG_LOCATION,
+      "unref deferred recv_initial_metadata_ready batch due to retry");
+  GRPC_ERROR_UNREF(recv_initial_metadata_error_);
+  recv_initial_metadata_error_ = GRPC_ERROR_NONE;
+  recv_message_ready_deferred_batch_.reset(
+      DEBUG_LOCATION, "unref deferred recv_message_ready batch due to retry");
+  GRPC_ERROR_UNREF(recv_message_error_);
+  recv_message_error_ = GRPC_ERROR_NONE;
+  on_complete_deferred_batch_.reset(
+      DEBUG_LOCATION, "unref deferred on_complete batch due to retry");
+  GRPC_ERROR_UNREF(on_complete_error_);
+  on_complete_error_ = GRPC_ERROR_NONE;
+  // Start a cancellation op on this call attempt to make sure the
+  // transport knows that this call should be cleaned up, even if it
+  // hasn't received any ops.
+  BatchData* cancel_batch_data = CreateBatch(1, /*set_on_complete=*/true);
+  cancel_batch_data->AddCancelStreamOp();
+  AddClosureForBatch(cancel_batch_data->batch(),
+                     "start cancellation batch on call attempt", closures);
+}
+
+void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimer(
+    void* arg, grpc_error_handle error) {
+  auto* call_attempt = static_cast<CallAttempt*>(arg);
+  GRPC_CLOSURE_INIT(&call_attempt->on_per_attempt_recv_timer_,
+                    OnPerAttemptRecvTimerLocked, call_attempt, nullptr);
+  GRPC_CALL_COMBINER_START(call_attempt->calld_->call_combiner_,
+                           &call_attempt->on_per_attempt_recv_timer_,
+                           GRPC_ERROR_REF(error), "per-attempt timer fired");
+}
+
+void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
+    void* arg, grpc_error_handle error) {
+  auto* call_attempt = static_cast<CallAttempt*>(arg);
+  auto* calld = call_attempt->calld_;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p attempt=%p: perAttemptRecvTimeout timer fired: "
+            "error=%s, per_attempt_recv_timer_pending_=%d",
+            calld->chand_, calld, call_attempt,
+            grpc_error_std_string(error).c_str(),
+            call_attempt->per_attempt_recv_timer_pending_);
+  }
+  CallCombinerClosureList closures;
+  if (error == GRPC_ERROR_NONE &&
+      call_attempt->per_attempt_recv_timer_pending_) {
+    call_attempt->per_attempt_recv_timer_pending_ = false;
+    // Cancel this attempt.
+    // TODO(roth): When implementing hedging, we should not cancel the
+    // current attempt.
+    call_attempt->Cancel(&closures);
+    // Check whether we should retry.
+    if (call_attempt->ShouldRetry(
+            /*status=*/absl::nullopt, /*is_lb_drop=*/false,
+            /*server_pushback_md=*/nullptr, /*server_pushback_ms=*/nullptr)) {
+      // We are retrying.  Start backoff timer.
+      calld->StartRetryTimer(/*server_pushback_ms=*/-1);
+    } else {
+      // Not retrying, so commit the call.
+      calld->RetryCommit(call_attempt);
+      // If retry state is no longer needed, switch to fast path for
+      // subsequent batches.
+      call_attempt->MaybeSwitchToFastPath();
+    }
+  }
+  closures.RunClosures(calld->call_combiner_);
+  call_attempt->Unref(DEBUG_LOCATION, "OnPerAttemptRecvTimer");
+  GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnPerAttemptRecvTimer");
+}
+
+void RetryFilter::CallData::CallAttempt::MaybeCancelPerAttemptRecvTimer() {
+  if (per_attempt_recv_timer_pending_) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p attempt=%p: cancelling "
+              "perAttemptRecvTimeout timer",
+              calld_->chand_, calld_, this);
+    }
+    per_attempt_recv_timer_pending_ = false;
+    grpc_timer_cancel(&per_attempt_recv_timer_);
+  }
 }
 
 //
@@ -1015,97 +1259,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   }
 }
 
-bool RetryFilter::CallData::CallAttempt::BatchData::ShouldRetry(
-    grpc_status_code status, grpc_mdelem* server_pushback_md, bool is_lb_drop,
-    grpc_millis* server_pushback_ms) {
-  auto* calld = call_attempt_->calld_;
-  // LB drops always inhibit retries.
-  if (is_lb_drop) return false;
-  // Get retry policy.
-  if (calld->retry_policy_ == nullptr) return false;
-  // Check status.
-  if (GPR_LIKELY(status == GRPC_STATUS_OK)) {
-    if (calld->retry_throttle_data_ != nullptr) {
-      calld->retry_throttle_data_->RecordSuccess();
-    }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: call succeeded",
-              calld->chand_, calld, call_attempt_.get());
-    }
-    return false;
-  }
-  // Status is not OK.  Check whether the status is retryable.
-  if (!calld->retry_policy_->retryable_status_codes().Contains(status)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p attempt=%p: status %s not configured as "
-              "retryable",
-              calld->chand_, calld, call_attempt_.get(),
-              grpc_status_code_to_string(status));
-    }
-    return false;
-  }
-  // Record the failure and check whether retries are throttled.
-  // Note that it's important for this check to come after the status
-  // code check above, since we should only record failures whose statuses
-  // match the configured retryable status codes, so that we don't count
-  // things like failures due to malformed requests (INVALID_ARGUMENT).
-  // Conversely, it's important for this to come before the remaining
-  // checks, so that we don't fail to record failures due to other factors.
-  if (calld->retry_throttle_data_ != nullptr &&
-      !calld->retry_throttle_data_->RecordFailure()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: retries throttled",
-              calld->chand_, calld, call_attempt_.get());
-    }
-    return false;
-  }
-  // Check whether the call is committed.
-  if (calld->retry_committed_) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p attempt=%p: retries already committed",
-              calld->chand_, calld, call_attempt_.get());
-    }
-    return false;
-  }
-  // Check whether we have retries remaining.
-  ++calld->num_attempts_completed_;
-  if (calld->num_attempts_completed_ >= calld->retry_policy_->max_attempts()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p attempt=%p: exceeded %d retry attempts",
-              calld->chand_, calld, call_attempt_.get(),
-              calld->retry_policy_->max_attempts());
-    }
-    return false;
-  }
-  // Check server push-back.
-  if (server_pushback_md != nullptr) {
-    // If the value is "-1" or any other unparseable string, we do not retry.
-    uint32_t ms;
-    if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(*server_pushback_md), &ms)) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p calld=%p attempt=%p: not retrying due to server "
-                "push-back",
-                calld->chand_, calld, call_attempt_.get());
-      }
-      return false;
-    } else {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-        gpr_log(
-            GPR_INFO,
-            "chand=%p calld=%p attempt=%p: server push-back: retry in %u ms",
-            calld->chand_, calld, call_attempt_.get(), ms);
-      }
-      *server_pushback_ms = static_cast<grpc_millis>(ms);
-    }
-  }
-  // We should retry.
-  return true;
-}
-
 //
 // recv_initial_metadata callback handling
 //
@@ -1155,14 +1308,16 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvInitialMetadataReady(
             grpc_error_std_string(error).c_str());
   }
   call_attempt->completed_recv_initial_metadata_ = true;
-  // If a retry was already dispatched, then we're not going to use the
+  // If this attempt has been cancelled, then we're not going to use the
   // result of this recv_initial_metadata op, so do nothing.
-  if (call_attempt->retry_dispatched_) {
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner_,
-        "recv_initial_metadata_ready after retry dispatched");
+  if (call_attempt->cancelled_) {
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
+                            "recv_initial_metadata_ready after cancellation");
     return;
   }
+  // Cancel per-attempt recv timer, if any.
+  call_attempt->MaybeCancelPerAttemptRecvTimer();
+  // If we're not committed, check the response to see if we need to commit.
   if (!calld->retry_committed_) {
     // If we got an error or a Trailers-Only response and have not yet gotten
     // the recv_trailing_metadata_ready callback, then defer propagating this
@@ -1246,13 +1401,16 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
             grpc_error_std_string(error).c_str());
   }
   ++call_attempt->completed_recv_message_count_;
-  // If a retry was already dispatched, then we're not going to use the
+  // If this attempt has been cancelled, then we're not going to use the
   // result of this recv_message op, so do nothing.
-  if (call_attempt->retry_dispatched_) {
+  if (call_attempt->cancelled_) {
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "recv_message_ready after retry dispatched");
+                            "recv_message_ready after cancellation");
     return;
   }
+  // Cancel per-attempt recv timer, if any.
+  call_attempt->MaybeCancelPerAttemptRecvTimer();
+  // If we're not committed, check the response to see if we need to commit.
   if (!calld->retry_committed_) {
     // If we got an error or the payload was nullptr and we have not yet gotten
     // the recv_trailing_metadata_ready callback, then defer propagating this
@@ -1441,6 +1599,15 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
             grpc_error_std_string(error).c_str());
   }
   call_attempt->completed_recv_trailing_metadata_ = true;
+  // If this attempt has been cancelled, then we're not going to use the
+  // result of this recv_trailing_metadata op, so do nothing.
+  if (call_attempt->cancelled_) {
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
+                            "recv_trailing_metadata_ready after cancellation");
+    return;
+  }
+  // Cancel per-attempt recv timer, if any.
+  call_attempt->MaybeCancelPerAttemptRecvTimer();
   // Get the call's status and check for server pushback metadata.
   grpc_status_code status = GRPC_STATUS_OK;
   grpc_mdelem* server_pushback_md = nullptr;
@@ -1458,45 +1625,13 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
   }
   // Check if we should retry.
   grpc_millis server_pushback_ms = -1;
-  if (batch_data->ShouldRetry(status, server_pushback_md, is_lb_drop,
-                              &server_pushback_ms)) {
-    // We're retrying.
-    // Unref batches for deferred completion callbacks that will now never
-    // be invoked.
-    if (!call_attempt->seen_recv_trailing_metadata_from_surface_) {
-      call_attempt->recv_trailing_metadata_internal_batch_.reset(
-          DEBUG_LOCATION,
-          "internal recv_trailing_metadata completed before that op was "
-          "started from the surface");
-    }
-    GRPC_ERROR_UNREF(call_attempt->recv_trailing_metadata_error_);
-    call_attempt->recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
-    call_attempt->recv_initial_metadata_ready_deferred_batch_.reset(
-        DEBUG_LOCATION,
-        "unref deferred recv_initial_metadata_ready batch due to retry");
-    GRPC_ERROR_UNREF(call_attempt->recv_initial_metadata_error_);
-    call_attempt->recv_initial_metadata_error_ = GRPC_ERROR_NONE;
-    call_attempt->recv_message_ready_deferred_batch_.reset(
-        DEBUG_LOCATION, "unref deferred recv_message_ready batch due to retry");
-    GRPC_ERROR_UNREF(call_attempt->recv_message_error_);
-    call_attempt->recv_message_error_ = GRPC_ERROR_NONE;
-    call_attempt->on_complete_deferred_batch_.reset(
-        DEBUG_LOCATION, "unref deferred on_complete batch due to retry");
-    GRPC_ERROR_UNREF(call_attempt->on_complete_error_);
-    call_attempt->on_complete_error_ = GRPC_ERROR_NONE;
+  if (call_attempt->ShouldRetry(status, is_lb_drop, server_pushback_md,
+                                &server_pushback_ms)) {
     // Start retry timer.
-    call_attempt->retry_dispatched_ = true;
     calld->StartRetryTimer(server_pushback_ms);
-    // Start a cancellation op on this call attempt to make sure the
-    // transport knows that this call should be cleaned up, even if it
-    // hasn't received any ops.
-    BatchData* cancel_batch_data =
-        call_attempt->CreateBatch(1, /*set_on_complete=*/true);
-    cancel_batch_data->AddCancelStreamOp();
+    // Cancel call attempt.
     CallCombinerClosureList closures;
-    call_attempt->AddClosureForBatch(cancel_batch_data->batch(),
-                                     "start cancellation batch on call attempt",
-                                     &closures);
+    call_attempt->Cancel(&closures);
     // Yields call combiner.
     closures.RunClosures(calld->call_combiner_);
     return;
@@ -1581,11 +1716,11 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(
             grpc_error_std_string(error).c_str(),
             grpc_transport_stream_op_batch_string(&batch_data->batch_).c_str());
   }
-  // If a retry was already dispatched, then we're not going to propagate
+  // If this attempt has been cancelled, then we're not going to propagate
   // the completion of this batch, so do nothing.
-  if (call_attempt->retry_dispatched_) {
+  if (call_attempt->cancelled_) {
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
-                            "on_complete after retry dispatched");
+                            "on_complete after cancellation");
     return;
   }
   // If we got an error and have not yet gotten the
@@ -1636,13 +1771,10 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(
   if (!call_attempt->completed_recv_trailing_metadata_) {
     batch_data->AddClosuresForReplayOrPendingSendOps(&closures);
   }
-  // If the call is committed and retry state is no longer needed, switch
-  // to fast path for subsequent batches.
-  // TODO(roth): As part of implementing hedging, this logic needs to
-  // check that *this* call attempt is the one that we've committed to.
-  // Might need to replace retry_dispatched_ with an enum indicating
-  // whether we're in flight, abandoned, or the winning call attempt.
-  if (calld->retry_committed_) call_attempt->MaybeSwitchToFastPath();
+  // If retry state is no longer needed (i.e., we're committed and there
+  // are no more send ops to replay), switch to fast path for subsequent
+  // batches.
+  call_attempt->MaybeSwitchToFastPath();
   // Schedule all of the closures identified above.
   // Note: This yields the call combiner.
   closures.RunClosures(calld->call_combiner_);
@@ -1876,7 +2008,6 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
       pending_send_message_(false),
       pending_send_trailing_metadata_(false),
       retry_committed_(false),
-      last_attempt_got_server_pushback_(false),
       retry_timer_pending_(false) {}
 
 RetryFilter::CallData::~CallData() {
@@ -1907,8 +2038,14 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     // will not be retried, because we have committed it here.
     if (call_attempt_ != nullptr) {
       RetryCommit(call_attempt_.get());
+      // TODO(roth): When implementing hedging, this will get more
+      // complex, because instead of just passing the batch down to a
+      // single call attempt, we'll need to cancel multiple call
+      // attempts and wait for the cancellation on_complete from each call
+      // attempt before we propagate the on_complete from this batch
+      // back to the surface.
       // Note: This will release the call combiner.
-      call_attempt_->lb_call()->StartTransportStreamOpBatch(batch);
+      call_attempt_->CancelFromSurface(batch);
       return;
     }
     // Cancel retry timer.
@@ -1951,7 +2088,12 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     // completed at least the send_initial_metadata op on the previous
     // attempt, which means that we'd need special logic to replay the
     // batch anyway, which is exactly what the CallAttempt object provides.
-    if (num_attempts_completed_ == 0 && retry_committed_) {
+    // We also skip this optimization if perAttemptRecvTimeout is set in the
+    // retry policy, because we need the code in CallAttempt to handle
+    // the associated timer.
+    if (num_attempts_completed_ == 0 && retry_committed_ &&
+        (retry_policy_ == nullptr ||
+         !retry_policy_->per_attempt_recv_timeout().has_value())) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p calld=%p: retry committed before first attempt; "
@@ -1975,9 +2117,8 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   }
   // Send batches to call attempt.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: starting batch on attempt=%p lb_call=%p",
-            chand_, this, call_attempt_.get(), call_attempt_->lb_call());
+    gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on attempt=%p", chand_,
+            this, call_attempt_.get());
   }
   call_attempt_->StartRetriableBatches();
 }
@@ -1997,8 +2138,6 @@ RetryFilter::CallData::CreateLoadBalancedCall() {
 void RetryFilter::CallData::CreateCallAttempt() {
   call_attempt_ = MakeRefCounted<CallAttempt>(this);
   call_attempt_->StartRetriableBatches();
-  // TODO(roth): When implementing hedging, change this to start a timer
-  // for the next hedging attempt.
 }
 
 //
@@ -2256,11 +2395,8 @@ void RetryFilter::CallData::StartRetryTimer(grpc_millis server_pushback_ms) {
   grpc_millis next_attempt_time;
   if (server_pushback_ms >= 0) {
     next_attempt_time = ExecCtx::Get()->Now() + server_pushback_ms;
-    last_attempt_got_server_pushback_ = true;
+    retry_backoff_.Reset();
   } else {
-    if (num_attempts_completed_ == 1 || last_attempt_got_server_pushback_) {
-      last_attempt_got_server_pushback_ = false;
-    }
     next_attempt_time = retry_backoff_.NextAttemptTime();
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
