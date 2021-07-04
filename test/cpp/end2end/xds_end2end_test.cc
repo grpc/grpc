@@ -8960,6 +8960,14 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
           true /* test_expects_failure */);
 }
 
+TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map;
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
 TEST_P(XdsServerSecurityTest, TestMtls) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
