@@ -130,7 +130,13 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  class ClusterState : public ConfigSelector::CallDispatchController {
+  // An entry in the map of clusters that need to be present in the LB
+  // policy config.  The map holds a weak ref.  One strong ref is held by
+  // the ConfigSelector, and another is held by each call assigned to
+  // the cluster by the ConfigSelector.  The ref for each call is held
+  // until the call is committed.  When the strong refs go away, we hop
+  // back into the WorkSerializer to remove the entry from the map.
+  class ClusterState : public DualRefCounted<ClusterState> {
    public:
     using ClusterStateMap =
         std::map<std::string, WeakRefCountedPtr<ClusterState>>;
@@ -140,8 +146,6 @@ class XdsResolver : public Resolver {
         : resolver_(std::move(resolver)),
           it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
                   .first) {}
-
-    const std::string& cluster() const { return it_->first; }
 
     void Orphan() override {
       auto* resolver = resolver_.release();
@@ -153,13 +157,39 @@ class XdsResolver : public Resolver {
           DEBUG_LOCATION);
     }
 
-    bool ShouldRetry() override { return true; }
-
-    void Commit() override { Unref(); }
+    const std::string& cluster() const { return it_->first; }
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
     ClusterStateMap::iterator it_;
+  };
+
+  // Call dispatch controller, created for each call handled by the
+  // ConfigSelector.  Holds a ref to the ClusterState object until the
+  // call is committed.
+  class XdsCallDispatchController
+      : public ConfigSelector::CallDispatchController {
+   public:
+    explicit XdsCallDispatchController(
+        RefCountedPtr<ClusterState> cluster_state)
+        : cluster_state_(std::move(cluster_state)) {}
+
+    bool ShouldRetry() override {
+      // TODO(donnadionne): Implement the retry circuit breaker here.
+      return true;
+    }
+
+    void Commit() override {
+      // TODO(donnadionne): If ShouldRetry() was called previously,
+      // decrement the retry circuit breaker counter.
+      cluster_state_.reset();
+    }
+
+   private:
+    // Note: The XdsCallDispatchController object is never actually destroyed,
+    // so do not add any data members that require destruction unless you have
+    // some other way to clean them up.
+    RefCountedPtr<ClusterState> cluster_state_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -705,7 +735,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     memcpy(hash_value, hash_string.c_str(), hash_string.size());
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
-    call_config.call_dispatch_controller = it->second->Ref().release();
+    call_config.call_dispatch_controller =
+        args.arena->New<XdsCallDispatchController>(it->second->Ref());
     return call_config;
   }
   return CallConfig();

@@ -31,7 +31,6 @@
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/arena.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -48,7 +47,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   using CallAttributes = std::map<const char*, absl::string_view>;
 
   // An interface to be used by the channel when dispatching calls.
-  class CallDispatchController : public DualRefCounted<CallDispatchController> {
+  class CallDispatchController {
    public:
     // Called by the channel to decide if it should retry the call upon a
     // failure.

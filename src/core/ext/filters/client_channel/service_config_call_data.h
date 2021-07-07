@@ -78,7 +78,12 @@ class ServiceConfigCallData {
   }
 
  private:
-  // A wrapper that ensures that we call Commit() at most once.
+  // A wrapper for the CallDispatchController returned by the ConfigSelector.
+  // Handles the case where the ConfigSelector doees not return any
+  // CallDispatchController.
+  // Also ensures that we call Commit() at most once, which allows the
+  // client channel code to call Commit() when the call is complete in case
+  // it wasn't called earlier, without needing to know whether or not it was.
   class SingleCommitCallDispatchController
       : public ConfigSelector::CallDispatchController {
    public:
@@ -99,8 +104,6 @@ class ServiceConfigCallData {
         commit_called_ = true;
       }
     }
-
-    void Orphan() override {}  // No-op -- not actually ref-counted.
 
    private:
     ConfigSelector::CallDispatchController* call_dispatch_controller_;

@@ -322,6 +322,7 @@ class RetryFilter::CallData {
       explicit AttemptDispatchController(CallAttempt* call_attempt)
           : call_attempt_(call_attempt) {}
 
+      // Will never be called.
       bool ShouldRetry() override { return false; }
 
       void Commit() override {
@@ -334,8 +335,6 @@ class RetryFilter::CallData {
           service_config_call_data->call_dispatch_controller()->Commit();
         }
       }
-
-      void Orphan() override {}  // No-op -- not actually ref-counted.
 
      private:
       CallAttempt* call_attempt_;
@@ -1116,7 +1115,6 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
     }
   }
   // Check with call dispatch controller.
-// FIXME: maybe do this only on first retry attempt?
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (!service_config_call_data->call_dispatch_controller()->ShouldRetry()) {
