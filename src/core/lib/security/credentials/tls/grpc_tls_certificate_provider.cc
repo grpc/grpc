@@ -21,6 +21,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -176,7 +177,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   refresh_thread_.Join();
 }
 
-void FileWatcherCertificateProvider::ForceUpdate() {
+absl::Status FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
   if (!root_cert_path_.empty()) {
@@ -197,13 +198,25 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       root_certificate_ = "";
     }
   }
+  absl::Status key_cert_match = absl::OkStatus();
   const bool identity_cert_changed =
       (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
-      pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+      key_cert_match = 
+          PrivateKeyAndCertificateMatch(pem_key_cert_pairs.private_key(), pem_key_cert_pairs.cert_chain());
+      if (key_cert_match.ok()){
+        pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+      } else {
+        //for a certificate-key mismatch, the update is unsuccessful: identity certificate does not change
+        identity_cert_changed = false;
+        gpr_log(
+          GPR_ERROR,
+          key_cert_match.ToString()
+        );
+      }
     } else {
       pem_key_cert_pairs_ = {};
     }
@@ -250,6 +263,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     GRPC_ERROR_UNREF(root_cert_error);
     GRPC_ERROR_UNREF(identity_cert_error);
   }
+  return key_cert_match;
 }
 
 absl::optional<std::string>
@@ -362,6 +376,55 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   gpr_log(GPR_ERROR,
           "All retry attempts failed. Will try again after the next interval.");
   return absl::nullopt;
+}
+
+absl::Status PrivateKeyAndCertificateMatch(const std::string& private_key,
+                                           const std::string& cert) {
+  if (private_key.empty()) {
+    return absl::InvalidArgumentError("Private key string is empty.");
+  }
+  if (cert.empty()) {
+    return absl::InvalidArgumentError("Certificate string is empty.");
+  }
+  BIO* cert_bio = BIO_new_mem_buf(cert.c_str(), cert.size());
+  if (cert_bio == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from certificate string to BIO failed.");
+  }
+  X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
+  BIO_free(cert_bio);
+  if (x509 == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from PEM string to X509 failed.");
+  }
+  EVP_PKEY* public_evp_pkey = X509_get_pubkey(x509);
+  X509_free(x509);
+  if (public_evp_pkey == nullptr) {
+    return absl::InvalidArgumentError(
+        "Extraction of public key from x.509 certificate failed.");
+  }
+  BIO* private_key_bio =
+      BIO_new_mem_buf(private_key.c_str(), private_key.size());
+  if (private_key_bio == nullptr) {
+    EVP_PKEY_free(public_evp_pkey);
+    return absl::InvalidArgumentError(
+        "Conversion from private key string to BIO failed.");
+  }
+  EVP_PKEY* private_evp_pkey =
+      PEM_read_bio_PrivateKey(private_key_bio, nullptr, nullptr, nullptr);
+  BIO_free(private_key_bio);
+  if (private_evp_pkey == nullptr) {
+    EVP_PKEY_free(public_evp_pkey);
+    return absl::InvalidArgumentError(
+        "Conversion from PEM string to EVP_PKEY failed.");
+  }
+  absl::Status result =
+      EVP_PKEY_cmp(private_evp_pkey, public_evp_pkey) == 1
+          ? absl::OkStatus()
+          : absl::InvalidArgumentError("Invalid credentials pair.");
+  EVP_PKEY_free(private_evp_pkey);
+  EVP_PKEY_free(public_evp_pkey);
+  return result;
 }
 
 }  // namespace grpc_core

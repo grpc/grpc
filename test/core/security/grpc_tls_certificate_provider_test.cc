@@ -495,8 +495,68 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
-}  // namespace testing
+TEST_F(GrpcTlsCertificateProviderTest, 
+       FileWatcherCertificateProviderWithInvalidCertificateKeyPair) {
+    // Create temporary files and copy cert data into it.
+  TmpFile tmp_root_cert(root_cert_);
+  auto tmp_identity_key = absl::make_unique<TmpFile>(private_key_2_);
+  auto tmp_identity_cert = absl::make_unique<TmpFile>(cert_chain_);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(tmp_identity_key->name(),
+                                          tmp_identity_cert->name(),
+                                          tmp_root_cert.name(), 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  
+  absl::Status status = provider->ForceUpdate();
 
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Invalid credentials pair.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
+  absl::Status status =
+      PrivateKeyAndCertificateMatch(/*private_key=*/"", cert_chain_);
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Private key string is empty.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyCertificate) {
+  absl::Status status =
+      PrivateKeyAndCertificateMatch(private_key_2_, /*cert=*/"");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Certificate string is empty.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidCertFormat) {
+  absl::Status status =
+      PrivateKeyAndCertificateMatch(private_key_2_, "invalid_certificate");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Conversion from PEM string to X509 failed.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       FailedKeyCertMatchOnInvalidPrivateKeyFormat) {
+  absl::Status status =
+      PrivateKeyAndCertificateMatch("invalid_private_key", cert_chain_2_);
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Conversion from PEM string to EVP_PKEY failed.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
+  absl::Status status =
+      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_2_);
+  EXPECT_TRUE(status.ok());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
+  absl::Status status =
+      PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_);
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Invalid credentials pair.");
+}
+
+}  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
