@@ -1398,6 +1398,7 @@ config("grpc_config") {
         "include/grpc++/support/stub_options.h",
         "include/grpc++/support/sync_stream.h",
         "include/grpc++/support/time.h",
+        "include/grpc/grpc_security.h",
         "include/grpcpp/alarm.h",
         "include/grpcpp/channel.h",
         "include/grpcpp/client_context.h",

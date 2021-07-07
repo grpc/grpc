@@ -318,10 +318,8 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_common",
         "grpc_lb_policy_grpclb",
-        "grpc_secure",
         "grpc_security_base",
         "grpc_trace",
-        "tsi_base",
     ],
 )
 
@@ -362,7 +360,6 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_client_connector",
         "grpc_transport_chttp2_server",
-        "tsi_base",
     ],
 )
 
@@ -431,7 +428,7 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc",
@@ -490,6 +487,7 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     visibility = ["@grpc:public"],
     deps = [
@@ -1476,6 +1474,7 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "google_api_upb",
         "gpr_base",
@@ -2137,6 +2136,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc_base_c",
@@ -2318,6 +2318,7 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
       "alts_util",
       "gpr_base",
@@ -2368,6 +2369,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc_base_c",
@@ -2431,6 +2433,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc_base_c",
@@ -2484,7 +2487,7 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_credentials_util",
         "grpc_security_base",
-        "ref_counted", 
+        "ref_counted",
         "ref_counted_ptr",
         "tsi_ssl_types",
     ],
@@ -2728,7 +2731,6 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_authorization_base",
         "grpc_matchers",
-        "grpc_secure",
     ],
 )
 
@@ -2748,6 +2750,7 @@ grpc_cc_library(
       "absl/strings:str_format",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
         "grpc_base_c",
@@ -2892,7 +2895,6 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base_c",
         "grpc_client_channel",
-        "grpc_secure",
         "grpc_security_base",
         "grpc_transport_chttp2",
     ],
@@ -2902,10 +2904,6 @@ grpc_cc_library(
     name = "grpc_transport_chttp2_client_insecure",
     srcs = [
         "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/strings:str_format",
     ],
     language = "c++",
     deps = [
@@ -2956,7 +2954,6 @@ grpc_cc_library(
         "grpc_base_c",
         "grpc_transport_chttp2",
         "grpc_transport_chttp2_server",
-        "ref_counted_ptr",
     ],
 )
 
