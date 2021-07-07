@@ -2685,7 +2685,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         // by xDS proto in the Circuit Breakers. gRPC along only imposes a
         // default maximum concurrent streams limit, which is 2^32.
         absl::MutexLock lock(&mu);
-        while (started - completed >= kDefaultMaxConcurrentRequest) cv.Wait(&mu);
+        while (started - completed >= kDefaultMaxConcurrentRequest) {
+          cv.Wait(&mu);
+        }
         ++started;
       }
       ConcurrentRpc* rpc = &rpcs[i];
@@ -2704,7 +2706,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     {
       absl::MutexLock lock(&mu);
-      while (completed != num_rpcs) cv.Wait(&mu);
+      while (completed != num_rpcs) {
+        cv.Wait(&mu);
+      }
     }
     EXPECT_EQ(completed, num_rpcs);
     return rpcs;
