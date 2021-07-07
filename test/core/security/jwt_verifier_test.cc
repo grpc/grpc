@@ -383,7 +383,7 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   grpc_httpcli_set_override(httpcli_get_google_keys_for_email,
                             httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
-                                 nullptr);
+                                 nullptr, false);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
@@ -417,7 +417,7 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   grpc_httpcli_set_override(httpcli_get_custom_keys_for_email,
                             httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
-                                 nullptr);
+                                 nullptr, false);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
@@ -465,7 +465,7 @@ static void test_jwt_verifier_url_issuer_success(void) {
   grpc_httpcli_set_override(httpcli_get_openid_config,
                             httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
-                                 nullptr);
+                                 nullptr, false);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
@@ -505,7 +505,7 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
   grpc_httpcli_set_override(httpcli_get_bad_json,
                             httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
-                                 nullptr);
+                                 nullptr, false);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
@@ -528,7 +528,7 @@ static void test_jwt_verifier_bad_json_key(void) {
   grpc_httpcli_set_override(httpcli_get_bad_json,
                             httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
-                                 nullptr);
+                                 nullptr, false);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != nullptr);
   grpc_jwt_verifier_verify(verifier, nullptr, jwt, expected_audience,
@@ -579,7 +579,7 @@ static void test_jwt_verifier_bad_signature(void) {
   grpc_httpcli_set_override(httpcli_get_openid_config,
                             httpcli_post_should_not_be_called);
   jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
-                                 nullptr);
+                                 nullptr, false);
   grpc_auth_json_key_destruct(&key);
   corrupt_jwt_sig(jwt);
   GPR_ASSERT(jwt != nullptr);

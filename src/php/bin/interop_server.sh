@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright 2020 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
-
-VERSION = '1.40.0.dev0'
-PROTOBUF_VERSION = '3.15.8'
+set -e
+cd $(dirname $0)
+source ./determine_extension_dir.sh
+cd ../tests/interop
+php $extension_dir -d max_execution_time=300 \
+  interop_server.php $@ 1>&2
