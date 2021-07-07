@@ -56,10 +56,6 @@ class CertificateProviderStore
   RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
       absl::string_view key);
 
-  // Returns true if the instance name \a key is present in the map of plugin
-  // configurations, false otherwise.
-  bool CertificateProviderConfigExists(absl::string_view key);
-
   void Orphan() override { Unref(); }
 
  private:
@@ -105,7 +101,7 @@ class CertificateProviderStore
 
   Mutex mu_;
   // Map of plugin configurations
-  PluginDefinitionMap plugin_config_map_ ABSL_GUARDED_BY(mu_);
+  const PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
   std::map<absl::string_view, CertificateProviderWrapper*>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);

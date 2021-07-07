@@ -869,10 +869,13 @@ bool IsEds(absl::string_view type_url) {
 #endif
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node)
+               const XdsBootstrap::Node* node,
+               const CertificateProviderStore::PluginDefinitionMap*
+                   certificate_provider_definition_map)
     : client_(client),
       tracer_(tracer),
       node_(node),
+      certificate_provider_definition_map_(certificate_provider_definition_map),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string(),
                                   GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
@@ -904,7 +907,7 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
 namespace {
 
 struct EncodingContext {
-  XdsClient* client;
+  XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
   TraceFlag* tracer;
   upb_symtab* symtab;
   upb_arena* arena;
@@ -1806,6 +1809,8 @@ grpc_error_handle RouteConfigParse(
 
 grpc_error_handle CertificateProviderInstanceParse(
     const EncodingContext& context,
+    const CertificateProviderStore::PluginDefinitionMap*
+        certificate_provider_definition_map,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
         certificate_provider_instance_proto,
     XdsApi::CommonTlsContext::CertificateProviderInstance*
@@ -1817,9 +1822,9 @@ grpc_error_handle CertificateProviderInstanceParse(
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
               certificate_provider_instance_proto))};
-  if (!context.client->certificate_provider_store()
-           .CertificateProviderConfigExists(
-               certificate_provider_instance->instance_name)) {
+  if (certificate_provider_definition_map->find(
+          certificate_provider_instance->instance_name) ==
+      certificate_provider_definition_map->end()) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Unrecognized certificate provider instance name: ",
                      certificate_provider_instance->instance_name)
@@ -1830,11 +1835,8 @@ grpc_error_handle CertificateProviderInstanceParse(
 
 grpc_error_handle CommonTlsContextParse(
     const EncodingContext& context,
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-        common_tls_context_proto,
-    XdsApi::CommonTlsContext* common_tls_context) GRPC_MUST_USE_RESULT;
-grpc_error_handle CommonTlsContextParse(
-    const EncodingContext& context,
+    const CertificateProviderStore::PluginDefinitionMap*
+        certificate_provider_definition_map,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
@@ -1913,7 +1915,8 @@ grpc_error_handle CommonTlsContextParse(
             combined_validation_context);
     if (validation_context_certificate_provider_instance != nullptr) {
       grpc_error_handle error = CertificateProviderInstanceParse(
-          context, validation_context_certificate_provider_instance,
+          context, certificate_provider_definition_map,
+          validation_context_certificate_provider_instance,
           &common_tls_context->combined_validation_context
                .validation_context_certificate_provider_instance);
       if (error != GRPC_ERROR_NONE) return error;
@@ -1924,7 +1927,8 @@ grpc_error_handle CommonTlsContextParse(
           common_tls_context_proto);
   if (tls_certificate_certificate_provider_instance != nullptr) {
     grpc_error_handle error = CertificateProviderInstanceParse(
-        context, tls_certificate_certificate_provider_instance,
+        context, certificate_provider_definition_map,
+        tls_certificate_certificate_provider_instance,
         &common_tls_context->tls_certificate_certificate_provider_instance);
     if (error != GRPC_ERROR_NONE) return error;
   }
@@ -2091,6 +2095,8 @@ grpc_error_handle LdsResponseParseClient(
 
 grpc_error_handle DownstreamTlsContextParse(
     const EncodingContext& context,
+    const CertificateProviderStore::PluginDefinitionMap*
+        certificate_provider_definition_map,
     const envoy_config_core_v3_TransportSocket* transport_socket,
     XdsApi::DownstreamTlsContext* downstream_tls_context) {
   absl::string_view name = UpbStringToAbsl(
@@ -2113,9 +2119,9 @@ grpc_error_handle DownstreamTlsContextParse(
           envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
               downstream_tls_context_proto);
       if (common_tls_context != nullptr) {
-        grpc_error_handle error =
-            CommonTlsContextParse(context, common_tls_context,
-                                  &downstream_tls_context->common_tls_context);
+        grpc_error_handle error = CommonTlsContextParse(
+            context, certificate_provider_definition_map, common_tls_context,
+            &downstream_tls_context->common_tls_context);
         if (error != GRPC_ERROR_NONE) return error;
       }
       auto* require_client_certificate =
@@ -2223,6 +2229,8 @@ grpc_error_handle FilterChainMatchParse(
 
 grpc_error_handle FilterChainParse(
     const EncodingContext& context,
+    const CertificateProviderStore::PluginDefinitionMap*
+        certificate_provider_definition_map,
     const envoy_config_listener_v3_FilterChain* filter_chain_proto, bool is_v2,
     FilterChain* filter_chain) {
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -2281,7 +2289,7 @@ grpc_error_handle FilterChainParse(
             filter_chain_proto);
     if (transport_socket != nullptr) {
       error = DownstreamTlsContextParse(
-          context, transport_socket,
+          context, certificate_provider_definition_map, transport_socket,
           &filter_chain->filter_chain_data->downstream_tls_context);
     }
   }
@@ -2507,6 +2515,8 @@ grpc_error_handle BuildFilterChainMap(
 
 grpc_error_handle LdsResponseParseServer(
     const EncodingContext& context,
+    const CertificateProviderStore::PluginDefinitionMap*
+        certificate_provider_definition_map,
     const envoy_config_listener_v3_Listener* listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
@@ -2529,7 +2539,8 @@ grpc_error_handle LdsResponseParseServer(
   parsed_filter_chains.reserve(size);
   for (size_t i = 0; i < size; i++) {
     FilterChain filter_chain;
-    error = FilterChainParse(context, filter_chains[i], is_v2, &filter_chain);
+    error = FilterChainParse(context, certificate_provider_definition_map,
+                             filter_chains[i], is_v2, &filter_chain);
     if (error != GRPC_ERROR_NONE) return error;
     parsed_filter_chains.push_back(std::move(filter_chain));
   }
@@ -2540,8 +2551,8 @@ grpc_error_handle LdsResponseParseServer(
       envoy_config_listener_v3_Listener_default_filter_chain(listener);
   if (default_filter_chain != nullptr) {
     FilterChain filter_chain;
-    error =
-        FilterChainParse(context, default_filter_chain, is_v2, &filter_chain);
+    error = FilterChainParse(context, certificate_provider_definition_map,
+                             default_filter_chain, is_v2, &filter_chain);
     if (error != GRPC_ERROR_NONE) return error;
     if (filter_chain.filter_chain_data != nullptr) {
       lds_update->default_filter_chain =
@@ -2556,6 +2567,8 @@ grpc_error_handle LdsResponseParseServer(
 
 grpc_error_handle LdsResponseParse(
     const EncodingContext& context,
+    const CertificateProviderStore::PluginDefinitionMap*
+        certificate_provider_definition_map,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_listener_names,
     XdsApi::LdsUpdateMap* lds_update_map,
@@ -2633,7 +2646,9 @@ grpc_error_handle LdsResponseParse(
     if (api_listener != nullptr) {
       error = LdsResponseParseClient(context, api_listener, is_v2, &lds_update);
     } else {
-      error = LdsResponseParseServer(context, listener, is_v2, &lds_update);
+      error =
+          LdsResponseParseServer(context, certificate_provider_definition_map,
+                                 listener, is_v2, &lds_update);
     }
     if (error != GRPC_ERROR_NONE) {
       errors.push_back(grpc_error_add_child(
@@ -2718,6 +2733,8 @@ grpc_error_handle RdsResponseParse(
 
 grpc_error_handle CdsResponseParse(
     const EncodingContext& context,
+    const CertificateProviderStore::PluginDefinitionMap*
+        certificate_provider_definition_map,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_cluster_names,
     XdsApi::CdsUpdateMap* cds_update_map,
@@ -3062,7 +3079,8 @@ grpc_error_handle CdsResponseParse(
                     upstream_tls_context);
             if (common_tls_context != nullptr) {
               grpc_error_handle error = CommonTlsContextParse(
-                  context, common_tls_context, &cds_update.common_tls_context);
+                  context, certificate_provider_definition_map,
+                  common_tls_context, &cds_update.common_tls_context);
               if (error != GRPC_ERROR_NONE) {
                 errors.push_back(grpc_error_add_child(
                     GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -3445,7 +3463,8 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
   // Parse the response according to the resource type.
   if (IsLds(result.type_url)) {
     result.parse_error =
-        LdsResponseParse(context, response, expected_listener_names,
+        LdsResponseParse(context, certificate_provider_definition_map_,
+                         response, expected_listener_names,
                          &result.lds_update_map, &result.resource_names_failed);
     if (result.parse_error != GRPC_ERROR_NONE) {
       MoveUpdatesToFailedSet(&result.lds_update_map,
@@ -3461,7 +3480,8 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     }
   } else if (IsCds(result.type_url)) {
     result.parse_error =
-        CdsResponseParse(context, response, expected_cluster_names,
+        CdsResponseParse(context, certificate_provider_definition_map_,
+                         response, expected_cluster_names,
                          &result.cds_update_map, &result.resource_names_failed);
     if (result.parse_error != GRPC_ERROR_NONE) {
       MoveUpdatesToFailedSet(&result.cds_update_map,

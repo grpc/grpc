@@ -50,15 +50,6 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
   return result;
 }
 
-bool CertificateProviderStore::CertificateProviderConfigExists(
-    absl::string_view key) {
-  MutexLock lock(&mu_);
-  if (plugin_config_map_.find(std::string(key)) != plugin_config_map_.end()) {
-    return true;
-  }
-  return false;
-}
-
 RefCountedPtr<CertificateProviderStore::CertificateProviderWrapper>
 CertificateProviderStore::CreateCertificateProviderLocked(
     absl::string_view key) {
