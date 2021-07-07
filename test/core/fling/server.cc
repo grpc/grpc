@@ -211,11 +211,12 @@ int main(int argc, char** argv) {
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
     server = grpc_server_create(nullptr, nullptr);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
+    GPR_ASSERT(grpc_server_add_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
     server = grpc_server_create(nullptr, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
+    GPR_ASSERT(grpc_server_add_http2_port(
+        server, addr, grpc_insecure_server_credentials_create()));
   }
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);

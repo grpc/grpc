@@ -117,6 +117,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_authorization_base",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
@@ -240,7 +241,6 @@ grpc_cc_test(
     srcs = ["check_gcp_environment_linux_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
@@ -253,7 +253,6 @@ grpc_cc_test(
     srcs = ["check_gcp_environment_windows_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
@@ -266,7 +265,6 @@ grpc_cc_test(
     srcs = ["grpc_alts_credentials_options_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -282,8 +280,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base_c",
         "//:grpc_secure",
-        "//:tsi",
-        "//:tsi_interface",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -308,8 +304,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
-        "//:tsi",
-        "//:tsi_interface",
         "//test/core/util:grpc_test_util",
     ],
 )

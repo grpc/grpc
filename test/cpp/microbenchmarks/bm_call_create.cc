@@ -24,6 +24,7 @@
 #include <sstream>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/channel.h>
@@ -89,7 +90,8 @@ class InsecureChannel : public BaseChannelFixture {
  public:
   InsecureChannel()
       : BaseChannelFixture(
-            grpc_insecure_channel_create("localhost:1234", nullptr, nullptr)) {}
+            grpc_channel_create(grpc_insecure_credentials_create(),
+                                "localhost:1234", nullptr, nullptr)) {}
 };
 
 class LameChannel : public BaseChannelFixture {

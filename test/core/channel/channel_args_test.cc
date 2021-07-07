@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
+#include <grpc_security.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -91,8 +92,8 @@ static void test_channel_create_with_args(void) {
 
   // creates channel
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel* c =
-      grpc_insecure_channel_create("fake_target", &client_args, nullptr);
+  grpc_channel* c = grpc_channel_create(grpc_insecure_credentials_create(),
+                                        "fake_target", &client_args, nullptr);
   // user is can free the memory they allocated here
   gpr_free(fc);
   grpc_channel_destroy(c);
@@ -155,13 +156,13 @@ static void test_channel_create_with_global_mutator(void) {
 
   // creates channels
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel* c =
-      grpc_insecure_channel_create("no_op_mutator", &client_args, nullptr);
+  grpc_channel* c = grpc_channel_create(grpc_insecure_credentials_create(),
+                                        "no_op_mutator", &client_args, nullptr);
   GPR_ASSERT(channel_has_client_idle_filter(c));
   grpc_channel_destroy(c);
 
-  c = grpc_insecure_channel_create("minimal_stack_mutator", &client_args,
-                                   nullptr);
+  c = grpc_channel_create(grpc_insecure_credentials_create(),
+                          "minimal_stack_mutator", &client_args, nullptr);
   GPR_ASSERT(channel_has_client_idle_filter(c) == false);
   grpc_channel_destroy(c);
 

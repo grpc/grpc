@@ -27,8 +27,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 
-#define GRPC_FAKE_SECURITY_URL_SCHEME "http+fake_security"
-
 /* Creates a fake connector that emulates real channel security.  */
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_fake_channel_security_connector_create(

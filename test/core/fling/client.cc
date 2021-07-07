@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -195,7 +196,8 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  channel = grpc_insecure_channel_create(target, nullptr, nullptr);
+  channel = grpc_channel_create(grpc_insecure_credentials_create(), target,
+                                nullptr, nullptr);
   cq = grpc_completion_queue_create_for_next(nullptr);
   the_buffer =
       grpc_raw_byte_buffer_create(&slice, static_cast<size_t>(payload_size));

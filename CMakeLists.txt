@@ -1524,7 +1524,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -1584,13 +1583,9 @@ add_library(grpc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
-  src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
-  src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2015,7 +2010,6 @@ add_library(grpc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/init.cc
-  src/core/lib/surface/init_secure.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
@@ -2036,7 +2030,6 @@ add_library(grpc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
-  src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
   src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -2352,7 +2345,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -2406,10 +2398,8 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
@@ -2436,6 +2426,9 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
@@ -2470,6 +2463,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
+  src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
@@ -2577,6 +2571,59 @@ add_library(grpc_unsecure
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
+  src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/context/security_context.cc
+  src/core/lib/security/credentials/alts/alts_credentials.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/lib/security/credentials/composite/composite_credentials.cc
+  src/core/lib/security/credentials/credentials.cc
+  src/core/lib/security/credentials/credentials_metadata.cc
+  src/core/lib/security/credentials/external/aws_external_account_credentials.cc
+  src/core/lib/security/credentials/external/aws_request_signer.cc
+  src/core/lib/security/credentials/external/external_account_credentials.cc
+  src/core/lib/security/credentials/external/file_external_account_credentials.cc
+  src/core/lib/security/credentials/external/url_external_account_credentials.cc
+  src/core/lib/security/credentials/fake/fake_credentials.cc
+  src/core/lib/security/credentials/google_default/credentials_generic.cc
+  src/core/lib/security/credentials/google_default/google_default_credentials.cc
+  src/core/lib/security/credentials/iam/iam_credentials.cc
+  src/core/lib/security/credentials/insecure/insecure_credentials.cc
+  src/core/lib/security/credentials/jwt/json_token.cc
+  src/core/lib/security/credentials/jwt/jwt_credentials.cc
+  src/core/lib/security/credentials/jwt/jwt_verifier.cc
+  src/core/lib/security/credentials/local/local_credentials.cc
+  src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
+  src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
+  src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+  src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  src/core/lib/security/credentials/tls/tls_credentials.cc
+  src/core/lib/security/credentials/tls/tls_utils.cc
+  src/core/lib/security/security_connector/alts/alts_security_connector.cc
+  src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_linux.cc
+  src/core/lib/security/security_connector/local/local_security_connector.cc
+  src/core/lib/security/security_connector/security_connector.cc
+  src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
+  src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/ssl_utils_config.cc
+  src/core/lib/security/security_connector/tls/tls_security_connector.cc
+  src/core/lib/security/transport/client_auth_filter.cc
+  src/core/lib/security/transport/secure_endpoint.cc
+  src/core/lib/security/transport/security_handshaker.cc
+  src/core/lib/security/transport/server_auth_filter.cc
+  src/core/lib/security/transport/tsi_error.cc
+  src/core/lib/security/util/json_util.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2597,7 +2644,6 @@ add_library(grpc_unsecure
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/init.cc
-  src/core/lib/surface/init_unsecure.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
@@ -2618,7 +2664,33 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
-  src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
+  src/core/tsi/alts/crypt/aes_gcm.cc
+  src/core/tsi/alts/crypt/gsec.cc
+  src/core/tsi/alts/frame_protector/alts_counter.cc
+  src/core/tsi/alts/frame_protector/alts_crypter.cc
+  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  src/core/tsi/alts/frame_protector/frame_handler.cc
+  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  src/core/tsi/fake_transport_security.cc
+  src/core/tsi/local_transport_security.cc
+  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  src/core/tsi/ssl_transport_security.cc
+  src/core/tsi/transport_security.cc
+  src/core/tsi/transport_security_grpc.cc
 )
 
 set_target_properties(grpc_unsecure PROPERTIES
@@ -2663,6 +2735,7 @@ target_link_libraries(grpc_unsecure
   absl::bind_front
   absl::statusor
   gpr
+  ${_gRPC_SSL_LIBRARIES}
   address_sorting
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2681,6 +2754,7 @@ foreach(_hdr
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
+  include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
   include/grpc/load_reporting.h
   include/grpc/slice.h

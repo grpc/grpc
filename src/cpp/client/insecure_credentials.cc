@@ -18,6 +18,7 @@
 #include <grpcpp/security/credentials.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -46,7 +47,8 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
     args.SetChannelArgs(&channel_args);
     return ::grpc::CreateChannelInternal(
         "",
-        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr),
+        grpc_channel_create(grpc_insecure_credentials_create(), target.c_str(),
+                            &channel_args, nullptr),
         std::move(interceptor_creators));
   }
 

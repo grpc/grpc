@@ -218,7 +218,8 @@ class TestServer {
     address_ =
         grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server_, address_.c_str()));
+    GPR_ASSERT(grpc_server_add_http2_port(
+        server_, address_.c_str(), grpc_insecure_server_credentials_create()));
     grpc_server_start(server_);
     thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));
   }
@@ -363,8 +364,9 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           fake_resolver_response_generator.get()));
       grpc_channel_args* channel_args =
           grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
-      grpc_channel* channel = grpc_insecure_channel_create(
-          "fake:///test.server.com", channel_args, nullptr);
+      grpc_channel* channel =
+          grpc_channel_create(grpc_insecure_credentials_create(),
+                              "fake:///test.server.com", channel_args, nullptr);
       grpc_channel_args_destroy(channel_args);
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);

@@ -28,6 +28,7 @@
 #include "server_credentials.h"
 #include "completion_queue.h"
 #include <inttypes.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -110,11 +111,11 @@ void create_new_channel(
     grpc_channel_args args,
     wrapped_grpc_channel_credentials *creds) {
   if (creds == NULL) {
-    channel->wrapper->wrapped = grpc_insecure_channel_create(target, &args,
+    channel->wrapper->wrapped = grpc_channel_create(grpc_insecure_credentials_create(), target, &args,
                                                              NULL);
   } else {
     channel->wrapper->wrapped =
-        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+        grpc_channel_create(creds->wrapped, target, &args, NULL);
   }
 }
 
