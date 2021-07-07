@@ -154,6 +154,7 @@ constexpr char kDefaultClusterName[] = "cluster_name";
 constexpr char kDefaultEdsServiceName[] = "eds_service_name";
 constexpr int kDefaultLocalityWeight = 3;
 constexpr int kDefaultLocalityPriority = 0;
+constexpr int kDefaultMaxConcurrentRequest = 1024;
 
 constexpr char kRequestMessage[] = "Live long and prosper.";
 constexpr char kDefaultServiceConfig[] =
@@ -2674,27 +2675,36 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Variables for synchronization
     absl::Mutex mu;
     absl::CondVar cv;
+    size_t started = 0;
     size_t completed = 0;
     // Set-off callback RPCs
     for (size_t i = 0; i < num_rpcs; i++) {
+      {
+        // xDS LB policy `xds_cluster_impl_experimental` has a default
+        // constraint of maximum 1024 concurrent requests. This number is picked
+        // by xDS proto in the Circuit Breakers. gRPC along only imposes a
+        // default maximum concurrent streams limit, which is 2^32.
+        absl::MutexLock lock(&mu);
+        while (started - completed >= kDefaultMaxConcurrentRequest) cv.Wait(&mu);
+        ++started;
+      }
       ConcurrentRpc* rpc = &rpcs[i];
       rpc_options.SetupRpc(&rpc->context, &request);
       grpc_millis t0 = NowFromCycleCounter();
       stub->async()->Echo(&rpc->context, &request, &rpc->response,
-                          [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
+                          [rpc, &mu, &completed, &cv, t0](Status s) {
                             rpc->status = s;
                             rpc->elapsed_time = NowFromCycleCounter() - t0;
-                            bool done;
                             {
                               absl::MutexLock lock(&mu);
-                              done = (++completed) == num_rpcs;
+                              ++completed;
+                              cv.Signal();
                             }
-                            if (done) cv.Signal();
                           });
     }
     {
       absl::MutexLock lock(&mu);
-      cv.Wait(&mu);
+      while (completed != num_rpcs) cv.Wait(&mu);
     }
     EXPECT_EQ(completed, num_rpcs);
     return rpcs;
