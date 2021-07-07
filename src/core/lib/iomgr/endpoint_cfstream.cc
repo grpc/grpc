@@ -292,7 +292,7 @@ void CFStreamShutdown(grpc_endpoint* ep, grpc_error_handle why) {
   CFReadStreamClose(ep_impl->read_stream);
   CFWriteStreamClose(ep_impl->write_stream);
   ep_impl->stream_sync->Shutdown(why);
-  grpc_resource_user_shutdown(ep_impl->resource_user);
+  grpc_resource_user_unref(ep_impl->resource_user);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown DONE (%p)", ep_impl, why);
   }
@@ -304,11 +304,6 @@ void CFStreamDestroy(grpc_endpoint* ep) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy", ep_impl);
   }
   EP_UNREF(ep_impl, "destroy");
-}
-
-grpc_resource_user* CFStreamGetResourceUser(grpc_endpoint* ep) {
-  CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
-  return ep_impl->resource_user;
 }
 
 absl::string_view CFStreamGetPeer(grpc_endpoint* ep) {
@@ -337,16 +332,16 @@ static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamDeleteFromPollsetSet,
                                             CFStreamShutdown,
                                             CFStreamDestroy,
-                                            CFStreamGetResourceUser,
                                             CFStreamGetPeer,
                                             CFStreamGetLocalAddress,
                                             CFStreamGetFD,
                                             CFStreamCanTrackErr};
 
-grpc_endpoint* grpc_cfstream_endpoint_create(
-    CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
-    const char* peer_string, grpc_resource_quota* resource_quota,
-    CFStreamHandle* stream_sync) {
+grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
+                                             CFWriteStreamRef write_stream,
+                                             const char* peer_string,
+                                             grpc_resource_user* resource_user,
+                                             CFStreamHandle* stream_sync) {
   CFStreamEndpoint* ep_impl = new CFStreamEndpoint;
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG,
@@ -387,8 +382,8 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
                     static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&ep_impl->write_action, WriteAction,
                     static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
-  ep_impl->resource_user =
-      grpc_resource_user_create(resource_quota, peer_string);
+  grpc_resource_user_ref(resource_user);
+  ep_impl->resource_user = resource_user;
   grpc_resource_user_slice_allocator_init(&ep_impl->slice_allocator,
                                           ep_impl->resource_user,
                                           CFStreamReadAllocationDone, ep_impl);

@@ -90,12 +90,13 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
 
 /// Usage note: this method does not take ownership of any pointer arguments.
 void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
+                 grpc_resource_user* resource_user,
                  grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
                  const grpc_resolved_address* addr, grpc_millis deadline) {
   grpc_event_engine_endpoint* ee_endpoint =
-      reinterpret_cast<grpc_event_engine_endpoint*>(
-          grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
+      reinterpret_cast<grpc_event_engine_endpoint*>(grpc_tcp_create(
+          channel_args, grpc_sockaddr_to_uri(addr), resource_user));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, endpoint);
@@ -236,7 +237,7 @@ grpc_fd* grpc_fd_create(int /* fd */, const char* /* name */,
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
     grpc_fd* /* fd */, const grpc_channel_args* /* channel_args */,
-    const char* /* addr_str */) {
+    const char* /* addr_str */, grpc_resource_user* /* resource_user */) {
   return nullptr;
 }
 

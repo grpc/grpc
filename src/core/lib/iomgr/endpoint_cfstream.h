@@ -39,10 +39,11 @@
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/endpoint.h"
 
-grpc_endpoint* grpc_cfstream_endpoint_create(
-    CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
-    const char* peer_string, grpc_resource_quota* resource_quota,
-    CFStreamHandle* stream_sync);
+grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
+                                             CFWriteStreamRef write_stream,
+                                             const char* peer_string,
+                                             grpc_resource_user* resource_user,
+                                             CFStreamHandle* stream_sync);
 
 #endif /* GRPC_CFSTREAM */
 

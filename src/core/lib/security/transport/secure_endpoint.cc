@@ -416,12 +416,6 @@ static int endpoint_get_fd(grpc_endpoint* secure_ep) {
   return grpc_endpoint_get_fd(ep->wrapped_ep);
 }
 
-static grpc_resource_user* endpoint_get_resource_user(
-    grpc_endpoint* secure_ep) {
-  secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  return grpc_endpoint_get_resource_user(ep->wrapped_ep);
-}
-
 static bool endpoint_can_track_err(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   return grpc_endpoint_can_track_err(ep->wrapped_ep);
@@ -434,7 +428,6 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_delete_from_pollset_set,
                                             endpoint_shutdown,
                                             endpoint_destroy,
-                                            endpoint_get_resource_user,
                                             endpoint_get_peer,
                                             endpoint_get_local_address,
                                             endpoint_get_fd,
