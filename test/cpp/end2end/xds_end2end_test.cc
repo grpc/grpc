@@ -11445,6 +11445,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -11453,6 +11454,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
@@ -11488,6 +11495,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const double kDelayRate = kDelayPercentage / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -11496,6 +11504,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   http_fault.mutable_delay()->mutable_header_delay();
@@ -11536,6 +11550,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
       10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -11544,6 +11559,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
@@ -11593,6 +11614,7 @@ TEST_P(FaultInjectionTest,
       10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -11601,6 +11623,12 @@ TEST_P(FaultInjectionTest,
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
