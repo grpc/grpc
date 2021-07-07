@@ -2116,6 +2116,14 @@ grpc_error_handle DownstreamTlsContextParse(
           "TLS configuration provided but no "
           "tls_certificate_certificate_provider_instance found.");
     }
+    if (downstream_tls_context->require_client_certificate &&
+        downstream_tls_context->common_tls_context.combined_validation_context
+            .validation_context_certificate_provider_instance.instance_name
+            .empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "TLS configuration requires client certificates but no certificate "
+          "provider instance specified for validation.");
+    }
   }
   return GRPC_ERROR_NONE;
 }
