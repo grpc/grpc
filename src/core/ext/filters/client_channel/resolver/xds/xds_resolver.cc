@@ -696,28 +696,12 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
-      ExecCtx::Run(
-          // TODO(roth): This hop into the ExecCtx is being done to avoid
-          // entering the WorkSerializer while holding the client channel data
-          // plane mutex, since that can lead to deadlocks. However, we should
-          // not have to solve this problem in each individual ConfigSelector
-          // implementation. When we have time, we should fix the client channel
-          // code to avoid this by not invoking the
-          // CallConfig::on_call_committed callback until after it has released
-          // the data plane mutex.
-          DEBUG_LOCATION,
-          GRPC_CLOSURE_CREATE(
-              [](void* arg, grpc_error_handle /*error*/) {
-                auto* resolver = static_cast<XdsResolver*>(arg);
-                resolver->work_serializer_->Run(
-                    [resolver]() {
-                      resolver->MaybeRemoveUnusedClusters();
-                      resolver->Unref();
-                    },
-                    DEBUG_LOCATION);
-              },
-              resolver, nullptr),
-          GRPC_ERROR_NONE);
+      resolver->work_serializer_->Run(
+          [resolver]() {
+            resolver->MaybeRemoveUnusedClusters();
+            resolver->Unref();
+          },
+          DEBUG_LOCATION);
     };
     return call_config;
   }
