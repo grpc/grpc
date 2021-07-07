@@ -41,6 +41,8 @@ from setuptools.command import egg_info
 import subprocess
 from subprocess import PIPE
 
+import _metadata
+
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
@@ -311,9 +313,8 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
     EXTENSION_LIBRARIES += (
         'advapi32',
-        'bcrypt',
-        'dbghelp',
         'ws2_32',
+        'dbghelp',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (
@@ -329,6 +330,22 @@ if BUILD_WITH_SYSTEM_RE2:
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
+
+
+# Quotes on Windows build macros are evaluated differently from other platforms,
+# so we must apply quotes asymmetrically in order to yield the proper result in
+# the binary.
+def _quote_build_define(argument):
+    if "win32" in sys.platform:
+        return '"\\\"{}\\\""'.format(argument)
+    return '"{}"'.format(argument)
+
+
+DEFINE_MACROS += (
+    ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", _quote_build_define("Python")),
+    ("GRPC_XDS_USER_AGENT_VERSION_SUFFIX",
+     _quote_build_define(_metadata.__version__)),
+)
 
 asm_key = ''
 if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:

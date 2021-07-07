@@ -27,6 +27,13 @@
  *  - some syscalls to be made directly
  */
 
+// [[deprecated]] attribute is only available since C++14
+#if __cplusplus >= 201402L
+#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
+#else
+#define GRPC_DEPRECATED(reason)
+#endif  // __cplusplus >= 201402L
+
 /*
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
  */
@@ -663,6 +670,21 @@ typedef unsigned __int64 uint64_t;
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
+
+/* Selectively enable EventEngine on specific platforms. This default can be
+ * overridden using the GRPC_USE_EVENT_ENGINE compiler flag.
+ */
+#ifndef GRPC_USE_EVENT_ENGINE
+/* Not enabled by default on any platforms yet. (2021.06) */
+#elif GRPC_USE_EVENT_ENGINE == 0
+/* Building with `-DGRPC_USE_EVENT_ENGINE=0` will override the default. */
+#undef GRPC_USE_EVENT_ENGINE
+#endif /* GRPC_USE_EVENT_ENGINE */
+
+#ifdef GRPC_USE_EVENT_ENGINE
+#undef GPR_SUPPORT_CHANNELS_FROM_FD
+#define GRPC_ARES 0
+#endif /* GRPC_USE_EVENT_ENGINE */
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
 

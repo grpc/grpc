@@ -443,7 +443,7 @@ class ServerCompletionQueue : public CompletionQueue {
   /// \param shutdown_cb is the shutdown callback used for CALLBACK api queues
   ServerCompletionQueue(grpc_cq_completion_type completion_type,
                         grpc_cq_polling_type polling_type,
-                        grpc_experimental_completion_queue_functor* shutdown_cb)
+                        grpc_completion_queue_functor* shutdown_cb)
       : CompletionQueue(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, completion_type, polling_type,
             shutdown_cb}),

@@ -15,11 +15,9 @@ import logging
 import re
 from typing import ClassVar, Dict, Optional
 
-# Workaround: `grpc` must be imported before `google.protobuf.json_format`,
-# to prevent "Segmentation fault". Ref https://github.com/grpc/grpc/issues/24897
-import grpc
 from google.protobuf import json_format
 import google.protobuf.message
+import grpc
 
 logger = logging.getLogger(__name__)
 

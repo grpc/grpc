@@ -33,9 +33,10 @@
 class grpc_service_account_jwt_access_credentials
     : public grpc_call_credentials {
  public:
-  grpc_service_account_jwt_access_credentials(
-      grpc_auth_json_key key, gpr_timespec token_lifetime,
-      std::string user_provided_audience);
+  grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
+                                              gpr_timespec token_lifetime,
+                                              std::string user_provided_scope,
+                                              bool clear_audience);
   ~grpc_service_account_jwt_access_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
@@ -49,8 +50,8 @@ class grpc_service_account_jwt_access_credentials
 
   const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
   const grpc_auth_json_key& key() const { return key_; }
-  const std::string& user_provided_audience() const {
-    return user_provided_audience_;
+  const std::string& user_provided_scope() const {
+    return user_provided_scope_;
   }
   std::string debug_string() override {
     return absl::StrFormat(
@@ -63,17 +64,18 @@ class grpc_service_account_jwt_access_credentials
   void reset_cache();
 
   // Have a simple cache for now with just 1 entry. We could have a map based on
-  // the audience for a more sophisticated one.
+  // the service_url for a more sophisticated one.
   gpr_mu cache_mu_;
   struct {
     grpc_mdelem jwt_md = GRPC_MDNULL;
-    std::string audience;
+    char* service_url = nullptr;
     gpr_timespec jwt_expiration;
   } cached_;
 
   grpc_auth_json_key key_;
   gpr_timespec jwt_lifetime_;
-  std::string user_provided_audience_;
+  std::string user_provided_scope_;
+  bool clear_audience_;
 };
 
 // Private constructor for jwt credentials from an already parsed json key.
@@ -81,6 +83,6 @@ class grpc_service_account_jwt_access_credentials
 grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime,
-    std::string user_provided_audience);
+    std::string user_provided_scope, bool clear_audience);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H */
