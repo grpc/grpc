@@ -182,7 +182,15 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
 
   if (scope != nullptr) {
     object["scope"] = scope;
-    if (!clear_audience) {
+    // This code path is for the self-signed jwt token used to access
+    // google API's, and it needs to satisfy the requirement specified
+    // in https://google.aip.dev/auth/4111. Specifically,
+    // 1) "scope" and "aud" fields can not coexist.
+    // 2) "sub" and "iss" fields should be set to the service account's email
+    //    address.
+    if (clear_audience) {
+      object["sub"] = json_key->client_email;
+    } else {
       object["aud"] = audience;
     }
   } else {

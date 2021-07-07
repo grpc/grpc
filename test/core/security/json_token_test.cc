@@ -79,6 +79,9 @@ static const char test_scope[] = "myperm1 myperm2";
 
 static const char test_service_url[] = "https://foo.com/foo.v1";
 
+static const char test_subject[] =
+    "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com";
+
 static char* test_json_key_str(const char* bad_part3) {
   const char* part3 =
       bad_part3 != nullptr ? bad_part3 : test_json_key_str_part3;
@@ -242,7 +245,8 @@ static void check_jwt_header(const Json& header) {
 }
 
 static void check_jwt_claim(const Json& claim, const char* expected_audience,
-                            const char* expected_scope) {
+                            const char* expected_scope,
+                            const char* expected_subject) {
   Json::Object object = claim.object_value();
 
   Json value = object["iss"];
@@ -250,16 +254,11 @@ static void check_jwt_claim(const Json& claim, const char* expected_audience,
   GPR_ASSERT(value.string_value() ==
              "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com");
   if (expected_scope != nullptr) {
-    GPR_ASSERT(object.find("sub") == object.end());
     value = object["scope"];
     GPR_ASSERT(value.type() == Json::Type::STRING);
     GPR_ASSERT(value.string_value() == expected_scope);
   } else {
-    /* Claims without scope must have a sub. */
     GPR_ASSERT(object.find("scope") == object.end());
-    value = object["sub"];
-    GPR_ASSERT(value.type() == Json::Type::STRING);
-    GPR_ASSERT(value.string_value() == object["iss"].string_value());
   }
 
   if (expected_audience != nullptr) {
@@ -268,6 +267,14 @@ static void check_jwt_claim(const Json& claim, const char* expected_audience,
     GPR_ASSERT(value.string_value() == expected_audience);
   } else {
     GPR_ASSERT(object.find("aud") == object.end());
+  }
+
+  if (expected_subject != nullptr) {
+    value = object["sub"];
+    GPR_ASSERT(value.type() == Json::Type::STRING);
+    GPR_ASSERT(value.string_value() == object["iss"].string_value());
+  } else {
+    GPR_ASSERT(object.find("sub") == object.end());
   }
 
   gpr_timespec expiration = gpr_time_0(GPR_CLOCK_REALTIME);
@@ -332,16 +339,16 @@ static char* jwt_creds_jwt_encode_and_sign(const grpc_auth_json_key* key) {
 }
 
 static void service_account_creds_check_jwt_claim(const Json& claim) {
-  check_jwt_claim(claim, GRPC_JWT_OAUTH2_AUDIENCE, test_scope);
+  check_jwt_claim(claim, GRPC_JWT_OAUTH2_AUDIENCE, test_scope, nullptr);
 }
 
 static void service_account_creds_no_audience_check_jwt_claim(
     const Json& claim) {
-  check_jwt_claim(claim, nullptr, test_scope);
+  check_jwt_claim(claim, nullptr, test_scope, test_subject);
 }
 
 static void jwt_creds_check_jwt_claim(const Json& claim) {
-  check_jwt_claim(claim, test_service_url, nullptr);
+  check_jwt_claim(claim, test_service_url, nullptr, test_subject);
 }
 
 static void test_jwt_encode_and_sign(
