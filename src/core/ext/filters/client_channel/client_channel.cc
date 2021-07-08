@@ -1548,6 +1548,10 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
     // Process calls that were queued waiting for the resolver result.
     for (ResolverQueuedCall* call = resolver_queued_calls_; call != nullptr;
          call = call->next) {
+      // InvalidateNow to avoid getting stuck re-initializing this timer
+      // in a loop while draining the currently-held WorkSerializer.
+      // Also see https://github.com/grpc/grpc/issues/26079.
+      ExecCtx::Get()->InvalidateNow();
       grpc_call_element* elem = call->elem;
       CallData* calld = static_cast<CallData*>(elem->call_data);
       grpc_error_handle error = GRPC_ERROR_NONE;
@@ -1660,6 +1664,10 @@ void ClientChannel::UpdateStateAndPickerLocked(
     // Re-process queued picks.
     for (LbQueuedCall* call = lb_queued_calls_; call != nullptr;
          call = call->next) {
+      // InvalidateNow to avoid getting stuck re-initializing this timer
+      // in a loop while draining the currently-held WorkSerializer.
+      // Also see https://github.com/grpc/grpc/issues/26079.
+      ExecCtx::Get()->InvalidateNow();
       grpc_error_handle error = GRPC_ERROR_NONE;
       if (call->lb_call->PickSubchannelLocked(&error)) {
         call->lb_call->AsyncPickDone(error);
