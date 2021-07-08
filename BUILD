@@ -299,6 +299,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     standalone = True,
+    visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
     ],
@@ -348,7 +349,6 @@ grpc_cc_library(
     },
     standalone = True,
     visibility = [
-        "@grpc:alt_grpc_legacy",
         "@grpc:public",
     ],
     deps = [
@@ -389,7 +389,6 @@ grpc_cc_library(
     },
     standalone = True,
     visibility = [
-        "@grpc:alt_grpc++_legacy",
         "@grpc:public",
     ],
     deps = [
@@ -461,6 +460,7 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/xds_server_builder.h",
     ],
+    visibility = ["@grpc:xds"],
     deps = [
         "grpc++_internals",
     ],
@@ -514,6 +514,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    visibility = ["@grpc:tsi"],
     deps = [
         "alts_upb",
         "alts_util",
@@ -658,6 +659,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
+    visibility = ["@grpc:alt_gpr_base_legacy"],
     deps = [
         "debug_location",
         "google_api_upb",
@@ -686,6 +688,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/sync_posix.h",
         "include/grpc/impl/codegen/sync_windows.h",
     ],
+    visibility = ["@grpc:public"],
 )
 
 grpc_cc_library(
@@ -694,6 +697,7 @@ grpc_cc_library(
     hdrs = ["src/core/lib/debug/trace.h"],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
+    visibility = ["@grpc:trace"],
     deps = [
         "grpc_codegen",
         ":gpr",
@@ -715,12 +719,14 @@ grpc_cc_library(
     name = "debug_location",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
+    visibility = ["@grpc:debug_location"],
 )
 
 grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
+    visibility = ["@grpc:client_channel"],
     deps = [
         "debug_location",
         "gpr_base",
@@ -761,6 +767,7 @@ grpc_cc_library(
     name = "ref_counted_ptr",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted_ptr.h"],
+    visibility = ["@grpc:ref_counted_ptr"],
     deps = [
         "gpr_base",
     ],
@@ -1103,6 +1110,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "dual_ref_counted",
         "gpr_base",
@@ -1120,6 +1128,7 @@ grpc_cc_library(
         "src/core/lib/surface/lame_client.cc",
     ],
     language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "atomic",
         "grpc_base_c",
@@ -1229,6 +1238,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
     ],
     language = "c++",
+    visibility = ["@grpc:client_channel"],
     deps = [
         "gpr_base",
         "grpc_base",
@@ -1377,6 +1387,7 @@ grpc_cc_library(
         "include/grpc/impl/codegen/status.h",
         "include/grpc/impl/codegen/slice.h",
     ],
+    visibility = ["@grpc:public"],
     deps = [
         "gpr_codegen",
     ],
@@ -2239,6 +2250,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/varint.h",
     ],
     language = "c++",
+    visibility = ["@grpc:grpclb"],
     deps = [
         "gpr_base",
         "grpc_base",
@@ -2377,6 +2389,7 @@ grpc_cc_library(
         "src/core/tsi/transport_security_interface.h",
     ],
     language = "c++",
+    visibility = ["@grpc:tsi_interface"],
     deps = [
         "gpr",
         "grpc_trace",
@@ -2420,6 +2433,7 @@ grpc_cc_library(
         "libssl",
     ],
     language = "c++",
+    visibility = ["@grpc:alts_frame_protector"],
     deps = [
         "gpr",
         "grpc_base",
@@ -2446,6 +2460,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
+    visibility = ["@grpc:tsi"],
     deps = [
         "alts_upb",
         "gpr",
@@ -2486,6 +2501,7 @@ grpc_cc_library(
         "libssl",
     ],
     language = "c++",
+    visibility = ["@grpc:tsi"],
     deps = [
         "alts_frame_protector",
         "alts_util",
@@ -2506,6 +2522,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
         "grpc",
         "grpc++_codegen_base",
@@ -2612,6 +2629,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/sync_stream.h",
         "include/grpcpp/impl/codegen/time.h",
     ],
+    visibility = ["@grpc:public"],
     deps = [
         "grpc++_internal_hdrs_only",
         "grpc_codegen",
@@ -2641,6 +2659,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
     ],
+    visibility = ["@grpc:public"],
     deps = [
         "grpc++_codegen_base",
         "grpc++_config_proto",
@@ -2657,6 +2676,7 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/config_protobuf.h",
         "include/grpcpp/impl/codegen/config_protobuf.h",
     ],
+    visibility = ["@grpc:public"],
 )
 
 grpc_cc_library(
@@ -2673,6 +2693,7 @@ grpc_cc_library(
         "include/grpc++/ext/proto_server_reflection_plugin.h",
         "include/grpcpp/ext/proto_server_reflection_plugin.h",
     ],
+    visibility = ["@grpc:public"],
     deps = [
         ":grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
@@ -2761,6 +2782,7 @@ grpc_cc_library(
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
     ],
+    visibility = ["@grpc:grpc++_test"],
     deps = [
         ":grpc++",
     ],
