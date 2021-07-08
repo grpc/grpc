@@ -354,7 +354,6 @@ class ServerInterface : public internal::CallHook {
     return nullptr;
   }
 
-  // EXPERIMENTAL
   // A method to get the callbackable completion queue associated with this
   // server. If the return value is nullptr, this server doesn't support
   // callback operations.
