@@ -140,11 +140,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /// Custom-Metadata -> Binary-Header / ASCII-Header
-  /// Binary-Header -> {Header-Name "-bin" } {binary value}
-  /// ASCII-Header -> Header-Name ASCII-Value
-  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /**
+  \verbatim
+  Custom-Metadata -> Binary-Header / ASCII-Header
+  Binary-Header -> {Header-Name "-bin" } {binary value}
+  ASCII-Header -> Header-Name ASCII-Value
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  \endverbatim
+  **/
   void AddInitialMetadata(const std::string& key, const std::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
@@ -161,11 +165,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /// Custom-Metadata -> Binary-Header / ASCII-Header
-  /// Binary-Header -> {Header-Name "-bin" } {binary value}
-  /// ASCII-Header -> Header-Name ASCII-Value
-  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /**
+  \verbatim
+  Custom-Metadata -> Binary-Header / ASCII-Header
+  Binary-Header -> {Header-Name "-bin" } {binary value}
+  ASCII-Header -> Header-Name ASCII-Value
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  \endverbatim
+  **/
   void AddTrailingMetadata(const std::string& key, const std::string& value);
 
   /// Return whether this RPC failed before the server could provide its status
