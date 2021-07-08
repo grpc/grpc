@@ -783,19 +783,12 @@ using UnimplementedBidiReactor =
 
 }  // namespace internal
 
-// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
+// TODO(vjpai): Remove namespace experimental when last known users are migrated
+// off.
 namespace experimental {
-
-template <class Request>
-using ServerReadReactor = ::grpc::ServerReadReactor<Request>;
-
-template <class Response>
-using ServerWriteReactor = ::grpc::ServerWriteReactor<Response>;
 
 template <class Request, class Response>
 using ServerBidiReactor = ::grpc::ServerBidiReactor<Request, Response>;
-
-using ServerUnaryReactor = ::grpc::ServerUnaryReactor;
 
 }  // namespace experimental
 

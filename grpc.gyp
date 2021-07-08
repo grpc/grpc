@@ -391,6 +391,7 @@
         'absl/base:base',
         'absl/memory:memory',
         'absl/status:status',
+        'absl/strings:cord',
         'absl/strings:str_format',
         'absl/strings:strings',
         'absl/synchronization:synchronization',
