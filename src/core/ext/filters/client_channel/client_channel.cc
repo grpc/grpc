@@ -1548,9 +1548,14 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
     // Process calls that were queued waiting for the resolver result.
     for (ResolverQueuedCall* call = resolver_queued_calls_; call != nullptr;
          call = call->next) {
-      // InvalidateNow to avoid getting stuck re-initializing this timer
-      // in a loop while draining the currently-held WorkSerializer.
-      // Also see https://github.com/grpc/grpc/issues/26079.
+      // If there are a lot of queued calls here, resuming them all may cause us
+      // to stay inside C-core for a long period of time. All of that work would
+      // be done using the same ExecCtx instance and therefore the same cached
+      // value of "now". The longer it takes to finish all of this work and exit
+      // from C-core, the more stale the cached value of "now" may become. This
+      // can cause problems whereby (e.g.) we calculate a timer deadline based
+      // on the stale value, which results in the timer firing too early. To
+      // avoid this, we invalidate the cached value for each call we process.
       ExecCtx::Get()->InvalidateNow();
       grpc_call_element* elem = call->elem;
       CallData* calld = static_cast<CallData*>(elem->call_data);
@@ -1664,9 +1669,14 @@ void ClientChannel::UpdateStateAndPickerLocked(
     // Re-process queued picks.
     for (LbQueuedCall* call = lb_queued_calls_; call != nullptr;
          call = call->next) {
-      // InvalidateNow to avoid getting stuck re-initializing this timer
-      // in a loop while draining the currently-held WorkSerializer.
-      // Also see https://github.com/grpc/grpc/issues/26079.
+      // If there are a lot of queued calls here, resuming them all may cause us
+      // to stay inside C-core for a long period of time. All of that work would
+      // be done using the same ExecCtx instance and therefore the same cached
+      // value of "now". The longer it takes to finish all of this work and exit
+      // from C-core, the more stale the cached value of "now" may become. This
+      // can cause problems whereby (e.g.) we calculate a timer deadline based
+      // on the stale value, which results in the timer firing too early. To
+      // avoid this, we invalidate the cached value for each call we process.
       ExecCtx::Get()->InvalidateNow();
       grpc_error_handle error = GRPC_ERROR_NONE;
       if (call->lb_call->PickSubchannelLocked(&error)) {
