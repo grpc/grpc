@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
-#include <grpc_security.h>
+#include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
