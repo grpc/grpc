@@ -79,9 +79,6 @@ static const char test_scope[] = "myperm1 myperm2";
 
 static const char test_service_url[] = "https://foo.com/foo.v1";
 
-static const char test_subject[] =
-    "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com";
-
 static char* test_json_key_str(const char* bad_part3) {
   const char* part3 =
       bad_part3 != nullptr ? bad_part3 : test_json_key_str_part3;
