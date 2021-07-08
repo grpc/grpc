@@ -2115,8 +2115,9 @@ grpc_error_handle DownstreamTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
             downstream_tls_context_proto);
     if (common_tls_context != nullptr) {
-      grpc_error_handle error = CommonTlsContextParse(context,
-          common_tls_context, &downstream_tls_context->common_tls_context);
+      grpc_error_handle error =
+          CommonTlsContextParse(context, common_tls_context,
+                                &downstream_tls_context->common_tls_context);
       if (error != GRPC_ERROR_NONE) return error;
     }
     auto* require_client_certificate =
@@ -3072,8 +3073,8 @@ grpc_error_handle CdsResponseParse(
               envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
                   upstream_tls_context);
           if (common_tls_context != nullptr) {
-            grpc_error_handle error = CommonTlsContextParse(context,
-                common_tls_context, &cds_update.common_tls_context);
+            grpc_error_handle error = CommonTlsContextParse(
+                context, common_tls_context, &cds_update.common_tls_context);
             if (error != GRPC_ERROR_NONE) {
               errors.push_back(grpc_error_add_child(
                   GRPC_ERROR_CREATE_FROM_COPIED_STRING(
