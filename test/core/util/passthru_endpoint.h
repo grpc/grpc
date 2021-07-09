@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef MOCK_ENDPOINT_H
-#define MOCK_ENDPOINT_H
+#ifndef PASSTHRU_ENDPOINT_H
+#define PASSTHRU_ENDPOINT_H
 
 #include <grpc/support/atm.h>
 
@@ -40,4 +40,4 @@ grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();
 
 void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats);
 
-#endif
+#endif  // PASSTHRU_ENDPOINT_H

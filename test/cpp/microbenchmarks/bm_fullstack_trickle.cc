@@ -29,11 +29,11 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/trickle_endpoint.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
-#include "test/cpp/util/mock_endpoint.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(bool, log, false, "Log state to CSV files");
@@ -86,7 +86,7 @@ class TrickledCHTTP2 : public EndpointPairFixture {
                  grpc_resource_user* resource_user)
       : EndpointPairFixture(
             service, MakeEndpoints(kilobits_per_second, stats, resource_user),
-            FixtureConfiguration()),
+            FixtureConfiguration(), resource_user),
         stats_(stats) {
     if (absl::GetFlag(FLAGS_log)) {
       std::ostringstream fn;
