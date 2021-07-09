@@ -39,7 +39,7 @@ TEST(MatchTest, Test) {
 TEST(MatchTest, TestVoidReturn) {
   bool triggered = false;
   Match(
-      absl::variant<int, double>(1.9), [](int x) { abort(); },
+      absl::variant<int, double>(1.9), [](int) { abort(); },
       [&triggered](double x) {
         EXPECT_EQ(x, 1.9);
         triggered = true;
@@ -50,14 +50,14 @@ TEST(MatchTest, TestVoidReturn) {
 TEST(MatchTest, TestMutable) {
   absl::variant<int, double> v = 1.9;
   MatchMutable(
-      &v, [](int* x) { abort(); }, [](double* x) { *x = 0.0; });
+      &v, [](int*) { abort(); }, [](double* x) { *x = 0.0; });
   EXPECT_EQ(v, (absl::variant<int, double>(0.0)));
 }
 
 TEST(MatchTest, TestMutableWithReturn) {
   absl::variant<int, double> v = 1.9;
   EXPECT_EQ(MatchMutable(
-                &v, [](int* x) -> int { abort(); },
+                &v, [](int*) -> int { abort(); },
                 [](double* x) -> int {
                   *x = 0.0;
                   return 1;
