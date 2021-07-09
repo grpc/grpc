@@ -176,6 +176,7 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
 
   Json::Object object = {
       {"iss", json_key->client_email},
+      {"sub", json_key->client_email},
       {"iat", now.tv_sec},
       {"exp", expiration.tv_sec},
   };
@@ -186,8 +187,6 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
       object["aud"] = audience;
     }
   } else {
-    /* Unscoped JWTs need a sub field. */
-    object["sub"] = json_key->client_email;
     object["aud"] = audience;
   }
 

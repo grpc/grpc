@@ -249,17 +249,16 @@ static void check_jwt_claim(const Json& claim, const char* expected_audience,
   GPR_ASSERT(value.type() == Json::Type::STRING);
   GPR_ASSERT(value.string_value() ==
              "777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount.com");
+  value = object["sub"];
+  GPR_ASSERT(value.type() == Json::Type::STRING);
+  GPR_ASSERT(value.string_value() == object["iss"].string_value());
+
   if (expected_scope != nullptr) {
-    GPR_ASSERT(object.find("sub") == object.end());
     value = object["scope"];
     GPR_ASSERT(value.type() == Json::Type::STRING);
     GPR_ASSERT(value.string_value() == expected_scope);
   } else {
-    /* Claims without scope must have a sub. */
     GPR_ASSERT(object.find("scope") == object.end());
-    value = object["sub"];
-    GPR_ASSERT(value.type() == Json::Type::STRING);
-    GPR_ASSERT(value.string_value() == object["iss"].string_value());
   }
 
   if (expected_audience != nullptr) {
