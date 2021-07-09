@@ -38,8 +38,9 @@
 grpc_channel* grpc_insecure_channel_create_from_fd(
     const char* target, int fd, const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_insecure_channel_create(target=%p, fd=%d, args=%p)", 3,
-                 (target, fd, args));
+  GRPC_API_TRACE(
+      "grpc_insecure_channel_create_from_fd(target=%p, fd=%d, args=%p)", 3,
+      (target, fd, args));
 
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
@@ -57,9 +58,9 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel =
-      grpc_channel_create(target, final_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          transport, nullptr, &error);
+  grpc_channel* channel = grpc_channel_create_internal(
+      target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr,
+      &error);
   grpc_channel_args_destroy(final_args);
   if (channel != nullptr) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);

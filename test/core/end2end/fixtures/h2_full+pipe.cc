@@ -25,6 +25,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -64,8 +65,8 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
                                   grpc_channel_args* client_args) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
-  f->client = grpc_insecure_channel_create(ffd->localaddr.c_str(), client_args,
-                                           nullptr);
+  f->client = grpc_channel_create(grpc_insecure_credentials_create(),
+                                  ffd->localaddr.c_str(), client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
@@ -79,7 +80,8 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(
-      grpc_server_add_insecure_http2_port(f->server, ffd->localaddr.c_str()));
+      grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
+                                 grpc_insecure_server_credentials_create()));
   grpc_server_start(f->server);
 }
 

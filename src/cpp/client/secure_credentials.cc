@@ -68,8 +68,7 @@ SecureChannelCredentials::CreateChannelWithInterceptors(
   args.SetChannelArgs(&channel_args);
   return ::grpc::CreateChannelInternal(
       args.GetSslTargetNameOverride(),
-      grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args,
-                                 nullptr),
+      grpc_channel_create(c_creds_, target.c_str(), &channel_args, nullptr),
       std::move(interceptor_creators));
 }
 

@@ -88,12 +88,12 @@ cdef class Server:
     if server_credentials is not None:
       self.references.append(server_credentials)
       with nogil:
-        result = grpc_server_add_secure_http2_port(
+        result = grpc_server_add_http2_port(
             self.c_server, address_c_string, server_credentials.c_credentials)
     else:
       with nogil:
-        result = grpc_server_add_insecure_http2_port(self.c_server,
-                                                     address_c_string)
+        result = grpc_server_add_http2_port(self.c_server,
+                                            address_c_string, grpc_insecure_server_credentials_create())
     return result
 
   cdef _c_shutdown(self, CompletionQueue queue, tag):

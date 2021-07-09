@@ -20,6 +20,8 @@
 
 #include <benchmark/benchmark.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -42,7 +44,8 @@ class InsecureChannelFixture : public ChannelDestroyerFixture {
  public:
   InsecureChannelFixture() {}
   void Init() override {
-    channel_ = grpc_insecure_channel_create("localhost:1234", nullptr, nullptr);
+    channel_ = grpc_channel_create(grpc_insecure_credentials_create(),
+                                   "localhost:1234", nullptr, nullptr);
   }
 };
 

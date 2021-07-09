@@ -33,7 +33,7 @@ void test_unknown_scheme_target(void) {
   grpc_channel_credentials* creds =
       grpc_fake_transport_security_credentials_create();
   grpc_channel* chan =
-      grpc_secure_channel_create(creds, "blah://blah", nullptr, nullptr);
+      grpc_channel_create(creds, "blah://blah", nullptr, nullptr);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
@@ -50,8 +50,7 @@ void test_security_connector_already_in_arg(void) {
   grpc_channel_args args;
   args.num_args = 1;
   args.args = &arg;
-  grpc_channel* chan =
-      grpc_secure_channel_create(nullptr, nullptr, &args, nullptr);
+  grpc_channel* chan = grpc_channel_create(nullptr, nullptr, &args, nullptr);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
@@ -60,8 +59,7 @@ void test_security_connector_already_in_arg(void) {
 }
 
 void test_null_creds(void) {
-  grpc_channel* chan =
-      grpc_secure_channel_create(nullptr, nullptr, nullptr, nullptr);
+  grpc_channel* chan = grpc_channel_create(nullptr, nullptr, nullptr, nullptr);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));

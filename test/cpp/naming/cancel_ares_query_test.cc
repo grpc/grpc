@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -320,7 +321,8 @@ void TestCancelDuringActiveQuery(
     abort();
   }
   grpc_channel* client =
-      grpc_insecure_channel_create(client_target.c_str(), client_args, nullptr);
+      grpc_channel_create(grpc_insecure_credentials_create(),
+                          client_target.c_str(), client_args, nullptr);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
   grpc_call* call = grpc_channel_create_call(

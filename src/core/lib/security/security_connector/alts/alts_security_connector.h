@@ -23,9 +23,9 @@
 
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 
 #define GRPC_ALTS_TRANSPORT_SECURITY_TYPE "alts"
-#define GRPC_ALTS_URL_SCHEME "https"
 
 /**
  * This method creates an ALTS channel security connector.

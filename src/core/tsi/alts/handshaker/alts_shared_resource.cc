@@ -56,7 +56,8 @@ void grpc_alts_shared_resource_dedicated_start(
   gpr_mu_lock(&g_alts_resource_dedicated.mu);
   if (g_alts_resource_dedicated.cq == nullptr) {
     g_alts_resource_dedicated.channel =
-        grpc_insecure_channel_create(handshaker_service_url, nullptr, nullptr);
+        grpc_channel_create(grpc_insecure_credentials_create(),
+                            handshaker_service_url, nullptr, nullptr);
     g_alts_resource_dedicated.cq =
         grpc_completion_queue_create_for_next(nullptr);
     g_alts_resource_dedicated.thread =

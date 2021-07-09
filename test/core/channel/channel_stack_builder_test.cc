@@ -21,6 +21,7 @@
 #include <limits.h>
 #include <string.h>
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -57,7 +58,8 @@ void set_arg_once_fn(grpc_channel_stack* /*channel_stack*/,
 
 static void test_channel_stack_builder_filter_replace(void) {
   grpc_channel* channel =
-      grpc_insecure_channel_create("target name isn't used", nullptr, nullptr);
+      grpc_channel_create(grpc_insecure_credentials_create(),
+                          "target name isn't used", nullptr, nullptr);
   GPR_ASSERT(channel != nullptr);
   // Make sure the high priority filter has been created.
   GPR_ASSERT(g_replacement_fn_called);
