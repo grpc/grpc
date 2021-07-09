@@ -112,7 +112,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
 
   fixture_data->ru = grpc_mock_resource_user_create();
   *fixture_data->ep =
-      grpc_iomgr_create_endpoint_pair("fixture", &args, fixture_data->ru);
+      grpc_iomgr_create_endpoint_pair("fixture", nullptr, fixture_data->ru);
 
   return f;
 }
