@@ -43,6 +43,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/util/mock_endpoint.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -130,7 +131,9 @@ static void test_init() {
   g_ctx.client_cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* Create endpoints */
-  *sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
+  grpc_resource_user* ru = grpc_mock_resource_user_create();
+  *sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr, ru);
+  grpc_resource_user_unref(ru);
   /* Create client, server and setup transport over endpoint pair */
   init_server();
   init_client();

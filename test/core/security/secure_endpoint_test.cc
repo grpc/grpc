@@ -30,6 +30,7 @@
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/fake_transport_security.h"
+#include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu* g_mu;
@@ -59,7 +60,9 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  tcp = grpc_iomgr_create_endpoint_pair("fixture", &args);
+  grpc_resource_user* ru = grpc_mock_resource_user_create();
+  tcp = grpc_iomgr_create_endpoint_pair("fixture", &args, ru);
+  grpc_resource_user_unref(ru);
   grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(tcp.server, g_pollset);
 
