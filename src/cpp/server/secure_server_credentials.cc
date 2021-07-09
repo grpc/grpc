@@ -74,7 +74,6 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_metadata md_entry;
     md_entry.key = SliceReferencingString(consumed.first);
     md_entry.value = SliceReferencingString(consumed.second);
-    md_entry.flags = 0;
     consumed_md.push_back(md_entry);
   }
   std::vector<grpc_metadata> response_md;
@@ -82,7 +81,6 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_metadata md_entry;
     md_entry.key = SliceReferencingString(response.first);
     md_entry.value = SliceReferencingString(response.second);
-    md_entry.flags = 0;
     response_md.push_back(md_entry);
   }
   auto consumed_md_data = consumed_md.empty() ? nullptr : &consumed_md[0];

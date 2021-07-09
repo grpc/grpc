@@ -2421,7 +2421,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       std::ostringstream server_address;
       server_address << "localhost:" << port_;
       if (use_xds_enabled_server_) {
-        experimental::XdsServerBuilder builder;
+        XdsServerBuilder builder;
         if (GetParam().bootstrap_source() ==
             TestType::kBootstrapFromChannelArg) {
           builder.SetOption(
@@ -4679,72 +4679,6 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   EXPECT_EQ(kNumEcho2Rpcs, backends_[3]->backend_service2()->request_count());
-}
-
-TEST_P(LdsRdsTest, XdsRoutingPathRegexMatchingCaseInsensitive) {
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const size_t kNumEcho1Rpcs = 10;
-  const size_t kNumEchoRpcs = 30;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 3)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsService1Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsService2Name));
-  // Populate new CDS resources.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewCluster1Name);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewCluster2Name);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
-  // Populating Route Configurations for LDS.
-  RouteConfiguration new_route_config = default_route_config_;
-  // First route will not match, since it's case-sensitive.
-  // Second route will match with same path.
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->mutable_safe_regex()->set_regex(
-      ".*EcHoTeSt1SErViCe.*");
-  route1->mutable_route()->set_cluster(kNewCluster1Name);
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  route2->mutable_match()->mutable_safe_regex()->set_regex(
-      ".*EcHoTeSt1SErViCe.*");
-  route2->mutable_match()->mutable_case_sensitive()->set_value(false);
-  route2->mutable_route()->set_cluster(kNewCluster2Name);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(0, new_route_config);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_wait_for_ready(true));
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  EXPECT_EQ(kNumEcho1Rpcs, backends_[2]->backend_service1()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
@@ -8187,6 +8121,20 @@ class XdsSecurityTest : public BasicTest {
   std::vector<std::string> fallback_authenticated_identity_;
 };
 
+TEST_P(XdsSecurityTest, UnknownTransportSocket) {
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("unknown_transport_socket");
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  CheckRpcSendFailure();
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized transport socket: unknown_transport_socket"));
+}
+
 TEST_P(XdsSecurityTest,
        TLSConfigurationWithoutValidationContextCertificateProviderInstance) {
   auto cluster = default_cluster_;
@@ -9136,7 +9084,71 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> client_authenticated_identity_;
 };
 
-TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
+TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("unknown_transport_socket");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized transport socket: unknown_transport_socket"));
+}
+
+TEST_P(
+    XdsServerSecurityTest,
+    NacksRequiringClientCertificateWithoutValidationCertificateProviderInstance) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  downstream_tls_context.mutable_require_client_certificate()->set_value(true);
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration requires client certificates but no "
+                  "certificate provider instance specified for validation."));
+}
+
+TEST_P(XdsServerSecurityTest,
+       NacksTlsConfigurationWithoutIdentityProviderInstance) {
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -9153,7 +9165,10 @@ TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
   DownstreamTlsContext downstream_tls_context;
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -9174,6 +9189,14 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map;
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
           true /* test_expects_failure */);
 }
 

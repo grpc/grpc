@@ -137,7 +137,7 @@ static void test_retry_per_attempt_recv_timeout(
               "      \"initialBackoff\": \"1s\",\n"
               "      \"maxBackoff\": \"120s\",\n"
               "      \"backoffMultiplier\": 1.6,\n"
-              "      \"perAttemptRecvTimeout\": \"1s\",\n"
+              "      \"perAttemptRecvTimeout\": \"2s\",\n"
               "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
               "    }\n"
               "  } ]\n"

@@ -70,18 +70,31 @@ def _update_visibility(visibility):
 
     # Visibility rules prefixed with '@grpc_' are used to flag different visibility rule
     # classes upstream.
+    PUBLIC = ["//visibility:public"]
+    PRIVATE = ["//:__subpackages__"]
     VISIBILITY_TARGETS = {
-        "alt_grpc_legacy": [],
-        "alt_grpc++_legacy": [],
-        "endpoint_tests": [],
-        "grpc_opencensus_plugin": ["//visibility:public"],
-        "grpc_resolver_fake": [],
-        "public": ["//visibility:public"],
+        "alt_gpr_base_legacy": PRIVATE,
+        "alt_grpc++_base_legacy": PRIVATE,
+        "alt_grpc_base_legacy": PRIVATE,
+        "alts_frame_protector": PRIVATE,
+        "client_channel": PRIVATE,
+        "debug_location": PRIVATE,
+        "endpoint_tests": PRIVATE,
+        "grpclb": PRIVATE,
+        "grpc_opencensus_plugin": PUBLIC,
+        "grpc_resolver_fake": PRIVATE,
+        "grpc++_test": PRIVATE,
+        "public": PUBLIC,
+        "ref_counted_ptr": PRIVATE,
+        "trace": PRIVATE,
+        "tsi_interface": PRIVATE,
+        "tsi": PRIVATE,
+        "xds": PRIVATE,
     }
     final_visibility = []
     for rule in visibility:
         if rule.startswith("@grpc:"):
-            for replacement in VISIBILITY_TARGETS[rule[6:]]:
+            for replacement in VISIBILITY_TARGETS[rule[len("@grpc:"):]]:
                 final_visibility.append(replacement)
         else:
             final_visibility.append(rule)
