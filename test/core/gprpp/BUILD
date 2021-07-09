@@ -97,6 +97,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:match",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -108,6 +109,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:overload",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
