@@ -20,7 +20,7 @@ namespace testing {
 
 TEST(MatchTest, Test) {
   EXPECT_EQ(Match(
-                absl::variant<int, double>(1.9), [](int x) -> int { abort(); },
+                absl::variant<int, double>(1.9), [](int) -> int { abort(); },
                 [](double x) -> int {
                   EXPECT_EQ(x, 1.9);
                   return 42;
@@ -32,7 +32,7 @@ TEST(MatchTest, Test) {
                   EXPECT_EQ(x, 3);
                   return 42;
                 },
-                [](double x) -> int { abort(); }),
+                [](double) -> int { abort(); }),
             42);
 }
 
