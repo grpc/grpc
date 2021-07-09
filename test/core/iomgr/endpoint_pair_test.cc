@@ -24,6 +24,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
+#include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu* g_mu;
