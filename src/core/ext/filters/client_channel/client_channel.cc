@@ -2990,7 +2990,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
                 complete_pick.subchannel.get());
             GPR_ASSERT(connected_subchannel_ != nullptr);
             lb_recv_trailing_metadata_ready_ =
-                complete_pick.recv_trailing_metadata_ready;
+                std::move(complete_pick.recv_trailing_metadata_ready);
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           },
