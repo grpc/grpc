@@ -5892,6 +5892,16 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: overload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/overload.h
+  src:
+  - test/core/gprpp/overload_test.cc
+  deps: []
+  uses_polling: false
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c++
