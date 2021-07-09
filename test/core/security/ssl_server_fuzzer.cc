@@ -59,13 +59,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   {
     grpc_core::ExecCtx exec_ctx;
 
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("ssl_server_fuzzer");
-    grpc_resource_user* resource_user =
-        grpc_mock_resource_user_create(resource_quota);
+    grpc_resource_user* resource_user = grpc_mock_resource_user_create();
     grpc_endpoint* mock_endpoint =
-        grpc_mock_endpoint_create(discard_write, resource_quota);
-    grpc_resource_quota_unref_internal(resource_quota);
+        grpc_mock_endpoint_create(discard_write, resource_user);
 
     grpc_mock_endpoint_put_read(
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
@@ -116,6 +112,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Explicit close"));
       grpc_core::ExecCtx::Get()->Flush();
     }
+    grpc_resource_user_unref(resource_user);
 
     GPR_ASSERT(state.done_callback_called);
 

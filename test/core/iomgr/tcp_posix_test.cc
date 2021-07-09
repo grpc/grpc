@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/iomgr/endpoint_tests.h"
+#include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu* g_mu;
