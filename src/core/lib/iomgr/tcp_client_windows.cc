@@ -210,7 +210,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
   gpr_log(GPR_INFO, "apolcyn connecting now run grpc_timer_init ac=%p socket=%p", ac, socket);
   grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(10, GPR_TIMESPAN)));
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(100, GPR_TIMESPAN)));
   gpr_log(GPR_INFO, "apolcyn connecting now run grpc_socket_notify_on_write ac=%p socket=%p", ac, socket);
   grpc_socket_notify_on_write(socket, &ac->on_connect);
   return;
