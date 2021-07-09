@@ -120,6 +120,11 @@ void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
  * caller eventually. */
 bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
                                    size_t size);
+/* Returns true if you can allocate 'size' worth of memory from the resource
+ * user without exceeding the resource quota's total size. No allocations are
+ * actually performed. */
+bool grpc_resource_user_could_alloc(grpc_resource_user* resource_user,
+                                    size_t size);
 /* Allocates from the resource user 'size' worth of memory.
  * If optional_on_done is NULL, then allocate immediately. This may push the
  * quota over-limit, at which point reclamation will kick in. The caller is

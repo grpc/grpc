@@ -43,8 +43,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("server_fuzzer");
+    grpc_resource_user* resource_user =
+        grpc_mock_resource_user_create(resource_quota);
     grpc_endpoint* mock_endpoint =
-        grpc_mock_endpoint_create(discard_write, resource_quota);
+        grpc_mock_endpoint_create(discard_write, resource_user);
     grpc_resource_quota_unref_internal(resource_quota);
     grpc_mock_endpoint_put_read(
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
@@ -55,8 +57,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
-    grpc_transport* transport =
-        grpc_create_chttp2_transport(nullptr, mock_endpoint, false);
+    grpc_transport* transport = grpc_create_chttp2_transport(
+        nullptr, mock_endpoint, false, resource_user);
     server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -95,6 +97,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     if (call1 != nullptr) grpc_call_unref(call1);
     grpc_call_details_destroy(&call_details1);
     grpc_metadata_array_destroy(&request_metadata1);
+    grpc_resource_user_unref(resource_user);
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
     grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 5000;

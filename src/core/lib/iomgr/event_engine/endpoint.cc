@@ -174,7 +174,6 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   grpc_resource_user_ref(resource_user);
   endpoint->ru = resource_user;
-  grpc_resource_quota_unref_internal(resource_quota);
   return &endpoint->base;
 }
 

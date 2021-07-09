@@ -325,6 +325,19 @@ static void on_accept(void* arg, grpc_error_handle error) {
     return;
   }
 
+  // Create Resource User
+  grpc_resource_quota* resource_quota =
+      grpc_channel_args_find_pointer<grpc_resource_quota>(
+          sp->server->channel_args, GRPC_ARG_RESOURCE_QUOTA);
+  if (resource_quota == nullptr) {
+    resource_quota = grpc_resource_quota_create(nullptr);
+  } else {
+    grpc_resource_quota_ref_internal(resource_quota);
+  }
+  grpc_resource_user* resource_user =
+      grpc_resource_user_create(resource_quota, addr_str.c_str());
+  grpc_resource_quota_unref_internal(resource_quota);
+
   /* The IOCP notified us of a completed operation. Let's grab the results,
      and act accordingly. */
   transfered_bytes = 0;
@@ -359,7 +372,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           sp->server->channel_args, peer_name_string.c_str());
+                           sp->server->channel_args, peer_name_string.c_str(),
+                           resource_user);
     } else {
       closesocket(sock);
     }
@@ -375,8 +389,10 @@ static void on_accept(void* arg, grpc_error_handle error) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = 0;
     acceptor->external_connection = false;
-    sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, NULL, acceptor);
+    sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, resource_user,
+                             NULL, acceptor);
   }
+  grpc_resource_user_unref(resource_user);
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
      to the new connection. We need to create a new one for the next

@@ -622,6 +622,7 @@ static void tcp_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   ZerocopyDisableAndWaitForRemaining(tcp);
   grpc_fd_shutdown(tcp->em_fd, why);
+  grpc_resource_user_shutdown(tcp->resource_user);
 }
 
 static void tcp_free(grpc_tcp* tcp) {

@@ -21,6 +21,8 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
+grpc_resource_user* grpc_mock_resource_user_create(
+    grpc_resource_quota* resource_quota = nullptr);
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_quota* resource_quota);
 void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice);

@@ -261,8 +261,9 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
   InProcessCHTTP2WithExplicitStats(
       Service* service, grpc_passthru_endpoint_stats* stats,
-      const FixtureConfiguration& fixture_configuration)
-      : EndpointPairFixture(service, MakeEndpoints(stats),
+      const FixtureConfiguration& fixture_configuration,
+      grpc_resource_user* resource_user)
+      : EndpointPairFixture(service, MakeEndpoints(stats, resource_user),
                             fixture_configuration),
         stats_(stats) {}
 
@@ -294,10 +295,13 @@ class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
  public:
   explicit InProcessCHTTP2(Service* service,
                            const FixtureConfiguration& fixture_configuration =
-                               FixtureConfiguration())
+                               FixtureConfiguration(),
+                           grpc_resource_user* resource_user)
       : InProcessCHTTP2WithExplicitStats(service,
                                          grpc_passthru_endpoint_stats_create(),
-                                         fixture_configuration) {}
+                                         fixture_configuration, resource_user) {
+
+  }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

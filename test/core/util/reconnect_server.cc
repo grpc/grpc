@@ -58,6 +58,7 @@ static void pretty_print_backoffs(reconnect_server* server) {
 }
 
 static void on_connect(void* arg, grpc_endpoint* tcp,
+                       grpc_resource_user* /* resource_user */,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);

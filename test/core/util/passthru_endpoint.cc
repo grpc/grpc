@@ -170,11 +170,6 @@ static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
 
 static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
 
-static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
-  half* m = reinterpret_cast<half*>(ep);
-  return m->resource_user;
-}
-
 static const grpc_endpoint_vtable vtable = {
     me_read,
     me_write,
@@ -183,7 +178,6 @@ static const grpc_endpoint_vtable vtable = {
     me_delete_from_pollset_set,
     me_shutdown,
     me_destroy,
-    me_get_resource_user,
     me_get_peer,
     me_get_local_address,
     me_get_fd,
@@ -191,7 +185,7 @@ static const grpc_endpoint_vtable vtable = {
 };
 
 static void half_init(half* m, passthru_endpoint* parent,
-                      grpc_resource_quota* resource_quota,
+                      grpc_resource_user* resource_user,
                       const char* half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
@@ -199,12 +193,13 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->on_read = nullptr;
   std::string name =
       absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
-  m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
+  grpc_resource_user_ref(resource_user);
+  m->resource_user = resource_user;
 }
 
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
-                                   grpc_resource_quota* resource_quota,
+                                   grpc_resource_user* resource_user,
                                    grpc_passthru_endpoint_stats* stats) {
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
@@ -216,8 +211,8 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
     gpr_ref(&stats->refs);
     m->stats = stats;
   }
-  half_init(&m->client, m, resource_quota, "client");
-  half_init(&m->server, m, resource_quota, "server");
+  half_init(&m->client, m, resource_user, "client");
+  half_init(&m->server, m, resource_user, "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;

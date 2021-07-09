@@ -107,8 +107,10 @@ void test_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
+  auto* ru = grpc_mock_resource_user_create();
+  grpc_tcp_client_connect(&done, &g_connecting, ru, g_pollset_set, nullptr,
                           &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_resource_user_unref(ru);
 
   /* await the connection */
   do {
@@ -156,8 +158,10 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
+  auto* ru = grpc_mock_resource_user_create();
+  grpc_tcp_client_connect(&done, &g_connecting, ru, g_pollset_set, nullptr,
                           &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_resource_user_unref(ru);
 
   gpr_mu_lock(g_mu);
 

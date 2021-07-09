@@ -116,7 +116,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
       void Orphan() override;
 
-      void Start(grpc_endpoint* endpoint, grpc_channel_args* args);
+      void Start(grpc_endpoint* endpoint, grpc_resource_user* resource_user,
+                 grpc_channel_args* args);
 
       // Needed to be able to grab an external ref in ActiveConnection::Start()
       using InternallyRefCounted<HandshakingState>::Ref;
@@ -148,7 +149,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     void SendGoAway();
 
     void Start(RefCountedPtr<Chttp2ServerListener> listener,
-               grpc_endpoint* endpoint, grpc_channel_args* args);
+               grpc_endpoint* endpoint, grpc_resource_user* resource_user,
+               grpc_channel_args* args);
 
     // Needed to be able to grab an external ref in
     // Chttp2ServerListener::OnAccept()
@@ -176,6 +178,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void StartListening();
 
   static void OnAccept(void* arg, grpc_endpoint* tcp,
+                       grpc_resource_user* resource_user,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor);
 
@@ -334,7 +337,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
-    grpc_endpoint* endpoint, grpc_channel_args* args) {
+    grpc_endpoint* endpoint, grpc_resource_user* resource_user,
+    grpc_channel_args* args) {
   Ref().release();  // Held by OnHandshakeDone
   RefCountedPtr<HandshakeManager> handshake_mgr;
   {
@@ -342,8 +346,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
     if (handshake_mgr_ == nullptr) return;
     handshake_mgr = handshake_mgr_;
   }
-  handshake_mgr->DoHandshake(endpoint, args, deadline_, acceptor_,
-                             OnHandshakeDone, this);
+  handshake_mgr->DoHandshake(endpoint, resource_user, args, deadline_,
+                             acceptor_, OnHandshakeDone, this);
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
@@ -380,8 +384,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   RefCountedPtr<HandshakeManager> handshake_mgr;
   bool cleanup_connection = false;
   bool free_resource_quota = false;
-  grpc_resource_user* resource_user =
-      self->connection_->listener_->server_->default_resource_user();
   {
     MutexLock connection_lock(&self->connection_->mu_);
     if (error != GRPC_ERROR_NONE || self->connection_->shutdown_) {
@@ -408,12 +410,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       // code, so we can just clean up here without creating a transport.
       if (args->endpoint != nullptr) {
         grpc_transport* transport = grpc_create_chttp2_transport(
-            args->args, args->endpoint, false, resource_user);
+            args->args, args->endpoint, false, args->resource_user);
         grpc_error_handle channel_init_err =
             self->connection_->listener_->server_->SetupTransport(
                 transport, self->accepting_pollset_, args->args,
                 grpc_chttp2_transport_get_socket_node(transport),
-                resource_user);
+                args->resource_user);
         if (channel_init_err == GRPC_ERROR_NONE) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
@@ -478,8 +480,9 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   }
   gpr_free(self->acceptor_);
   OrphanablePtr<ActiveConnection> connection;
-  if (free_resource_quota && resource_user != nullptr) {
-    grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+  if (free_resource_quota && args->resource_user != nullptr) {
+    grpc_resource_user_free(args->resource_user,
+                            GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
   }
   if (cleanup_connection) {
     MutexLock listener_lock(&self->connection_->listener_->mu_);
@@ -540,7 +543,7 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
 
 void Chttp2ServerListener::ActiveConnection::Start(
     RefCountedPtr<Chttp2ServerListener> listener, grpc_endpoint* endpoint,
-    grpc_channel_args* args) {
+    grpc_resource_user* resource_user, grpc_channel_args* args) {
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   listener_ = std::move(listener);
   {
@@ -550,7 +553,7 @@ void Chttp2ServerListener::ActiveConnection::Start(
     // the critical region.
     handshaking_state_ref = handshaking_state_->Ref();
   }
-  handshaking_state_ref->Start(endpoint, args);
+  handshaking_state_ref->Start(endpoint, resource_user, args);
 }
 
 void Chttp2ServerListener::ActiveConnection::OnClose(
@@ -697,6 +700,7 @@ void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
 }
 
 void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
+                                    grpc_resource_user* resource_user,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
@@ -752,10 +756,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     MutexLock lock(&self->mu_);
     // Shutdown the the connection if listener's stopped serving.
     if (!self->shutdown_ && self->is_serving_) {
-      grpc_resource_user* resource_user =
-          self->server_->default_resource_user();
-      if (resource_user != nullptr &&
-          !grpc_resource_user_safe_alloc(resource_user,
+      if (!grpc_resource_user_safe_alloc(resource_user,
                                          GRPC_RESOURCE_QUOTA_CHANNEL_SIZE)) {
         gpr_log(
             GPR_ERROR,
@@ -774,7 +775,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   if (connection != nullptr) {
     endpoint_cleanup(GRPC_ERROR_NONE);
   } else {
-    connection_ref->Start(std::move(listener_ref), tcp, args);
+    connection_ref->Start(std::move(listener_ref), tcp, resource_user, args);
   }
   grpc_channel_args_destroy(args);
 }

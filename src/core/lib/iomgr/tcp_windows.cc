@@ -504,7 +504,7 @@ static grpc_endpoint_vtable vtable = {win_read,
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
                                const char* peer_string,
-                               grpc_resource_user* ru) {
+                               grpc_resource_user* resource_user) {
   grpc_tcp* tcp = new grpc_tcp;
   memset(tcp, 0, sizeof(grpc_tcp));
   tcp->base.vtable = &vtable;
@@ -524,9 +524,8 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   }
   tcp->peer_string = peer_string;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  grpc_resource_user_ref(ru);
-  tcp->resource_user = ru;
-
+  grpc_resource_user_ref(resource_user);
+  tcp->resource_user = resource_user;
   return &tcp->base;
 }
 

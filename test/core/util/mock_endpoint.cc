@@ -106,11 +106,6 @@ static absl::string_view me_get_local_address(grpc_endpoint* /*ep*/) {
   return "fake:mock_endpoint";
 }
 
-static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
-  return m->resource_user;
-}
-
 static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
 
 static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
@@ -122,19 +117,32 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_delete_from_pollset_set,
                                             me_shutdown,
                                             me_destroy,
-                                            me_get_resource_user,
                                             me_get_peer,
                                             me_get_local_address,
                                             me_get_fd,
                                             me_can_track_err};
 
+grpc_resource_user* grpc_mock_resource_user_create(
+    grpc_resource_quota* resource_quota) {
+  if (resource_quota == nullptr) {
+    resource_quota = grpc_resource_quota_create("anonymous mock quota");
+  } else {
+    grpc_resource_quota_ref_internal(resource_quota);
+  }
+  grpc_resource_user* ru = nullptr;
+  ru = grpc_resource_user_create(
+      resource_quota, absl::StrFormat("mock_resource_user_%" PRIxPTR,
+                                      reinterpret_cast<intptr_t>(&ru))
+                          .c_str());
+  grpc_resource_quota_unref_internal(resource_quota);
+  return ru;
+}
+
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
-                                         grpc_resource_quota* resource_quota) {
+                                         grpc_resource_user* resource_user) {
   mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
   m->base.vtable = &vtable;
-  std::string name =
-      absl::StrFormat("mock_endpoint_%" PRIxPTR, reinterpret_cast<intptr_t>(m));
-  m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
+  m->resource_user = resource_user;
   grpc_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);
   m->on_write = on_write;

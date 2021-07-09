@@ -49,13 +49,24 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
 
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
-
+  grpc_resource_quota* resource_quota =
+      grpc_channel_args_find_pointer<grpc_resource_quota>(
+          args, GRPC_ARG_RESOURCE_QUOTA);
+  if (resource_quota == nullptr) {
+    resource_quota = grpc_resource_quota_create(nullptr);
+  } else {
+    grpc_resource_quota_ref_internal(resource_quota);
+  }
+  grpc_resource_user* resource_user =
+      grpc_resource_user_create(resource_quota, "fd-client");
+  grpc_resource_quota_unref_internal(resource_quota);
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
-      grpc_fd_create(fd, "client", true), args, "fd-client");
+      grpc_fd_create(fd, "client", true), args, "fd-client", resource_user);
 
   grpc_transport* transport =
-      grpc_create_chttp2_transport(final_args, client, true);
+      grpc_create_chttp2_transport(final_args, client, true, resource_user);
   GPR_ASSERT(transport);
+  grpc_resource_user_unref(resource_user);
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel* channel =
       grpc_channel_create(target, final_args, GRPC_CLIENT_DIRECT_CHANNEL,

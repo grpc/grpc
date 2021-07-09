@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -61,6 +62,7 @@ namespace grpc_core {
 /// which the callback takes ownership of.
 struct HandshakerArgs {
   grpc_endpoint* endpoint = nullptr;
+  grpc_resource_user* resource_user = nullptr;
   grpc_channel_args* args = nullptr;
   grpc_slice_buffer* read_buffer = nullptr;
   // A handshaker may set this to true before invoking on_handshake_done
@@ -114,7 +116,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
-  void DoHandshake(grpc_endpoint* endpoint,
+  void DoHandshake(grpc_endpoint* endpoint, grpc_resource_user* resource_user,
                    const grpc_channel_args* channel_args, grpc_millis deadline,
                    grpc_tcp_server_acceptor* acceptor,
                    grpc_iomgr_cb_func on_handshake_done, void* user_data);

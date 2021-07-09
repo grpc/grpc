@@ -33,7 +33,7 @@ typedef struct {
 
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
-                                   grpc_resource_quota* resource_quota,
+                                   grpc_resource_user* resource_user,
                                    grpc_passthru_endpoint_stats* stats);
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();

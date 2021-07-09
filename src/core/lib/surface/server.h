@@ -97,9 +97,6 @@ class Server : public InternallyRefCounted<Server> {
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
   const grpc_channel_args* channel_args() const { return channel_args_; }
-  grpc_resource_user* default_resource_user() const {
-    return default_resource_user_;
-  }
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 
   // Do not call this before Start(). Returns the pollsets. The
@@ -398,7 +395,6 @@ class Server : public InternallyRefCounted<Server> {
   }
 
   grpc_channel_args* const channel_args_;
-  grpc_resource_user* default_resource_user_ = nullptr;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 
