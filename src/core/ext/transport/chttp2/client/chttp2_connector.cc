@@ -100,7 +100,10 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   if (!connecting_ && endpoint_ != nullptr) {
     grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_REF(error));
   }
-  grpc_resource_user_unref(resource_user_);
+  // The RU is only valid if Connect has been called
+  if (resource_user_ != nullptr) {
+    grpc_resource_user_unref(resource_user_);
+  }
   GRPC_ERROR_UNREF(error);
 }
 

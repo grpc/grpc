@@ -146,7 +146,7 @@ class TestTcpServer {
                         grpc_pollset* accepting_pollset,
                         grpc_tcp_server_acceptor* acceptor) {
     auto* self = static_cast<TestTcpServer*>(arg);
-    self->OnConnect(tcp, accepting_pollset, resource_user, acceptor);
+    self->OnConnect(tcp, resource_user, accepting_pollset, acceptor);
   }
 
   static void OnFdReleased(void* arg, grpc_error_handle err) {
