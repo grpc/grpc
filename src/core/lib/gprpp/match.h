@@ -20,19 +20,49 @@
 
 namespace grpc_core {
 
+namespace detail {
+
+template <typename... Cases>
+struct MatchPointerExtractor {
+  OverloadType<Cases...> cases;
+  template <typename T>
+  auto operator()(T& value) -> decltype(cases(&value)) {
+    return cases(&value);
+  }
+};
+
+}  // namespace detail
+
 /// Match on a variant.
 /// Given variant \a value, and a set of callables \a fs, call the appropriate
 /// callable based on the type contained in \a value.
 ///
 /// Example (prints "hoorah"):
 ///   variant<int, string> v = 42;
-///   Match(v, 
-///         [](int i) { puts("hoorah"); }, 
+///   Match(v,
+///         [](int i) { puts("hoorah"); },
 ///         [](string s) { puts("boo"); });
 template <typename... Fs, typename T0, typename... Ts>
 auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
     -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0>())) {
   return absl::visit(Overload(std::move(fs)...), value);
+}
+
+/// A version of Match that takes a mutable pointer to a variant and calls it's
+/// overload callables with a mutable pointer to the current variant value.
+///
+/// Example:
+///   variant<int, string> v = 42;
+///   MatchMutable(&v,
+///                [](int* i) { *i = 1; },
+///                [](string* s) { *s = "foo"; });
+///   // v now contains 1.
+template <typename... Fs, typename T0, typename... Ts>
+auto MatchMutable(absl::variant<T0, Ts...>* value, Fs... fs)
+    -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0*>())) {
+  return absl::visit(detail::MatchPointerExtractor<Fs...>{OverloadType<Fs...>(
+                         std::move(fs)...)},
+                     *value);
 }
 
 }  // namespace grpc_core
