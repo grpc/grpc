@@ -20,8 +20,8 @@
 #include <grpc/impl/codegen/log.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"

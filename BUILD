@@ -312,6 +312,18 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
+    select_deps = {
+        "grpc_no_xds": [],
+        "//conditions:default": [
+            "grpc_lb_policy_cds",
+            "grpc_lb_policy_xds_cluster_impl",
+            "grpc_lb_policy_xds_cluster_manager",
+            "grpc_lb_policy_xds_cluster_resolver",
+            "grpc_resolver_xds",
+            "grpc_resolver_c2p",
+            "grpc_xds_server_config_fetcher",
+        ],
+    },
     standalone = True,
     visibility = ["@grpc:public"],
     deps = [
@@ -496,6 +508,7 @@ grpc_cc_library(
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
+        "grpc_insecure_credentials",
         "grpc_unsecure",
     ],
 )
