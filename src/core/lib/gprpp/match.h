@@ -21,7 +21,7 @@
 namespace grpc_core {
 
 template <typename... Fs, typename T0, typename... Ts>
-auto Match(const absl::variant<T0, Ts...>&& value, Fs... fs)
+auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
     -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0>())) {
   return absl::visit(Overload(std::move(fs)...), value);
 }
