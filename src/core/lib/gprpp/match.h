@@ -20,6 +20,15 @@
 
 namespace grpc_core {
 
+/// Match on a variant.
+/// Given variant \a value, and a set of callables \a fs, call the appropriate
+/// callable based on the type contained in \a value.
+///
+/// Example (prints "hoorah"):
+///   variant<int, string> v = 42;
+///   Match(v, 
+///         [](int i) { puts("hoorah"); }, 
+///         [](string s) { puts("boo"); });
 template <typename... Fs, typename T0, typename... Ts>
 auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
     -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0>())) {
