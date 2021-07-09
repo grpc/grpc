@@ -2419,7 +2419,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       std::ostringstream server_address;
       server_address << "localhost:" << port_;
       if (use_xds_enabled_server_) {
-        experimental::XdsServerBuilder builder;
+        XdsServerBuilder builder;
         if (GetParam().bootstrap_source() ==
             TestType::kBootstrapFromChannelArg) {
           builder.SetOption(
@@ -7970,6 +7970,20 @@ class XdsSecurityTest : public BasicTest {
   std::vector<std::string> fallback_authenticated_identity_;
 };
 
+TEST_P(XdsSecurityTest, UnknownTransportSocket) {
+  auto cluster = default_cluster_;
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("unknown_transport_socket");
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  CheckRpcSendFailure();
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized transport socket: unknown_transport_socket"));
+}
+
 TEST_P(XdsSecurityTest,
        TLSConfigurationWithoutValidationContextCertificateProviderInstance) {
   auto cluster = default_cluster_;
@@ -8919,7 +8933,71 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
   std::vector<std::string> client_authenticated_identity_;
 };
 
-TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
+TEST_P(XdsServerSecurityTest, UnknownTransportSocket) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("unknown_transport_socket");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized transport socket: unknown_transport_socket"));
+}
+
+TEST_P(
+    XdsServerSecurityTest,
+    NacksRequiringClientCertificateWithoutValidationCertificateProviderInstance) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("fake_plugin1");
+  downstream_tls_context.mutable_require_client_certificate()->set_value(true);
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "TLS configuration requires client certificates but no "
+                  "certificate provider instance specified for validation."));
+}
+
+TEST_P(XdsServerSecurityTest,
+       NacksTlsConfigurationWithoutIdentityProviderInstance) {
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -8936,7 +9014,10 @@ TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
   DownstreamTlsContext downstream_tls_context;
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -8957,6 +9038,14 @@ TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
+  FakeCertificateProvider::CertDataMap fake1_cert_map;
+  g_fake1_cert_data_map = &fake1_cert_map;
+  SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
+  SendRpc([this]() { return CreateMtlsChannel(); }, {}, {},
           true /* test_expects_failure */);
 }
 
