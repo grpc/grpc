@@ -2541,6 +2541,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
