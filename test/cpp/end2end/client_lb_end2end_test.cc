@@ -82,8 +82,8 @@ namespace {
 gpr_atm g_connection_delay_ms;
 
 void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
-                grpc_resource_user* resource_user,
-                                     grpc_pollset_set* interested_parties,
+                                   grpc_resource_user* resource_user,
+                                   grpc_pollset_set* interested_parties,
                                    const grpc_channel_args* channel_args,
                                    const grpc_resolved_address* addr,
                                    grpc_millis deadline) {
@@ -91,8 +91,8 @@ void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
   if (delay_ms > 0) {
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
   }
-  default_client_impl->connect(closure, ep, resource_user, interested_parties, channel_args,
-                               addr, deadline + delay_ms);
+  default_client_impl->connect(closure, ep, resource_user, interested_parties,
+                               channel_args, addr, deadline + delay_ms);
 }
 
 grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
