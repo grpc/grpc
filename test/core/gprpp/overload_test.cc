@@ -19,12 +19,12 @@ namespace grpc_core {
 namespace testing {
 
 TEST(Overload, Test) {
-    auto a = [](int x) { return x; };
-    auto b = [](std::string x) -> int { return x.length(); };
-    auto overload = Overload(a, b);
-    EXPECT_EQ(overload(1), 1);
-    EXPECT_EQ(overload("1"), 1);
-    EXPECT_EQ(overload("abc"), 3);
+  auto a = [](int x) { return x; };
+  auto b = [](std::string x) -> int { return x.length(); };
+  auto overload = Overload(a, b);
+  EXPECT_EQ(overload(1), 1);
+  EXPECT_EQ(overload("1"), 1);
+  EXPECT_EQ(overload("abc"), 3);
 }
 
 }  // namespace testing
