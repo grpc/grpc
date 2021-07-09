@@ -581,6 +581,9 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c combiner_test)
   endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c competition)
+  endif()
   add_dependencies(buildtests_c completion_queue_threading_test)
   add_dependencies(buildtests_c compression_test)
   add_dependencies(buildtests_c concurrent_connectivity_test)
@@ -724,6 +727,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c varint_test)
 
   add_custom_target(buildtests_cxx)
+  add_dependencies(buildtests_cxx activity_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx address_sorting_test)
   endif()
@@ -841,6 +845,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx connectivity_state_test)
   add_dependencies(buildtests_cxx context_allocator_end2end_test)
   add_dependencies(buildtests_cxx context_list_test)
+  add_dependencies(buildtests_cxx context_test)
   add_dependencies(buildtests_cxx delegating_channel_test)
   add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
   add_dependencies(buildtests_cxx dual_ref_counted_test)
@@ -857,6 +862,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx filter_end2end_test)
   add_dependencies(buildtests_cxx flaky_network_test)
+  add_dependencies(buildtests_cxx for_each_test)
   add_dependencies(buildtests_cxx generic_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx global_config_env_test)
@@ -882,6 +888,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx health_service_end2end_test)
   add_dependencies(buildtests_cxx http2_client)
   add_dependencies(buildtests_cxx hybrid_end2end_test)
+  add_dependencies(buildtests_cxx if_test)
   add_dependencies(buildtests_cxx init_test)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
@@ -890,8 +897,10 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx interop_test)
   endif()
+  add_dependencies(buildtests_cxx join_test)
   add_dependencies(buildtests_cxx json_test)
   add_dependencies(buildtests_cxx large_metadata_bad_client_test)
+  add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
   add_dependencies(buildtests_cxx linux_system_roots_test)
@@ -902,14 +911,20 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx mock_test)
   add_dependencies(buildtests_cxx nonblocking_test)
   add_dependencies(buildtests_cxx noop-benchmark)
+  add_dependencies(buildtests_cxx observable_test)
   add_dependencies(buildtests_cxx orphanable_test)
   add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
   add_dependencies(buildtests_cxx pid_controller_test)
+  add_dependencies(buildtests_cxx pipe_test)
+  add_dependencies(buildtests_cxx poll_test)
   add_dependencies(buildtests_cxx port_sharing_end2end_test)
+  add_dependencies(buildtests_cxx promise_factory_test)
+  add_dependencies(buildtests_cxx promise_test)
   add_dependencies(buildtests_cxx proto_server_reflection_test)
   add_dependencies(buildtests_cxx proto_utils_test)
   add_dependencies(buildtests_cxx qps_json_driver)
   add_dependencies(buildtests_cxx qps_worker)
+  add_dependencies(buildtests_cxx race_test)
   add_dependencies(buildtests_cxx raw_end2end_test)
   add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
@@ -919,6 +934,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx retry_throttle_test)
   add_dependencies(buildtests_cxx secure_auth_context_test)
+  add_dependencies(buildtests_cxx seq_test)
   add_dependencies(buildtests_cxx server_builder_plugin_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx server_builder_test)
@@ -971,8 +987,12 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
+  add_dependencies(buildtests_cxx try_join_test)
+  add_dependencies(buildtests_cxx try_seq_test)
   add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
   add_dependencies(buildtests_cxx uri_parser_test)
+  add_dependencies(buildtests_cxx visitor_test)
+  add_dependencies(buildtests_cxx while_test)
   add_dependencies(buildtests_cxx window_overflow_bad_client_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx work_serializer_test)
@@ -4932,6 +4952,44 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(competition
+    src/core/lib/promise/activity.cc
+    test/core/promise/benchmark/competition.cc
+    test/core/promise/benchmark/filter_stack.cc
+  )
+
+  target_include_directories(competition
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+  )
+
+  target_link_libraries(competition
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::flat_hash_set
+    absl::inlined_vector
+    absl::status
+    absl::statusor
+    absl::synchronization
+    absl::optional
+    absl::variant
+    ${_gRPC_BENCHMARK_LIBRARIES}
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(completion_queue_threading_test
   test/core/surface/completion_queue_threading_test.cc
@@ -7692,6 +7750,48 @@ target_link_libraries(varint_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(activity_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/activity_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(activity_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(activity_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(address_sorting_test
@@ -10127,6 +10227,48 @@ target_link_libraries(context_list_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(context_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/context_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(context_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(context_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(delegating_channel_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -10697,6 +10839,48 @@ target_link_libraries(flaky_network_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(for_each_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/for_each_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(for_each_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(for_each_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
 )
 
 
@@ -11784,6 +11968,48 @@ target_link_libraries(hybrid_end2end_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(if_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/if_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(if_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(if_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(init_test
   test/core/surface/init_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12030,6 +12256,48 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(join_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/join_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(join_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(join_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(json_test
   test/core/json/json_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12096,6 +12364,48 @@ target_link_libraries(large_metadata_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(latch_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/latch_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(latch_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(latch_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
 )
 
 
@@ -12515,6 +12825,48 @@ target_link_libraries(noop-benchmark
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(observable_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/observable_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(observable_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(observable_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(orphanable_test
   test/core/gprpp/orphanable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12622,6 +12974,90 @@ target_link_libraries(pid_controller_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(pipe_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/pipe_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(pipe_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(pipe_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(poll_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/poll_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(poll_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(poll_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(port_sharing_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -12664,6 +13100,91 @@ target_link_libraries(port_sharing_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(promise_factory_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/promise_factory_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(promise_factory_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(promise_factory_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::bind_front
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(promise_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/promise_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(promise_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(promise_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
 )
 
 
@@ -12910,6 +13431,48 @@ target_link_libraries(qps_worker
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(race_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/race_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(race_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(race_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
 )
 
 
@@ -13179,6 +13742,48 @@ target_link_libraries(secure_auth_context_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(seq_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/seq_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(seq_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(seq_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
 )
 
 
@@ -14622,6 +15227,90 @@ target_link_libraries(too_many_pings_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(try_join_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/try_join_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(try_join_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(try_join_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(try_seq_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/try_seq_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(try_seq_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(try_seq_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(unknown_frame_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/unknown_frame.cc
@@ -14688,6 +15377,90 @@ target_link_libraries(uri_parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(visitor_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/visitor_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(visitor_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(visitor_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(while_test
+  src/core/lib/promise/activity.cc
+  test/core/promise/while_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(while_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(while_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::synchronization
+  absl::optional
+  absl::variant
 )
 
 

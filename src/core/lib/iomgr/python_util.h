@@ -43,4 +43,4 @@ inline int grpc_slice_buffer_length(grpc_slice_buffer* buffer, int i) {
   return GRPC_SLICE_LENGTH(buffer->slices[i]);
 }
 
-#endif
+#endif  // GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H

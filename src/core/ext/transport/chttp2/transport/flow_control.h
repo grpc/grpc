@@ -479,4 +479,4 @@ extern TestOnlyTransportTargetWindowEstimatesMocker*
 }  // namespace chttp2
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
