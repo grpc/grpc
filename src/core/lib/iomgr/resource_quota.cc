@@ -914,9 +914,6 @@ bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
                                    size_t size) {
   if (gpr_atm_no_barrier_load(&resource_user->shutdown)) return false;
   gpr_mu_lock(&resource_user->mu);
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: ru safe alloc. ru(%p) prior(%d) size(%d)",
-          resource_user,
-          gpr_atm_no_barrier_load(&resource_user->resource_quota->used), size);
   grpc_resource_quota* resource_quota = resource_user->resource_quota;
   bool cas_success;
   do {
@@ -951,9 +948,6 @@ bool grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
                               grpc_closure* optional_on_done) {
   // TODO(juanlishen): Maybe return immediately if shutting down. Deferring this
   // because some tests become flaky after the change.
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: ru alloc. ru(%p) prior(%d) size(%d)",
-          resource_user,
-          gpr_atm_no_barrier_load(&resource_user->resource_quota->used), size);
   gpr_mu_lock(&resource_user->mu);
   grpc_resource_quota* resource_quota = resource_user->resource_quota;
   gpr_atm_no_barrier_fetch_add(&resource_quota->used, size);
@@ -966,9 +960,6 @@ bool grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
 void grpc_resource_user_free(grpc_resource_user* resource_user, size_t size) {
   gpr_mu_lock(&resource_user->mu);
   grpc_resource_quota* resource_quota = resource_user->resource_quota;
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: ru freeing. ru(%p) used(%d) size(%d)",
-          resource_user,
-          gpr_atm_no_barrier_load(&resource_user->resource_quota->used), size);
   gpr_atm prior = gpr_atm_no_barrier_fetch_add(&resource_quota->used, -size);
   GPR_ASSERT(prior >= static_cast<long>(size));
   bool was_zero_or_negative = resource_user->free_pool <= 0;
