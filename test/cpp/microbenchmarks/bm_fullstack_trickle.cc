@@ -33,6 +33,7 @@
 #include "test/core/util/trickle_endpoint.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "test/cpp/util/mock_endpoint.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(bool, log, false, "Log state to CSV files");

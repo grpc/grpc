@@ -27,6 +27,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "test/core/util/mock_endpoint.h"
 
 namespace grpc {
 namespace testing {
@@ -40,7 +41,9 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_UnaryPingPong(benchmark::State& state) {
   EchoTestService::AsyncService service;
-  std::unique_ptr<Fixture> fixture(new Fixture(&service));
+  grpc_resource_user* ru = grpc_mock_resource_user_create();
+  std::unique_ptr<Fixture> fixture(new Fixture(&service, ru));
+  grpc_resource_user_unref(ru);
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;

@@ -111,7 +111,7 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  explicit TCP(Service* service,
+  explicit TCP(Service* service, grpc_resource_user* resource_user,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
@@ -131,7 +131,7 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  explicit UDS(Service* service,
+  explicit UDS(Service* service, grpc_resource_user* resource_user,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
@@ -152,7 +152,7 @@ class UDS : public FullstackFixture {
 
 class InProcess : public FullstackFixture {
  public:
-  explicit InProcess(Service* service,
+  explicit InProcess(Service* service, grpc_resource_user* resource_user,
                      const FixtureConfiguration& fixture_configuration =
                          FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {}
@@ -162,7 +162,8 @@ class InProcess : public FullstackFixture {
 class EndpointPairFixture : public BaseFixture {
  public:
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
-                      const FixtureConfiguration& fixture_configuration)
+                      const FixtureConfiguration& fixture_configuration,
+                      grpc_resource_user* resource_user)
       : endpoint_pair_(endpoints) {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
@@ -178,7 +179,7 @@ class EndpointPairFixture : public BaseFixture {
       const grpc_channel_args* server_args =
           server_->c_server()->core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
+          server_args, endpoints.server, false /* is_client */, resource_user);
 
       for (grpc_pollset* pollset :
            server_->c_server()->core_server->pollsets()) {
@@ -198,8 +199,8 @@ class EndpointPairFixture : public BaseFixture {
       fixture_configuration.ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      client_transport_ =
-          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
+      client_transport_ = grpc_create_chttp2_transport(
+          &c_args, endpoints.client, true, resource_user);
       GPR_ASSERT(client_transport_);
       grpc_channel* channel = grpc_channel_create(
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
@@ -245,12 +246,13 @@ class EndpointPairFixture : public BaseFixture {
 
 class SockPair : public EndpointPairFixture {
  public:
-  explicit SockPair(Service* service,
+  explicit SockPair(Service* service, grpc_resource_user* resource_user,
                     const FixtureConfiguration& fixture_configuration =
                         FixtureConfiguration())
-      : EndpointPairFixture(service,
-                            grpc_iomgr_create_endpoint_pair("test", nullptr),
-                            fixture_configuration) {}
+      : EndpointPairFixture(
+            service,
+            grpc_iomgr_create_endpoint_pair("test", nullptr, resource_user),
+            fixture_configuration, resource_user) {}
 };
 
 /* Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
@@ -264,7 +266,7 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
       const FixtureConfiguration& fixture_configuration,
       grpc_resource_user* resource_user)
       : EndpointPairFixture(service, MakeEndpoints(stats, resource_user),
-                            fixture_configuration),
+                            fixture_configuration, resource_user),
         stats_(stats) {}
 
   ~InProcessCHTTP2WithExplicitStats() override {
@@ -283,20 +285,19 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  private:
   grpc_passthru_endpoint_stats* stats_;
 
-  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats,
+                                          grpc_resource_user* resource_user) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server,
-                                  LibraryInitializer::get().rq(), stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server, resource_user, stats);
     return p;
   }
 };
 
 class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
  public:
-  explicit InProcessCHTTP2(Service* service,
+  explicit InProcessCHTTP2(Service* service, grpc_resource_user* resource_user,
                            const FixtureConfiguration& fixture_configuration =
-                               FixtureConfiguration(),
-                           grpc_resource_user* resource_user)
+                               FixtureConfiguration())
       : InProcessCHTTP2WithExplicitStats(service,
                                          grpc_passthru_endpoint_stats_create(),
                                          fixture_configuration, resource_user) {
@@ -322,8 +323,8 @@ class MinStackConfiguration : public FixtureConfiguration {
 template <class Base>
 class MinStackize : public Base {
  public:
-  explicit MinStackize(Service* service)
-      : Base(service, MinStackConfiguration()) {}
+  explicit MinStackize(Service* service, grpc_resource_user* resource_user)
+      : Base(service, resource_user, MinStackConfiguration()) {}
 };
 
 typedef MinStackize<TCP> MinTCP;

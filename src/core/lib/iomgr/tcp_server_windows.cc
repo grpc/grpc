@@ -335,7 +335,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
     grpc_resource_quota_ref_internal(resource_quota);
   }
   grpc_resource_user* resource_user =
-      grpc_resource_user_create(resource_quota, addr_str.c_str());
+      grpc_resource_user_create(resource_quota, "tcp_server_windows");
   grpc_resource_quota_unref_internal(resource_quota);
 
   /* The IOCP notified us of a completed operation. Let's grab the results,
