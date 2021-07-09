@@ -673,6 +673,9 @@ class uvTask {
   uv_timer_t timer_;
   const intptr_t key_;
   void cancel() {
+    if (uv_is_closing(reinterpret_cast<uv_handle_t*>(&timer_))) {
+      return;
+    }
     uv_timer_stop(&timer_);
     uv_close(reinterpret_cast<uv_handle_t*>(&timer_), [](uv_handle_t* handle) {
       uv_timer_t* timer = reinterpret_cast<uv_timer_t*>(handle);
