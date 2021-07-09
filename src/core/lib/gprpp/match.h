@@ -50,7 +50,7 @@ auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
   return absl::visit(Overload(std::move(fs)...), value);
 }
 
-/// A version of Match that takes a mutable pointer to a variant and calls it's
+/// A version of Match that takes a mutable pointer to a variant and calls its
 /// overload callables with a mutable pointer to the current variant value.
 ///
 /// Example:
