@@ -76,6 +76,7 @@ def _update_visibility(visibility):
         "alt_gpr_base_legacy": PRIVATE,
         "alt_grpc++_base_legacy": PRIVATE,
         "alt_grpc_base_legacy": PRIVATE,
+        "alt_grpc++_base_unsecure_legacy": PRIVATE,
         "alts_frame_protector": PRIVATE,
         "client_channel": PRIVATE,
         "debug_location": PRIVATE,
