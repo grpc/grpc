@@ -26,6 +26,7 @@
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
+#include "test/core/util/mock_endpoint.h"
 
 namespace grpc {
 namespace testing {
@@ -122,7 +123,9 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
   int message_size = state.range(0);
   int max_ping_pongs = state.range(1);
   CallbackStreamingTestService service;
-  std::unique_ptr<Fixture> fixture(new Fixture(&service));
+  grpc_resource_user* ru = grpc_mock_resource_user_create();
+  std::unique_ptr<Fixture> fixture(new Fixture(&service, ru));
+  grpc_resource_user_unref(ru);
   std::unique_ptr<EchoTestService::Stub> stub_(
       EchoTestService::NewStub(fixture->channel()));
   EchoRequest request;

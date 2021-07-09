@@ -253,7 +253,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
 
   EchoTestService::AsyncService service;
   grpc_resource_user* ru = grpc_mock_resource_user_create();
-  std::unique_ptr<Fixture> fixture(new Fixture(&service));
+  std::unique_ptr<Fixture> fixture(new Fixture(&service, ru));
   grpc_resource_user_unref(ru);
   {
     EchoResponse send_response;

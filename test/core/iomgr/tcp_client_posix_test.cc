@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 
 static grpc_pollset_set* g_pollset_set;

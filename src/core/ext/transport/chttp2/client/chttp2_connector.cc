@@ -181,9 +181,8 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      GPR_ASSERT(self->resource_user_ == args->resource_user);
       self->result_->transport = grpc_create_chttp2_transport(
-          args->args, args->endpoint, true, self->resource_user_);
+          args->args, args->endpoint, true, args->resource_user);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
