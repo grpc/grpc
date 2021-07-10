@@ -102,6 +102,7 @@ module GRPC
       end
 
       write_loop(replies, is_client: false)
+      replies
     end
 
     ##

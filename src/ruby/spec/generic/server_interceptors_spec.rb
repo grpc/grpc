@@ -42,6 +42,20 @@ describe 'Server Interceptors' do
         end
       end
 
+      it 'should return response', server: true do
+        value = nil
+        expect(interceptor).to receive(:request_response)
+          .once.and_wrap_original do |original_method, *args, &block|
+            value = original_method.call(*args, &block)
+          end
+
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub)
+          expect(stub.an_rpc(request)).to be_a(EchoMsg)
+          expect(value).to be_a(EchoMsg)
+        end
+      end
+
       it 'can modify trailing metadata', server: true do
         expect(interceptor).to receive(:request_response)
           .once.and_call_original
@@ -74,6 +88,20 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           expect(stub.a_client_streaming_rpc(requests)).to be_a(EchoMsg)
+        end
+      end
+
+      it 'should return response', server: true do
+        value = nil
+        expect(interceptor).to receive(:client_streamer)
+          .once.and_wrap_original do |original_method, *args, &block|
+            value = original_method.call(*args, &block)
+          end
+
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub)
+          expect(stub.a_client_streaming_rpc(requests)).to be_a(EchoMsg)
+          expect(value).to be_a(EchoMsg)
         end
       end
 
@@ -115,6 +143,25 @@ describe 'Server Interceptors' do
         end
       end
 
+      it 'should return response', server: true do
+        value = nil
+        expect(interceptor).to receive(:server_streamer)
+          .once.and_wrap_original do |original_method, *args, &block|
+            value = original_method.call(*args, &block)
+          end
+
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub)
+          responses = stub.a_server_streaming_rpc(request)
+          responses.each do |r|
+            expect(r).to be_a(EchoMsg)
+          end
+          value.each do |r|
+            expect(r).to be_a(EchoMsg)
+          end
+        end
+      end
+
       it 'can modify trailing metadata', server: true do
         expect(interceptor).to receive(:server_streamer)
           .once.and_call_original
@@ -143,6 +190,25 @@ describe 'Server Interceptors' do
       let(:requests) { [EchoMsg.new, EchoMsg.new] }
 
       it 'should be called', server: true do
+        value = nil
+        expect(interceptor).to receive(:bidi_streamer)
+          .once.and_wrap_original do |original_method, *args, &block|
+            value = original_method.call(*args, &block)
+          end
+
+        run_services_on_server(@server, services: [service]) do
+          stub = build_insecure_stub(EchoStub)
+          responses = stub.a_bidi_rpc(requests)
+          responses.each do |r|
+            expect(r).to be_a(EchoMsg)
+          end
+          value.each do |r|
+            expect(r).to be_a(EchoMsg)
+          end
+        end
+      end
+
+      it 'should return response', server: true do
         expect(interceptor).to receive(:bidi_streamer)
           .once.and_call_original
 

@@ -62,6 +62,7 @@ module GRPC
           resp,
           trailing_metadata: active_call.output_metadata
         )
+        resp
       end
     end
 
@@ -78,6 +79,7 @@ module GRPC
           resp,
           trailing_metadata: active_call.output_metadata
         )
+        resp
       end
     end
 
@@ -94,6 +96,7 @@ module GRPC
         replies = mth.call(req, call)
         replies.each { |r| active_call.remote_send(r) }
         send_status(active_call, OK, 'OK', active_call.output_metadata)
+        replies
       end
     end
 
@@ -103,8 +106,9 @@ module GRPC
     # @param [Array<GRPC::InterceptionContext>] inter_ctx
     #
     def handle_bidi_streamer(active_call, mth, inter_ctx)
-      active_call.run_server_bidi(mth, inter_ctx)
+      replies = active_call.run_server_bidi(mth, inter_ctx)
       send_status(active_call, OK, 'OK', active_call.output_metadata)
+      replies
     end
 
     ##
