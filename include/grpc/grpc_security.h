@@ -324,11 +324,14 @@ GRPCAPI gpr_timespec grpc_max_auth_token_lifetime(void);
    - json_key is the JSON key string containing the client's private key.
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
-     will be cropped to this value.  */
+     will be cropped to this value.
+   - user_provided_audience is an optional field for user to override the
+     auidence in the JWT token. If user_provided_audience is empty, the
+     service URL will be used as the audience.  */
 GRPCAPI grpc_call_credentials*
-grpc_service_account_jwt_access_credentials_create(const char* json_key,
-                                                   gpr_timespec token_lifetime,
-                                                   void* reserved);
+grpc_service_account_jwt_access_credentials_create(
+    const char* json_key, gpr_timespec token_lifetime,
+    const char* user_provided_audience);
 
 /** Builds External Account credentials.
  - json_string is the JSON string containing the credentials options.
