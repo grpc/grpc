@@ -21,7 +21,9 @@
 
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#ifndef GRPC_NO_XXH_INLINE_ALL
 #define XXH_INLINE_ALL
+#endif
 #include "xxhash.h"
 
 #include <grpc/support/alloc.h>
