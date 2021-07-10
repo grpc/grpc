@@ -28,9 +28,11 @@ extern zend_class_entry *grpc_ce_call;
 
 /* Wrapper struct for grpc_call that can be associated with a PHP object */
 PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_call)
-  bool owned;
-  grpc_call *wrapped;
-  wrapped_grpc_channel* channel;
+bool is_async;
+
+bool owned;
+grpc_call* wrapped;
+wrapped_grpc_channel* channel;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call)
 
 static inline wrapped_grpc_call
@@ -49,9 +51,6 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC);
 /* Initializes the Call PHP class */
 void grpc_init_call(TSRMLS_D);
 
-/* Populates a grpc_metadata_array with the data in a PHP array object.
-   Returns true on success and false on failure */
-bool create_metadata_array(zval *array, grpc_metadata_array *metadata);
-void grpc_php_metadata_array_destroy_including_entries(
-    grpc_metadata_array* array);
+PHP_FUNCTION(drainCompletionEvents);
+
 #endif /* NET_GRPC_PHP_GRPC_CHANNEL_H_ */

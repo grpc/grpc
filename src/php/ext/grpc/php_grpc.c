@@ -47,7 +47,12 @@ HashTable grpc_target_upper_bound_map;
  *
  * Every user visible function must have an entry in grpc_functions[].
  */
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_drainCompletionEvents, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 const zend_function_entry grpc_functions[] = {
+    PHP_FE(drainCompletionEvents, arginfo_drainCompletionEvents)
     PHP_FE_END /* Must be the last line in grpc_functions[] */
 };
 /* }}} */
@@ -188,6 +193,7 @@ void postfork_child() {
 
   // clear completion queue
   grpc_php_shutdown_completion_queue(TSRMLS_C);
+  grpc_php_shutdown_completion_queue_for_callback(TSRMLS_C);
 
   // clean-up grpc_core
   grpc_shutdown();
@@ -200,6 +206,7 @@ void postfork_child() {
   // restart grpc_core
   grpc_init();
   grpc_php_init_completion_queue(TSRMLS_C);
+  grpc_php_init_completion_queue_for_callback(TSRMLS_C);
 }
 
 void postfork_parent() {
@@ -570,6 +577,7 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
     zend_hash_destroy(&grpc_target_upper_bound_map);
     grpc_shutdown_timeval(TSRMLS_C);
     grpc_php_shutdown_completion_queue(TSRMLS_C);
+    grpc_php_shutdown_completion_queue_for_callback(TSRMLS_C);
     grpc_shutdown();
     GRPC_G(initialized) = 0;
   }
@@ -599,6 +607,7 @@ PHP_RINIT_FUNCTION(grpc) {
     grpc_init();
     register_fork_handlers();
     grpc_php_init_completion_queue(TSRMLS_C);
+    grpc_php_init_completion_queue_for_callback(TSRMLS_C);
     GRPC_G(initialized) = 1;
   }
   return SUCCESS;

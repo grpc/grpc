@@ -57,7 +57,13 @@ abstract class AbstractCall
         } else {
             $deadline = Timeval::infFuture();
         }
-        $this->call = new Call($channel, $method, $deadline);
+        $this->call = new Call(
+            $channel,
+            $method,
+            $deadline,
+            null,
+            is_array($options["async_callbacks"])
+        );
         $this->deserialize = $deserialize;
         $this->metadata = null;
         $this->trailing_metadata = null;

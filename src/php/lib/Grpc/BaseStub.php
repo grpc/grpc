@@ -292,7 +292,16 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            $call->start($argument, $metadata, $options);
+            if (is_array($options["async_callbacks"])) {
+                $call->startAsync(
+                    $options["async_callbacks"],
+                    $argument,
+                    $metadata,
+                    $options
+                );
+            } else {
+                $call->start($argument, $metadata, $options);
+            }
             return $call;
         };
     }
@@ -328,7 +337,11 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            $call->start($metadata);
+            if (is_array($options["async_callbacks"])) {
+                $call->startAsync($options["async_callbacks"], $metadata);
+            } else {
+                $call->start($metadata);
+            }
             return $call;
         };
     }
@@ -365,7 +378,16 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            $call->start($argument, $metadata, $options);
+            if (is_array($options["async_callbacks"])) {
+                $call->startAsync(
+                    $options["async_callbacks"],
+                    $argument,
+                    $metadata,
+                    $options
+                );
+            } else {
+                $call->start($argument, $metadata, $options);
+            }
             return $call;
         };
     }
@@ -401,7 +423,11 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            $call->start($metadata);
+            if (is_array($options["async_callbacks"])) {
+                $call->startAsync($options["async_callbacks"], $metadata);
+            } else {
+                $call->start($metadata);
+            }
 
             return $call;
         };
