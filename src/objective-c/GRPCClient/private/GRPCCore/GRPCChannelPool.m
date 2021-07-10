@@ -152,11 +152,12 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)_destroyDelay * NSEC_PER_SEC),
                      _timerQueue, ^{
                        @synchronized(self) {
-                         // Check _lastTimedDestroy against now in case more calls are created (and
-                         // maybe destroyed) after this dispatch_async. In that case the current
-                         // dispatch_after block should be discarded; the channel should be
-                         // destroyed in a later dispatch_after block.
-                         if (now != nil && self->_lastTimedDestroy == now) {
+                         // Check _lastTimedDestroy against now and the number of calls 
+                         // in case more calls are created (and maybe destroyed) after this 
+                         // dispatch_async. In that case the current dispatch_after block should be
+                         // discarded; 
+                         if (now != nil && self->_lastTimedDestroy == now && 
+                             self->_wrappedCalls.allObjects.count == 0) {
                            self->_wrappedChannel = nil;
                            self->_lastTimedDestroy = nil;
                          }
