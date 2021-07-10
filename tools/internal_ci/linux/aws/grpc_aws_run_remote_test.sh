@@ -88,15 +88,40 @@ ID=$(aws ec2 run-instances --image-id $AWS_MACHINE_IMAGE --instance-initiated-sh
     --tag-specifications "$AWS_INSTANCE_TAGS" \
     --region us-east-2 | jq .Instances[0].InstanceId | sed 's/"//g')
 echo "instance-id=$ID"
-echo "Waiting 1m for instance ip..."
-sleep 1m
-IP=$(aws ec2 describe-instances \
-    --instance-id=$ID \
-    --region us-east-2 | jq .Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp | sed 's/"//g')
+echo "Polling (1m) for instance metadata..."
+for i in $(seq 1 6); do
+    result=$(aws ec2 describe-instances \
+        --instance-id=$ID \
+        --region us-east-2 | jq .Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp | sed 's/"//g')
+    # Check for an ip address vs error. Finish waiting if an ip address is found.
+    echo $result | grep -E "[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+"
+    if [[ $? -eq 0 ]]; then
+        IP=$result
+        break
+    fi
+    sleep 10s
+done
+if [ -z "$IP" ]; then
+    echo "No instance found after waiting. Exiting now."
+    exit 1
+fi
+
 SERVER_HOST_KEY_ENTRY="$IP $SERVER_HOST_KEY_ENTRY"
 echo $SERVER_HOST_KEY_ENTRY >> ~/.ssh/known_hosts
-echo "Waiting 2m for instance to initialize..."
-sleep 2m
+
+echo "Polling (2m) for ssh availability..."
+for i in $(seq 1 12); do 
+    result=$(ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a")
+    if [[ $? -eq 0 ]]; then
+        SSH_AVAILABLE=1
+        break
+    fi
+    sleep 10s
+done
+if [ -z "$SSH_AVAILABLE" ]; then
+    echo "Instance not available for ssh after waiting. Exiting now."
+    exit 1
+fi
 
 echo "Copying workspace to remote instance..."
 # use rsync over ssh since it's much faster than scp
