@@ -746,6 +746,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "overload",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/overload.h"],
+)
+
+grpc_cc_library(
+    name = "match",
+    external_deps = [
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/match.h"],
+    deps = ["overload"],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
