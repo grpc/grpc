@@ -292,13 +292,6 @@ class Status(six.with_metaclass(abc.ABCMeta)):
     """
 
 
-#############################  gRPC Exceptions  ################################
-
-
-class RpcError(Exception):
-    """Raised by the gRPC library to indicate non-OK-status RPC termination."""
-
-
 ##############################  Shared Context  ################################
 
 
@@ -398,6 +391,13 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
           The details string of the RPC.
         """
         raise NotImplementedError()
+
+
+#############################  gRPC Exceptions  ################################
+
+
+class RpcError(Exception, Call):
+    """Raised by the gRPC library to indicate non-OK-status RPC termination."""
 
 
 ##############  Invocation-Side Interceptor Interfaces & Classes  ##############
