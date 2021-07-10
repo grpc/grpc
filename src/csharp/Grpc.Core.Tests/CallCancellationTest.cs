@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -188,6 +189,37 @@ namespace Grpc.Core.Tests
             obj.Dispose();
 
             using (obj) {}
+        }
+
+        [Test]
+        public async Task ServerStreamingCall_CancelAfterServerHasFinished()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                await responseStream.WriteAsync("abc");
+            });
+
+            var cts = new CancellationTokenSource();
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(new CallOptions(cancellationToken: cts.Token)), "request1");
+            // make sure the response and status sent by the server is received on the client side
+            await Task.Delay(2000);
+
+            // cancel the call before actually reading the response
+            cts.Cancel();
+            var moveNextTask = call.ResponseStream.MoveNext();
+
+            try
+            {
+                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                await moveNextTask;
+                Assert.Fail();
+
+                // either the correct response is returned, or the call ends with OK status.
+                //Assert.AreEqual("abc", call.ResponseStream.Current);
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
     }
 }
