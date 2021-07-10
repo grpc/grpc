@@ -988,7 +988,7 @@ static void write_action_begin_locked(void* gt,
       continue_read_action_locked(t);
     }
   } else {
-    GRPC_STATS_INC_HTTP2_SPURIOUS_WRITES_BEGUN();
+    // GRPC_STATS_INC_HTTP2_SPURIOUS_WRITES_BEGUN();
     set_write_state(t, GRPC_CHTTP2_WRITE_STATE_IDLE, "begin writing nothing");
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "writing");
   }
