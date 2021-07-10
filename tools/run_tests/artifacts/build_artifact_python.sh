@@ -209,5 +209,24 @@ then
   rm -rf venv/
 fi
 
+strip_binary_wheel() {
+    WHEEL_PATH="$1"
+    TEMP_WHEEL_DIR=$(mktemp -d)
+    ${PYTHON} -m wheel unpack "$WHEEL_PATH" -d "$TEMP_WHEEL_DIR"
+    find "$TEMP_WHEEL_DIR" -name "_protoc_compiler*.so" -exec strip --strip-debug {} ";"
+    find "$TEMP_WHEEL_DIR" -name "cygrpc*.so" -exec strip --strip-debug {} ";"
+
+    WHEEL_FILE=$(basename "$WHEEL_PATH")
+    DISTRIBUTION_NAME=$(basename "$WHEEL_PATH" | cut -d '-' -f 1)
+    VERSION=$(basename "$WHEEL_PATH" | cut -d '-' -f 2)
+    ${PYTHON} -m wheel pack "$TEMP_WHEEL_DIR/$DISTRIBUTION_NAME-$VERSION" -d "$TEMP_WHEEL_DIR"
+    mv "$TEMP_WHEEL_DIR/$WHEEL_FILE" "$WHEEL_PATH"
+}
+
+# strip debug symbols from the binary wheels
+for wheel in "$ARTIFACT_DIR"/*.whl; do
+    strip_binary_wheel "$wheel"
+done
+
 cp -r dist/* "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"
