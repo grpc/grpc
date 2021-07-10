@@ -70,7 +70,7 @@ def platform_string():
     return jobset.platform_string()
 
 
-_DEFAULT_TIMEOUT_SECONDS = 5 * 60
+_DEFAULT_TIMEOUT_SECONDS = 1 * 60
 _PRE_BUILD_STEP_TIMEOUT_SECONDS = 10 * 60
 
 

@@ -101,6 +101,8 @@ namespace Grpc.Testing
             var echoInitialList = context.RequestHeaders.Where((entry) => entry.Key == "x-grpc-test-echo-initial").ToList();
             if (echoInitialList.Any()) {
                 var entry = echoInitialList.Single();
+
+                Console.Error.WriteLine($"sending back header: {entry}");
                 await context.WriteResponseHeadersAsync(new Metadata { entry });
             }
 
