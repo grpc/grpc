@@ -78,7 +78,12 @@ namespace Grpc.Core.Internal
             var profiler = Profilers.ForCurrentThread();
 
             using (profiler.NewScope("AsyncCall.UnaryCall"))
-            using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.CreateSync())
+
+            // Create a pluckable completion queue for the call. Avoid creating a completion queue when we know the channel has already
+            // been shutdown. In such case, the call will fail with ObjectDisposedException immediately anyway and creating / destroying
+            // a completion queue would lead to crash if this was the last channel in the application (and thus GrpcEnvironment has been shutdown).
+            // See https://github.com/grpc/grpc/issues/19090
+            using (CompletionQueueSafeHandle cq = details.Channel.Handle.IsClosed ?  null : CompletionQueueSafeHandle.CreateSync())
             {
                 bool callStartedOk = false;
                 try
