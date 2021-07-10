@@ -158,13 +158,13 @@ def expand_directives(root, directives):
             if directive.who not in globs[glob]:
                 globs[glob].append(directive.who)
     # expand owners for intersecting globs
-    sorted_globs = sorted(globs.keys(),
+    sorted_globs = sorted(list(globs.keys()),
                           key=lambda g: len(git_glob(full_dir(root, g))),
                           reverse=True)
     out_globs = collections.OrderedDict()
     for glob_add in sorted_globs:
         who_add = globs[glob_add]
-        pre_items = [i for i in out_globs.items()]
+        pre_items = [i for i in list(out_globs.items())]
         out_globs[glob_add] = who_add.copy()
         for glob_have, who_have in pre_items:
             files_add = git_glob(full_dir(root, glob_add))
@@ -186,8 +186,8 @@ def add_parent_to_globs(parent, globs, globs_dir):
     for owners in owners_data:
         if owners.dir == parent:
             owners_globs = expand_directives(owners.dir, owners.directives)
-            for oglob, oglob_who in owners_globs.items():
-                for gglob, gglob_who in globs.items():
+            for oglob, oglob_who in list(owners_globs.items()):
+                for gglob, gglob_who in list(globs.items()):
                     files_parent = git_glob(full_dir(owners.dir, oglob))
                     files_child = git_glob(full_dir(globs_dir, gglob))
                     intersect = files_parent.intersection(files_child)
@@ -220,7 +220,7 @@ with open(args.out, 'w') as out:
             continue
         globs = expand_directives(head.dir, head.directives)
         add_parent_to_globs(head.parent, globs, head.dir)
-        for glob, owners in globs.items():
+        for glob, owners in list(globs.items()):
             skip = False
             for glob1, owners1, dir1 in reversed(written_globs):
                 files = git_glob(full_dir(head.dir, glob))

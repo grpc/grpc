@@ -22,7 +22,7 @@ import os
 import subprocess
 import json
 
-import jobset
+from . import jobset
 
 _DEVNULL = open(os.devnull, 'w')
 
