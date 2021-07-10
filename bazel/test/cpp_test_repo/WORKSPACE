@@ -1,5 +1,5 @@
 # We use "local_repository()" to test against the checked-out version of gRPC
-# In real life, this would look like this instead:
+# In real life, it would look like this instead:
 # http_archive(
 #     name = "com_github_grpc_grpc",
 #     urls = [
@@ -12,13 +12,9 @@ local_repository(
     path = "../../..",
 )
 
-# Ensure rules don't rely on __main__ naming convention.
-workspace(name = "python_test_repo")
-
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
 
 load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
 grpc_extra_deps()
