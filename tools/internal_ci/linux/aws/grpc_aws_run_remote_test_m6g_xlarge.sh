@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,21 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -e
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/aws/grpc_aws_run_remote_test_m6g_xlarge.sh"
-timeout_mins: 90
-before_action {
-    fetch_keystore {
-        keystore_resource {
-            keystore_config_id: 73836
-            keyname: "grpc_aws_ec2_credentials"
-        }
-    }
-}
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-  }
-}
+# Use m6g.xlarge: 4core, 16G memory, https://aws.amazon.com/ec2/instance-types/m6/
+AWS_INSTANCE_TYPE="m6g.xlarge" "$(dirname $0)/grpc_aws_run_remote_test.sh"

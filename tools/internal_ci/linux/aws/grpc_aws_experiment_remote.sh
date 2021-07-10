@@ -20,10 +20,33 @@ sudo apt update
 sudo apt install -y build-essential autoconf libtool pkg-config cmake python python-pip clang
 sudo pip install six
 
-cd grpc
+# java pre-requisites
+# TODO: with openjdk11, benchmarks fail with: "Error: Could not find or load main class com.google.caliper.worker.WorkerMain"
+# see https://github.com/protocolbuffers/protobuf/issues/8680
+#sudo apt-get install -y maven openjdk-11-jdk-headless
+sudo apt-get install -y maven openjdk-8-jdk-headless
 
-# without port server running, many tests will fail
-python tools/run_tests/start_port_server.py
+# TODO(get rid of hack to uninstall openjdk 11)
+sudo apt-get remove -y openjdk-11-jdk-headless || true
+sudo apt-get remove -y openjdk-11-jre-headless || true
+java -version
 
-# build with bazel
-tools/bazel build --config=opt //test/...
+# go pre-requisites
+sudo snap install go --classic
+go version
+
+# node pre-requisites
+curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | bash
+set +ex
+. ~/.nvm/nvm.sh
+# TODO: install newer version of node
+nvm install 12
+nvm use 12
+set -ex
+
+git clone https://github.com/jtattermusch/protobuf.git
+cd protobuf
+git checkout benchmarks_no_tcmalloc
+git submodule update --init
+
+kokoro/linux/benchmark/run.sh
