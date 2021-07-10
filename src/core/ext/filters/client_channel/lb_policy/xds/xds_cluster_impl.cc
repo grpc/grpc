@@ -395,6 +395,7 @@ void XdsClusterImplLb::ShutdownLocked() {
   picker_.reset();
   drop_stats_.reset();
   xds_client_.reset();
+  call_counter_.reset();
 }
 
 void XdsClusterImplLb::ExitIdleLocked() {

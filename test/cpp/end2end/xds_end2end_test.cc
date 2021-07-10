@@ -154,6 +154,7 @@ constexpr char kDefaultClusterName[] = "cluster_name";
 constexpr char kDefaultEdsServiceName[] = "eds_service_name";
 constexpr int kDefaultLocalityWeight = 3;
 constexpr int kDefaultLocalityPriority = 0;
+constexpr int kDefaultRpcTimeoutMs = 1000;
 
 constexpr char kRequestMessage[] = "Live long and prosper.";
 constexpr char kDefaultServiceConfig[] =
@@ -1873,7 +1874,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   struct RpcOptions {
     RpcService service = SERVICE_ECHO;
     RpcMethod method = METHOD_ECHO;
-    int timeout_ms = 1000;
+    int timeout_ms = kDefaultRpcTimeoutMs;
     bool wait_for_ready = false;
     bool server_fail = false;
     std::vector<std::pair<std::string, std::string>> metadata;
@@ -7155,7 +7156,8 @@ TEST_P(CdsTest, RingHashNoHashPolicy) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs =
+      kDefaultRpcTimeoutMs * grpc_test_slowdown_factor();
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7169,8 +7171,6 @@ TEST_P(CdsTest, RingHashNoHashPolicy) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  // TODO(donnadionne): remove extended timeout after ring creation
-  // optimization.
   WaitForAllBackends(0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(kNumRpcs);
@@ -7218,7 +7218,8 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs =
+      kDefaultRpcTimeoutMs * grpc_test_slowdown_factor();
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7241,8 +7242,6 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
       {"unmatched_header", absl::StrFormat("%" PRIu32, rand())},
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  // TODO(donnadionne): remove extended timeout after ring creation
-  // optimization.
   WaitForAllBackends(0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(kNumRpcs, rpc_options);
@@ -7261,7 +7260,8 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs =
+      kDefaultRpcTimeoutMs * grpc_test_slowdown_factor();
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7286,8 +7286,6 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  // TODO(donnadionne): remove extended timeout after ring creation
-  // optimization.
   WaitForAllBackends(0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(kNumRpcs);
@@ -7310,7 +7308,8 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs =
+      kDefaultRpcTimeoutMs * grpc_test_slowdown_factor();
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7326,8 +7325,6 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  // TODO(donnadionne): remove extended timeout after ring creation
-  // optimization.
   WaitForAllBackends(0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(kNumRpcs);
@@ -7353,7 +7350,8 @@ TEST_P(CdsTest,
   const double kWeight20Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight80Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs =
+      kDefaultRpcTimeoutMs * grpc_test_slowdown_factor();
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kWeight20Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7368,8 +7366,6 @@ TEST_P(CdsTest,
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  // TODO(donnadionne): remove extended timeout after ring creation
-  // optimization.
   WaitForAllBackends(0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(kNumRpcs);
