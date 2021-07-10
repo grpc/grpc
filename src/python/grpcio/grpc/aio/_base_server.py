@@ -212,6 +212,22 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
+    def is_active(self) -> bool:
+        """ Checks whether the context is active
+
+        Returns:
+          boolean conveying whether the context is active
+        """
+
+    @abc.abstractmethod
+    def add_callback(self, callback) -> None:
+        """ Adds callback
+
+        Args:
+          callback: callback to add
+        """
+
+    @abc.abstractmethod
     def set_code(self, code: grpc.StatusCode) -> None:
         """Sets the value to be used as status code upon RPC completion.
 
