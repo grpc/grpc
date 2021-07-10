@@ -16,13 +16,9 @@
 
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -30,8 +26,6 @@ namespace Grpc.Core.Tests
 {
     public class SanityTest
     {
-        // TODO: make sanity test work for CoreCLR as well
-#if !NETCOREAPP1_1 && !NETCOREAPP2_1
         /// <summary>
         /// Because we depend on a native library, sometimes when things go wrong, the
         /// entire NUnit test process crashes. To be able to track down problems better,
@@ -46,7 +40,6 @@ namespace Grpc.Core.Tests
             var discoveredTests = DiscoverAllTestClasses();
             var testsFromFile
                 = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(ReadTestsJson());
-
             Assert.AreEqual(discoveredTests, testsFromFile);
         }
 
@@ -106,11 +99,20 @@ namespace Grpc.Core.Tests
             };
             foreach (var assemblyName in otherAssemblies)
             {
-                var location = executingAssembly.Location.Replace("Grpc.Core.Tests", assemblyName);
-                result.Add(Assembly.LoadFrom(location));
+                var assemblyPath = executingAssembly.Location.Replace("Grpc.Core.Tests", assemblyName);
+                result.Add(LoadForeignAssembly(assemblyPath));
             }
             return result;
         }
+
+        private Assembly LoadForeignAssembly(string assemblyPath)
+        {
+#if !NETCOREAPP1_1 && !NETCOREAPP2_1
+            return Assembly.LoadFrom(assemblyPath);
+#else
+            var assemblyLoader = new ForeignProjectAssemblyLoader(Path.GetDirectoryName(assemblyPath), assemblyPath);
+            return assemblyLoader.Assembly;
 #endif
+        }
     }
 }
