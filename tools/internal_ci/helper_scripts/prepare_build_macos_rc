@@ -29,6 +29,11 @@ ulimit -a
 # Brew packages installed when Kokoro image was built tend to have less conflict.
 export HOMEBREW_NO_AUTO_UPDATE=1
 
+# It's required to update the brew because it won't work with the default version Kokoro has.
+# This can be fragile, though because the future version of brew can break. In that case,
+# please consider to fix the certain version like https://github.com/grpc/grpc/pull/24837.
+brew update
+
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
