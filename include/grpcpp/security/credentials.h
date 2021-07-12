@@ -172,19 +172,11 @@ struct SslCredentialsOptions {
 
 /// Builds credentials with reasonable defaults.
 ///
-/// user_provided_scope is an optional field for user to use to represent the
-/// scope field in the JWT token. It will only be used if a service account JWT
-/// access credential is created by the application default credentials
-/// mechanism. If user_provided_scope is not empty, the audience (service URL)
-/// field in the JWT token will be cleared, which is dictated by
-/// https://google.aip.dev/auth/4111.
-///
 /// \warning Only use these credentials when connecting to a Google endpoint.
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
-    const grpc::string& user_provided_scope = "");
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
 
 /// Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
@@ -205,15 +197,9 @@ constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
 /// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
-/// user_provided_scope is an optional field for user to use to represent the
-/// scope field in the JWT token.
-/// clear_audience is a boolean field that dictates clearing audience
-/// field in the JWT token when it is set to true AND user_provided_scope is
-/// not empty. */
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
-    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs,
-    const grpc::string& user_provided_scope = "", bool clear_audience = false);
+    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
 
 /// Builds refresh token credentials.
 /// json_refresh_token is the JSON string containing the refresh token along
