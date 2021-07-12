@@ -627,7 +627,7 @@ static const int16_t emit_sub_tbl[249 * 16] = {
 
 namespace {
 // The alphabet used for base64 encoding binary metadata.
-static const char kBase64Alphabet[] =
+static constexpr char kBase64Alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
 // An inverted table: for each value in kBase64Alphabet, table contains the
@@ -639,8 +639,10 @@ struct Base64InverseTable {
     for (int i = 0; i < 256; i++) {
       table[i] = 255;
     }
-    for (uint8_t i = 0; i < sizeof(Base64InverseTable) - 1; i++) {
-      table[(uint8_t)kBase64Alphabet[i]] = i;
+    for (const char* p = kBase64Alphabet; *p; p++) {
+      uint8_t idx = *p;
+      uint8_t ofs = p - kBase64Alphabet;
+      table[idx] = ofs;
     }
   }
 };
