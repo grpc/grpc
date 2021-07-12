@@ -1615,28 +1615,25 @@ grpc_millis NowFromCycleCounter() {
   return grpc_cycle_counter_to_millis_round_up(now);
 }
 
-// Returns the number of RPCs needed to pass error_tolerance at 99.995% chance.
-// Rolling dices in drop/fault-injection generates a binomial distribution (if
-// our code is not horribly wrong). Let's make "n" the number of samples, "p"
-// the probabilty. If we have np>5 & n(1-p)>5, we can approximately treat the
-// binomial distribution as a normal distribution.
+// Returns the number of RPCs needed to pass error_tolerance at 99.99994%
+// chance. Rolling dices in drop/fault-injection generates a binomial
+// distribution (if our code is not horribly wrong). Let's make "n" the number
+// of samples, "p" the probabilty. If we have np>5 & n(1-p)>5, we can
+// approximately treat the binomial distribution as a normal distribution.
 //
 // For normal distribution, we can easily look up how many standard deviation we
 // need to reach 99.995%. Based on Wiki's table
-// https://en.wikipedia.org/wiki/Standard_normal_table, we need 4.00 sigma
-// (standard deviation) to cover the probability area of 99.995%. In another
-// word, for a sample with size "n" probability "p" error-tolerance "k", we want
-// the error always land within 4.00 sigma. The sigma of binominal distribution
-// and be computed as sqrt(np(1-p)). Hence, we have the equation:
+// https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule, we need 5.00
+// sigma (standard deviation) to cover the probability area of 99.99994%. In
+// another word, for a sample with size "n" probability "p" error-tolerance "k",
+// we want the error always land within 5.00 sigma. The sigma of binominal
+// distribution and be computed as sqrt(np(1-p)). Hence, we have the equation:
 //
-//   kn <= 4.00 * sqrt(np(1-p))
-//
-// E.g., with p=0.5 k=0.1, n >= 400; with p=0.5 k=0.05, n >= 1600; with p=0.5
-// k=0.01, n >= 40000.
+//   kn <= 5.00 * sqrt(np(1-p))
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
   GPR_ASSERT(p >= 0 && p <= 1);
   size_t num_rpcs =
-      ceil(p * (1 - p) * 4.00 * 4.00 / error_tolerance / error_tolerance);
+      ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
   gpr_log(GPR_INFO,
           "Sending %" PRIuPTR " RPCs for percentage=%.3f error_tolerance=%.3f",
           num_rpcs, p, error_tolerance);
@@ -8115,7 +8112,7 @@ TEST_P(
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
       ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name(std::string("instance_name"));
+      ->set_instance_name(std::string("fake_plugin1"));
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   CheckRpcSendFailure();
@@ -8168,7 +8165,13 @@ TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
       ->set_instance_name("unknown");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
+  CheckRpcSendFailure();
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
@@ -8188,7 +8191,13 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
+  CheckRpcSendFailure();
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -9114,14 +9123,32 @@ TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
   SetLdsUpdate("", "", "unknown", "", false);
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
-  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
-          true /* test_expects_failure */);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
@@ -9853,7 +9880,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   for (int i = 1; i < 65536; i++) {
     filter_chain->mutable_filter_chain_match()->add_source_ports(i);
   }
-  // Add another filter chain with no source prefix range mentioned with a bad
+  // Add another filter chain with no source port mentioned with a bad
   // DownstreamTlsContext configuration.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9863,7 +9890,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
       ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("unknown");
+      ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // A successful RPC proves that the filter chain with matching source port
@@ -11620,6 +11647,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -11628,6 +11656,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
@@ -11663,6 +11697,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const double kDelayRate = kDelayPercentage / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -11671,6 +11706,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   http_fault.mutable_delay()->mutable_header_delay();
@@ -11711,6 +11752,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
       10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -11719,6 +11761,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
@@ -11768,6 +11816,7 @@ TEST_P(FaultInjectionTest,
       10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
+  const size_t kMaxConcurrentRequests = kNumRpcs;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -11776,6 +11825,12 @@ TEST_P(FaultInjectionTest,
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  // Loosen the max concurrent request limit
+  Cluster cluster = default_cluster_;
+  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
+  threshold->set_priority(RoutingPriority::DEFAULT);
+  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();

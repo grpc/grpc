@@ -206,8 +206,10 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
+  gpr_mu_lock(&ac->mu);
   grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
   grpc_socket_notify_on_write(socket, &ac->on_connect);
+  gpr_mu_unlock(&ac->mu);
   return;
 
 failure:

@@ -746,6 +746,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "overload",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/overload.h"],
+)
+
+grpc_cc_library(
+    name = "match",
+    external_deps = [
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/match.h"],
+    deps = ["overload"],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
@@ -2254,6 +2270,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/time",
         "libcrypto",
+        "libssl",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
@@ -2796,6 +2813,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "gpr_base",
         "grpc++_codegen_base",
