@@ -292,4 +292,8 @@ class KubernetesBaseRunner:
                              name: str) -> str:
         """A helper to make consistent test app kubernetes namespace name
         for given resource prefix and suffix."""
-        return f'{resource_prefix}-{name}-{resource_suffix}'
+        parts = [resource_prefix, name]
+        # Avoid trailing dash when the suffix is empty.
+        if resource_suffix:
+            parts.append(resource_suffix)
+        return '-'.join(parts)

@@ -135,8 +135,8 @@ class TrafficDirectorManager:
     def _make_resource_name(self, name: str) -> str:
         """Make dash-separated resource name with resource prefix and suffix."""
         parts = [self.resource_prefix, name]
-        # Avoid trailing dash when the suffix is an empty string.
-        if self.resource_suffix != '':
+        # Avoid trailing dash when the suffix is empty.
+        if self.resource_suffix:
             parts.append(self.resource_suffix)
         return '-'.join(parts)
 
