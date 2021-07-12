@@ -354,11 +354,12 @@ class TrafficDirectorManager:
         self.target_proxy = None
         self.target_proxy_is_http = False
 
-    def find_unused_forwarding_rule_port(self,
-                                         lo: int = 1,
-                                         hi: int = 65535,
-                                         *,
-                                         attempts: int = 25) -> int:
+    def find_unused_forwarding_rule_port(
+            self,
+            *,
+            lo: int = 1024,  # To avoid confusion, skip well-known ports.
+            hi: int = 65535,
+            attempts: int = 25) -> int:
         for attempts in range(attempts):
             src_port = random.randint(lo, hi)
             if not (self.compute.exists_forwarding_rule(src_port)):
