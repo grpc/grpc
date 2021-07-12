@@ -119,6 +119,10 @@ static void test_retry_recv_initial_metadata(grpc_end2end_test_config config) {
   grpc_slice details;
   int was_cancelled = 2;
   char* peer;
+  grpc_metadata initial_metadata_from_server = {
+      grpc_slice_from_static_string("key1"),
+      grpc_slice_from_static_string("val1"),
+      {{nullptr, nullptr, nullptr, nullptr}}};
 
   grpc_arg args[] = {
       grpc_channel_arg_integer_create(
@@ -207,10 +211,16 @@ static void test_retry_recv_initial_metadata(grpc_end2end_test_config config) {
 
   // Server sends initial metadata in its own batch, before sending
   // trailing metadata.
+  // Ideally, this would not require actually sending any metadata
+  // entries, but we do so to avoid sporadic failures in the proxy
+  // tests, where the proxy may wind up combining the batches, depending
+  // on timing.  Sending a metadata entry ensures that the transport
+  // won't send a Trailers-Only response, even if the batches are combined.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
+  op->data.send_initial_metadata.count = 1;
+  op->data.send_initial_metadata.metadata = &initial_metadata_from_server;
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
                                 nullptr);
