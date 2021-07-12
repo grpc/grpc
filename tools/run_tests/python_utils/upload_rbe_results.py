@@ -112,7 +112,7 @@ def _get_resultstore_data(api_key, invocation_id):
     """Returns dictionary of test results by querying ResultStore API.
   Args:
       api_key: String of ResultStore API key
-      invocation_id: String of ResultStore invocation ID to results from 
+      invocation_id: String of ResultStore invocation ID to results from
   """
     all_actions = []
     page_token = ''
