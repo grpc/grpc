@@ -626,9 +626,13 @@ static const int16_t emit_sub_tbl[249 * 16] = {
 };
 
 namespace {
+// The alphabet used for base64 encoding binary metadata.
 static const char kBase64Alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
+// An inverted table: for each value in kBase64Alphabet, table contains the
+// index with which it's stored, so we can quickly invert the encoding without
+// any complicated runtime logic.
 struct Base64InverseTable {
   uint8_t table[256]{};
   GRPC_HPACK_CONSTEXPR_FN Base64InverseTable() {
