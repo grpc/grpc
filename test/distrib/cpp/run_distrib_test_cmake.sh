@@ -54,7 +54,7 @@ popd
 # Install s2a_core
 mkdir -p "third_party/s2a_core/cmake/build"
 cd "third_party/s2a_core"
-git submodule update --init
+git submodule update --init --recursive
 cd ../..
 pushd "third_party/s2a_core/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
