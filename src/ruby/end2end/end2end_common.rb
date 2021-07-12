@@ -102,7 +102,7 @@ class ClientController < ClientControl::ParentController::Service
                                 "--parent_controller_port=#{port}",
                                 "--server_port=#{server_port}")
     begin
-      Timeout.timeout(10) do
+      Timeout.timeout(20) do
         @client_controller_port_mu.synchronize do
           while @client_controller_port.nil?
             @client_controller_port_cv.wait(@client_controller_port_mu)
@@ -110,6 +110,8 @@ class ClientController < ClientControl::ParentController::Service
         end
       end
     rescue => e
+      @server.stop
+      server_thread.join
       fail "timeout waiting for child process to report port. error: #{e}"
     end
     @server.stop

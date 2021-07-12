@@ -21,10 +21,14 @@ def main
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    'client_memory_usage_client.rb', server_port)
-
-  Process.wait(client_controller.client_pid)
+  begin
+    client_controller = ClientController.new(
+      'client_memory_usage_client.rb', server_port)
+    Process.wait(client_controller.client_pid)
+  rescue => e
+    @server_runner.stop
+    fail "timeout waiting for child process to report port. error: #{e}"
+  end
 
   client_exit_code = $CHILD_STATUS
   if client_exit_code != 0

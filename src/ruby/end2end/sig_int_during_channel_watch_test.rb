@@ -25,13 +25,13 @@ def main
   server_runner = ServerRunner.new(echo_service)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    'sig_int_during_channel_watch_client.rb', server_port)
-  # give time for the client to get into the middle
-  # of a channel state watch call
-  sleep 1
-  Process.kill('SIGINT', client_controller.client_pid)
   begin
+    client_controller = ClientController.new(
+      'sig_int_during_channel_watch_client.rb', server_port)
+    # give time for the client to get into the middle
+    # of a channel state watch call
+    sleep 1
+    Process.kill('SIGINT', client_controller.client_pid)
     Timeout.timeout(10) do
       Process.wait(client_controller.client_pid)
     end
@@ -42,6 +42,9 @@ def main
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. It likely freezes when a ' \
       'SIGINT is sent while there is an active connectivity_state call'
+  rescue => e
+    server_runner.stop
+    raise "ClientController creation failed, error: #{e}"
   end
   client_exit_code = $CHILD_STATUS
   if client_exit_code != 0

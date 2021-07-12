@@ -52,8 +52,14 @@ def main
   server_runner = ServerRunner.new(service_impl, rpc_server_args: rpc_server_args)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    'killed_client_thread_client.rb', server_port)
+  client_controller = nil
+  begin
+    client_controller = ClientController.new(
+      'killed_client_thread_client.rb', server_port)
+  rescue => e
+    server_runner.stop
+    raise "ClientController creation failed, error: #{e}"
+  end
 
   received_rpc_mu.synchronize do
     received_rpc_cv.wait(received_rpc_mu) until received_rpc

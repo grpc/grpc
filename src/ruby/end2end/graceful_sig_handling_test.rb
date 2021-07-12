@@ -25,14 +25,19 @@ def main
   server_runner = ServerRunner.new(echo_service)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  client_controller = ClientController.new(
-    'graceful_sig_handling_client.rb', server_port)
-  # now get the client to send an RPC
-  client_controller.stub.do_echo_rpc(
-    ClientControl::DoEchoRpcRequest.new(request: 'hello'))
-  STDERR.puts 'killing client'
-  Process.kill('SIGINT', client_controller.client_pid)
-  Process.wait(client_controller.client_pid)
+  begin
+    client_controller = ClientController.new(
+      'graceful_sig_handling_client.rb', server_port)
+    # now get the client to send an RPC
+    client_controller.stub.do_echo_rpc(
+      ClientControl::DoEchoRpcRequest.new(request: 'hello'))
+    STDERR.puts 'killing client'
+    Process.kill('SIGINT', client_controller.client_pid)
+    Process.wait(client_controller.client_pid)
+  rescue => e
+    server_runner.stop
+    raise "ClientController creation failed, error: #{e}"
+  end
   client_exit_status = $CHILD_STATUS
   if client_exit_status.exited?
     if client_exit_status.exitstatus != 0
