@@ -198,8 +198,10 @@ void grpc_run_bad_client_test(
   grpc_init();
 
   /* Create endpoints */
-  grpc_resource_user* resource_user = grpc_mock_resource_user_create();
-  sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr, resource_user);
+  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  sfd =
+      grpc_iomgr_create_endpoint_pair("fixture", nullptr, client_ru, server_ru);
 
   /* Create server, completion events */
   a.server = grpc_server_create(nullptr, nullptr);
@@ -212,8 +214,8 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  transport =
-      grpc_create_chttp2_transport(nullptr, sfd.server, false, resource_user);
+  transport = grpc_create_chttp2_transport(nullptr, sfd.server, false,
+                                           server_resource_user);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
@@ -240,7 +242,8 @@ void grpc_run_bad_client_test(
   /* Shutdown. */
   shutdown_client(&sfd.client);
   server_validator_thd.Join();
-
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
   GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,

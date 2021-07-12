@@ -199,7 +199,8 @@ static void half_init(half* m, passthru_endpoint* parent,
 
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
-                                   grpc_resource_user* resource_user,
+                                   grpc_resource_user* client_resource_user,
+                                   grpc_resource_user* server_resource_user,
                                    grpc_passthru_endpoint_stats* stats) {
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
@@ -211,8 +212,8 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
     gpr_ref(&stats->refs);
     m->stats = stats;
   }
-  half_init(&m->client, m, resource_user, "client");
-  half_init(&m->server, m, resource_user, "server");
+  half_init(&m->client, m, client_resource_user, "client");
+  half_init(&m->server, m, server_resource_user, "server");
   gpr_mu_init(&m->mu);
   *client = &m->client.base;
   *server = &m->server.base;

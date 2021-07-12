@@ -41,9 +41,12 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  grpc_resource_user* ru = grpc_mock_resource_user_create();
-  grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair("test", &args, ru);
-  grpc_resource_user_unref(ru);
+  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  grpc_endpoint_pair p =
+      grpc_iomgr_create_endpoint_pair("test", &args, client_ru, server_ru);
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
 
   f.client_ep = p.client;
   f.server_ep = p.server;

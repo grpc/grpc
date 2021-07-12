@@ -131,9 +131,12 @@ static void test_init() {
   g_ctx.client_cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* Create endpoints */
-  grpc_resource_user* ru = grpc_mock_resource_user_create();
-  *sfd = grpc_iomgr_create_endpoint_pair("fixture", nullptr, ru);
-  grpc_resource_user_unref(ru);
+  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  tcp =
+      grpc_iomgr_create_endpoint_pair("fixture", nullptr, client_ru, server_ru);
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
   /* Create client, server and setup transport over endpoint pair */
   init_server();
   init_client();

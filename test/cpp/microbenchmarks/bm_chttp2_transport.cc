@@ -133,10 +133,12 @@ class PhonyEndpoint : public grpc_endpoint {
 class Fixture {
  public:
   Fixture(const grpc::ChannelArguments& args, bool client,
-          grpc_resource_user* resource_user) {
+          grpc_resource_user* client_resource_user,
+          grpc_resource_user* /* server_resource_user */) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    t_ = grpc_create_chttp2_transport(&c_args, ep_, client, resource_user);
+    t_ = grpc_create_chttp2_transport(&c_args, ep_, client,
+                                      client_resource_user);
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }
@@ -262,9 +264,11 @@ std::vector<std::unique_ptr<gpr_event>> done_events;
 static void BM_StreamCreateDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, ru);
-  grpc_resource_user_unref(ru);
+  auto* client_ru = grpc_mock_resource_user_create();
+  auto* server_ru = grpc_mock_resource_user_create();
+  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
@@ -314,9 +318,11 @@ template <class Metadata>
 static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, ru);
-  grpc_resource_user_unref(ru);
+  auto* client_ru = grpc_mock_resource_user_create();
+  auto* server_ru = grpc_mock_resource_user_create();
+  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
@@ -373,9 +379,11 @@ BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
 static void BM_TransportEmptyOp(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, ru);
-  grpc_resource_user_unref(ru);
+  auto* client_ru = grpc_mock_resource_user_create();
+  auto* server_ru = grpc_mock_resource_user_create();
+  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
   auto* s = new Stream(&f);
   s->Init(state);
   grpc_transport_stream_op_batch op;
@@ -418,9 +426,11 @@ BENCHMARK(BM_TransportEmptyOp);
 static void BM_TransportStreamSend(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, ru);
-  grpc_resource_user_unref(ru);
+  auto* client_ru = grpc_mock_resource_user_create();
+  auto* server_ru = grpc_mock_resource_user_create();
+  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
   auto* s = new Stream(&f);
   s->Init(state);
   grpc_transport_stream_op_batch op;
@@ -565,9 +575,11 @@ static grpc_slice CreateIncomingDataSlice(size_t length, size_t frame_size) {
 static void BM_TransportStreamRecv(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, ru);
-  grpc_resource_user_unref(ru);
+  auto* client_ru = grpc_mock_resource_user_create();
+  auto* server_ru = grpc_mock_resource_user_create();
+  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
   auto* s = new Stream(&f);
   s->Init(state);
   grpc_transport_stream_op_batch_payload op_payload(nullptr);

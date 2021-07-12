@@ -65,9 +65,11 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   int request_msgs_size = state.range(0);
   int response_msgs_size = state.range(1);
   CallbackStreamingTestService service;
-  grpc_resource_user* ru = grpc_mock_resource_user_create();
-  std::unique_ptr<Fixture> fixture(new Fixture(&service, ru));
-  grpc_resource_user_unref(ru);
+  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
+  grpc_resource_user_unref(client_ru);
+  grpc_resource_user_unref(server_ru);
   std::unique_ptr<EchoTestService::Stub> stub_(
       EchoTestService::NewStub(fixture->channel()));
   EchoRequest request;

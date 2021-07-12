@@ -29,6 +29,7 @@ struct grpc_endpoint_pair {
 };
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
     const char* name, grpc_channel_args* args,
-    grpc_resource_user* resource_user);
+    grpc_resource_user* client_resource_user,
+    grpc_resource_user* server_resource_user);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H */

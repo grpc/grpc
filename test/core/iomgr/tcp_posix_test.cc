@@ -613,13 +613,16 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  grpc_resource_user* resource_user =
+  grpc_resource_user* client_resource_user =
+      grpc_mock_resource_user_create(resource_quota);
+  grpc_resource_user* server_resource_user =
       grpc_mock_resource_user_create(resource_quota);
   f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client", false),
-                                &args, "test", resource_user);
+                                &args, "test", client_resource_user);
   f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server", false),
-                                &args, "test", resource_user);
-  grpc_resource_user_unref(resource_user);
+                                &args, "test", server_resource_user);
+  grpc_resource_user_unref(client_resource_user);
+  grpc_resource_user_unref(server_resource_user);
   grpc_resource_quota_unref_internal(resource_quota);
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, g_pollset);
