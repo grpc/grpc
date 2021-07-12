@@ -543,52 +543,84 @@ static grpc_error_handle parse_begin(grpc_chttp2_hpack_parser* p,
   }
 
   switch (*cur >> 4) {
-      // lithdr_notidx
+      // Literal header not indexed.
+      // First byte format: 0000xxxx
+      // Where xxxx:
+      //   0000  - literal key
+      //   1111  - indexed key, varint encoded index
+      //   other - indexed key, inline encoded index
     case 0:
       switch (*cur & 0xf) {
-        case 0:
+        case 0: // literal key
           return parse_lithdr_notidx_v(p, cur, end);
-        case 0xf:
+        case 0xf: // varint encoded key index
           return parse_lithdr_notidx_x(p, cur, end);
-        default:
+        default: // inline encoded key index
           return parse_lithdr_notidx(p, cur, end);
       }
-      // lithdr_nvridx
+      // Literal header never indexed.
+      // First byte format: 0001xxxx
+      // Where xxxx:
+      //   0000  - literal key
+      //   1111  - indexed key, varint encoded index
+      //   other - indexed key, inline encoded index
     case 1:
       switch (*cur & 0xf) {
-        case 0:
+        case 0: // literal key
           return parse_lithdr_nvridx_v(p, cur, end);
-        case 0xf:
+        case 0xf: // varint encoded key index
           return parse_lithdr_nvridx_x(p, cur, end);
-        default:
+        default: // inline encoded key index
           return parse_lithdr_nvridx(p, cur, end);
       }
-      // max size
+      // Update max table size.
+      // First byte format: 001xxxxx
+      // Where xxxxx:
+      //   11111 - max size is varint encoded
+      //   other - max size is stored inline
     case 2:
+      // inline encoded max table size
       return parse_max_tbl_size(p, cur, end);
     case 3:
       if (*cur == 0x3f) {
+        // varint encoded max table size
         return parse_max_tbl_size_x(p, cur, end);
       } else {
+        // inline encoded max table size
         return parse_max_tbl_size(p, cur, end);
       }
-      // lithdr_incidx
+      // Literal header with incremental indexing.
+      // First byte format: 01xxxxxx
+      // Where xxxxxx:
+      //   000000 - literal key
+      //   111111 - indexed key, varint encoded index
+      //   other  - indexed key, inline encoded index
     case 4:
       if (*cur == 0x40) {
+        // literal key
         return parse_lithdr_incidx_v(p, cur, end);
       }
     case 5:
     case 6:
+      // inline encoded key index
       return parse_lithdr_incidx(p, cur, end);
     case 7:
       if (*cur == 0x7f) {
+        // varint encoded key index
         return parse_lithdr_incidx_x(p, cur, end);
       } else {
+        // inline encoded key index
         return parse_lithdr_incidx(p, cur, end);
       }
-      // indexed_field
+      // Indexed Header Field Representation
+      // First byte format: 1xxxxxxx
+      // Where xxxxxxx:
+      //   0000000 - illegal
+      //   1111111 - varint encoded field index
+      //   other   - inline encoded field index
     case 8:
       if (*cur == 0x80) {
+        // illegal value.
         return parse_illegal_op(p, cur, end);
       }
     case 9:
@@ -597,11 +629,14 @@ static grpc_error_handle parse_begin(grpc_chttp2_hpack_parser* p,
     case 12:
     case 13:
     case 14:
+      // inline encoded field index
       return parse_indexed_field(p, cur, end);
     case 15:
       if (*cur == 0xff) {
+        // varint encoded field index
         return parse_indexed_field_x(p, cur, end);
       } else {
+        // inline encoded field index
         return parse_indexed_field(p, cur, end);
       }
   }
