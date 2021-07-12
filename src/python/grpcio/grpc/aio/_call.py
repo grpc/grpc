@@ -175,17 +175,15 @@ class Call:
         self._response_deserializer = response_deserializer
 
     def __del__(self) -> None:
-        # The '_cython_call' object might be destructed before Call object
-        if hasattr(self, '_cython_call'):
-            if not self._cython_call.done():
-                self._cancel(_GC_CANCELLATION_DETAILS)
+        self._cancel(_GC_CANCELLATION_DETAILS)
 
     def cancelled(self) -> bool:
         return self._cython_call.cancelled()
 
     def _cancel(self, details: str) -> bool:
         """Forwards the application cancellation reasoning."""
-        if not self._cython_call.done():
+        # The '_cython_call' object might be destructed before Call object
+        if hasattr(self, '_cython_call') and not self._cython_call.done():
             self._cython_call.cancel(details)
             return True
         else:
@@ -253,12 +251,9 @@ class _UnaryResponseMixin(Call):
     def _init_unary_response_mixin(self, response_task: asyncio.Task):
         self._call_response = response_task
 
-    def cancel(self) -> bool:
-        if super().cancel():
-            self._call_response.cancel()
-            return True
-        else:
-            return False
+    def _cancel(self, details: str) -> bool:
+        self._call_response.cancel()
+        return super()._cancel(details)
 
     def __await__(self) -> ResponseType:
         """Wait till the ongoing RPC request finishes."""
@@ -304,12 +299,9 @@ class _StreamResponseMixin(Call):
         elif self._response_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
-    def cancel(self) -> bool:
-        if super().cancel():
-            self._preparation.cancel()
-            return True
-        else:
-            return False
+    def _cancel(self, details: str) -> bool:
+        self._preparation.cancel()
+        return super()._cancel(details)
 
     async def _fetch_stream_responses(self) -> ResponseType:
         message = await self._read()
@@ -382,13 +374,10 @@ class _StreamRequestMixin(Call):
         if self._request_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
-    def cancel(self) -> bool:
-        if super().cancel():
-            if self._async_request_poller is not None:
-                self._async_request_poller.cancel()
-            return True
-        else:
-            return False
+    def _cancel(self, details: str) -> bool:
+        if self._async_request_poller is not None:
+            self._async_request_poller.cancel()
+        return super()._cancel(details)
 
     def _metadata_sent_observer(self):
         self._metadata_sent.set()
