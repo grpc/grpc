@@ -67,6 +67,7 @@ python tools/run_tests/run_tests.py -l csharp -c opt --build_only
 # --test_case after they are added into "all".
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
+    --halt_after_fail \
     --test_case="all,path_matching,header_matching" \
     --project_id=grpc-testing \
     --project_num=830293263384 \
