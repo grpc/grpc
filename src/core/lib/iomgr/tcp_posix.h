@@ -57,4 +57,12 @@ int grpc_tcp_fd(grpc_endpoint* ep);
 void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done);
 
+#ifdef GRPC_POSIX_SOCKET_TCP
+
+void grpc_tcp_posix_init();
+
+void grpc_tcp_posix_shutdown();
+
+#endif /* GRPC_POSIX_SOCKET_TCP */
+
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */

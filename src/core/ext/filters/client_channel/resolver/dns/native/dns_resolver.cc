@@ -48,8 +48,6 @@ namespace grpc_core {
 
 namespace {
 
-const char kDefaultPort[] = "https";
-
 class NativeDnsResolver : public Resolver {
  public:
   explicit NativeDnsResolver(ResolverArgs args);
@@ -276,7 +274,7 @@ void NativeDnsResolver::StartResolvingLocked() {
   addresses_ = nullptr;
   GRPC_CLOSURE_INIT(&on_resolved_, NativeDnsResolver::OnResolved, this,
                     grpc_schedule_on_exec_ctx);
-  grpc_resolve_address(name_to_resolve_.c_str(), kDefaultPort,
+  grpc_resolve_address(name_to_resolve_.c_str(), kDefaultSecurePort,
                        interested_parties_, &on_resolved_, &addresses_);
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
 }

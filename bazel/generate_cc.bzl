@@ -154,6 +154,7 @@ def generate_cc_impl(ctx):
         outputs = out_files,
         executable = ctx.executable._protoc,
         arguments = arguments,
+        use_default_shell_env = True,
     )
 
     return struct(files = depset(out_files))

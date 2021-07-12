@@ -115,8 +115,7 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
     This function is experimental. */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
-    grpc_experimental_completion_queue_functor* shutdown_callback,
-    void* reserved);
+    grpc_completion_queue_functor* shutdown_callback, void* reserved);
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
@@ -554,6 +553,14 @@ GRPCAPI char* grpc_channelz_get_subchannel(intptr_t subchannel_id);
 /* Returns a single Socket, or else a NOT_FOUND code. The returned string
    is allocated and must be freed by the application. */
 GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
+
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Fetch a vtable for grpc_channel_arg that points to
+ * grpc_authorization_policy_provider.
+ */
+GRPCAPI const grpc_arg_pointer_vtable*
+grpc_authorization_policy_provider_arg_vtable(void);
 
 #ifdef __cplusplus
 }

@@ -83,19 +83,20 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "handshake_verify_peer_options_test",
-    srcs = ["verify_peer_options.cc"],
-    data = [
-        "//src/core/tsi/test_creds:ca.pem",
-        "//src/core/tsi/test_creds:server1.key",
-        "//src/core/tsi/test_creds:server1.pem",
-    ],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
+# Disabled as per b/178094682
+#grpc_cc_test(
+#    name = "handshake_verify_peer_options_test",
+#    srcs = ["verify_peer_options.cc"],
+#    data = [
+#        "//src/core/tsi/test_creds:ca.pem",
+#        "//src/core/tsi/test_creds:server1.key",
+#        "//src/core/tsi/test_creds:server1.pem",
+#    ],
+#    language = "C++",
+#    tags = ["no_mac", no_windows"],
+#    deps = [
+#        "//:gpr",
+#        "//:grpc",
+#        "//test/core/util:grpc_test_util",
+#    ],
+#)
