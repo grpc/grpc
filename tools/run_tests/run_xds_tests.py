@@ -203,7 +203,7 @@ argp.add_argument(
     'Leave GCP VMs and configuration running after test. Default behavior is '
     'to delete when tests complete.')
 argp.add_argument('--halt_after_fail',
-                  default='store_true',
+                  action='store_true',
                   help='Halt and save the resources when test failed.')
 argp.add_argument(
     '--compute_discovery_document',
