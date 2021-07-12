@@ -536,11 +536,167 @@ TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
   EXPECT_TRUE(*status);
 }
 
+TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyMultipleCertMatch) {
+  absl::StatusOr<bool> status = PrivateKeyAndCertificateMatch(
+      private_key_2_, /*cert_chain*/ cert_chain_2_ + cert_chain_);
+  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(*status);
+}
+
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_);
   EXPECT_TRUE(status.ok());
   EXPECT_FALSE(*status);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, DataWatcherCertificateProviderCreation) {
+  DataWatcherCertificateProvider provider(
+      root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  // Watcher watching both root and identity certs.
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  CancelWatch(watcher_state_1);
+  // Watcher watching only root certs.
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, absl::nullopt);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  CancelWatch(watcher_state_2);
+  // Watcher watching only identity certs.
+  WatcherState* watcher_state_3 =
+      MakeWatcher(provider.distributor(), absl::nullopt, kCertName);
+  EXPECT_THAT(
+      watcher_state_3->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(
+          "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  CancelWatch(watcher_state_3);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadEmptyRootCertificate) {
+  DataWatcherCertificateProvider provider(root_cert_, {});
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  CancelWatch(watcher_state_1);
+  absl::Status status = provider.ReloadRootCertificate("");
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Root Certificate string is empty.");
+  CancelWatch(watcher_state_2);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadUnchangedRootCertificate) {
+  DataWatcherCertificateProvider provider(root_cert_, {});
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  CancelWatch(watcher_state_1);
+  absl::Status status = provider.ReloadRootCertificate(root_cert_);
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Root Certificate has not changed.");
+  CancelWatch(watcher_state_2);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadChangedRootCertificate) {
+  DataWatcherCertificateProvider provider(root_cert_, {});
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  CancelWatch(watcher_state_1);
+  absl::Status status = provider.ReloadRootCertificate(root_cert_2_);
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_2_, {})));
+  EXPECT_TRUE(status.ok());
+  CancelWatch(watcher_state_2);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadEmptyKeyCertificatePair) {
+  PemKeyCertPairList pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());
+  DataWatcherCertificateProvider provider("", pem_key_cert_pair_list);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_1);
+  absl::Status status = provider.ReloadKeyCertificatePair({});
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state_2->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "Empty Key-Cert pair list.");
+  CancelWatch(watcher_state_2);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadUnchangedKeyCertificatePair) {
+  PemKeyCertPairList pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());
+  DataWatcherCertificateProvider provider("", pem_key_cert_pair_list);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_1);
+  absl::Status status =
+      provider.ReloadKeyCertificatePair(pem_key_cert_pair_list);
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state_2->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(), "The Key-Cert pair list has not changed.");
+  CancelWatch(watcher_state_2);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderReloadChangedKeyCertificatePair) {
+  PemKeyCertPairList pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str());
+  DataWatcherCertificateProvider provider("", pem_key_cert_pair_list);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  CancelWatch(watcher_state_1);
+  pem_key_cert_pair_list =
+      MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str());
+  absl::Status status =
+      provider.ReloadKeyCertificatePair(pem_key_cert_pair_list);
+  WatcherState* watcher_state_2 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(
+      watcher_state_2->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo("", pem_key_cert_pair_list)));
+  EXPECT_TRUE(status.ok());
+  CancelWatch(watcher_state_2);
 }
 
 }  // namespace testing
