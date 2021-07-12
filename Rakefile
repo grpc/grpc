@@ -23,12 +23,6 @@ end
 
 # Add the extension compiler task
 Rake::ExtensionTask.new('grpc_c', spec) do |ext|
-  unless RUBY_PLATFORM =~ /darwin/
-    # TODO: also set "no_native to true" for mac if possible. As is,
-    # "no_native" can only be set if the RUBY_PLATFORM doing
-    # cross-compilation is contained in the "ext.cross_platform" array.
-    ext.no_native = true
-  end
   ext.source_pattern = '**/*.{c,h}'
   ext.ext_dir = File.join('src', 'ruby', 'ext', 'grpc')
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
@@ -36,6 +30,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32',
     'x86_64-linux', 'x86-linux',
+    'x86_64-darwin',
     'universal-darwin'
   ]
   ext.cross_compiling do |spec|
@@ -46,6 +41,8 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
     spec.files += Dir.glob('src/ruby/pb/**/*')
   end
 end
+
+CLEAN.add "src/ruby/lib/grpc/[0-9].[0-9]", "src/ruby/lib/grpc/grpc_c.{bundle,so}"
 
 # Define the test suites
 SPEC_SUITES = [
@@ -106,14 +103,13 @@ task 'dlls' do
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
     env_comp += "LDXX=#{opt[:cross]}-g++ "
-    run_rake_compiler opt[:platform], <<-EOT
+    run_rake_compiler(opt[:platform], <<~EOT)
       gem update --system --no-document && \
       #{env} #{env_comp} make -j`nproc` #{out} && \
       #{opt[:cross]}-strip -x -S #{out} && \
       cp #{out} #{opt[:out]}
     EOT
   end
-
 end
 
 desc 'Build the native gem file under rake_compiler_dock'
@@ -135,10 +131,11 @@ task 'gem:native' do
   else
     Rake::Task['dlls'].execute
     ['x86-mingw32', 'x64-mingw32'].each do |plat|
-      run_rake_compiler plat, <<-EOT
+      run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
-        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
+        bundle exec rake clean && \
+        bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
           GRPC_CONFIG=#{grpc_config}
@@ -147,11 +144,12 @@ task 'gem:native' do
     # Truncate grpc_c.*.ruby files because they're for Windows only.
     File.truncate('grpc_c.32.ruby', 0)
     File.truncate('grpc_c.64.ruby', 0)
-    ['x86_64-linux', 'x86-linux'].each do |plat|
-      run_rake_compiler plat, <<-EOT
+    ['x86_64-linux', 'x86-linux', 'x86_64-darwin'].each do |plat|
+      run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
-        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
+        bundle exec rake clean && \
+        bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
           GRPC_CONFIG=#{grpc_config}
