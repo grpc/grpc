@@ -1471,6 +1471,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
     ],
     language = "c++",
+    visibility = ["@grpc:grpclb"],
     deps = [
         "gpr_base",
         "grpc_base_c",
