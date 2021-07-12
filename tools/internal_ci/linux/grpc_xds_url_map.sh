@@ -87,18 +87,12 @@ run_test() {
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
   set -x
-  # NOTE(lidiz) we pin the server image to java-server because: 1. only Java
-  # server understands the rpc-behavior metadata; 2. all UrlMap tests today are
-  # testing client-side logic.
   python -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
-    --namespace="interop-psm-url-map" \
-    --server_xds_port=8848 \
-    --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    --strategy="reuse"
+    --flagfile="config/url-map.cfg"
   set +x
 }
 

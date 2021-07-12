@@ -13,8 +13,8 @@
 # limitations under the License.
 """A test framework built for urlMap related xDS test cases."""
 
-import inspect
 import functools
+import inspect
 from typing import Any, Iterable, List, Mapping, Tuple
 
 from absl import flags
@@ -132,21 +132,26 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
     (except the client K8s deployment).
     """
 
-    def __init__(self, absl_flags: Mapping[str, Any]):
-        for key in absl_flags:
-            setattr(self, key, absl_flags[key])
+    # This class dynamically set, so disable "no-member" check.
+    # pylint: disable=no-member
+
+    def __init__(self, absl_flags: Mapping[str, Any] = None):
+        if absl_flags is not None:
+            for key in absl_flags:
+                setattr(self, key, absl_flags[key])
         # API managers
         self.k8s_api_manager = k8s.KubernetesApiManager(self.kube_context)
         self.gcp_api_manager = gcp.api.GcpApiManager()
         self.td = traffic_director.TrafficDirectorManager(
             self.gcp_api_manager,
             self.project,
-            resource_prefix=self.namespace,
+            resource_prefix=self.resource_prefix,
+            resource_suffix=(self.resource_suffix or ""),
             network=self.network,
         )
         # Kubernetes namespace
         self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,
-                                                     self.namespace)
+                                                     self.resource_prefix)
         # Kubernetes Test Client
         self.test_client_runner = client_app.KubernetesClientRunner(
             self.k8s_namespace,
@@ -197,7 +202,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
         # This is the step that mostly likely to go wrong. Lifting it to be the
         # first task ensures fail fast.
         aggregator = _UrlMapChangeAggregator(
-            url_map_name="%s-%s" % (self.namespace, self.td.URL_MAP_NAME))
+            url_map_name=self.td.make_resource_name(self.td.URL_MAP_NAME))
         for test_case_class in test_case_classes:
             aggregator.apply_change(test_case_class)
         final_url_map = aggregator.get_map()
