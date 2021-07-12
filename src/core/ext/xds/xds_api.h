@@ -109,9 +109,26 @@ class XdsApi {
       bool operator==(const HashPolicy& other) const;
       std::string ToString() const;
     };
-
     Matchers matchers;
     std::vector<HashPolicy> hash_policies;
+
+    struct RetryPolicy {
+      std::string retry_on;
+      uint32_t num_retries;
+      absl::optional<Duration> per_try_timeout;
+
+      struct RetryBackOff {
+        Duration base_interval;
+        Duration max_interval;
+      };
+      RetryBackOff retry_back_off;
+
+      struct HedgePolicy {
+        bool hedge_on_per_try_timeout;
+      };
+      absl::optional<HedgePolicy> hedge_policy;
+    };
+    absl::optional<RetryPolicy> retry_policy;
 
     // Action for this route.
     // TODO(roth): When we can use absl::variant<>, consider using that

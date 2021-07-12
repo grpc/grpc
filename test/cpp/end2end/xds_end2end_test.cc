@@ -1823,6 +1823,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
+    gpr_log(GPR_INFO, "donna was in CreateChannel");
+    args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
     // If the parent channel is using the fake resolver, we inject the
     // response generator here.
     if (GetParam().use_fake_resolver()) {
@@ -5510,6 +5512,87 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicy) {
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+  });
+  AdsServiceImpl::EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(2, 3)},
+  });
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(3, 4)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
+  // Construct route config.
+  RouteConfiguration new_route_config = default_route_config_;
+  // route 1:
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
+  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("blah, blah2");
+  retry_policy->mutable_num_retries()->set_value(3);
+  auto per_try_timeout = retry_policy->mutable_per_try_timeout();
+  per_try_timeout->set_seconds(1);
+  per_try_timeout->set_nanos(0);
+  auto base_interval =
+      retry_policy->mutable_retry_back_off()->mutable_base_interval();
+  base_interval->set_seconds(1);
+  base_interval->set_nanos(0);
+  auto max_interval =
+      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  max_interval->set_seconds(10);
+  max_interval->set_nanos(5);
+  auto* hedge_policy = route1->mutable_route()->mutable_hedge_policy();
+  hedge_policy->set_hedge_on_per_try_timeout(true);
+  // route 2:
+  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
+  route2->mutable_route()->set_cluster(kNewCluster2Name);
+  retry_policy = route2->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on("blah2, blah3");
+  // route 3:
+  auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  route3->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
+  route3->mutable_route()->set_cluster(kDefaultClusterName);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  SetRouteConfiguration(0, new_route_config);
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(1, RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(1, RpcOptions()
+                        .set_rpc_service(SERVICE_ECHO1)
+                        .set_rpc_method(METHOD_ECHO1)
+                        .set_wait_for_ready(true));
+  CheckRpcSendOk(1, RpcOptions()
+                        .set_rpc_service(SERVICE_ECHO2)
+                        .set_rpc_method(METHOD_ECHO2)
+                        .set_wait_for_ready(true));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
