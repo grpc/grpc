@@ -40,6 +40,14 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/http2_errors.h"
 
+#if __cplusplus > 201103L
+#define GRPC_HPACK_CONSTEXPR_FN constexpr
+#define GRPC_HPACK_CONSTEXPR_VALUE constexpr
+#else
+#define GRPC_HPACK_CONSTEXPR_FN
+#define GRPC_HPACK_CONSTEXPR_VALUE const
+#endif
+
 grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser(
     false, "chttp2_hpack_parser");
 
@@ -617,26 +625,24 @@ static const int16_t emit_sub_tbl[249 * 16] = {
     13,  22,  22,  22,  22,  256, 256, 256, 256,
 };
 
-static const uint8_t inverse_base64[256] = {
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 62,  255,
-    255, 255, 63,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  255, 255,
-    255, 64,  255, 255, 255, 0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
-    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,
-    25,  255, 255, 255, 255, 255, 255, 26,  27,  28,  29,  30,  31,  32,  33,
-    34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,  48,
-    49,  50,  51,  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255,
+namespace {
+static const char kBase64Alphabet[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+struct Base64InverseTable {
+  uint8_t table[256]{};
+  GRPC_HPACK_CONSTEXPR_FN Base64InverseTable() {
+    for (int i = 0; i < 256; i++) {
+      table[i] = 255;
+    }
+    for (uint8_t i = 0; i < sizeof(Base64InverseTable) - 1; i++) {
+      table[(uint8_t)kBase64Alphabet[i]] = i;
+    }
+  }
 };
+
+static GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
+}  // namespace
 
 static void GPR_ATTRIBUTE_NOINLINE on_hdr_log(grpc_mdelem md) {
   char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
@@ -1325,7 +1331,7 @@ static grpc_error_handle append_string(grpc_chttp2_hpack_parser* p,
         p->binary = B64_BYTE0;
         return GRPC_ERROR_NONE;
       }
-      bits = inverse_base64[*cur];
+      bits = kBase64InverseTable.table[*cur];
       ++cur;
       if (bits == 255) {
         return parse_error(
@@ -1342,7 +1348,7 @@ static grpc_error_handle append_string(grpc_chttp2_hpack_parser* p,
         p->binary = B64_BYTE1;
         return GRPC_ERROR_NONE;
       }
-      bits = inverse_base64[*cur];
+      bits = kBase64InverseTable.table[*cur];
       ++cur;
       if (bits == 255) {
         return parse_error(
@@ -1359,7 +1365,7 @@ static grpc_error_handle append_string(grpc_chttp2_hpack_parser* p,
         p->binary = B64_BYTE2;
         return GRPC_ERROR_NONE;
       }
-      bits = inverse_base64[*cur];
+      bits = kBase64InverseTable.table[*cur];
       ++cur;
       if (bits == 255) {
         return parse_error(
@@ -1376,7 +1382,7 @@ static grpc_error_handle append_string(grpc_chttp2_hpack_parser* p,
         p->binary = B64_BYTE3;
         return GRPC_ERROR_NONE;
       }
-      bits = inverse_base64[*cur];
+      bits = kBase64InverseTable.table[*cur];
       ++cur;
       if (bits == 255) {
         return parse_error(
