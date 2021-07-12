@@ -47,7 +47,7 @@ class TrafficDirectorManager:
     resource_suffix: str
 
     BACKEND_SERVICE_NAME = "backend-service"
-    ALTERNATIVE_BACKEND_SERVICE_NAME = "alternative-backend-service"
+    ALTERNATIVE_BACKEND_SERVICE_NAME = "backend-service-alt"
     HEALTH_CHECK_NAME = "health-check"
     URL_MAP_NAME = "url-map"
     URL_MAP_PATH_MATCHER_NAME = "path-matcher"
