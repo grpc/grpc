@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/security/authorization/sdk_server_authz_filter.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
@@ -66,6 +67,21 @@ static bool maybe_prepend_server_auth_filter(
   return true;
 }
 
+static bool maybe_prepend_sdk_server_authz_filter(
+    grpc_channel_stack_builder* builder, void* /*arg*/) {
+  const grpc_channel_args* args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const auto* provider =
+      grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
+          args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
+  if (provider != nullptr) {
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_core::SdkServerAuthzFilter::kFilterVtable, nullptr,
+        nullptr);
+  }
+  return true;
+}
+
 void grpc_register_security_filters(void) {
   // Register the auth client with a priority < INT_MAX to allow the authority
   // filter -on which the auth filter depends- to be higher on the channel
@@ -76,6 +92,12 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_client_auth_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX - 1,
                                    maybe_prepend_server_auth_filter, nullptr);
+  // Register the SdkServerAuthzFilter with a priority less than
+  // server_auth_filter to allow server_auth_filter on which the sdk filter
+  // depends on to be higher on the channel stack.
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX - 2,
+                                   maybe_prepend_sdk_server_authz_filter,
+                                   nullptr);
 }
 
 void grpc_security_init() { grpc_core::SecurityRegisterHandshakerFactories(); }

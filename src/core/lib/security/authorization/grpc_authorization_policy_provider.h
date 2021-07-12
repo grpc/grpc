@@ -38,11 +38,8 @@ class StaticDataAuthorizationPolicyProvider
 
   explicit StaticDataAuthorizationPolicyProvider(RbacPolicies policies);
 
-  RefCountedPtr<AuthorizationEngine> allow_engine() const override {
-    return allow_engine_;
-  }
-  RefCountedPtr<AuthorizationEngine> deny_engine() const override {
-    return deny_engine_;
+  AuthorizationEngines engines() const override {
+    return {allow_engine_, deny_engine_};
   }
 
   void Orphan() override {}
