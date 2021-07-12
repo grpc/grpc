@@ -38,6 +38,8 @@ brew update
 #   Error: The `brew link` step did not complete successfully The formula built, but is not symlinked into /usr/local.
 #   Could not symlink bin/2to3 Target /usr/local/bin/2to3 already exists. You may want to remove it:
 rm '/usr/local/bin/2to3'
+rm '/usr/local/bin/protoc'
+rm '/usr/local/bin/idle3'
 
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
