@@ -34,6 +34,11 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # please consider to fix the certain version like https://github.com/grpc/grpc/pull/24837.
 brew update
 
+# This is to fix the error from brew saying
+#   Error: The `brew link` step did not complete successfully The formula built, but is not symlinked into /usr/local.
+#   Could not symlink bin/2to3 Target /usr/local/bin/2to3 already exists. You may want to remove it:
+rm '/usr/local/bin/2to3'
+
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
