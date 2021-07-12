@@ -55,8 +55,7 @@ namespace grpc_core {
 
 // A basic provider class that will get credentials from string during
 // initialization.
-class StaticDataCertificateProvider final
-    : public grpc_tls_certificate_provider {
+class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
  public:
   StaticDataCertificateProvider(
       std::string root_certificate,
@@ -134,11 +133,33 @@ class FileWatcherCertificateProvider final
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 
+// A provider class that initializes its credentials from strings and supports
+// reloading said credentials from memory.
+class DataWatcherCertificateProvider : public StaticDataCertificateProvider {
+ public:
+  DataWatcherCertificateProvider(
+      std::string root_certificate,
+      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+
+  // Reloads the root_certificate and updates the distributor.
+  absl::Status ReloadRootCertificate(const std::string& root_certificate);
+
+  // Reloads the key-cert pair list and updates the distributor.
+  absl::Status ReloadKeyCertificatePair(
+      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+};
+
 //  Checks if the private key matches the certificate's public key.
 //  Returns a not-OK status on failure, or a bool indicating
 //  whether the key/cert pair matches.
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain);
+
+//  Checks if the private key and leaf cert for all pairs in the list match.
+//  Returns the passed pair list if the match is successful and an empty one
+//  otherwise.
+grpc_core::PemKeyCertPairList GetValidKeyCertPairList(
+    const grpc_core::PemKeyCertPairList& pair_list);
 
 }  // namespace grpc_core
 

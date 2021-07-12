@@ -23,8 +23,12 @@
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/support/config.h>
 
+#include <functional>
+#include <map>
 #include <memory>
 #include <vector>
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
+#include "absl/status/statusor.h"
 
 // TODO(yihuazhang): remove the forward declaration here and include
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
@@ -69,6 +73,35 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
   ~StaticDataCertificateProvider() override;
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+ private:
+  grpc_tls_certificate_provider* c_provider_ = nullptr;
+};
+
+// A basic CertificateProviderInterface implementation that will load credential
+// data from static string during initialization and supports reloading
+// said data from memory.
+class DataWatcherCertificateProvider : public CertificateProviderInterface {
+ public:
+  DataWatcherCertificateProvider(
+      const std::string& root_certificate,
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+
+  explicit DataWatcherCertificateProvider(const std::string& root_certificate)
+      : DataWatcherCertificateProvider(root_certificate, {}) {}
+
+  explicit DataWatcherCertificateProvider(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
+      : DataWatcherCertificateProvider("", identity_key_cert_pairs) {}
+
+  ~DataWatcherCertificateProvider() override;
+
+  grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+  grpc::Status ReloadRootCertificate(const std::string& root_certificate);
+
+  grpc::Status ReloadKeyCertificatePair(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
  private:
   grpc_tls_certificate_provider* c_provider_ = nullptr;
