@@ -19,6 +19,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "openssl/pem.h"
 
 namespace grpc_core {
 
@@ -69,6 +70,64 @@ std::string GetFileContents(const char* path) {
   std::string credential = std::string(StringViewFromSlice(slice));
   grpc_slice_unref(slice);
   return credential;
+}
+
+absl::Status CheckPrivateKey(absl::string_view private_key) {
+  if (private_key.empty()) {
+    return absl::InvalidArgumentError("Private key string is empty.");
+  }
+  BIO* private_key_bio =
+      BIO_new_mem_buf(private_key.data(), private_key.size());
+  if (private_key_bio == nullptr) {
+    EVP_PKEY_free(public_evp_pkey);
+    return absl::InvalidArgumentError(
+        "Conversion from private key string to BIO failed.");
+  }
+  EVP_PKEY* private_evp_pkey =
+      PEM_read_bio_PrivateKey(private_key_bio, nullptr, nullptr, nullptr);
+  if (private_evp_pkey == nullptr) {
+    return absl::InvalidArgumentError("Invalid private key string.");
+  }
+  int pkey_type = EVP_PKEY_id(private_evp_pkey);
+  switch (pkey_type) {
+    case EVP_PKEY_NONE:
+      return absl::InvalidArgumentError("Undefined key type.");
+    case EVP_PKEY_RSA:
+    case EVP_PKEY_RSA_PSS:
+      // The cases that lead here represent currently supported key types.
+      break;
+    default:
+      gpr_log(GPR_ERROR, "Key type currently not supported.");
+  }
+  return absl::OkStatus();
+}
+
+absl::Status CheckCertChain(absl::string_view cert_chain) {
+  if (cert_chain.empty()) {
+    return absl::InvalidArgumentError("Certificate chain string is empty.");
+  }
+  BIO* cert_chain_bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
+  STACK_OF(X509_INFO)* cert_stack =
+      PEM_X509_INFO_read_bio(cert_chain_bio, nullptr, nullptr, nullptr);
+  int num_certs = sk_X509_INFO_num(cert_stack);
+  gpr_log(GPR_ERROR, "Num of certs: %d", num_certs);
+  X509* x_509 = nullptr;
+  for (int i = 0; i < num_certs; i++) {
+    X509_INFO* cert_info = sk_X509_INFO_value(cert_stack, i);
+    x_509 = cert_info->x509;
+    bool is_not_null = x_509 != nullptr;
+    gpr_log(GPR_ERROR, "Index: %d, Valid: %s", i,
+            is_not_null ? "true" : "false");
+    if (!is_not_null) {
+      return absl::InvalidArgumentError(
+          "Certificate chain contains cert with bad format");
+    }
+  }
+
+  BIO_free(cert_chain_bio);
+  X509_free(x_509);
+  sk_X509_INFO_pop_free(cert_stack, X509_INFO_free);
+  return absl::OkStatus();
 }
 
 }  // namespace testing

@@ -43,6 +43,16 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
 
 std::string GetFileContents(const char* path);
 
+//  Checks that the string `private_key` is that of a key of supported type and
+//  in PKCS #8 syntax. Returns an OK status if so or a not-OK status otherwise.
+//  Logs supported but unexpected types.
+absl::Status CheckPrivateKey(absl::string_view private_key);
+
+//  Checks that the string `cert_chain` is that of a certificate chain
+//  containing certificates of supported type and PEM-encoded.
+//  Returns an OK status if so or a not-OK status otherwise.
+absl::Status CheckCertChain(absl::string_view cert_chain);
+
 }  // namespace testing
 
 }  // namespace grpc_core
