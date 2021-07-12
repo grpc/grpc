@@ -868,10 +868,13 @@ bool IsEds(absl::string_view type_url) {
 #endif
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
-               const XdsBootstrap::Node* node)
+               const XdsBootstrap::Node* node,
+               const CertificateProviderStore::PluginDefinitionMap*
+                   certificate_provider_definition_map)
     : client_(client),
       tracer_(tracer),
       node_(node),
+      certificate_provider_definition_map_(certificate_provider_definition_map),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string(),
                                   GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
@@ -903,11 +906,13 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
 namespace {
 
 struct EncodingContext {
-  XdsClient* client;
+  XdsClient* client;  // Used only for logging. Unsafe for dereferencing.
   TraceFlag* tracer;
   upb_symtab* symtab;
   upb_arena* arena;
   bool use_v3;
+  const CertificateProviderStore::PluginDefinitionMap*
+      certificate_provider_definition_map;
 };
 
 // Works for both std::string and absl::string_view.
@@ -1116,8 +1121,12 @@ grpc_slice XdsApi::CreateAdsRequest(
     const std::string& version, const std::string& nonce,
     grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
@@ -1803,24 +1812,32 @@ grpc_error_handle RouteConfigParse(
   return GRPC_ERROR_NONE;
 }
 
-XdsApi::CommonTlsContext::CertificateProviderInstance
-CertificateProviderInstanceParse(
+grpc_error_handle CertificateProviderInstanceParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance*
-        certificate_provider_instance_proto) {
-  return {
+        certificate_provider_instance_proto,
+    XdsApi::CommonTlsContext::CertificateProviderInstance*
+        certificate_provider_instance) {
+  *certificate_provider_instance = {
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
               certificate_provider_instance_proto)),
       UpbStringToStdString(
           envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_certificate_name(
               certificate_provider_instance_proto))};
+  if (context.certificate_provider_definition_map->find(
+          certificate_provider_instance->instance_name) ==
+      context.certificate_provider_definition_map->end()) {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unrecognized certificate provider instance name: ",
+                     certificate_provider_instance->instance_name)
+            .c_str());
+  }
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error_handle CommonTlsContextParse(
-    const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
-        common_tls_context_proto,
-    XdsApi::CommonTlsContext* common_tls_context) GRPC_MUST_USE_RESULT;
-grpc_error_handle CommonTlsContextParse(
+    const EncodingContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
@@ -1898,19 +1915,21 @@ grpc_error_handle CommonTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CombinedCertificateValidationContext_validation_context_certificate_provider_instance(
             combined_validation_context);
     if (validation_context_certificate_provider_instance != nullptr) {
-      common_tls_context->combined_validation_context
-          .validation_context_certificate_provider_instance =
-          CertificateProviderInstanceParse(
-              validation_context_certificate_provider_instance);
+      grpc_error_handle error = CertificateProviderInstanceParse(
+          context, validation_context_certificate_provider_instance,
+          &common_tls_context->combined_validation_context
+               .validation_context_certificate_provider_instance);
+      if (error != GRPC_ERROR_NONE) return error;
     }
   }
   auto* tls_certificate_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_certificate_provider_instance(
           common_tls_context_proto);
   if (tls_certificate_certificate_provider_instance != nullptr) {
-    common_tls_context->tls_certificate_certificate_provider_instance =
-        CertificateProviderInstanceParse(
-            tls_certificate_certificate_provider_instance);
+    grpc_error_handle error = CertificateProviderInstanceParse(
+        context, tls_certificate_certificate_provider_instance,
+        &common_tls_context->tls_certificate_certificate_provider_instance);
+    if (error != GRPC_ERROR_NONE) return error;
   }
   return GRPC_ERROR_NONE;
 }
@@ -2100,8 +2119,9 @@ grpc_error_handle DownstreamTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
             downstream_tls_context_proto);
     if (common_tls_context != nullptr) {
-      grpc_error_handle error = CommonTlsContextParse(
-          common_tls_context, &downstream_tls_context->common_tls_context);
+      grpc_error_handle error =
+          CommonTlsContextParse(context, common_tls_context,
+                                &downstream_tls_context->common_tls_context);
       if (error != GRPC_ERROR_NONE) return error;
     }
     auto* require_client_certificate =
@@ -3058,7 +3078,7 @@ grpc_error_handle CdsResponseParse(
                   upstream_tls_context);
           if (common_tls_context != nullptr) {
             grpc_error_handle error = CommonTlsContextParse(
-                common_tls_context, &cds_update.common_tls_context);
+                context, common_tls_context, &cds_update.common_tls_context);
             if (error != GRPC_ERROR_NONE) {
               errors.push_back(grpc_error_add_child(
                   GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -3416,8 +3436,12 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
     const std::set<absl::string_view>& expected_eds_service_names) {
   AdsParseResult result;
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
       envoy_service_discovery_v3_DiscoveryResponse_parse(
@@ -3504,8 +3528,12 @@ grpc_slice SerializeLrsRequest(
 grpc_slice XdsApi::CreateLrsInitialRequest(
     const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   server.ShouldUseV3()};
+  const EncodingContext context = {client_,
+                                   tracer_,
+                                   symtab_.ptr(),
+                                   arena.ptr(),
+                                   server.ShouldUseV3(),
+                                   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -3575,8 +3603,9 @@ void LocalityStatsPopulate(
 grpc_slice XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   false};
+  const EncodingContext context = {
+      client_,     tracer_, symtab_.ptr(),
+      arena.ptr(), false,   certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -3909,8 +3938,9 @@ std::string XdsApi::AssembleClientConfig(
   // Fill-in the node information
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
-  const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
-                                   true};
+  const EncodingContext context = {
+      client_,     tracer_, symtab_.ptr(),
+      arena.ptr(), true,    certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
   // Dump each xDS-type config into PerXdsConfig
