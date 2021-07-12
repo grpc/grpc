@@ -142,6 +142,7 @@ grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_user* resource_user) {
   mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
   m->base.vtable = &vtable;
+  grpc_resource_user_ref(resource_user);
   m->resource_user = resource_user;
   grpc_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);
