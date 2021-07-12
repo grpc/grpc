@@ -83,7 +83,7 @@ namespace Grpc.Core
         {
             for (int i = entries.Count - 1; i >= 0; i--)
             {
-                if (entries[i].Key == key)
+                if (string.Equals(entries[i].Key, key, StringComparison.OrdinalIgnoreCase))
                 {
                     return entries[i];
                 }
@@ -119,7 +119,7 @@ namespace Grpc.Core
         {
             for (int i = 0; i < entries.Count; i++)
             {
-                if (entries[i].Key == key)
+                if (string.Equals(entries[i].Key, key, StringComparison.OrdinalIgnoreCase))
                 {
                     yield return entries[i];
                 }
