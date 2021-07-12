@@ -123,7 +123,6 @@ absl::Status CheckCertChain(absl::string_view cert_chain) {
           "Certificate chain contains cert with bad format");
     }
   }
-
   BIO_free(cert_chain_bio);
   X509_free(x_509);
   sk_X509_INFO_pop_free(cert_stack, X509_INFO_free);
