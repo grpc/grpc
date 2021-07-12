@@ -13,8 +13,8 @@
 # limitations under the License.
 """A test framework built for urlMap related xDS test cases."""
 
-import inspect
 import functools
+import inspect
 from typing import Any, Iterable, List, Mapping, Tuple
 
 from absl import flags
@@ -132,16 +132,22 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
     (except the client K8s deployment).
     """
 
-    def __init__(self, absl_flags: Mapping[str, Any]):
-        for key in absl_flags:
-            setattr(self, key, absl_flags[key])
+    # This class dynamically set, so disable "no-member" check.
+    # pylint: disable=no-member
+
+    def __init__(self, absl_flags: Mapping[str, Any] = None):
+        if absl_flags is not None:
+            for key in absl_flags:
+                setattr(self, key, absl_flags[key])
         # API managers
         self.k8s_api_manager = k8s.KubernetesApiManager(self.kube_context)
         self.gcp_api_manager = gcp.api.GcpApiManager()
         self.td = traffic_director.TrafficDirectorManager(
             self.gcp_api_manager,
             self.project,
+            # TODO(lidiz): replace namespace with resource prefix/suffix.
             resource_prefix=self.namespace,
+            resource_suffix="",
             network=self.network,
         )
         # Kubernetes namespace
