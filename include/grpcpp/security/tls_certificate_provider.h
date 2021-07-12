@@ -23,7 +23,7 @@
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/support/config.h>
 
-#include <absl/status/statusor.h>
+#include "absl/status/statusor.h"
 #include <functional>
 #include <map>
 #include <memory>
@@ -157,7 +157,6 @@ class FileWatcherCertificateProvider final
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
 
-absl::StatusOr<bool> lol;
 }  // namespace experimental
 }  // namespace grpc
 
