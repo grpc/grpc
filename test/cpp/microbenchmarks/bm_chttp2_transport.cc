@@ -57,8 +57,7 @@ class PhonyEndpoint : public grpc_endpoint {
                                                    get_fd,
                                                    can_track_err};
     grpc_endpoint::vtable = &my_vtable;
-    ru_ = grpc_resource_user_create(LibraryInitializer::get().rq(),
-                                    "phony_endpoint");
+    ru_ = grpc_mock_resource_user_create();
   }
 
   void PushInput(grpc_slice slice) {
@@ -72,6 +71,8 @@ class PhonyEndpoint : public grpc_endpoint {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_cb_, GRPC_ERROR_NONE);
     read_cb_ = nullptr;
   }
+
+  grpc_resource_user* get_ru() { return ru_; }
 
  private:
   grpc_resource_user* ru_;
@@ -132,13 +133,10 @@ class PhonyEndpoint : public grpc_endpoint {
 
 class Fixture {
  public:
-  Fixture(const grpc::ChannelArguments& args, bool client,
-          grpc_resource_user* client_resource_user,
-          grpc_resource_user* /* server_resource_user */) {
+  Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    t_ = grpc_create_chttp2_transport(&c_args, ep_, client,
-                                      client_resource_user);
+    t_ = grpc_create_chttp2_transport(&c_args, ep_, client, ep_->get_ru());
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }
@@ -262,13 +260,9 @@ class Stream {
 std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_StreamCreateDestroy(benchmark::State& state) {
-  TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* client_ru = grpc_mock_resource_user_create();
-  auto* server_ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
+  TrackCounters track_counters;
+  Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
@@ -298,9 +292,9 @@ class RepresentativeClientInitialMetadata {
     return {
         GRPC_MDELEM_SCHEME_HTTP,
         GRPC_MDELEM_METHOD_POST,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_PATH,
-            grpc_slice_intern(grpc_slice_from_static_string("/foo/bar"))),
+        grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
+                                grpc_slice_intern(grpc_slice_from_static_string(
+                                    "/foo/bar/bm_chttp2_transport"))),
         grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
                                 grpc_slice_intern(grpc_slice_from_static_string(
                                     "foo.test.google.fr:1234"))),
@@ -318,11 +312,7 @@ template <class Metadata>
 static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* client_ru = grpc_mock_resource_user_create();
-  auto* server_ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
+  Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
@@ -379,11 +369,7 @@ BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
 static void BM_TransportEmptyOp(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* client_ru = grpc_mock_resource_user_create();
-  auto* server_ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
+  Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   s->Init(state);
   grpc_transport_stream_op_batch op;
@@ -426,11 +412,7 @@ BENCHMARK(BM_TransportEmptyOp);
 static void BM_TransportStreamSend(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* client_ru = grpc_mock_resource_user_create();
-  auto* server_ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
+  Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   s->Init(state);
   grpc_transport_stream_op_batch op;
@@ -575,11 +557,7 @@ static grpc_slice CreateIncomingDataSlice(size_t length, size_t frame_size) {
 static void BM_TransportStreamRecv(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  auto* client_ru = grpc_mock_resource_user_create();
-  auto* server_ru = grpc_mock_resource_user_create();
-  Fixture f(grpc::ChannelArguments(), true, client_ru, server_ru);
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
+  Fixture f(grpc::ChannelArguments(), true);
   auto* s = new Stream(&f);
   s->Init(state);
   grpc_transport_stream_op_batch_payload op_payload(nullptr);

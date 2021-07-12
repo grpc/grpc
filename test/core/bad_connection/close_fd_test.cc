@@ -133,7 +133,7 @@ static void test_init() {
   /* Create endpoints */
   grpc_resource_user* client_ru = grpc_mock_resource_user_create();
   grpc_resource_user* server_ru = grpc_mock_resource_user_create();
-  tcp =
+  *sfd =
       grpc_iomgr_create_endpoint_pair("fixture", nullptr, client_ru, server_ru);
   grpc_resource_user_unref(client_ru);
   grpc_resource_user_unref(server_ru);

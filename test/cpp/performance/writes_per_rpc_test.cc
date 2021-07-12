@@ -77,7 +77,7 @@ class EndpointPairFixture {
           server_->c_server()->core_server->channel_args();
       grpc_transport* transport = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */,
-          client_resource_user, server_resource_user);
+          server_resource_user);
 
       for (grpc_pollset* pollset :
            server_->c_server()->core_server->pollsets()) {
@@ -168,7 +168,7 @@ static double UnaryPingPong(int request_size, int response_size) {
   grpc_resource_user* client_ru = grpc_mock_resource_user_create();
   grpc_resource_user* server_ru = grpc_mock_resource_user_create();
   std::unique_ptr<InProcessCHTTP2> fixture(new InProcessCHTTP2(
-      &service, grpc_passthru_endpoint_stats_create(), client_rum, server_ru));
+      &service, grpc_passthru_endpoint_stats_create(), client_ru, server_ru));
   grpc_resource_user_unref(client_ru);
   grpc_resource_user_unref(server_ru);
   EchoRequest send_request;

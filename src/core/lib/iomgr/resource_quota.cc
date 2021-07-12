@@ -777,7 +777,6 @@ const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void) {
 grpc_resource_user* grpc_resource_user_create(
     grpc_resource_quota* resource_quota, const char* name) {
   grpc_resource_user* resource_user = new grpc_resource_user;
-  gpr_log(GPR_DEBUG, "DO NOT SUBMIT - new ru(%p)", resource_user);
   resource_user->resource_quota =
       grpc_resource_quota_ref_internal(resource_quota);
   GRPC_CLOSURE_INIT(&resource_user->allocate_closure, &ru_allocate,

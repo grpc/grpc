@@ -167,7 +167,7 @@ class EndpointPairFixture : public BaseFixture {
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
                       const FixtureConfiguration& fixture_configuration,
                       grpc_resource_user* client_resource_user,
-                      grpc_resource_user* server_resource_user, )
+                      grpc_resource_user* server_resource_user)
       : endpoint_pair_(endpoints) {
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
@@ -275,7 +275,7 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
       Service* service, grpc_passthru_endpoint_stats* stats,
       const FixtureConfiguration& fixture_configuration,
       grpc_resource_user* client_resource_user,
-      grpc_resource_user* server_resource_user, )
+      grpc_resource_user* server_resource_user)
       : EndpointPairFixture(
             service,
             MakeEndpoints(stats, client_resource_user, server_resource_user),
@@ -341,8 +341,11 @@ class MinStackConfiguration : public FixtureConfiguration {
 template <class Base>
 class MinStackize : public Base {
  public:
-  explicit MinStackize(Service* service, grpc_resource_user* resource_user)
-      : Base(service, resource_user, MinStackConfiguration()) {}
+  explicit MinStackize(Service* service,
+                       grpc_resource_user* client_resource_user,
+                       grpc_resource_user* server_resource_user)
+      : Base(service, client_resource_user, server_resource_user,
+             MinStackConfiguration()) {}
 };
 
 typedef MinStackize<TCP> MinTCP;
