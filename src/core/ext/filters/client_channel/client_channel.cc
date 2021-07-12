@@ -2987,6 +2987,13 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
         // yet seen that change and given us a new picker), then just
         // queue the pick.  We'll try again as soon as we get a new picker.
         if (connected_subchannel_ == nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+            gpr_log(GPR_INFO,
+                    "chand=%p lb_call=%p: subchannel from picker has no "
+                    "connected subchannel; queuing call until the LB policy "
+                    "gives returns new picker",
+                    chand_, this);
+          }
           MaybeAddCallToLbQueuedCallsLocked();
           return false;
         }
