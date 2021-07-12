@@ -38,7 +38,10 @@ namespace Grpc.Core.Internal
     internal abstract class AsyncCallBase<TWrite, TRead> : IReceivedMessageCallback, ISendCompletionCallback
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCallBase<TWrite, TRead>>();
-        protected static readonly Status DeserializeResponseFailureStatus = new Status(StatusCode.Internal, "Failed to deserialize response message.");
+        protected static Status CreateDeserializeResponseFailureStatus(Exception exception)
+        {
+            return new Status(StatusCode.Internal, "Failed to deserialize response message.", exception);
+        }
 
         readonly Action<TWrite, SerializationContext> serializer;
         readonly Func<DeserializationContext, TRead> deserializer;
@@ -351,7 +354,7 @@ namespace Grpc.Core.Internal
                     readingDone = true;
 
                     // TODO(jtattermusch): it might be too late to set the status
-                    CancelWithStatus(DeserializeResponseFailureStatus);
+                    CancelWithStatus(CreateDeserializeResponseFailureStatus(deserializeException));
                 }
 
                 if (!readingDone)
