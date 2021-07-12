@@ -201,7 +201,11 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         # Format example: 20210626-1859
         datetime_suffix: str = framework.helpers.datetime.datetime_suffix()
         # Use lowercase chars because some resource names won't allow uppercase.
-        unique_hash: str = framework.helpers.rand.rand_string(lowercase=True)
+        # For len 5, total (26 + 10)^5 = 60,466,176 combinations.
+        # Approx. number of test runs needed to start at the same minute to
+        # produce a collision: math.sqrt(math.pi/2 * (26+10)**5) ≈ 9745.
+        # https://en.wikipedia.org/wiki/Birthday_attack#Mathematics
+        unique_hash: str = framework.helpers.rand.rand_string(5, lowercase=True)
         return f'{datetime_suffix}-{unique_hash}'
 
     def setupTrafficDirectorGrpc(self):
