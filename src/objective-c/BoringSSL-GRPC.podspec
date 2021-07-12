@@ -202,6 +202,7 @@ Pod::Spec.new do |s|
       }
     EOF
 
+    if [[ "$(uname)" == "Darwin" ]]; then
     # To avoid symbol conflict with OpenSSL, gRPC needs to rename all the BoringSSL symbols with a
     # prefix. This is done with BoringSSL's BORINGSSL_PREFIX mechanism
     # (https://github.com/google/boringssl/blob/75148d7abf12bdd1797fec3c5da9a21963703516/BUILDING.md#building-with-prefixed-symbols).
@@ -713,5 +714,6 @@ Pod::Spec.new do |s|
     # Include of boringssl_prefix_symbols.h does not follow Xcode import style. We add the package
     # name here so that Xcode knows where to find it.
     find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <boringssl_prefix_symbols.h>;#include <openssl_grpc/boringssl_prefix_symbols.h>;g'
+    fi
   END_OF_COMMAND
 end
