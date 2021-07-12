@@ -565,10 +565,3 @@ void grpc_tls_certificate_provider_release(
   grpc_core::ExecCtx exec_ctx;
   if (provider != nullptr) provider->Unref();
 }
-
-absl::StatusOr<bool> grpc_tls_private_key_cert_match(const char* private_key,
-                                                     const char* cert_chain) {
-  return grpc_core::PrivateKeyAndCertificateMatch(
-      absl::NullSafeStringView(private_key),
-      absl::NullSafeStringView(cert_chain));
-}
