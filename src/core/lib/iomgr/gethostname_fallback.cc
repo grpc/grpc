@@ -25,6 +25,8 @@
 
 #include <stddef.h>
 
-char* grpc_gethostname() { return NULL; }
+grpc_core::UniquePtr<char> grpc_gethostname() {
+  return grpc_core::UniquePtr<char>{};
+}
 
 #endif  // GRPC_GETHOSTNAME_FALLBACK
