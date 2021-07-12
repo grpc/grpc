@@ -201,6 +201,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(readonly) NSUInteger channelOptionsHash;
 
+// Parameters for GTMSessionFetcher transport retry policy. This is only for internal users.
+@property(atomic, assign) NSTimeInterval maxRetryInterval;
+@property(atomic, assign) NSTimeInterval minRetryInterval;
+@property(atomic, assign) NSUInteger retryCount;
+@property(atomic, assign) double retryFactor;
+
 @end
 
 /**
@@ -300,12 +306,6 @@ NS_ASSUME_NONNULL_BEGIN
  * https://github.com/grpc/proposal/blob/master/A6-client-retries.md
  */
 @property(readwrite) BOOL retryEnabled;
-
-// Parameters for GTMSessionFetcher transport retry policy. This is only for internal users.
-@property(atomic, assign) NSTimeInterval maxRetryInterval;
-@property(atomic, assign) NSTimeInterval minRetryInterval;
-@property(atomic, assign) NSUInteger retryCount;
-@property(atomic, assign) double retryFactor;
 
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
