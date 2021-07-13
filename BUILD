@@ -511,6 +511,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    visibility = ["@grpc:public"],
     deps = [
         "grpc++",
     ],
@@ -1470,6 +1471,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
     ],
     language = "c++",
+    visibility = ["@grpc:grpclb"],
     deps = [
         "gpr_base",
         "grpc_base_c",
@@ -3533,6 +3535,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_annotations_upbdefs",
         "envoy_core_upb",
         "envoy_type_upbdefs",
         "google_api_upbdefs",

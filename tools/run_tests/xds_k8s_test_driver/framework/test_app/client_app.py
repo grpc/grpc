@@ -338,3 +338,17 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             self._delete_service_account(self.service_account_name)
             self.service_account = None
         super().cleanup(force=force_namespace and force)
+
+    @classmethod
+    def make_namespace_name(cls,
+                            resource_prefix: str,
+                            resource_suffix: str,
+                            name: str = 'client') -> str:
+        """A helper to make consistent XdsTestClient kubernetes namespace name
+        for given resource prefix and suffix.
+
+        Note: the idea is to intentionally produce different namespace name for
+        the test server, and the test client, as that closely mimics real-world
+        deployments.
+        """
+        return cls._make_namespace_name(resource_prefix, resource_suffix, name)

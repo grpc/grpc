@@ -8029,7 +8029,7 @@ TEST_P(
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.mutable_common_tls_context()
       ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name(std::string("instance_name"));
+      ->set_instance_name(std::string("fake_plugin1"));
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   CheckRpcSendFailure();
@@ -8082,7 +8082,13 @@ TEST_P(XdsSecurityTest, UnknownRootCertificateProvider) {
       ->set_instance_name("unknown");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
+  CheckRpcSendFailure();
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
@@ -8102,7 +8108,13 @@ TEST_P(XdsSecurityTest, UnknownIdentityCertificateProvider) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure(1, RpcOptions(), StatusCode::UNAVAILABLE);
+  CheckRpcSendFailure();
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
   g_fake1_cert_data_map = nullptr;
 }
 
@@ -9028,14 +9040,32 @@ TEST_P(XdsServerSecurityTest, UnknownIdentityCertificateProvider) {
   SetLdsUpdate("", "", "unknown", "", false);
   SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
           true /* test_expects_failure */);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsServerSecurityTest, UnknownRootCertificateProvider) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
   SetLdsUpdate("unknown", "", "fake_plugin1", "", false);
-  SendRpc([this]() { return CreateTlsChannel(); }, {}, {},
-          true /* test_expects_failure */);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "Unrecognized certificate provider instance name: unknown"));
 }
 
 TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
@@ -9767,7 +9797,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   for (int i = 1; i < 65536; i++) {
     filter_chain->mutable_filter_chain_match()->add_source_ports(i);
   }
-  // Add another filter chain with no source prefix range mentioned with a bad
+  // Add another filter chain with no source port mentioned with a bad
   // DownstreamTlsContext configuration.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -9777,7 +9807,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   DownstreamTlsContext downstream_tls_context;
   downstream_tls_context.mutable_common_tls_context()
       ->mutable_tls_certificate_certificate_provider_instance()
-      ->set_instance_name("unknown");
+      ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // A successful RPC proves that the filter chain with matching source port
