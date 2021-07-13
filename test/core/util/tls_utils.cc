@@ -76,24 +76,21 @@ absl::Status CheckPrivateKey(absl::string_view private_key) {
   if (private_key.empty()) {
     return absl::InvalidArgumentError("Private key string is empty.");
   }
-  BIO* private_key_bio =
-      BIO_new_mem_buf(private_key.data(), private_key.size());
-  if (private_key_bio == nullptr) {
+  bssl::UniquePtr<BIO> private_key_bio(
+      BIO_new_mem_buf(private_key.data(), private_key.size()));
+  if (!private_key_bio) {
     return absl::InvalidArgumentError(
         "Conversion from private key string to BIO failed.");
   }
-  EVP_PKEY* private_evp_pkey =
-      PEM_read_bio_PrivateKey(private_key_bio, nullptr, nullptr, nullptr);
-  if (private_evp_pkey == nullptr) {
-    BIO_free(private_key_bio);
+  bssl::UniquePtr<EVP_PKEY> private_evp_pkey(PEM_read_bio_PrivateKey(
+      private_key_bio.get(), nullptr, nullptr, nullptr));
+  if (!private_evp_pkey) {
     return absl::InvalidArgumentError("Invalid private key string.");
   }
-  int pkey_type = EVP_PKEY_id(private_evp_pkey);
-  bool is_key_type_defined = true;
+  int pkey_type = EVP_PKEY_id(private_evp_pkey.get());
   switch (pkey_type) {
     case EVP_PKEY_NONE:
-      is_key_type_defined = false;
-      break;
+      return absl::InvalidArgumentError("Undefined key type.");
     case EVP_PKEY_RSA:
     case EVP_PKEY_RSA_PSS:
       // The cases that lead here represent currently supported key types.
@@ -101,11 +98,7 @@ absl::Status CheckPrivateKey(absl::string_view private_key) {
     default:
       gpr_log(GPR_ERROR, "Key type currently not supported.");
   }
-  BIO_free(private_key_bio);
-  EVP_PKEY_free(private_evp_pkey);
-  return is_key_type_defined
-             ? absl::OkStatus()
-             : absl::InvalidArgumentError("Undefined key type.");
+  return absl::OkStatus();
 }
 
 absl::Status CheckCertChain(absl::string_view cert_chain) {
