@@ -367,7 +367,6 @@ static grpc_end2end_test_config configs[] = {
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_static_data_tls1_3,
      chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
-    // TODO: start
     // client: data watcher provider + async custom verification
     // server: data watcher provider
     // extra: TLS 1.2
@@ -388,7 +387,6 @@ static grpc_end2end_test_config configs[] = {
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_data_watcher_tls1_3,
      chttp2_init_client, chttp2_init_server, chttp2_tear_down_secure_fullstack},
-    // TODO: end
     // client: certificate watcher provider + async custom verification
     // server: certificate watcher provider
     // extra: TLS 1.2
