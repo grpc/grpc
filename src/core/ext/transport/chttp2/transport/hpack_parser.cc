@@ -639,11 +639,11 @@ static grpc_error_handle parse_begin(grpc_chttp2_hpack_parser* p,
       //   other - indexed key, inline encoded index
     case 0:
       switch (*cur & 0xf) {
-        case 0: // literal key
+        case 0:  // literal key
           return parse_lithdr_notidx_v(p, cur, end);
-        case 0xf: // varint encoded key index
+        case 0xf:  // varint encoded key index
           return parse_lithdr_notidx_x(p, cur, end);
-        default: // inline encoded key index
+        default:  // inline encoded key index
           return parse_lithdr_notidx(p, cur, end);
       }
       // Literal header never indexed.
@@ -654,11 +654,11 @@ static grpc_error_handle parse_begin(grpc_chttp2_hpack_parser* p,
       //   other - indexed key, inline encoded index
     case 1:
       switch (*cur & 0xf) {
-        case 0: // literal key
+        case 0:  // literal key
           return parse_lithdr_nvridx_v(p, cur, end);
-        case 0xf: // varint encoded key index
+        case 0xf:  // varint encoded key index
           return parse_lithdr_nvridx_x(p, cur, end);
-        default: // inline encoded key index
+        default:  // inline encoded key index
           return parse_lithdr_nvridx(p, cur, end);
       }
       // Update max table size.
