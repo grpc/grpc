@@ -24,6 +24,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -59,7 +60,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   {
     grpc_core::ExecCtx exec_ctx;
 
-    grpc_resource_user* resource_user = grpc_mock_resource_user_create();
+    grpc_resource_user* resource_user = grpc_resource_user_create_unlimited();
     grpc_endpoint* mock_endpoint =
         grpc_mock_endpoint_create(discard_write, resource_user);
 

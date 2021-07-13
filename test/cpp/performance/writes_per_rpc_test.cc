@@ -40,7 +40,7 @@
 
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -165,8 +165,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   const int kIterations = 10000;
 
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
-  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
+  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<InProcessCHTTP2> fixture(new InProcessCHTTP2(
       &service, grpc_passthru_endpoint_stats_create(), client_ru, server_ru));
   grpc_resource_user_unref(client_ru);

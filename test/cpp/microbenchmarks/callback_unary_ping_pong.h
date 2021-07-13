@@ -25,7 +25,7 @@
 #include <sstream>
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -65,8 +65,8 @@ static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   int request_msgs_size = state.range(0);
   int response_msgs_size = state.range(1);
   CallbackStreamingTestService service;
-  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
-  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
+  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
   grpc_resource_user_unref(client_ru);
   grpc_resource_user_unref(server_ru);

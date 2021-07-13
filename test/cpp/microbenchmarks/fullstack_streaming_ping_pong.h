@@ -25,7 +25,7 @@
 #include <sstream>
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
 
@@ -52,8 +52,8 @@ static void BM_StreamingPingPong(benchmark::State& state) {
   const int max_ping_pongs = state.range(1);
 
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
-  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
+  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
   grpc_resource_user_unref(client_ru);
   grpc_resource_user_unref(server_ru);
@@ -150,8 +150,8 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
   const int msg_size = state.range(0);
 
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
-  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
+  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
   grpc_resource_user_unref(client_ru);
   grpc_resource_user_unref(server_ru);
@@ -259,8 +259,8 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
   const int write_and_finish = state.range(2);
 
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
-  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
+  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
   grpc_resource_user_unref(client_ru);
   grpc_resource_user_unref(server_ru);

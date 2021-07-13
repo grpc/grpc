@@ -122,22 +122,6 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_get_fd,
                                             me_can_track_err};
 
-grpc_resource_user* grpc_mock_resource_user_create(
-    grpc_resource_quota* resource_quota) {
-  if (resource_quota == nullptr) {
-    resource_quota = grpc_resource_quota_create("anonymous mock quota");
-  } else {
-    grpc_resource_quota_ref_internal(resource_quota);
-  }
-  grpc_resource_user* ru = nullptr;
-  ru = grpc_resource_user_create(
-      resource_quota, absl::StrFormat("mock_resource_user_%" PRIxPTR,
-                                      reinterpret_cast<intptr_t>(&ru))
-                          .c_str());
-  grpc_resource_quota_unref_internal(resource_quota);
-  return ru;
-}
-
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_user* resource_user) {
   mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));

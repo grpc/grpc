@@ -33,7 +33,7 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -57,7 +57,7 @@ class PhonyEndpoint : public grpc_endpoint {
                                                    get_fd,
                                                    can_track_err};
     grpc_endpoint::vtable = &my_vtable;
-    ru_ = grpc_mock_resource_user_create();
+    ru_ = grpc_resource_user_create_unlimited();
   }
 
   void PushInput(grpc_slice slice) {

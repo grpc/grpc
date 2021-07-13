@@ -26,6 +26,7 @@
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 #include <grpc/grpc.h>
@@ -72,7 +73,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("context_list_test");
   grpc_resource_user* resource_user =
-      grpc_mock_resource_user_create(resource_quota);
+      grpc_resource_user_create_unlimited(resource_quota);
   grpc_endpoint* mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_user);
   grpc_transport* t =
@@ -130,7 +131,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("context_list_test");
   grpc_resource_user* resource_user =
-      grpc_mock_resource_user_create(resource_quota);
+      grpc_resource_user_create_unlimited(resource_quota);
   grpc_endpoint* mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_user);
   grpc_transport* t =

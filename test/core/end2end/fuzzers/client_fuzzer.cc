@@ -27,6 +27,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -48,7 +49,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("client_fuzzer");
     grpc_resource_user* resource_user =
-        grpc_mock_resource_user_create(resource_quota);
+        grpc_resource_user_create_unlimited(resource_quota);
     grpc_endpoint* mock_endpoint =
         grpc_mock_endpoint_create(discard_write, resource_user);
     grpc_resource_quota_unref_internal(resource_quota);

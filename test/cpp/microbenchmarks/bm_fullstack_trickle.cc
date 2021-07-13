@@ -29,7 +29,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/trickle_endpoint.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -267,8 +267,8 @@ static void TrickleCQNext(TrickledCHTTP2* fixture, void** t, bool* ok,
 
 static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
-  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
+  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, true, state.range(0) /* req_size */,
       state.range(0) /* resp_size */, state.range(1) /* bw in kbit/s */,
@@ -366,8 +366,8 @@ BENCHMARK(BM_PumpStreamServerToClient_Trickle)->Apply(StreamingTrickleArgs);
 
 static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_mock_resource_user_create();
-  grpc_resource_user* server_ru = grpc_mock_resource_user_create();
+  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
+  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, false, state.range(0) /* req_size */,
       state.range(1) /* resp_size */, state.range(2) /* bw in kbit/s */,

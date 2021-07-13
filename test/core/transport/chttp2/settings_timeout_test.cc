@@ -38,8 +38,8 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-#include "test/core/util/mock_endpoint.h"
 #include "test/core/util/port.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -114,7 +114,7 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    auto* ru = grpc_mock_resource_user_create();
+    auto* ru = grpc_resource_user_create_unlimited();
     grpc_tcp_client_connect(state.closure(), &endpoint_, ru, pollset_set,
                             nullptr /* channel_args */, server_addresses->addrs,
                             grpc_core::ExecCtx::Get()->Now() + 1000);

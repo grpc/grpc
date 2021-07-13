@@ -64,7 +64,6 @@ struct internal_request {
   grpc_closure done_write;
   grpc_closure connected;
   grpc_error_handle overall_error;
-  grpc_resource_quota* resource_quota;
 };
 static grpc_httpcli_get_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
@@ -109,7 +108,6 @@ static void finish(internal_request* req, grpc_error_handle error) {
   grpc_slice_buffer_destroy_internal(&req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
   grpc_resource_user_unref(req->resource_user);
-  grpc_resource_quota_unref_internal(req->resource_quota);
   gpr_free(req);
 }
 
@@ -213,7 +211,8 @@ static void next_address(internal_request* req, grpc_error_handle error) {
   GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
   grpc_arg arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), req->resource_quota,
+      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
+      grpc_resource_user_quota(req->resource_user),
       grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &arg};
   grpc_tcp_client_connect(&req->connected, &req->ep, req->resource_user,
@@ -251,7 +250,6 @@ static void internal_request_begin(grpc_httpcli_context* context,
   req->context = context;
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
-  req->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
   req->resource_user = grpc_resource_user_create(resource_quota, name);
   GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&req->done_write, done_write, req,

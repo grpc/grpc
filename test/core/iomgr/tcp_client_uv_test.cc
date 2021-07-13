@@ -35,7 +35,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 
 static gpr_mu* g_mu;
@@ -109,7 +109,7 @@ void test_succeeds(void) {
   GPR_ASSERT(uv_tcp_getsockname(svr_handle, (struct sockaddr*)addr,
                                 (int*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
-  auto* ru = grpc_mock_resource_user_create();
+  auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &g_connecting, ru, NULL, NULL, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
   grpc_resource_user_unref(ru);
@@ -154,7 +154,7 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
-  auto* ru = grpc_mock_resource_user_create();
+  auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &g_connecting, ru, NULL, NULL, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
   grpc_resource_user_unref(ru);
