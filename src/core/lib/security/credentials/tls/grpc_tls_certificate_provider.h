@@ -67,7 +67,7 @@ class StaticDataCertificateProvider : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
- private:
+ protected:
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
