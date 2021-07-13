@@ -174,6 +174,18 @@ static grpc_end2end_test_fixture chttp2_create_fixture_static_data_tls1_3(
                                            grpc_tls_version::TLS1_3);
 }
 
+static grpc_end2end_test_fixture chttp2_create_fixture_data_watcher_tls1_2(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_data_watcher(client_args, server_args,
+                                           grpc_tls_version::TLS1_2);
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_data_watcher_tls1_3(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  return chttp2_create_fixture_data_watcher(client_args, server_args,
+                                           grpc_tls_version::TLS1_3);
+}
+
 static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher_tls1_2(
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   return chttp2_create_fixture_cert_watcher(client_args, server_args,
