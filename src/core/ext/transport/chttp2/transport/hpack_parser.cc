@@ -40,19 +40,6 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-<<<<<<< HEAD
-grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser(
-    false, "chttp2_hpack_parser");
-
-typedef enum {
-  NOT_BINARY,
-  BINARY_BEGIN,
-  B64_BYTE0,
-  B64_BYTE1,
-  B64_BYTE2,
-  B64_BYTE3
-} binary_state;
-=======
 #if __cplusplus > 201103L
 #define GRPC_HPACK_CONSTEXPR_FN constexpr
 #define GRPC_HPACK_CONSTEXPR_VALUE constexpr
@@ -64,7 +51,6 @@ typedef enum {
 namespace grpc_core {
 
 DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser(false, "chttp2_hpack_parser");
->>>>>>> 7e0533d8c2... parser compiles again
 
 /* How parsing works:
 
@@ -453,25 +439,26 @@ static const int16_t emit_sub_tbl[249 * 16] = {
     13,  22,  22,  22,  22,  256, 256, 256, 256,
 };
 
-static const uint8_t inverse_base64[256] = {
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 62,  255,
-    255, 255, 63,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  255, 255,
-    255, 64,  255, 255, 255, 0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
-    10,  11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,  23,  24,
-    25,  255, 255, 255, 255, 255, 255, 26,  27,  28,  29,  30,  31,  32,  33,
-    34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,  48,
-    49,  50,  51,  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255,
+namespace {
+// The alphabet used for base64 encoding binary metadata.
+static constexpr char kBase64Alphabet[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+// An inverted table: for each value in kBase64Alphabet, table contains the
+// index with which it's stored, so we can quickly invert the encoding without
+// any complicated runtime logic.
+struct Base64InverseTable {
+  uint8_t table[256]{};
+  GRPC_HPACK_CONSTEXPR_FN Base64InverseTable() {
+    for (int i = 0; i < 256; i++) {
+      table[i] = 255;
+    }
+    for (const char* p = kBase64Alphabet; *p; p++) {
+      uint8_t idx = *p;
+      uint8_t ofs = p - kBase64Alphabet;
+      table[idx] = ofs;
+    }
+  }
 };
 
 static GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
@@ -1229,7 +1216,7 @@ grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
         binary_ = BinaryState::kBase64Byte0;
         return GRPC_ERROR_NONE;
       }
-      bits = inverse_base64[*cur];
+      bits = kBase64InverseTable.table[*cur];
       ++cur;
       if (bits == 255) {
         return parse_error(
@@ -1246,7 +1233,7 @@ grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
         binary_ = BinaryState::kBase64Byte1;
         return GRPC_ERROR_NONE;
       }
-      bits = inverse_base64[*cur];
+      bits = kBase64InverseTable.table[*cur];
       ++cur;
       if (bits == 255) {
         return parse_error(
@@ -1263,7 +1250,7 @@ grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
         binary_ = BinaryState::kBase64Byte2;
         return GRPC_ERROR_NONE;
       }
-      bits = inverse_base64[*cur];
+      bits = kBase64InverseTable.table[*cur];
       ++cur;
       if (bits == 255) {
         return parse_error(
@@ -1280,7 +1267,7 @@ grpc_error_handle HPackParser::AppendString(const uint8_t* cur,
         binary_ = BinaryState::kBase64Byte3;
         return GRPC_ERROR_NONE;
       }
-      bits = inverse_base64[*cur];
+      bits = kBase64InverseTable.table[*cur];
       ++cur;
       if (bits == 255) {
         return parse_error(
