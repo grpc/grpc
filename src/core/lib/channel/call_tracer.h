@@ -19,6 +19,11 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CALL_TRACER_H
 #define GRPC_CORE_LIB_CHANNEL_CALL_TRACER_H
 
+#include "absl/strings/string_view.h"
+
+#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/metadata_batch.h"
+
 namespace grpc_core {
 
 // Interface for a tracer that records activities on a particular call attempt.
