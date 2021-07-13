@@ -33,8 +33,9 @@ void test_unknown_scheme_target(void) {
   grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
   grpc_core::ResolverRegistry::Builder::InitRegistry();
 
-  chan = grpc_channel_create(grpc_insecure_credentials_create(), "blah://blah",
-                             nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  chan = grpc_channel_create(creds, "blah://blah", nullptr, nullptr);
+  grpc_channel_credentials_release(creds);
   GPR_ASSERT(chan != nullptr);
 
   grpc_core::ExecCtx exec_ctx;

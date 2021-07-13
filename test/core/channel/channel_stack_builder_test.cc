@@ -57,9 +57,10 @@ void set_arg_once_fn(grpc_channel_stack* /*channel_stack*/,
 }
 
 static void test_channel_stack_builder_filter_replace(void) {
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_channel_create(grpc_insecure_credentials_create(),
-                          "target name isn't used", nullptr, nullptr);
+      grpc_channel_create(creds, "target name isn't used", nullptr, nullptr);
+  grpc_channel_credentials_release(creds);
   GPR_ASSERT(channel != nullptr);
   // Make sure the high priority filter has been created.
   GPR_ASSERT(g_replacement_fn_called);

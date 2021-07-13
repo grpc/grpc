@@ -240,8 +240,10 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
                "bad creds symbol, want :this_channel_is_insecure");
       return Qnil;
     }
-    ch = grpc_channel_create(grpc_insecure_credentials_create(), target_chars,
-                             &args, NULL);
+    grpc_channel_credentials* insecure_creds =
+        grpc_insecure_credentials_create();
+    ch = grpc_channel_create(insecure_creds, target_chars, &args, NULL);
+    grpc_channel_credentials_release(insecure_creds);
   } else {
     wrapper->credentials = credentials;
     if (grpc_rb_is_channel_credentials(credentials)) {

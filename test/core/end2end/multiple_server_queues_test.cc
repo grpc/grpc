@@ -48,8 +48,10 @@ int main(int argc, char** argv) {
 
   server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq1, nullptr);
-  grpc_server_add_http2_port(server, "[::]:0",
-                             grpc_insecure_server_credentials_create());
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  grpc_server_add_http2_port(server, "[::]:0", server_creds);
+  grpc_server_credentials_release(server_creds);
   grpc_server_register_completion_queue(server, cq2, nullptr);
   grpc_server_register_completion_queue(server, cq3, nullptr);
 

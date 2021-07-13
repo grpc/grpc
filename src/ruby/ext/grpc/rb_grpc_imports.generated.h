@@ -356,14 +356,7 @@ extern grpc_ssl_session_cache_create_channel_arg_type grpc_ssl_session_cache_cre
 typedef void(*grpc_call_credentials_release_type)(grpc_call_credentials* creds);
 extern grpc_call_credentials_release_type grpc_call_credentials_release_import;
 #define grpc_call_credentials_release grpc_call_credentials_release_import
-<<<<<<< HEAD
-typedef grpc_channel_credentials*(*grpc_google_default_credentials_create_type)(grpc_call_credentials* call_credentials, const char* user_provided_scope);
-=======
-typedef void(*grpc_channel_credentials_release_type)(grpc_channel_credentials* creds);
-extern grpc_channel_credentials_release_type grpc_channel_credentials_release_import;
-#define grpc_channel_credentials_release grpc_channel_credentials_release_import
 typedef grpc_channel_credentials*(*grpc_google_default_credentials_create_type)(grpc_call_credentials* call_credentials);
->>>>>>> upstream/master
 extern grpc_google_default_credentials_create_type grpc_google_default_credentials_create_import;
 #define grpc_google_default_credentials_create grpc_google_default_credentials_create_import
 typedef void(*grpc_set_ssl_roots_override_callback_type)(grpc_ssl_roots_override_callback cb);

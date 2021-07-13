@@ -77,8 +77,10 @@ static grpc_channel* create_test_channel(const char* addr,
   if (creds != nullptr) {
     channel = grpc_channel_create(creds, addr, &channel_args, nullptr);
   } else {
-    channel = grpc_channel_create(grpc_insecure_credentials_create(), addr,
-                                  &channel_args, nullptr);
+    grpc_channel_credentials* insecure_creds =
+        grpc_insecure_credentials_create();
+    channel = grpc_channel_create(insecure_creds, addr, &channel_args, nullptr);
+    grpc_channel_credentials_release(insecure_creds);
   }
   return channel;
 }
@@ -149,8 +151,10 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
 }
 
 static void insecure_test_add_port(grpc_server* server, const char* addr) {
-  grpc_server_add_http2_port(server, addr,
-                             grpc_insecure_server_credentials_create());
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  grpc_server_add_http2_port(server, addr, server_creds);
+  grpc_server_credentials_release(server_creds);
 }
 
 static void secure_test_add_port(grpc_server* server, const char* addr) {

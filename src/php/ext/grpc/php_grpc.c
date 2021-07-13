@@ -111,8 +111,10 @@ void create_new_channel(
     grpc_channel_args args,
     wrapped_grpc_channel_credentials *creds) {
   if (creds == NULL) {
-    channel->wrapper->wrapped = grpc_channel_create(grpc_insecure_credentials_create(), target, &args,
+    grpc_channel_credentials *insecure_creds = grpc_insecure_credentials_create();
+    channel->wrapper->wrapped = grpc_channel_create(insecure_creds, target, &args,
                                                              NULL);
+    grpc_channel_credentials_release(insecure_creds);
   } else {
     channel->wrapper->wrapped =
         grpc_channel_create(creds->wrapped, target, &args, NULL);

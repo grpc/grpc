@@ -86,12 +86,17 @@ class BaseChannelFixture {
   grpc_channel* const channel_;
 };
 
+static grpc_channel* CreateChannel() {
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel =
+      grpc_channel_create(creds, "localhost:1234", nullptr, nullptr);
+  grpc_channel_credentials_release(creds);
+  return channel;
+}
+
 class InsecureChannel : public BaseChannelFixture {
  public:
-  InsecureChannel()
-      : BaseChannelFixture(
-            grpc_channel_create(grpc_insecure_credentials_create(),
-                                "localhost:1234", nullptr, nullptr)) {}
+  InsecureChannel() : BaseChannelFixture(CreateChannel()) {}
 };
 
 class LameChannel : public BaseChannelFixture {

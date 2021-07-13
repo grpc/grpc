@@ -59,8 +59,10 @@ class ServerThread {
     arg.value.integer = 1000;
     grpc_channel_args args = {1, &arg};
     server_ = grpc_server_create(&args, nullptr);
-    ASSERT_TRUE(grpc_server_add_http2_port(
-        server_, address_, grpc_insecure_server_credentials_create()));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    ASSERT_TRUE(grpc_server_add_http2_port(server_, address_, server_creds));
+    grpc_server_credentials_release(server_creds);
     cq_ = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);

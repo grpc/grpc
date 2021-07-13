@@ -157,8 +157,10 @@ static void run_channel_shutdown_before_timeout_test(
 }
 
 static grpc_channel* insecure_test_create_channel(const char* addr) {
-  return grpc_channel_create(grpc_insecure_credentials_create(), addr, nullptr,
-                             nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel = grpc_channel_create(creds, addr, nullptr, nullptr);
+  grpc_channel_credentials_release(creds);
+  return channel;
 }
 
 static const test_fixture insecure_test = {

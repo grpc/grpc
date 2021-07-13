@@ -108,8 +108,9 @@ class ChannelFixture {
         const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
         max_tracer_event_memory);
     grpc_channel_args client_args = {1, &client_a};
-    channel_ = grpc_channel_create(grpc_insecure_credentials_create(),
-                                   "fake_target", &client_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create(creds, "fake_target", &client_args, nullptr);
+    grpc_channel_credentials_release(creds);
   }
 
   ~ChannelFixture() { grpc_channel_destroy(channel_); }

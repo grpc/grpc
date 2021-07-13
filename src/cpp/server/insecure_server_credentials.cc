@@ -27,8 +27,11 @@ namespace {
 class InsecureServerCredentialsImpl final : public ServerCredentials {
  public:
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
-    return grpc_server_add_http2_port(
-        server, addr.c_str(), grpc_insecure_server_credentials_create());
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    int result = grpc_server_add_http2_port(server, addr.c_str(), server_creds);
+    grpc_server_credentials_release(server_creds);
+    return result;
   }
   void SetAuthMetadataProcessor(
       const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) override {

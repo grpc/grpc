@@ -2477,6 +2477,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "libssl",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,

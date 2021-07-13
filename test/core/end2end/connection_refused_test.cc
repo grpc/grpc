@@ -80,8 +80,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   int port = grpc_pick_unused_port_or_die();
   std::string addr = grpc_core::JoinHostPort("127.0.0.1", port);
   gpr_log(GPR_INFO, "server: %s", addr.c_str());
-  chan = grpc_channel_create(grpc_insecure_credentials_create(), addr.c_str(),
-                             args, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  chan = grpc_channel_create(creds, addr.c_str(), args, nullptr);
+  grpc_channel_credentials_release(creds);
   grpc_slice host = grpc_slice_from_static_string("nonexistant");
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
   call =

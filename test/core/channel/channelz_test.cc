@@ -152,8 +152,9 @@ class ChannelFixture {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
     grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-    channel_ = grpc_channel_create(grpc_insecure_credentials_create(),
-                                   "fake_target", &client_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create(creds, "fake_target", &client_args, nullptr);
+    grpc_channel_credentials_release(creds);
   }
 
   ~ChannelFixture() { grpc_channel_destroy(channel_); }
@@ -277,8 +278,10 @@ TEST(ChannelzChannelTest, ChannelzDisabled) {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-  grpc_channel* channel = grpc_channel_create(
-      grpc_insecure_credentials_create(), "fake_target", &args, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel =
+      grpc_channel_create(creds, "fake_target", &args, nullptr);
+  grpc_channel_credentials_release(creds);
   ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
   ASSERT_EQ(channelz_channel, nullptr);
   grpc_channel_destroy(channel);
@@ -512,8 +515,10 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel* internal_channel = grpc_channel_create(
-      grpc_insecure_credentials_create(), "fake_target", &client_args, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* internal_channel =
+      grpc_channel_create(creds, "fake_target", &client_args, nullptr);
+  grpc_channel_credentials_release(creds);
   // The internal channel should not be returned from the request
   ValidateGetTopChannels(10);
   grpc_channel_destroy(internal_channel);

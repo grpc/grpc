@@ -34,8 +34,10 @@
 TEST(ServerChttp2, UnparseableTarget) {
   grpc_channel_args args = {0, nullptr};
   grpc_server* server = grpc_server_create(&args, nullptr);
-  int port = grpc_server_add_http2_port(
-      server, "[", grpc_insecure_server_credentials_create());
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  int port = grpc_server_add_http2_port(server, "[", server_creds);
+  grpc_server_credentials_release(server_creds);
   EXPECT_EQ(port, 0);
   grpc_server_destroy(server);
 }

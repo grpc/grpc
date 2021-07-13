@@ -74,9 +74,10 @@ void chttp2_init_client_fullstack_compression(grpc_end2end_test_fixture* f,
   ffd->client_args_compression =
       grpc_channel_args_set_channel_default_compression_algorithm(
           client_args, GRPC_COMPRESS_GZIP);
-  f->client = grpc_channel_create(grpc_insecure_credentials_create(),
-                                  ffd->localaddr.c_str(),
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  f->client = grpc_channel_create(creds, ffd->localaddr.c_str(),
                                   ffd->client_args_compression, nullptr);
+  grpc_channel_credentials_release(creds);
 }
 
 void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
@@ -95,9 +96,11 @@ void chttp2_init_server_fullstack_compression(grpc_end2end_test_fixture* f,
   }
   f->server = grpc_server_create(ffd->server_args_compression, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(
-      grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
-                                 grpc_insecure_server_credentials_create()));
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
+                                        server_creds));
+  grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }
 

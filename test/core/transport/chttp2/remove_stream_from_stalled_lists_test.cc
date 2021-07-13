@@ -148,8 +148,11 @@ class TestServer {
     server_ = grpc_server_create(nullptr, nullptr);
     address_ = grpc_core::JoinHostPort("[::1]", grpc_pick_unused_port_or_die());
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(grpc_server_add_http2_port(
-        server_, address_.c_str(), grpc_insecure_server_credentials_create()));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(
+        grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     accept_thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));
   }
