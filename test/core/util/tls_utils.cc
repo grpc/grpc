@@ -16,10 +16,10 @@
 
 #include "test/core/util/tls_utils.h"
 
+#include "openssl/pem.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "openssl/pem.h"
 
 namespace grpc_core {
 
@@ -79,19 +79,21 @@ absl::Status CheckPrivateKey(absl::string_view private_key) {
   BIO* private_key_bio =
       BIO_new_mem_buf(private_key.data(), private_key.size());
   if (private_key_bio == nullptr) {
-    EVP_PKEY_free(public_evp_pkey);
     return absl::InvalidArgumentError(
         "Conversion from private key string to BIO failed.");
   }
   EVP_PKEY* private_evp_pkey =
       PEM_read_bio_PrivateKey(private_key_bio, nullptr, nullptr, nullptr);
   if (private_evp_pkey == nullptr) {
+    BIO_free(private_key_bio);
     return absl::InvalidArgumentError("Invalid private key string.");
   }
   int pkey_type = EVP_PKEY_id(private_evp_pkey);
+  bool is_key_type_defined = true;
   switch (pkey_type) {
     case EVP_PKEY_NONE:
-      return absl::InvalidArgumentError("Undefined key type.");
+      is_key_type_defined = false;
+      break;
     case EVP_PKEY_RSA:
     case EVP_PKEY_RSA_PSS:
       // The cases that lead here represent currently supported key types.
@@ -99,7 +101,11 @@ absl::Status CheckPrivateKey(absl::string_view private_key) {
     default:
       gpr_log(GPR_ERROR, "Key type currently not supported.");
   }
-  return absl::OkStatus();
+  BIO_free(private_key_bio);
+  EVP_PKEY_free(private_evp_pkey);
+  return is_key_type_defined
+             ? absl::OkStatus()
+             : absl::InvalidArgumentError("Undefined key type.");
 }
 
 absl::Status CheckCertChain(absl::string_view cert_chain) {
@@ -115,18 +121,18 @@ absl::Status CheckCertChain(absl::string_view cert_chain) {
   for (int i = 0; i < num_certs; i++) {
     X509_INFO* cert_info = sk_X509_INFO_value(cert_stack, i);
     x_509 = cert_info->x509;
-    bool is_not_null = x_509 != nullptr;
-    gpr_log(GPR_ERROR, "Index: %d, Valid: %s", i,
-            is_not_null ? "true" : "false");
-    if (!is_not_null) {
-      return absl::InvalidArgumentError(
-          "Certificate chain contains cert with bad format");
+    bool is_null = x_509 != nullptr;
+    gpr_log(GPR_ERROR, "Index: %d, Valid: %s", i, is_null ? "false" : "true");
+    if (is_null) {
+      break;
     }
   }
   BIO_free(cert_chain_bio);
   X509_free(x_509);
   sk_X509_INFO_pop_free(cert_stack, X509_INFO_free);
-  return absl::OkStatus();
+  return is_null ? absl::InvalidArgumentError(
+                       "Certificate chain contains cert with bad format")
+                 : absl::OkStatus();
 }
 
 }  // namespace testing
