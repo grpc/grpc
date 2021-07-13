@@ -62,6 +62,7 @@ touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
 
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
+    --halt_after_fail \
     --test_case="all,path_matching,header_matching" \
     --project_id=grpc-testing \
     --source_image=projects/grpc-testing/global/images/xds-test-server-2 \
