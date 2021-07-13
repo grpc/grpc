@@ -57,6 +57,16 @@ cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
+@rem Install s2a_core
+mkdir third_party\s2a_core\cmake\build
+cd "third_party/s2a_core"
+git submodule update --init
+cd ../..
+pushd third_party\s2a_core\cmake\build
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% ..\..
+cmake --build . --config Release --target install || goto :error
+popd
+
 @rem Install zlib
 mkdir third_party\zlib\cmake\build
 pushd third_party\zlib\cmake\build
@@ -82,6 +92,7 @@ cmake ^
   -DgRPC_CARES_PROVIDER=package ^
   -DgRPC_PROTOBUF_PROVIDER=package ^
   -DgRPC_RE2_PROVIDER=package ^
+  -DgRPC_S2A_CORE_PROVIDER=package ^
   -DgRPC_SSL_PROVIDER=package ^
   -DgRPC_ZLIB_PROVIDER=package ^
   ../.. || goto :error

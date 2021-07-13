@@ -51,6 +51,16 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
 make -j4 install
 popd
 
+# Install s2a_core
+mkdir -p "third_party/s2a_core/cmake/build"
+cd "third_party/s2a_core"
+git submodule update --init --recursive
+cd ../..
+pushd "third_party/s2a_core/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+make -j4 install
+popd
+
 # Install zlib
 mkdir -p "third_party/zlib/cmake/build"
 pushd "third_party/zlib/cmake/build"
@@ -74,6 +84,7 @@ cmake \
   -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
   -DgRPC_RE2_PROVIDER=package \
+  -DgRPC_S2A_CORE_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
   ../..

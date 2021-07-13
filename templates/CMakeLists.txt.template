@@ -73,6 +73,7 @@
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
+      deps.append("${_gRPC_S2A_CORE_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
@@ -199,6 +200,9 @@
 
   set(gRPC_RE2_PROVIDER "module" CACHE STRING "Provider of re2 library")
   set_property(CACHE gRPC_RE2_PROVIDER PROPERTY STRINGS "module" "package")
+
+  set(gRPC_S2A_CORE_PROVIDER "module" CACHE STRING "Provider of s2a_core library")
+  set_property(CACHE gRPC_S2A_CORE_PROVIDER PROPERTY STRINGS "module" "package")
 
   set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
   set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
@@ -334,6 +338,7 @@
   include(cmake/upb.cmake)
   include(cmake/xxhash.cmake)
   include(cmake/zlib.cmake)
+  include(cmake/s2a_core.cmake)
 
   if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
@@ -473,7 +478,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 're2', 's2a_core', 'xxhash', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>
@@ -596,6 +601,9 @@
   % endif
   % if lib.language == 'c++':
       <%text>${_gRPC_PROTO_GENS_DIR}</%text>
+  % endif
+  % if lib.name == 's2a_core':
+      third_party/abseil-cpp
   % endif
   )
   % if len(get_deps(lib)) > 0:

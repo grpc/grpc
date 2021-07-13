@@ -78,6 +78,9 @@ set_property(CACHE gRPC_CARES_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_RE2_PROVIDER "module" CACHE STRING "Provider of re2 library")
 set_property(CACHE gRPC_RE2_PROVIDER PROPERTY STRINGS "module" "package")
 
+set(gRPC_S2A_CORE_PROVIDER "module" CACHE STRING "Provider of s2a_core library")
+set_property(CACHE gRPC_S2A_CORE_PROVIDER PROPERTY STRINGS "module" "package")
+
 set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
 set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -123,6 +126,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_exponential_biased
   absl_fixed_array
   absl_flat_hash_map
+  absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
   absl_hash
@@ -264,6 +268,7 @@ include(cmake/ssl.cmake)
 include(cmake/upb.cmake)
 include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
+include(cmake/s2a_core.cmake)
 
 if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
@@ -2103,9 +2108,11 @@ target_link_libraries(grpc
   ${_gRPC_CARES_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_RE2_LIBRARIES}
+  ${_gRPC_S2A_CORE_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_map
+  absl::flat_hash_set
   absl::inlined_vector
   absl::bind_front
   absl::statusor
@@ -2658,6 +2665,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_CARES_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_RE2_LIBRARIES}
+  ${_gRPC_S2A_CORE_LIBRARIES}
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_map
@@ -9229,7 +9237,6 @@ target_include_directories(cel_authorization_engine_test
 target_link_libraries(cel_authorization_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flat_hash_set
   grpc_test_util
 )
 
@@ -15939,7 +15946,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl absl_base absl_bind_front absl_cord absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "gpr openssl absl_base absl_bind_front absl_cord absl_flat_hash_map absl_flat_hash_set absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
@@ -15959,7 +15966,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "grpc absl_base absl_bind_front absl_cord absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "grpc absl_base absl_bind_front absl_cord absl_flat_hash_map absl_flat_hash_set absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
   "-lgrpc++"
   ""
   "grpc++.pc")

@@ -2757,8 +2757,10 @@ grpc_cc_library(
         "src/core/tsi/transport_security_grpc.h",
     ],
     external_deps = [
-        "libssl",
         "libcrypto",
+        "libssl",
+        # TODO(matthewstevenson88) Remove once S2A TSI is merged.
+        "absl/container:flat_hash_set",
         "absl/strings",
         "upb_lib",
     ],

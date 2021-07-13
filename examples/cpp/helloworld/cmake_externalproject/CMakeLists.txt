@@ -71,6 +71,23 @@ ExternalProject_Add(re2
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/re2
 )
 
+# if OPENSSL_ROOT_DIR is set, propagate that hint path to the external projects with OpenSSL dependency.
+set(_CMAKE_ARGS_OPENSSL_ROOT_DIR "")
+if (OPENSSL_ROOT_DIR)
+  set(_CMAKE_ARGS_OPENSSL_ROOT_DIR "-DOPENSSL_ROOT_DIR:PATH=${OPENSSL_ROOT_DIR}")
+endif()
+
+# Builds s2a_core project from the git submodule.
+ExternalProject_Add(s2a_core
+  PREFIX s2a_core
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/s2a_core"
+  CMAKE_CACHE_ARGS
+        -DS2A_CORE_ABSL_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/third_party/abseil-cpp
+  	-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
+        -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/s2a_core
+	${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
+)
+
 # Builds zlib project from the git submodule.
 ExternalProject_Add(zlib
   PREFIX zlib
@@ -84,12 +101,6 @@ if (WIN32)
   set(_FINDPACKAGE_PROTOBUF_CONFIG_DIR "${CMAKE_CURRENT_BINARY_DIR}/protobuf/cmake")
 else()
   set(_FINDPACKAGE_PROTOBUF_CONFIG_DIR "${CMAKE_CURRENT_BINARY_DIR}/protobuf/lib/cmake/protobuf")
-endif()
-
-# if OPENSSL_ROOT_DIR is set, propagate that hint path to the external projects with OpenSSL dependency.
-set(_CMAKE_ARGS_OPENSSL_ROOT_DIR "")
-if (OPENSSL_ROOT_DIR)
-  set(_CMAKE_ARGS_OPENSSL_ROOT_DIR "-DOPENSSL_ROOT_DIR:PATH=${OPENSSL_ROOT_DIR}")
 endif()
 
 # Builds gRPC based on locally checked-out sources and set arguments so that all the dependencies
@@ -112,9 +123,12 @@ ExternalProject_Add(grpc
         -DgRPC_CARES_PROVIDER:STRING=package
         -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/c-ares/lib/cmake/c-ares
         -DgRPC_SSL_PROVIDER:STRING=package
+	-DgRPC_S2A_CORE_PROVIDER:STRING=package
+	-Ds2a_core_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/s2a_core/lib/cmake/s2a_core
+	-DS2A_CORE_ABSL_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/third_party/abseil-cpp
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
-  DEPENDS c-ares protobuf re2 zlib absl
+  DEPENDS c-ares protobuf re2 zlib absl s2a_core
 )
 
 # Build the helloworld projects itself using a CMakeLists.txt that assumes all the dependencies
@@ -135,6 +149,8 @@ ExternalProject_Add(helloworld
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2
         -DZLIB_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/zlib
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
+	-Ds2a_core_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/s2a_core/lib/cmake/s2a_core
+	-DS2A_CORE_ABSL_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/third_party/abseil-cpp
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DgRPC_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc/lib/cmake/grpc
   DEPENDS protobuf grpc

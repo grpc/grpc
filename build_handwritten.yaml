@@ -197,7 +197,7 @@ defaults:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
-      -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
+      -Ithird_party/s2a_core -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
       -Ithird_party/xxhash
     LDFLAGS: -g
   zlib:
@@ -209,6 +209,7 @@ php_config_m4:
   - address_sorting
   - boringssl
   - re2
+  - s2a_core
   - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
@@ -241,6 +242,7 @@ python_dependencies:
   - ares
   - boringssl
   - re2
+  - s2a_core
   - z
 ruby_gem:
   deps:
@@ -249,4 +251,5 @@ ruby_gem:
   - ares
   - boringssl
   - re2
+  - s2a_core
   - z
