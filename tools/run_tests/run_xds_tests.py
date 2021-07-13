@@ -3413,6 +3413,8 @@ try:
 finally:
     keep_resources = args.keep_gcp_resources
     if args.halt_after_fail and failed_tests:
+        logger.info(
+            'Halt after fail triggered, exiting without cleaning up resources')
         keep_resources = True
     if not keep_resources:
         logger.info('Cleaning up GCP resources. This may take some time.')
