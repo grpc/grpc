@@ -111,8 +111,8 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  explicit TCP(Service* service, grpc_resource_user* client_resource_user,
-               grpc_resource_user* server_resource_user,
+  explicit TCP(Service* service, grpc_resource_user* /* client_resource_user */,
+               grpc_resource_user* /* server_resource_user */,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
@@ -132,8 +132,8 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  explicit UDS(Service* service, grpc_resource_user* client_resource_user,
-               grpc_resource_user* server_resource_user,
+  explicit UDS(Service* service, grpc_resource_user* /* client_resource_user */,
+               grpc_resource_user* /* server_resource_user */,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
@@ -154,8 +154,9 @@ class UDS : public FullstackFixture {
 
 class InProcess : public FullstackFixture {
  public:
-  explicit InProcess(Service* service, grpc_resource_user* client_resource_user,
-                     grpc_resource_user* server_resource_user,
+  explicit InProcess(Service* service,
+                     grpc_resource_user* /* client_resource_user */,
+                     grpc_resource_user* /* server_resource_user */,
                      const FixtureConfiguration& fixture_configuration =
                          FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {}
