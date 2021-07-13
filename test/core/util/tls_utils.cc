@@ -105,25 +105,22 @@ absl::Status CheckCertChain(absl::string_view cert_chain) {
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate chain string is empty.");
   }
-  BIO* cert_chain_bio = BIO_new_mem_buf(cert_chain.data(), cert_chain.size());
-  STACK_OF(X509_INFO)* cert_stack =
-      PEM_X509_INFO_read_bio(cert_chain_bio, nullptr, nullptr, nullptr);
-  int num_certs = sk_X509_INFO_num(cert_stack);
-  bool is_null = false;
-  bool are_all_certs_invalid = num_certs == 0;
+  bssl::UniquePtr<BIO> cert_chain_bio(
+      BIO_new_mem_buf(cert_chain.data(), cert_chain.size()));
+  bssl::UniquePtr<STACK_OF(X509_INFO)> cert_stack(
+      PEM_X509_INFO_read_bio(cert_chain_bio.get(), nullptr, nullptr, nullptr));
+  int num_certs = sk_X509_INFO_num(cert_stack.get());
+  const char* bad_format_string = "Certificate chain contains cert with bad format";
+  if (num_certs == 0) {
+    return absl::InvalidArgumentError(bad_format_string);
+  }
   for (int i = 0; i < num_certs; i++) {
-    X509_INFO* cert_info = sk_X509_INFO_value(cert_stack, i);
+    X509_INFO* cert_info = sk_X509_INFO_value(cert_stack.get(), i);
     if (cert_info->x509 == nullptr) {
-      is_null = true;
-      break;
+      return absl::InvalidArgumentError(bad_format_string);
     }
   }
-  BIO_free(cert_chain_bio);
-  sk_X509_INFO_pop_free(cert_stack, X509_INFO_free);
-  return (is_null || are_all_certs_invalid)
-             ? absl::InvalidArgumentError(
-                   "Certificate chain contains cert with bad format")
-             : absl::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace testing
