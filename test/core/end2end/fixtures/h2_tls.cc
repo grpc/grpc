@@ -102,6 +102,47 @@ static grpc_end2end_test_fixture chttp2_create_fixture_static_data(
   return f;
 }
 
+static grpc_end2end_test_fixture chttp2_create_fixture_data_watcher(
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
+    grpc_tls_version tls_version) {
+  grpc_end2end_test_fixture f;
+  int port = grpc_pick_unused_port_or_die();
+  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
+  memset(&f, 0, sizeof(f));
+  ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
+  ffd->tls_version = tls_version;
+  grpc_slice root_slice, cert_slice, key_slice;
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
+  std::string root_cert =
+      std::string(grpc_core::StringViewFromSlice(root_slice));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+  std::string identity_cert =
+      std::string(grpc_core::StringViewFromSlice(cert_slice));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  std::string private_key =
+      std::string(grpc_core::StringViewFromSlice(key_slice));
+  grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
+                                   identity_cert.c_str());
+  ffd->client_provider = grpc_tls_certificate_provider_data_watcher_create(
+      root_cert.c_str(), client_pairs);
+  grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs_add_pair(server_pairs, private_key.c_str(),
+                                   identity_cert.c_str());
+  ffd->server_provider = grpc_tls_certificate_provider_data_watcher_create(
+      root_cert.c_str(), server_pairs);
+  f.fixture_data = ffd;
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+  grpc_slice_unref(root_slice);
+  grpc_slice_unref(cert_slice);
+  grpc_slice_unref(key_slice);
+  return f;
+}
+
 static grpc_end2end_test_fixture chttp2_create_fixture_cert_watcher(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/,
     grpc_tls_version tls_version) {
