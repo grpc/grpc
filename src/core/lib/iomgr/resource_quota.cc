@@ -930,19 +930,6 @@ bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
   return true;
 }
 
-bool grpc_resource_user_could_alloc(grpc_resource_user* resource_user,
-                                    size_t size) {
-  if (gpr_atm_no_barrier_load(&resource_user->shutdown)) return false;
-  gpr_mu_lock(&resource_user->mu);
-  grpc_resource_quota* resource_quota = resource_user->resource_quota;
-  gpr_atm used = gpr_atm_no_barrier_load(&resource_quota->used);
-  gpr_atm new_used = used + size;
-  bool could_alloc = static_cast<size_t>(new_used) <=
-                     grpc_resource_quota_peek_size(resource_quota);
-  gpr_mu_unlock(&resource_user->mu);
-  return could_alloc;
-}
-
 bool grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
                               grpc_closure* optional_on_done) {
   // TODO(juanlishen): Maybe return immediately if shutting down. Deferring this

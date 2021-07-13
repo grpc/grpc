@@ -716,9 +716,10 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
   GRPC_ERROR_UNREF(read_closed_error);
   GRPC_ERROR_UNREF(write_closed_error);
   GRPC_ERROR_UNREF(byte_stream_error);
-
   flow_control.Destroy();
-
+  if (!t->is_client) {
+    grpc_resource_user_free(t->resource_user, GRPC_RESOURCE_QUOTA_CALL_SIZE);
+  }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "stream");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_arg, GRPC_ERROR_NONE);
 }
@@ -771,8 +772,8 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   // simply refuse the stream here instead of canceling the stream after it's
   // accepted since the latter will create the call which costs much memory.
   GPR_ASSERT(t->resource_user != nullptr);
-  if (!grpc_resource_user_could_alloc(t->resource_user,
-                                      GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
+  if (!grpc_resource_user_safe_alloc(t->resource_user,
+                                     GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
     gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
     grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_REFUSED_STREAM,
                                              nullptr);
