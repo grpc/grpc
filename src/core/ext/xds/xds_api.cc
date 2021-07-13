@@ -1547,6 +1547,12 @@ grpc_error_handle ParseTypedPerFilterConfig(
   return GRPC_ERROR_NONE;
 }
 
+void DurationParse(const google_protobuf_Duration* proto_duration,
+                   XdsApi::Duration* duration) {
+  duration->seconds = google_protobuf_Duration_seconds(proto_duration);
+  duration->nanos = google_protobuf_Duration_nanos(proto_duration);
+}
+
 grpc_error_handle RetryPolicyParse(
     const envoy_config_route_v3_RetryPolicy* retry_policy,
     XdsApi::Route::RetryPolicy* retry) {
@@ -1591,8 +1597,7 @@ grpc_error_handle RetryPolicyParse(
           "RouteAction RetryPolicy RetryBackoff missing base interval");
     } else {
       XdsApi::Duration base;
-      base.seconds = google_protobuf_Duration_seconds(base_interval);
-      base.nanos = google_protobuf_Duration_nanos(base_interval);
+      DurationParse(base_interval, &base);
       gpr_log(GPR_INFO, "donna debugging set base");
       retry->retry_back_off.base_interval = base;
     }
@@ -1600,11 +1605,16 @@ grpc_error_handle RetryPolicyParse(
         envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
     XdsApi::Duration max;
     if (max_interval != nullptr) {
-      max.seconds = google_protobuf_Duration_seconds(max_interval);
-      max.nanos = google_protobuf_Duration_nanos(max_interval);
+      DurationParse(max_interval, &max);
     } else {
+      // if max interval is not set, it is 10x the base, if the value in nanos
+      // can yield another second, adjust the value in seconds accordingly.
       max.seconds = retry->retry_back_off.base_interval.seconds * 10;
-      // calculate nanos too
+      max.nanos = retry->retry_back_off.base_interval.nanos * 10;
+      if (max.nanos > 1000000000) {
+        max.seconds += max.nanos / 1000000000;
+        max.nanos = max.nanos % 1000000000;
+      }
     }
     gpr_log(GPR_INFO, "donna debugging set max");
     retry->retry_back_off.max_interval = max;
@@ -1620,8 +1630,7 @@ grpc_error_handle RetryPolicyParse(
     // TODO@donnadionne: what to do if we cannot support any policy from
     // retry_on?
     XdsApi::Duration per_try;
-    per_try.seconds = google_protobuf_Duration_seconds(per_try_timeout);
-    per_try.nanos = google_protobuf_Duration_nanos(per_try_timeout);
+    DurationParse(per_try_timeout, &per_try);
     retry->per_try_timeout = per_try;
   }
   return GRPC_ERROR_NONE;
@@ -1721,8 +1730,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
       }
       if (duration != nullptr) {
         XdsApi::Duration duration_in_route;
-        duration_in_route.seconds = google_protobuf_Duration_seconds(duration);
-        duration_in_route.nanos = google_protobuf_Duration_nanos(duration);
+        DurationParse(duration, &duration_in_route);
         route->max_stream_duration = duration_in_route;
       }
     }
@@ -2067,10 +2075,8 @@ grpc_error_handle HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
-      http_connection_manager->http_max_stream_duration.seconds =
-          google_protobuf_Duration_seconds(duration);
-      http_connection_manager->http_max_stream_duration.nanos =
-          google_protobuf_Duration_nanos(duration);
+      DurationParse(duration,
+                    &http_connection_manager->http_max_stream_duration);
     }
   }
   // Parse filters.

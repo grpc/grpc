@@ -491,7 +491,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
-        "      \"maxAttempts\": \"%d\",\n"
+        "      \"maxAttempts\": %d,\n"
         "      \"initialBackoff\": \"%d.%09ds\",\n"
         "      \"maxBackoff\": \"%d.%09ds\",\n"
         "      \"backoffMultiplier\": 2,\n",
