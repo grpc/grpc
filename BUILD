@@ -3535,6 +3535,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_annotations_upbdefs",
         "envoy_core_upb",
         "envoy_type_upbdefs",
         "google_api_upbdefs",
