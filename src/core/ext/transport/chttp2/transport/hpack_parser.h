@@ -35,10 +35,7 @@ class HPackParser {
   enum class Priority { None, Included };
 
   // User specified structure called for each received header.
-  class Sink {
-   public:
-    virtual void OnHeader(grpc_mdelem md) = 0;
-  };
+  using Sink = std::function<grpc_error_handle(grpc_mdelem)>;
 
   HPackParser();
   ~HPackParser();
@@ -46,17 +43,49 @@ class HPackParser {
   HPackParser(const HPackParser&) = delete;
   HPackParser& operator=(const HPackParser&) = delete;
 
-  void BeginFrame(Sink* sink, Boundary boundary, Priority priority);
-
+  void BeginFrame(Sink sink, Boundary boundary, Priority priority);
+  void ResetSink(Sink sink) { sink_ = std::move(sink); }
   grpc_error_handle Parse(const grpc_slice& slice);
+  void FinishFrame();
+
+  grpc_chttp2_hptbl* hpack_table() { return &table_; }
+  bool is_boundary() const { return boundary_ != Boundary::None; }
+  bool is_eof() const { return boundary_ == Boundary::EndOfStream; }
+  bool is_in_begin_state() const { return state_ == &HPackParser::parse_begin; }
 
  private:
+  enum class BinaryState {
+    kNotBinary,
+    kBinaryBegin,
+    kBase64Byte0,
+    kBase64Byte1,
+    kBase64Byte2,
+    kBase64Byte3,
+  };
+
+  struct String {
+    bool copied_;
+    struct {
+      grpc_slice referenced;
+      struct {
+        char* str;
+        uint32_t length;
+        uint32_t capacity;
+      } copied;
+    } data_;
+
+    UnmanagedMemorySlice TakeExtern();
+    ManagedMemorySlice TakeIntern();
+    void AppendBytes(const uint8_t* data, size_t length);
+  };
+
   using State = grpc_error_handle (HPackParser::*)(const uint8_t* beg,
                                                    const uint8_t* end);
 
   // Forward declarations for parsing states.
   // These are keeping their old (C-style) names until a future refactor where
   // they will be eliminated.
+  grpc_error_handle parse_next(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_begin(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_error(const uint8_t* cur, const uint8_t* end,
                                 grpc_error_handle error);
@@ -65,17 +94,23 @@ class HPackParser {
 
   grpc_error_handle parse_string_prefix(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_key_string(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_value_string(const uint8_t* cur, const uint8_t* end,
+                                       bool is_binary);
   grpc_error_handle parse_value_string_with_indexed_key(const uint8_t* cur,
                                                         const uint8_t* end);
   grpc_error_handle parse_value_string_with_literal_key(const uint8_t* cur,
                                                         const uint8_t* end);
-
+  grpc_error_handle parse_stream_weight(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_value0(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_value1(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_value2(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_value3(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_value4(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_value5up(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_stream_dep0(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_stream_dep1(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_stream_dep2(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_stream_dep3(const uint8_t* cur, const uint8_t* end);
 
   grpc_error_handle parse_indexed_field(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_indexed_field_x(const uint8_t* cur,
@@ -98,19 +133,51 @@ class HPackParser {
   grpc_error_handle parse_max_tbl_size(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle parse_max_tbl_size_x(const uint8_t* cur,
                                          const uint8_t* end);
+  grpc_error_handle parse_string(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle begin_parse_string(const uint8_t* cur, const uint8_t* end,
+                                       BinaryState binary, String* str);
 
-  struct String {
-    bool copied;
-    struct {
-      grpc_slice referenced;
-      struct {
-        char* str;
-        uint32_t length;
-        uint32_t capacity;
-      } copied;
-    } data;
+  grpc_error_handle after_prioritization(const uint8_t* cur,
+                                         const uint8_t* end);
+  grpc_error_handle finish_indexed_field(const uint8_t* cur,
+                                         const uint8_t* end);
+  grpc_error_handle finish_lithdr_incidx(const uint8_t* cur,
+                                         const uint8_t* end);
+  grpc_error_handle finish_lithdr_incidx_v(const uint8_t* cur,
+                                           const uint8_t* end);
+  grpc_error_handle finish_lithdr_notidx(const uint8_t* cur,
+                                         const uint8_t* end);
+  grpc_error_handle finish_lithdr_notidx_v(const uint8_t* cur,
+                                           const uint8_t* end);
+  grpc_error_handle finish_lithdr_nvridx(const uint8_t* cur,
+                                         const uint8_t* end);
+  grpc_error_handle finish_lithdr_nvridx_v(const uint8_t* cur,
+                                           const uint8_t* end);
+  grpc_error_handle finish_max_tbl_size(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle finish_str(const uint8_t* cur, const uint8_t* end);
+
+  enum class TableAction {
+    kAddToTable,
+    kOmitFromTable,
   };
 
+  GPR_ATTRIBUTE_NOINLINE grpc_error_handle InvalidHPackIndexError();
+  GPR_ATTRIBUTE_NOINLINE void LogHeader(grpc_mdelem md);
+  grpc_error_handle AddHeaderToTable(grpc_mdelem md);
+  template <TableAction table_action>
+  grpc_error_handle FinishHeader(grpc_mdelem md);
+
+  grpc_mdelem GetPrecomputedMDForIndex();
+  void SetPrecomputedMDIndex(grpc_mdelem md);
+  bool IsBinaryLiteralHeader();
+  grpc_error_handle IsBinaryIndexedHeader(bool* is);
+
+  grpc_error_handle AppendString(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle AppendHuffNibble(uint8_t nibble);
+  grpc_error_handle AppendHuffBytes(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle AppendStrBytes(const uint8_t* cur, const uint8_t* end);
+
+  Sink sink_;
   grpc_error_handle last_error_;
 
   // current parse state - or a function that implements it
@@ -146,18 +213,18 @@ class HPackParser {
   // huffman decoding state
   int16_t huff_state_;
   // is the string being decoded binary?
-  bool binary_;
+  BinaryState binary_;
   // is the current string huffman encoded?
   bool huff_;
   // is a dynamic table update allowed?
-  uint8_t dynamic_table_update_allowed_;
+  uint8_t dynamic_table_updates_allowed_;
   // set by higher layers, used by grpc_chttp2_header_parser_parse to signal
   // it should append a metadata boundary at the end of frame
   Boundary boundary_;
-  uint32_t base64_buffer;
+  uint32_t base64_buffer_;
 
   // hpack table
-  grpc_chttp2_hptbl table;
+  grpc_chttp2_hptbl table_;
 };
 
 }  // namespace grpc_core
