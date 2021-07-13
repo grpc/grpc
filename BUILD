@@ -524,6 +524,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    visibility = ["@grpc:public"],
     deps = [
         "grpc++",
     ],
@@ -757,6 +758,22 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
     visibility = ["@grpc:debug_location"],
+)
+
+grpc_cc_library(
+    name = "overload",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/overload.h"],
+)
+
+grpc_cc_library(
+    name = "match",
+    external_deps = [
+        "absl/types:variant",
+    ],
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/match.h"],
+    deps = ["overload"],
 )
 
 grpc_cc_library(
@@ -1469,6 +1486,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
     ],
     language = "c++",
+    visibility = ["@grpc:grpclb"],
     deps = [
         "gpr_base",
         "grpc_base_c",
@@ -2158,6 +2176,10 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/strings:str_format",
+        "absl/time",
+        "libcrypto",
+        "libssl",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
@@ -3110,6 +3132,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
+    visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "gpr_base",
         "grpc++_codegen_base",

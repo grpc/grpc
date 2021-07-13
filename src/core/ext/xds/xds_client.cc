@@ -1803,7 +1803,8 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       interested_parties_(grpc_pollset_set_create()),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_->certificate_providers())),
-      api_(this, &grpc_xds_client_trace, bootstrap_->node()) {
+      api_(this, &grpc_xds_client_trace, bootstrap_->node(),
+           &bootstrap_->certificate_providers()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }

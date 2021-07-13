@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/channel/context.h"
@@ -39,11 +40,13 @@ class ServiceConfigCallData {
   ServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
       const ServiceConfigParser::ParsedConfigVector* method_configs,
-      std::map<const char*, absl::string_view> call_attributes,
+      ConfigSelector::CallAttributes call_attributes,
+      ConfigSelector::CallDispatchController* call_dispatch_controller,
       grpc_call_context_element* call_context)
       : service_config_(std::move(service_config)),
         method_configs_(method_configs),
-        call_attributes_(std::move(call_attributes)) {
+        call_attributes_(std::move(call_attributes)),
+        call_dispatch_controller_(call_dispatch_controller) {
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
   }
@@ -53,7 +56,7 @@ class ServiceConfigCallData {
       const ServiceConfigParser::ParsedConfigVector* method_configs,
       grpc_call_context_element* call_context)
       : ServiceConfigCallData(std::move(service_config), method_configs, {},
-                              call_context) {}
+                              nullptr, call_context) {}
 
   ServiceConfig* service_config() { return service_config_.get(); }
 
@@ -70,15 +73,52 @@ class ServiceConfigCallData {
     return call_attributes_;
   }
 
+  ConfigSelector::CallDispatchController* call_dispatch_controller() {
+    return &call_dispatch_controller_;
+  }
+
  private:
+  // A wrapper for the CallDispatchController returned by the ConfigSelector.
+  // Handles the case where the ConfigSelector doees not return any
+  // CallDispatchController.
+  // Also ensures that we call Commit() at most once, which allows the
+  // client channel code to call Commit() when the call is complete in case
+  // it wasn't called earlier, without needing to know whether or not it was.
+  class SingleCommitCallDispatchController
+      : public ConfigSelector::CallDispatchController {
+   public:
+    explicit SingleCommitCallDispatchController(
+        ConfigSelector::CallDispatchController* call_dispatch_controller)
+        : call_dispatch_controller_(call_dispatch_controller) {}
+
+    bool ShouldRetry() override {
+      if (call_dispatch_controller_ != nullptr) {
+        return call_dispatch_controller_->ShouldRetry();
+      }
+      return true;
+    }
+
+    void Commit() override {
+      if (call_dispatch_controller_ != nullptr && !commit_called_) {
+        call_dispatch_controller_->Commit();
+        commit_called_ = true;
+      }
+    }
+
+   private:
+    ConfigSelector::CallDispatchController* call_dispatch_controller_;
+    bool commit_called_ = false;
+  };
+
   static void Destroy(void* ptr) {
     ServiceConfigCallData* self = static_cast<ServiceConfigCallData*>(ptr);
     self->~ServiceConfigCallData();
   }
 
   RefCountedPtr<ServiceConfig> service_config_;
-  const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
-  std::map<const char*, absl::string_view> call_attributes_;
+  const ServiceConfigParser::ParsedConfigVector* method_configs_;
+  ConfigSelector::CallAttributes call_attributes_;
+  SingleCommitCallDispatchController call_dispatch_controller_;
 };
 
 }  // namespace grpc_core
