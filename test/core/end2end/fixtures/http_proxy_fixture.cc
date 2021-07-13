@@ -50,8 +50,8 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/port.h"
+#include "test/core/util/resource_user_util.h"
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
