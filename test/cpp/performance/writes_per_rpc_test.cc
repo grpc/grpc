@@ -75,6 +75,7 @@ class EndpointPairFixture {
     {
       const grpc_channel_args* server_args =
           server_->c_server()->core_server->channel_args();
+      grpc_resource_user_ref(server_resource_user);
       grpc_transport* transport = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */,
           server_resource_user);
@@ -96,6 +97,7 @@ class EndpointPairFixture {
       ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
+      grpc_resource_user_ref(client_resource_user);
       grpc_transport* transport = grpc_create_chttp2_transport(
           &c_args, endpoints.client, true, client_resource_user);
       GPR_ASSERT(transport);

@@ -99,7 +99,6 @@ static void init_client() {
   grpc_transport* transport;
   auto* ru = grpc_resource_user_create_unlimited();
   transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->client, true, ru);
-  grpc_resource_user_unref(ru);
   client_setup_transport(transport);
   GPR_ASSERT(g_ctx.client);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -115,7 +114,6 @@ static void init_server() {
   auto* ru = grpc_resource_user_create_unlimited();
   transport =
       grpc_create_chttp2_transport(nullptr, g_ctx.ep->server, false, ru);
-  grpc_resource_user_unref(ru);
   server_setup_transport(transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }

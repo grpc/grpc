@@ -55,7 +55,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_start(server);
     grpc_transport* transport = grpc_create_chttp2_transport(
         nullptr, mock_endpoint, false, resource_user);
-    grpc_resource_user_unref(resource_user);
     server->core_server->SetupTransport(transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 

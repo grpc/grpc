@@ -243,7 +243,6 @@ void grpc_run_bad_client_test(
   shutdown_client(&sfd.client);
   server_validator_thd.Join();
   grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
   GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,

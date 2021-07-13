@@ -471,7 +471,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   //   TODO(ctiller): tune this
   grpc_chttp2_stream_map_init(&stream_map, 8);
 
-  grpc_resource_user_ref(resource_user);
   grpc_slice_buffer_init(&read_buffer);
   grpc_slice_buffer_init(&outbuf);
   if (is_client) {

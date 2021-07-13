@@ -136,7 +136,9 @@ class Fixture {
   Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    t_ = grpc_create_chttp2_transport(&c_args, ep_, client, ep_->get_ru());
+    auto ru = ep_->get_ru();
+    grpc_resource_user_ref(ru);
+    t_ = grpc_create_chttp2_transport(&c_args, ep_, client, ru);
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }

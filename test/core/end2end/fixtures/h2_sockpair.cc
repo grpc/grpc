@@ -144,8 +144,6 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
   grpc_core::ExecCtx exec_ctx;
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
-  grpc_resource_user_unref(fixture_data->client_ru);
-  grpc_resource_user_unref(fixture_data->server_ru);
   gpr_free(f->fixture_data);
 }
 
