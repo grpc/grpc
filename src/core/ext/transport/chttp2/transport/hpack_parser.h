@@ -48,11 +48,56 @@ class HPackParser {
 
   void BeginFrame(Sink* sink, Boundary boundary, Priority priority);
 
-  grpc_error_handle Parse(grpc_chttp2_hpack_parser* p, const grpc_slice& slice);
+  grpc_error_handle Parse(const grpc_slice& slice);
 
  private:
-  using State = grpc_error_handle (*)(grpc_chttp2_hpack_parser* p,
-                                      const uint8_t* beg, const uint8_t* end);
+  using State = grpc_error_handle (HPackParser::*)(const uint8_t* beg,
+                                                   const uint8_t* end);
+
+  // Forward declarations for parsing states.
+  // These are keeping their old (C-style) names until a future refactor where
+  // they will be eliminated.
+  grpc_error_handle parse_begin(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_error(const uint8_t* cur, const uint8_t* end,
+                                grpc_error_handle error);
+  grpc_error_handle still_parse_error(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_illegal_op(const uint8_t* cur, const uint8_t* end);
+
+  grpc_error_handle parse_string_prefix(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_key_string(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_value_string_with_indexed_key(const uint8_t* cur,
+                                                        const uint8_t* end);
+  grpc_error_handle parse_value_string_with_literal_key(const uint8_t* cur,
+                                                        const uint8_t* end);
+
+  grpc_error_handle parse_value0(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_value1(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_value2(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_value3(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_value4(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_value5up(const uint8_t* cur, const uint8_t* end);
+
+  grpc_error_handle parse_indexed_field(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_indexed_field_x(const uint8_t* cur,
+                                          const uint8_t* end);
+  grpc_error_handle parse_lithdr_incidx(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_lithdr_incidx_x(const uint8_t* cur,
+                                          const uint8_t* end);
+  grpc_error_handle parse_lithdr_incidx_v(const uint8_t* cur,
+                                          const uint8_t* end);
+  grpc_error_handle parse_lithdr_notidx(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_lithdr_notidx_x(const uint8_t* cur,
+                                          const uint8_t* end);
+  grpc_error_handle parse_lithdr_notidx_v(const uint8_t* cur,
+                                          const uint8_t* end);
+  grpc_error_handle parse_lithdr_nvridx(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_lithdr_nvridx_x(const uint8_t* cur,
+                                          const uint8_t* end);
+  grpc_error_handle parse_lithdr_nvridx_v(const uint8_t* cur,
+                                          const uint8_t* end);
+  grpc_error_handle parse_max_tbl_size(const uint8_t* cur, const uint8_t* end);
+  grpc_error_handle parse_max_tbl_size_x(const uint8_t* cur,
+                                         const uint8_t* end);
 
   struct String {
     bool copied;
@@ -79,7 +124,7 @@ class HPackParser {
   // the value we're currently parsing
   union {
     uint32_t* value;
-    grpc_chttp2_hpack_parser_string* str;
+    String* str;
   } parsing_;
   // string parameters for each chunk
   String key_;

@@ -36,6 +36,8 @@
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
+using grpc_core::HPackParser;
+
 static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t);
 static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                                                   int is_continuation);
@@ -318,16 +320,25 @@ static grpc_error_handle skip_header(void* /*tp*/, grpc_mdelem md) {
   return GRPC_ERROR_NONE;
 }
 
+static HPackParser::Boundary hpack_boundary_type(grpc_chttp2_transport* t, bool is_eoh) {
+  if (is_eoh) {
+    if (t->header_eof) {
+      return HPackParser::Boundary::EndOfStream;
+    } else {
+      return HPackParser::Boundary::EndOfHeaders;
+    }
+  } else {
+    return HPackParser::Boundary::None;
+  }
+}
+
 static grpc_error_handle init_skip_frame_parser(grpc_chttp2_transport* t,
                                                 int is_header) {
   if (is_header) {
-    uint8_t is_eoh = t->expect_continuation_stream_id != 0;
+    bool is_eoh = t->expect_continuation_stream_id != 0;
     t->parser = grpc_chttp2_header_parser_parse;
     t->parser_data = &t->hpack_parser;
-    t->hpack_parser.on_header = skip_header;
-    t->hpack_parser.on_header_user_data = nullptr;
-    t->hpack_parser.is_boundary = is_eoh;
-    t->hpack_parser.is_eof = static_cast<uint8_t>(is_eoh ? t->header_eof : 0);
+    t->hpack_parser.BeginFrame(&skip_header, hpack_boundary_type(t, is_eoh), HPackParser::Priority::None);
   } else {
     t->parser = skip_parser;
   }
