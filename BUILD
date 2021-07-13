@@ -550,10 +550,10 @@ grpc_cc_library(
         "alts_upb",
         "alts_util",
         "gpr_base",
-        "grpc_base_c",
         "grpc++",
+        "grpc_base_c",
         "tsi_alts_credentials",
-      ],
+    ],
 )
 
 grpc_cc_library(
@@ -2198,7 +2198,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
-        ],
+    ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/authorization_policy_provider.h",
@@ -2227,9 +2227,9 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-      "gpr_base",
-      "grpc_base_c",
-      "tsi_base",
+        "gpr_base",
+        "grpc_base_c",
+        "tsi_base",
     ],
 )
 
@@ -2289,7 +2289,7 @@ grpc_cc_library(
         "gpr",
         "grpc_base_c",
         "tsi_base",
-      ],
+    ],
 )
 
 grpc_cc_library(
@@ -2338,7 +2338,7 @@ grpc_cc_library(
         "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc",
         "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc",
         "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc",
-        ],
+    ],
     hdrs = [
         "src/core/tsi/alts/crypt/gsec.h",
         "src/core/tsi/alts/frame_protector/alts_counter.h",
@@ -2366,10 +2366,10 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
-      "alts_util",
-      "gpr_base",
-      "grpc_base_c",
-      "tsi_base",
+        "alts_util",
+        "gpr_base",
+        "grpc_base_c",
+        "tsi_base",
     ],
 )
 
@@ -2438,7 +2438,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/lib/security/credentials/google_default/google_default_credentials.h",
     ],
-     external_deps = [
+    external_deps = [
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -2446,8 +2446,8 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "gpr_base",
-        "grpc_base_c",
         "grpc_alts_credentials",
+        "grpc_base_c",
         "grpc_codegen",
         "grpc_external_account_credentials",
         "grpc_jwt_credentials",
@@ -2499,8 +2499,8 @@ grpc_cc_library(
         "src/core/lib/security/credentials/iam/iam_credentials.h",
     ],
     external_deps = [
-      "absl/strings",
-      "absl/strings:str_format",
+        "absl/strings",
+        "absl/strings:str_format",
     ],
     language = "c++",
     deps = [
@@ -2643,7 +2643,7 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "libssl",
-        "libcrypto"
+        "libcrypto",
     ],
     language = "c++",
     visibility = ["@grpc:public"],
@@ -2662,7 +2662,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi_ssl_types",
     hdrs = [
-      "src/core/tsi/ssl_types.h",
+        "src/core/tsi/ssl_types.h",
     ],
     external_deps = [
         "libssl",
@@ -2676,14 +2676,14 @@ grpc_cc_library(
         "src/core/lib/http/httpcli_security_connector.cc",
     ],
     external_deps = [
-      "absl/strings",
+        "absl/strings",
     ],
     language = "c++",
     deps = [
         "gpr_base",
         "grpc_base_c",
         "grpc_security_base",
-        "ref_counted_ptr", 
+        "ref_counted_ptr",
         "tsi_ssl_credentials",
     ],
 )
@@ -2769,14 +2769,14 @@ grpc_cc_library(
         "src/core/lib/security/authorization/rbac_policy.h",
     ],
     external_deps = [
-      "absl/strings", 
-      "absl/strings:str_format",
+        "absl/strings",
+        "absl/strings:str_format",
     ],
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
         "grpc_authorization_base",
+        "grpc_base_c",
         "grpc_matchers",
     ],
 )
@@ -2793,8 +2793,8 @@ grpc_cc_library(
         "src/core/lib/security/authorization/rbac_translator.h",
     ],
     external_deps = [
-      "absl/strings",
-      "absl/strings:str_format",
+        "absl/strings",
+        "absl/strings:str_format",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
@@ -3084,8 +3084,8 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_base_c",
-        "tsi_base",
         "tsi_alts_credentials",
+        "tsi_base",
         "tsi_fake_credentials",
         "tsi_local_credentials",
         "tsi_ssl_credentials",
