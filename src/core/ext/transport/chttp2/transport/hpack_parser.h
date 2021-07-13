@@ -137,8 +137,6 @@ class HPackParser {
   grpc_error_handle begin_parse_string(const uint8_t* cur, const uint8_t* end,
                                        BinaryState binary, String* str);
 
-  grpc_error_handle after_prioritization(const uint8_t* cur,
-                                         const uint8_t* end);
   grpc_error_handle finish_indexed_field(const uint8_t* cur,
                                          const uint8_t* end);
   grpc_error_handle finish_lithdr_incidx(const uint8_t* cur,

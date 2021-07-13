@@ -667,7 +667,7 @@ grpc_error_handle HPackParser::parse_stream_weight(const uint8_t* cur,
     return GRPC_ERROR_NONE;
   }
 
-  return after_prioritization(cur + 1, end);
+  return (this->*after_prioritization_)(cur + 1, end);
 }
 
 grpc_error_handle HPackParser::parse_stream_dep3(const uint8_t* cur,
@@ -1590,6 +1590,8 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice) {
   return error;
 }
 
+}  // namespace grpc_core
+
 // TODO(ctiller): this serves as an eviction notice for the remainder of this
 // file... it belongs elsewhere!
 
@@ -1635,7 +1637,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   const grpc_slice& slice,
                                                   int is_last) {
   GPR_TIMER_SCOPE("grpc_chttp2_header_parser_parse", 0);
-  auto* parser = static_cast<HPackParser*>(hpack_parser);
+  auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
@@ -1683,5 +1685,3 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   }
   return GRPC_ERROR_NONE;
 }
-
-}  // namespace grpc_core
