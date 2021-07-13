@@ -317,6 +317,7 @@ class BackendServiceImpl
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    gpr_log(GPR_INFO, "donna in echo server");
     auto peer_identity = context->auth_context()->GetPeerIdentity();
     CountedService<TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
     const auto status =
@@ -1881,6 +1882,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     std::vector<std::pair<std::string, std::string>> metadata;
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
+    StatusCode server_expected_error = StatusCode::OK;
 
     RpcOptions() {}
 
@@ -1922,6 +1924,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     RpcOptions& set_client_cancel_after_us(int rpc_client_cancel_after_us) {
       client_cancel_after_us = rpc_client_cancel_after_us;
+      return *this;
+    }
+
+    RpcOptions& set_server_expected_error(StatusCode code) {
+      server_expected_error = code;
       return *this;
     }
 
@@ -2187,6 +2194,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (local_response) response = new EchoResponse;
     ClientContext context;
     EchoRequest request;
+    if (rpc_options.server_expected_error != StatusCode::OK) {
+      auto* error = request.mutable_param()->mutable_expected_error();
+      error->set_code(rpc_options.server_expected_error);
+    }
     rpc_options.SetupRpc(&context, &request);
     Status status;
     switch (rpc_options.service) {
@@ -5516,83 +5527,39 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
 
 TEST_P(LdsRdsTest, XdsRetryPolicy) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 2)},
-  });
-  AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(2, 3)},
-  });
-  AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(3, 4)},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsService1Name));
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsService2Name));
-  // Populate new CDS resources.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewCluster1Name);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService1Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewCluster2Name);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService2Name);
-  balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Construct route config.
   RouteConfiguration new_route_config = default_route_config_;
-  // route 1:
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
-  route1->mutable_route()->set_cluster(kNewCluster1Name);
+  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
+  route1->mutable_route()->set_cluster(kDefaultClusterName);
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on(
       "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
-  retry_policy->mutable_num_retries()->set_value(3);
+  retry_policy->mutable_num_retries()->set_value(1);
   auto per_try_timeout = retry_policy->mutable_per_try_timeout();
-  per_try_timeout->set_seconds(1);
+  per_try_timeout->set_seconds(5);
   per_try_timeout->set_nanos(0);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
-  base_interval->set_seconds(1);
-  base_interval->set_nanos(0);
+  base_interval->set_seconds(0);
+  base_interval->set_nanos(25000000);
   auto max_interval =
       retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(10);
-  max_interval->set_nanos(5);
-  // route 2:
-  auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
-  route2->mutable_route()->set_cluster(kNewCluster2Name);
-  retry_policy = route2->mutable_route()->mutable_retry_policy();
-  retry_policy->set_retry_on("internal,resource-exhausted,unavailable");
-  // route 3:
-  auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  route3->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
-  route3->mutable_route()->set_cluster(kDefaultClusterName);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  max_interval->set_seconds(0);
+  max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
-  WaitForAllBackends(0, 2);
-  CheckRpcSendOk(1, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(1, RpcOptions()
-                        .set_rpc_service(SERVICE_ECHO1)
-                        .set_rpc_method(METHOD_ECHO1)
-                        .set_wait_for_ready(true));
-  CheckRpcSendOk(1, RpcOptions()
-                        .set_rpc_service(SERVICE_ECHO2)
-                        .set_rpc_method(METHOD_ECHO2)
-                        .set_wait_for_ready(true));
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
+      StatusCode::DEADLINE_EXCEEDED);
+  gpr_log(GPR_INFO, "request sent is %d",
+          backends_[0]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 

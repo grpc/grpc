@@ -1578,7 +1578,7 @@ grpc_error_handle RetryPolicyParse(
       envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
   if (num_retries != nullptr) {
     auto num_retries_value = google_protobuf_UInt32Value_value(num_retries);
-    if (retry->num_retries == 0) {
+    if (num_retries_value == 0) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           "RouteAction RetryPolicy num_retries set to invalid value 0");
     } else {
