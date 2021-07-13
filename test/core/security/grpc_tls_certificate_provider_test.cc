@@ -543,6 +543,50 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
   EXPECT_FALSE(*status);
 }
 
+TEST_F(GrpcTlsCertificateProviderTest, EmptyPrivateKeyString) {
+  absl::Status status = CheckPrivateKey("");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Private key string is empty.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, InvalidPrivateKeyString) {
+  absl::Status status = CheckPrivateKey("invalid_private_key");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Invalid private key string.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, ValidPrivateKeyString) {
+  absl::Status status = CheckPrivateKey(private_key_2_);
+  EXPECT_TRUE(status.ok());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, EmptyCertificateChainString) {
+  absl::Status status = CheckCertChain("");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(), "Certificate chain string is empty.");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, InvalidCertificateChainString) {
+  absl::Status status = CheckCertChain("invalid_certificate_chain");
+  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.message(),
+            "Certificate chain contains cert with bad format");
+}
+
+TEST_F(GrpcTlsCertificateProviderTest, ValidCertificateChainString) {
+  absl::Status status = CheckCertChain(cert_chain_);
+  EXPECT_TRUE(status.ok());
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       ValidCertificateChainStringWithMultipleCerts) {
+  //  Adding "noise" string to reinforce that its presence does not lead to a
+  //  not-OK status.
+  absl::Status status = CheckCertChain(
+      cert_chain_ + "invalid_certificate_chain\n" + cert_chain_2_);
+  EXPECT_TRUE(status.ok());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

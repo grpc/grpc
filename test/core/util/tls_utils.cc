@@ -117,22 +117,21 @@ absl::Status CheckCertChain(absl::string_view cert_chain) {
       PEM_X509_INFO_read_bio(cert_chain_bio, nullptr, nullptr, nullptr);
   int num_certs = sk_X509_INFO_num(cert_stack);
   gpr_log(GPR_ERROR, "Num of certs: %d", num_certs);
-  X509* x_509 = nullptr;
+  bool is_null = false;
+  bool are_all_certs_invalid = num_certs == 0;
   for (int i = 0; i < num_certs; i++) {
     X509_INFO* cert_info = sk_X509_INFO_value(cert_stack, i);
-    x_509 = cert_info->x509;
-    bool is_null = x_509 != nullptr;
-    gpr_log(GPR_ERROR, "Index: %d, Valid: %s", i, is_null ? "false" : "true");
+    is_null = cert_info->x509 == nullptr;
     if (is_null) {
       break;
     }
   }
   BIO_free(cert_chain_bio);
-  X509_free(x_509);
   sk_X509_INFO_pop_free(cert_stack, X509_INFO_free);
-  return is_null ? absl::InvalidArgumentError(
-                       "Certificate chain contains cert with bad format")
-                 : absl::OkStatus();
+  return (is_null || are_all_certs_invalid)
+             ? absl::InvalidArgumentError(
+                   "Certificate chain contains cert with bad format")
+             : absl::OkStatus();
 }
 
 }  // namespace testing
