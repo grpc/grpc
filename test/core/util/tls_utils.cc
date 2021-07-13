@@ -116,13 +116,12 @@ absl::Status CheckCertChain(absl::string_view cert_chain) {
   STACK_OF(X509_INFO)* cert_stack =
       PEM_X509_INFO_read_bio(cert_chain_bio, nullptr, nullptr, nullptr);
   int num_certs = sk_X509_INFO_num(cert_stack);
-  gpr_log(GPR_ERROR, "Num of certs: %d", num_certs);
   bool is_null = false;
   bool are_all_certs_invalid = num_certs == 0;
   for (int i = 0; i < num_certs; i++) {
     X509_INFO* cert_info = sk_X509_INFO_value(cert_stack, i);
-    is_null = cert_info->x509 == nullptr;
-    if (is_null) {
+    if (cert_info->x509 == nullptr) {
+      is_null = true;
       break;
     }
   }

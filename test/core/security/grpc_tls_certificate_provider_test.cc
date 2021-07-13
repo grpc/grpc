@@ -545,13 +545,13 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
 
 TEST_F(GrpcTlsCertificateProviderTest, EmptyPrivateKeyString) {
   absl::Status status = CheckPrivateKey("");
-  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(), "Private key string is empty.");
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, InvalidPrivateKeyString) {
   absl::Status status = CheckPrivateKey("invalid_private_key");
-  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(), "Invalid private key string.");
 }
 
@@ -562,13 +562,13 @@ TEST_F(GrpcTlsCertificateProviderTest, ValidPrivateKeyString) {
 
 TEST_F(GrpcTlsCertificateProviderTest, EmptyCertificateChainString) {
   absl::Status status = CheckCertChain("");
-  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(), "Certificate chain string is empty.");
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, InvalidCertificateChainString) {
   absl::Status status = CheckCertChain("invalid_certificate_chain");
-  EXPECT_FALSE(status.ok());
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "Certificate chain contains cert with bad format");
 }
