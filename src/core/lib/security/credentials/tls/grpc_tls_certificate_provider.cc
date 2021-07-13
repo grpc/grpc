@@ -177,7 +177,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   refresh_thread_.Join();
 }
 
-void FileWatcherCertificateProvider::ForceUpdate() {
+absl::StatusOr<bool> FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
   if (!root_cert_path_.empty()) {
@@ -198,13 +198,25 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       root_certificate_ = "";
     }
   }
+  absl::StatusOr<bool> keyCertMatch = true;
   const bool identity_cert_changed =
       (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
-      pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+      for (int i = 0; i < pem_key_cert_pairs->size(); i++) {
+        absl::StatusOr<bool> keyCertMatch = PrivateKeyAndCertificateMatch(
+          pem_key_cert_pairs[i].private_key(), pem_key_cert_pairs[i].cert_chain());
+        if (!(keyCertMatch.ok() && *keyCertMatch)) {
+//          gpr_log(GPR_ERROR,
+//                  keyCertMatch.status().ToString());
+          break;
+        }
+      }
+      if (keyCertMatch.ok()){
+        pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
+      }
     } else {
       pem_key_cert_pairs_ = {};
     }
@@ -251,6 +263,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     GRPC_ERROR_UNREF(root_cert_error);
     GRPC_ERROR_UNREF(identity_cert_error);
   }
+  return keyCertMatch;
 }
 
 absl::optional<std::string>

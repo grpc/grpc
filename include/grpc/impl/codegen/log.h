@@ -23,6 +23,7 @@
 
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
+#include <string>
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,7 +58,7 @@ GPRAPI const char* gpr_log_severity_string(gpr_log_severity severity);
 /** Log a message. It's advised to use GPR_xxx above to generate the context
  * for each message */
 GPRAPI void gpr_log(const char* file, int line, gpr_log_severity severity,
-                    const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
+                    std::__cxx11::basic_string<char> format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 
 GPRAPI int gpr_should_log(gpr_log_severity severity);
 

@@ -49,7 +49,7 @@ int gpr_should_log_stacktrace(gpr_log_severity severity);
 static long sys_gettid(void) { return syscall(__NR_gettid); }
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
-             const char* format, ...) {
+             std::basic_string<char> format, ...) {
   /* Avoid message construction if gpr_log_message won't log */
   if (gpr_should_log(severity) == 0) {
     return;
