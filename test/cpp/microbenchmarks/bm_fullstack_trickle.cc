@@ -272,7 +272,7 @@ static void BM_PumpStreamServerToClient_Trickle(benchmark::State& state) {
   std::unique_ptr<TrickledCHTTP2> fixture(new TrickledCHTTP2(
       &service, true, state.range(0) /* req_size */,
       state.range(0) /* resp_size */, state.range(1) /* bw in kbit/s */,
-      grpc_passthru_endpoint_stats_create(), client_ru, , server_ru));
+      grpc_passthru_endpoint_stats_create(), client_ru, server_ru));
   grpc_resource_user_unref(client_ru);
   grpc_resource_user_unref(server_ru);
   {
