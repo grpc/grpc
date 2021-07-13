@@ -116,6 +116,7 @@ void server_thread(void* vargs) {
 }
 
 static void on_connect(void* vargs, grpc_endpoint* tcp,
+                       grpc_resource_user* /*resource_user*/,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);

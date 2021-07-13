@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 namespace grpc_core {
 
@@ -62,6 +63,7 @@ class Chttp2Connector : public SubchannelConnector {
   // Holds the endpoint when first created before being handed off to
   // the handshake manager, and then again after handshake is done.
   grpc_endpoint* endpoint_ = nullptr;
+  grpc_resource_user* resource_user_ = nullptr;
   grpc_closure connected_;
   grpc_closure on_receive_settings_;
   grpc_timer timer_;

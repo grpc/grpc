@@ -268,10 +268,23 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->fd_index = sp->fd_index;
     acceptor->external_connection = false;
 
-    sp->server->on_accept_cb(
-        sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->channel_args, addr_str.c_str()),
-        read_notifier_pollset, acceptor);
+    // Create Resource User
+    grpc_resource_quota* resource_quota =
+        grpc_channel_args_find_pointer<grpc_resource_quota>(
+            sp->server->channel_args, GRPC_ARG_RESOURCE_QUOTA);
+    if (resource_quota == nullptr) {
+      resource_quota = grpc_resource_quota_create(nullptr);
+    } else {
+      grpc_resource_quota_ref_internal(resource_quota);
+    }
+    grpc_resource_user* resource_user =
+        grpc_resource_user_create(resource_quota, addr_str.c_str());
+    grpc_resource_quota_unref_internal(resource_quota);
+    sp->server->on_accept_cb(sp->server->on_accept_cb_arg,
+                             grpc_tcp_create(fdobj, sp->server->channel_args,
+                                             addr_str.c_str(), resource_user),
+                             resource_user, read_notifier_pollset, acceptor);
+    grpc_resource_user_unref(resource_user);
   }
 
   GPR_UNREACHABLE_CODE(return );
@@ -613,9 +626,23 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->external_connection = true;
     acceptor->listener_fd = listener_fd;
     acceptor->pending_data = buf;
+    // Create Resource User
+    grpc_resource_quota* resource_quota =
+        grpc_channel_args_find_pointer<grpc_resource_quota>(
+            s_->channel_args, GRPC_ARG_RESOURCE_QUOTA);
+    if (resource_quota == nullptr) {
+      resource_quota = grpc_resource_quota_create(nullptr);
+    } else {
+      grpc_resource_quota_ref_internal(resource_quota);
+    }
+    grpc_resource_user* resource_user =
+        grpc_resource_user_create(resource_quota, addr_str.c_str());
+    grpc_resource_quota_unref_internal(resource_quota);
     s_->on_accept_cb(s_->on_accept_cb_arg,
-                     grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str()),
-                     read_notifier_pollset, acceptor);
+                     grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(),
+                                     resource_user),
+                     resource_user, read_notifier_pollset, acceptor);
+    grpc_resource_user_unref(resource_user);
   }
 
  private:

@@ -71,10 +71,12 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("context_list_test");
+  grpc_resource_user* resource_user =
+      grpc_mock_resource_user_create(resource_quota);
   grpc_endpoint* mock_endpoint =
-      grpc_mock_endpoint_create(discard_write, resource_quota);
+      grpc_mock_endpoint_create(discard_write, resource_user);
   grpc_transport* t =
-      grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
+      grpc_create_chttp2_transport(nullptr, mock_endpoint, true, resource_user);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
@@ -127,10 +129,12 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("context_list_test");
+  grpc_resource_user* resource_user =
+      grpc_mock_resource_user_create(resource_quota);
   grpc_endpoint* mock_endpoint =
-      grpc_mock_endpoint_create(discard_write, resource_quota);
+      grpc_mock_endpoint_create(discard_write, resource_user);
   grpc_transport* t =
-      grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
+      grpc_create_chttp2_transport(nullptr, mock_endpoint, true, resource_user);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];

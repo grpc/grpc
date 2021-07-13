@@ -48,6 +48,7 @@ struct internal_request {
   grpc_resolved_addresses* addresses;
   size_t next_address;
   grpc_endpoint* ep;
+  grpc_resource_user* resource_user;
   char* host;
   char* ssl_host_override;
   grpc_millis deadline;
@@ -69,6 +70,7 @@ static grpc_httpcli_get_override g_get_override = nullptr;
 static grpc_httpcli_post_override g_post_override = nullptr;
 
 static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
+                                grpc_resource_user* /* resource_user */,
                                 const char* /*host*/, grpc_millis /*deadline*/,
                                 void (*on_done)(void* arg,
                                                 grpc_endpoint* endpoint)) {
@@ -106,6 +108,7 @@ static void finish(internal_request* req, grpc_error_handle error) {
   grpc_slice_buffer_destroy_internal(&req->incoming);
   grpc_slice_buffer_destroy_internal(&req->outgoing);
   GRPC_ERROR_UNREF(req->overall_error);
+  grpc_resource_user_unref(req->resource_user);
   grpc_resource_quota_unref_internal(req->resource_quota);
   gpr_free(req);
 }
@@ -190,7 +193,8 @@ static void on_connected(void* arg, grpc_error_handle error) {
     return;
   }
   req->handshaker->handshake(
-      req, req->ep, req->ssl_host_override ? req->ssl_host_override : req->host,
+      req, req->ep, req->resource_user,
+      req->ssl_host_override ? req->ssl_host_override : req->host,
       req->deadline, on_handshake_done);
 }
 
@@ -212,8 +216,9 @@ static void next_address(internal_request* req, grpc_error_handle error) {
       const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), req->resource_quota,
       grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &arg};
-  grpc_tcp_client_connect(&req->connected, &req->ep, req->context->pollset_set,
-                          &args, addr, req->deadline);
+  grpc_tcp_client_connect(&req->connected, &req->ep, req->resource_user,
+                          req->context->pollset_set, &args, addr,
+                          req->deadline);
 }
 
 static void on_resolved(void* arg, grpc_error_handle error) {
@@ -247,6 +252,7 @@ static void internal_request_begin(grpc_httpcli_context* context,
   req->pollent = pollent;
   req->overall_error = GRPC_ERROR_NONE;
   req->resource_quota = grpc_resource_quota_ref_internal(resource_quota);
+  req->resource_user = grpc_resource_user_create(resource_quota, name);
   GRPC_CLOSURE_INIT(&req->on_read, on_read, req, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&req->done_write, done_write, req,
                     grpc_schedule_on_exec_ctx);

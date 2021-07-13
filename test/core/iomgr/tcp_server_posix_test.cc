@@ -142,6 +142,7 @@ static void test_addr_init_str(test_addr* addr) {
 }
 
 static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
+                       grpc_resource_user* /*resource_user*/,
                        grpc_pollset* /*pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   grpc_endpoint_shutdown(tcp,

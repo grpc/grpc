@@ -200,6 +200,8 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   }
 
   grpc_endpoint_destroy(ep);
+  grpc_resource_user_unref(resource_user);
+  grpc_resource_user_shutdown(resource_user);
 
   grpc_slice_buffer_destroy_internal(&qbuf);
 
@@ -469,6 +471,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   //   TODO(ctiller): tune this
   grpc_chttp2_stream_map_init(&stream_map, 8);
 
+  grpc_resource_user_ref(resource_user);
   grpc_slice_buffer_init(&read_buffer);
   grpc_slice_buffer_init(&outbuf);
   if (is_client) {
@@ -717,10 +720,6 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
   flow_control.Destroy();
 
-  if (t->resource_user != nullptr) {
-    grpc_resource_user_free(t->resource_user, GRPC_RESOURCE_QUOTA_CALL_SIZE);
-  }
-
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "stream");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_arg, GRPC_ERROR_NONE);
 }
@@ -772,9 +771,9 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   // Don't accept the stream if memory quota doesn't allow. Note that we should
   // simply refuse the stream here instead of canceling the stream after it's
   // accepted since the latter will create the call which costs much memory.
-  if (t->resource_user != nullptr &&
-      !grpc_resource_user_safe_alloc(t->resource_user,
-                                     GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
+  GPR_ASSERT(t->resource_user != nullptr);
+  if (!grpc_resource_user_could_alloc(t->resource_user,
+                                      GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
     gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
     grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_REFUSED_STREAM,
                                              nullptr);
@@ -3165,8 +3164,8 @@ static void post_benign_reclaimer(grpc_chttp2_transport* t) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "benign_reclaimer");
     GRPC_CLOSURE_INIT(&t->benign_reclaimer_locked, benign_reclaimer, t,
                       grpc_schedule_on_exec_ctx);
-    grpc_resource_user_post_reclaimer(grpc_endpoint_get_resource_user(t->ep),
-                                      false, &t->benign_reclaimer_locked);
+    grpc_resource_user_post_reclaimer(t->resource_user, false,
+                                      &t->benign_reclaimer_locked);
   }
 }
 
@@ -3176,8 +3175,8 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "destructive_reclaimer");
     GRPC_CLOSURE_INIT(&t->destructive_reclaimer_locked, destructive_reclaimer,
                       t, grpc_schedule_on_exec_ctx);
-    grpc_resource_user_post_reclaimer(grpc_endpoint_get_resource_user(t->ep),
-                                      true, &t->destructive_reclaimer_locked);
+    grpc_resource_user_post_reclaimer(t->resource_user, true,
+                                      &t->destructive_reclaimer_locked);
   }
 }
 
@@ -3212,8 +3211,7 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
   }
   t->benign_reclaimer_registered = false;
   if (error != GRPC_ERROR_CANCELLED) {
-    grpc_resource_user_finish_reclamation(
-        grpc_endpoint_get_resource_user(t->ep));
+    grpc_resource_user_finish_reclamation(t->resource_user);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "benign_reclaimer");
 }
@@ -3250,8 +3248,7 @@ static void destructive_reclaimer_locked(void* arg, grpc_error_handle error) {
     }
   }
   if (error != GRPC_ERROR_CANCELLED) {
-    grpc_resource_user_finish_reclamation(
-        grpc_endpoint_get_resource_user(t->ep));
+    grpc_resource_user_finish_reclamation(t->resource_user);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "destructive_reclaimer");
 }

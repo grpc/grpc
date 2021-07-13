@@ -50,6 +50,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "test/core/util/mock_endpoint.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -537,9 +538,11 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
       grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
+  auto* ru = grpc_mock_resource_user_create();
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, nullptr,
+                          ru, conn->pollset_set, nullptr,
                           &resolved_addresses->addrs[0], deadline);
+  grpc_resource_user_unref(ru);
   grpc_resolved_addresses_destroy(resolved_addresses);
 }
 
@@ -552,6 +555,7 @@ static void on_read_request_done(void* arg, grpc_error_handle error) {
 }
 
 static void on_accept(void* arg, grpc_endpoint* endpoint,
+                      grpc_resource_user* /*resource_user*/,
                       grpc_pollset* /*accepting_pollset*/,
                       grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);

@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
@@ -43,7 +44,8 @@ typedef struct grpc_httpcli_context {
 
 struct grpc_httpcli_handshaker {
   const char* default_port;
-  void (*handshake)(void* arg, grpc_endpoint* endpoint, const char* host,
+  void (*handshake)(void* arg, grpc_endpoint* endpoint,
+                    grpc_resource_user* resource_user, const char* host,
                     grpc_millis deadline,
                     void (*on_done)(void* arg, grpc_endpoint* endpoint));
 };

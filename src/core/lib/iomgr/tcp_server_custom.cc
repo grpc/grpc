@@ -235,13 +235,25 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s", sp->server,
             peer_name_string.c_str());
   }
-  ep = custom_tcp_endpoint_create(socket, sp->server->resource_quota,
+  // Create Resource User
+  grpc_resource_quota* resource_quota = sp->server->resource_quota;
+  if (resource_quota == nullptr) {
+    resource_quota = grpc_resource_quota_create(nullptr);
+  } else {
+    grpc_resource_quota_ref_internal(resource_quota);
+  }
+  grpc_resource_user* resource_user =
+      grpc_resource_user_create(resource_quota, peer_name_string.c_str());
+  grpc_resource_quota_unref_internal(resource_quota);
+  ep = custom_tcp_endpoint_create(socket, resource_user,
                                   peer_name_string.c_str());
   acceptor->from_server = sp->server;
   acceptor->port_index = sp->port_index;
   acceptor->fd_index = 0;
   acceptor->external_connection = false;
-  sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, nullptr, acceptor);
+  sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, resource_user,
+                           nullptr, acceptor);
+  grpc_resource_user_unref(resource_user);
 }
 
 static void custom_accept_callback(grpc_custom_socket* socket,
