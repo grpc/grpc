@@ -1583,12 +1583,15 @@ grpc_error_handle HPackParser::Parse(const grpc_slice& slice) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   while (start != end && error == GRPC_ERROR_NONE) {
     const uint8_t* target = start + GPR_MIN(MAX_PARSE_LENGTH, end - start);
-    error = (this->*state_)( start, target);
+    error = (this->*state_)(start, target);
     start = target;
   }
   current_slice_refcount_ = nullptr;
   return error;
 }
+
+// TODO(ctiller): this serves as an eviction notice for the remainder of this
+// file... it belongs elsewhere!
 
 typedef void (*maybe_complete_func_type)(grpc_chttp2_transport* t,
                                          grpc_chttp2_stream* s);
