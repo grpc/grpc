@@ -137,6 +137,17 @@ bool XdsSecurityEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(donnadionne): Check to see if retrt policy is enabled, this will be
+// removed once ring hash policy is fully integration-tested and enabled by
+// default.
+bool XdsRetryEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // XdsApi::Route::HashPolicy
 //
@@ -1536,67 +1547,84 @@ grpc_error_handle ParseTypedPerFilterConfig(
   return GRPC_ERROR_NONE;
 }
 
-absl::optional<XdsApi::Route::RetryPolicy> RetryPolicyParse(
-    const envoy_config_route_v3_RetryPolicy* retry_policy) {
-  XdsApi::Route::RetryPolicy retry;
-  retry.retry_on = UpbStringToStdString(
+grpc_error_handle RetryPolicyParse(
+    const envoy_config_route_v3_RetryPolicy* retry_policy,
+    XdsApi::Route::RetryPolicy* retry) {
+  auto retry_on = UpbStringToStdString(
       envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
+  std::vector<absl::string_view> codes = absl::StrSplit(retry_on, ',');
+  for (const auto& code : codes) {
+    if (code == "cancelled") {
+      retry->retry_on.Add(GRPC_STATUS_CANCELLED);
+    } else if (code == "deadline-exceeded") {
+      retry->retry_on.Add(GRPC_STATUS_DEADLINE_EXCEEDED);
+    } else if (code == "internal") {
+      retry->retry_on.Add(GRPC_STATUS_INTERNAL);
+    } else if (code == "resource-exhausted") {
+      retry->retry_on.Add(GRPC_STATUS_RESOURCE_EXHAUSTED);
+    } else if (code == "unavailable") {
+      retry->retry_on.Add(GRPC_STATUS_UNAVAILABLE);
+    } else {
+      gpr_log(GPR_DEBUG, "Unsupported retry_on policy");
+    }
+  }
   const google_protobuf_UInt32Value* num_retries =
       envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
   if (num_retries != nullptr) {
-    retry.num_retries = google_protobuf_UInt32Value_value(num_retries);
+    auto num_retries_value = google_protobuf_UInt32Value_value(num_retries);
+    if (retry->num_retries == 0) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          "RouteAction RetryPolicy num_retries set to invalid value 0");
+    } else {
+      retry->num_retries = num_retries_value;
+    }
   } else {
-    gpr_log(GPR_DEBUG, "RouteAction RetryPolicy missing num_retries");
-    return absl::nullopt;
+    retry->num_retries = 1;
   }
   const envoy_config_route_v3_RetryPolicy_RetryBackOff* backoff =
       envoy_config_route_v3_RetryPolicy_retry_back_off(retry_policy);
   if (backoff != nullptr) {
     const google_protobuf_Duration* base_interval =
         envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
-    if (base_interval != nullptr) {
+    if (base_interval == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          "RouteAction RetryPolicy RetryBackoff missing base interval");
+    } else {
       XdsApi::Duration base;
       base.seconds = google_protobuf_Duration_seconds(base_interval);
       base.nanos = google_protobuf_Duration_nanos(base_interval);
-      retry.retry_back_off.base_interval = base;
-    } else {
-      gpr_log(GPR_DEBUG,
-              "RouteAction RetryPolicy RetryBackoff missing base interval");
-      return absl::nullopt;
+      gpr_log(GPR_INFO, "donna debugging set base");
+      retry->retry_back_off.base_interval = base;
     }
     const google_protobuf_Duration* max_interval =
         envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
+    XdsApi::Duration max;
     if (max_interval != nullptr) {
-      XdsApi::Duration max;
       max.seconds = google_protobuf_Duration_seconds(max_interval);
       max.nanos = google_protobuf_Duration_nanos(max_interval);
-      retry.retry_back_off.max_interval = max;
     } else {
-      gpr_log(GPR_DEBUG,
-              "RouteAction RetryPolicy RetryBackoff missing max interval");
-      return absl::nullopt;
+      max.seconds = retry->retry_back_off.base_interval.seconds * 10;
+      // calculate nanos too
     }
+    gpr_log(GPR_INFO, "donna debugging set max");
+    retry->retry_back_off.max_interval = max;
   } else {
-    gpr_log(GPR_DEBUG, "RetryPolicy missing retry_backoff");
-    return absl::nullopt;
+    retry->retry_back_off.base_interval.seconds = 0;
+    retry->retry_back_off.base_interval.nanos = 25000000;
+    retry->retry_back_off.max_interval.seconds = 0;
+    retry->retry_back_off.max_interval.nanos = 250000000;
   }
   const google_protobuf_Duration* per_try_timeout =
       envoy_config_route_v3_RetryPolicy_per_try_timeout(retry_policy);
   if (per_try_timeout != nullptr) {
+    // TODO@donnadionne: what to do if we cannot support any policy from
+    // retry_on?
     XdsApi::Duration per_try;
     per_try.seconds = google_protobuf_Duration_seconds(per_try_timeout);
     per_try.nanos = google_protobuf_Duration_nanos(per_try_timeout);
-    retry.per_try_timeout = per_try;
+    retry->per_try_timeout = per_try;
   }
-  return retry;
-}
-
-absl::optional<XdsApi::Route::RetryPolicy::HedgePolicy> HedgePolicyParse(
-    const envoy_config_route_v3_HedgePolicy* hedge_policy) {
-  XdsApi::Route::RetryPolicy::HedgePolicy hedge;
-  hedge.hedge_on_per_try_timeout =
-      envoy_config_route_v3_HedgePolicy_hedge_on_per_try_timeout(hedge_policy);
-  return hedge;
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error_handle RouteActionParse(const EncodingContext& context,
@@ -1777,15 +1805,14 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
     }
   }
   // Get retry policy
-  const envoy_config_route_v3_RetryPolicy* retry_policy =
-      envoy_config_route_v3_RouteAction_retry_policy(route_action);
-  if (retry_policy != nullptr) {
-    XdsApi::Route::RetryPolicy retry;
-    route->retry_policy = RetryPolicyParse(retry_policy);
-    const envoy_config_route_v3_HedgePolicy* hedge_policy =
-        envoy_config_route_v3_RouteAction_hedge_policy(route_action);
-    if (hedge_policy != nullptr && route->retry_policy != absl::nullopt) {
-      route->retry_policy->hedge_policy = HedgePolicyParse(hedge_policy);
+  if (XdsRetryEnabled()) {
+    const envoy_config_route_v3_RetryPolicy* retry_policy =
+        envoy_config_route_v3_RouteAction_retry_policy(route_action);
+    if (retry_policy != nullptr) {
+      XdsApi::Route::RetryPolicy retry;
+      grpc_error_handle error = RetryPolicyParse(retry_policy, &retry);
+      if (error != GRPC_ERROR_NONE) return error;
+      route->retry_policy = retry;
     }
   }
   return GRPC_ERROR_NONE;
@@ -1834,18 +1861,14 @@ grpc_error_handle RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
     }
     // Parse retry policy.
-    absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy =
-        absl::nullopt;
+    XdsApi::Route::RetryPolicy virtual_host_retry_policy;
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
-    if (retry_policy != nullptr) {
-      virtual_host_retry_policy = RetryPolicyParse(retry_policy);
-      const envoy_config_route_v3_HedgePolicy* hedge_policy =
-          envoy_config_route_v3_VirtualHost_hedge_policy(virtual_hosts[i]);
-      if (hedge_policy != nullptr &&
-          virtual_host_retry_policy != absl::nullopt) {
-        virtual_host_retry_policy->hedge_policy =
-            HedgePolicyParse(hedge_policy);
+    if (XdsRetryEnabled()) {
+      if (retry_policy != nullptr) {
+        grpc_error_handle error =
+            RetryPolicyParse(retry_policy, &virtual_host_retry_policy);
+        if (error != GRPC_ERROR_NONE) return error;
       }
     }
     // Parse routes.
@@ -1882,7 +1905,8 @@ grpc_error_handle RouteConfigParse(
       error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
-      if (route.retry_policy == absl::nullopt) {
+      if (XdsRetryEnabled() && route.retry_policy == absl::nullopt &&
+          retry_policy != nullptr) {
         route.retry_policy = virtual_host_retry_policy;
         gpr_log(GPR_INFO, "donna add the virtual host one if there is one");
       }

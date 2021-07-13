@@ -5515,6 +5515,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicy) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -5554,7 +5555,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicy) {
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
-  retry_policy->set_retry_on("blah, blah2");
+  retry_policy->set_retry_on(
+      "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
   retry_policy->mutable_num_retries()->set_value(3);
   auto per_try_timeout = retry_policy->mutable_per_try_timeout();
   per_try_timeout->set_seconds(1);
@@ -5567,14 +5569,12 @@ TEST_P(LdsRdsTest, XdsRetryPolicy) {
       retry_policy->mutable_retry_back_off()->mutable_max_interval();
   max_interval->set_seconds(10);
   max_interval->set_nanos(5);
-  auto* hedge_policy = route1->mutable_route()->mutable_hedge_policy();
-  hedge_policy->set_hedge_on_per_try_timeout(true);
   // route 2:
   auto* route2 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route2->mutable_match()->set_path("/grpc.testing.EchoTest2Service/Echo2");
   route2->mutable_route()->set_cluster(kNewCluster2Name);
   retry_policy = route2->mutable_route()->mutable_retry_policy();
-  retry_policy->set_retry_on("blah2, blah3");
+  retry_policy->set_retry_on("internal,resource-exhausted,unavailable");
   // route 3:
   auto* route3 = new_route_config.mutable_virtual_hosts(0)->add_routes();
   route3->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
@@ -5593,6 +5593,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicy) {
                         .set_rpc_service(SERVICE_ECHO2)
                         .set_rpc_method(METHOD_ECHO2)
                         .set_wait_for_ready(true));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {

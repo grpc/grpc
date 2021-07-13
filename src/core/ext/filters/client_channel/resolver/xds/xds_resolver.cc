@@ -506,16 +506,29 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
                           route.retry_policy->per_try_timeout->seconds,
                           route.retry_policy->per_try_timeout->nanos));
     }
-    if (route.retry_policy->hedge_policy.has_value()) {
-      retry_parts.push_back(absl::StrFormat(
-          "      \"hedgePolicy\": {\n"
-          "         \"hedgeOnPerAttemptRecvTimeout\": \"%d\"\n"
-          "       },\n",
-          route.retry_policy->hedge_policy->hedge_on_per_try_timeout));
+    std::vector<std::string> code_parts;
+    if (!route.retry_policy->retry_on.Empty()) {
+      if (route.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
+        code_parts.push_back("        \"CANCELLED\"");
+      }
+      if (route.retry_policy->retry_on.Contains(
+              GRPC_STATUS_DEADLINE_EXCEEDED)) {
+        code_parts.push_back("        \"DEADLINE_EXCEEDED\"");
+      }
+      if (route.retry_policy->retry_on.Contains(GRPC_STATUS_INTERNAL)) {
+        code_parts.push_back("        \"INTERNAL\"");
+      }
+      if (route.retry_policy->retry_on.Contains(
+              GRPC_STATUS_RESOURCE_EXHAUSTED)) {
+        code_parts.push_back("        \"RESOURCE_EXHAUSTED\"");
+      }
+      if (route.retry_policy->retry_on.Contains(GRPC_STATUS_UNAVAILABLE)) {
+        code_parts.push_back("        \"UNAVAILABLE\"");
+      }
     }
     retry_parts.push_back(
-        absl::StrFormat("      \"retryableStatusCodes\": [ \"%s\" ]\n",
-                        route.retry_policy->retry_on));
+        absl::StrFormat("      \"retryableStatusCodes\": [\n %s ]\n",
+                        absl::StrJoin(code_parts, ",\n")));
     retry_parts.push_back(absl::StrFormat("    }"));
     fields.emplace_back(absl::StrJoin(retry_parts, ""));
   }

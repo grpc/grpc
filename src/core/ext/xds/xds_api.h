@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -113,7 +114,7 @@ class XdsApi {
     std::vector<HashPolicy> hash_policies;
 
     struct RetryPolicy {
-      std::string retry_on;
+      internal::StatusCodeSet retry_on;
       uint32_t num_retries;
       absl::optional<Duration> per_try_timeout;
 
@@ -122,11 +123,6 @@ class XdsApi {
         Duration max_interval;
       };
       RetryBackOff retry_back_off;
-
-      struct HedgePolicy {
-        bool hedge_on_per_try_timeout;
-      };
-      absl::optional<HedgePolicy> hedge_policy;
     };
     absl::optional<RetryPolicy> retry_policy;
 

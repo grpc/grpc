@@ -44,10 +44,6 @@ message RetryPolicy {
   RetryBackOff retry_back_off = 8;
 }
 
-message HedgePolicy {
-  bool hedge_on_per_try_timeout = 3;
-}
-
 // The top level element in the routing configuration is a virtual host. Each virtual host has
 // a logical name as well as a set of domains that get routed to it based on the incoming request's
 // host header. This allows a single listener to service multiple top level domain path trees. Once
@@ -91,7 +87,6 @@ message VirtualHost {
   map<string, google.protobuf.Any> typed_per_filter_config = 15;
 
   RetryPolicy retry_policy = 16;
-  HedgePolicy hedge_policy = 17;
 }
 
 // A route is both a specification of how to match a request as well as an indication of what to do
@@ -339,7 +334,6 @@ message RouteAction {
   repeated HashPolicy hash_policy = 15;
 
   RetryPolicy retry_policy = 9;
-  HedgePolicy hedge_policy = 27;
 
   // Specifies the maximum stream duration for this route.
   MaxStreamDuration max_stream_duration = 36;
