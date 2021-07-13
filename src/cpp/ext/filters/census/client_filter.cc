@@ -91,10 +91,10 @@ void CensusClientCallData::StartTransportStreamOpBatch(
   if (op->send_initial_metadata() != nullptr) {
     census_context* ctxt = op->get_census_context();
     GenerateClientContext(
-        qualified_method_, &context_,
+        qualified_method_, tracer_.context(),
         (ctxt == nullptr) ? nullptr : reinterpret_cast<CensusContext*>(ctxt));
-    size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf_,
-                                               kMaxTraceContextLen);
+    size_t tracing_len = TraceContextSerialize(
+        tracer_.context()->Context(), tracing_buf_, kMaxTraceContextLen);
     if (tracing_len > 0) {
       GRPC_LOG_IF_ERROR(
           "census grpc_filter",
@@ -159,7 +159,7 @@ void CensusClientCallData::Destroy(grpc_call_element* /*elem*/,
   const uint64_t response_size = GetIncomingDataSize(final_info);
   double latency_ms = absl::ToDoubleMilliseconds(absl::Now() - start_time_);
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
-      context_.tags().tags();
+      tracer_.context()->tags().tags();
   std::string method = absl::StrCat(method_);
   tags.emplace_back(ClientMethodTagKey(), method);
   std::string final_status =
@@ -177,10 +177,11 @@ void CensusClientCallData::Destroy(grpc_call_element* /*elem*/,
   grpc_slice_unref_internal(path_);
   if (final_info->final_status != GRPC_STATUS_OK) {
     // TODO(unknown): Map grpc_status_code to trace::StatusCode.
-    context_.Span().SetStatus(opencensus::trace::StatusCode::UNKNOWN,
-                              StatusCodeToString(final_info->final_status));
+    tracer_.context()->Span().SetStatus(
+        opencensus::trace::StatusCode::UNKNOWN,
+        StatusCodeToString(final_info->final_status));
   }
-  context_.EndSpan();
+  tracer_.context()->EndSpan();
 }
 
 }  // namespace grpc
