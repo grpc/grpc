@@ -1618,7 +1618,7 @@ grpc_millis NowFromCycleCounter() {
 // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
 // chance. Rolling dices in drop/fault-injection generates a binomial
 // distribution (if our code is not horribly wrong). Let's make "n" the number
-// of samples, "p" the probabilty. If we have np>5 & n(1-p)>5, we can
+// of samples, "p" the probability. If we have np>5 & n(1-p)>5, we can
 // approximately treat the binomial distribution as a normal distribution.
 //
 // For normal distribution, we can easily look up how many standard deviation we
