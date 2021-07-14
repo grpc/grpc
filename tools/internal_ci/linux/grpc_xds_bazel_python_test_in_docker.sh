@@ -62,12 +62,8 @@ bazel build //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
-<<<<<<< HEAD
-    --test_case=all \
-=======
     --halt_after_fail \
-    --test_case="all,circuit_breaking,timeout,fault_injection" \
->>>>>>> 048d6be581 (Halt and save GCP resources in our interop tests (#26669))
+    --test_case=all \
     --project_id=grpc-testing \
     --source_image=projects/grpc-testing/global/images/xds-test-server \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
