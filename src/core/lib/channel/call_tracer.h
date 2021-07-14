@@ -41,17 +41,17 @@ class CallTracer {
     // Please refer to `grpc_transport_stream_op_batch_payload` for details on
     // arguments.
     virtual void RecordSendInitialMetadata(
-        const grpc_metadata_batch& send_initial_metadata, uint32_t flags) = 0;
+        grpc_metadata_batch* send_initial_metadata, uint32_t flags) = 0;
     virtual void RecordOnDoneSendInitialMetadata(gpr_atm* peer_string) = 0;
     virtual void RecordSendTrailingMetadata(
-        const grpc_metadata_batch& send_trailing_metadata) = 0;
+        grpc_metadata_batch* send_trailing_metadata) = 0;
     virtual void RecordSendMessage(const ByteStream& send_message) = 0;
     virtual void RecordReceivedInitialMetadata(
-        const grpc_metadata_batch& recv_initial_metadata, uint32_t* flags,
+        grpc_metadata_batch* recv_initial_metadata, uint32_t* flags,
         gpr_atm* peer_string) = 0;
     virtual void RecordReceivedMessage(const ByteStream& recv_message) = 0;
     virtual void RecordReceivedTrailingMetadata(
-        const grpc_metadata_batch& recv_trailing_metadata) = 0;
+        grpc_metadata_batch* recv_trailing_metadata) = 0;
     virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
     // Records annotations if supported by the attached tracer library, no-op
     // otherwise.

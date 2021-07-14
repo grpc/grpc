@@ -33,20 +33,20 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
    public:
     ~OpenCensusCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
-        const grpc_metadata_batch& /* send_initial_metadata */,
+        grpc_metadata_batch* /* send_initial_metadata */,
         uint32_t /* flags */) override {}
     void RecordOnDoneSendInitialMetadata(gpr_atm* /* peer_string */) override {}
     void RecordSendTrailingMetadata(
-        const grpc_metadata_batch& /* send_trailing_metadata */) override {}
+        grpc_metadata_batch* /* send_trailing_metadata */) override {}
     void RecordSendMessage(
         const grpc_core::ByteStream& /* send_message */) override {}
     void RecordReceivedInitialMetadata(
-        const grpc_metadata_batch& /* recv_initial_metadata */,
-        uint32_t* /* flags */, gpr_atm* /* peer_string */) override {}
+        grpc_metadata_batch* /* recv_initial_metadata */, uint32_t* /* flags */,
+        gpr_atm* /* peer_string */) override {}
     void RecordReceivedMessage(
         const grpc_core::ByteStream& /* recv_message */) override {}
     void RecordReceivedTrailingMetadata(
-        const grpc_metadata_batch& /* recv_trailing_metadata */) override {}
+        grpc_metadata_batch* /* recv_trailing_metadata */) override {}
     void RecordCancel(grpc_error_handle /* cancel_error */) override {}
     void RecordAnnotation(absl::string_view /* annotation */) override {}
     void RecordEnd(const grpc_call_final_info& /* final_info */) override {}
