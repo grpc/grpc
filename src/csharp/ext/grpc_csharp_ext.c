@@ -425,6 +425,7 @@ grpcsharp_insecure_channel_create(const char* target,
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel = grpc_channel_create(creds, target, args, NULL);
   grpc_channel_credentials_release(creds);
+  return channel;
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_destroy(grpc_channel* channel) {
@@ -951,6 +952,7 @@ GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_server_add_insecure_http2_port(
   grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
   int result = grpc_server_add_http2_port(server, addr, creds);
   grpc_server_credentials_release(creds);
+  return result;
 }
 
 GPR_EXPORT void GPR_CALLTYPE grpcsharp_server_start(grpc_server* server) {
