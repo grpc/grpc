@@ -22,6 +22,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <openssl/ssl.h>
+#include <openssl/base.h>
 
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/slice/slice_internal.h"
