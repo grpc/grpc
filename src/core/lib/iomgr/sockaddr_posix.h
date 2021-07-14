@@ -47,6 +47,7 @@ typedef struct in6_addr grpc_in6_addr;
 
 #define GRPC_AF_UNSPEC AF_UNSPEC
 #define GRPC_AF_UNIX AF_UNIX
+#define GRPC_AF_VSOCK AF_VSOCK
 #define GRPC_AF_INET AF_INET
 #define GRPC_AF_INET6 AF_INET6
 
