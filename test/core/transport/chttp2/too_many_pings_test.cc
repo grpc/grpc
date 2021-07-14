@@ -818,6 +818,7 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel = grpc_channel_create(creds, server_address.c_str(),
                                               &client_channel_args, nullptr);
+  grpc_channel_credentials_release(creds);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
   cq_verifier* cqv = cq_verifier_create(cq);

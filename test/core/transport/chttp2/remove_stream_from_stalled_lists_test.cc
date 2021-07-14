@@ -303,9 +303,11 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
           const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true));
       grpc_channel_args* channel_args =
           grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
+      grpc_channel_credentials* creds = grpc_insecure_credentials_create();
       grpc_channel* channel = grpc_channel_create(
-          grpc_insecure_credentials_create(),
-          std::string("ipv6:" + server_address).c_str(), channel_args, nullptr);
+          creds, std::string("ipv6:" + server_address).c_str(), channel_args,
+          nullptr);
+      grpc_channel_credentials_release(creds);
       grpc_channel_args_destroy(channel_args);
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);

@@ -488,9 +488,10 @@ static void alts_tsi_handshaker_create_channel(
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
   GPR_ASSERT(handshaker->channel == nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   handshaker->channel = grpc_channel_create(
-      grpc_insecure_credentials_create(),
-      next_args->handshaker->handshaker_service_url, nullptr, nullptr);
+      creds, next_args->handshaker->handshaker_service_url, nullptr, nullptr);
+  grpc_channel_credentials_release(creds);
   tsi_result continue_next_result =
       alts_tsi_handshaker_continue_handshaker_next(
           handshaker, next_args->received_bytes.get(),
