@@ -43,9 +43,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::HPackParser parser;
-    parser.BeginFrame(onhdr, grpc_core::HPackParser::Boundary::None, grpc_core::HPackParser::Priority::None);
-    GRPC_ERROR_UNREF(parser.Parse(
-        grpc_slice_from_static_buffer(data, size)));
+    parser.BeginFrame(onhdr, grpc_core::HPackParser::Boundary::None,
+                      grpc_core::HPackParser::Priority::None);
+    GRPC_ERROR_UNREF(parser.Parse(grpc_slice_from_static_buffer(data, size)));
   }
   grpc_shutdown();
   return 0;
