@@ -32,7 +32,7 @@ T IntoResult(absl::StatusOr<T>* status) {
 // g()->Poll<StatusOr<B>>, h()->Poll<StatusOr<C>>. If one of those should be a
 // Status instead, we need a placeholder type to return, and this is it.
 struct Empty {};
-inline Empty IntoResult(absl::Status* status) { return Empty{}; }
+inline Empty IntoResult(absl::Status*) { return Empty{}; }
 
 // Traits object to pass to BasicJoin
 struct TryJoinTraits {

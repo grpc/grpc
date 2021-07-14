@@ -322,7 +322,7 @@ class BasicSeq {
   // Terminator for the above recursion.
   template <>
   struct DestructSubsequentFactories<N - 1> {
-    static void Run(BasicSeq* s) {}
+    static void Run(BasicSeq*) {}
   };
 
   // Specialization for the final state - there are no subsequent factories.

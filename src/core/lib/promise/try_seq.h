@@ -61,7 +61,7 @@ struct TrySeqTraits<absl::Status> {
   using UnwrappedType = void;
   using WrappedType = absl::Status;
   template <typename Next>
-  static auto CallFactory(Next* next, absl::Status&& status)
+  static auto CallFactory(Next* next, absl::Status&&)
       -> decltype(next->Once()) {
     return next->Once();
   }

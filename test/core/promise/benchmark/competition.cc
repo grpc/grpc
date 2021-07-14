@@ -48,7 +48,7 @@ struct Interject {
     i->c.p = i;
   }
 
-  static void Destroy(CallElem* elem) {}
+  static void Destroy(CallElem*) {}
 
   static void StartOp(CallElem* elem, Op* op) {
     auto* i = static_cast<Interject*>(elem->call_data);
@@ -103,7 +103,7 @@ struct InterjectPipe {
     i->c_trailing_metadata.p = i;
   }
 
-  static void Destroy(CallElem* elem) {}
+  static void Destroy(CallElem*) {}
 
   static void StartOp(CallElem* elem, Op* op) {
     auto* i = static_cast<InterjectPipe*>(elem->call_data);
@@ -133,7 +133,7 @@ Filter interject_pipe = {
     0,
 };
 
-void EndOp(CallElem* elem, Op* op) { op->on_complete->Run(absl::OkStatus()); }
+void EndOp(CallElem*, Op* op) { op->on_complete->Run(absl::OkStatus()); }
 
 Filter end_filter = {EndOp,         NoCallData, NoCallData, NoChannelData,
                      NoChannelData, 0,          0};

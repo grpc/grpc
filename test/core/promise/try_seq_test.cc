@@ -44,7 +44,7 @@ TEST(PromiseTest, SucceedAndThenChangeType) {
 
 TEST(PromiseTest, FailAndThen) {
   EXPECT_EQ(TrySeq([]() { return absl::StatusOr<int>(absl::CancelledError()); },
-                   [](int i) {
+                   [](int) {
                      return []() -> Poll<absl::StatusOr<double>> { abort(); };
                    })(),
             Poll<absl::StatusOr<double>>(

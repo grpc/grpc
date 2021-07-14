@@ -63,7 +63,7 @@ class Race<Promise> {
   Promise promise_;
 };
 
-}  // namespace race_detail
+}  // namespace promise_detail
 
 /// Run all the promises, return the first result that's available.
 /// If two results are simultaneously available, bias towards the first result

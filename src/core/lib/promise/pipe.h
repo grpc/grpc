@@ -47,6 +47,9 @@ class Promise {
  public:
   virtual Poll<bool> Step(T* output) = 0;
   virtual void Stop() = 0;
+
+ protected:
+  inline virtual ~Promise() = default;
 };
 
 struct alignas(alignof(void*)) Scratch {
@@ -63,6 +66,7 @@ class FilterInterface {
   virtual void UpdateReceiver(PipeReceiver<T>* receiver) = 0;
 
  protected:
+  inline virtual ~FilterInterface() {}
   static void SetReceiverIndex(PipeReceiver<T>* receiver, int idx,
                                FilterInterface* p);
   char AllocIndex(PipeReceiver<T>* receiver);
@@ -404,7 +408,7 @@ class Next {
     receiver_->next_ = this;
   }
   PipeReceiver<T>* receiver_;
-  int next_filter_ = 0;
+  size_t next_filter_ = 0;
   Promise<T>* current_promise_ = nullptr;
   Scratch scratch_;
 };

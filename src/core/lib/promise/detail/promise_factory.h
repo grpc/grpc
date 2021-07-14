@@ -128,8 +128,8 @@ class PromiseFactory<A, F,
  public:
   using Promise = PromiseLike<F>;
   using Arg = A;
-  Promise Once(Arg arg) { return std::move(f_); }
-  Promise Repeated(Arg arg) { return f_; }
+  Promise Once(Arg) { return std::move(f_); }
+  Promise Repeated(Arg) { return f_; }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
@@ -173,8 +173,8 @@ class PromiseFactory<A, F, absl::enable_if_t<IsVoidCallable<ResultOf<F()>>()>> {
  public:
   using Arg = A;
   using Promise = PromiseLike<decltype(std::declval<F>()())>;
-  Promise Once(Arg arg) { return Promise(f_()); }
-  Promise Repeated(Arg arg) { return Promise(f_()); }
+  Promise Once(Arg) { return Promise(f_()); }
+  Promise Repeated(Arg) { return Promise(f_()); }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:

@@ -17,11 +17,11 @@
 
 #include <functional>
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -33,6 +33,9 @@ class Wakeable {
   virtual void Wakeup() = 0;
   // Drop this wakeable without waking up the underlying activity.
   virtual void Drop() = 0;
+
+ protected:
+  inline virtual ~Wakeable() {}
 };
 
 // An owning reference to a Wakeable.

@@ -50,7 +50,7 @@ void FreeChannel(ChannelStack* stk) {
 CallStack* MakeCall(ChannelStack* stk) {
   char* data = new char[stk->call_stack_size];
   CallStack* call = reinterpret_cast<CallStack*>(data);
-  new (data) CallStack{{0}, stk->num_elems};
+  new (data) CallStack{{0}, stk->num_elems, {}};
   data += sizeof(CallStack);
   ChannelElem* channel_elems = reinterpret_cast<ChannelElem*>(stk + 1);
   char* user_data = data + stk->num_elems * sizeof(CallElem);
