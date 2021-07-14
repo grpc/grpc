@@ -101,15 +101,6 @@ class GenericServerContext;
 class Server;
 class ServerInterface;
 class ContextAllocator;
-
-// TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
-namespace experimental {
-
-typedef ::grpc::ServerContextBase ServerContextBase;
-typedef ::grpc::CallbackServerContext CallbackServerContext;
-
-}  // namespace experimental
-
 class GenericCallbackServerContext;
 
 namespace internal {
@@ -122,7 +113,7 @@ class ServerContextTestSpouse;
 class DefaultReactorTestPeer;
 }  // namespace testing
 
-/// Base class of ServerContext. Experimental until callback API is final.
+/// Base class of ServerContext.
 class ServerContextBase {
  public:
   virtual ~ServerContextBase();
@@ -149,11 +140,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /// Custom-Metadata -> Binary-Header / ASCII-Header
-  /// Binary-Header -> {Header-Name "-bin" } {binary value}
-  /// ASCII-Header -> Header-Name ASCII-Value
-  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /**
+  \verbatim
+  Custom-Metadata -> Binary-Header / ASCII-Header
+  Binary-Header -> {Header-Name "-bin" } {binary value}
+  ASCII-Header -> Header-Name ASCII-Value
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  \endverbatim
+  **/
   void AddInitialMetadata(const std::string& key, const std::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
@@ -170,11 +165,15 @@ class ServerContextBase {
   /// must end in "-bin".
   ///
   /// Metadata must conform to the following format:
-  /// Custom-Metadata -> Binary-Header / ASCII-Header
-  /// Binary-Header -> {Header-Name "-bin" } {binary value}
-  /// ASCII-Header -> Header-Name ASCII-Value
-  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  /**
+  \verbatim
+  Custom-Metadata -> Binary-Header / ASCII-Header
+  Binary-Header -> {Header-Name "-bin" } {binary value}
+  ASCII-Header -> Header-Name ASCII-Value
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  \endverbatim
+  **/
   void AddTrailingMetadata(const std::string& key, const std::string& value);
 
   /// Return whether this RPC failed before the server could provide its status
@@ -310,8 +309,6 @@ class ServerContextBase {
   ///
   /// This method should not be called more than once or called after return
   /// from the method handler.
-  ///
-  /// WARNING: This is experimental API and could be changed or removed.
   ::grpc::ServerUnaryReactor* DefaultReactor() {
     // Short-circuit the case where a default reactor was already set up by
     // the TestPeer.

@@ -640,13 +640,11 @@ void PrintHeaderClientMethodCallbackInterfacesEnd(
   // Intentionally include the word "class" to avoid possible shadowing.
   // TODO: Remove experimental_async call when possible, replace with nullptr.
   printer->Print(
-      "virtual class async_interface* async() { "
-      "return experimental_async(); }\n");
+      "virtual class async_interface* async() { return nullptr; }\n");
 
   // TODO: Remove experimental_async call when possible.
   printer->Print(
-      "virtual class async_interface* experimental_async() { "
-      "return nullptr; }\n");
+      "class async_interface* experimental_async() { return async(); }\n");
 }
 
 void PrintHeaderClientMethodCallbackStart(
@@ -713,9 +711,6 @@ void PrintHeaderClientMethodCallbackEnd(
 
   printer->Print(
       "class async* async() override { "
-      "return experimental_async(); }\n");
-  printer->Print(
-      "class async* experimental_async() override { "
       "return &async_stub_; }\n");
 }
 

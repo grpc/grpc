@@ -93,6 +93,7 @@ libs:
   - test/core/end2end/tests/retry_lb_drop.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
   - test/core/end2end/tests/retry_recv_message.cc
   - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
@@ -205,6 +206,7 @@ libs:
   - test/core/end2end/tests/retry_lb_drop.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
   - test/core/end2end/tests/retry_recv_message.cc
   - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
@@ -389,6 +391,7 @@ libs:
   - absl/base:base
   - absl/memory:memory
   - absl/status:status
+  - absl/strings:cord
   - absl/strings:str_format
   - absl/strings:strings
   - absl/synchronization:synchronization
@@ -3150,7 +3153,52 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/arena.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tls_gcc.h
+  - src/core/lib/gpr/tls_msvc.h
+  - src/core/lib/gpr/tls_pthread.h
+  - src/core/lib/gpr/tls_stdcpp.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/arena.h
+  - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_join.h
@@ -3169,15 +3217,80 @@ targets:
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tls_pthread.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/benchmark/competition.cc
   - test/core/promise/benchmark/filter_stack.cc
   deps:
+  - absl/base:base
+  - absl/memory:memory
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
   - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
   - absl/types:variant
   - benchmark
+  - upb
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4192,7 +4305,52 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/arena.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tls_gcc.h
+  - src/core/lib/gpr/tls_msvc.h
+  - src/core/lib/gpr/tls_pthread.h
+  - src/core/lib/gpr/tls_stdcpp.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/arena.h
+  - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_join.h
@@ -4207,15 +4365,79 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tls_pthread.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/activity_test.cc
   deps:
+  - absl/base:base
   - absl/container:flat_hash_set
+  - absl/memory:memory
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
   - absl/synchronization:synchronization
+  - absl/time:time
   - absl/types:optional
   - absl/types:variant
+  - upb
   uses_polling: false
 - name: address_sorting_test
   gtest: true
@@ -5298,7 +5520,52 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/arena.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tls_gcc.h
+  - src/core/lib/gpr/tls_msvc.h
+  - src/core/lib/gpr/tls_pthread.h
+  - src/core/lib/gpr/tls_stdcpp.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/arena.h
+  - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_join.h
@@ -5317,14 +5584,79 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tls_pthread.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/for_each_test.cc
   deps:
+  - absl/base:base
   - absl/container:flat_hash_set
+  - absl/memory:memory
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
   - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
   - absl/types:variant
+  - upb
   uses_polling: false
 - name: generic_end2end_test
   gtest: true
@@ -5854,7 +6186,52 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/arena.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tls_gcc.h
+  - src/core/lib/gpr/tls_msvc.h
+  - src/core/lib/gpr/tls_pthread.h
+  - src/core/lib/gpr/tls_stdcpp.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/arena.h
+  - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_join.h
@@ -5869,13 +6246,78 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tls_pthread.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/latch_test.cc
   deps:
+  - absl/base:base
+  - absl/memory:memory
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
   - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
   - absl/types:variant
+  - upb
   uses_polling: false
 - name: lb_get_cpu_stats_test
   gtest: true
@@ -5935,6 +6377,18 @@ targets:
   - src/core/lib/promise/poll.h
   src:
   - test/core/promise/loop_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
+- name: match_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/overload.h
+  src:
+  - test/core/gprpp/match_test.cc
   deps:
   - absl/types:variant
   uses_polling: false
@@ -6044,7 +6498,52 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/arena.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tls_gcc.h
+  - src/core/lib/gpr/tls_msvc.h
+  - src/core/lib/gpr/tls_pthread.h
+  - src/core/lib/gpr/tls_stdcpp.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/arena.h
+  - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -6058,15 +6557,79 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tls_pthread.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/observable_test.cc
   deps:
+  - absl/base:base
   - absl/container:flat_hash_set
+  - absl/memory:memory
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
   - absl/synchronization:synchronization
+  - absl/time:time
   - absl/types:optional
   - absl/types:variant
+  - upb
   uses_polling: false
 - name: orphanable_test
   gtest: true
@@ -6090,6 +6653,16 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: overload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/overload.h
+  src:
+  - test/core/gprpp/overload_test.cc
+  deps: []
+  uses_polling: false
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c++
@@ -6132,7 +6705,52 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/arena.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tls_gcc.h
+  - src/core/lib/gpr/tls_msvc.h
+  - src/core/lib/gpr/tls_pthread.h
+  - src/core/lib/gpr/tls_stdcpp.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/arena.h
+  - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_join.h
@@ -6148,14 +6766,78 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c
+  - src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tls_pthread.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/arena.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/pipe_test.cc
   deps:
+  - absl/base:base
+  - absl/memory:memory
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
   - absl/synchronization:synchronization
+  - absl/time:time
   - absl/types:optional
   - absl/types:variant
+  - upb
   uses_polling: false
 - name: poll_test
   gtest: true

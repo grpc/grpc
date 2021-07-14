@@ -15,6 +15,10 @@
 #ifndef GRPC_CORE_LIB_GPRPP_OVERLOAD_H
 #define GRPC_CORE_LIB_GPRPP_OVERLOAD_H
 
+// Portable code. port_platform.h is not required.
+
+#include <utility>
+
 namespace grpc_core {
 
 template <typename... Cases>
@@ -24,21 +28,27 @@ struct OverloadType;
 template <typename Case, typename... Cases>
 struct OverloadType<Case, Cases...> : public Case,
                                       public OverloadType<Cases...> {
-  explicit OverloadType(Case c, Cases... cases)
-      : Case(std::move(c)), OverloadType<Cases...>(std::move(cases)...) {}
+  explicit OverloadType(Case&& c, Cases&&... cases)
+      : Case(std::forward<Case>(c)),
+        OverloadType<Cases...>(std::forward<Cases>(cases)...) {}
   using Case::operator();
   using OverloadType<Cases...>::operator();
 };
 // Overload of a single case is just that case itself
 template <typename Case>
 struct OverloadType<Case> : public Case {
-  explicit OverloadType(Case c) : Case(std::move(c)) {}
+  explicit OverloadType(Case&& c) : Case(std::forward<Case>(c)) {}
   using Case::operator();
 };
 
-// For callables A, B, C, ..., with different argument lists, return a callable
-// that is callable with all argument lists by building the sum type of A, B,
-// C,...
+/// Compose callables into a single callable.
+/// e.g. given [](int i) { puts("a"); } and [](double d) { puts("b"); },
+/// return a callable object like:
+/// struct {
+///   void operator()(int i) { puts("a"); }
+///   void operator()(double i) { puts("b"); }
+/// };
+/// Preserves all captures.
 template <typename... Cases>
 OverloadType<Cases...> Overload(Cases... cases) {
   return OverloadType<Cases...>(std::move(cases)...);

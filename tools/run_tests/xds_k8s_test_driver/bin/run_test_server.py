@@ -40,20 +40,25 @@ _CLEANUP_NAMESPACE = flags.DEFINE_bool(
     help="Delete namespace during resource cleanup")
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
+# Running outside of a test suite, so require explicit resource_suffix.
+flags.mark_flag_as_required("resource_suffix")
+
+KubernetesServerRunner = server_app.KubernetesServerRunner
 
 
 def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
 
-    # Flag shortcuts.
     project: str = xds_flags.PROJECT.value
     # GCP Service Account email
     gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
-    # Base namespace
-    namespace = xds_flags.NAMESPACE.value
-    server_namespace = namespace
 
+    # Resource names.
+    resource_prefix: str = xds_flags.RESOURCE_PREFIX.value
+    resource_suffix: str = xds_flags.RESOURCE_SUFFIX.value
+
+    # KubernetesServerRunner arguments.
     runner_kwargs = dict(
         deployment_name=xds_flags.SERVER_NAME.value,
         image_name=xds_k8s_flags.SERVER_IMAGE.value,
@@ -70,7 +75,9 @@ def main(argv):
             deployment_template='server-secure.deployment.yaml')
 
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
-    server_runner = server_app.KubernetesServerRunner(
+    server_namespace = KubernetesServerRunner.make_namespace_name(
+        resource_prefix, resource_suffix)
+    server_runner = KubernetesServerRunner(
         k8s.KubernetesNamespace(k8s_api_manager, server_namespace),
         **runner_kwargs)
 
