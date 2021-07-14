@@ -46,7 +46,12 @@ Chttp2Connector::Chttp2Connector() {
 }
 
 Chttp2Connector::~Chttp2Connector() {
-  if (endpoint_ != nullptr) grpc_endpoint_destroy(endpoint_);
+  if (endpoint_ != nullptr) {
+    grpc_endpoint_destroy(endpoint_);
+  }
+  if (resource_user_ != nullptr) {
+    grpc_resource_user_unref(resource_user_);
+  }
 }
 
 void Chttp2Connector::Connect(const Args& args, Result* result,
@@ -102,7 +107,7 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   }
   // The RU is only valid if Connect has been called
   if (resource_user_ != nullptr) {
-    grpc_resource_user_unref(resource_user_);
+    grpc_resource_user_shutdown(resource_user_);
   }
   GRPC_ERROR_UNREF(error);
 }

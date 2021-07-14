@@ -57,7 +57,6 @@ class PhonyEndpoint : public grpc_endpoint {
                                                    get_fd,
                                                    can_track_err};
     grpc_endpoint::vtable = &my_vtable;
-    ru_ = grpc_resource_user_create_unlimited();
   }
 
   void PushInput(grpc_slice slice) {
@@ -72,10 +71,7 @@ class PhonyEndpoint : public grpc_endpoint {
     read_cb_ = nullptr;
   }
 
-  grpc_resource_user* get_ru() { return ru_; }
-
  private:
-  grpc_resource_user* ru_;
   grpc_closure* read_cb_ = nullptr;
   grpc_slice_buffer* slices_ = nullptr;
   bool have_slice_ = false;
@@ -113,13 +109,11 @@ class PhonyEndpoint : public grpc_endpoint {
                                       grpc_pollset_set* /*pollset*/) {}
 
   static void shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-    grpc_resource_user_shutdown(static_cast<PhonyEndpoint*>(ep)->ru_);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                             static_cast<PhonyEndpoint*>(ep)->read_cb_, why);
   }
 
   static void destroy(grpc_endpoint* ep) {
-    grpc_resource_user_unref(static_cast<PhonyEndpoint*>(ep)->ru_);
     delete static_cast<PhonyEndpoint*>(ep);
   }
 
@@ -136,9 +130,8 @@ class Fixture {
   Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    auto ru = ep_->get_ru();
-    grpc_resource_user_ref(ru);
-    t_ = grpc_create_chttp2_transport(&c_args, ep_, client, ru);
+    t_ = grpc_create_chttp2_transport(&c_args, ep_, client,
+                                      grpc_resource_user_create_unlimited());
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }

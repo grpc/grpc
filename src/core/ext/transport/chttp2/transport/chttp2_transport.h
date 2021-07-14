@@ -34,9 +34,9 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
 
 extern bool g_flow_control_enabled;
 
-/// Creates a CHTTP2 Transport. This steals a \a resource_user ref from the
-/// caller; if the caller still needs the resource_user after creating a
-/// transport, the caller must take another ref.
+/// Creates a CHTTP2 Transport. This takes ownership of a \a resource_user ref
+/// from the caller; if the caller still needs the resource_user after creating
+/// a transport, the caller must take another ref.
 grpc_transport* grpc_create_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
     grpc_resource_user* resource_user);

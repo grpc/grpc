@@ -210,14 +210,8 @@ static void next_address(internal_request* req, grpc_error_handle error) {
   addr = &req->addresses->addrs[req->next_address++];
   GRPC_CLOSURE_INIT(&req->connected, on_connected, req,
                     grpc_schedule_on_exec_ctx);
-  grpc_arg arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
-      grpc_resource_user_quota(req->resource_user),
-      grpc_resource_quota_arg_vtable());
-  grpc_channel_args args = {1, &arg};
   grpc_tcp_client_connect(&req->connected, &req->ep, req->resource_user,
-                          req->context->pollset_set, &args, addr,
-                          req->deadline);
+                          req->context->pollset_set, {}, addr, req->deadline);
 }
 
 static void on_resolved(void* arg, grpc_error_handle error) {
