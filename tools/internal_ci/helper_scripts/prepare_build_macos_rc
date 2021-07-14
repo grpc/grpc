@@ -29,9 +29,6 @@ ulimit -a
 # Brew packages installed when Kokoro image was built tend to have less conflict.
 export HOMEBREW_NO_AUTO_UPDATE=1
 
-# Let's try
-export HOMEBREW_BOTTLE_DOMAIN=https://ghcr.io/v2/homebrew/core
-
 # Dump the brew configuration for debugging just in case. Check "Core tap HEAD" field
 # because it should be the same as below unless it's been updated.
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
@@ -140,7 +137,7 @@ if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
   # Install PHP 7.2 explictly to address missing php header files and
   # to work well with the pre-installed phpunit 8.4
-  brew install php@7.2
+  brew install php@7.2 || true
   export LDFLAGS="-L/usr/local/opt/php@7.2/lib $(LDFLAGS)"
   export CPPFLAGS="-I/usr/local/opt/php@7.2/include $(CPPFLAGS)"
   export PATH="/usr/local/opt/php@7.2/bin:/usr/local/opt/php@7.2/sbin:$PATH"
