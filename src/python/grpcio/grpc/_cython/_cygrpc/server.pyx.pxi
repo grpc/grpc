@@ -92,11 +92,10 @@ cdef class Server:
             self.c_server, address_c_string, server_credentials.c_credentials)
     else:
       with nogil:
-      	cdef grpc_server_credentials *creds
-	creds = grpc_insecure_server_credentials_create()
+        creds = grpc_insecure_server_credentials_create()
         result = grpc_server_add_http2_port(self.c_server,
                                             address_c_string, creds)
-	grpc_server_credentials_release(creds)
+        grpc_server_credentials_release(creds)
     return result
 
   cdef _c_shutdown(self, CompletionQueue queue, tag):

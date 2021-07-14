@@ -37,13 +37,12 @@ cdef class AioChannel:
 
         if credentials is None:
             self._is_secure = False
-	    cdef grpc_channel_credentials *creds
-	    creds = grpc_insecure_credentials_create();
+            creds = grpc_insecure_credentials_create();
             self.channel = grpc_channel_create(creds,
                 <char *>target,
                 channel_args.c_args(),
                 NULL)
-	    grpc_channel_credentials_release(creds)
+            grpc_channel_credentials_release(creds)
         else:
             self._is_secure = True
             self.channel = grpc_channel_create(

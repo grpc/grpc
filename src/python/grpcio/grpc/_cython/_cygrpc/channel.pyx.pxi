@@ -453,9 +453,8 @@ cdef class Channel:
     self._arguments = arguments
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     if channel_credentials is None:
-      cdef grpc_channel_credentials *creds
       creds = grpc_insecure_credentials_create()
-      self._state.c_channel = grpc_channel_create(c_insecure_channel_credentials,
+      self._state.c_channel = grpc_channel_create(creds,
           <char *>target, channel_args.c_args(), NULL)
       grpc_channel_credentials_release(creds)
     else:
