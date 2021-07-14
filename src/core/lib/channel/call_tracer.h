@@ -26,42 +26,49 @@
 
 namespace grpc_core {
 
-// Interface for a tracer that records activities on a particular call attempt.
-// (A single RPC can have multiple attempts due to retry/hedging policies or as
-// transparent retry attempts.)
-
-class CallAttemptTracer {
- public:
-  // Please refer to `grpc_transport_stream_op_batch_payload` for details on
-  // arguments.
-  virtual void RecordSendInitialMetadata(
-      grpc_metadata_batch* send_initial_metadata, uint32_t flags) = 0;
-  virtual void RecordOnDoneSendInitialMetadata(gpr_atm* peer_string) = 0;
-  virtual void RecordSendTrailingMetadata(
-      grpc_metadata_batch* send_trailing_metadata) = 0;
-  virtual void RecordSendMessage(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message) = 0;
-  virtual void RecordReceivedInitialMetadata(
-      grpc_metadata_batch* recv_initial_metadata, uint32_t* flags,
-      gpr_atm* peer_string) = 0;
-  virtual void RecordReceivedMessage(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message) = 0;
-  virtual void RecordReceivedTrailingMetadata(
-      grpc_metadata_batch* recv_trailing_metadata) = 0;
-  virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
-  virtual void RecordAnnotation(absl::string_view annotation) = 0;
-  virtual void RecordEnd(const grpc_call_final_info* final_info) = 0;
-};
-
 // Interface for a tracer that records activities on a call. Actual attempts for
 // this call are traced with CallAttemptTracer after invoking RecordNewAttempt()
 // on the CallTracer object.
 class CallTracer {
  public:
+  // Interface for a tracer that records activities on a particular call
+  // attempt.
+  // (A single RPC can have multiple attempts due to retry/hedging policies or
+  // as transparent retry attempts.)
+  class CallAttemptTracer {
+   public:
+    virtual ~CallAttemptTracer() {}
+    // Please refer to `grpc_transport_stream_op_batch_payload` for details on
+    // arguments.
+    virtual void RecordSendInitialMetadata(
+        const grpc_metadata_batch& send_initial_metadata, uint32_t flags) = 0;
+    virtual void RecordOnDoneSendInitialMetadata(gpr_atm* peer_string) = 0;
+    virtual void RecordSendTrailingMetadata(
+        const grpc_metadata_batch& send_trailing_metadata) = 0;
+    virtual void RecordSendMessage(const ByteStream& send_message) = 0;
+    virtual void RecordReceivedInitialMetadata(
+        const grpc_metadata_batch& recv_initial_metadata, uint32_t* flags,
+        gpr_atm* peer_string) = 0;
+    virtual void RecordReceivedMessage(const ByteStream& recv_message) = 0;
+    virtual void RecordReceivedTrailingMetadata(
+        const grpc_metadata_batch& recv_trailing_metadata) = 0;
+    virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
+    // Records annotations if supported by the attached tracer library, no-op
+    // otherwise.
+    virtual void RecordAnnotation(absl::string_view annotation) = 0;
+    // Should be the last API call to the object. Once invoked, the tracer
+    // library is free to destroy the object.
+    virtual void RecordEnd(const grpc_call_final_info& final_info) = 0;
+  };
+
+  virtual ~CallTracer() {}
+
   // Records a new attempt for the associated call. \a transparent denotes
   // whether the attempt is being made as a transparent retry or as a
   // non-transparent retry/heding attempt.
-  virtual CallAttemptTracer* RecordNewAttempt(bool transparent) = 0;
+  virtual CallAttemptTracer* RecordNewAttempt(bool is_transparent_retry) = 0;
+  // Records annotations if supported by the attached tracer library, no-op
+  // otherwise.
   virtual void RecordAnnotation(absl::string_view annotation) = 0;
 };
 

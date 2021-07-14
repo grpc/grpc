@@ -26,41 +26,39 @@
 
 namespace grpc {
 
-class OpenCensusCallAttemptTracer : public grpc_core::CallAttemptTracer {
- public:
-  // Please refer to `grpc_transport_stream_op_batch_payload` for details on
-  // arguments.
-  void RecordSendInitialMetadata(
-      grpc_metadata_batch* /* send_initial_metadata */,
-      uint32_t /* flags */) override {}
-  void RecordOnDoneSendInitialMetadata(gpr_atm* /* peer_string */) override {}
-  void RecordSendTrailingMetadata(
-      grpc_metadata_batch* /* send_trailing_metadata */) override {}
-  void RecordSendMessage(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream> /* send_message */)
-      override {}
-  void RecordReceivedInitialMetadata(
-      grpc_metadata_batch* /* recv_initial_metadata */, uint32_t* /* flags */,
-      gpr_atm* /* peer_string */) override {}
-  void RecordReceivedMessage(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream>* /* recv_message */)
-      override {}
-  void RecordReceivedTrailingMetadata(
-      grpc_metadata_batch* /* recv_trailing_metadata */) override {}
-  void RecordCancel(grpc_error_handle /* cancel_error */) override {}
-  void RecordAnnotation(absl::string_view /* annotation */) override {}
-  void RecordEnd(const grpc_call_final_info* /* final_info */) override {}
-
-  CensusContext* context() { return &context_; }
-
- private:
-  CensusContext context_;
-};
-
 class OpenCensusCallTracer : public grpc_core::CallTracer {
  public:
+  class OpenCensusCallAttemptTracer
+      : public grpc_core::CallTracer::CallAttemptTracer {
+   public:
+    ~OpenCensusCallAttemptTracer() override {}
+    void RecordSendInitialMetadata(
+        const grpc_metadata_batch& /* send_initial_metadata */,
+        uint32_t /* flags */) override {}
+    void RecordOnDoneSendInitialMetadata(gpr_atm* /* peer_string */) override {}
+    void RecordSendTrailingMetadata(
+        const grpc_metadata_batch& /* send_trailing_metadata */) override {}
+    void RecordSendMessage(
+        const grpc_core::ByteStream& /* send_message */) override {}
+    void RecordReceivedInitialMetadata(
+        const grpc_metadata_batch& /* recv_initial_metadata */,
+        uint32_t* /* flags */, gpr_atm* /* peer_string */) override {}
+    void RecordReceivedMessage(
+        const grpc_core::ByteStream& /* recv_message */) override {}
+    void RecordReceivedTrailingMetadata(
+        const grpc_metadata_batch& /* recv_trailing_metadata */) override {}
+    void RecordCancel(grpc_error_handle /* cancel_error */) override {}
+    void RecordAnnotation(absl::string_view /* annotation */) override {}
+    void RecordEnd(const grpc_call_final_info& /* final_info */) override {}
+
+    CensusContext* context() { return &context_; }
+
+   private:
+    CensusContext context_;
+  };
+
   OpenCensusCallAttemptTracer* RecordNewAttempt(
-      bool /* transparent */) override {
+      bool /* is_transparent_retry */) override {
     return nullptr;
   }
   void RecordAnnotation(absl::string_view /* annotation */) override {}
