@@ -193,7 +193,6 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->on_read = nullptr;
   std::string name =
       absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
-  grpc_resource_user_ref(resource_user);
   m->resource_user = resource_user;
 }
 

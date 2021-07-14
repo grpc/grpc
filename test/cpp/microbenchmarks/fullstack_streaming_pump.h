@@ -40,13 +40,10 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
 template <class Fixture>
 static void BM_PumpStreamClientToServer(benchmark::State& state) {
-  grpc_core::ExecCtx exec_ctx;
   EchoTestService::AsyncService service;
   grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
   grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
   {
     EchoRequest send_request;
     EchoRequest recv_request;
@@ -114,13 +111,10 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
 
 template <class Fixture>
 static void BM_PumpStreamServerToClient(benchmark::State& state) {
-  grpc_core::ExecCtx exec_ctx;
   EchoTestService::AsyncService service;
   grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
   grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
   {
     EchoResponse send_response;
     EchoResponse recv_response;

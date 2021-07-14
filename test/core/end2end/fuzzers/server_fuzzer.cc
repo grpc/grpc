@@ -42,6 +42,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
     grpc_resource_user* resource_user = grpc_resource_user_create_unlimited();
+    grpc_resource_user_ref(resource_user);
     grpc_endpoint* mock_endpoint =
         grpc_mock_endpoint_create(discard_write, resource_user);
     grpc_mock_endpoint_put_read(

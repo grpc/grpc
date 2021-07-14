@@ -97,8 +97,8 @@ static void client_setup_transport(grpc_transport* transport) {
 static void init_client() {
   grpc_core::ExecCtx exec_ctx;
   grpc_transport* transport;
-  auto* ru = grpc_resource_user_create_unlimited();
-  transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->client, true, ru);
+  transport = grpc_create_chttp2_transport(
+      nullptr, g_ctx.ep->client, true, grpc_resource_user_create_unlimited());
   client_setup_transport(transport);
   GPR_ASSERT(g_ctx.client);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -111,9 +111,8 @@ static void init_server() {
   g_ctx.server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);
   grpc_server_start(g_ctx.server);
-  auto* ru = grpc_resource_user_create_unlimited();
-  transport =
-      grpc_create_chttp2_transport(nullptr, g_ctx.ep->server, false, ru);
+  transport = grpc_create_chttp2_transport(
+      nullptr, g_ctx.ep->server, false, grpc_resource_user_create_unlimited());
   server_setup_transport(transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }
@@ -129,12 +128,10 @@ static void test_init() {
   g_ctx.client_cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* Create endpoints */
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
-  *sfd =
-      grpc_iomgr_create_endpoint_pair("fixture", nullptr, client_ru, server_ru);
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
+  *sfd = grpc_iomgr_create_endpoint_pair(
+      "fixture", nullptr,
+      /*client_resource_user=*/grpc_resource_user_create_unlimited(),
+      /*server_resource_user=*/grpc_resource_user_create_unlimited());
   /* Create client, server and setup transport over endpoint pair */
   init_server();
   init_client();

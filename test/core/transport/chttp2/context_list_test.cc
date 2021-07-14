@@ -70,10 +70,8 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   grpc_core::ExecCtx exec_ctx;
   grpc_stream_refcount ref;
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("context_list_test");
-  grpc_resource_user* resource_user =
-      grpc_resource_user_create_unlimited(resource_quota);
+  grpc_resource_user* resource_user = grpc_resource_user_create_unlimited();
+  grpc_resource_user_ref(resource_user);
   grpc_endpoint* mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_user);
   grpc_transport* t =
@@ -103,7 +101,6 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
     gpr_free(s[i]);
   }
   grpc_transport_destroy(t);
-  grpc_resource_quota_unref(resource_quota);
   exec_ctx.Flush();
 }
 
@@ -128,10 +125,8 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   grpc_core::ExecCtx exec_ctx;
   grpc_stream_refcount ref;
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("context_list_test");
-  grpc_resource_user* resource_user =
-      grpc_resource_user_create_unlimited(resource_quota);
+  grpc_resource_user* resource_user = grpc_resource_user_create_unlimited();
+  grpc_resource_user_ref(resource_user);
   grpc_endpoint* mock_endpoint =
       grpc_mock_endpoint_create(discard_write, resource_user);
   grpc_transport* t =
@@ -160,7 +155,6 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
     gpr_free(s[i]);
   }
   grpc_transport_destroy(t);
-  grpc_resource_quota_unref(resource_quota);
   exec_ctx.Flush();
 }
 

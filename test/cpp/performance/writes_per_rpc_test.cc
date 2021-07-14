@@ -75,7 +75,6 @@ class EndpointPairFixture {
     {
       const grpc_channel_args* server_args =
           server_->c_server()->core_server->channel_args();
-      grpc_resource_user_ref(server_resource_user);
       grpc_transport* transport = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */,
           server_resource_user);
@@ -97,7 +96,6 @@ class EndpointPairFixture {
       ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      grpc_resource_user_ref(client_resource_user);
       grpc_transport* transport = grpc_create_chttp2_transport(
           &c_args, endpoints.client, true, client_resource_user);
       GPR_ASSERT(transport);
@@ -157,6 +155,8 @@ class InProcessCHTTP2 : public EndpointPairFixture {
       grpc_resource_user* client_resource_user,
       grpc_resource_user* server_resource_user) {
     grpc_endpoint_pair p;
+    grpc_resource_user_ref(client_resource_user);
+    grpc_resource_user_ref(server_resource_user);
     grpc_passthru_endpoint_create(&p.client, &p.server, client_resource_user,
                                   server_resource_user, stats);
     return p;
@@ -171,8 +171,6 @@ static double UnaryPingPong(int request_size, int response_size) {
   grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   std::unique_ptr<InProcessCHTTP2> fixture(new InProcessCHTTP2(
       &service, grpc_passthru_endpoint_stats_create(), client_ru, server_ru));
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;

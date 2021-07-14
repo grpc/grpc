@@ -27,6 +27,7 @@ struct grpc_endpoint_pair {
   grpc_endpoint* client;
   grpc_endpoint* server;
 };
+// Note: takes ownership of a ref from the caller on both resource users.
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
     const char* name, grpc_channel_args* args,
     grpc_resource_user* client_resource_user,

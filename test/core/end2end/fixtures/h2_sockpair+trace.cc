@@ -113,6 +113,10 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   fixture_data->client_ru = grpc_resource_user_create_unlimited();
   fixture_data->server_ru = grpc_resource_user_create_unlimited();
+  // The fixture needs to hold a ref to the resource users for later creation of
+  // the transport.
+  grpc_resource_user_ref(fixture_data->client_ru);
+  grpc_resource_user_ref(fixture_data->server_ru);
   fixture_data->ep = grpc_iomgr_create_endpoint_pair(
       "fixture", {}, fixture_data->client_ru, fixture_data->server_ru);
   return f;

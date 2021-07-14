@@ -226,6 +226,8 @@ class TrickledCHTTP2 : public EndpointPairFixture {
       grpc_resource_user* client_resource_user,
       grpc_resource_user* server_resource_user) {
     grpc_endpoint_pair p;
+    grpc_resource_user_ref(client_resource_user);
+    grpc_resource_user_ref(server_resource_user);
     grpc_passthru_endpoint_create(&p.client, &p.server, client_resource_user,
                                   server_resource_user, stats);
     double bytes_per_second = 125.0 * kilobits;

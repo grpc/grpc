@@ -31,6 +31,7 @@ typedef struct {
   gpr_atm num_writes;
 } grpc_passthru_endpoint_stats;
 
+// Note: assumes a ref is taken from the calling code on both resource users.
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
                                    grpc_resource_user* client_resource_user,

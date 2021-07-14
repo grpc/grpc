@@ -200,6 +200,8 @@ void grpc_run_bad_client_test(
   /* Create endpoints */
   grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
   grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
+  // a server_ru ref is needed later for transport creation.
+  grpc_resource_user_ref(server_ru);
   sfd =
       grpc_iomgr_create_endpoint_pair("fixture", nullptr, client_ru, server_ru);
 
@@ -242,7 +244,6 @@ void grpc_run_bad_client_test(
   /* Shutdown. */
   shutdown_client(&sfd.client);
   server_validator_thd.Join();
-  grpc_resource_user_unref(client_ru);
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
   GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,

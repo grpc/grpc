@@ -46,13 +46,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
 
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("client_fuzzer");
-    grpc_resource_user* resource_user =
-        grpc_resource_user_create_unlimited(resource_quota);
+    grpc_resource_user* resource_user = grpc_resource_user_create_unlimited();
+    grpc_resource_user_ref(resource_user);
     grpc_endpoint* mock_endpoint =
         grpc_mock_endpoint_create(discard_write, resource_user);
-    grpc_resource_quota_unref_internal(resource_quota);
 
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_transport* transport = grpc_create_chttp2_transport(

@@ -111,11 +111,14 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  explicit TCP(Service* service, grpc_resource_user* /* client_resource_user */,
-               grpc_resource_user* /* server_resource_user */,
+  explicit TCP(Service* service, grpc_resource_user* client_resource_user,
+               grpc_resource_user* server_resource_user,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
-      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
+      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {
+    grpc_resource_user_unref(client_resource_user);
+    grpc_resource_user_unref(server_resource_user);
+  }
 
   ~TCP() override { grpc_recycle_unused_port(port_); }
 
@@ -132,11 +135,14 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  explicit UDS(Service* service, grpc_resource_user* /* client_resource_user */,
-               grpc_resource_user* /* server_resource_user */,
+  explicit UDS(Service* service, grpc_resource_user* client_resource_user,
+               grpc_resource_user* server_resource_user,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
-      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
+      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {
+    grpc_resource_user_unref(client_resource_user);
+    grpc_resource_user_unref(server_resource_user);
+  }
 
   ~UDS() override { grpc_recycle_unused_port(port_); }
 
@@ -154,17 +160,20 @@ class UDS : public FullstackFixture {
 
 class InProcess : public FullstackFixture {
  public:
-  explicit InProcess(Service* service,
-                     grpc_resource_user* /* client_resource_user */,
-                     grpc_resource_user* /* server_resource_user */,
+  explicit InProcess(Service* service, grpc_resource_user* client_resource_user,
+                     grpc_resource_user* server_resource_user,
                      const FixtureConfiguration& fixture_configuration =
                          FixtureConfiguration())
-      : FullstackFixture(service, fixture_configuration, "") {}
+      : FullstackFixture(service, fixture_configuration, "") {
+    grpc_resource_user_unref(client_resource_user);
+    grpc_resource_user_unref(server_resource_user);
+  }
   ~InProcess() override {}
 };
 
 class EndpointPairFixture : public BaseFixture {
  public:
+  // Takes ownership of a ref on both resource users.
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
                       const FixtureConfiguration& fixture_configuration,
                       grpc_resource_user* client_resource_user,
@@ -175,7 +184,6 @@ class EndpointPairFixture : public BaseFixture {
     b.RegisterService(service);
     fixture_configuration.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
-
     grpc_core::ExecCtx exec_ctx;
 
     /* add server endpoint to server_
@@ -183,7 +191,6 @@ class EndpointPairFixture : public BaseFixture {
     {
       const grpc_channel_args* server_args =
           server_->c_server()->core_server->channel_args();
-      grpc_resource_user_ref(server_resource_user);
       server_transport_ = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */,
           server_resource_user);
@@ -206,7 +213,6 @@ class EndpointPairFixture : public BaseFixture {
       fixture_configuration.ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      grpc_resource_user_ref(client_resource_user);
       client_transport_ = grpc_create_chttp2_transport(
           &c_args, endpoints.client, true, client_resource_user);
       GPR_ASSERT(client_transport_);
@@ -255,16 +261,22 @@ class EndpointPairFixture : public BaseFixture {
 class SockPair : public EndpointPairFixture {
  public:
   explicit SockPair(Service* service, grpc_resource_user* client_resource_user,
-
                     grpc_resource_user* server_resource_user,
                     const FixtureConfiguration& fixture_configuration =
                         FixtureConfiguration())
       : EndpointPairFixture(
             service,
-            grpc_iomgr_create_endpoint_pair(
-
-                "test", nullptr, client_resource_user, server_resource_user),
+            MakeEndpoints(client_resource_user, server_resource_user),
             fixture_configuration, client_resource_user, server_resource_user) {
+  }
+  private:
+  static grpc_endpoint_pair MakeEndpoints(
+      grpc_resource_user* client_resource_user,
+      grpc_resource_user* server_resource_user) {
+    grpc_resource_user_ref(client_resource_user);
+    grpc_resource_user_ref(server_resource_user);
+    return grpc_iomgr_create_endpoint_pair("test", nullptr, client_resource_user,
+                                  server_resource_user);
   }
 };
 
@@ -306,6 +318,8 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
       grpc_resource_user* client_resource_user,
       grpc_resource_user* server_resource_user) {
     grpc_endpoint_pair p;
+    grpc_resource_user_ref(client_resource_user);
+    grpc_resource_user_ref(server_resource_user);
     grpc_passthru_endpoint_create(&p.client, &p.server, client_resource_user,
                                   server_resource_user, stats);
     return p;
