@@ -14,5 +14,5 @@
 
 FROM fedora:23
 
-RUN yum clean all && yum update -y && yum install -y python python-pip
-RUN pip install virtualenv
+RUN yum clean all && yum update -y && yum install -y python3 python3-pip
+RUN pip3 install virtualenv

@@ -775,6 +775,11 @@ class PythonLanguage(object):
                                                    minor='8',
                                                    bits=bits,
                                                    config_vars=config_vars)
+        python39_config = _python_config_generator(name='py39',
+                                                   major='3',
+                                                   minor='9',
+                                                   bits=bits,
+                                                   config_vars=config_vars)
         pypy27_config = _pypy_config_generator(name='pypy',
                                                major='2',
                                                config_vars=config_vars)
@@ -804,13 +809,9 @@ class PythonLanguage(object):
                     # NOTE(rbellevi): Testing takes significantly longer on
                     # MacOS, so we restrict the number of interpreter versions
                     # tested.
-                    return (
-                        python27_config,
-                        python38_config,
-                    )
+                    return (python38_config,)
                 else:
                     return (
-                        python27_config,
                         python35_config,
                         python37_config,
                         python38_config,
@@ -825,6 +826,8 @@ class PythonLanguage(object):
             return (python37_config,)
         elif args.compiler == 'python3.8':
             return (python38_config,)
+        elif args.compiler == 'python3.9':
+            return (python39_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':

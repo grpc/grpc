@@ -17,4 +17,5 @@ FROM centos:7
 RUN yum install -y python
 RUN yum install -y epel-release
 RUN yum install -y python-pip
-RUN pip install virtualenv
+RUN yum install -y python3
+RUN python3 -m pip install virtualenv

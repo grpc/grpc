@@ -14,5 +14,5 @@
 
 FROM debian:jessie
 
-RUN apt-get update && apt-get install -y python python-pip
-RUN pip install virtualenv
+RUN apt-get update && apt-get install -y python3 python3-pip
+RUN pip3 install virtualenv
