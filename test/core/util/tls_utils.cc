@@ -73,7 +73,7 @@ std::string GetFileContents(const char* path) {
   return credential;
 }
 
-absl::Status CheckPrivateKey(absl::string_view private_key) {
+absl::Status CheckPrivateKeyFormat(absl::string_view private_key) {
   if (private_key.empty()) {
     return absl::InvalidArgumentError("Private key string is empty.");
   }
@@ -102,7 +102,7 @@ absl::Status CheckPrivateKey(absl::string_view private_key) {
   return absl::OkStatus();
 }
 
-absl::Status CheckCertChain(absl::string_view cert_chain) {
+absl::Status CheckCertChainFormat(absl::string_view cert_chain) {
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate chain string is empty.");
   }
