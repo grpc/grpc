@@ -21,13 +21,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <openssl/base.h>
 #include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "tls_utils.h"
+#include "src/core/lib/security/credentials/tls/tls_utils.h"
 
 namespace grpc_core {
 
