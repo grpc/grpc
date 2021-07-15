@@ -4381,6 +4381,16 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: binder_smoke_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/binder/binder_smoke_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: bm_alarm
   build: test
   language: c++
