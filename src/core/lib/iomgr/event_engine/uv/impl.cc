@@ -694,7 +694,13 @@ uvEngine::TaskHandle uvEngine::RunAt(absl::Time when, Callback fn,
                                      RunOptions opts) {
   uvTask* task = new uvTask(this);
   task->fn_ = std::move(fn);
-  uint64_t timeout = (when - absl::Now()) / absl::Milliseconds(1);
+  absl::Time now = absl::Now();
+  uint64_t timeout;
+  if (now >= when) {
+    timeout = 0;
+  } else {
+    timeout = (when - now) / absl::Milliseconds(1);
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG,
             "EE::UV::uvTask@%p::RunAt, scheduled, timeout=%" PRIu64
