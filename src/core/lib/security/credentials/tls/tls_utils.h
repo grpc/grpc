@@ -24,6 +24,10 @@
 #include <string>
 #include <vector>
 
+#include "openssl/evp.h"
+#include "openssl/bio.h"
+#include "openssl/x509.h"
+
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/security/context/security_context.h"
