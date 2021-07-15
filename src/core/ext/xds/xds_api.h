@@ -121,8 +121,22 @@ class XdsApi {
       struct RetryBackOff {
         Duration base_interval;
         Duration max_interval;
+
+        bool operator==(const RetryBackOff& other) const {
+          return base_interval == other.base_interval &&
+                 max_interval == other.max_interval;
+        }
+        std::string ToString() const;
       };
       RetryBackOff retry_back_off;
+
+      bool operator==(const RetryPolicy& other) const {
+        return (retry_on == other.retry_on &&
+                num_retries == other.num_retries &&
+                per_try_timeout == other.per_try_timeout &&
+                retry_back_off == other.retry_back_off);
+      }
+      std::string ToString() const;
     };
     absl::optional<RetryPolicy> retry_policy;
 
@@ -152,6 +166,7 @@ class XdsApi {
 
     bool operator==(const Route& other) const {
       return matchers == other.matchers && cluster_name == other.cluster_name &&
+             retry_policy == other.retry_policy &&
              weighted_clusters == other.weighted_clusters &&
              max_stream_duration == other.max_stream_duration &&
              typed_per_filter_config == other.typed_per_filter_config;

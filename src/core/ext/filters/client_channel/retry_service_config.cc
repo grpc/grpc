@@ -226,7 +226,6 @@ grpc_error_handle ParseRetryPolicy(
     }
   }
   // Parse retryableStatusCodes.
-  gpr_log(GPR_INFO, "donna are we validating retryableStatusCode???");
   it = json.object_value().find("retryableStatusCodes");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::ARRAY) {
@@ -247,7 +246,6 @@ grpc_error_handle ParseRetryPolicy(
               "field:retryableStatusCodes error:failed to parse status code"));
           continue;
         }
-        gpr_log(GPR_INFO, "donna retryableStatusCode added");
         retryable_status_codes->Add(status);
       }
     }

@@ -601,9 +601,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         "\n  } ]\n"
         "}");
     *method_config = ServiceConfig::Create(args, json.c_str(), &error);
-    gpr_log(GPR_INFO, "donna created method config: %s", json.c_str());
   }
-  gpr_log(GPR_INFO, "donna maybe created method config");
   grpc_channel_args_destroy(args);
   return error;
 }

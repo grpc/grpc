@@ -5640,10 +5640,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
-  route1->mutable_route()->set_cluster(kDefaultClusterName);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  auto* retry_policy =
+      new_route_config.mutable_virtual_hosts(0)->mutable_retry_policy();
   retry_policy->set_retry_on(
       "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
@@ -5658,18 +5656,15 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
       retry_policy->mutable_retry_back_off()->mutable_max_interval();
   max_interval->set_seconds(0);
   max_interval->set_nanos(250000000);
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
+  route1->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
   // Ensure we retried the correct number of times on a supported status.
   CheckRpcSendFailure(
       1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
       StatusCode::DEADLINE_EXCEEDED);
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
-  ResetBackendCounters();
-  // Ensure we don't retry on an unsupported status.
-  CheckRpcSendFailure(
-      1, RpcOptions().set_server_expected_error(StatusCode::UNAUTHENTICATED),
-      StatusCode::UNAUTHENTICATED);
-  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 

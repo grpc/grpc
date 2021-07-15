@@ -226,6 +226,29 @@ std::string XdsApi::Route::HashPolicy::ToString() const {
 }
 
 //
+// XdsApi::Route::RetryPolicy
+//
+std::string XdsApi::Route::RetryPolicy::RetryBackOff::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(
+      absl::StrCat("RetryBackOff Base: ", base_interval.ToString()));
+  contents.push_back(
+      absl::StrCat("RetryBackOff max: ", max_interval.ToString()));
+  return absl::StrJoin(contents, ",");
+}
+
+std::string XdsApi::Route::RetryPolicy::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(absl::StrFormat("num_retries=%d", num_retries));
+  if (per_try_timeout.has_value()) {
+    contents.push_back(
+        absl::StrCat("per_try_timeout=", per_try_timeout->ToString()));
+  }
+  contents.push_back(retry_back_off.ToString());
+  return absl::StrJoin(contents, ",");
+}
+
+//
 // XdsApi::Route
 //
 
@@ -265,6 +288,10 @@ std::string XdsApi::Route::ToString() const {
   contents.push_back(matchers.ToString());
   for (const HashPolicy& hash_policy : hash_policies) {
     contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
+  }
+  if (retry_policy.has_value()) {
+    contents.push_back(
+        absl::StrCat("retry_policy={", retry_policy->ToString(), "}"));
   }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
@@ -1598,7 +1625,6 @@ grpc_error_handle RetryPolicyParse(
     } else {
       XdsApi::Duration base;
       DurationParse(base_interval, &base);
-      gpr_log(GPR_INFO, "donna debugging set base");
       retry->retry_back_off.base_interval = base;
     }
     const google_protobuf_Duration* max_interval =
@@ -1915,7 +1941,6 @@ grpc_error_handle RouteConfigParse(
       if (XdsRetryEnabled() && route.retry_policy == absl::nullopt &&
           retry_policy != nullptr) {
         route.retry_policy = virtual_host_retry_policy;
-        gpr_log(GPR_INFO, "donna add the virtual host one if there is one");
       }
       if (context.use_v3) {
         grpc_error_handle error = ParseTypedPerFilterConfig<
