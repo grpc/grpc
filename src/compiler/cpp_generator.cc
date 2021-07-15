@@ -1365,7 +1365,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   }
   PrintHeaderClientMethodCallbackInterfacesEnd(printer, vars);
   printer->Outdent();
-  printer->Print("private:\n");
+  printer->Print(" private:\n");
   printer->Indent();
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethodInterfaces(printer, service->method(i).get(), vars,
