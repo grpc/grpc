@@ -312,6 +312,8 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
   }
 
   void thread() {
+    // ugh
+    signal(SIGPIPE, SIG_IGN);
     int r = 0;
     worker_thread_id_ = std::this_thread::get_id();
     r = uv_loop_init(&loop_);
