@@ -307,8 +307,8 @@ class KubernetesNamespace:
         local_address = local_address or self.PORT_FORWARD_LOCAL_ADDRESS
         local_port = local_port or remote_port
         cmd = [
-            "kubectl", "--context", self.api.context, "--namespace", self.name,
-            "port-forward", "--address", local_address,
+            "kubectl", "--context", self.api.context, "--resource_prefix",
+            self.name, "port-forward", "--address", local_address,
             f"pod/{pod.metadata.name}", f"{local_port}:{remote_port}"
         ]
         pf = subprocess.Popen(cmd,
