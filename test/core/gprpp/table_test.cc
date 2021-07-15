@@ -19,46 +19,92 @@
 namespace grpc_core {
 namespace testing {
 
-TEST(TypedTable, NoOp) {
-  TypedTable<int, double, std::string> t;
+TEST(Table, NoOp) {
+  Table<int, double, std::string> t;
   EXPECT_EQ(t.get<int>(), nullptr);
   EXPECT_EQ(t.get<double>(), nullptr);
   EXPECT_EQ(t.get<std::string>(), nullptr);
+  EXPECT_EQ(t.get<0>(), nullptr);
+  EXPECT_EQ(t.get<1>(), nullptr);
+  EXPECT_EQ(t.get<2>(), nullptr);
 }
 
-TEST(TypedTable, SetTheThings) {
-  TypedTable<int, double, std::string> t;
+TEST(Table, SetTheThings) {
+  Table<int, double, std::string> t;
   t.set<int>(3);
   t.set<double>(2.9);
   t.set<std::string>("Hello world!");
   EXPECT_EQ(*t.get<int>(), 3);
   EXPECT_EQ(*t.get<double>(), 2.9);
   EXPECT_EQ(*t.get<std::string>(), "Hello world!");
+  EXPECT_EQ(*t.get<0>(), 3);
+  EXPECT_EQ(*t.get<1>(), 2.9);
+  EXPECT_EQ(*t.get<2>(), "Hello world!");
 }
 
-TEST(TypedTable, GetDefault) {
-  TypedTable<int, double, std::string> t;
+TEST(Table, GetDefault) {
+  Table<int, double, std::string> t;
   EXPECT_EQ(*t.get_or_create<std::string>(), "");
   EXPECT_EQ(*t.get_or_create<double>(), 0.0);
   EXPECT_EQ(*t.get_or_create<int>(), 0);
 }
 
-TEST(TypedTable, Copy) {
-  TypedTable<int, std::string> t;
+TEST(Table, GetDefaultIndexed) {
+  Table<int, double, std::string> t;
+  EXPECT_EQ(*t.get_or_create<2>(), "");
+  EXPECT_EQ(*t.get_or_create<1>(), 0.0);
+  EXPECT_EQ(*t.get_or_create<0>(), 0);
+}
+
+TEST(Table, Copy) {
+  Table<int, std::string> t;
   t.set<std::string>("abcdefghijklmnopqrstuvwxyz");
   EXPECT_EQ(*t.get<std::string>(), "abcdefghijklmnopqrstuvwxyz");
   EXPECT_EQ(t.get<int>(), nullptr);
-  TypedTable<int, std::string> u(t);
+  Table<int, std::string> u(t);
   EXPECT_EQ(*u.get<std::string>(), "abcdefghijklmnopqrstuvwxyz");
   EXPECT_EQ(*t.get<std::string>(), "abcdefghijklmnopqrstuvwxyz");
   EXPECT_EQ(t.get<int>(), nullptr);
   EXPECT_EQ(u.get<int>(), nullptr);
   u.set<std::string>("hello");
-  EXPECT_EQ(*u.get<std::string>(), "hello");
-  EXPECT_EQ(*t.get<std::string>(), "abcdefghijklmnopqrstuvwxyz");
+  EXPECT_EQ(*u.get<1>(), "hello");
+  EXPECT_EQ(*t.get<1>(), "abcdefghijklmnopqrstuvwxyz");
   t = u;
   EXPECT_EQ(*u.get<std::string>(), "hello");
   EXPECT_EQ(*t.get<std::string>(), "hello");
+}
+
+TEST(Table, Move) {
+  Table<int, std::string> t;
+  t.set<std::string>("abcdefghijklmnopqrstuvwxyz");
+  EXPECT_EQ(*t.get<std::string>(), "abcdefghijklmnopqrstuvwxyz");
+  EXPECT_EQ(t.get<int>(), nullptr);
+  Table<int, std::string> u(std::move(t));
+  EXPECT_NE(t.get<std::string>(), nullptr);
+  EXPECT_EQ(*u.get<std::string>(), "abcdefghijklmnopqrstuvwxyz");
+  EXPECT_EQ(t.get<int>(), nullptr);
+  EXPECT_EQ(u.get<int>(), nullptr);
+  u.set<std::string>("hello");
+  EXPECT_EQ(*u.get<1>(), "hello");
+  t = std::move(u);
+  EXPECT_NE(u.get<std::string>(), nullptr);
+  EXPECT_EQ(*t.get<std::string>(), "hello");
+}
+
+TEST(Table, SameTypes) {
+  Table<std::string, std::string, std::string> t;
+  // The following lines should not compile:
+  // t.get<std::string>();
+  // t.has<4>();
+  // t.get<4>();
+  // t.clear<4>();
+  EXPECT_EQ(t.get<0>(), nullptr);
+  EXPECT_EQ(t.get<1>(), nullptr);
+  EXPECT_EQ(t.get<2>(), nullptr);
+  t.set<1>("Hello!");
+  EXPECT_EQ(t.get<0>(), nullptr);
+  EXPECT_EQ(*t.get<1>(), "Hello!");
+  EXPECT_EQ(t.get<2>(), nullptr);
 }
 
 }  // namespace testing

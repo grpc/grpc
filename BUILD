@@ -766,6 +766,7 @@ grpc_cc_library(
     name = "table",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/table.h"],
+    external_deps = ["absl/utility"]
 )
 
 grpc_cc_library(
