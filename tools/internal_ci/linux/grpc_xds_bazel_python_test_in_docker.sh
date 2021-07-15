@@ -62,6 +62,7 @@ bazel build //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_routing_lb,cds_lb,eds_lb,priority_lb,weighted_target_lb,lrs_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
+    --halt_after_fail \
     --test_case=all \
     --project_id=grpc-testing \
     --source_image=projects/grpc-testing/global/images/xds-test-server \
