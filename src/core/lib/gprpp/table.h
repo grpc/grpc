@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_GPRPP_TYPED_TABLE_H
-#define GRPC_CORE_LIB_GPRPP_TYPED_TABLE_H
+#ifndef GRPC_CORE_LIB_GPRPP_TABLE_H
+#define GRPC_CORE_LIB_GPRPP_TABLE_H
 
 // Portable code. port_platform.h is not required.
 
@@ -374,4 +374,4 @@ class Table {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_GPRPP_TYPED_TABLE_H
+#endif  // GRPC_CORE_LIB_GPRPP_TABLE_H
