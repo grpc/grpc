@@ -37,27 +37,33 @@ struct Elements<T, Ts...> : Elements<Ts...> {
     [[no_unique_address]] T x;
   };
   U u;
-
-  // Access the pointer to the value at index I
-  template <size_t I>
-  struct Get {
-    static auto f(Elements* e)
-        -> decltype(Elements<Ts...>::template Get<I - 1>::f(e)) {
-      return Elements<Ts...>::template Get<I - 1>::f(e);
-    }
-    static auto f(const Elements* e)
-        -> decltype(Elements<Ts...>::template Get<I - 1>::f(e)) {
-      return Elements<Ts...>::template Get<I - 1>::f(e);
-    }
-  };
-  template <>
-  struct Get<0> {
-    static T* f(Elements* e) { return &e->u.x; }
-    static const T* f(const Elements* e) { return &e->u.x; }
-  };
 };
 template <>
 struct Elements<> {};
+
+// Element accessor for Elements<>
+// Provides a static method f that returns a pointer to the value of element I
+// for Elements<Ts...>
+template <size_t I, typename... Ts>
+struct GetElem;
+
+template <typename T, typename... Ts>
+struct GetElem<0, T, Ts...> {
+  static T* f(Elements<T, Ts...>* e) { return &e->u.x; }
+  static const T* f(const Elements<T, Ts...>* e) { return &e->u.x; }
+};
+
+template <size_t I, typename T, typename... Ts>
+struct GetElem<I, T, Ts...> {
+  static auto f(Elements<T, Ts...>* e)
+      -> decltype(GetElem<I - 1, Ts...>::f(e)) {
+    return GetElem<I - 1, Ts...>::f(e);
+  }
+  static auto f(const Elements<T, Ts...>* e)
+      -> decltype(GetElem<I - 1, Ts...>::f(e)) {
+    return GetElem<I - 1, Ts...>::f(e);
+  }
+};
 
 // CountIncludedStruct is the backing for the CountIncluded function below.
 // Sets a member constant N to the number of times Needle is in Haystack.
@@ -288,6 +294,9 @@ class Table {
   using PresentBits = std::bitset<sizeof...(Ts)>;
   // The tuple-like backing structure for Table.
   using Elements = table_detail::Elements<Ts...>;
+  // Extractor from Elements
+  template <size_t I>
+  using GetElem = table_detail::GetElem<I, Ts...>;
 
   // Given a T, return the unambiguous index of it within Ts.
   template <typename T>
@@ -299,14 +308,14 @@ class Table {
   // index I.
   template <size_t I>
   TypeIndex<I>* element_ptr() {
-    return Elements::template Get<I>::f(&elements_);
+    return GetElem<I>::f(&elements_);
   }
 
   // Given an index, return a point to the (maybe uninitialized!) data value at
   // index I.
   template <size_t I>
   const TypeIndex<I>* element_ptr() const {
-    return Elements::template Get<I>::f(&elements_);
+    return GetElem<I>::f(&elements_);
   }
 
   // Set the present bit to value (if true - value is present/set, if false,
