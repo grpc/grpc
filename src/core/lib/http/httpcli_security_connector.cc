@@ -175,6 +175,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   } else {
     grpc_channel_args_destroy(args->args);
     grpc_slice_buffer_destroy_internal(args->read_buffer);
+    grpc_resource_user_unref(args->resource_user);
     gpr_free(args->read_buffer);
     c->func(c->arg, args->endpoint);
   }
