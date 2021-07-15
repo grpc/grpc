@@ -127,7 +127,6 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   connect->closure = closure;
   connect->endpoint = ep;
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
-  grpc_resource_user_ref(resource_user);
   connect->resource_user = resource_user;
   connect->socket = socket;
   socket->connector = connect;

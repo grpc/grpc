@@ -245,6 +245,7 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
   grpc_resource_user* resource_user =
       grpc_resource_user_create(resource_quota, peer_name_string.c_str());
   grpc_resource_quota_unref_internal(resource_quota);
+  grpc_resource_user_ref(resource_user);
   ep = custom_tcp_endpoint_create(socket, resource_user,
                                   peer_name_string.c_str());
   acceptor->from_server = sp->server;

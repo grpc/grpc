@@ -206,7 +206,6 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   ac->refs = 2;
   ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->endpoint = endpoint;
-  grpc_resource_user_ref(ac->resource_user);
   ac->resource_user = resource_user;
   ac->channel_args = grpc_channel_args_copy(channel_args);
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);

@@ -170,7 +170,6 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
             connect, connect->addr_name.c_str());
   }
-  grpc_resource_user_ref(resource_user);
   connect->resource_user = resource_user;
 
   CFReadStreamRef read_stream;

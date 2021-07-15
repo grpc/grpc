@@ -374,7 +374,6 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   tcp->shutting_down = false;
-  grpc_resource_user_ref(resource_user);
   tcp->resource_user = resource_user;
   grpc_resource_user_slice_allocator_init(
       &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);

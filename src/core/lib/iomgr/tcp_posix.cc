@@ -1746,7 +1746,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = peer_string;
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  grpc_resource_user_ref(resource_user);
   tcp->resource_user = resource_user;
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
