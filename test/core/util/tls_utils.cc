@@ -15,6 +15,7 @@
 //
 
 #include "test/core/util/tls_utils.h"
+#include "src/core/lib/security/credentials/tls/tls_utils.h"
 
 #include "openssl/pem.h"
 #include "src/core/lib/gpr/tmpfile.h"
@@ -76,13 +77,13 @@ absl::Status CheckPrivateKey(absl::string_view private_key) {
   if (private_key.empty()) {
     return absl::InvalidArgumentError("Private key string is empty.");
   }
-  bssl::UniquePtr<BIO> private_key_bio(
+  OwnedBIO private_key_bio(
       BIO_new_mem_buf(private_key.data(), private_key.size()));
   if (!private_key_bio) {
     return absl::InvalidArgumentError(
         "Conversion from private key string to BIO failed.");
   }
-  bssl::UniquePtr<EVP_PKEY> private_evp_pkey(PEM_read_bio_PrivateKey(
+  OwnedEVP_PKEY private_evp_pkey(PEM_read_bio_PrivateKey(
       private_key_bio.get(), nullptr, nullptr, nullptr));
   if (!private_evp_pkey) {
     return absl::InvalidArgumentError("Invalid private key string.");
@@ -105,16 +106,18 @@ absl::Status CheckCertChain(absl::string_view cert_chain) {
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate chain string is empty.");
   }
-  bssl::UniquePtr<BIO> cert_chain_bio(
+  OwnedBIO cert_chain_bio(
       BIO_new_mem_buf(cert_chain.data(), cert_chain.size()));
-  bssl::UniquePtr<STACK_OF(X509_INFO)> cert_stack(
+  OwnedX509InfoStack cert_stack(
       PEM_X509_INFO_read_bio(cert_chain_bio.get(), nullptr, nullptr, nullptr));
   int num_certs = sk_X509_INFO_num(cert_stack.get());
-  const char* bad_format_string = "Certificate chain contains cert with bad format";
+  const char* bad_format_string =
+      "Certificate chain contains cert with bad format";
   if (num_certs == 0) {
     return absl::InvalidArgumentError(bad_format_string);
   }
   for (int i = 0; i < num_certs; i++) {
+    // We don't need to free `cert_info` because its parent manages it
     X509_INFO* cert_info = sk_X509_INFO_value(cert_stack.get(), i);
     if (cert_info->x509 == nullptr) {
       return absl::InvalidArgumentError(bad_format_string);
