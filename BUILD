@@ -89,7 +89,7 @@ g_stands_for = "goofy"  # @unused
 
 core_version = "18.0.0"  # @unused
 
-version = "1.39.0-pre1"  # @unused
+version = "1.39.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
