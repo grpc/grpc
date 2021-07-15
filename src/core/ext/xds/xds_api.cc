@@ -1571,7 +1571,7 @@ grpc_error_handle RetryPolicyParse(
     } else if (code == "unavailable") {
       retry->retry_on.Add(GRPC_STATUS_UNAVAILABLE);
     } else {
-      gpr_log(GPR_DEBUG, "Unsupported retry_on policy");
+      gpr_log(GPR_DEBUG, "Unsupported retry_on policy.");
     }
   }
   const google_protobuf_UInt32Value* num_retries =
@@ -1580,7 +1580,7 @@ grpc_error_handle RetryPolicyParse(
     auto num_retries_value = google_protobuf_UInt32Value_value(num_retries);
     if (num_retries_value == 0) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          "RouteAction RetryPolicy num_retries set to invalid value 0");
+          "RouteAction RetryPolicy num_retries set to invalid value 0.");
     } else {
       retry->num_retries = num_retries_value;
     }
@@ -1594,7 +1594,7 @@ grpc_error_handle RetryPolicyParse(
         envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
     if (base_interval == nullptr) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          "RouteAction RetryPolicy RetryBackoff missing base interval");
+          "RouteAction RetryPolicy RetryBackoff missing base interval.");
     } else {
       XdsApi::Duration base;
       DurationParse(base_interval, &base);
@@ -1616,7 +1616,6 @@ grpc_error_handle RetryPolicyParse(
         max.nanos = max.nanos % 1000000000;
       }
     }
-    gpr_log(GPR_INFO, "donna debugging set max");
     retry->retry_back_off.max_interval = max;
   } else {
     retry->retry_back_off.base_interval.seconds = 0;
@@ -1627,7 +1626,7 @@ grpc_error_handle RetryPolicyParse(
   const google_protobuf_Duration* per_try_timeout =
       envoy_config_route_v3_RetryPolicy_per_try_timeout(retry_policy);
   if (per_try_timeout != nullptr) {
-    // TODO@donnadionne: what to do if we cannot support any policy from
+    // TODO(donnadionne): what to do if we cannot support any policy from
     // retry_on?
     XdsApi::Duration per_try;
     DurationParse(per_try_timeout, &per_try);
