@@ -295,12 +295,10 @@ class CountedService : public ServiceType {
   void IncreaseRequestCount() {
     grpc_core::MutexLock lock(&mu_);
     ++request_count_;
-    gpr_log(GPR_INFO, "donna log inc %d", request_count_);
   }
 
   void ResetCounters() {
     grpc_core::MutexLock lock(&mu_);
-    gpr_log(GPR_INFO, "donna log reset");
     request_count_ = 0;
     response_count_ = 0;
   }
@@ -319,7 +317,6 @@ class BackendServiceImpl
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
-    gpr_log(GPR_INFO, "donna in echo server");
     auto peer_identity = context->auth_context()->GetPeerIdentity();
     CountedService<TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
     const auto status =
@@ -1880,6 +1877,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     bool wait_for_ready = false;
     bool server_fail = false;
     std::vector<std::pair<std::string, std::string>> metadata;
+    int server_sleep_us = 0;
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
@@ -1922,6 +1920,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return *this;
     }
 
+    RpcOptions& set_server_sleep_us(int rpc_server_sleep_us) {
+      server_sleep_us = rpc_server_sleep_us;
+      return *this;
+    }
+
     RpcOptions& set_client_cancel_after_us(int rpc_client_cancel_after_us) {
       client_cancel_after_us = rpc_client_cancel_after_us;
       return *this;
@@ -1946,6 +1949,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       if (server_fail) {
         request->mutable_param()->mutable_expected_error()->set_code(
             GRPC_STATUS_FAILED_PRECONDITION);
+      }
+      if (server_sleep_us != 0) {
+        request->mutable_param()->set_server_sleep_us(server_sleep_us);
       }
       if (client_cancel_after_us != 0) {
         request->mutable_param()->set_client_cancel_after_us(
@@ -5525,7 +5531,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
             kTimeoutApplicationSecond * 1000000000);
 }
 
-TEST_P(LdsRdsTest, XdsRetryPolicy) {
+TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   const size_t kNumRetries = 3;
   SetNextResolution({});
@@ -5545,7 +5551,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicy) {
       "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
   auto per_try_timeout = retry_policy->mutable_per_try_timeout();
-  per_try_timeout->set_seconds(5);
+  per_try_timeout->set_seconds(1);
   per_try_timeout->set_nanos(0);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
@@ -5556,7 +5562,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicy) {
   max_interval->set_seconds(0);
   max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
-  // Ensure we retried the correct number of test on a supported status.
+  // Ensure we retried the correct number of times on a supported status.
   CheckRpcSendFailure(
       1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
       StatusCode::DEADLINE_EXCEEDED);
@@ -5567,6 +5573,56 @@ TEST_P(LdsRdsTest, XdsRetryPolicy) {
       1, RpcOptions().set_server_expected_error(StatusCode::UNAUTHENTICATED),
       StatusCode::UNAUTHENTICATED);
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyPerTryTimeout) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  const size_t kNumRetries = 1;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
+  route1->mutable_route()->set_cluster(kDefaultClusterName);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  auto per_try_timeout = retry_policy->mutable_per_try_timeout();
+  per_try_timeout->set_seconds(1);
+  per_try_timeout->set_nanos(0);
+  auto base_interval =
+      retry_policy->mutable_retry_back_off()->mutable_base_interval();
+  base_interval->set_seconds(0);
+  base_interval->set_nanos(25000000);
+  auto max_interval =
+      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  max_interval->set_seconds(0);
+  max_interval->set_nanos(250000000);
+  SetRouteConfiguration(0, new_route_config);
+  // Ensure we retried the correct number of times on a supported status and
+  // that we timed out according to per try timeout.
+  grpc_millis t0 = NowFromCycleCounter();
+  grpc_millis t1 = t0 + (kNumRetries + 1) * 1000;
+  grpc_millis t2 = t0 + (kNumRetries + 2) * 1000;
+  CheckRpcSendFailure(1,
+                      RpcOptions()
+                          .set_wait_for_ready(true)
+                          .set_timeout_ms((kNumRetries + 3) * 1000)
+                          //.set_skip_cancelled_check(true)
+                          .set_server_sleep_us((kNumRetries + 4) * 1000 * 1000),
+                      StatusCode::DEADLINE_EXCEEDED);
+  t0 = NowFromCycleCounter();
+  EXPECT_GE(t0, t1);
+  EXPECT_LT(t0, t2);
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
