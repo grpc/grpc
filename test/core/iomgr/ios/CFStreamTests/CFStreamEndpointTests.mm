@@ -129,7 +129,6 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   grpc_resource_user *ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &ep_, ru, nullptr, nullptr, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
-  grpc_resource_user_unref(ru);
 
   /* await the connection */
   do {

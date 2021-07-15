@@ -538,11 +538,10 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
       grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
-  auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          ru, conn->pollset_set, nullptr,
+                          grpc_resource_user_create_unlimited(),
+                          conn->pollset_set, nullptr,
                           &resolved_addresses->addrs[0], deadline);
-  grpc_resource_user_unref(ru);
   grpc_resolved_addresses_destroy(resolved_addresses);
 }
 

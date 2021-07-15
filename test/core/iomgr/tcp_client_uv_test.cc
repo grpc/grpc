@@ -112,8 +112,6 @@ void test_succeeds(void) {
   auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &g_connecting, ru, NULL, NULL, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
-  grpc_resource_user_unref(ru);
-
   gpr_mu_lock(g_mu);
 
   while (g_connections_complete == connections_complete_before) {
@@ -157,8 +155,6 @@ void test_fails(void) {
   auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &g_connecting, ru, NULL, NULL, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
-  grpc_resource_user_unref(ru);
-
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */

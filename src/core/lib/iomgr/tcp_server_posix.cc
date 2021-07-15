@@ -280,6 +280,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     grpc_resource_user* resource_user =
         grpc_resource_user_create(resource_quota, addr_str.c_str());
     grpc_resource_quota_unref_internal(resource_quota);
+    grpc_resource_user_ref(resource_user);
     sp->server->on_accept_cb(sp->server->on_accept_cb_arg,
                              grpc_tcp_create(fdobj, sp->server->channel_args,
                                              addr_str.c_str(), resource_user),
@@ -637,6 +638,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     grpc_resource_user* resource_user =
         grpc_resource_user_create(resource_quota, addr_str.c_str());
     grpc_resource_quota_unref_internal(resource_quota);
+    grpc_resource_user_ref(resource_user);
     s_->on_accept_cb(s_->on_accept_cb_arg,
                      grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(),
                                      resource_user),

@@ -106,7 +106,6 @@ static void must_fail(void* arg, grpc_error_handle error) {
   auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &g_connecting, ru, nullptr, nullptr, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
-  grpc_resource_user_unref(ru);
 
   /* await the connection */
   do {
@@ -163,7 +162,6 @@ static void must_fail(void* arg, grpc_error_handle error) {
   auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &g_connecting, ru, nullptr, nullptr, &resolved_addr,
                           GRPC_MILLIS_INF_FUTURE);
-  grpc_resource_user_unref(ru);
 
   grpc_core::ExecCtx::Get()->Flush();
 

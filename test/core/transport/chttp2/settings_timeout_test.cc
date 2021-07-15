@@ -114,11 +114,10 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    auto* ru = grpc_resource_user_create_unlimited();
-    grpc_tcp_client_connect(state.closure(), &endpoint_, ru, pollset_set,
+    grpc_tcp_client_connect(state.closure(), &endpoint_,
+                            grpc_resource_user_create_unlimited(), pollset_set,
                             nullptr /* channel_args */, server_addresses->addrs,
                             grpc_core::ExecCtx::Get()->Now() + 1000);
-    grpc_resource_user_unref(ru);
     ASSERT_TRUE(PollUntilDone(
         &state,
         grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
