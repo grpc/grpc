@@ -35,7 +35,7 @@ using MDVec = std::vector<std::pair<const char*, const char*>>;
 struct TestChecker {
   MDVec* expect;
 
-  TestChecker(MDVec* expect) : expect(std::move(expect)) {}
+  explicit TestChecker(MDVec* expect) : expect(expect) {}
 
   grpc_error_handle operator()(grpc_mdelem md) {
     GPR_ASSERT(!expect->empty());
