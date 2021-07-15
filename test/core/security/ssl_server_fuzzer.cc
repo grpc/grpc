@@ -61,6 +61,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
 
     grpc_resource_user* resource_user = grpc_resource_user_create_unlimited();
+    grpc_resource_user_ref(resource_user);
     grpc_endpoint* mock_endpoint =
         grpc_mock_endpoint_create(discard_write, resource_user);
 
@@ -113,8 +114,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Explicit close"));
       grpc_core::ExecCtx::Get()->Flush();
     }
-    grpc_resource_user_unref(resource_user);
-
     GPR_ASSERT(state.done_callback_called);
 
     sc.reset(DEBUG_LOCATION, "test");
