@@ -147,8 +147,9 @@ TEST(
 
 // ServerCredentials should always have identity credential presented.
 // Otherwise gRPC stack will fail.
-TEST(CredentialsTest,
-     TlsServerCredentialsWithDataWatcherCertificateProviderLoadingIdentityOnly) {
+TEST(
+    CredentialsTest,
+    TlsServerCredentialsWithDataWatcherCertificateProviderLoadingIdentityOnly) {
   experimental::IdentityKeyCertPair key_cert_pair;
   key_cert_pair.private_key = kIdentityCertPrivateKey;
   key_cert_pair.certificate_chain = kIdentityCertContents;

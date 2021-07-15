@@ -27,7 +27,6 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "absl/status/statusor.h"
 
 // TODO(yihuazhang): remove the forward declaration here and include

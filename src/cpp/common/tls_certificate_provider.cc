@@ -61,14 +61,14 @@ DataWatcherCertificateProvider::~DataWatcherCertificateProvider() {
 }
 
 grpc::Status DataWatcherCertificateProvider::ReloadRootCertificate(
-    const string& root_certificate) {
+    const std::string& root_certificate) {
   grpc_core::DataWatcherCertificateProvider* in_memory_provider =
       dynamic_cast<grpc_core::DataWatcherCertificateProvider*>(c_provider_);
   GPR_ASSERT(in_memory_provider != nullptr);
   absl::Status status =
       in_memory_provider->ReloadRootCertificate(root_certificate);
   return grpc::Status(static_cast<StatusCode>(status.code()),
-                      status.message().data());
+                      std::string(status.message()));
 }
 
 grpc::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(

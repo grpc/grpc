@@ -532,21 +532,21 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_2_);
-  EXPECT_TRUE(status.ok());
+  ASSERT_TRUE(status.ok());
   EXPECT_TRUE(*status);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyMultipleCertMatch) {
   absl::StatusOr<bool> status = PrivateKeyAndCertificateMatch(
-      private_key_2_, /*cert_chain*/ cert_chain_2_ + cert_chain_);
-  EXPECT_TRUE(status.ok());
+      private_key_2_, /*cert_chain=*/ cert_chain_2_ + cert_chain_);
+  ASSERT_TRUE(status.ok());
   EXPECT_TRUE(*status);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_);
-  EXPECT_TRUE(status.ok());
+  ASSERT_TRUE(status.ok());
   EXPECT_FALSE(*status);
 }
 

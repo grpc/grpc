@@ -44,9 +44,9 @@ constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
+using ::grpc::experimental::DataWatcherCertificateProvider;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::StaticDataCertificateProvider;
-using ::grpc::experimental::DataWatcherCertificateProvider;
 using ::grpc::experimental::TlsServerAuthorizationCheckArg;
 using ::grpc::experimental::TlsServerAuthorizationCheckConfig;
 using ::grpc::experimental::TlsServerAuthorizationCheckInterface;

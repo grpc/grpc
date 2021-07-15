@@ -368,7 +368,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
 DataWatcherCertificateProvider::DataWatcherCertificateProvider(
     std::string root_certificate,
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
-    : StaticDataCertificateProvider(root_certificate, pem_key_cert_pairs) {}
+    : StaticDataCertificateProvider(std::move(root_certificate), std::move(pem_key_cert_pairs)) {}
 
 absl::Status DataWatcherCertificateProvider::ReloadRootCertificate(
     const std::string& root_certificate) {
@@ -408,19 +408,19 @@ absl::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
   if (pem_key_cert_pairs.empty()) {
     return absl::InvalidArgumentError("Empty Key-Cert pair list.");
   }
-  for (int i = 0; i < pem_key_cert_pairs.size(); i++) {
-    absl::StatusOr<bool> status =
-        PrivateKeyAndCertificateMatch(pem_key_cert_pairs[i].private_key(),
-                                      pem_key_cert_pairs[i].cert_chain());
-    if (!(status.ok() && *status)) {
-      return absl::InvalidArgumentError("Invalid credentials pair.");
-    }
-  }
-  grpc_core::MutexLock lock(&mu_);
   if (pem_key_cert_pairs == pem_key_cert_pairs_) {
     return absl::InvalidArgumentError(
         "The Key-Cert pair list has not changed.");
   }
+  for (unsigned long i = 0; i < pem_key_cert_pairs.size(); i++) {
+    absl::StatusOr<bool> matched_or =
+        PrivateKeyAndCertificateMatch(pem_key_cert_pairs[i].private_key(),
+                                      pem_key_cert_pairs[i].cert_chain());
+    if (!(matched_or.ok() && *matched_or)) {
+      return absl::InvalidArgumentError(std::string(matched_or.status().message()));
+    }
+  }
+  grpc_core::MutexLock lock(&mu_);
   pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
   ExecCtx exec_ctx;
   grpc_error_handle identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -494,11 +494,8 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 }
 
 grpc_core::PemKeyCertPairList GetValidKeyCertPairList(
-    const grpc_core::PemKeyCertPairList& pair_list) {
-  if (pair_list.empty()) {
-    return {};
-  }
-  for (int i = 0; i < pair_list.size(); i++) {
+    PemKeyCertPairList pair_list) {
+  for (unsigned long i = 0; i < pair_list.size(); i++) {
     absl::StatusOr<bool> status = PrivateKeyAndCertificateMatch(
         pair_list[i].private_key(), pair_list[i].cert_chain());
     if (!(status.ok() && *status)) {
