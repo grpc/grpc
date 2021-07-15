@@ -117,7 +117,8 @@ absl::Status CheckCertChainFormat(absl::string_view cert_chain) {
     return absl::InvalidArgumentError(bad_format_string);
   }
   for (int i = 0; i < num_certs; i++) {
-    // We don't need to free `cert_info` because its parent manages it
+    // We don't need to free `cert_info` because its parent,`cert_stack`,
+    // manages it
     X509_INFO* cert_info = sk_X509_INFO_value(cert_stack.get(), i);
     if (cert_info->x509 == nullptr) {
       return absl::InvalidArgumentError(bad_format_string);
