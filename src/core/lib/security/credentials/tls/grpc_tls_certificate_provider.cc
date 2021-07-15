@@ -21,12 +21,22 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <openssl/ssl.h>
 #include <openssl/base.h>
+#include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
+
+namespace grpc_ptr {
+GRPC_MAKE_DELETER(X509, X509_free)
+GRPC_MAKE_UP_REF(X509, X509_up_ref)
+GRPC_MAKE_DELETER(EVP_PKEY, EVP_PKEY_free)
+GRPC_MAKE_UP_REF(EVP_PKEY, EVP_PKEY_up_ref)
+GRPC_MAKE_DELETER(X509_INFO, X509_INFO_free)
+GRPC_MAKE_DELETER(BIO, BIO_free)
+GRPC_MAKE_UP_REF(BIO, BIO_up_ref)
+}  // namespace grpc_ptr
 
 namespace grpc_core {
 
@@ -374,7 +384,7 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  bssl::UniquePtr<BIO> cert_bio(
+  grpc_ptr::OwnedPtr<BIO> cert_bio(
       BIO_new_mem_buf(cert_chain.data(), cert_chain.size()));
   if (!cert_bio) {
     return absl::InvalidArgumentError(
@@ -382,24 +392,24 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   }
   // Reads the first cert from the cert_chain which is expected to be the leaf
   // cert
-  bssl::UniquePtr<X509> x509(
+  grpc_ptr::OwnedPtr<X509> x509(
       PEM_read_bio_X509(cert_bio.get(), nullptr, nullptr, nullptr));
   if (!x509) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 failed.");
   }
-  bssl::UniquePtr<EVP_PKEY> public_evp_pkey(X509_get_pubkey(x509.get()));
+  grpc_ptr::OwnedPtr<EVP_PKEY> public_evp_pkey(X509_get_pubkey(x509.get()));
   if (!public_evp_pkey) {
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
-  bssl::UniquePtr<BIO> private_key_bio(
+  grpc_ptr::OwnedPtr<BIO> private_key_bio(
       BIO_new_mem_buf(private_key.data(), private_key.size()));
   if (!private_key_bio) {
     return absl::InvalidArgumentError(
         "Conversion from private key string to BIO failed.");
   }
-  bssl::UniquePtr<EVP_PKEY> private_evp_pkey(PEM_read_bio_PrivateKey(
+  grpc_ptr::OwnedPtr<EVP_PKEY> private_evp_pkey(PEM_read_bio_PrivateKey(
       private_key_bio.get(), nullptr, nullptr, nullptr));
   if (!private_evp_pkey) {
     return absl::InvalidArgumentError(

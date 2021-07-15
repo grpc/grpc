@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <memory>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,5 +49,47 @@ GPRAPI void gpr_free_aligned(void* ptr);
 #ifdef __cplusplus
 }
 #endif
+
+extern "C++" {
+
+namespace grpc_ptr {
+
+namespace internal {
+
+template <typename T>
+struct DeleterImpl {};
+
+template <typename T>
+struct Deleter {
+  void operator()(T* ptr) { DeleterImpl<T>::Free(ptr); }
+};
+
+}  // namespace internal
+
+#define GRPC_MAKE_DELETER(type, deleter)          \
+  namespace internal {                            \
+  template <>                                     \
+  struct DeleterImpl<type> {                      \
+    static void Free(type* ptr) { deleter(ptr); } \
+  };                                              \
+  }
+
+template <typename T>
+using OwnedPtr = std::unique_ptr<T, internal::Deleter<T>>;
+
+#define GRPC_MAKE_UP_REF(type, up_ref_func)                \
+  inline OwnedPtr<type> UpRef(type* v) {                   \
+    if (v != nullptr) {                                    \
+      up_ref_func(v);                                      \
+    }                                                      \
+    return OwnedPtr<type>(v);                              \
+  }                                                        \
+                                                           \
+  inline OwnedPtr<type> UpRef(const OwnedPtr<type>& ptr) { \
+    return UpRef(ptr.get());                               \
+  }
+
+}  // namespace grpc_ptr
+}  // extern C++
 
 #endif /* GRPC_SUPPORT_ALLOC_H */
