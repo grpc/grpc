@@ -334,6 +334,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       return;
     }
     ready_.set_value(true);
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx ctx;
     while (uv_run(&loop_, UV_RUN_ONCE) != 0 && !shutdown_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
