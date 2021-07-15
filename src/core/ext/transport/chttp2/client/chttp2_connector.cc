@@ -89,6 +89,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
   // make sure that we still exist at that point by taking a ref.
   Ref().release();  // Ref held by callback.
+  grpc_resource_user_ref(resource_user_);
   grpc_tcp_client_connect(&connected_, ep, resource_user_,
                           args.interested_parties, args.channel_args, &addr,
                           args.deadline);
@@ -107,7 +108,8 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   }
   // The RU is only valid if Connect has been called
   if (resource_user_ != nullptr) {
-    grpc_resource_user_shutdown(resource_user_);
+    grpc_resource_user_unref(resource_user_);
+    resource_user_ = nullptr;
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -127,6 +129,10 @@ void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
       }
       if (self->endpoint_ != nullptr) {
         grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
+      }
+      if (self->resource_user_ != nullptr) {
+        grpc_resource_user_unref(self->resource_user_);
+        self->resource_user_ = nullptr;
       }
       self->result_->Reset();
       grpc_closure* notify = self->notify_;

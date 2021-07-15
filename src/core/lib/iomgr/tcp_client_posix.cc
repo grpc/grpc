@@ -301,6 +301,7 @@ void grpc_tcp_client_create_from_prepared_fd(
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
+    grpc_resource_user_unref(resource_user);
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
     error = grpc_error_set_str(
         error, GRPC_ERROR_STR_TARGET_ADDRESS,
@@ -320,7 +321,6 @@ void grpc_tcp_client_create_from_prepared_fd(
   ac->addr_str = grpc_sockaddr_to_uri(addr);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
-  grpc_resource_user_ref(resource_user);
   ac->resource_user = resource_user;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
