@@ -213,6 +213,8 @@ class XdsResolver : public Resolver {
       return filters_;
     }
 
+    bool GetRetryEnabled() { return retry_enabled_; }
+
     grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) override;
 
    private:
@@ -243,6 +245,7 @@ class XdsResolver : public Resolver {
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
+    bool retry_enabled_ = false;
     grpc_error_handle filter_error_ = GRPC_ERROR_NONE;
   };
 
@@ -488,6 +491,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
   std::vector<std::string> fields;
   // Set retry policy if any.
   if (route.retry_policy.has_value()) {
+    retry_enabled_ = true;
     std::vector<std::string> retry_parts;
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
@@ -606,10 +610,22 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
 
 grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
     grpc_channel_args* args) {
-  if (filter_error_ == GRPC_ERROR_NONE) return args;
-  grpc_arg error_arg = MakeLameClientErrorArg(filter_error_);
+  // The max number of args to add is 2 so far; when more args need to be added
+  // we will increase the size of args_to_add accordingly;
+  grpc_arg args_to_add[2];
+  size_t num_of_args_to_add = 0;
+  if (filter_error_ != GRPC_ERROR_NONE) {
+    args_to_add[num_of_args_to_add] = MakeLameClientErrorArg(filter_error_);
+    ++num_of_args_to_add;
+  }
+  if (retry_enabled_) {
+    args_to_add[num_of_args_to_add] = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1);
+    ++num_of_args_to_add;
+  }
+  if (num_of_args_to_add == 0) return args;
   grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &error_arg, 1);
+      grpc_channel_args_copy_and_add(args, args_to_add, num_of_args_to_add);
   grpc_channel_args_destroy(args);
   return new_args;
 }

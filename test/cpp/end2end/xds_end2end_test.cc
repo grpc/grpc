@@ -1826,8 +1826,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
-    gpr_log(GPR_INFO, "donna was in CreateChannel");
-    args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
     // If the parent channel is using the fake resolver, we inject the
     // response generator here.
     if (GetParam().use_fake_resolver()) {
