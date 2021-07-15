@@ -313,7 +313,10 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
 
   void thread() {
     // ugh
-    signal(SIGPIPE, SIG_IGN);
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGPIPE);
+    pthread_sigmask(SIG_BLOCK, &set, NULL);
     int r = 0;
     worker_thread_id_ = std::this_thread::get_id();
     r = uv_loop_init(&loop_);
