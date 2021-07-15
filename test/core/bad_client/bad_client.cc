@@ -204,7 +204,6 @@ void grpc_run_bad_client_test(
   grpc_resource_user_ref(server_ru);
   sfd =
       grpc_iomgr_create_endpoint_pair("fixture", nullptr, client_ru, server_ru);
-
   /* Create server, completion events */
   a.server = grpc_server_create(nullptr, nullptr);
   a.cq = grpc_completion_queue_create_for_next(nullptr);

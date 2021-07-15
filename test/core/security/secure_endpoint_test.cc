@@ -63,8 +63,6 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
   grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
   tcp = grpc_iomgr_create_endpoint_pair("fixture", &args, client_ru, server_ru);
-  grpc_resource_user_unref(client_ru);
-  grpc_resource_user_unref(server_ru);
   grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(tcp.server, g_pollset);
 

@@ -40,21 +40,15 @@ int main(int argc, char** argv) {
        of descriptors */
     rlim.rlim_cur = rlim.rlim_max = 10;
     GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
-    grpc_resource_user* client_resource_user =
-        grpc_resource_user_create_unlimited();
-    grpc_resource_user* server_resource_user =
-        grpc_resource_user_create_unlimited();
-
     for (i = 0; i < 100; i++) {
-      p = grpc_iomgr_create_endpoint_pair("test", nullptr, client_resource_user,
-                                          server_resource_user);
+      p = grpc_iomgr_create_endpoint_pair(
+          "test", nullptr,
+          /*client_resource_user=*/grpc_resource_user_create_unlimited(),
+          /*server_resource_user=*/grpc_resource_user_create_unlimited());
       grpc_endpoint_destroy(p.client);
       grpc_endpoint_destroy(p.server);
       grpc_core::ExecCtx::Get()->Flush();
     }
-
-    grpc_resource_user_unref(client_resource_user);
-    grpc_resource_user_unref(server_resource_user);
   }
 
   grpc_shutdown();
