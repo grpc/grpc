@@ -464,11 +464,6 @@ struct Base64InverseTable {
 static GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
 }  // namespace
 
-void HPackParser::FinishFrame() {
-  sink_ = Sink();
-  dynamic_table_updates_allowed_ = 2;
-}
-
 void GPR_ATTRIBUTE_NOINLINE HPackParser::LogHeader(grpc_mdelem md) {
   char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
   char* v = nullptr;
@@ -1538,6 +1533,15 @@ HPackParser::HPackParser() {
   last_error_ = GRPC_ERROR_NONE;
 }
 
+HPackParser::~HPackParser() {
+  grpc_chttp2_hptbl_destroy(&table_);
+  GRPC_ERROR_UNREF(last_error_);
+  grpc_slice_unref_internal(key_.data_.referenced);
+  grpc_slice_unref_internal(value_.data_.referenced);
+  gpr_free(key_.data_.copied.str);
+  gpr_free(value_.data_.copied.str);
+}
+
 void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
   sink_ = std::move(sink);
   boundary_ = boundary;
@@ -1551,13 +1555,25 @@ void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
   }
 }
 
-HPackParser::~HPackParser() {
-  grpc_chttp2_hptbl_destroy(&table_);
-  GRPC_ERROR_UNREF(last_error_);
-  grpc_slice_unref_internal(key_.data_.referenced);
-  grpc_slice_unref_internal(value_.data_.referenced);
-  gpr_free(key_.data_.copied.str);
-  gpr_free(value_.data_.copied.str);
+void HPackParser::QueueBufferToParse(const grpc_slice& slice) {
+  queued_slices_.push_back(grpc_slice_ref_internal(slice));
+}
+
+grpc_error_handle HPackParser::FinishFrame() {
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  for (const auto& slice : queued_slices_) {
+    error = Parse(slice);
+    if (error != GRPC_ERROR_NONE) break;
+  }
+  for (const auto& slice : queued_slices_) {
+    grpc_slice_unref_internal(slice);
+  }
+  queued_slices_.clear();
+
+  sink_ = Sink();
+  dynamic_table_updates_allowed_ = 2;
+
+  return error;
 }
 
 grpc_error_handle HPackParser::Parse(const grpc_slice& slice) {
@@ -1628,48 +1644,43 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
-  grpc_error_handle error = parser->Parse(slice);
+  parser->QueueBufferToParse(slice);
+  if (!is_last || !parser->is_boundary()) {
+    return GRPC_ERROR_NONE;
+  }
+  grpc_error_handle error = parser->FinishFrame();
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
-  if (is_last) {
-    if (parser->is_boundary() && !parser->is_in_begin_state()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "end of header frame not aligned with a hpack record boundary");
-    }
-    /* need to check for null stream: this can occur if we receive an invalid
-       stream id on a header */
-    if (s != nullptr) {
-      if (parser->is_boundary()) {
-        if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Too many trailer frames");
-        }
-        /* Process stream compression md element if it exists */
-        if (s->header_frames_received ==
-            0) { /* Only acts on initial metadata */
-          parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
-        }
-        s->published_metadata[s->header_frames_received] =
-            GRPC_METADATA_PUBLISHED_FROM_WIRE;
-        maybe_complete_funcs[s->header_frames_received](t, s);
-        s->header_frames_received++;
+  /* need to check for null stream: this can occur if we receive an invalid
+      stream id on a header */
+  if (s != nullptr) {
+    if (parser->is_boundary()) {
+      if (s->header_frames_received == GPR_ARRAY_SIZE(s->metadata_buffer)) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many trailer frames");
       }
-      if (parser->is_eof()) {
-        if (t->is_client && !s->write_closed) {
-          /* server eof ==> complete closure; we may need to forcefully close
-             the stream. Wait until the combiner lock is ready to be released
-             however -- it might be that we receive a RST_STREAM following this
-             and can avoid the extra write */
-          GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-          t->combiner->FinallyRun(
-              GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
-              GRPC_ERROR_NONE);
-        }
-        grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+      /* Process stream compression md element if it exists */
+      if (s->header_frames_received == 0) { /* Only acts on initial metadata */
+        parse_stream_compression_md(t, s, &s->metadata_buffer[0].batch);
       }
+      s->published_metadata[s->header_frames_received] =
+          GRPC_METADATA_PUBLISHED_FROM_WIRE;
+      maybe_complete_funcs[s->header_frames_received](t, s);
+      s->header_frames_received++;
     }
-    parser->FinishFrame();
+    if (parser->is_eof()) {
+      if (t->is_client && !s->write_closed) {
+        /* server eof ==> complete closure; we may need to forcefully close
+            the stream. Wait until the combiner lock is ready to be released
+            however -- it might be that we receive a RST_STREAM following this
+            and can avoid the extra write */
+        GRPC_CHTTP2_STREAM_REF(s, "final_rst");
+        t->combiner->FinallyRun(
+            GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
+            GRPC_ERROR_NONE);
+      }
+      grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+    }
   }
   return GRPC_ERROR_NONE;
 }
