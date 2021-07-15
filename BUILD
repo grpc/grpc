@@ -763,6 +763,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "table",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/table.h"],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
