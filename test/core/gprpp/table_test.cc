@@ -80,14 +80,14 @@ TEST(Table, Move) {
   EXPECT_EQ(*t.get<std::string>(), "abcdefghijklmnopqrstuvwxyz");
   EXPECT_EQ(t.get<int>(), nullptr);
   Table<int, std::string> u(std::move(t));
-  EXPECT_NE(t.get<std::string>(), nullptr);
+  EXPECT_NE(t.get<std::string>(), nullptr);  // NOLINT(bugprone-use-after-move)
   EXPECT_EQ(*u.get<std::string>(), "abcdefghijklmnopqrstuvwxyz");
   EXPECT_EQ(t.get<int>(), nullptr);
   EXPECT_EQ(u.get<int>(), nullptr);
   u.set<std::string>("hello");
   EXPECT_EQ(*u.get<1>(), "hello");
   t = std::move(u);
-  EXPECT_NE(u.get<std::string>(), nullptr);
+  EXPECT_NE(u.get<std::string>(), nullptr);  // NOLINT(bugprone-use-after-move)
   EXPECT_EQ(*t.get<std::string>(), "hello");
 }
 

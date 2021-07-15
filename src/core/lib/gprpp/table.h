@@ -177,14 +177,14 @@ class Table {
   }
 
   // Move from another table
-  Table(Table&& rhs) {
+  Table(Table&& rhs) noexcept {
     // Since we know all fields are clear initially, pass false for or_clear.
     Move<false>(absl::make_index_sequence<sizeof...(Ts)>(),
                 std::forward<Table>(rhs));
   }
 
   // Move from another table
-  Table& operator=(Table&& rhs) {
+  Table& operator=(Table&& rhs) noexcept {
     // Since we may not be all clear, pass true for or_clear to have Move()
     // clear newly emptied fields.
     Move<true>(absl::make_index_sequence<sizeof...(Ts)>(),
