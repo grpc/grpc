@@ -375,6 +375,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
                            sp->server->channel_args, peer_name_string.c_str(),
                            resource_user);
     } else {
+      grpc_resource_user_unref(resource_user);
       closesocket(sock);
     }
   }
@@ -392,7 +393,6 @@ static void on_accept(void* arg, grpc_error_handle error) {
     sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, resource_user,
                              NULL, acceptor);
   }
-  grpc_resource_user_unref(resource_user);
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
      to the new connection. We need to create a new one for the next

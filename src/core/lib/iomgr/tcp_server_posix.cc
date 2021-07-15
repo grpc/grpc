@@ -284,7 +284,6 @@ static void on_read(void* arg, grpc_error_handle err) {
                              grpc_tcp_create(fdobj, sp->server->channel_args,
                                              addr_str.c_str(), resource_user),
                              resource_user, read_notifier_pollset, acceptor);
-    grpc_resource_user_unref(resource_user);
   }
 
   GPR_UNREACHABLE_CODE(return );
@@ -642,7 +641,6 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
                      grpc_tcp_create(fdobj, s_->channel_args, addr_str.c_str(),
                                      resource_user),
                      resource_user, read_notifier_pollset, acceptor);
-    grpc_resource_user_unref(resource_user);
   }
 
  private:

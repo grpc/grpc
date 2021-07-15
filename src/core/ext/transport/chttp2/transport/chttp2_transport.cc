@@ -201,7 +201,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_endpoint_destroy(ep);
   grpc_resource_user_unref(resource_user);
-  grpc_resource_user_shutdown(resource_user);
 
   grpc_slice_buffer_destroy_internal(&qbuf);
 

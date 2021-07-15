@@ -47,7 +47,7 @@ typedef struct grpc_tcp_server_acceptor {
 } grpc_tcp_server_acceptor;
 
 /* Called for newly connected TCP connections.
-   Takes ownership of acceptor. */
+   Takes ownership of acceptor and resource_user. */
 typedef void (*grpc_tcp_server_cb)(void* arg, grpc_endpoint* ep,
                                    grpc_resource_user* resource_user,
                                    grpc_pollset* accepting_pollset,

@@ -60,6 +60,7 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_resource_user* resource_user =
       grpc_resource_user_create(resource_quota, "fd-client");
   grpc_resource_quota_unref_internal(resource_quota);
+  grpc_resource_user_ref(resource_user);
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
       grpc_fd_create(fd, "client", true), args, "fd-client", resource_user);
 

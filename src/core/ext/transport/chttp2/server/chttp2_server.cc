@@ -414,6 +414,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         grpc_resource_user_ref(args->resource_user);
         grpc_transport* transport = grpc_create_chttp2_transport(
             args->args, args->endpoint, false, args->resource_user);
+        grpc_resource_user_ref(args->resource_user);
         grpc_error_handle channel_init_err =
             self->connection_->listener_->server_->SetupTransport(
                 transport, self->accepting_pollset_, args->args,
@@ -495,6 +496,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       connection = std::move(it->second);
       self->connection_->listener_->connections_.erase(it);
     }
+    grpc_resource_user_unref(args->resource_user);
   }
   self->Unref();
 }

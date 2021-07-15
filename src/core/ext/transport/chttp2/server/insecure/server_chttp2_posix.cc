@@ -52,6 +52,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   grpc_resource_user* resource_user =
       grpc_resource_user_create(resource_quota, name.c_str());
   grpc_resource_quota_unref_internal(resource_quota);
+  grpc_resource_user_ref(resource_user);
   grpc_endpoint* server_endpoint =
       grpc_tcp_create(grpc_fd_create(fd, name.c_str(), true), server_args,
                       name.c_str(), resource_user);

@@ -153,6 +153,7 @@ void Chttp2Connector::StartHandshakeLocked() {
                                      args_.interested_parties,
                                      handshake_mgr_.get());
   grpc_endpoint_add_to_pollset_set(endpoint_, args_.interested_parties);
+  grpc_resource_user_ref(resource_user_);
   handshake_mgr_->DoHandshake(endpoint_, resource_user_, args_.channel_args,
                               args_.deadline, nullptr /* acceptor */,
                               OnHandshakeDone, this);
@@ -195,9 +196,6 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      // The transport expects an RU ref, but none are held in the
-      // HandshakerArgs.
-      grpc_resource_user_ref(args->resource_user);
       self->result_->transport = grpc_create_chttp2_transport(
           args->args, args->endpoint, true, args->resource_user);
       self->result_->socket_node =

@@ -177,6 +177,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
+      grpc_resource_user_ref(ac->resource_user);
       *ep = grpc_tcp_client_create_from_fd(
           fd, ac->channel_args, ac->addr_str.c_str(), ac->resource_user);
       fd = nullptr;

@@ -111,8 +111,6 @@ void test_succeeds(void) {
   auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &g_connecting, ru, g_pollset_set, nullptr,
                           &resolved_addr, GRPC_MILLIS_INF_FUTURE);
-  grpc_resource_user_unref(ru);
-
   /* await the connection */
   do {
     resolved_addr.len = static_cast<socklen_t>(sizeof(addr));
@@ -162,8 +160,6 @@ void test_fails(void) {
   auto* ru = grpc_resource_user_create_unlimited();
   grpc_tcp_client_connect(&done, &g_connecting, ru, g_pollset_set, nullptr,
                           &resolved_addr, GRPC_MILLIS_INF_FUTURE);
-  grpc_resource_user_unref(ru);
-
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */

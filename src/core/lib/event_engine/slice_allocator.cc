@@ -32,6 +32,7 @@ SliceAllocator::SliceAllocator(grpc_resource_user* user)
 SliceAllocator::~SliceAllocator() {
   if (resource_user_ != nullptr) {
     grpc_resource_user_unref(resource_user_);
+    resource_user_ = nullptr;
   }
 };
 

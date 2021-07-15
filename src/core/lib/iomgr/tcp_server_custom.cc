@@ -254,7 +254,6 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
   acceptor->external_connection = false;
   sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, resource_user,
                            nullptr, acceptor);
-  grpc_resource_user_unref(resource_user);
 }
 
 static void custom_accept_callback(grpc_custom_socket* socket,
