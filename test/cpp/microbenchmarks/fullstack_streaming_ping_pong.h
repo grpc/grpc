@@ -51,9 +51,9 @@ static void BM_StreamingPingPong(benchmark::State& state) {
   const int max_ping_pongs = state.range(1);
 
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
-  std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
+  std::unique_ptr<Fixture> fixture(new Fixture(
+      &service, /*client_resource_user=*/grpc_resource_user_create_unlimited(),
+      /*server_resource_user=*/grpc_resource_user_create_unlimited()));
   {
     EchoResponse send_response;
     EchoResponse recv_response;
@@ -146,9 +146,9 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
   const int msg_size = state.range(0);
 
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
-  std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
+  std::unique_ptr<Fixture> fixture(new Fixture(
+      &service, /*client_resource_user=*/grpc_resource_user_create_unlimited(),
+      /*server_resource_user=*/grpc_resource_user_create_unlimited()));
   {
     EchoResponse send_response;
     EchoResponse recv_response;
@@ -252,9 +252,9 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
   const int write_and_finish = state.range(2);
 
   EchoTestService::AsyncService service;
-  grpc_resource_user* client_ru = grpc_resource_user_create_unlimited();
-  grpc_resource_user* server_ru = grpc_resource_user_create_unlimited();
-  std::unique_ptr<Fixture> fixture(new Fixture(&service, client_ru, server_ru));
+  std::unique_ptr<Fixture> fixture(new Fixture(
+      &service, /*client_resource_user=*/grpc_resource_user_create_unlimited(),
+      /*server_resource_user=*/grpc_resource_user_create_unlimited()));
   {
     EchoResponse send_response;
     EchoResponse recv_response;

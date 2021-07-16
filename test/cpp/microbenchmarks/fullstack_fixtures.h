@@ -116,6 +116,7 @@ class TCP : public FullstackFixture {
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {
+    grpc_core::ExecCtx exec_ctx;
     grpc_resource_user_unref(client_resource_user);
     grpc_resource_user_unref(server_resource_user);
   }
@@ -140,6 +141,7 @@ class UDS : public FullstackFixture {
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {
+    grpc_core::ExecCtx exec_ctx;
     grpc_resource_user_unref(client_resource_user);
     grpc_resource_user_unref(server_resource_user);
   }
@@ -165,6 +167,7 @@ class InProcess : public FullstackFixture {
                      const FixtureConfiguration& fixture_configuration =
                          FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {
+    grpc_core::ExecCtx exec_ctx;
     grpc_resource_user_unref(client_resource_user);
     grpc_resource_user_unref(server_resource_user);
   }
