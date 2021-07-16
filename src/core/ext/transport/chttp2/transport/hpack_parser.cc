@@ -1559,7 +1559,7 @@ void HPackParser::QueueBufferToParse(const grpc_slice& slice) {
   queued_slices_.push_back(grpc_slice_ref_internal(slice));
 }
 
-grpc_error_handle HPackParser::FinishFrame() {
+grpc_error_handle HPackParser::Parse() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   for (const auto& slice : queued_slices_) {
     error = Parse(slice);
@@ -1569,11 +1569,12 @@ grpc_error_handle HPackParser::FinishFrame() {
     grpc_slice_unref_internal(slice);
   }
   queued_slices_.clear();
+  return error;
+}
 
+void HPackParser::FinishFrame() {
   sink_ = Sink();
   dynamic_table_updates_allowed_ = 2;
-
-  return error;
 }
 
 grpc_error_handle HPackParser::Parse(const grpc_slice& slice) {
@@ -1645,12 +1646,14 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }
   parser->QueueBufferToParse(slice);
-  if (!is_last || !parser->is_boundary()) {
+  if (!is_last) {
     return GRPC_ERROR_NONE;
   }
-  grpc_error_handle error = parser->FinishFrame();
-  if (error != GRPC_ERROR_NONE) {
-    return error;
+  if (parser->is_boundary()) {
+    grpc_error_handle error = parser->Parse();
+    if (error != GRPC_ERROR_NONE) {
+      return error;
+    }
   }
   /* need to check for null stream: this can occur if we receive an invalid
       stream id on a header */
@@ -1682,5 +1685,6 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
       grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
     }
   }
+  parser->FinishFrame();
   return GRPC_ERROR_NONE;
 }

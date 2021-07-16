@@ -46,7 +46,8 @@ class HPackParser {
   void BeginFrame(Sink sink, Boundary boundary, Priority priority);
   void ResetSink(Sink sink) { sink_ = std::move(sink); }
   void QueueBufferToParse(const grpc_slice& slice);
-  grpc_error_handle FinishFrame();
+  grpc_error_handle Parse();
+  void FinishFrame();
 
   grpc_chttp2_hptbl* hpack_table() { return &table_; }
   bool is_boundary() const { return boundary_ != Boundary::None; }
