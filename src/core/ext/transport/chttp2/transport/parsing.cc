@@ -693,8 +693,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       gpr_log(GPR_ERROR, "too many header frames received");
       return init_header_skip_frame_parser(t, priority_type);
   }
-  t->hpack_parser.BeginFrame(std::move(on_header),
-                             hpack_boundary_type(t), priority_type);
+  t->hpack_parser.BeginFrame(std::move(on_header), hpack_boundary_type(t),
+                             priority_type);
   return GRPC_ERROR_NONE;
 }
 

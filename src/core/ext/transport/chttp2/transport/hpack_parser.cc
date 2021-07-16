@@ -1543,7 +1543,8 @@ HPackParser::~HPackParser() {
 }
 
 void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
-  gpr_log(GPR_ERROR, "%p BeginFrame: b=%d, p=%d", this, (int)boundary, (int)priority);
+  gpr_log(GPR_ERROR, "%p BeginFrame: b=%d, p=%d", this, (int)boundary,
+          (int)priority);
   sink_ = std::move(sink);
   boundary_ = boundary;
   switch (priority) {
@@ -1647,7 +1648,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   int is_last) {
   GPR_TIMER_SCOPE("grpc_chttp2_header_parser_parse", 0);
   auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
-  gpr_log(GPR_ERROR, "%p parse: is_last=%d", parser,  is_last);
+  gpr_log(GPR_ERROR, "%p parse: is_last=%d", parser, is_last);
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }

@@ -175,7 +175,7 @@ class HPackParser {
   grpc_error_handle AppendHuffBytes(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle AppendStrBytes(const uint8_t* cur, const uint8_t* end);
 
-grpc_error_handle Parse(const grpc_slice& slice);
+  grpc_error_handle Parse(const grpc_slice& slice);
 
   Sink sink_;
   grpc_error_handle last_error_;
