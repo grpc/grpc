@@ -463,13 +463,15 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   for (auto slice : init_slices) {
     p.QueueBufferToParse(slice);
   }
-  GPR_ASSERT(GRPC_ERROR_NONE == p.FinishFrame());
+  GPR_ASSERT(GRPC_ERROR_NONE == p.Parse());
+  p.FinishFrame();
   while (state.KeepRunning()) {
     for (auto slice : benchmark_slices) {
       p.QueueBufferToParse(slice);
     }
     p.ResetSink([arena](grpc_mdelem e) { return OnHeader(arena, e); });
-    GPR_ASSERT(GRPC_ERROR_NONE == p.FinishFrame());
+    GPR_ASSERT(GRPC_ERROR_NONE == p.Parse());
+    p.FinishFrame();
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {

@@ -69,7 +69,7 @@ static void test_vector(grpc_core::HPackParser* parser,
 
   {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(parser->FinishFrame() == GRPC_ERROR_NONE);
+    GPR_ASSERT(parser->Parse() == GRPC_ERROR_NONE);
   }
 
   for (i = 0; i < nslices; i++) {
