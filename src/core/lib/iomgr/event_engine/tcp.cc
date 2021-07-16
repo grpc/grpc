@@ -237,7 +237,8 @@ grpc_fd* grpc_fd_create(int /* fd */, const char* /* name */,
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
     grpc_fd* /* fd */, const grpc_channel_args* /* channel_args */,
-    const char* /* addr_str */, grpc_resource_user* /* resource_user */) {
+    const char* /* addr_str */, grpc_resource_user* resource_user) {
+  grpc_resource_user_unref(resource_user);
   return nullptr;
 }
 

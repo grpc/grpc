@@ -510,6 +510,7 @@ static void destroy_channel(void* arg, grpc_error_handle /*error*/) {
   if (channel->resource_user != nullptr) {
     grpc_resource_user_free(channel->resource_user,
                             GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+    grpc_resource_user_unref(channel->resource_user);
   }
   gpr_free(channel->target);
   gpr_free(channel);

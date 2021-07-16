@@ -97,11 +97,11 @@ static void server_weak_ref_set(server_weak_ref* weak_ref,
 }
 
 static void on_connect(void* arg, grpc_endpoint* tcp,
-                       grpc_resource_user* /*resource_user*/,
-                       grpc_pollset* pollset,
+                       grpc_resource_user* resource_user, grpc_pollset* pollset,
                        grpc_tcp_server_acceptor* acceptor) {
   grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  grpc_resource_user_unref(resource_user);
   grpc_endpoint_destroy(tcp);
 
   on_connect_result temp_result;

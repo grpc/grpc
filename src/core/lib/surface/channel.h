@@ -30,6 +30,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata.h"
 
+/** Creates a grpc_channel. Takes ownership of a \a resource_user ref. */
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* args,
                                   grpc_channel_stack_type channel_stack_type,
