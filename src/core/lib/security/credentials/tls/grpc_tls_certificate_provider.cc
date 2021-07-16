@@ -368,7 +368,8 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
 DataWatcherCertificateProvider::DataWatcherCertificateProvider(
     std::string root_certificate,
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
-    : StaticDataCertificateProvider(std::move(root_certificate), std::move(pem_key_cert_pairs)) {}
+    : StaticDataCertificateProvider(std::move(root_certificate),
+                                    std::move(pem_key_cert_pairs)) {}
 
 absl::Status DataWatcherCertificateProvider::ReloadRootCertificate(
     const std::string& root_certificate) {
@@ -417,7 +418,8 @@ absl::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
         PrivateKeyAndCertificateMatch(pem_key_cert_pairs[i].private_key(),
                                       pem_key_cert_pairs[i].cert_chain());
     if (!(matched_or.ok() && *matched_or)) {
-      return absl::InvalidArgumentError(std::string(matched_or.status().message()));
+      return absl::InvalidArgumentError(
+          std::string(matched_or.status().message()));
     }
   }
   grpc_core::MutexLock lock(&mu_);

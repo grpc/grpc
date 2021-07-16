@@ -538,7 +538,7 @@ TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
 
 TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyMultipleCertMatch) {
   absl::StatusOr<bool> status = PrivateKeyAndCertificateMatch(
-      private_key_2_, /*cert_chain=*/ cert_chain_2_ + cert_chain_);
+      private_key_2_, /*cert_chain=*/cert_chain_2_ + cert_chain_);
   ASSERT_TRUE(status.ok());
   EXPECT_TRUE(*status);
 }
