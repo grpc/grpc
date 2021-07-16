@@ -18,6 +18,7 @@ import enum
 import inspect
 import logging
 from functools import partial
+import traceback
 from typing import AsyncIterable, Optional, Tuple
 
 import grpc
@@ -413,11 +414,11 @@ class _StreamRequestMixin(Call):
                         return
 
             await self._done_writing()
-        except Exception as client_iterator_error:
+        except:
             # Client iterators can raise exceptions, which we should handle by
             # cancelling the RPC and logging the client's error. No exceptions
             # should escape this function.
-            _LOGGER.debug('Client request_iterator raised exception: %s', client_iterator_error)
+            _LOGGER.debug('Client request_iterator raised exception:\n%s', traceback.format_exc())
             self.cancel()
 
     async def _write(self, request: RequestType) -> None:
