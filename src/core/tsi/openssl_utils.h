@@ -23,14 +23,34 @@
 
 namespace grpc_core {
 
-struct EVP_PKEYDeleter {
-  void operator()(EVP_PKEY* pkey) const { EVP_PKEY_free(pkey); }
+// A class for managing openssl `EVP_PKEY` structures.
+class OwnedOpenSslPrivateKey {
+ public:
+  explicit OwnedOpenSslPrivateKey(const char* private_key, int size);
+
+  explicit OwnedOpenSslPrivateKey(EVP_PKEY* pkey);
+
+  ~OwnedOpenSslPrivateKey();
+
+  EVP_PKEY* get_private_key() { return private_key_; }
+
+ private:
+  EVP_PKEY* private_key_ = nullptr;
 };
-struct BIO_Deleter {
-  void operator()(BIO* bio) const { BIO_free(bio); }
-};
-struct X509_Deleter {
-  void operator()(X509* x509) const { X509_free(x509); }
+
+// A class for managing openssl `X509` structures.
+class OwnedOpenSslX509 {
+ public:
+  explicit OwnedOpenSslX509(const char* cert, int size);
+
+  explicit OwnedOpenSslX509(X509* x509);
+
+  ~OwnedOpenSslX509();
+
+  X509* get_x509() { return x_509_; }
+
+ private:
+  X509* x_509_ = nullptr;
 };
 
 }  // namespace grpc_core

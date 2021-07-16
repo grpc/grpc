@@ -21,12 +21,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
-#include "src/core/lib/security/credentials/tls/openssl_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/openssl_utils.h"
 
 namespace grpc_core {
 
@@ -366,10 +365,6 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
   return absl::nullopt;
 }
 
-using OwnedEVP_PKEY = std::unique_ptr<EVP_PKEY, EVP_PKEYDeleter>;
-using OwnedBIO = std::unique_ptr<BIO, BIO_Deleter>;
-using OwnedX509 = std::unique_ptr<X509, X509_Deleter>;
-
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain) {
   if (private_key.empty()) {
@@ -378,36 +373,24 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   if (cert_chain.empty()) {
     return absl::InvalidArgumentError("Certificate string is empty.");
   }
-  OwnedBIO cert_bio(BIO_new_mem_buf(cert_chain.data(), cert_chain.size()));
-  if (!cert_bio) {
-    return absl::InvalidArgumentError(
-        "Conversion from certificate string to BIO failed.");
-  }
-  // Reads the first cert from the cert_chain which is expected to be the leaf
-  // cert
-  OwnedX509 x509(PEM_read_bio_X509(cert_bio.get(), nullptr, nullptr, nullptr));
-  if (!x509) {
+  OwnedOpenSslX509 x509(cert_chain.data(), cert_chain.size());
+  if (!x509.get_x509()) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to X509 failed.");
   }
-  OwnedEVP_PKEY public_evp_pkey(X509_get_pubkey(x509.get()));
-  if (!public_evp_pkey) {
+  OwnedOpenSslPrivateKey public_evp_pkey(X509_get_pubkey(x509.get_x509()));
+  if (!public_evp_pkey.get_private_key()) {
     return absl::InvalidArgumentError(
         "Extraction of public key from x.509 certificate failed.");
   }
-  OwnedBIO private_key_bio(
-      BIO_new_mem_buf(private_key.data(), private_key.size()));
-  if (!private_key_bio) {
-    return absl::InvalidArgumentError(
-        "Conversion from private key string to BIO failed.");
-  }
-  OwnedEVP_PKEY private_evp_pkey(PEM_read_bio_PrivateKey(
-      private_key_bio.get(), nullptr, nullptr, nullptr));
-  if (!private_evp_pkey) {
+  OwnedOpenSslPrivateKey private_evp_pkey(private_key.data(),
+                                          private_key.size());
+  if (!private_evp_pkey.get_private_key()) {
     return absl::InvalidArgumentError(
         "Conversion from PEM string to EVP_PKEY failed.");
   }
-  return EVP_PKEY_cmp(private_evp_pkey.get(), public_evp_pkey.get()) == 1;
+  return EVP_PKEY_cmp(private_evp_pkey.get_private_key(),
+                      public_evp_pkey.get_private_key()) == 1;
 }
 
 }  // namespace grpc_core

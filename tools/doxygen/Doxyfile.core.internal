@@ -1877,7 +1877,6 @@ src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
-src/core/lib/security/credentials/tls/openssl_utils.h \
 src/core/lib/security/credentials/tls/tls_credentials.cc \
 src/core/lib/security/credentials/tls/tls_credentials.h \
 src/core/lib/security/credentials/tls/tls_utils.cc \
@@ -2037,6 +2036,8 @@ src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
 src/core/tsi/local_transport_security.cc \
 src/core/tsi/local_transport_security.h \
+src/core/tsi/openssl_utils.cc \
+src/core/tsi/openssl_utils.h \
 src/core/tsi/ssl/session_cache/ssl_session.h \
 src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
