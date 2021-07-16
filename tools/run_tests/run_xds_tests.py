@@ -3412,7 +3412,7 @@ try:
             sys.exit(1)
 finally:
     keep_resources = args.keep_gcp_resources
-    if args.halt_after_fail and failed_tests:
+    if args.halt_after_fail and args.test_case and failed_tests:
         logger.info(
             'Halt after fail triggered, exiting without cleaning up resources')
         keep_resources = True
