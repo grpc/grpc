@@ -495,6 +495,43 @@ TEST_F(GrpcTlsCertificateProviderTest,
   CancelWatch(watcher_state_1);
 }
 
+TEST_F(GrpcTlsCertificateProviderTest,
+       FileWatcherCertificateProviderWithInvalidCertificateKeyPairOnRefresh) {
+  // Create temporary files and copy cert data into them.
+  TmpFile tmp_root_cert(root_cert_);
+  TmpFile tmp_identity_key(private_key_);
+  TmpFile tmp_identity_cert(cert_chain_);
+  // Create FileWatcherCertificateProvider.
+  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
+                                          tmp_identity_cert.name(),
+                                          tmp_root_cert.name(), 1);
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // Expect to see the credential data.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                               cert_chain_.c_str()))));
+  // Copy new data to files.
+  // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
+  // update when the directory renaming is added in gpr.
+  tmp_identity_key.RewriteFile(private_key_);
+  tmp_identity_cert.RewriteFile(cert_chain_2_);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  // Expect to see no identity sent to watchers, and no credential updates.
+  EXPECT_THAT(watcher_state_1->GetErrorQueue(),
+              ::testing::Not(::testing::Contains(ErrorInfo("", kIdentityError))));
+//  // Expect to see the old credential data.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  root_cert_, MakeCertKeyPairs(private_key_.c_str(),
+                                                 cert_chain_.c_str()))));
+  // Clean up.
+  CancelWatch(watcher_state_1);
+}
+
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnEmptyPrivateKey) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(/*private_key=*/"", cert_chain_);
