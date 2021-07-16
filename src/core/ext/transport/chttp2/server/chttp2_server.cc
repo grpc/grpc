@@ -409,8 +409,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       // handshaker may have handed off the connection to some external
       // code, so we can just clean up here without creating a transport.
       if (args->endpoint != nullptr) {
-        // The transport expects an RU ref, but none are held in the
-        // HandshakerArgs.
         grpc_resource_user_ref(args->resource_user);
         grpc_transport* transport = grpc_create_chttp2_transport(
             args->args, args->endpoint, false, args->resource_user);
