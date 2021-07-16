@@ -352,7 +352,8 @@ class DynamicTerminationFilter::CallData {
         calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
         args, pollent, nullptr,
-        service_config_call_data->call_dispatch_controller());
+        service_config_call_data->call_dispatch_controller(),
+        /*is_transparent_retry=*/false);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
@@ -1174,10 +1175,11 @@ RefCountedPtr<ClientChannel::LoadBalancedCall>
 ClientChannel::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
     grpc_closure* on_call_destruction_complete,
-    ConfigSelector::CallDispatchController* call_dispatch_controller) {
-  return args.arena->New<LoadBalancedCall>(this, args, pollent,
-                                           on_call_destruction_complete,
-                                           call_dispatch_controller);
+    ConfigSelector::CallDispatchController* call_dispatch_controller,
+    bool is_transparent_retry) {
+  return args.arena->New<LoadBalancedCall>(
+      this, args, pollent, on_call_destruction_complete,
+      call_dispatch_controller, is_transparent_retry);
 }
 
 namespace {
@@ -2553,10 +2555,23 @@ class ClientChannel::LoadBalancedCall::LbCallState
 // LoadBalancedCall
 //
 
+namespace {
+
+CallTracer::CallAttemptTracer* GetCallAttemptTracer(
+    grpc_call_context_element* context, bool is_transparent_retry) {
+  auto* call_tracer =
+      static_cast<CallTracer*>(context[GRPC_CONTEXT_CALL_TRACER].value);
+  if (call_tracer == nullptr) return nullptr;
+  return call_tracer->RecordNewAttempt(is_transparent_retry);
+}
+
+}  // namespace
+
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,
     grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
-    ConfigSelector::CallDispatchController* call_dispatch_controller)
+    ConfigSelector::CallDispatchController* call_dispatch_controller,
+    bool is_transparent_retry)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
                      ? "LoadBalancedCall"
                      : nullptr),
@@ -2570,7 +2585,9 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       call_context_(args.context),
       pollent_(pollent),
       on_call_destruction_complete_(on_call_destruction_complete),
-      call_dispatch_controller_(call_dispatch_controller) {}
+      call_dispatch_controller_(call_dispatch_controller),
+      call_attempt_tracer_(
+          GetCallAttemptTracer(args.context, is_transparent_retry)) {}
 
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   grpc_slice_unref_internal(path_);
@@ -2705,9 +2722,54 @@ void ClientChannel::LoadBalancedCall::PendingBatchesResume() {
 
 void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  // Intercept recv_trailing_metadata_ready for LB callback.
+  // Record send ops in tracer.
+  if (call_attempt_tracer_ != nullptr) {
+    if (batch->send_initial_metadata) {
+      call_attempt_tracer_->RecordSendInitialMetadata(
+          batch->payload->send_initial_metadata.send_initial_metadata,
+          batch->payload->send_initial_metadata.send_initial_metadata_flags);
+    }
+    if (batch->send_message) {
+      call_attempt_tracer_->RecordSendMessage(
+          batch->payload->send_message.send_message.get());
+    }
+    if (batch->send_trailing_metadata) {
+      call_attempt_tracer_->RecordSendTrailingMetadata(
+          batch->payload->send_trailing_metadata.send_trailing_metadata);
+    }
+    // Intercept recv ops.
+    if (batch->recv_initial_metadata) {
+      recv_initial_metadata_ =
+          batch->payload->recv_initial_metadata.recv_initial_metadata;
+      recv_initial_metadata_flags_ =
+          batch->payload->recv_initial_metadata.recv_flags;
+      peer_string_ = batch->payload->recv_initial_metadata.peer_string;
+      original_recv_initial_metadata_ready_ =
+          batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
+      GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
+                        this, nullptr);
+      batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
+          &recv_initial_metadata_ready_;
+    }
+    if (batch->recv_message) {
+      recv_message_ = batch->payload->recv_message.recv_message;
+      original_recv_message_ready_ =
+          batch->payload->recv_message.recv_message_ready;
+      GRPC_CLOSURE_INIT(&recv_message_ready_, RecvMessageReady, this, nullptr);
+      batch->payload->recv_message.recv_message_ready = &recv_message_ready_;
+    }
+  }
+  // Intercept recv_trailing_metadata even if there is no call tracer,
+  // since we may need to notify the LB policy about trailing metadata.
   if (batch->recv_trailing_metadata) {
-    InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(batch);
+    recv_trailing_metadata_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+    original_recv_trailing_metadata_ready_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
+                      this, nullptr);
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &recv_trailing_metadata_ready_;
   }
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(cancel_error_ != GRPC_ERROR_NONE)) {
@@ -2784,10 +2846,35 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
   }
 }
 
-void ClientChannel::LoadBalancedCall::
-    RecvTrailingMetadataReadyForLoadBalancingPolicy(void* arg,
-                                                    grpc_error_handle error) {
+void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
+    void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
+  self->call_attempt_tracer_->RecordReceivedInitialMetadata(
+      self->recv_initial_metadata_, *self->recv_initial_metadata_flags_,
+      self->peer_string_);
+  Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
+               GRPC_ERROR_REF(error));
+}
+
+void ClientChannel::LoadBalancedCall::RecvMessageReady(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<LoadBalancedCall*>(arg);
+  self->call_attempt_tracer_->RecordReceivedMessage(
+      self->recv_message_->get());
+  Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,
+               GRPC_ERROR_REF(error));
+}
+
+void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<LoadBalancedCall*>(arg);
+  // Notify the call tracer about trailing metadata.
+  if (self->call_attempt_tracer_ != nullptr) {
+    self->call_attempt_tracer_->RecordReceivedTrailingMetadata(
+        self->recv_trailing_metadata_);
+  }
+  // If the LB policy requested a callback for trailing metadata, invoke
+  // the callback.
   if (self->lb_recv_trailing_metadata_ready_ != nullptr) {
     // Set error if call did not succeed.
     grpc_error_handle error_for_lb = GRPC_ERROR_NONE;
@@ -2826,20 +2913,6 @@ void ClientChannel::LoadBalancedCall::
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
                error);
-}
-
-void ClientChannel::LoadBalancedCall::
-    InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
-        grpc_transport_stream_op_batch* batch) {
-  recv_trailing_metadata_ =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-  original_recv_trailing_metadata_ready_ =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
-                    RecvTrailingMetadataReadyForLoadBalancingPolicy, this,
-                    grpc_schedule_on_exec_ctx);
-  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      &recv_trailing_metadata_ready_;
 }
 
 void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {

@@ -39,12 +39,12 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /* send_trailing_metadata */) override {}
     void RecordSendMessage(
-        const grpc_core::ByteStream& /* send_message */) override {}
+        const grpc_core::ByteStream* /* send_message */) override {}
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /* recv_initial_metadata */, uint32_t* /* flags */,
+        grpc_metadata_batch* /* recv_initial_metadata */, uint32_t /* flags */,
         gpr_atm* /* peer_string */) override {}
     void RecordReceivedMessage(
-        const grpc_core::ByteStream& /* recv_message */) override {}
+        const grpc_core::ByteStream* /* recv_message */) override {}
     void RecordReceivedTrailingMetadata(
         grpc_metadata_batch* /* recv_trailing_metadata */) override {}
     void RecordCancel(grpc_error_handle /* cancel_error */) override {}

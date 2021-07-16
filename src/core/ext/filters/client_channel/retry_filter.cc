@@ -2179,7 +2179,9 @@ RetryFilter::CallData::CreateLoadBalancedCall(
       // This callback holds a ref to the CallStackDestructionBarrier
       // object until the LB call is destroyed.
       call_stack_destruction_barrier_->MakeLbCallDestructionClosure(this),
-      call_dispatch_controller);
+      call_dispatch_controller,
+      // TODO(roth): Change this when we support transparent retries.
+      /*is_transparent_retry=*/false);
 }
 
 void RetryFilter::CallData::CreateCallAttempt() {

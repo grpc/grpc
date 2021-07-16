@@ -46,11 +46,11 @@ class CallTracer {
     virtual void RecordOnDoneSendInitialMetadata(gpr_atm* peer_string) = 0;
     virtual void RecordSendTrailingMetadata(
         grpc_metadata_batch* send_trailing_metadata) = 0;
-    virtual void RecordSendMessage(const ByteStream& send_message) = 0;
+    virtual void RecordSendMessage(const ByteStream* send_message) = 0;
     virtual void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* recv_initial_metadata, uint32_t* flags,
+        grpc_metadata_batch* recv_initial_metadata, uint32_t flags,
         gpr_atm* peer_string) = 0;
-    virtual void RecordReceivedMessage(const ByteStream& recv_message) = 0;
+    virtual void RecordReceivedMessage(const ByteStream* recv_message) = 0;
     virtual void RecordReceivedTrailingMetadata(
         grpc_metadata_batch* recv_trailing_metadata) = 0;
     virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
