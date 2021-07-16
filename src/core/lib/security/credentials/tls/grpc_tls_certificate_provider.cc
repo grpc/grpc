@@ -34,7 +34,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)),
-      pem_key_cert_pairs_(std::move(GetValidKeyCertPairList(pem_key_cert_pairs))) {
+      pem_key_cert_pairs_(
+          std::move(GetValidKeyCertPairList(pem_key_cert_pairs))) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
