@@ -46,6 +46,7 @@ Chttp2Connector::Chttp2Connector() {
 
 Chttp2Connector::~Chttp2Connector() {
   if (endpoint_ != nullptr) grpc_endpoint_destroy(endpoint_);
+  if (args_.channel_args != nullptr) grpc_channel_args_destroy(args_.channel_args);
 }
 
 void Chttp2Connector::Connect(const Args& args, Result* result,
@@ -56,7 +57,9 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(notify_ == nullptr);
-    args_ = args;
+    args_.channel_args = grpc_channel_args_copy(args.channel_args);
+    args_.deadline = args.deadline;
+    args_.interested_parties = args.interested_parties;
     result_ = result;
     notify_ = notify;
     GPR_ASSERT(!connecting_);
