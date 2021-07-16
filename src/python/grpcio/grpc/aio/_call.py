@@ -399,18 +399,26 @@ class _StreamRequestMixin(Call):
             if inspect.isasyncgen(request_iterator) or hasattr(
                     request_iterator, '__aiter__'):
                 async for request in request_iterator:
-                    await self._write(request)
+                    try:
+                        await self._write(request)
+                    except AioRpcError as rpc_error:
+                        _LOGGER.debug('Exception while consuming the request_iterator: %s', rpc_error)
+                        return
             else:
                 for request in request_iterator:
-                    await self._write(request)
+                    try:
+                        await self._write(request)
+                    except AioRpcError as rpc_error:
+                        _LOGGER.debug('Exception while consuming the request_iterator: %s', rpc_error)
+                        return
 
             await self._done_writing()
-        except AioRpcError as rpc_error:
-            # Rpc status should be exposed through other API. Exceptions raised
-            # within this Task won't be retrieved by another coroutine. It's
-            # better to suppress the error than spamming users' screen.
-            _LOGGER.debug('Exception while consuming the request_iterator: %s',
-                          rpc_error)
+        except Exception as client_iterator_error:
+            # Client iterators can raise exceptions, which we should handle by
+            # cancelling the RPC and logging the client's error. No exceptions
+            # should escape this function.
+            _LOGGER.debug('Client request_iterator raised exception: %s', client_iterator_error)
+            self.cancel()
 
     async def _write(self, request: RequestType) -> None:
         if self.done():
