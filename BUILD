@@ -2245,7 +2245,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
-        "src/core/lib/security/credentials/tls/openssl_deleters.h",
+        "src/core/lib/security/credentials/tls/openssl_utils.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
         "src/core/lib/security/credentials/tls/tls_utils.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",

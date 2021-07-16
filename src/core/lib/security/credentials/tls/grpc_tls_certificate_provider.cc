@@ -24,7 +24,7 @@
 #include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
-#include "src/core/lib/security/credentials/tls/openssl_deleters.h"
+#include "src/core/lib/security/credentials/tls/openssl_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 

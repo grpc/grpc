@@ -1105,7 +1105,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc )
   s.files += %w( src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h )
-  s.files += %w( src/core/lib/security/credentials/tls/openssl_deleters.h )
+  s.files += %w( src/core/lib/security/credentials/tls/openssl_utils.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_utils.cc )

@@ -3,8 +3,8 @@
 // TODO: Replace with appropriate comments.
 //
 
-#ifndef SRC_CORE_TSI_OPENSSL_DELETERS_H_
-#define SRC_CORE_TSI_OPENSSL_DELETERS_H_
+#ifndef SRC_CORE_TSI_OPENSSL_UTILS_H_
+#define SRC_CORE_TSI_OPENSSL_UTILS_H_
 
 #include "openssl/bio.h"
 #include "openssl/evp.h"
@@ -24,4 +24,4 @@ struct X509_Deleter {
 
 }  // namespace grpc_core
 
-#endif  // SRC_CORE_TSI_OPENSSL_DELETERS_H_
+#endif  // SRC_CORE_TSI_OPENSSL_UTILS_H_
