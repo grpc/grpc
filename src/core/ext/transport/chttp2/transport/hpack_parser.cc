@@ -1543,8 +1543,6 @@ HPackParser::~HPackParser() {
 }
 
 void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
-  gpr_log(GPR_ERROR, "%p BeginFrame: b=%d, p=%d", this, (int)boundary,
-          (int)priority);
   sink_ = std::move(sink);
   boundary_ = boundary;
   switch (priority) {
@@ -1558,14 +1556,10 @@ void HPackParser::BeginFrame(Sink sink, Boundary boundary, Priority priority) {
 }
 
 void HPackParser::QueueBufferToParse(const grpc_slice& slice) {
-  char* buffer = grpc_dump_slice(slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
-  gpr_log(GPR_ERROR, "%p qslice %s", this, buffer);
-  gpr_free(buffer);
   queued_slices_.push_back(grpc_slice_ref_internal(slice));
 }
 
 grpc_error_handle HPackParser::Parse() {
-  gpr_log(GPR_ERROR, "%p Parse", this);
   grpc_error_handle error = GRPC_ERROR_NONE;
   for (const auto& slice : queued_slices_) {
     error = Parse(slice);
@@ -1648,7 +1642,6 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   int is_last) {
   GPR_TIMER_SCOPE("grpc_chttp2_header_parser_parse", 0);
   auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
-  gpr_log(GPR_ERROR, "%p parse: is_last=%d", parser, is_last);
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }

@@ -232,11 +232,11 @@ static void test_retry_per_attempt_recv_timeout(
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_ERROR, "server_peer=%s", peer);
+  gpr_log(GPR_DEBUG, "server_peer=%s", peer);
   gpr_free(peer);
   peer = grpc_call_get_peer(c);
   GPR_ASSERT(peer != nullptr);
-  gpr_log(GPR_ERROR, "client_peer=%s", peer);
+  gpr_log(GPR_DEBUG, "client_peer=%s", peer);
   gpr_free(peer);
 
   // Server sends status ABORTED.
