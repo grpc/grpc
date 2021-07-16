@@ -72,19 +72,11 @@ class BidiStreamingCall extends AbstractCall
         // start async reading
         $receiveMessageCallback = function ($error, $event = null)
         use (&$receiveMessageCallback) {
-            if ($error) {
-                if (is_callable($this->async_callbacks_['onStatus'])) {
-                    $this->async_callbacks_['onStatus'](
-                        (object)Status::status(STATUS_UNKNOWN, $error)
-                    );
-                }
-                return;
-            }
-            if ($event->message === null) {
+            if ($error || $event->message === null) {
                 if (is_callable($this->async_callbacks_['onData'])) {
                     $this->async_callbacks_['onData'](null);
                 }
-                // server stream done, get status
+                // server stream done or error occured, get status
                 $this->call->startBatchAsync([
                     OP_RECV_STATUS_ON_CLIENT => true,
                 ], function ($error, $event = null) {

@@ -86,11 +86,9 @@ class UnaryCall extends AbstractCall
             }
             $this->metadata = $event->metadata;
 
-            if ($event->message) {
-                $response = $this->_deserializeResponse($event->message);
-                if (is_callable($this->async_callbacks_['onData'])) {
-                    $this->async_callbacks_['onData']($response);
-                }
+            $response = $this->_deserializeResponse($event->message);
+            if (is_callable($this->async_callbacks_['onData'])) {
+                $this->async_callbacks_['onData']($response);
             }
 
             if (is_callable($this->async_callbacks_['onStatus'])) {

@@ -186,7 +186,7 @@ PHP_METHOD(Call, startBatch) {
   }
 
   zval *array;
-  struct batch batch = {0};
+  struct batch batch = {{{0}}};
 
   grpc_call_error error;
 
@@ -349,8 +349,8 @@ PHP_FUNCTION(drainCompletionEvents) {
       break;
     }
 
-    zval params[2] = {0};
-    zval retval = {0};
+    zval params[2] = {{{0}}};
+    zval retval = {{0}};
     call_batch_tag->fci.params = params;
     call_batch_tag->fci.retval = &retval;
 

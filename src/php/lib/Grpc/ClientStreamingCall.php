@@ -55,6 +55,25 @@ class ClientStreamingCall extends AbstractCall
         $this->call->startBatchAsync([
             OP_SEND_INITIAL_METADATA => $metadata,
         ], function ($error, $event = null) {
+            if ($error) {
+                // error occured, get status
+                $this->call->startBatchAsync([
+                    OP_RECV_STATUS_ON_CLIENT => true,
+                ], function ($error, $event = null) {
+                    if ($error) {
+                        if (is_callable($this->async_callbacks_['onStatus'])) {
+                            $this->async_callbacks_['onStatus'](
+                                (object)Status::status(STATUS_UNKNOWN, $error)
+                            );
+                        }
+                        return;
+                    }
+                    if (is_callable($this->async_callbacks_['onStatus'])) {
+                        $this->async_callbacks_['onStatus']($event->status);
+                    }
+                });
+                return;
+            }
         });
     }
 
@@ -81,10 +100,12 @@ class ClientStreamingCall extends AbstractCall
                 $this->call->startBatchAsync([
                     OP_SEND_MESSAGE => $message_array,
                 ], function ($error, $event = null) {
-                    array_shift($this->async_write_queue_);
-                    $nextWrite = reset($this->async_write_queue_);
-                    if ($nextWrite) {
-                        $nextWrite();
+                    if (!$error) {
+                        array_shift($this->async_write_queue_);
+                        $nextWrite = reset($this->async_write_queue_);
+                        if ($nextWrite) {
+                            $nextWrite();
+                        }
                     }
                 });
             };
@@ -131,11 +152,9 @@ class ClientStreamingCall extends AbstractCall
                 }
                 $this->metadata = $event->metadata;
 
-                if ($event->message) {
-                    $response = $this->_deserializeResponse($event->message);
-                    if (is_callable($this->async_callbacks_['onData'])) {
-                        $this->async_callbacks_['onData']($response);
-                    }
+                $response = $this->_deserializeResponse($event->message);
+                if (is_callable($this->async_callbacks_['onData'])) {
+                    $this->async_callbacks_['onData']($response);
                 }
 
                 if (is_callable($this->async_callbacks_['onStatus'])) {
