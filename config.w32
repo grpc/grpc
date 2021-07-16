@@ -628,12 +628,14 @@ if (PHP_GRPC != "no") {
     "src\\core\\tsi\\ssl_transport_security.cc " +
     "src\\core\\tsi\\transport_security.cc " +
     "src\\core\\tsi\\transport_security_grpc.cc " +
+    "src\\php\\ext\\grpc\\batch.c " +
     "src\\php\\ext\\grpc\\byte_buffer.c " +
     "src\\php\\ext\\grpc\\call.c " +
     "src\\php\\ext\\grpc\\call_credentials.c " +
     "src\\php\\ext\\grpc\\channel.c " +
     "src\\php\\ext\\grpc\\channel_credentials.c " +
     "src\\php\\ext\\grpc\\completion_queue.c " +
+    "src\\php\\ext\\grpc\\metadata_array.c " +
     "src\\php\\ext\\grpc\\php_grpc.c " +
     "src\\php\\ext\\grpc\\server.c " +
     "src\\php\\ext\\grpc\\server_credentials.c " +
