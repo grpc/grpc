@@ -116,7 +116,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "table_test",
     srcs = ["table_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = ["gtest", "absl/types:optional"],
     language = "C++",
     uses_polling = False,
     deps = [

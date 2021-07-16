@@ -15,6 +15,8 @@
 #include "src/core/lib/gprpp/table.h"
 #include <gtest/gtest.h>
 #include <string>
+#include <tuple>
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 namespace testing {
@@ -105,6 +107,32 @@ TEST(Table, SameTypes) {
   EXPECT_EQ(t.get<0>(), nullptr);
   EXPECT_EQ(*t.get<1>(), "Hello!");
   EXPECT_EQ(t.get<2>(), nullptr);
+}
+
+// Test suite proving this is memory efficient compared to
+// tuple<optional<Ts>...>
+
+template <typename T>
+struct TableSizeTest : public ::testing::Test {};
+
+using SizeTests = ::testing::Types<
+    std::tuple<int, int, int, int, int, int, int, int, int, int>>;
+
+TYPED_TEST_SUITE(TableSizeTest, SizeTests);
+
+template <typename... Ts>
+int sizeof_tuple_of_optionals(std::tuple<Ts...>*) {
+  return sizeof(std::tuple<absl::optional<Ts>...>);
+}
+
+template <typename... Ts>
+int sizeof_table(std::tuple<Ts...>*) {
+  return sizeof(Table<Ts...>);
+}
+
+TYPED_TEST(TableSizeTest, SmallerThanTupleOfOptionals) {
+  EXPECT_GE(sizeof_tuple_of_optionals(static_cast<TypeParam*>(nullptr)),
+            sizeof_table(static_cast<TypeParam*>(nullptr)));
 }
 
 }  // namespace testing
