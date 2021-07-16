@@ -24,10 +24,6 @@
 #include <string>
 #include <vector>
 
-#include "openssl/evp.h"
-#include "openssl/bio.h"
-#include "openssl/x509.h"
-
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/security/context/security_context.h"
@@ -49,20 +45,6 @@ absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
 // property can have any number of values.
 std::vector<absl::string_view> GetAuthPropertyArray(grpc_auth_context* context,
                                                     const char* property_name);
-
-struct EVP_PKEYDeleter {
-  void operator()(EVP_PKEY* pkey) const { EVP_PKEY_free(pkey); }
-};
-struct BIO_Deleter {
-  void operator()(BIO* bio) const { BIO_free(bio); }
-};
-struct X509_Deleter {
-  void operator()(X509* x509) const { X509_free(x509); }
-};
-
-using OwnedEVP_PKEY = std::unique_ptr<EVP_PKEY, EVP_PKEYDeleter>;
-using OwnedBIO = std::unique_ptr<BIO, BIO_Deleter>;
-using OwnedX509 = std::unique_ptr<X509, X509_Deleter>;
 
 }  // namespace grpc_core
 

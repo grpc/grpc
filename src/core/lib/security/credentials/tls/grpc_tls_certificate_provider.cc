@@ -24,9 +24,10 @@
 #include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
+#include "src/core/lib/security/credentials/tls/openssl_deleters.h"
+#include "src/core/lib/security/credentials/tls/tls_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/security/credentials/tls/tls_utils.h"
 
 namespace grpc_core {
 
@@ -365,6 +366,10 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
           "All retry attempts failed. Will try again after the next interval.");
   return absl::nullopt;
 }
+
+using OwnedEVP_PKEY = std::unique_ptr<EVP_PKEY, EVP_PKEYDeleter>;
+using OwnedBIO = std::unique_ptr<BIO, BIO_Deleter>;
+using OwnedX509 = std::unique_ptr<X509, X509_Deleter>;
 
 absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
     absl::string_view private_key, absl::string_view cert_chain) {

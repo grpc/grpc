@@ -1085,6 +1085,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/openssl_deleters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.cc" role="src" />
