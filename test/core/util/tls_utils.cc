@@ -131,13 +131,6 @@ void AsyncExternalVerifier::Destruct(void* user_data) {
       "DestroyExternalVerifier", DestroyExternalVerifier, self, nullptr,
       grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
   destroy_thread.Start();
-  // Notify the caller that the thread is shut down.
-  {
-    MutexLock lock(&self->mu_);
-    if (self->thread_shutdown_event_ != nullptr) {
-      gpr_event_set(self->thread_shutdown_event_, reinterpret_cast<void*>(1));
-    }
-  }
 }
 
 void AsyncExternalVerifier::WorkerThread(void* arg) {
