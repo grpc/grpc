@@ -41,7 +41,7 @@ extern grpc_completion_queue* callback_queue;
 
 /* */
 struct callback_tag_list_item {
-  grpc_experimental_completion_queue_functor functor;
+  grpc_completion_queue_functor functor;
   struct callback_tag_list_item* next;
   struct callback_tag_list_item* prev;
 };

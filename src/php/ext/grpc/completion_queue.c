@@ -88,9 +88,9 @@ struct callback_tag_list_item* grpc_php_callback_tag_list_pop() {
 }
 
 void callback_queue_shutdown_callback(
-    struct grpc_experimental_completion_queue_functor* tag, int succeeded) {}
+    struct grpc_completion_queue_functor* tag, int succeeded) {}
 
-static struct grpc_experimental_completion_queue_functor
+static struct grpc_completion_queue_functor
     callback_queue_shutdown_functor = {callback_queue_shutdown_callback, false};
 
 void grpc_php_init_completion_queue_for_callback(TSRMLS_D) {

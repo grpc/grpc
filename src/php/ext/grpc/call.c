@@ -78,7 +78,7 @@ struct grpc_call_batch_tag {
 };
 
 void grpc_call_batch_callback(
-    struct grpc_experimental_completion_queue_functor* tag, int succeeded) {
+    struct grpc_completion_queue_functor* tag, int succeeded) {
   struct grpc_call_batch_tag* call_batch_tag =
       (struct grpc_call_batch_tag*)(tag);
   call_batch_tag->succeeded = succeeded;
