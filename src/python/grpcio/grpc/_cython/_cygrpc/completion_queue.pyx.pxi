@@ -31,7 +31,7 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
       c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
       if gpr_time_cmp(c_timeout, c_deadline) > 0:
         c_timeout = c_deadline
-  
+
       c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
   
       if (c_event.type != GRPC_QUEUE_TIMEOUT or

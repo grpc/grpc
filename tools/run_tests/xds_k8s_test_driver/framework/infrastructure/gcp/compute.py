@@ -14,7 +14,7 @@
 import dataclasses
 import enum
 import logging
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 from googleapiclient import discovery
 import googleapiclient.errors
@@ -181,6 +181,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 }],
             })
 
+    def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
+        return self._insert_resource(self.api.urlMaps(), url_map_body)
+
     def delete_url_map(self, name):
         self._delete_resource(self.api.urlMaps(), 'urlMap', name)
 
@@ -231,6 +234,17 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 'network': network_url,
                 'target': target_proxy.url,
             })
+
+    def exists_forwarding_rule(self, src_port) -> bool:
+        # TODO(sergiitk): Better approach for confirming the port is available.
+        #   It's possible a rule allocates actual port range, e.g 8000-9000,
+        #   and this wouldn't catch it. For now, we assume there's no
+        #   port ranges used in the project.
+        filter_str = (f'(portRange eq "{src_port}-{src_port}") '
+                      f'(IPAddress eq "0.0.0.0")'
+                      f'(loadBalancingScheme eq "INTERNAL_SELF_MANAGED")')
+        return self._exists_resource(self.api.globalForwardingRules(),
+                                     filter=filter_str)
 
     def delete_forwarding_rule(self, name):
         self._delete_resource(self.api.globalForwardingRules(),
@@ -323,19 +337,29 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                       **kwargs) -> GcpResource:
         resp = collection.get(project=self.project, **kwargs).execute()
         logger.info('Loaded compute resource:\n%s',
-                    self._resource_pretty_format(resp))
+                    self.resource_pretty_format(resp))
         return self.GcpResource(resp['name'], resp['selfLink'])
+
+    def _exists_resource(self, collection: discovery.Resource,
+                         filter: str) -> bool:
+        resp = collection.list(
+            project=self.project, filter=filter,
+            maxResults=1).execute(num_retries=self._GCP_API_RETRIES)
+        if 'kind' not in resp:
+            # TODO(sergiitk): better error
+            raise ValueError('List response "kind" is missing')
+        return 'items' in resp and resp['items']
 
     def _insert_resource(self, collection: discovery.Resource,
                          body: Dict[str, Any]) -> GcpResource:
         logger.info('Creating compute resource:\n%s',
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         resp = self._execute(collection.insert(project=self.project, body=body))
         return self.GcpResource(body['name'], resp['targetLink'])
 
     def _patch_resource(self, collection, body, **kwargs):
         logger.info('Patching compute resource:\n%s',
-                    self._resource_pretty_format(body))
+                    self.resource_pretty_format(body))
         self._execute(
             collection.patch(project=self.project, body=body, **kwargs))
 
