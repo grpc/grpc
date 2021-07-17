@@ -26,6 +26,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/xds/xds_circuit_breaker_call_counter_map.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -42,66 +43,6 @@ namespace grpc_core {
 TraceFlag grpc_xds_cluster_impl_lb_trace(false, "xds_cluster_impl_lb");
 
 namespace {
-
-//
-// global circuit breaker atomic map
-//
-
-class CircuitBreakerCallCounterMap {
- public:
-  using Key =
-      std::pair<std::string /*cluster*/, std::string /*eds_service_name*/>;
-
-  class CallCounter : public RefCounted<CallCounter> {
-   public:
-    explicit CallCounter(Key key) : key_(std::move(key)) {}
-    ~CallCounter() override;
-
-    uint32_t Load() { return concurrent_requests_.Load(MemoryOrder::SEQ_CST); }
-    uint32_t Increment() { return concurrent_requests_.FetchAdd(1); }
-    void Decrement() { concurrent_requests_.FetchSub(1); }
-
-   private:
-    Key key_;
-    Atomic<uint32_t> concurrent_requests_{0};
-  };
-
-  RefCountedPtr<CallCounter> GetOrCreate(const std::string& cluster,
-                                         const std::string& eds_service_name);
-
- private:
-  Mutex mu_;
-  std::map<Key, CallCounter*> map_ ABSL_GUARDED_BY(mu_);
-};
-
-CircuitBreakerCallCounterMap* g_call_counter_map = nullptr;
-
-RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter>
-CircuitBreakerCallCounterMap::GetOrCreate(const std::string& cluster,
-                                          const std::string& eds_service_name) {
-  Key key(cluster, eds_service_name);
-  RefCountedPtr<CallCounter> result;
-  MutexLock lock(&mu_);
-  auto it = map_.find(key);
-  if (it == map_.end()) {
-    it = map_.insert({key, nullptr}).first;
-  } else {
-    result = it->second->RefIfNonZero();
-  }
-  if (result == nullptr) {
-    result = MakeRefCounted<CallCounter>(std::move(key));
-    it->second = result.get();
-  }
-  return result;
-}
-
-CircuitBreakerCallCounterMap::CallCounter::~CallCounter() {
-  MutexLock lock(&g_call_counter_map->mu_);
-  auto it = g_call_counter_map->map_.find(key_);
-  if (it != g_call_counter_map->map_.end() && it->second == this) {
-    g_call_counter_map->map_.erase(it);
-  }
-}
 
 //
 // LB policy
@@ -422,7 +363,7 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
           config_->lrs_load_reporting_server_name().value(),
           config_->cluster_name(), config_->eds_service_name());
     }
-    call_counter_ = g_call_counter_map->GetOrCreate(
+    call_counter_ = grpc_core::CircuitBreakerCallCounterMap::GetOrCreate(
         config_->cluster_name(), config_->eds_service_name());
   } else {
     // Cluster name, EDS service name, and LRS server name should never
@@ -784,12 +725,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 //
 
 void grpc_lb_policy_xds_cluster_impl_init() {
-  grpc_core::g_call_counter_map = new grpc_core::CircuitBreakerCallCounterMap();
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
           absl::make_unique<grpc_core::XdsClusterImplLbFactory>());
 }
 
-void grpc_lb_policy_xds_cluster_impl_shutdown() {
-  delete grpc_core::g_call_counter_map;
-}
+void grpc_lb_policy_xds_cluster_impl_shutdown() {}
