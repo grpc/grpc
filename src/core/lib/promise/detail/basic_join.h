@@ -15,9 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
 
-#include <bitset>
 #include <utility>
 #include "absl/utility/utility.h"
+#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
@@ -54,7 +54,7 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
   using Fsd = Fused<Traits, F>;
   [[no_unique_address]] Fsd fused;
   // Figure out what kind of bitmask will be used by the outer join.
-  using Bits = std::bitset<sizeof...(Fs)>;
+  using Bits = BitSet<sizeof...(Fs)>;
   // Initialize from a tuple of pointers to Fs
   explicit Joint(std::tuple<Fs*...> fs)
       : Joint<Traits, I + 1, Fs...>(fs), fused(std::move(*std::get<I>(fs))) {}
@@ -114,7 +114,7 @@ struct Joint<Traits, sizeof...(Fs), Fs...> {
   template <typename T>
   void DestructAll(const T&) {}
   template <typename F>
-  auto Run(std::bitset<sizeof...(Fs)>*, F finally) -> decltype(finally()) {
+  auto Run(BitSet<sizeof...(Fs)>*, F finally) -> decltype(finally()) {
     return finally();
   }
 };
@@ -126,7 +126,7 @@ class BasicJoin {
   static constexpr size_t N = sizeof...(Fs);
   // Bitset: if a bit is 0, that joint is still in promise state. If it's 1,
   // then the joint has a result.
-  [[no_unique_address]] std::bitset<N> state_;
+  [[no_unique_address]] BitSet<N> state_;
   // The actual joints, wrapped in an anonymous union to give us control of
   // construction/destruction.
   union {
