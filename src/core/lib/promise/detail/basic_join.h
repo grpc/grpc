@@ -70,7 +70,7 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
   // Destruct: check bits to see if we're in promise or result state, and call
   // the appropriate destructor. Recursively, call up through the join.
   void DestructAll(const Bits& bits) {
-    if (!static_cast<bool>(bits[I])) {
+    if (!bits.is_set(I)) {
       Destruct(&fused.f);
     } else {
       Destruct(&fused.result);
@@ -81,7 +81,7 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
   template <typename F>
   auto Run(Bits* bits, F finally) -> decltype(finally()) {
     // If we're still in the promise state...
-    if (!static_cast<bool>((*bits)[I])) {
+    if (!bits->is_set(I)) {
       // Poll the promise
       auto r = fused.f();
       if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
