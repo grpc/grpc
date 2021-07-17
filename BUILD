@@ -651,6 +651,16 @@ grpc_cc_library(
     ],
 )
 
+# A library that vends only port_platform, so that libraries that don't need
+# anything else from gpr can still be portable!
+grpc_cc_library(
+    name = "gpr_platform",
+    language = "c++",
+    pubilc_hdrs = [
+        "include/grpc/impl/codegen/port_platform.h",
+    ],
+)
+
 grpc_cc_library(
     name = "grpc_trace",
     srcs = ["src/core/lib/debug/trace.cc"],
