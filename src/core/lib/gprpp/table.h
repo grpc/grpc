@@ -17,7 +17,6 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <bitset>
 #include <utility>
 #include "absl/utility/utility.h"
 #include "src/core/gprpp/bitset.h"
