@@ -529,6 +529,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
             "Conversion from PEM string to EVP_PKEY failed.");
 }
 
+// TODO: Remove this single cert test case in favor of the multiple cert one
 TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
   absl::StatusOr<bool> status =
       PrivateKeyAndCertificateMatch(private_key_2_, cert_chain_2_);

@@ -33,9 +33,12 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate,
     grpc_core::PemKeyCertPairList pem_key_cert_pairs)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
-      root_certificate_(std::move(root_certificate)),
-      pem_key_cert_pairs_(
-          GetValidKeyCertPairList(std::move(pem_key_cert_pairs))) {
+      root_certificate_(std::move(root_certificate)) {
+  if (IsKeyCertPairListValid(pem_key_cert_pairs).ok()) {
+    pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
+  } else {
+    pem_key_cert_pairs_ = {};
+  }
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
@@ -396,7 +399,7 @@ absl::Status DataWatcherCertificateProvider::ReloadRootCertificate(
       distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
                                     absl::nullopt);
     }
-    if (info.root_being_watched && root_certificate_.empty()) {
+    if (info.root_being_watched) {
       distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(root_cert_error),
                                     absl::nullopt);
     }
@@ -414,14 +417,9 @@ absl::Status DataWatcherCertificateProvider::ReloadKeyCertificatePair(
     return absl::InvalidArgumentError(
         "The Key-Cert pair list has not changed.");
   }
-  for (unsigned long i = 0; i < pem_key_cert_pairs.size(); i++) {
-    absl::StatusOr<bool> matched_or =
-        PrivateKeyAndCertificateMatch(pem_key_cert_pairs[i].private_key(),
-                                      pem_key_cert_pairs[i].cert_chain());
-    if (!(matched_or.ok() && *matched_or)) {
-      return absl::InvalidArgumentError(
-          std::string(matched_or.status().message()));
-    }
+  absl::Status matched_or = IsKeyCertPairListValid(pem_key_cert_pairs);
+  if (!matched_or.ok()) {
+    return matched_or;
   }
   grpc_core::MutexLock lock(&mu_);
   pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
@@ -496,16 +494,18 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
   return result;
 }
 
-grpc_core::PemKeyCertPairList GetValidKeyCertPairList(
-    PemKeyCertPairList pair_list) {
-  for (unsigned long i = 0; i < pair_list.size(); i++) {
-    absl::StatusOr<bool> status = PrivateKeyAndCertificateMatch(
+absl::Status IsKeyCertPairListValid(const PemKeyCertPairList& pair_list) {
+  if (pair_list.empty()) {
+    return absl::InvalidArgumentError("Key-Cert Pair list is empty.");
+  }
+  for (size_t i = 0; i < pair_list.size(); ++i) {
+    absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
         pair_list[i].private_key(), pair_list[i].cert_chain());
-    if (!(status.ok() && *status)) {
-      return {};
+    if (!(matched_or.ok() && *matched_or)) {
+      return matched_or.status();
     }
   }
-  return pair_list;
+  return absl::OkStatus();
 }
 
 }  // namespace grpc_core
