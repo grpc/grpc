@@ -61,6 +61,26 @@ public:
         return (units_[unit_for(i)] & mask_for(i)) != 0;
     }
 
+    bool all() const {
+	if (kTotalBits % kUnitBits == 0) {
+	    for (size_t i=0; i<kUnits; i++) {
+	    	if (units_[i] != ~Uint<kUnitBits>(0)) return false;
+	    }
+	} else {
+	    for (size_t i=0; i<kUnits-1; i++) {
+	    	if (units_[i] != ~Uint<kUnitBits>(0)) return false;
+	    }
+	    return units_[kUnits-1] == (Uint<kUnitBits>(1) << (kTotalBits % kUnitBits)) - 1;
+	}
+    }
+
+    bool none() const {
+	for (size_t i=0; i<kUnits; i++) {
+	    if (units_[i] != 0) return false;
+	}
+	return true;
+    }
+
 private:
     static constexpr std::size_t unit_for(std::size_t bit) {
         return bit / kUnitBits;
