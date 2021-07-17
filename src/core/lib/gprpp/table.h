@@ -19,7 +19,7 @@
 
 #include <utility>
 #include "absl/utility/utility.h"
-#include "src/core/gprpp/bitset.h"
+#include "src/core/lib/gprpp/bitset.h"
 
 namespace grpc_core {
 
@@ -208,7 +208,7 @@ class Table {
   // Check if this table has index I.
   template <size_t I>
       absl::enable_if_t < I<sizeof...(Ts), bool> has() const {
-    return present_bits_[I];
+    return present_bits_.is_set(I);
   }
 
   // Return the value for type T, or nullptr if it is un-set.
