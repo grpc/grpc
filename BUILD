@@ -781,7 +781,16 @@ grpc_cc_library(
     external_deps = ["absl/utility"],
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/table.h"],
-    deps = ["gpr_platform"],
+    deps = ["gpr_platform", "bitset"],
+)
+
+grpc_cc_library(
+    name = "bitset",
+    language = "c++",
+    public_hdrs = ["src/core/lib/gprpp/bitset.h"],
+    deps = [
+        "gpr_platform",
+    ],
 )
 
 grpc_cc_library(
