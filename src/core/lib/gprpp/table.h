@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_TABLE_H
 #define GRPC_CORE_LIB_GPRPP_TABLE_H
 
-// Portable code. port_platform.h is not required.
+#include <grpc/impl/codegen/port_platform.h>
 
 #include <bitset>
 #include <utility>
