@@ -56,6 +56,23 @@ class OpenSslX509 {
   X509* x_509_ = nullptr;
 };
 
+// A class for managing openssl `STACK_OF(X509_INFO)` structures.
+class OpenSslX509InfoStack {
+ public:
+  explicit OpenSslX509InfoStack(absl::string_view cert);
+
+  explicit OpenSslX509InfoStack(STACK_OF(X509_INFO) * sk) { info_stack_ = sk; }
+
+  ~OpenSslX509InfoStack() {
+    sk_X509_INFO_pop_free(info_stack_, X509_INFO_free);
+  }
+
+  STACK_OF(X509_INFO) * get_stack() { return info_stack_; }
+
+ private:
+  STACK_OF(X509_INFO) * info_stack_ = nullptr;
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_TSI_OPENSSL_UTILS_H
