@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_MAP_H
 #define GRPC_CORE_LIB_PROMISE_MAP_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "absl/types/variant.h"
 #include "src/core/lib/promise/poll.h"
 

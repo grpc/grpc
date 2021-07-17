@@ -21,6 +21,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_SWITCH_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_SWITCH_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <stdlib.h>
 
 namespace grpc_core {

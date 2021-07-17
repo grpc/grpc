@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_JOIN_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <utility>
 #include "absl/utility/utility.h"
 #include "src/core/lib/gprpp/bitset.h"

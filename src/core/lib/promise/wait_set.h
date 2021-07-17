@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_WAITSET_H
 #define GRPC_CORE_LIB_PROMISE_WAITSET_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "absl/container/flat_hash_set.h"
 #include "src/core/lib/promise/activity.h"
 

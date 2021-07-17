@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_JOIN_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/promise/detail/basic_join.h"
 
 namespace grpc_core {

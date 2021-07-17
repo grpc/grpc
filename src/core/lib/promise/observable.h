@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
 #define GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <limits>
 #include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"

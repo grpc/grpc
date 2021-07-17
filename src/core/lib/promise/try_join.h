@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/detail/status.h"
 

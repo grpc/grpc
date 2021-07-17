@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <functional>
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
