@@ -15,157 +15,58 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 
-#include "absl/status/statusor.h"
-#include "absl/types/variant.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/detail/basic_join.h"
+#include "src/core/lib/promise/detail/status.h"
 
 namespace grpc_core {
 
-namespace try_join_detail {
+namespace promise_detail {
 
-struct Empty {};
-
+// Extract the T from a StatusOr<T>
 template <typename T>
 T IntoResult(absl::StatusOr<T>* status) {
   return std::move(**status);
 }
 
-inline Empty IntoResult(absl::Status* status) { return Empty{}; }
+// TryJoin returns a StatusOr<tuple<A,B,C>> for f()->Poll<StatusOr<A>>,
+// g()->Poll<StatusOr<B>>, h()->Poll<StatusOr<C>>. If one of those should be a
+// Status instead, we need a placeholder type to return, and this is it.
+struct Empty {};
+inline Empty IntoResult(absl::Status*) { return Empty{}; }
 
-// Stores either a promise (if uncompleted) or its result (if completed) so
-// that polling can occur after the promise is completed.
-template <class Promise>
-class Fused {
- public:
-  using PromiseResult = typename decltype(std::declval<Promise>()())::Type;
-  using Result = decltype(IntoResult(static_cast<PromiseResult*>(nullptr)));
-
-  explicit Fused(Promise promise) : state_(std::move(promise)) {}
-
-  // Poll the underlying promise if we're still executing.
-  // Returns error, or Ok(true) if a result is ready, or Ok(false) if pending.
-  absl::StatusOr<bool> Poll() { return absl::visit(CallPoll{this}, state_); }
-
-  Result take() { return std::move(absl::get<Result>(state_)); }
-
- private:
-  absl::variant<Promise, Result> state_;
-
-  struct CallPoll {
-    Fused* const fused;
-
-    // Poll for the case that we're still executing.
-    absl::StatusOr<bool> operator()(Promise& promise) const {
-      // Poll the underlying promise.
-      auto r = promise();
-      // If the promise is complete...
-      if (auto* p = r.get_ready()) {
-        // ... and it's successful, save the success and return complete.
-        if (p->ok()) {
-          fused->state_.template emplace<Result>(IntoResult(p));
-          return absl::StatusOr<bool>(true);
-        }
-        // ... otherwise it's failed, and we can return failure immediately.
-        return absl::StatusOr<bool>(p->status());
-      }
-      // If the promise is not complete, return pending.
-      return absl::StatusOr<bool>(false);
+// Traits object to pass to BasicJoin
+struct TryJoinTraits {
+  template <typename T>
+  using ResultType =
+      decltype(IntoResult(std::declval<absl::remove_reference_t<T>*>()));
+  template <typename T, typename F>
+  static auto OnResult(T result, F kontinue)
+      -> decltype(kontinue(IntoResult(&result))) {
+    using Result =
+        typename PollTraits<decltype(kontinue(IntoResult(&result)))>::Type;
+    if (!result.ok()) {
+      return Result(IntoStatus(&result));
     }
-
-    // Poll for the case that we've completed -- return that information.
-    absl::StatusOr<bool> operator()(Result& result) const {
-      return absl::StatusOr<bool>(true);
-    }
-  };
-};
-
-// Recursive helper type to poll a list of children and early out
-// appropriately.
-template <typename... Promises>
-struct PollAll;
-
-template <typename Promise, typename... Promises>
-struct PollAll<Promise, Promises...> {
-  static absl::StatusOr<bool> Poll(Fused<Promise>& p,
-                                   Fused<Promises>&... next) {
-    // First poll the top promise.
-    auto r = p.Poll();
-    // If it failed, then everything will fail and we can early out.
-    if (!r.ok()) {
-      return r;
-    }
-    // Note: if it was pending, a later promise might fail, so we need to keep
-    // recursing/polling.
-
-    // Poll the remaining children.
-    auto n = PollAll<Promises...>::Poll(next...);
-    // If any of them failed, then everything has failed.
-    if (!n.ok()) {
-      return n;
-    }
-    // If the first or any of the remainder were pending, then the overall
-    // promise is so far succeeding but still pending - return pending.
-    if (!*r || !*n) {
-      return absl::StatusOr<bool>(false);
-    }
-    // Otherwise return completion.
-    return r;
+    return kontinue(IntoResult(&result));
   }
-};
-
-template <typename Promise>
-struct PollAll<Promise> {
-  static absl::StatusOr<bool> Poll(Fused<Promise>& p) { return p.Poll(); }
+  template <typename T>
+  static absl::StatusOr<T> Wrap(T x) {
+    return absl::StatusOr<T>(std::move(x));
+  }
 };
 
 // Implementation of TryJoin combinator.
 template <typename... Promises>
-class TryJoin {
- public:
-  explicit TryJoin(Promises... promises)
-      : state_(Fused<Promises>(std::move(promises))...) {}
+using TryJoin = BasicJoin<TryJoinTraits, Promises...>;
 
-  using Tuple = std::tuple<typename Fused<Promises>::Result...>;
-
-  Poll<absl::StatusOr<Tuple>> operator()() {
-    // Check overall status.
-    // Result could be - fail      -> fail
-    //                   Ok(true)  -> ready
-    //                   Ok(false) -> pending
-    auto result = absl::apply(
-        [](Fused<Promises>&... promises) {
-          return PollAll<Promises...>::Poll(promises...);
-        },
-        state_);
-    // If we failed, return failure.
-    if (!result.ok()) {
-      return ready(absl::StatusOr<Tuple>(std::move(result.status())));
-    }
-    // If complete, build and return the tuple.
-    if (*result) {
-      return absl::apply(
-          [](Fused<Promises>&... promises) {
-            return ready(
-                absl::StatusOr<Tuple>(absl::in_place, promises.take()...));
-          },
-          state_);
-    }
-    // Keep pending!
-    return kPending;
-  }
-
- private:
-  std::tuple<Fused<Promises>...> state_;
-};
-
-}  // namespace try_join_detail
+}  // namespace promise_detail
 
 // Run all promises.
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok(tuple-of-results).
 template <typename... Promises>
-try_join_detail::TryJoin<Promises...> TryJoin(Promises... promises) {
-  return try_join_detail::TryJoin<Promises...>(std::move(promises)...);
+promise_detail::TryJoin<Promises...> TryJoin(Promises... promises) {
+  return promise_detail::TryJoin<Promises...>(std::move(promises)...);
 }
 
 }  // namespace grpc_core

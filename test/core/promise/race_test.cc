@@ -17,13 +17,12 @@
 
 namespace grpc_core {
 
-Poll<int> instant() { return ready(1); }
+Poll<int> instant() { return 1; }
+Poll<int> never() { return Pending(); }
 
-Poll<int> never() { return kPending; }
-
-TEST(RaceTest, Race1) { EXPECT_EQ(Race(instant)().take(), 1); }
-TEST(RaceTest, Race2A) { EXPECT_EQ(Race(instant, never)().take(), 1); }
-TEST(RaceTest, Race2B) { EXPECT_EQ(Race(never, instant)().take(), 1); }
+TEST(RaceTest, Race1) { EXPECT_EQ(Race(instant)(), Poll<int>(1)); }
+TEST(RaceTest, Race2A) { EXPECT_EQ(Race(instant, never)(), Poll<int>(1)); }
+TEST(RaceTest, Race2B) { EXPECT_EQ(Race(never, instant)(), Poll<int>(1)); }
 
 }  // namespace grpc_core
 

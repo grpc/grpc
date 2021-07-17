@@ -20,7 +20,7 @@
 
 namespace grpc_core {
 
-namespace race_detail {
+namespace promise_detail {
 
 // Implementation type for Race combinator.
 template <typename... Promises>
@@ -29,19 +29,20 @@ class Race;
 template <typename Promise, typename... Promises>
 class Race<Promise, Promises...> {
  public:
+  using Result = decltype(std::declval<Promise>()());
+
   explicit Race(Promise promise, Promises... promises)
       : promise_(std::move(promise)), next_(std::move(promises)...) {}
-
-  using Result = decltype(std::declval<Promise>()());
 
   Result operator()() {
     // Check our own promise.
     auto r = promise_();
-    if (r.ready()) {
-      return r;
+    if (absl::holds_alternative<Pending>(r)) {
+      // Check the rest of them.
+      return next_();
     }
-    // Check the rest of them.
-    return next_();
+    // Return the first ready result.
+    return std::move(absl::get<kPollReadyIdx>(std::move(r)));
   }
 
  private:
@@ -54,22 +55,22 @@ class Race<Promise, Promises...> {
 template <typename Promise>
 class Race<Promise> {
  public:
-  explicit Race(Promise promise) : promise_(std::move(promise)) {}
   using Result = decltype(std::declval<Promise>()());
+  explicit Race(Promise promise) : promise_(std::move(promise)) {}
   Result operator()() { return promise_(); }
 
  private:
   Promise promise_;
 };
 
-}  // namespace race_detail
+}  // namespace promise_detail
 
 /// Run all the promises, return the first result that's available.
 /// If two results are simultaneously available, bias towards the first result
 /// listed.
 template <typename... Promises>
-race_detail::Race<Promises...> Race(Promises... promises) {
-  return race_detail::Race<Promises...>(std::move(promises)...);
+promise_detail::Race<Promises...> Race(Promises... promises) {
+  return promise_detail::Race<Promises...>(std::move(promises)...);
 }
 
 }  // namespace grpc_core

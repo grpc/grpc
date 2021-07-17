@@ -18,101 +18,115 @@
 #include <limits>
 #include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/wait_set.h"
 
 namespace grpc_core {
 
+namespace promise_detail {
+
+using ObservableVersion = uint64_t;
+static constexpr ObservableVersion kTombstoneVersion =
+    std::numeric_limits<ObservableVersion>::max();
+
+}  // namespace promise_detail
+
 class WatchCommitter {
  public:
-  virtual void Commit() = 0;
+  void Commit() { version_seen_ = promise_detail::kTombstoneVersion; }
+
+ protected:
+  promise_detail::ObservableVersion version_seen_ = 0;
 };
 
-namespace observable_detail {
-
-using Version = uint64_t;
-
-static constexpr Version kTombstoneVersion =
-    std::numeric_limits<Version>::max();
+namespace promise_detail {
 
 // Shared state between Observable and Observer.
 template <typename T>
 class ObservableState {
  public:
-  explicit ObservableState(absl::optional<T> value) : value_(value) {}
+  explicit ObservableState(absl::optional<T> value)
+      : value_(std::move(value)) {}
 
+  // Publish that we're closed.
   void Close() {
-    // Publish that we're closed.
-    waiters_.mu()->Lock();
+    mu_.Lock();
     version_ = kTombstoneVersion;
     value_.reset();
-    waiters_.WakeAllAndUnlock();
+    auto wakeup = waiters_.TakeWakeupSet();
+    mu_.Unlock();
+    wakeup.Wakeup();
   }
 
+  // Synchronously publish a new value, and wake any waiters.
   void Push(T value) {
-    waiters_.mu()->Lock();
+    mu_.Lock();
     version_++;
     value_ = std::move(value);
-    waiters_.WakeAllAndUnlock();
+    auto wakeup = waiters_.TakeWakeupSet();
+    mu_.Unlock();
+    wakeup.Wakeup();
   }
 
-  Poll<absl::optional<T>> PollGet(Version* version_seen) {
-    absl::MutexLock lock(waiters_.mu());
+  Poll<absl::optional<T>> PollGet(ObservableVersion* version_seen) {
+    absl::MutexLock lock(&mu_);
     if (!value_.has_value()) {
       if (version_ != kTombstoneVersion) {
         // We allow initial no-value, which does not indicate closure.
-        return waiters_.pending();
+        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
       }
     }
     *version_seen = version_;
-    return ready(value_);
+    return value_;
   }
 
-  Poll<absl::optional<T>> PollNext(Version* version_seen) {
-    absl::MutexLock lock(waiters_.mu());
+  Poll<absl::optional<T>> PollNext(ObservableVersion* version_seen) {
+    absl::MutexLock lock(&mu_);
     if (!value_.has_value()) {
       if (version_ != kTombstoneVersion) {
         // We allow initial no-value, which does not indicate closure.
-        return waiters_.pending();
+        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
       }
     }
     if (version_ == *version_seen) {
-      return waiters_.pending();
+      return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
     }
     *version_seen = version_;
-    return ready(value_);
+    return value_;
   }
 
-  Poll<absl::optional<T>> PollWatch(Version* version_seen) {
+  Poll<absl::optional<T>> PollWatch(ObservableVersion* version_seen) {
     if (*version_seen == kTombstoneVersion) {
-      return kPending;
+      return Pending();
     }
 
-    absl::MutexLock lock(waiters_.mu());
+    absl::MutexLock lock(&mu_);
     if (!value_.has_value()) {
       if (version_ != kTombstoneVersion) {
         // We allow initial no-value, which does not indicate closure.
-        return waiters_.pending();
+        return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
       }
     }
     if (version_ == *version_seen) {
-      return waiters_.pending();
+      return waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
     }
     *version_seen = version_;
     // Watch needs to be woken up if the value changes even if it's ready now.
-    waiters_.pending();
-    return ready(value_);
+    waiters_.AddPending(Activity::current()->MakeNonOwningWaker());
+    return value_;
   }
 
  private:
-  WaitSet waiters_;
-  Version version_ GUARDED_BY(waiters_.mu()) = 1;
-  absl::optional<T> value_ GUARDED_BY(waiters_.mu());
+  absl::Mutex mu_;
+  WaitSet waiters_ ABSL_GUARDED_BY(mu_);
+  ObservableVersion version_ ABSL_GUARDED_BY(mu_) = 1;
+  absl::optional<T> value_ ABSL_GUARDED_BY(mu_);
 };
 
 // Promise implementation for Observer::Get.
 template <typename T>
-class Get {
+class ObservableGet {
  public:
-  Get(Version* version_seen, ObservableState<T>* state)
+  ObservableGet(ObservableVersion* version_seen, ObservableState<T>* state)
       : version_seen_(version_seen), state_(state) {}
 
   Poll<absl::optional<T>> operator()() {
@@ -120,15 +134,15 @@ class Get {
   }
 
  private:
-  Version* version_seen_;
+  ObservableVersion* version_seen_;
   ObservableState<T>* state_;
 };
 
 // Promise implementation for Observer::Next.
 template <typename T>
-class Next {
+class ObservableNext {
  public:
-  Next(Version* version_seen, ObservableState<T>* state)
+  ObservableNext(ObservableVersion* version_seen, ObservableState<T>* state)
       : version_seen_(version_seen), state_(state) {}
 
   Poll<absl::optional<T>> operator()() {
@@ -136,30 +150,30 @@ class Next {
   }
 
  private:
-  Version* version_seen_;
+  ObservableVersion* version_seen_;
   ObservableState<T>* state_;
 };
 
 template <typename T, typename F>
-class Watch final : private WatchCommitter {
+class ObservableWatch final : private WatchCommitter {
  private:
-  using Promise = decltype(
-      std::declval<F>()(std::declval<T>(), std::declval<WatchCommitter*>()));
-  using Result = typename decltype(std::declval<Promise>()())::Type;
+  using Promise = PromiseLike<decltype(
+      std::declval<F>()(std::declval<T>(), std::declval<WatchCommitter*>()))>;
+  using Result = typename Promise::Result;
 
  public:
-  explicit Watch(F factory, std::shared_ptr<ObservableState<T>> state)
+  explicit ObservableWatch(F factory, std::shared_ptr<ObservableState<T>> state)
       : state_(std::move(state)), factory_(std::move(factory)) {}
-  Watch(const Watch&) = delete;
-  Watch& operator=(const Watch&) = delete;
-  Watch(Watch&&) = default;
-  Watch& operator=(Watch&&) = default;
+  ObservableWatch(const ObservableWatch&) = delete;
+  ObservableWatch& operator=(const ObservableWatch&) = delete;
+  ObservableWatch(ObservableWatch&&) noexcept = default;
+  ObservableWatch& operator=(ObservableWatch&&) noexcept = default;
 
   Poll<Result> operator()() {
     auto r = state_->PollWatch(&version_seen_);
-    if (auto* p = r.get_ready()) {
+    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
       if (p->has_value()) {
-        promise_ = factory_(std::move(**p), this);
+        promise_ = Promise(factory_(std::move(**p), this));
       } else {
         promise_ = {};
       }
@@ -167,20 +181,17 @@ class Watch final : private WatchCommitter {
     if (promise_.has_value()) {
       return (*promise_)();
     } else {
-      return kPending;
+      return Pending();
     }
   }
 
  private:
-  void Commit() { version_seen_ = kTombstoneVersion; }
-
   std::shared_ptr<ObservableState<T>> state_;
-  Version version_seen_ = 0;
   absl::optional<Promise> promise_;
   F factory_;
 };
 
-}  // namespace observable_detail
+}  // namespace promise_detail
 
 template <typename T>
 class Observable;
@@ -206,8 +217,8 @@ class Observer {
   // Observable has been closed, this will be nullopt. Borrows data from the
   // Observer, so this value must stay valid until the promise is resolved. Only
   // one Next, Get call is allowed to be outstanding at a time.
-  observable_detail::Get<T> Get() {
-    return observable_detail::Get<T>{&version_seen_, &*state_};
+  promise_detail::ObservableGet<T> Get() {
+    return promise_detail::ObservableGet<T>{&version_seen_, &*state_};
   }
 
   // Return a promise that will produce the next unseen value as an optional<T>.
@@ -215,15 +226,15 @@ class Observer {
   // Observable has been closed, this will be nullopt. Borrows data from the
   // Observer, so this value must stay valid until the promise is resolved. Only
   // one Next, Get call is allowed to be outstanding at a time.
-  observable_detail::Next<T> Next() {
-    return observable_detail::Next<T>{&version_seen_, &*state_};
+  promise_detail::ObservableNext<T> Next() {
+    return promise_detail::ObservableNext<T>{&version_seen_, &*state_};
   }
 
  private:
-  using State = observable_detail::ObservableState<T>;
+  using State = promise_detail::ObservableState<T>;
   friend class Observable<T>;
   explicit Observer(std::shared_ptr<State> state) : state_(state) {}
-  observable_detail::Version version_seen_ = 0;
+  promise_detail::ObservableVersion version_seen_ = 0;
   std::shared_ptr<State> state_;
 };
 
@@ -252,15 +263,15 @@ class Observable {
   // commit token. If the commit token is used (the Commit function on it is
   // called), then no further Watch updates are provided.
   template <typename F>
-  observable_detail::Watch<T, F> Watch(F f) {
-    return observable_detail::Watch<T, F>(std::move(f), state_);
+  promise_detail::ObservableWatch<T, F> Watch(F f) {
+    return promise_detail::ObservableWatch<T, F>(std::move(f), state_);
   }
 
  private:
-  using State = observable_detail::ObservableState<T>;
+  using State = promise_detail::ObservableState<T>;
   std::shared_ptr<State> state_;
 };
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_OBSERVABLE_H

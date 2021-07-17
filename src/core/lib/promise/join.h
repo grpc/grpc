@@ -15,105 +15,35 @@
 #ifndef GRPC_CORE_LIB_PROMISE_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_JOIN_H
 
-#include "absl/types/variant.h"
-#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/detail/basic_join.h"
 
 namespace grpc_core {
+namespace promise_detail {
 
-namespace join_detail {
-
-// Track either the functor providing a promise, or the result of the promise.
-// Can be polled after the promise finishes, since it keeps track of that.
-template <typename Functor>
-class Fused {
- public:
-  using Result = typename decltype(std::declval<Functor>()())::Type;
-
-  explicit Fused(Functor f) : f_(std::move(f)) {}
-
-  // Returns true if the promise is completed.
-  bool Poll() { return absl::visit(CallPoll{this}, f_); }
-
-  // Move the result out of storage.
-  Result take() { return std::move(absl::get<Result>(f_)); }
-
- private:
-  // Combined state - either we are a promise or the result.
-  // TODO(ctiller): Is it worth doing a bool/union split to avoid excessive
-  // generality from variant<> here?
-  absl::variant<Functor, Result> f_;
-
-  struct CallPoll {
-    Fused* const fused;
-
-    bool operator()(Functor& f) {
-      auto r = f();
-      if (auto* p = r.get_ready()) {
-        fused->f_.template emplace<Result>(std::move(*p));
-        return true;
-      }
-      return false;
-    }
-
-    bool operator()(Result&) { return true; }
-  };
+struct JoinTraits {
+  template <typename T>
+  using ResultType = absl::remove_reference_t<T>;
+  template <typename T, typename F>
+  static auto OnResult(T result, F kontinue)
+      -> decltype(kontinue(std::move(result))) {
+    return kontinue(std::move(result));
+  }
+  template <typename T>
+  static T Wrap(T x) {
+    return x;
+  }
 };
 
-// Helper to recursively poll through a set of Promises, and early out if
-// any are pending.
 template <typename... Promises>
-struct PollAll;
+using Join = BasicJoin<JoinTraits, Promises...>;
 
-template <typename Promise, typename... Promises>
-struct PollAll<Promise, Promises...> {
-  static bool Poll(Fused<Promise>& p, Fused<Promises>&... next) {
-    const bool a = p.Poll();
-    const bool b = PollAll<Promises...>::Poll(next...);
-    return a && b;
-  }
-};
-
-template <>
-struct PollAll<> {
-  static bool Poll() { return true; }
-};
-
-// The combined promise.
-template <typename... Promise>
-class Join {
- public:
-  explicit Join(Promise... promises)
-      : state_(Fused<Promise>(std::move(promises))...) {}
-
-  Poll<std::tuple<typename Fused<Promise>::Result...>> operator()() {
-    // Check if everything is ready
-    if (absl::apply(
-            [](Fused<Promise>&... promise) {
-              return PollAll<Promise...>::Poll(promise...);
-            },
-            state_)) {
-      // If it is, return the tuple of results.
-      return absl::apply(
-          [](Fused<Promise>&... fused) {
-            return std::make_tuple(fused.take()...);
-          },
-          state_);
-    } else {
-      return kPending;
-    }
-  }
-
- private:
-  std::tuple<Fused<Promise>...> state_;
-};
-
-}  // namespace join_detail
+}  // namespace promise_detail
 
 /// Combinator to run all promises to completion, and return a tuple
 /// of their results.
 template <typename... Promise>
-join_detail::Join<Promise...> Join(Promise... promises) {
-  return join_detail::Join<Promise...>(std::move(promises)...);
+promise_detail::Join<Promise...> Join(Promise... promises) {
+  return promise_detail::Join<Promise...>(std::move(promises)...);
 }
 
 }  // namespace grpc_core

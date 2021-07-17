@@ -34,16 +34,23 @@ ChannelStack* MakeChannel(Filter** filters, size_t num_filters) {
     data += sizeof(ChannelElem);
     user_data += filters[i]->sizeof_channel_data;
   }
-  printf("CALL STACK SIZE: %d\n", (int)call_size);
+  printf("CALL STACK SIZE: %d\n", static_cast<int>(call_size));
   return stk;
 }
 
-void FreeChannel(ChannelStack* stk) { delete[] reinterpret_cast<char*>(stk); }
+void FreeChannel(ChannelStack* stk) {
+  ChannelElem* elems = reinterpret_cast<ChannelElem*>(stk + 1);
+  for (size_t i = 0; i < stk->num_elems; i++) {
+    elems[i].filter->destroy_channel_data(&elems[i]);
+  }
+  stk->~ChannelStack();
+  delete[] reinterpret_cast<char*>(stk);
+}
 
 CallStack* MakeCall(ChannelStack* stk) {
   char* data = new char[stk->call_stack_size];
   CallStack* call = reinterpret_cast<CallStack*>(data);
-  new (data) CallStack{0, stk->num_elems};
+  new (data) CallStack{{0}, stk->num_elems, {}};
   data += sizeof(CallStack);
   ChannelElem* channel_elems = reinterpret_cast<ChannelElem*>(stk + 1);
   char* user_data = data + stk->num_elems * sizeof(CallElem);
@@ -58,8 +65,14 @@ CallStack* MakeCall(ChannelStack* stk) {
 }
 
 void FreeCall(CallStack* stk) {
-  stk->~CallStack();
-  delete[] reinterpret_cast<char*>(stk);
+  if (stk->refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+    CallElem* elems = reinterpret_cast<CallElem*>(stk + 1);
+    for (size_t i = 0; i < stk->num_elems; i++) {
+      elems[i].filter->destroy_call_data(&elems[i]);
+    }
+    stk->~CallStack();
+    delete[] reinterpret_cast<char*>(stk);
+  }
 }
 
 void NoChannelData(ChannelElem*) {}

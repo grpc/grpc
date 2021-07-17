@@ -20,24 +20,19 @@ namespace grpc_core {
 // GLOBALS
 
 thread_local Activity* Activity::g_current_activity_ = nullptr;
+Waker::Unwakeable Waker::unwakeable_;
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPER TYPES
 
 // Weak handle to an Activity.
 // Handle can persist while Activity goes away.
-class Activity::Handle {
+class Activity::Handle final : public Wakeable {
  public:
   explicit Handle(Activity* activity) : activity_(activity) {}
 
   // Ref the Handle (not the activity).
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
-  // Unref the Handle (not the activity).
-  void Unref() {
-    if (1 == refs_.fetch_sub(1, std::memory_order_acq_rel)) {
-      delete this;
-    }
-  }
 
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() {
@@ -50,7 +45,7 @@ class Activity::Handle {
 
   // Activity needs to wake up (if it still exists!) - wake it up, and drop the
   // ref that was kept for this handle.
-  void WakeupAndUnref() LOCKS_EXCLUDED(mu_, activity_->mu_) {
+  void Wakeup() override ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
     // against DropActivity, so we need to only increase activities refcount if
@@ -58,10 +53,9 @@ class Activity::Handle {
     if (activity_ && activity_->RefIfNonZero()) {
       Activity* activity = activity_;
       mu_.Unlock();
-      // Activity still exists and we have a reference: wake it up, and then
+      // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
       activity->Wakeup();
-      activity->Unref();
     } else {
       // Could not get the activity - it's either gone or going. No need to wake
       // it up!
@@ -71,43 +65,25 @@ class Activity::Handle {
     Unref();
   }
 
+  void Drop() override { Unref(); }
+
  private:
+  // Unref the Handle (not the activity).
+  void Unref() {
+    if (1 == refs_.fetch_sub(1, std::memory_order_acq_rel)) {
+      delete this;
+    }
+  }
+
   // Two initial refs: one for the waiter that caused instantiation, one for the
   // activity.
   std::atomic<size_t> refs_{2};
-  absl::Mutex mu_ ACQUIRED_AFTER(activity_->mu_);
-  Activity* activity_ GUARDED_BY(mu_);
-};
-
-// Set the current activity at construction, clean it up at destruction.
-class Activity::ScopedActivity {
- public:
-  explicit ScopedActivity(Activity* activity) {
-    assert(g_current_activity_ == nullptr);
-    g_current_activity_ = activity;
-  }
-  ~ScopedActivity() { g_current_activity_ = nullptr; }
-  ScopedActivity(const ScopedActivity&) = delete;
-  ScopedActivity& operator=(const ScopedActivity&) = delete;
+  Mutex mu_ ABSL_ACQUIRED_AFTER(activity_->mu_);
+  Activity* activity_ ABSL_GUARDED_BY(mu_);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // ACTIVITY IMPLEMENTATION
-
-Activity::Activity(CallbackScheduler* scheduler)
-    : callback_scheduler_(scheduler) {}
-
-Activity::~Activity() {
-  if (handle_) {
-    handle_->DropActivity();
-  }
-}
-
-void Activity::Start(std::function<void(absl::Status)> on_done) {
-  assert(!on_done_);
-  on_done_ = std::move(on_done);
-  Wakeup();
-}
 
 bool Activity::RefIfNonZero() {
   auto value = refs_.load(std::memory_order_acquire);
@@ -132,147 +108,11 @@ Activity::Handle* Activity::RefHandle() {
   }
 }
 
-void Activity::Wakeup() {
-  // If there's no active activity, we can just run inline.
-  if (g_current_activity_ == nullptr) {
-    Step();
-    return;
-  }
-  // If there is an active activity, but hey it's us, flag that and we'll loop
-  // in RunLoop (that's calling from above here!).
-  if (g_current_activity_ == this) {
-    mu_.AssertHeld();
-    got_wakeup_during_run_ = true;
-    return;
-  }
-  // Can't safely run, so ask to run later.
-  callback_scheduler_->Schedule([this]() { this->Step(); });
+void Activity::DropHandle() {
+  handle_->DropActivity();
+  handle_ = nullptr;
 }
 
-void Activity::Step() {
-  Poll<absl::Status> result = kPending;
-  {
-    // Poll the promise until things settle out under a lock.
-    absl::MutexLock lock(&mu_);
-    result = RunLoop();
-  }
-  // If we completed, call on_done.
-  // No need to lock here since we guarantee this edge only occurs once.
-  if (auto* status = result.get_ready()) {
-    on_done_(std::move(*status));
-    on_done_ = std::function<void(absl::Status)>();
-  }
-}
-
-Poll<absl::Status> Activity::RunLoop() {
-  if (done_) {
-    // We might get some spurious wakeups after finishing.
-    return kPending;
-  }
-  // Set g_current_activity_ until we return.
-  ScopedActivity scoped_activity(this);
-  do {
-    // Clear continuation flag - this might get set if Wakeup is called
-    // down-stack.
-    got_wakeup_during_run_ = false;
-    // Run the promise.
-    Poll<absl::Status> r = Run();
-    if (auto* status = r.get_ready()) {
-      // If complete, destroy the promise, flag done, and exit this loop.
-      Stop();
-      done_ = true;
-      return std::move(*status);
-    }
-    // Continue looping til no wakeups occur.
-  } while (got_wakeup_during_run_);
-  return kPending;
-}
-
-void Activity::Cancel() {
-  bool was_done;
-  {
-    absl::MutexLock lock(&mu_);
-    // Drop the promise if it exists.
-    Stop();
-    // Check if we were done, and flag done.
-    was_done = done_;
-    done_ = true;
-  }
-  // If we were not done, then call the on_done callback.
-  if (!was_done) {
-    on_done_(absl::CancelledError());
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// WAITSET IMPLEMENTATION
-
-WaitSet::WaitSet() = default;
-
-WaitSet::~WaitSet() {
-  for (auto* h : pending_) {
-    h->WakeupAndUnref();
-  }
-}
-
-Pending WaitSet::pending() {
-  Activity::g_current_activity_->mu_.AssertHeld();
-  // Get a reffed handle to the current activity.
-  Activity::Handle* h = Activity::g_current_activity_->RefHandle();
-  // Insert it into our pending list.
-  if (!pending_.insert(h).second) {
-    // If it was already there, we can drop it immediately.
-    h->Unref();
-  }
-  return kPending;
-}
-
-void WaitSet::WakeAllAndUnlock() {
-  // Take the entire pending set.
-  decltype(pending_) prior;
-  prior.swap(pending_);
-  // Unlock so we're not holding a mutex during wakeups
-  mu_.Unlock();
-  // Wakeup all the waiting activities!
-  for (auto* h : prior) {
-    h->WakeupAndUnref();
-  }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// SINGLEWAITER IMPLEMENTATION
-
-SingleWaiter::SingleWaiter() : waiter_(nullptr) {}
-
-SingleWaiter::~SingleWaiter() { Wakeup(waiter_); }
-
-Pending SingleWaiter::pending() {
-  assert(Activity::g_current_activity_);
-  Activity::g_current_activity_->mu_.AssertHeld();
-  if (waiter_ == Activity::g_current_activity_) {
-    return kPending;
-  }
-  if (waiter_ != nullptr) {
-    waiter_->Unref();
-  }
-  waiter_ = Activity::g_current_activity_;
-  waiter_->Ref();
-  return kPending;
-}
-
-void SingleWaiter::WakeAndUnlock() {
-  Activity* activity = waiter_;
-  waiter_ = nullptr;
-  mu_.Unlock();
-  Wakeup(activity);
-}
-
-void SingleWaiter::Wakeup(Activity* activity) {
-  if (activity == nullptr) {
-    return;
-  }
-  activity->Wakeup();
-  activity->Unref();
-}
+Waker Activity::MakeNonOwningWaker() { return Waker(RefHandle()); }
 
 }  // namespace grpc_core

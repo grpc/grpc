@@ -15,157 +15,72 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRY_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_TRY_SEQ_H
 
+#include <tuple>
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
-namespace try_seq_detail {
+namespace promise_detail {
 
-template <typename... Ts>
-struct List {
-  template <typename T>
-  using Append = List<Ts..., T>;
-  using Variant = absl::variant<Ts...>;
-};
-
-template <typename F, typename... Next>
-class State;
-
-template <typename F>
-class State<F> {
- public:
-  explicit State(F f) : f_(std::move(f)) {}
-  using Result = typename decltype(std::declval<F>()())::Type;
-
-  using FinalState = State<F>;
-  using StatesList = List<FinalState>;
-
-  template <typename StateVariant>
-  Poll<Result> Run(StateVariant*) {
-    return f_();
+template <typename T>
+struct TrySeqTraits {
+  using UnwrappedType = T;
+  using WrappedType = absl::StatusOr<T>;
+  template <typename Next>
+  static auto CallFactory(Next* next, T&& value)
+      -> decltype(next->Once(std::forward<T>(value))) {
+    return next->Once(std::forward<T>(value));
   }
-
- private:
-  F f_;
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
+    return run_next(std::move(prior));
+  }
 };
 
-template <typename Next, typename T>
-struct NextResultTraits;
-
 template <typename T>
-struct NextArg;
-template <typename T>
-struct NextArg<absl::StatusOr<T>> {
-  using Type = T;
+struct TrySeqTraits<absl::StatusOr<T>> {
+  using UnwrappedType = T;
+  using WrappedType = absl::StatusOr<T>;
+  template <typename Next>
+  static auto CallFactory(Next* next, absl::StatusOr<T>&& status)
+      -> decltype(next->Once(std::move(*status))) {
+    return next->Once(std::move(*status));
+  }
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(absl::StatusOr<T> prior,
+                                            RunNext run_next) {
+    if (!prior.ok()) return Result(prior.status());
+    return run_next(std::move(prior));
+  }
 };
 template <>
-struct NextArg<absl::Status> {
-  using Type = void;
-};
-
-template <typename Next, typename T>
-auto CallNext(Next* next, absl::StatusOr<T>* status)
-    -> decltype(next->Once(std::move(**status))) {
-  return next->Once(std::move(**status));
-}
-
-template <typename Next>
-auto CallNext(Next* next, absl::Status* status) -> decltype(next->Once()) {
-  return next->Once();
-}
-
-template <typename Result>
-Result StatusFrom(absl::Status* status) {
-  return Result(std::move(*status));
-}
-
-template <typename Result, typename T>
-Result StatusFrom(absl::StatusOr<T>* status) {
-  return Result(std::move(status->status()));
-}
-
-template <typename F, typename Next, typename... Nexts>
-class State<F, Next, Nexts...> final {
- public:
-  State(F f, Next next, Nexts... nexts)
-      : f_(std::move(f)), next_(std::move(next)), nexts_(std::move(nexts)...) {}
-
-  using FResult = typename decltype(std::declval<F>()())::Type;
-  using NextFactory =
-      adaptor_detail::Factory<typename NextArg<FResult>::Type, Next>;
-  using NextResult = decltype(CallNext(static_cast<NextFactory*>(nullptr),
-                                       static_cast<FResult*>(nullptr)));
-  using NextState = State<NextResult, Nexts...>;
-  using FinalState = typename NextState::FinalState;
-  using StatesList =
-      typename NextState::StatesList::template Append<State<F, Next, Nexts...>>;
-  using PollResult = absl::StatusOr<NextState>;
-
-  template <typename StateVariant>
-  Poll<typename FinalState::Result> Run(StateVariant* state_variant) {
-    auto r = f_();
-    if (auto* result = r.get_ready()) {
-      if (result->ok()) {
-        auto next = &next_;
-        return absl::apply(
-            [result, next, state_variant](Nexts&... nexts) {
-              return state_variant
-                  ->template emplace<NextState>(CallNext(next, result),
-                                                std::move(nexts)...)
-                  .Run(state_variant);
-            },
-            nexts_);
-      }
-      return ready(StatusFrom<typename FinalState::Result>(result));
-    }
-    return kPending;
+struct TrySeqTraits<absl::Status> {
+  using UnwrappedType = void;
+  using WrappedType = absl::Status;
+  template <typename Next>
+  static auto CallFactory(Next* next, absl::Status&&)
+      -> decltype(next->Once()) {
+    return next->Once();
   }
-
- private:
-  F f_;
-  NextFactory next_;
-  std::tuple<Nexts...> nexts_;
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(absl::Status prior,
+                                            RunNext run_next) {
+    if (!prior.ok()) return Result(prior);
+    return run_next(std::move(prior));
+  }
 };
 
-template <typename... Functors>
-class TrySeq {
- private:
-  using InitialState = State<Functors...>;
-  using FinalState = typename InitialState::FinalState;
-  using StatesVariant = typename InitialState::StatesList::Variant;
-  using Result = typename FinalState::Result;
-  StatesVariant state_;
+template <typename... Fs>
+using TrySeq = BasicSeq<TrySeqTraits, Fs...>;
 
-  struct CallPoll {
-    TrySeq* seq;
-    // CallPoll on a non-final state moves to the next state if it completes.
-    // If so, it immediately polls the next state also (recursively!) and when
-    // polling completes stores the current state back into state_.
-    // kSetState keeps track of the need to do this (or not) - when we first
-    // visit state_ kSetState is false indicating that we're already mutating
-    // it. If we gain a new state on the stack, we don't put that into state_
-    // immediately to avoid unnecessary potential copies.
-    template <typename State>
-    Poll<Result> operator()(State& state) {
-      return state.Run(&seq->state_);
-    }
-  };
-
- public:
-  explicit TrySeq(Functors... functors)
-      : state_(InitialState(std::move(functors)...)) {}
-
-  Poll<Result> operator()() { return absl::visit(CallPoll{this}, state_); }
-};
-
-}  // namespace try_seq_detail
+}  // namespace promise_detail
 
 // Try a sequence of operations.
 // * Run the first functor as a promise.
-// * Feed the it's success result into the second functor to create a promise,
+// * Feed its success result into the second functor to create a promise,
 //   then run that.
 // * ...
 // * Feed the second-final success result into the final functor to create a
@@ -176,8 +91,8 @@ class TrySeq {
 // Status to indicate only success/failure. In the case of returning Status,
 // the construction functors take no arguments.
 template <typename... Functors>
-try_seq_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
-  return try_seq_detail::TrySeq<Functors...>(std::move(functors)...);
+promise_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
+  return promise_detail::TrySeq<Functors...>(std::move(functors)...);
 }
 
 }  // namespace grpc_core

@@ -17,36 +17,23 @@
 
 namespace grpc_core {
 
+TEST(PollTest, IsItPoll) {
+  EXPECT_EQ(PollTraits<Poll<int>>::is_poll(), true);
+  EXPECT_EQ(PollTraits<Poll<bool>>::is_poll(), true);
+  EXPECT_EQ(PollTraits<Poll<std::unique_ptr<int>>>::is_poll(), true);
+  EXPECT_EQ(PollTraits<int>::is_poll(), false);
+  EXPECT_EQ(PollTraits<bool>::is_poll(), false);
+  EXPECT_EQ(PollTraits<std::unique_ptr<int>>::is_poll(), false);
+}
+
 TEST(PollTest, Pending) {
-  Poll<int> i = kPending;
-  EXPECT_EQ(i.pending(), true);
-  EXPECT_EQ(i.ready(), false);
-  EXPECT_EQ(i.get_ready(), nullptr);
-  EXPECT_EQ(i.Map([](int i) -> int { abort(); }).pending(), true);
+  Poll<int> i = Pending();
+  EXPECT_TRUE(absl::holds_alternative<Pending>(i));
 }
 
 TEST(PollTest, Ready) {
   Poll<int> i = 1;
-  EXPECT_EQ(i.pending(), false);
-  EXPECT_EQ(i.ready(), true);
-  EXPECT_EQ(*i.get_ready(), 1);
-  EXPECT_EQ(*i.Map([](int i) { return i + 1; }).get_ready(), 2);
-  EXPECT_EQ(i.pending(), false);
-  EXPECT_EQ(i.ready(), true);
-}
-
-TEST(PollTest, Take) {
-  Poll<int> i = 1;
-  EXPECT_EQ(i.pending(), false);
-  EXPECT_EQ(i.ready(), true);
-  EXPECT_EQ(*i.get_ready(), 1);
-  Poll<int> j = i.take();
-  EXPECT_EQ(j.pending(), false);
-  EXPECT_EQ(j.ready(), true);
-  EXPECT_EQ(*j.get_ready(), 1);
-  EXPECT_EQ(i.pending(), true);
-  EXPECT_EQ(i.ready(), false);
-  EXPECT_EQ(i.get_ready(), nullptr);
+  EXPECT_TRUE(absl::holds_alternative<int>(i));
 }
 
 }  // namespace grpc_core

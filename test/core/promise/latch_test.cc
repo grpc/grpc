@@ -12,48 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/latch.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/observable.h"
-#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
 
-using testing::Mock;
 using testing::MockFunction;
 using testing::StrictMock;
 
 namespace grpc_core {
 
-TEST(ForEachTest, SendThriceWithPipe) {
-  Pipe<int> pipe;
-  int num_received = 0;
+TEST(LatchTest, Works) {
+  Latch<int> latch;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
-      [&pipe, &num_received] {
-        return Map(Join(Seq(
-                            pipe.sender.Push(1),
-                            [&pipe] { return pipe.sender.Push(2); },
-                            [&pipe] { return pipe.sender.Push(3); },
-                            [&pipe] {
-                              auto drop = std::move(pipe.sender);
-                              return absl::OkStatus();
-                            }),
-                        ForEach(std::move(pipe.receiver),
-                                [&num_received](int i) {
-                                  num_received++;
-                                  EXPECT_EQ(num_received, i);
-                                  return absl::OkStatus();
-                                })),
-                   JustElem<1>());
+      [&latch] {
+        return Seq(Join(latch.Wait(),
+                        [&latch]() {
+                          latch.Set(42);
+                          return true;
+                        }),
+                   [](std::tuple<int*, bool> result) {
+                     EXPECT_EQ(*std::get<0>(result), 42);
+                     return absl::OkStatus();
+                   });
       },
       NoCallbackScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-  Mock::VerifyAndClearExpectations(&on_done);
-  EXPECT_EQ(num_received, 3);
 }
 
 }  // namespace grpc_core

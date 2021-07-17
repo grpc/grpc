@@ -16,7 +16,8 @@
 #define GRPC_CORE_LIB_PROMISE_VISITOR_H
 
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/gprpp/overload.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -35,7 +36,7 @@ struct ResultOf;
 
 template <typename Promise, typename... Promises>
 struct ResultOf<Promise, Promises...> {
-  using Type = typename decltype(std::declval<Promise>()())::Type;
+  using Type = typename PollTraits<decltype(std::declval<Promise>()())>::Type;
 };
 
 template <typename... Promises>
@@ -53,27 +54,13 @@ class Promise {
 };
 
 template <typename... Cases>
-struct Overload;
-template <typename Case, typename... Cases>
-struct Overload<Case, Cases...> : public Case, public Overload<Cases...> {
-  explicit Overload(Case c, Cases... cases)
-      : Case(std::move(c)), Overload<Cases...>(std::move(cases)...) {}
-  using Case::operator();
-  using Overload<Cases...>::operator();
-};
-template <typename Case>
-struct Overload<Case> : public Case {
-  explicit Overload(Case c) : Case(std::move(c)) {}
-  using Case::operator();
-};
-
-template <typename... Cases>
 class OverloadFactory {
  public:
   template <typename T>
-  using AdaptorFactory = adaptor_detail::Factory<T, Overload<Cases...>>;
+  using AdaptorFactory =
+      promise_detail::PromiseFactory<T, OverloadType<Cases...>>;
 
-  OverloadFactory(Cases... cases) : overload_(std::move(cases)...) {}
+  explicit OverloadFactory(Cases... cases) : overload_(std::move(cases)...) {}
 
   template <typename T>
   auto operator()(T value)
@@ -82,7 +69,7 @@ class OverloadFactory {
   }
 
  private:
-  Overload<Cases...> overload_;
+  OverloadType<Cases...> overload_;
 };
 
 template <typename Factory, typename Arg>
@@ -134,4 +121,4 @@ visitor_detail::Visitor<Cases...> Visitor(Cases... cases) {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_VISITOR_H

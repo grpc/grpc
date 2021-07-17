@@ -16,7 +16,6 @@
 #define GRPC_CORE_LIB_PROMISE_MAP_H
 
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -29,16 +28,17 @@ class Map {
   Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
-  using PromiseResult = typename decltype(std::declval<Promise>()())::Type;
+  using PromiseResult =
+      typename PollTraits<decltype(std::declval<Promise>()())>::Type;
   using Result = absl::remove_reference_t<decltype(
       std::declval<Fn>()(std::declval<PromiseResult>()))>;
 
   Poll<Result> operator()() {
     auto r = promise_();
-    if (auto* p = r.get_ready()) {
-      return ready(fn_(std::move(*p)));
+    if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      return fn_(std::move(*p));
     }
-    return kPending;
+    return Pending();
   }
 
  private:
@@ -49,7 +49,8 @@ class Map {
 }  // namespace map_detail
 
 // Mapping combinator.
-// Takes a promise, and a function to mutate it's result, and returns a promise.
+// Takes a promise, and a synchronous function to mutate it's result, and
+// returns a promise.
 template <typename Promise, typename Fn>
 map_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
   return map_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));

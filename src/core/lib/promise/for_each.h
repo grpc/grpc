@@ -17,7 +17,7 @@
 
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
-#include "src/core/lib/promise/adaptor.h"
+#include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -45,13 +45,14 @@ template <typename Reader, typename Action>
 class ForEach {
  private:
   using ReaderNext = decltype(std::declval<Reader>().Next());
-  using ReaderResult =
-      typename decltype(std::declval<ReaderNext>()())::Type::value_type;
-  using ActionFactory = adaptor_detail::Factory<ReaderResult, Action>;
+  using ReaderResult = typename PollTraits<decltype(
+      std::declval<ReaderNext>()())>::Type::value_type;
+  using ActionFactory = promise_detail::PromiseFactory<ReaderResult, Action>;
   using ActionPromise = typename ActionFactory::Promise;
 
  public:
-  using Result = typename decltype(std::declval<ActionPromise>()())::Type;
+  using Result =
+      typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
   ForEach(Reader reader, Action action)
       : reader_(std::move(reader)),
         action_factory_(std::move(action)),
@@ -77,29 +78,29 @@ class ForEach {
 
     Poll<Result> operator()(ReaderNext& reader_next) {
       auto r = reader_next();
-      if (auto* p = r.get_ready()) {
+      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         if (p->has_value()) {
           auto action = self->action_factory_.Repeated(std::move(**p));
           return CallPoll<true>{self}(action);
         } else {
-          return ready(Done<Result>::Make());
+          return Done<Result>::Make();
         }
       }
       if (kSetState) {
         self->state_.template emplace<ReaderNext>(std::move(reader_next));
       }
-      return kPending;
+      return Pending();
     }
 
     Poll<Result> operator()(ActionPromise& promise) {
       auto r = promise();
-      if (auto* p = r.get_ready()) {
+      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
         return FinishIteration(p, &self->reader_, CallPoll<true>{self});
       }
       if (kSetState) {
         self->state_.template emplace<ActionPromise>(std::move(promise));
       }
-      return kPending;
+      return Pending();
     }
   };
 };
@@ -115,4 +116,4 @@ for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_PROMISE_JOIN_H
+#endif  // GRPC_CORE_LIB_PROMISE_FOR_EACH_H

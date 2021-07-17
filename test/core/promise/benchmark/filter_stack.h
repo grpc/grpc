@@ -29,7 +29,7 @@ struct ChannelStack {
 };
 
 struct CallStack {
-  uint64_t refcount;
+  std::atomic<size_t> refcount;
   size_t num_elems;
   absl::Mutex mutex;
 };
@@ -64,6 +64,9 @@ struct Op {
         cancel_stream(false),
         is_traced(false) {}
 
+  Op(const Op&) = delete;
+  Op& operator=(const Op&) = delete;
+
   Payload* payload = nullptr;
 
   Closure* on_complete = nullptr;
@@ -81,7 +84,9 @@ struct Op {
 struct Filter {
   void (*start_transport_stream_op_batch)(CallElem* elem, Op* op);
   void (*init_call_data)(CallElem* elem);
+  void (*destroy_call_data)(CallElem* elem);
   void (*init_channel_data)(ChannelElem* elem);
+  void (*destroy_channel_data)(ChannelElem* elem);
   size_t sizeof_call_data;
   size_t sizeof_channel_data;
 };

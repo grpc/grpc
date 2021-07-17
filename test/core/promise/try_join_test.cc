@@ -22,57 +22,53 @@ using P = std::function<Poll<absl::StatusOr<T>>()>;
 
 template <typename T>
 P<T> instant_ok(T x) {
-  return [x] { return ready(absl::StatusOr<T>(x)); };
+  return [x] { return absl::StatusOr<T>(x); };
 }
 
 template <typename T>
 P<T> instant_fail() {
-  return [] { return ready(absl::StatusOr<T>()); };
+  return [] { return absl::StatusOr<T>(); };
 }
 
 template <typename... T>
-absl::StatusOr<std::tuple<T...>> ok(T... x) {
+Poll<absl::StatusOr<std::tuple<T...>>> ok(T... x) {
   return absl::StatusOr<std::tuple<T...>>(absl::in_place, x...);
 }
 
 template <typename... T>
-absl::StatusOr<std::tuple<T...>> fail() {
+Poll<absl::StatusOr<std::tuple<T...>>> fail() {
   return absl::StatusOr<std::tuple<T...>>();
 }
 
 template <typename T>
 P<T> pending() {
-  return []() -> Poll<absl::StatusOr<T>> { return kPending; };
+  return []() -> Poll<absl::StatusOr<T>> { return Pending(); };
 }
 
-TEST(TryJoinTest, Join1) { EXPECT_EQ(TryJoin(instant_ok(1))().take(), ok(1)); }
+TEST(TryJoinTest, Join1) { EXPECT_EQ(TryJoin(instant_ok(1))(), ok(1)); }
 
 TEST(TryJoinTest, Join1Fail) {
-  EXPECT_EQ(TryJoin(instant_fail<int>())().take(), fail<int>());
+  EXPECT_EQ(TryJoin(instant_fail<int>())(), fail<int>());
 }
 
 TEST(TryJoinTest, Join2Success) {
-  EXPECT_EQ(TryJoin(instant_ok(1), instant_ok(2))().take(), ok(1, 2));
+  EXPECT_EQ(TryJoin(instant_ok(1), instant_ok(2))(), ok(1, 2));
 }
 
 TEST(TryJoinTest, Join2Fail1) {
-  EXPECT_EQ(TryJoin(instant_ok(1), instant_fail<int>())().take(),
-            (fail<int, int>()));
+  EXPECT_EQ(TryJoin(instant_ok(1), instant_fail<int>())(), (fail<int, int>()));
 }
 
 TEST(TryJoinTest, Join2Fail2) {
-  EXPECT_EQ(TryJoin(instant_fail<int>(), instant_ok(2))().take(),
-            (fail<int, int>()));
+  EXPECT_EQ(TryJoin(instant_fail<int>(), instant_ok(2))(), (fail<int, int>()));
 }
 
 TEST(TryJoinTest, Join2Fail1P) {
-  EXPECT_EQ(TryJoin(pending<int>(), instant_fail<int>())().take(),
-            (fail<int, int>()));
+  EXPECT_EQ(TryJoin(pending<int>(), instant_fail<int>())(), (fail<int, int>()));
 }
 
 TEST(TryJoinTest, Join2Fail2P) {
-  EXPECT_EQ(TryJoin(instant_fail<int>(), pending<int>())().take(),
-            (fail<int, int>()));
+  EXPECT_EQ(TryJoin(instant_fail<int>(), pending<int>())(), (fail<int, int>()));
 }
 
 }  // namespace grpc_core

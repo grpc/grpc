@@ -113,4 +113,4 @@ void grpc_stream_compression_context_destroy(
 int grpc_stream_compression_method_parse(
     grpc_slice value, bool is_compress, grpc_stream_compression_method* method);
 
-#endif
+#endif  // GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H

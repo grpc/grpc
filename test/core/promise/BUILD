@@ -17,144 +17,185 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 grpc_cc_test(
     name = "activity_test",
     srcs = ["activity_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = [
+        "//:activity",
+        "//:join",
+        "//:promise",
+        "//:seq",
+        "//:wait_set",
+    ],
 )
 
 grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:if"],
 )
 
 grpc_cc_test(
     name = "poll_test",
     srcs = ["poll_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:poll"],
 )
 
 grpc_cc_test(
     name = "for_each_test",
     srcs = ["for_each_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = [
+        "//:for_each",
+        "//:join",
+        "//:map",
+        "//:observable",
+        "//:pipe",
+        "//:seq",
+    ],
 )
 
 grpc_cc_test(
     name = "observable_test",
     srcs = ["observable_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = [
+        "//:observable",
+        "//:promise",
+        "//:seq",
+    ],
 )
 
 grpc_cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = [
+        "//:join",
+        "//:pipe",
+        "//:promise",
+        "//:seq",
+    ],
 )
 
 grpc_cc_test(
-    name = "adaptor_test",
-    srcs = ["adaptor_test.cc"],
+    name = "promise_factory_test",
+    srcs = ["promise_factory_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/functional:bind_front",
+    ],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest",         "absl/functional:bind_front",
-],
+    deps = [
+        "//:capture",
+        "//:promise",
+        "//:promise_factory",
+    ],
 )
 
 grpc_cc_test(
     name = "context_test",
     srcs = ["context_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:context"],
 )
 
 grpc_cc_test(
     name = "promise_test",
     srcs = ["promise_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
     deps = ["//:promise"],
-    external_deps = ["gtest"],
 )
 
 grpc_cc_test(
     name = "seq_test",
     srcs = ["seq_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:seq"],
 )
 
 grpc_cc_test(
     name = "try_seq_test",
     srcs = ["try_seq_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:try_seq"],
 )
 
 grpc_cc_test(
     name = "join_test",
     srcs = ["join_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:join"],
 )
 
 grpc_cc_test(
     name = "try_join_test",
     srcs = ["try_join_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:try_join"],
 )
 
 grpc_cc_test(
     name = "race_test",
     srcs = ["race_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:race"],
 )
 
 grpc_cc_test(
     name = "visitor_test",
     srcs = ["visitor_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
-    external_deps = ["gtest"],
+    deps = ["//:visitor"],
 )
 
 grpc_cc_test(
-    name = "while_test",
-    srcs = ["while_test.cc"],
+    name = "loop_test",
+    srcs = ["loop_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = ["//:loop"],
+)
+
+grpc_cc_test(
+    name = "latch_test",
+    srcs = ["latch_test.cc"],
     external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:join",
+        "//:latch",
+        "//:seq",
+    ],
 )
