@@ -49,6 +49,10 @@ public:
         units_[unit_for(i)] |= mask_for(i);
     }
 
+    void set(int i, bool is_set) {
+    	if (is_set) set(i); else clear(i);
+    }
+
     void clear(int i) {
         units_[unit_for(i)] &= ~mask_for(i);
     }
