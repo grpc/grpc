@@ -38,7 +38,7 @@ module GRPC
     #
     # @param [Object] request
     # @param [GRPC::ActiveCall] call
-    # @param [Method] method
+    # @param [String] method
     # @param [Hash] metadata
     #
     def request_response(request: nil, call: nil, method: nil, metadata: nil)
@@ -52,7 +52,7 @@ module GRPC
     #
     # @param [Enumerable] requests
     # @param [GRPC::ActiveCall] call
-    # @param [Method] method
+    # @param [String] method
     # @param [Hash] metadata
     #
     def client_streamer(requests: nil, call: nil, method: nil, metadata: nil)
@@ -66,7 +66,7 @@ module GRPC
     #
     # @param [Object] request
     # @param [GRPC::ActiveCall] call
-    # @param [Method] method
+    # @param [String] method
     # @param [Hash] metadata
     #
     def server_streamer(request: nil, call: nil, method: nil, metadata: nil)
@@ -80,7 +80,7 @@ module GRPC
     #
     # @param [Enumerable] requests
     # @param [GRPC::ActiveCall] call
-    # @param [Method] method
+    # @param [String] method
     # @param [Hash] metadata
     #
     def bidi_streamer(requests: nil, call: nil, method: nil, metadata: nil)
@@ -172,7 +172,7 @@ module GRPC
       i = @interceptors.pop
       return yield unless i
 
-      i.send(type, args) do
+      i.send(type, **args) do
         if @interceptors.any?
           intercept!(type, args) do
             yield

@@ -18,8 +18,8 @@
 
 #import "GRPCCall+ChannelArg.h"
 
-#import "private/GRPCChannelPool.h"
-#import "private/GRPCHost.h"
+#import "private/GRPCCore/GRPCChannelPool.h"
+#import "private/GRPCCore/GRPCHost.h"
 
 #import <grpc/impl/codegen/compression_types.h>
 
@@ -28,6 +28,11 @@
 + (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host {
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   hostConfig.userAgentPrefix = userAgentPrefix;
+}
+
++ (void)setUserAgentSuffix:(nonnull NSString *)userAgentSuffix forHost:(nonnull NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.userAgentSuffix = userAgentSuffix;
 }
 
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host {

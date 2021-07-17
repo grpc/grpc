@@ -39,17 +39,18 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
     struct pending_request* next;
   };
 
-  explicit grpc_plugin_credentials(grpc_metadata_credentials_plugin plugin);
+  explicit grpc_plugin_credentials(grpc_metadata_credentials_plugin plugin,
+                                   grpc_security_level min_security_level);
   ~grpc_plugin_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* on_request_metadata,
-                            grpc_error** error) override;
+                            grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error* error) override;
+                                   grpc_error_handle error) override;
 
   // Checks if the request has been cancelled.
   // If not, removes it from the pending list, so that it cannot be
@@ -57,6 +58,8 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   // When this returns, r->cancelled indicates whether the request was
   // cancelled before completion.
   void pending_request_complete(pending_request* r);
+
+  std::string debug_string() override;
 
  private:
   void pending_request_remove_locked(pending_request* pending_request);

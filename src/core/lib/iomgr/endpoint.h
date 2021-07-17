@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/time.h>
@@ -33,7 +35,6 @@
 
 typedef struct grpc_endpoint grpc_endpoint;
 typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
-class Timestamps;
 
 struct grpc_endpoint_vtable {
   void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
@@ -43,10 +44,11 @@ struct grpc_endpoint_vtable {
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
   void (*add_to_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
-  void (*shutdown)(grpc_endpoint* ep, grpc_error* why);
+  void (*shutdown)(grpc_endpoint* ep, grpc_error_handle why);
   void (*destroy)(grpc_endpoint* ep);
   grpc_resource_user* (*get_resource_user)(grpc_endpoint* ep);
-  char* (*get_peer)(grpc_endpoint* ep);
+  absl::string_view (*get_peer)(grpc_endpoint* ep);
+  absl::string_view (*get_local_address)(grpc_endpoint* ep);
   int (*get_fd)(grpc_endpoint* ep);
   bool (*can_track_err)(grpc_endpoint* ep);
 };
@@ -59,7 +61,9 @@ struct grpc_endpoint_vtable {
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                         grpc_closure* cb, bool urgent);
 
-char* grpc_endpoint_get_peer(grpc_endpoint* ep);
+absl::string_view grpc_endpoint_get_peer(grpc_endpoint* ep);
+
+absl::string_view grpc_endpoint_get_local_address(grpc_endpoint* ep);
 
 /* Get the file descriptor used by \a ep. Return -1 if \a ep is not using an fd.
  */
@@ -82,7 +86,7 @@ void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
-void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error* why);
+void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why);
 void grpc_endpoint_destroy(grpc_endpoint* ep);
 
 /* Add an endpoint to a pollset or pollset_set, so that when the pollset is
@@ -95,7 +99,7 @@ void grpc_endpoint_add_to_pollset_set(grpc_endpoint* ep,
 void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
                                            grpc_pollset_set* pollset_set);
 
-grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* endpoint);
+grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* ep);
 
 bool grpc_endpoint_can_track_err(grpc_endpoint* ep);
 

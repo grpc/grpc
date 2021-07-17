@@ -37,10 +37,9 @@ typedef struct {
 } synchronizer;
 
 static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
-  char* usage = gpr_cmdline_usage_string(cl, argv0);
-  fprintf(stderr, "%s", usage);
+  std::string usage = gpr_cmdline_usage_string(cl, argv0);
+  fprintf(stderr, "%s", usage.c_str());
   fflush(stderr);
-  gpr_free(usage);
   gpr_cmdline_destroy(cl);
   exit(1);
 }
@@ -52,12 +51,9 @@ static void on_jwt_verification_done(void* user_data,
 
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
-    char* claims_str;
     GPR_ASSERT(claims != nullptr);
-    claims_str = grpc_json_dump_to_string(
-        const_cast<grpc_json*>(grpc_jwt_claims_json(claims)), 2);
-    printf("Claims: \n\n%s\n", claims_str);
-    gpr_free(claims_str);
+    std::string claims_str = grpc_jwt_claims_json(claims)->Dump(/*indent=*/2);
+    printf("Claims: \n\n%s\n", claims_str.c_str());
     grpc_jwt_claims_destroy(claims);
   } else {
     GPR_ASSERT(claims == nullptr);
@@ -105,8 +101,9 @@ int main(int argc, char** argv) {
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE)))
+            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE))) {
       sync.is_done = true;
+    }
     gpr_mu_unlock(sync.mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(sync.mu);

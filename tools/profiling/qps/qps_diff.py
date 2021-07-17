@@ -26,23 +26,22 @@ import sys
 import tabulate
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', 'microbenchmarks', 'bm_diff'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', 'microbenchmarks',
+                 'bm_diff'))
 import bm_speedup
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests',
+                 'python_utils'))
 import check_on_pr
 
 
 def _args():
     argp = argparse.ArgumentParser(description='Perform diff on QPS Driver')
-    argp.add_argument(
-        '-d',
-        '--diff_base',
-        type=str,
-        help='Commit or branch to compare the current one to')
+    argp.add_argument('-d',
+                      '--diff_base',
+                      type=str,
+                      help='Commit or branch to compare the current one to')
     argp.add_argument(
         '-l',
         '--loops',
@@ -50,12 +49,11 @@ def _args():
         default=4,
         help='Number of loops for each benchmark. More loops cuts down on noise'
     )
-    argp.add_argument(
-        '-j',
-        '--jobs',
-        type=int,
-        default=multiprocessing.cpu_count(),
-        help='Number of CPUs to use')
+    argp.add_argument('-j',
+                      '--jobs',
+                      type=int,
+                      default=multiprocessing.cpu_count(),
+                      help='Number of CPUs to use')
     args = argp.parse_args()
     assert args.diff_base, "diff_base must be set"
     return args
@@ -129,8 +127,8 @@ def diff(scenarios, loops, old, new):
     rows = []
     for sn in scenarios:
         mdn_diff = abs(_median(new_data[sn]) - _median(old_data[sn]))
-        print('%s: %s=%r %s=%r mdn_diff=%r' % (sn, new, new_data[sn], old,
-                                               old_data[sn], mdn_diff))
+        print('%s: %s=%r %s=%r mdn_diff=%r' %
+              (sn, new, new_data[sn], old, old_data[sn], mdn_diff))
         s = bm_speedup.speedup(new_data[sn], old_data[sn], 10e-5)
         if abs(s) > 3 and mdn_diff > 0.5:
             rows.append([sn, '%+d%%' % s])

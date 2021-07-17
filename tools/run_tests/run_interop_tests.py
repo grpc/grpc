@@ -97,16 +97,16 @@ class CXXLanguage:
         self.safename = 'cxx'
 
     def client_cmd(self, args):
-        return ['bins/opt/interop_client'] + args
+        return ['cmake/build/interop_client'] + args
 
     def client_cmd_http2interop(self, args):
-        return ['bins/opt/http2_client'] + args
+        return ['cmake/build/http2_client'] + args
 
     def cloud_to_prod_env(self):
         return {}
 
     def server_cmd(self, args):
-        return ['bins/opt/interop_server'] + args
+        return ['cmake/build/interop_server'] + args
 
     def global_env(self):
         return {}
@@ -190,8 +190,8 @@ class CSharpCoreCLRLanguage:
 class AspNetCoreLanguage:
 
     def __init__(self):
-        self.client_cwd = '../grpc-dotnet/testassets/InteropTestsClient/bin/Debug/netcoreapp3.0'
-        self.server_cwd = '../grpc-dotnet/testassets/InteropTestsWebsite/bin/Debug/netcoreapp3.0'
+        self.client_cwd = '../grpc-dotnet/output/InteropTestsClient'
+        self.server_cwd = '../grpc-dotnet/output/InteropTestsWebsite'
         self.safename = str(self)
 
     def cloud_to_prod_env(self):
@@ -207,11 +207,11 @@ class AspNetCoreLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
-            _AUTH_TEST_CASES
+        return _SKIP_GOOGLE_DEFAULT_CREDS + \
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return []
 
     def __str__(self):
         return 'aspnetcore'
@@ -279,7 +279,9 @@ class JavaLanguage:
         return []
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        # Does not support CompressedRequest feature.
+        # Only supports CompressedResponse feature for unary.
+        return _SKIP_CLIENT_COMPRESSION + ['server_compressed_streaming']
 
     def __str__(self):
         return 'java'
@@ -301,7 +303,7 @@ class JavaOkHttpClient:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_DATA_FRAME_PADDING
 
     def __str__(self):
         return 'javaokhttp'
@@ -329,7 +331,7 @@ class GoLanguage:
         return ['go', 'run', 'server.go'] + args
 
     def global_env(self):
-        return {}
+        return {'GO111MODULE': 'on'}
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION
@@ -481,39 +483,11 @@ class NodePureJSLanguage:
         return 'nodepurejs'
 
 
-class PHPLanguage:
-
-    def __init__(self):
-        self.client_cwd = None
-        self.safename = str(self)
-
-    def client_cmd(self, args):
-        return ['src/php/bin/interop_client.sh'] + args
-
-    def cloud_to_prod_env(self):
-        return {}
-
-    def global_env(self):
-        return {}
-
-    def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
-
-    def unimplemented_test_cases_server(self):
-        return []
-
-    def __str__(self):
-        return 'php'
-
-
 class PHP7Language:
 
     def __init__(self):
         self.client_cwd = None
+        self.server_cwd = None
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -522,18 +496,20 @@ class PHP7Language:
     def cloud_to_prod_env(self):
         return {}
 
+    def server_cmd(self, args):
+        return ['src/php/bin/interop_server.sh'] + args
+
     def global_env(self):
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + \
+        return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
             _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _SKIP_COMPRESSION
 
     def __str__(self):
         return 'php7'
@@ -666,6 +642,61 @@ class PythonLanguage:
         return 'python'
 
 
+class PythonAsyncIOLanguage:
+
+    def __init__(self):
+        self.client_cwd = None
+        self.server_cwd = None
+        self.http2_cwd = None
+        self.safename = str(self)
+
+    def client_cmd(self, args):
+        return [
+            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
+            'run_interop', '--use-asyncio', '--client',
+            '--args="{}"'.format(' '.join(args))
+        ]
+
+    def client_cmd_http2interop(self, args):
+        return [
+            'py37_native/bin/python',
+            'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
+        ] + args
+
+    def cloud_to_prod_env(self):
+        return {}
+
+    def server_cmd(self, args):
+        return [
+            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
+            'run_interop', '--use-asyncio', '--server',
+            '--args="{}"'.format(' '.join(args))
+        ]
+
+    def global_env(self):
+        return {
+            'LD_LIBRARY_PATH': '{}/libs/opt'.format(DOCKER_WORKDIR_ROOT),
+            'PYTHONPATH': '{}/src/python/gens'.format(DOCKER_WORKDIR_ROOT)
+        }
+
+    def unimplemented_test_cases(self):
+        # TODO(https://github.com/grpc/grpc/issues/21707)
+        return _SKIP_COMPRESSION + \
+            _SKIP_DATA_FRAME_PADDING + \
+            _AUTH_TEST_CASES + \
+            ['timeout_on_sleeping_server']
+
+    def unimplemented_test_cases_server(self):
+        # TODO(https://github.com/grpc/grpc/issues/21749)
+        return _TEST_CASES + \
+            _AUTH_TEST_CASES + \
+            _HTTP2_TEST_CASES + \
+            _HTTP2_SERVER_TEST_CASES
+
+    def __str__(self):
+        return 'pythonasyncio'
+
+
 _LANGUAGES = {
     'c++': CXXLanguage(),
     'csharp': CSharpLanguage(),
@@ -677,17 +708,17 @@ _LANGUAGES = {
     'javaokhttp': JavaOkHttpClient(),
     'node': NodeLanguage(),
     'nodepurejs': NodePureJSLanguage(),
-    'php': PHPLanguage(),
     'php7': PHP7Language(),
     'objc': ObjcLanguage(),
     'ruby': RubyLanguage(),
     'python': PythonLanguage(),
+    'pythonasyncio': PythonAsyncIOLanguage(),
 }
 
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
     'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'go',
-    'ruby', 'python', 'dart'
+    'ruby', 'python', 'dart', 'pythonasyncio', 'php7'
 ]
 
 _TEST_CASES = [
@@ -728,9 +759,9 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
     'java', 'go', 'python', 'c++'
 ]
 
-_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
-_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++', 'python']
 
 _TRANSPORT_SECURITY_OPTIONS = ['tls', 'alts', 'insecure']
 
@@ -821,8 +852,8 @@ def auth_options(language, test_case, google_default_creds_use_key_file,
 
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
-                'csharp', 'csharpcoreclr', 'node', 'php', 'php7', 'python',
-                'ruby', 'nodepurejs'
+                'csharp', 'csharpcoreclr', 'aspnetcore', 'node', 'php7',
+                'python', 'ruby', 'nodepurejs'
         ]:
             env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
         else:
@@ -905,8 +936,8 @@ def cloud_to_prod_jobspec(language,
     cwd = language.client_cwd
 
     if docker_image:
-        container_name = dockerjob.random_name(
-            'interop_client_%s' % language.safename)
+        container_name = dockerjob.random_name('interop_client_%s' %
+                                               language.safename)
         cmdline = docker_run_cmdline(
             cmdline,
             image=docker_image,
@@ -916,24 +947,23 @@ def cloud_to_prod_jobspec(language,
                          '--name=%s' % container_name])
         if manual_cmd_log is not None:
             if manual_cmd_log == []:
-                manual_cmd_log.append(
-                    'echo "Testing ${docker_image:=%s}"' % docker_image)
+                manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' %
+                                      docker_image)
             manual_cmd_log.append(manual_cmdline(cmdline, docker_image))
         cwd = None
         environ = None
 
     suite_name = 'cloud_to_prod_auth' if auth else 'cloud_to_prod'
-    test_job = jobset.JobSpec(
-        cmdline=cmdline,
-        cwd=cwd,
-        environ=environ,
-        shortname='%s:%s:%s:%s:%s' %
-        (suite_name, language, server_host_nickname, test_case,
-         transport_security),
-        timeout_seconds=_TEST_TIMEOUT,
-        flake_retries=4 if args.allow_flakes else 0,
-        timeout_retries=2 if args.allow_flakes else 0,
-        kill_handler=_job_kill_handler)
+    test_job = jobset.JobSpec(cmdline=cmdline,
+                              cwd=cwd,
+                              environ=environ,
+                              shortname='%s:%s:%s:%s:%s' %
+                              (suite_name, language, server_host_nickname,
+                               test_case, transport_security),
+                              timeout_seconds=_TEST_TIMEOUT,
+                              flake_retries=4 if args.allow_flakes else 0,
+                              timeout_retries=2 if args.allow_flakes else 0,
+                              kill_handler=_job_kill_handler)
     if docker_image:
         test_job.container_name = container_name
     return test_job
@@ -959,8 +989,9 @@ def cloud_to_cloud_jobspec(language,
     elif transport_security == 'insecure':
         interop_only_options += ['--use_tls=false']
     else:
-        print('Invalid transport security option %s in cloud_to_cloud_jobspec.'
-              % transport_security)
+        print(
+            'Invalid transport security option %s in cloud_to_cloud_jobspec.' %
+            transport_security)
         sys.exit(1)
 
     client_test_case = test_case
@@ -995,8 +1026,8 @@ def cloud_to_cloud_jobspec(language,
     environ = language.global_env()
     if docker_image and language.safename != 'objc':
         # we can't run client in docker for objc.
-        container_name = dockerjob.random_name(
-            'interop_client_%s' % language.safename)
+        container_name = dockerjob.random_name('interop_client_%s' %
+                                               language.safename)
         cmdline = docker_run_cmdline(
             cmdline,
             image=docker_image,
@@ -1006,8 +1037,8 @@ def cloud_to_cloud_jobspec(language,
                          '--name=%s' % container_name])
         if manual_cmd_log is not None:
             if manual_cmd_log == []:
-                manual_cmd_log.append(
-                    'echo "Testing ${docker_image:=%s}"' % docker_image)
+                manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' %
+                                      docker_image)
             manual_cmd_log.append(manual_cmdline(cmdline, docker_image))
         cwd = None
 
@@ -1031,8 +1062,8 @@ def server_jobspec(language,
                    transport_security='tls',
                    manual_cmd_log=None):
     """Create jobspec for running a server"""
-    container_name = dockerjob.random_name(
-        'interop_server_%s' % language.safename)
+    container_name = dockerjob.random_name('interop_server_%s' %
+                                           language.safename)
     server_cmd = ['--port=%s' % _DEFAULT_SERVER_PORT]
     if transport_security == 'tls':
         server_cmd += ['--use_tls=true']
@@ -1065,8 +1096,8 @@ def server_jobspec(language,
         # command line.
         docker_args += [
             '--health-cmd=python test/http2_test/http2_server_health_check.py '
-            '--server_host=%s --server_port=%d' % ('localhost',
-                                                   _DEFAULT_SERVER_PORT),
+            '--server_host=%s --server_port=%d' %
+            ('localhost', _DEFAULT_SERVER_PORT),
             '--health-interval=1s',
             '--health-retries=5',
             '--health-timeout=10s',
@@ -1075,22 +1106,20 @@ def server_jobspec(language,
     else:
         docker_args += ['-p', str(_DEFAULT_SERVER_PORT)]
 
-    docker_cmdline = docker_run_cmdline(
-        cmdline,
-        image=docker_image,
-        cwd=language.server_cwd,
-        environ=environ,
-        docker_args=docker_args)
+    docker_cmdline = docker_run_cmdline(cmdline,
+                                        image=docker_image,
+                                        cwd=language.server_cwd,
+                                        environ=environ,
+                                        docker_args=docker_args)
     if manual_cmd_log is not None:
         if manual_cmd_log == []:
-            manual_cmd_log.append(
-                'echo "Testing ${docker_image:=%s}"' % docker_image)
+            manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' %
+                                  docker_image)
         manual_cmd_log.append(manual_cmdline(docker_cmdline, docker_image))
-    server_job = jobset.JobSpec(
-        cmdline=docker_cmdline,
-        environ=environ,
-        shortname='interop_server_%s' % language,
-        timeout_seconds=30 * 60)
+    server_job = jobset.JobSpec(cmdline=docker_cmdline,
+                                environ=environ,
+                                shortname='interop_server_%s' % language,
+                                timeout_seconds=30 * 60)
     server_job.container_name = container_name
     return server_job
 
@@ -1105,12 +1134,6 @@ def build_interop_image_jobspec(language, tag=None):
     }
     if not args.travis:
         env['TTY_FLAG'] = '-t'
-    # This env variable is used to get around the github rate limit
-    # error when running the PHP `composer install` command
-    host_file = '%s/.composer/auth.json' % os.environ['HOME']
-    if language.safename == 'php' and os.path.exists(host_file):
-        env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
-          '-v %s:/root/.composer/auth.json:ro' % host_file
     build_job = jobset.JobSpec(
         cmdline=['tools/run_tests/dockerize/build_interop_image.sh'],
         environ=env,
@@ -1156,50 +1179,44 @@ prod_servers = {
 }
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
-argp.add_argument(
-    '-l',
-    '--language',
-    choices=['all'] + sorted(_LANGUAGES),
-    nargs='+',
-    default=['all'],
-    help='Clients to run. Objc client can be only run on OSX.')
+argp.add_argument('-l',
+                  '--language',
+                  choices=['all'] + sorted(_LANGUAGES),
+                  nargs='+',
+                  default=['all'],
+                  help='Clients to run. Objc client can be only run on OSX.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
-argp.add_argument(
-    '--cloud_to_prod',
-    default=False,
-    action='store_const',
-    const=True,
-    help='Run cloud_to_prod tests.')
-argp.add_argument(
-    '--cloud_to_prod_auth',
-    default=False,
-    action='store_const',
-    const=True,
-    help='Run cloud_to_prod_auth tests.')
-argp.add_argument(
-    '--google_default_creds_use_key_file',
-    default=False,
-    action='store_const',
-    const=True,
-    help=('Whether or not we should use a key file for the '
-          'google_default_credentials test case, e.g. by '
-          'setting env var GOOGLE_APPLICATION_CREDENTIALS.'))
-argp.add_argument(
-    '--prod_servers',
-    choices=prod_servers.keys(),
-    default=['default'],
-    nargs='+',
-    help=('The servers to run cloud_to_prod and '
-          'cloud_to_prod_auth tests against.'))
-argp.add_argument(
-    '-s',
-    '--server',
-    choices=['all'] + sorted(_SERVERS),
-    nargs='+',
-    help='Run cloud_to_cloud servers in a separate docker ' +
-    'image. Servers can only be started automatically if ' +
-    '--use_docker option is enabled.',
-    default=[])
+argp.add_argument('--cloud_to_prod',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run cloud_to_prod tests.')
+argp.add_argument('--cloud_to_prod_auth',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run cloud_to_prod_auth tests.')
+argp.add_argument('--google_default_creds_use_key_file',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help=('Whether or not we should use a key file for the '
+                        'google_default_credentials test case, e.g. by '
+                        'setting env var GOOGLE_APPLICATION_CREDENTIALS.'))
+argp.add_argument('--prod_servers',
+                  choices=prod_servers.keys(),
+                  default=['default'],
+                  nargs='+',
+                  help=('The servers to run cloud_to_prod and '
+                        'cloud_to_prod_auth tests against.'))
+argp.add_argument('-s',
+                  '--server',
+                  choices=['all'] + sorted(_SERVERS),
+                  nargs='+',
+                  help='Run cloud_to_cloud servers in a separate docker ' +
+                  'image. Servers can only be started automatically if ' +
+                  '--use_docker option is enabled.',
+                  default=[])
 argp.add_argument(
     '--override_server',
     action='append',
@@ -1218,10 +1235,16 @@ argp.add_argument(
     type=str,
     help='Default GCE service account email to use for some auth interop tests.',
     default='830293263384-compute@developer.gserviceaccount.com')
-argp.add_argument(
-    '-t', '--travis', default=False, action='store_const', const=True)
-argp.add_argument(
-    '-v', '--verbose', default=False, action='store_const', const=True)
+argp.add_argument('-t',
+                  '--travis',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('-v',
+                  '--verbose',
+                  default=False,
+                  action='store_const',
+                  const=True)
 argp.add_argument(
     '--use_docker',
     default=False,
@@ -1238,14 +1261,14 @@ argp.add_argument(
     help=
     'Allow flaky tests to show as passing (re-runs failed tests up to five times)'
 )
-argp.add_argument(
-    '--manual_run',
-    default=False,
-    action='store_const',
-    const=True,
-    help='Prepare things for running interop tests manually. ' +
-    'Preserve docker images after building them and skip '
-    'actually running the tests. Only print commands to run by ' + 'hand.')
+argp.add_argument('--manual_run',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Prepare things for running interop tests manually. ' +
+                  'Preserve docker images after building them and skip '
+                  'actually running the tests. Only print commands to run by ' +
+                  'hand.')
 argp.add_argument(
     '--http2_interop',
     default=False,
@@ -1260,14 +1283,13 @@ argp.add_argument(
     help=
     'Enable HTTP/2 server edge case testing. (Includes positive and negative tests'
 )
-argp.add_argument(
-    '--transport_security',
-    choices=_TRANSPORT_SECURITY_OPTIONS,
-    default='tls',
-    type=str,
-    nargs='?',
-    const=True,
-    help='Which transport security mechanism to use.')
+argp.add_argument('--transport_security',
+                  choices=_TRANSPORT_SECURITY_OPTIONS,
+                  default='tls',
+                  type=str,
+                  nargs='?',
+                  const=True,
+                  help='Which transport security mechanism to use.')
 argp.add_argument(
     '--custom_credentials_type',
     choices=_CUSTOM_CREDENTIALS_TYPE_OPTIONS,
@@ -1290,18 +1312,15 @@ argp.add_argument(
     help=(
         '(Deprecated, has no effect) Put reports into subdirectories to improve '
         'presentation of results by Internal CI.'))
-argp.add_argument(
-    '--bq_result_table',
-    default='',
-    type=str,
-    nargs='?',
-    help='Upload test results to a specified BQ table.')
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
 args = argp.parse_args()
 
-servers = set(
-    s
-    for s in itertools.chain.from_iterable(
-        _SERVERS if x == 'all' else [x] for x in args.server))
+servers = set(s for s in itertools.chain.from_iterable(
+    _SERVERS if x == 'all' else [x] for x in args.server))
 # ALTS servers are only available for certain languages.
 if args.transport_security == 'alts':
     servers = servers.intersection(_SERVERS_FOR_ALTS_TEST_CASES)
@@ -1331,9 +1350,8 @@ if not args.use_docker and servers:
 # we want to include everything but objc in 'all'
 # because objc won't run on non-mac platforms
 all_but_objc = set(six.iterkeys(_LANGUAGES)) - set(['objc'])
-languages = set(_LANGUAGES[l]
-                for l in itertools.chain.from_iterable(
-                    all_but_objc if x == 'all' else [x] for x in args.language))
+languages = set(_LANGUAGES[l] for l in itertools.chain.from_iterable(
+    all_but_objc if x == 'all' else [x] for x in args.language))
 # ALTS interop clients are only available for certain languages.
 if args.transport_security == 'alts':
     alts_languages = set(_LANGUAGES[l] for l in _LANGUAGES_FOR_ALTS_TEST_CASES)
@@ -1352,9 +1370,9 @@ http2InteropServer = Http2Server() if args.http2_server_interop else None
 docker_images = {}
 if args.use_docker:
     # languages for which to build docker images
-    languages_to_build = set(
-        _LANGUAGES[k]
-        for k in set([str(l) for l in languages] + [s for s in servers]))
+    languages_to_build = set(_LANGUAGES[k]
+                             for k in set([str(l) for l in languages] +
+                                          [s for s in servers]))
     languages_to_build = languages_to_build | languages_http2_clients_for_http2_server_interop
 
     if args.http2_interop:
@@ -1373,27 +1391,27 @@ if args.use_docker:
         build_jobs.append(job)
 
     if build_jobs:
-        jobset.message(
-            'START', 'Building interop docker images.', do_newline=True)
+        jobset.message('START',
+                       'Building interop docker images.',
+                       do_newline=True)
         if args.verbose:
             print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
 
-        num_failures, build_resultset = jobset.run(
-            build_jobs, newline_on_success=True, maxjobs=args.jobs)
+        num_failures, build_resultset = jobset.run(build_jobs,
+                                                   newline_on_success=True,
+                                                   maxjobs=args.jobs)
 
         report_utils.render_junit_xml_report(build_resultset,
                                              _DOCKER_BUILD_XML_REPORT)
 
         if num_failures == 0:
-            jobset.message(
-                'SUCCESS',
-                'All docker images built successfully.',
-                do_newline=True)
+            jobset.message('SUCCESS',
+                           'All docker images built successfully.',
+                           do_newline=True)
         else:
-            jobset.message(
-                'FAILED',
-                'Failed to build interop docker images.',
-                do_newline=True)
+            jobset.message('FAILED',
+                           'Failed to build interop docker images.',
+                           do_newline=True)
             for image in six.itervalues(docker_images):
                 dockerjob.remove_image(image, skip_nonexistent=True)
             sys.exit(1)
@@ -1407,11 +1425,10 @@ server_addresses = {}
 try:
     for s in servers:
         lang = str(s)
-        spec = server_jobspec(
-            _LANGUAGES[lang],
-            docker_images.get(lang),
-            args.transport_security,
-            manual_cmd_log=server_manual_cmd_log)
+        spec = server_jobspec(_LANGUAGES[lang],
+                              docker_images.get(lang),
+                              args.transport_security,
+                              manual_cmd_log=server_manual_cmd_log)
         if not args.manual_run:
             job = dockerjob.DockerJob(spec)
             server_jobs[lang] = job
@@ -1425,10 +1442,9 @@ try:
     if args.http2_server_interop:
         # launch a HTTP2 server emulator that creates edge cases
         lang = str(http2InteropServer)
-        spec = server_jobspec(
-            http2InteropServer,
-            docker_images.get(lang),
-            manual_cmd_log=server_manual_cmd_log)
+        spec = server_jobspec(http2InteropServer,
+                              docker_images.get(lang),
+                              manual_cmd_log=server_manual_cmd_log)
         if not args.manual_run:
             http2_server_job = dockerjob.DockerJob(spec)
             server_jobs[lang] = http2_server_job
@@ -1590,7 +1606,7 @@ try:
             # HTTP_SERVER_TEST_CASES, in which clients use their gRPC interop clients rather
             # than specialized http2 clients, reusing existing test implementations.
             # For example, in the "data_frame_padding" test, use language's gRPC
-            # interop clients and make them think that theyre running "large_unary"
+            # interop clients and make them think that they're running "large_unary"
             # test case. This avoids implementing a new test case in each language.
             for test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
                 if test_case not in language.unimplemented_test_cases():
@@ -1627,11 +1643,10 @@ try:
     if args.verbose:
         print('Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
 
-    num_failures, resultset = jobset.run(
-        jobs,
-        newline_on_success=True,
-        maxjobs=args.jobs,
-        skip_jobs=args.manual_run)
+    num_failures, resultset = jobset.run(jobs,
+                                         newline_on_success=True,
+                                         maxjobs=args.jobs,
+                                         skip_jobs=args.manual_run)
     if args.bq_result_table and resultset:
         upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:

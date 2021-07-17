@@ -29,7 +29,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -85,7 +85,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void empty_batch_body(grpc_end2end_test_config config,
+static void empty_batch_body(grpc_end2end_test_config /*config*/,
                              grpc_end2end_test_fixture f) {
   grpc_call* c;
   cq_verifier* cqv = cq_verifier_create(f.cq);

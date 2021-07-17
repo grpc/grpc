@@ -29,6 +29,9 @@ android {
                 arguments '-DgRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
             }
         }
+        ndk {
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
     }
     buildTypes {
         debug {

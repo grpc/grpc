@@ -14,19 +14,39 @@
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
-py_library(
+package(default_testonly = 1)
+
+py_binary(
     name = "wait_for_ready_example",
-    testonly = 1,
     srcs = ["wait_for_ready_example.py"],
+    data = ["helloworld.proto"],
+    imports = ["."],
+    python_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
+    ],
+)
+
+py_binary(
+    name = "asyncio_wait_for_ready_example",
+    srcs = ["asyncio_wait_for_ready_example.py"],
+    data = ["helloworld.proto"],
+    imports = ["."],
+    python_version = "PY3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
 
 py_test(
     name = "test/_wait_for_ready_example_test",
-    srcs = ["test/_wait_for_ready_example_test.py"],
-    deps = [":wait_for_ready_example",],
     size = "small",
+    srcs = ["test/_wait_for_ready_example_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":asyncio_wait_for_ready_example",
+        ":wait_for_ready_example",
+    ],
 )

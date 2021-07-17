@@ -23,7 +23,7 @@ module Math
   module Math
     class Service
 
-      include GRPC::GenericService
+      include ::GRPC::GenericService
 
       self.marshal_class_method = :encode
       self.unmarshal_class_method = :decode
@@ -31,19 +31,19 @@ module Math
 
       # Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
       # and remainder.
-      rpc :Div, DivArgs, DivReply
+      rpc :Div, ::Math::DivArgs, ::Math::DivReply
       # DivMany accepts an arbitrary number of division args from the client stream
       # and sends back the results in the reply stream.  The stream continues until
       # the client closes its end; the server does the same after sending all the
       # replies.  The stream ends immediately if either end aborts.
-      rpc :DivMany, stream(DivArgs), stream(DivReply)
+      rpc :DivMany, stream(::Math::DivArgs), stream(::Math::DivReply)
       # Fib generates numbers in the Fibonacci sequence.  If FibArgs.limit > 0, Fib
       # generates up to limit numbers; otherwise it continues until the call is
       # canceled.  Unlike Fib above, Fib has no final FibReply.
-      rpc :Fib, FibArgs, stream(Num)
+      rpc :Fib, ::Math::FibArgs, stream(::Math::Num)
       # Sum sums a stream of numbers, returning the final result once the stream
       # is closed.
-      rpc :Sum, stream(Num), Num
+      rpc :Sum, stream(::Math::Num), ::Math::Num
     end
 
     Stub = Service.rpc_stub_class

@@ -39,7 +39,7 @@ bool IsConfigErrorCalled() { return g_config_error_function_called; }
 // This function is for preventing the program from invoking
 // an error handler due to configuration error and
 // make test routines know whether there is error.
-void FakeConfigErrorFunction(const char* error_message) {
+void FakeConfigErrorFunction(const char* /*error_message*/) {
   g_config_error_function_called = true;
 }
 

@@ -21,20 +21,20 @@
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 #import <ProtoRPC/ProtoRPC.h>
-#import <RemoteTest/Messages.pbobjc.h>
-#import <RemoteTest/Test.pbobjc.h>
-#import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <grpc/grpc.h>
 #import <grpc/support/log.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
 #define TEST_TIMEOUT 32
 
 extern const char *kCFStreamVarName;
 
 // Convenience class to use blocks as callbacks
-@interface MacTestsBlockCallbacks : NSObject<GRPCProtoResponseHandler>
+@interface MacTestsBlockCallbacks : NSObject <GRPCProtoResponseHandler>
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                 messageCallback:(void (^)(id))messageCallback
@@ -87,6 +87,14 @@ extern const char *kCFStreamVarName;
 
 @implementation StressTests {
   RMTTestService *_service;
+}
+
++ (XCTestSuite *)defaultTestSuite {
+  if (self == [StressTests class]) {
+    return [XCTestSuite testSuiteWithName:@"StressTestsEmptySuite"];
+  } else {
+    return super.defaultTestSuite;
+  }
 }
 
 + (NSString *)host {
@@ -171,7 +179,6 @@ extern const char *kCFStreamVarName;
                                    }
                                  }
                                  closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-
                                    @synchronized(self) {
                                      if (error == nil && !address_removed) {
                                        system([[NSString
@@ -180,9 +187,9 @@ extern const char *kCFStreamVarName;
                                            UTF8String]);
                                        address_removed = YES;
                                      } else if (error != nil && !address_readded) {
-                                       system([
-                                           [NSString stringWithFormat:@"sudo ifconfig lo0 alias %@",
-                                                                      [[self class] hostAddress]]
+                                       system([[NSString
+                                           stringWithFormat:@"sudo ifconfig lo0 alias %@",
+                                                            [[self class] hostAddress]]
                                            UTF8String]);
                                        address_readded = YES;
                                      }

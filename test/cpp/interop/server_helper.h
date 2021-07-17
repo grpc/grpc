@@ -37,14 +37,14 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
 
 class InteropServerContextInspector {
  public:
-  InteropServerContextInspector(const ::grpc::ServerContext& context);
+  explicit InteropServerContextInspector(const ::grpc::ServerContext& context);
 
   // Inspector methods, able to peek inside ServerContext, follow.
   std::shared_ptr<const AuthContext> GetAuthContext() const;
   bool IsCancelled() const;
   grpc_compression_algorithm GetCallCompressionAlgorithm() const;
   uint32_t GetEncodingsAcceptedByClient() const;
-  uint32_t GetMessageFlags() const;
+  bool WasCompressed() const;
 
  private:
   const ::grpc::ServerContext& context_;

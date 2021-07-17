@@ -36,5 +36,5 @@ rm -f Podfile.lock
 rm -f RemoteTestClient/*.{h,m}
 
 echo "TIME:  $(date)"
-pod install
+pod install | ./verbose_time.sh
 

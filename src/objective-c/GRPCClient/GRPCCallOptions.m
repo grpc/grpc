@@ -17,15 +17,17 @@
  */
 
 #import "GRPCCallOptions.h"
+#import "GRPCTransport.h"
 #import "internal/GRPCCallOptions+Internal.h"
 
 // The default values for the call options.
 static NSString *const kDefaultServerAuthority = nil;
 static const NSTimeInterval kDefaultTimeout = 0;
 static const BOOL kDefaultFlowControlEnabled = NO;
-static NSArray *const kDefaultInterceptorFactories = nil;
+static NSArray<id<GRPCInterceptorFactory>> *const kDefaultInterceptorFactories = nil;
 static NSDictionary *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
+static NSString *const kDefaultUserAgentSuffix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
 static const GRPCCompressionAlgorithm kDefaultCompressionAlgorithm = GRPCCompressNone;
 static const BOOL kDefaultRetryEnabled = YES;
@@ -41,6 +43,7 @@ static NSString *const kDefaultPEMCertificateChain = nil;
 static NSString *const kDefaultOauth2AccessToken = nil;
 static const id<GRPCAuthorizationProtocol> kDefaultAuthTokenProvider = nil;
 static const GRPCTransportType kDefaultTransportType = GRPCTransportTypeChttp2BoringSSL;
+static const GRPCTransportID kDefaultTransport = NULL;
 static NSString *const kDefaultHostNameOverride = nil;
 static const id kDefaultLogContext = nil;
 static NSString *const kDefaultChannelPoolDomain = nil;
@@ -62,11 +65,12 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSString *_serverAuthority;
   NSTimeInterval _timeout;
   BOOL _flowControlEnabled;
-  NSArray *_interceptorFactories;
+  NSArray<id<GRPCInterceptorFactory>> *_interceptorFactories;
   NSString *_oauth2AccessToken;
   id<GRPCAuthorizationProtocol> _authTokenProvider;
   NSDictionary *_initialMetadata;
   NSString *_userAgentPrefix;
+  NSString *_userAgentSuffix;
   NSUInteger _responseSizeLimit;
   GRPCCompressionAlgorithm _compressionAlgorithm;
   BOOL _retryEnabled;
@@ -80,6 +84,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSString *_PEMPrivateKey;
   NSString *_PEMCertificateChain;
   GRPCTransportType _transportType;
+  GRPCTransportID _transport;
   NSString *_hostNameOverride;
   id<NSObject> _logContext;
   NSString *_channelPoolDomain;
@@ -94,6 +99,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @synthesize authTokenProvider = _authTokenProvider;
 @synthesize initialMetadata = _initialMetadata;
 @synthesize userAgentPrefix = _userAgentPrefix;
+@synthesize userAgentSuffix = _userAgentSuffix;
 @synthesize responseSizeLimit = _responseSizeLimit;
 @synthesize compressionAlgorithm = _compressionAlgorithm;
 @synthesize retryEnabled = _retryEnabled;
@@ -107,6 +113,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @synthesize PEMPrivateKey = _PEMPrivateKey;
 @synthesize PEMCertificateChain = _PEMCertificateChain;
 @synthesize transportType = _transportType;
+@synthesize transport = _transport;
 @synthesize hostNameOverride = _hostNameOverride;
 @synthesize logContext = _logContext;
 @synthesize channelPoolDomain = _channelPoolDomain;
@@ -121,6 +128,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
                        userAgentPrefix:kDefaultUserAgentPrefix
+                       userAgentSuffix:kDefaultUserAgentSuffix
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
                           retryEnabled:kDefaultRetryEnabled
@@ -134,6 +142,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                          PEMPrivateKey:kDefaultPEMPrivateKey
                    PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
+                             transport:kDefaultTransport
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
                      channelPoolDomain:kDefaultChannelPoolDomain
@@ -143,11 +152,12 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (instancetype)initWithServerAuthority:(NSString *)serverAuthority
                                 timeout:(NSTimeInterval)timeout
                      flowControlEnabled:(BOOL)flowControlEnabled
-                   interceptorFactories:(NSArray *)interceptorFactories
+                   interceptorFactories:(NSArray<id<GRPCInterceptorFactory>> *)interceptorFactories
                       oauth2AccessToken:(NSString *)oauth2AccessToken
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
                         initialMetadata:(NSDictionary *)initialMetadata
                         userAgentPrefix:(NSString *)userAgentPrefix
+                        userAgentSuffix:(NSString *)userAgentSuffix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
                    compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
                            retryEnabled:(BOOL)retryEnabled
@@ -161,6 +171,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                           PEMPrivateKey:(NSString *)PEMPrivateKey
                     PEMCertificateChain:(NSString *)PEMCertificateChain
                           transportType:(GRPCTransportType)transportType
+                              transport:(GRPCTransportID)transport
                        hostNameOverride:(NSString *)hostNameOverride
                              logContext:(id)logContext
                       channelPoolDomain:(NSString *)channelPoolDomain
@@ -172,11 +183,12 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _interceptorFactories = interceptorFactories;
     _oauth2AccessToken = [oauth2AccessToken copy];
     _authTokenProvider = authTokenProvider;
-    _initialMetadata =
-        initialMetadata == nil
-            ? nil
-            : [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
+    _initialMetadata = initialMetadata == nil
+                           ? nil
+                           : [[NSDictionary alloc] initWithDictionary:initialMetadata
+                                                            copyItems:YES];
     _userAgentPrefix = [userAgentPrefix copy];
+    _userAgentSuffix = [userAgentSuffix copy];
     _responseSizeLimit = responseSizeLimit;
     _compressionAlgorithm = compressionAlgorithm;
     _retryEnabled = retryEnabled;
@@ -185,14 +197,15 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _connectMinTimeout = connectMinTimeout < 0 ? 0 : connectMinTimeout;
     _connectInitialBackoff = connectInitialBackoff < 0 ? 0 : connectInitialBackoff;
     _connectMaxBackoff = connectMaxBackoff < 0 ? 0 : connectMaxBackoff;
-    _additionalChannelArgs =
-        additionalChannelArgs == nil
-            ? nil
-            : [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
+    _additionalChannelArgs = additionalChannelArgs == nil
+                                 ? nil
+                                 : [[NSDictionary alloc] initWithDictionary:additionalChannelArgs
+                                                                  copyItems:YES];
     _PEMRootCertificates = [PEMRootCertificates copy];
     _PEMPrivateKey = [PEMPrivateKey copy];
     _PEMCertificateChain = [PEMCertificateChain copy];
     _transportType = transportType;
+    _transport = transport;
     _hostNameOverride = [hostNameOverride copy];
     _logContext = logContext;
     _channelPoolDomain = [channelPoolDomain copy];
@@ -211,6 +224,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
                                                     userAgentPrefix:_userAgentPrefix
+                                                    userAgentSuffix:_userAgentSuffix
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
                                                        retryEnabled:_retryEnabled
@@ -224,6 +238,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                       PEMPrivateKey:_PEMPrivateKey
                                                 PEMCertificateChain:_PEMCertificateChain
                                                       transportType:_transportType
+                                                          transport:_transport
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
                                                   channelPoolDomain:_channelPoolDomain
@@ -242,6 +257,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
               initialMetadata:[[NSDictionary alloc] initWithDictionary:_initialMetadata
                                                              copyItems:YES]
               userAgentPrefix:[_userAgentPrefix copy]
+              userAgentSuffix:[_userAgentSuffix copy]
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
                  retryEnabled:_retryEnabled
@@ -256,6 +272,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                 PEMPrivateKey:[_PEMPrivateKey copy]
           PEMCertificateChain:[_PEMCertificateChain copy]
                 transportType:_transportType
+                    transport:_transport
              hostNameOverride:[_hostNameOverride copy]
                    logContext:_logContext
             channelPoolDomain:[_channelPoolDomain copy]
@@ -266,6 +283,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (BOOL)hasChannelOptionsEqualTo:(GRPCCallOptions *)callOptions {
   if (callOptions == nil) return NO;
   if (!areObjectsEqual(callOptions.userAgentPrefix, _userAgentPrefix)) return NO;
+  if (!areObjectsEqual(callOptions.userAgentSuffix, _userAgentSuffix)) return NO;
   if (!(callOptions.responseSizeLimit == _responseSizeLimit)) return NO;
   if (!(callOptions.compressionAlgorithm == _compressionAlgorithm)) return NO;
   if (!(callOptions.retryEnabled == _retryEnabled)) return NO;
@@ -280,6 +298,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   if (!areObjectsEqual(callOptions.PEMCertificateChain, _PEMCertificateChain)) return NO;
   if (!areObjectsEqual(callOptions.hostNameOverride, _hostNameOverride)) return NO;
   if (!(callOptions.transportType == _transportType)) return NO;
+  if (!(TransportIDIsEqual(callOptions.transport, _transport))) return NO;
   if (!areObjectsEqual(callOptions.logContext, _logContext)) return NO;
   if (!areObjectsEqual(callOptions.channelPoolDomain, _channelPoolDomain)) return NO;
   if (!(callOptions.channelID == _channelID)) return NO;
@@ -290,6 +309,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (NSUInteger)channelOptionsHash {
   NSUInteger result = 0;
   result ^= _userAgentPrefix.hash;
+  result ^= _userAgentSuffix.hash;
   result ^= _responseSizeLimit;
   result ^= _compressionAlgorithm;
   result ^= _retryEnabled;
@@ -304,6 +324,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   result ^= _PEMCertificateChain.hash;
   result ^= _hostNameOverride.hash;
   result ^= _transportType;
+  result ^= TransportIDHash(_transport);
   result ^= _logContext.hash;
   result ^= _channelPoolDomain.hash;
   result ^= _channelID;
@@ -323,6 +344,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @dynamic authTokenProvider;
 @dynamic initialMetadata;
 @dynamic userAgentPrefix;
+@dynamic userAgentSuffix;
 @dynamic responseSizeLimit;
 @dynamic compressionAlgorithm;
 @dynamic retryEnabled;
@@ -336,6 +358,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @dynamic PEMPrivateKey;
 @dynamic PEMCertificateChain;
 @dynamic transportType;
+@dynamic transport;
 @dynamic hostNameOverride;
 @dynamic logContext;
 @dynamic channelPoolDomain;
@@ -350,6 +373,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                      authTokenProvider:kDefaultAuthTokenProvider
                        initialMetadata:kDefaultInitialMetadata
                        userAgentPrefix:kDefaultUserAgentPrefix
+                       userAgentSuffix:kDefaultUserAgentSuffix
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
                           retryEnabled:kDefaultRetryEnabled
@@ -363,6 +387,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                          PEMPrivateKey:kDefaultPEMPrivateKey
                    PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
+                             transport:kDefaultTransport
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
                      channelPoolDomain:kDefaultChannelPoolDomain
@@ -379,6 +404,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                   authTokenProvider:_authTokenProvider
                                                     initialMetadata:_initialMetadata
                                                     userAgentPrefix:_userAgentPrefix
+                                                    userAgentSuffix:_userAgentSuffix
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
                                                        retryEnabled:_retryEnabled
@@ -392,6 +418,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                       PEMPrivateKey:_PEMPrivateKey
                                                 PEMCertificateChain:_PEMCertificateChain
                                                       transportType:_transportType
+                                                          transport:_transport
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
                                                   channelPoolDomain:_channelPoolDomain
@@ -409,6 +436,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
             authTokenProvider:_authTokenProvider
               initialMetadata:_initialMetadata
               userAgentPrefix:_userAgentPrefix
+              userAgentSuffix:_userAgentSuffix
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
                  retryEnabled:_retryEnabled
@@ -422,6 +450,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                 PEMPrivateKey:_PEMPrivateKey
           PEMCertificateChain:_PEMCertificateChain
                 transportType:_transportType
+                    transport:_transport
              hostNameOverride:_hostNameOverride
                    logContext:_logContext
             channelPoolDomain:_channelPoolDomain
@@ -445,7 +474,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   _flowControlEnabled = flowControlEnabled;
 }
 
-- (void)setInterceptorFactories:(NSArray *)interceptorFactories {
+- (void)setInterceptorFactories:(NSArray<id<GRPCInterceptorFactory>> *)interceptorFactories {
   _interceptorFactories = interceptorFactories;
 }
 
@@ -463,6 +492,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (void)setUserAgentPrefix:(NSString *)userAgentPrefix {
   _userAgentPrefix = [userAgentPrefix copy];
+}
+
+- (void)setUserAgentSuffix:(NSString *)userAgentSuffix {
+  _userAgentSuffix = [userAgentSuffix copy];
 }
 
 - (void)setResponseSizeLimit:(NSUInteger)responseSizeLimit {
@@ -518,8 +551,8 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 }
 
 - (void)setAdditionalChannelArgs:(NSDictionary *)additionalChannelArgs {
-  _additionalChannelArgs =
-      [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
+  _additionalChannelArgs = [[NSDictionary alloc] initWithDictionary:additionalChannelArgs
+                                                          copyItems:YES];
 }
 
 - (void)setPEMRootCertificates:(NSString *)PEMRootCertificates {
@@ -536,6 +569,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (void)setTransportType:(GRPCTransportType)transportType {
   _transportType = transportType;
+}
+
+- (void)setTransport:(GRPCTransportID)transport {
+  _transport = transport;
 }
 
 - (void)setHostNameOverride:(NSString *)hostNameOverride {

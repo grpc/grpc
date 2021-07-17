@@ -31,7 +31,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_http_parser parser;
   grpc_http_response response;
   grpc_init();
-  memset(&response, 0, sizeof(response));
+  response = {};
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
   grpc_slice slice = grpc_slice_from_copied_buffer((const char*)data, size);
   GRPC_ERROR_UNREF(grpc_http_parser_parse(&parser, slice, nullptr));

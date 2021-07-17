@@ -120,7 +120,7 @@ namespace Grpc.Core.Internal
             {
                 throw new MissingMethodException(string.Format("The native method \"{0}\" does not exist", methodName));
             }
-#if NETSTANDARD1_5 || NETSTANDARD2_0
+#if NETSTANDARD
             return Marshal.GetDelegateForFunctionPointer<T>(ptr);  // non-generic version is obsolete
 #else
             return Marshal.GetDelegateForFunctionPointer(ptr, typeof(T)) as T;  // generic version not available in .NET45
@@ -217,7 +217,7 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// On Linux systems, using using dlopen and dlsym results in
+        /// On Linux systems, using dlopen and dlsym results in
         /// DllNotFoundException("libdl.so not found") if libc6-dev
         /// is not installed. As a workaround, we load symbols for
         /// dlopen and dlsym from the current process as on Linux

@@ -1,0 +1,517 @@
+// Copyright 2019 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file contains the xds protocol and its dependency. It can't be used by
+// the gRPC library; otherwise there can be duplicate definition problems if
+// users depend on both gRPC and Envoy. It can only be used by gRPC tests.
+//
+// TODO(juanlishen): This file is a hack to avoid a problem we're
+// currently having where we can't depend on a proto file in an external
+// repo due to bazel limitations.  Once that's fixed, this should be
+// removed.  Until this, it should be used in the gRPC tests only, or else it
+// will cause a conflict due to the same proto messages being defined in
+// multiple files in the same binary.
+
+syntax = "proto3";
+
+package envoy.api.v2;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
+
+message Status {
+  // The status code, which should be an enum value of [google.rpc.Code][].
+  int32 code = 1;
+
+  // A developer-facing error message, which should be in English. Any
+  // user-facing error message should be localized and sent in the
+  // [google.rpc.Status.details][] field, or localized by the client.
+  string message = 2;
+
+  // A list of messages that carry the error details.  There is a common set of
+  // message types for APIs to use.
+  repeated google.protobuf.Any details = 3;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+// Identifies location of where either Envoy runs or where upstream hosts run.
+message Locality {
+  // Region this :ref:`zone <envoy_api_field_core.Locality.zone>` belongs to.
+  string region = 1;
+
+  // Defines the local service zone where Envoy is running. Though optional, it
+  // should be set if discovery service routing is used and the discovery
+  // service exposes :ref:`zone data <envoy_api_field_endpoint.LocalityLbEndpoints.locality>`,
+  // either in this message or via :option:`--service-zone`. The meaning of zone
+  // is context dependent, e.g. `Availability Zone (AZ)
+  // <https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html>`_
+  // on AWS, `Zone <https://cloud.google.com/compute/docs/regions-zones/>`_ on
+  // GCP, etc.
+  string zone = 2;
+
+  // When used for locality of upstream hosts, this field further splits zone
+  // into smaller chunks of sub-zones so they can be load balanced
+  // independently.
+  string sub_zone = 3;
+}
+
+// Identifies a specific Envoy instance. The node identifier is presented to the
+// management server, which may use this identifier to distinguish per Envoy
+// configuration for serving.
+message Node {
+  // An opaque node identifier for the Envoy node. This also provides the local
+  // service node name. It should be set if any of the following features are
+  // used: :ref:`statsd <arch_overview_statistics>`, :ref:`CDS
+  // <config_cluster_manager_cds>`, and :ref:`HTTP tracing
+  // <arch_overview_tracing>`, either in this message or via
+  // :option:`--service-node`.
+  string id = 1;
+
+  // Defines the local service cluster name where Envoy is running. Though
+  // optional, it should be set if any of the following features are used:
+  // :ref:`statsd <arch_overview_statistics>`, :ref:`health check cluster
+  // verification <envoy_api_field_core.HealthCheck.HttpHealthCheck.service_name>`,
+  // :ref:`runtime override directory <envoy_api_msg_config.bootstrap.v2.Runtime>`,
+  // :ref:`user agent addition
+  // <envoy_api_field_config.filter.network.http_connection_manager.v2.HttpConnectionManager.add_user_agent>`,
+  // :ref:`HTTP global rate limiting <config_http_filters_rate_limit>`,
+  // :ref:`CDS <config_cluster_manager_cds>`, and :ref:`HTTP tracing
+  // <arch_overview_tracing>`, either in this message or via
+  // :option:`--service-cluster`.
+  string cluster = 2;
+
+  // Opaque metadata extending the node identifier. Envoy will pass this
+  // directly to the management server.
+  google.protobuf.Struct metadata = 3;
+
+  // Locality specifying where the Envoy instance is running.
+  Locality locality = 4;
+
+  // This is motivated by informing a management server during canary which
+  // version of Envoy is being tested in a heterogeneous fleet. This will be set
+  // by Envoy in management server RPCs.
+  string build_version = 5 [deprecated = true];
+
+  // Free-form string that identifies the entity requesting config.
+  // E.g. "envoy" or "grpc"
+  string user_agent_name = 6;
+
+  oneof user_agent_version_type {
+    // Free-form string that identifies the version of the entity requesting config.
+    // E.g. "1.12.2" or "abcd1234", or "SpecialEnvoyBuild"
+    string user_agent_version = 7;
+  }
+
+  // Client feature support list. These are well known features described
+  // in the Envoy API repository for a given major version of an API. Client features
+  // use reverse DNS naming scheme, for example `com.acme.feature`.
+  // See :ref:`the list of features <client_features>` that xDS client may
+  // support.
+  repeated string client_features = 10;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+// A DiscoveryRequest requests a set of versioned resources of the same type for
+// a given Envoy node on some API.
+message DiscoveryRequest {
+  // The version_info provided in the request messages will be the version_info
+  // received with the most recent successfully processed response or empty on
+  // the first request. It is expected that no new request is sent after a
+  // response is received until the Envoy instance is ready to ACK/NACK the new
+  // configuration. ACK/NACK takes place by returning the new API config version
+  // as applied or the previous API config version respectively. Each type_url
+  // (see below) has an independent version associated with it.
+  string version_info = 1;
+
+  // The node making the request.
+  Node node = 2;
+
+  // List of resources to subscribe to, e.g. list of cluster names or a route
+  // configuration name. If this is empty, all resources for the API are
+  // returned. LDS/CDS expect empty resource_names, since this is global
+  // discovery for the Envoy instance. The LDS and CDS responses will then imply
+  // a number of resources that need to be fetched via EDS/RDS, which will be
+  // explicitly enumerated in resource_names.
+  repeated string resource_names = 3;
+
+  // Type of the resource that is being requested, e.g.
+  // "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment". This is implicit
+  // in requests made via singleton xDS APIs such as CDS, LDS, etc. but is
+  // required for ADS.
+  string type_url = 4;
+
+  // nonce corresponding to DiscoveryResponse being ACK/NACKed. See above
+  // discussion on version_info and the DiscoveryResponse nonce comment. This
+  // may be empty if no nonce is available, e.g. at startup or for non-stream
+  // xDS implementations.
+  string response_nonce = 5;
+
+  // This is populated when the previous :ref:`DiscoveryResponse <envoy_api_msg_DiscoveryResponse>`
+  // failed to update configuration. The *message* field in *error_details* provides the Envoy
+  // internal exception related to the failure. It is only intended for consumption during manual
+  // debugging, the string provided is not guaranteed to be stable across Envoy versions.
+  Status error_detail = 6;
+}
+
+message DiscoveryResponse {
+  // The version of the response data.
+  string version_info = 1;
+
+  // The response resources. These resources are typed and depend on the API being called.
+  repeated google.protobuf.Any resources = 2;
+
+  // [#not-implemented-hide:]
+  // Canary is used to support two Envoy command line flags:
+  //
+  // * --terminate-on-canary-transition-failure. When set, Envoy is able to
+  //   terminate if it detects that configuration is stuck at canary. Consider
+  //   this example sequence of updates:
+  //   - Management server applies a canary config successfully.
+  //   - Management server rolls back to a production config.
+  //   - Envoy rejects the new production config.
+  //   Since there is no sensible way to continue receiving configuration
+  //   updates, Envoy will then terminate and apply production config from a
+  //   clean slate.
+  // * --dry-run-canary. When set, a canary response will never be applied, only
+  //   validated via a dry run.
+  bool canary = 3;
+
+  // Type URL for resources. This must be consistent with the type_url in the
+  // Any messages for resources if resources is non-empty. This effectively
+  // identifies the xDS API when muxing over ADS.
+  string type_url = 4;
+
+  // For gRPC based subscriptions, the nonce provides a way to explicitly ack a
+  // specific DiscoveryResponse in a following DiscoveryRequest. Additional
+  // messages may have been sent by Envoy to the management server for the
+  // previous version on the stream prior to this DiscoveryResponse, that were
+  // unprocessed at response send time. The nonce allows the management server
+  // to ignore any further DiscoveryRequests for the previous version until a
+  // DiscoveryRequest bearing the nonce. The nonce is optional and is not
+  // required for non-stream based xDS implementations.
+  string nonce = 5;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+message Pipe {
+  // Unix Domain Socket path. On Linux, paths starting with '@' will use the
+  // abstract namespace. The starting '@' is replaced by a null byte by Envoy.
+  // Paths starting with '@' will result in an error in environments other than
+  // Linux.
+  string path = 1;
+}
+
+message SocketAddress {
+  enum Protocol {
+    TCP = 0;
+    // [#not-implemented-hide:]
+    UDP = 1;
+  }
+  Protocol protocol = 1;
+  // The address for this socket. :ref:`Listeners <config_listeners>` will bind
+  // to the address. An empty address is not allowed. Specify ``0.0.0.0`` or ``::``
+  // to bind to any address. [#comment:TODO(zuercher) reinstate when implemented:
+  // It is possible to distinguish a Listener address via the prefix/suffix matching
+  // in :ref:`FilterChainMatch <envoy_api_msg_listener.FilterChainMatch>`.] When used
+  // within an upstream :ref:`BindConfig <envoy_api_msg_core.BindConfig>`, the address
+  // controls the source address of outbound connections. For :ref:`clusters
+  // <envoy_api_msg_Cluster>`, the cluster type determines whether the
+  // address must be an IP (*STATIC* or *EDS* clusters) or a hostname resolved by DNS
+  // (*STRICT_DNS* or *LOGICAL_DNS* clusters). Address resolution can be customized
+  // via :ref:`resolver_name <envoy_api_field_core.SocketAddress.resolver_name>`.
+  string address = 2;
+  oneof port_specifier {
+    uint32 port_value = 3;
+    // This is only valid if :ref:`resolver_name
+    // <envoy_api_field_core.SocketAddress.resolver_name>` is specified below and the
+    // named resolver is capable of named port resolution.
+    string named_port = 4;
+  }
+  // The name of the resolver. This must have been registered with Envoy. If this is
+  // empty, a context dependent default applies. If address is a hostname this
+  // should be set for resolution other than DNS. If the address is a concrete
+  // IP address, no resolution will occur.
+  string resolver_name = 5;
+
+  // When binding to an IPv6 address above, this enables `IPv4 compatibity
+  // <https://tools.ietf.org/html/rfc3493#page-11>`_. Binding to ``::`` will
+  // allow both IPv4 and IPv6 connections, with peer IPv4 addresses mapped into
+  // IPv6 space as ``::FFFF:<IPv4-address>``.
+  bool ipv4_compat = 6;
+}
+
+// Addresses specify either a logical or physical address and port, which are
+// used to tell Envoy where to bind/listen, connect to upstream and find
+// management servers.
+message Address {
+  oneof address {
+
+    SocketAddress socket_address = 1;
+    Pipe pipe = 2;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+message Metadata {
+  // Key is the reverse DNS filter name, e.g. com.acme.widget. The envoy.*
+  // namespace is reserved for Envoy's built-in filters.
+  map<string, google.protobuf.Struct> filter_metadata = 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+// Endpoint health status.
+enum HealthStatus {
+  // The health status is not known. This is interpreted by Envoy as *HEALTHY*.
+  UNKNOWN = 0;
+
+  // Healthy.
+  HEALTHY = 1;
+
+  // Unhealthy.
+  UNHEALTHY = 2;
+
+  // Connection draining in progress. E.g.,
+  // `<https://aws.amazon.com/blogs/aws/elb-connection-draining-remove-instances-from-service-with-care/>`_
+  // or
+  // `<https://cloud.google.com/compute/docs/load-balancing/enabling-connection-draining>`_.
+  // This is interpreted by Envoy as *UNHEALTHY*.
+  DRAINING = 3;
+
+  // Health check timed out. This is part of HDS and is interpreted by Envoy as
+  // *UNHEALTHY*.
+  TIMEOUT = 4;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+// Upstream host identifier.
+message Endpoint {
+  // The upstream host address.
+  //
+  // .. attention::
+  //
+  //   The form of host address depends on the given cluster type. For STATIC or EDS,
+  //   it is expected to be a direct IP address (or something resolvable by the
+  //   specified :ref:`resolver <envoy_api_field_core.SocketAddress.resolver_name>`
+  //   in the Address). For LOGICAL or STRICT DNS, it is expected to be hostname,
+  //   and will be resolved via DNS.
+  Address address = 1;
+
+  // The optional health check configuration.
+  message HealthCheckConfig {
+    // Optional alternative health check port value.
+    //
+    // By default the health check address port of an upstream host is the same
+    // as the host's serving address port. This provides an alternative health
+    // check port. Setting this with a non-zero value allows an upstream host
+    // to have different health check address port.
+    uint32 port_value = 1;
+  }
+
+  // The optional health check configuration is used as configuration for the
+  // health checker to contact the health checked host.
+  //
+  // .. attention::
+  //
+  //   This takes into effect only for upstream clusters with
+  //   :ref:`active health checking <arch_overview_health_checking>` enabled.
+  HealthCheckConfig health_check_config = 2;
+}
+
+// An Endpoint that Envoy can route traffic to.
+message LbEndpoint {
+  // Upstream host identifier
+  Endpoint endpoint = 1;
+
+  // Optional health status when known and supplied by EDS server.
+  HealthStatus health_status = 2;
+
+  // The endpoint metadata specifies values that may be used by the load
+  // balancer to select endpoints in a cluster for a given request. The filter
+  // name should be specified as *envoy.lb*. An example boolean key-value pair
+  // is *canary*, providing the optional canary status of the upstream host.
+  // This may be matched against in a route's
+  // :ref:`RouteAction <envoy_api_msg_route.RouteAction>` metadata_match field
+  // to subset the endpoints considered in cluster load balancing.
+  Metadata metadata = 3;
+
+  // The optional load balancing weight of the upstream host, in the range 1 -
+  // 128. Envoy uses the load balancing weight in some of the built in load
+  // balancers. The load balancing weight for an endpoint is divided by the sum
+  // of the weights of all endpoints in the endpoint's locality to produce a
+  // percentage of traffic for the endpoint. This percentage is then further
+  // weighted by the endpoint's locality's load balancing weight from
+  // LocalityLbEndpoints. If unspecified, each host is presumed to have equal
+  // weight in a locality.
+  //
+  // .. attention::
+  //
+  //   The limit of 128 is somewhat arbitrary, but is applied due to performance
+  //   concerns with the current implementation and can be removed when
+  //   `this issue <https://github.com/envoyproxy/envoy/issues/1285>`_ is fixed.
+  google.protobuf.UInt32Value load_balancing_weight = 4;
+}
+
+// A group of endpoints belonging to a Locality.
+// One can have multiple LocalityLbEndpoints for a locality, but this is
+// generally only done if the different groups need to have different load
+// balancing weights or different priorities.
+message LocalityLbEndpoints {
+  // Identifies location of where the upstream hosts run.
+  Locality locality = 1;
+
+  // The group of endpoints belonging to the locality specified.
+  repeated LbEndpoint lb_endpoints = 2;
+
+  // Optional: Per priority/region/zone/sub_zone weight - range 1-128. The load
+  // balancing weight for a locality is divided by the sum of the weights of all
+  // localities  at the same priority level to produce the effective percentage
+  // of traffic for the locality.
+  //
+  // Locality weights are only considered when :ref:`locality weighted load
+  // balancing <arch_overview_load_balancing_locality_weighted_lb>` is
+  // configured. These weights are ignored otherwise. If no weights are
+  // specificed when locality weighted load balancing is enabled, the cluster is
+  // assumed to have a weight of 1.
+  //
+  // .. attention::
+  //
+  //   The limit of 128 is somewhat arbitrary, but is applied due to performance
+  //   concerns with the current implementation and can be removed when
+  //   `this issue <https://github.com/envoyproxy/envoy/issues/1285>`_ is fixed.
+  google.protobuf.UInt32Value load_balancing_weight = 3;
+
+  // Optional: the priority for this LocalityLbEndpoints. If unspecified this will
+  // default to the highest priority (0).
+  //
+  // Under usual circumstances, Envoy will only select endpoints for the highest
+  // priority (0). In the event all endpoints for a particular priority are
+  // unavailable/unhealthy, Envoy will fail over to selecting endpoints for the
+  // next highest priority group.
+  //
+  // Priorities should range from 0 (highest) to N (lowest) without skipping.
+  uint32 priority = 5;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+message FractionalPercent {
+  // Specifies the numerator. Defaults to 0.
+  uint32 numerator = 1;
+
+  // Fraction percentages support several fixed denominator values.
+  enum DenominatorType {
+    // 100.
+    //
+    // **Example**: 1/100 = 1%.
+    HUNDRED = 0;
+
+    // 10,000.
+    //
+    // **Example**: 1/10000 = 0.01%.
+    TEN_THOUSAND = 1;
+
+    // 1,000,000.
+    //
+    // **Example**: 1/1000000 = 0.0001%.
+    MILLION = 2;
+  }
+
+  // Specifies the denominator. If the denominator specified is less than the numerator, the final
+  // fractional percentage is capped at 1 (100%).
+  DenominatorType denominator = 2;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+// [#protodoc-title: EDS]
+// Endpoint discovery :ref:`architecture overview <arch_overview_service_discovery_types_eds>`
+service EndpointDiscoveryService {
+  // The resource_names field in DiscoveryRequest specifies a list of clusters
+  // to subscribe to updates for.
+  rpc StreamEndpoints(stream DiscoveryRequest) returns (stream DiscoveryResponse) {
+  }
+}
+
+// Each route from RDS will map to a single cluster or traffic split across
+// clusters using weights expressed in the RDS WeightedCluster.
+//
+// With EDS, each cluster is treated independently from a LB perspective, with
+// LB taking place between the Localities within a cluster and at a finer
+// granularity between the hosts within a locality. For a given cluster, the
+// effective weight of a host is its load_balancing_weight multiplied by the
+// load_balancing_weight of its Locality.
+message ClusterLoadAssignment {
+  // Name of the cluster. This will be the :ref:`service_name
+  // <envoy_api_field_Cluster.EdsClusterConfig.service_name>` value if specified
+  // in the cluster :ref:`EdsClusterConfig
+  // <envoy_api_msg_Cluster.EdsClusterConfig>`.
+  string cluster_name = 1;
+
+  // List of endpoints to load balance to.
+  repeated LocalityLbEndpoints endpoints = 2;
+
+  // Load balancing policy settings.
+  message Policy {
+    reserved 1;
+
+    message DropOverload {
+      // Identifier for the policy specifying the drop.
+      string category = 1;
+
+      // Percentage of traffic that should be dropped for the category.
+      FractionalPercent drop_percentage = 2;
+    }
+    // Action to trim the overall incoming traffic to protect the upstream
+    // hosts. This action allows protection in case the hosts are unable to
+    // recover from an outage, or unable to autoscale or unable to handle
+    // incoming traffic volume for any reason.
+    //
+    // At the client each category is applied one after the other to generate
+    // the 'actual' drop percentage on all outgoing traffic. For example:
+    //
+    // .. code-block:: json
+    //
+    //  { "drop_overloads": [
+    //      { "category": "throttle", "drop_percentage": 60 }
+    //      { "category": "lb", "drop_percentage": 50 }
+    //  ]}
+    //
+    // The actual drop percentages applied to the traffic at the clients will be
+    //    "throttle"_drop = 60%
+    //    "lb"_drop = 20%  // 50% of the remaining 'actual' load, which is 40%.
+    //    actual_outgoing_load = 20% // remaining after applying all categories.
+    repeated DropOverload drop_overloads = 2;
+
+    // Priority levels and localities are considered overprovisioned with this
+    // factor (in percentage). This means that we don't consider a priority
+    // level or locality unhealthy until the percentage of healthy hosts
+    // multiplied by the overprovisioning factor drops below 100.
+    // With the default value 140(1.4), Envoy doesn't consider a priority level
+    // or a locality unhealthy until their percentage of healthy hosts drops
+    // below 72%.
+    // Read more at :ref:`priority levels <arch_overview_load_balancing_priority_levels>` and
+    // :ref:`localities <arch_overview_load_balancing_locality_weighted_lb>`.
+    google.protobuf.UInt32Value overprovisioning_factor = 3;
+  }
+
+  // Load balancing policy settings.
+  Policy policy = 4;
+}

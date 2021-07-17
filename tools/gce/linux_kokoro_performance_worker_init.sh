@@ -74,10 +74,10 @@ sudo apt-get install -y python-psutil python3-psutil
 sudo apt-get install -y google-cloud-sdk
 
 # C++ dependencies
-sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
+sudo apt-get install -y libgtest-dev libc++-dev clang
 
 # Python dependencies
-sudo pip install --upgrade pip==10.0.1
+sudo pip install --upgrade pip==19.3.1
 sudo pip install tabulate
 sudo pip install google-api-python-client oauth2client
 sudo pip install virtualenv
@@ -92,7 +92,7 @@ sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
 sudo pypy -m pip install google-api-python-client oauth2client
 # TODO(jtattermusch): for some reason, we need psutil installed
-# in pypy for kokoro_log_reader.py (strange, because the comand is
+# in pypy for kokoro_log_reader.py (strange, because the command is
 # "python kokoro_log_reader.py" and pypy is not the system default)
 sudo pypy -m pip install psutil
 
@@ -140,7 +140,7 @@ tar zxf dotnet_old.tar.gz -C dotnet_old
 sudo cp -r dotnet_old/shared/Microsoft.NETCore.App/1.1.10/ /usr/share/dotnet/shared/Microsoft.NETCore.App/
 
 # Ruby dependencies
-gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+gpg --keyserver hkp://pgp.mit.edu --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 curl -sSL https://get.rvm.io | bash -s stable --ruby
 # silence shellcheck as it cannot follow the following `source` path statically:
 # shellcheck disable=SC1090
@@ -161,7 +161,10 @@ ruby -v
 gem install bundler
 
 # PHP dependencies
-sudo apt-get install -y php php-dev phpunit php-pear unzip zlib1g-dev
+sudo apt-get install -y php7.2 php7.2-dev php-pear unzip zlib1g-dev
+sudo wget https://phar.phpunit.de/phpunit-8.5.8.phar && \
+    sudo mv phpunit-8.5.8.phar /usr/local/bin/phpunit && \
+    sudo chmod +x /usr/local/bin/phpunit
 curl -sS https://getcomposer.org/installer | php
 sudo mv composer.phar /usr/local/bin/composer
 
@@ -197,7 +200,7 @@ echo 4096 | sudo tee /proc/sys/kernel/perf_event_mlock_kb
 git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 
 # Install scipy and numpy for benchmarking scripts
-sudo apt-get install -y python-scipy python-numpy
+sudo apt-get install -y python3-scipy python3-numpy
 
 # Install docker
 curl -sSL https://get.docker.com/ | sh

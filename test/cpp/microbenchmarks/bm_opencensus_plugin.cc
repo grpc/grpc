@@ -22,21 +22,19 @@
 
 #include "absl/base/call_once.h"
 #include "absl/strings/str_cat.h"
-#include "include/grpc++/grpc++.h"
-#include "include/grpcpp/opencensus.h"
+#include "include/grpc/grpc.h"
+#include "include/grpcpp/grpcpp.h"
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
-using ::grpc::RegisterOpenCensusPlugin;
-using ::grpc::RegisterOpenCensusViewsForExport;
-
 absl::once_flag once;
-void RegisterOnce() { absl::call_once(once, RegisterOpenCensusPlugin); }
+void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
 
 class EchoServer final : public grpc::testing::EchoTestService::Service {
-  grpc::Status Echo(grpc::ServerContext* context,
+  grpc::Status Echo(grpc::ServerContext* /*context*/,
                     const grpc::testing::EchoRequest* request,
                     grpc::testing::EchoResponse* response) override {
     if (request->param().expected_error().code() == 0) {
@@ -85,6 +83,7 @@ class EchoServerThread final {
 };
 
 static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
+  grpc::testing::TestGrpcScope grpc_scope;
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
       grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
@@ -100,11 +99,13 @@ static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusDisabled);
 
 static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
+  // Now start the test by registering the plugin (once in the execution)
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid
   // initialization costs varying between runs.
-  RegisterOpenCensusViewsForExport();
+  grpc::RegisterOpenCensusViewsForExport();
 
+  grpc::testing::TestGrpcScope grpc_scope;
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
       grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
@@ -119,4 +120,9 @@ static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
 }
 BENCHMARK(BM_E2eLatencyCensusEnabled);
 
-BENCHMARK_MAIN();
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::benchmark::Initialize(&argc, argv);
+  if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
+  ::benchmark::RunSpecifiedBenchmarks();
+}

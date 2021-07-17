@@ -41,21 +41,12 @@ repository, you need to run the following command to update submodules:
 git submodule update --init
 ```
 
-You also need to have the gflags library installed on your system. gflags can be
-installed with the following command:
-Linux:
-```
-sudo apt-get install libgflags-dev
-```
-Mac systems with Homebrew:
-```
-brew install gflags
-```
-
-Once the prerequisites are satisfied, you can build the command line tool with
-the command:
+Once the prerequisites are satisfied, you can build with cmake:
 
 ```
+$ mkdir -p cmake/build
+$ cd cmake/build
+$ cmake -DgRPC_BUILD_TESTS=ON ../..
 $ make grpc_cli
 ```
 
@@ -69,6 +60,8 @@ guides for
 [Java](https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md#enable-server-reflection)
 , [C++](https://github.com/grpc/grpc/blob/master/doc/server_reflection_tutorial.md)
 and [Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md)
+
+Local proto files can be used as an alternative. See instructions [below](#Call-a-remote-method).
 
 ## Usage
 
@@ -183,7 +176,12 @@ We can send RPCs to a server and get responses using `grpc_cli call` command.
     ```
 
     If the proto file is not under the current directory, you can use
-    `--proto_path` to specify a new search root.
+    `--proto_path` to specify new search roots
+    (separated by colon on Mac/Linux/Cygwin or semicolon on Windows).
+
+    Note that the tool will always attempt to use the reflection service first,
+    falling back to local proto files if the service is not found. Use
+    `--noremotedb` to avoid attempting to use the reflection service.
 
 -   Send non-proto rpc
 

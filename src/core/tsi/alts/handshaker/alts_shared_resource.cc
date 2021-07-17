@@ -30,7 +30,7 @@ alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(void) {
   return &g_alts_resource_dedicated;
 }
 
-static void thread_worker(void* arg) {
+static void thread_worker(void* /*arg*/) {
   while (true) {
     grpc_event event =
         grpc_completion_queue_next(g_alts_resource_dedicated.cq,

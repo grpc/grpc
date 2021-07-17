@@ -1,7 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\Grpc.Core\Common.csproj.include" />
-
   <PropertyGroup>
     <Authors>The gRPC Authors</Authors>
     <Copyright>Copyright 2016 The gRPC Authors</Copyright>
@@ -26,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj">
+    <ProjectReference Include="../Grpc.Core.Api/Grpc.Core.Api.csproj">
       <PrivateAssets>None</PrivateAssets>
     </ProjectReference>
   </ItemGroup>

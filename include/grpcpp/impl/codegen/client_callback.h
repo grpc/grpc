@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2018 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
-
 #include <atomic>
 #include <functional>
 
@@ -29,53 +27,71 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
-
-namespace grpc_impl {
-class Channel;
-class ClientContext;
-}  // namespace grpc_impl
+#include <grpcpp/impl/codegen/sync.h>
 
 namespace grpc {
+class Channel;
+class ClientContext;
 
 namespace internal {
 class RpcMethod;
 
-/// Perform a callback-based unary call
+/// Perform a callback-based unary call.  May optionally specify the base
+/// class of the Request and Response so that the internal calls and structures
+/// below this may be based on those base classes and thus achieve code reuse
+/// across different RPCs (e.g., for protobuf, MessageLite would be a base
+/// class).
 /// TODO(vjpai): Combine as much as possible with the blocking unary call code
-template <class InputMessage, class OutputMessage>
-void CallbackUnaryCall(ChannelInterface* channel, const RpcMethod& method,
-                       ::grpc_impl::ClientContext* context,
+template <class InputMessage, class OutputMessage,
+          class BaseInputMessage = InputMessage,
+          class BaseOutputMessage = OutputMessage>
+void CallbackUnaryCall(::grpc::ChannelInterface* channel,
+                       const ::grpc::internal::RpcMethod& method,
+                       ::grpc::ClientContext* context,
                        const InputMessage* request, OutputMessage* result,
-                       std::function<void(Status)> on_completion) {
-  CallbackUnaryCallImpl<InputMessage, OutputMessage> x(
+                       std::function<void(::grpc::Status)> on_completion) {
+  static_assert(std::is_base_of<BaseInputMessage, InputMessage>::value,
+                "Invalid input message specification");
+  static_assert(std::is_base_of<BaseOutputMessage, OutputMessage>::value,
+                "Invalid output message specification");
+  CallbackUnaryCallImpl<BaseInputMessage, BaseOutputMessage> x(
       channel, method, context, request, result, on_completion);
 }
 
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl {
  public:
-  CallbackUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
-                        ::grpc_impl::ClientContext* context,
+  CallbackUnaryCallImpl(::grpc::ChannelInterface* channel,
+                        const ::grpc::internal::RpcMethod& method,
+                        ::grpc::ClientContext* context,
                         const InputMessage* request, OutputMessage* result,
-                        std::function<void(Status)> on_completion) {
-    CompletionQueue* cq = channel->CallbackCQ();
+                        std::function<void(::grpc::Status)> on_completion) {
+    ::grpc::CompletionQueue* cq = channel->CallbackCQ();
     GPR_CODEGEN_ASSERT(cq != nullptr);
-    Call call(channel->CreateCall(method, context, cq));
+    grpc::internal::Call call(channel->CreateCall(method, context, cq));
 
-    using FullCallOpSet =
-        CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                  CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
-                  CallOpClientSendClose, CallOpClientRecvStatus>;
+    using FullCallOpSet = grpc::internal::CallOpSet<
+        ::grpc::internal::CallOpSendInitialMetadata,
+        grpc::internal::CallOpSendMessage,
+        grpc::internal::CallOpRecvInitialMetadata,
+        grpc::internal::CallOpRecvMessage<OutputMessage>,
+        grpc::internal::CallOpClientSendClose,
+        grpc::internal::CallOpClientRecvStatus>;
 
-    auto* ops = new (g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(FullCallOpSet))) FullCallOpSet;
-
-    auto* tag = new (g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(CallbackWithStatusTag)))
-        CallbackWithStatusTag(call.call(), on_completion, ops);
+    struct OpSetAndTag {
+      FullCallOpSet opset;
+      grpc::internal::CallbackWithStatusTag tag;
+    };
+    const size_t alloc_sz = sizeof(OpSetAndTag);
+    auto* const alloced = static_cast<OpSetAndTag*>(
+        ::grpc::g_core_codegen_interface->grpc_call_arena_alloc(call.call(),
+                                                                alloc_sz));
+    auto* ops = new (&alloced->opset) FullCallOpSet;
+    auto* tag = new (&alloced->tag)
+        grpc::internal::CallbackWithStatusTag(call.call(), on_completion, ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible
-    Status s = ops->SendMessagePtr(request);
+    ::grpc::Status s = ops->SendMessagePtr(request);
     if (!s.ok()) {
       tag->force_run(s);
       return;
@@ -91,9 +107,41 @@ class CallbackUnaryCallImpl {
     call.PerformOps(ops);
   }
 };
-}  // namespace internal
 
-namespace experimental {
+// Base class for public API classes.
+class ClientReactor {
+ public:
+  virtual ~ClientReactor() = default;
+
+  /// Called by the library when all operations associated with this RPC have
+  /// completed and all Holds have been removed. OnDone provides the RPC status
+  /// outcome for both successful and failed RPCs. If it is never called on an
+  /// RPC, it indicates an application-level problem (like failure to remove a
+  /// hold).
+  ///
+  /// \param[in] s The status outcome of this RPC
+  virtual void OnDone(const ::grpc::Status& /*s*/) = 0;
+
+  /// InternalScheduleOnDone is not part of the API and is not meant to be
+  /// overridden. It is virtual to allow successful builds for certain bazel
+  /// build users that only want to depend on gRPC codegen headers and not the
+  /// full library (although this is not a generally-supported option). Although
+  /// the virtual call is slower than a direct call, this function is
+  /// heavyweight and the cost of the virtual call is not much in comparison.
+  /// This function may be removed or devirtualized in the future.
+  virtual void InternalScheduleOnDone(::grpc::Status s);
+
+  /// InternalTrailersOnly is not part of the API and is not meant to be
+  /// overridden. It is virtual to allow successful builds for certain bazel
+  /// build users that only want to depend on gRPC codegen headers and not the
+  /// full library (although this is not a generally-supported option). Although
+  /// the virtual call is slower than a direct call, this function is
+  /// heavyweight and the cost of the virtual call is not much in comparison.
+  /// This function may be removed or devirtualized in the future.
+  virtual bool InternalTrailersOnly(const grpc_call* call) const;
+};
+
+}  // namespace internal
 
 // Forward declarations
 template <class Request, class Response>
@@ -112,7 +160,7 @@ class ClientCallbackReaderWriter {
  public:
   virtual ~ClientCallbackReaderWriter() {}
   virtual void StartCall() = 0;
-  virtual void Write(const Request* req, WriteOptions options) = 0;
+  virtual void Write(const Request* req, ::grpc::WriteOptions options) = 0;
   virtual void WritesDone() = 0;
   virtual void Read(Response* resp) = 0;
   virtual void AddHold(int holds) = 0;
@@ -144,9 +192,9 @@ class ClientCallbackWriter {
  public:
   virtual ~ClientCallbackWriter() {}
   virtual void StartCall() = 0;
-  void Write(const Request* req) { Write(req, WriteOptions()); }
-  virtual void Write(const Request* req, WriteOptions options) = 0;
-  void WriteLast(const Request* req, WriteOptions options) {
+  void Write(const Request* req) { Write(req, ::grpc::WriteOptions()); }
+  virtual void Write(const Request* req, ::grpc::WriteOptions options) = 0;
+  void WriteLast(const Request* req, ::grpc::WriteOptions options) {
     Write(req, options.set_last_message());
   }
   virtual void WritesDone() = 0;
@@ -175,16 +223,19 @@ class ClientCallbackUnary {
 // activated by calling StartCall, possibly after initiating StartRead,
 // StartWrite, or AddHold operations on the streaming object. Note that none of
 // the classes are pure; all reactions have a default empty reaction so that the
-// user class only needs to override those classes that it cares about.
+// user class only needs to override those reactions that it cares about.
 // The reactor must be passed to the stub invocation before any of the below
-// operations can be called.
+// operations can be called and its reactions will be invoked by the library in
+// response to the completion of various operations. Reactions must not include
+// blocking operations (such as blocking I/O, starting synchronous RPCs, or
+// waiting on condition variables). Reactions may be invoked concurrently,
+// except that OnDone is called after all others (assuming proper API usage).
+// The reactor may not be deleted until OnDone is called.
 
 /// \a ClientBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>
-class ClientBidiReactor {
+class ClientBidiReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientBidiReactor() {}
-
   /// Activate the RPC and initiate any reads or writes that have been Start'ed
   /// before this call. All streaming RPCs issued by the client MUST have
   /// StartCall invoked on them (even if they are canceled) as this call is the
@@ -201,19 +252,21 @@ class ClientBidiReactor {
   /// Initiate a write operation (or post it for later initiation if StartCall
   /// has not yet been invoked).
   ///
-  /// \param[in] req The message to be written. The library takes temporary
-  ///                ownership until OnWriteDone, at which point the application
-  ///                regains ownership of msg.
-  void StartWrite(const Request* req) { StartWrite(req, WriteOptions()); }
+  /// \param[in] req The message to be written. The library does not take
+  ///                ownership but the caller must ensure that the message is
+  ///                not deleted or modified until OnWriteDone is called.
+  void StartWrite(const Request* req) {
+    StartWrite(req, ::grpc::WriteOptions());
+  }
 
   /// Initiate/post a write operation with specified options.
   ///
-  /// \param[in] req The message to be written. The library takes temporary
-  ///                ownership until OnWriteDone, at which point the application
-  ///                regains ownership of msg.
+  /// \param[in] req The message to be written. The library does not take
+  ///                ownership but the caller must ensure that the message is
+  ///                not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
-  void StartWrite(const Request* req, WriteOptions options) {
-    stream_->Write(req, std::move(options));
+  void StartWrite(const Request* req, ::grpc::WriteOptions options) {
+    stream_->Write(req, options);
   }
 
   /// Initiate/post a write operation with specified options and an indication
@@ -221,12 +274,12 @@ class ClientBidiReactor {
   /// Note that calling this means that no more calls to StartWrite,
   /// StartWriteLast, or StartWritesDone are allowed.
   ///
-  /// \param[in] req The message to be written. The library takes temporary
-  ///                ownership until OnWriteDone, at which point the application
-  ///                regains ownership of msg.
+  /// \param[in] req The message to be written. The library does not take
+  ///                ownership but the caller must ensure that the message is
+  ///                not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
-  void StartWriteLast(const Request* req, WriteOptions options) {
-    StartWrite(req, std::move(options.set_last_message()));
+  void StartWriteLast(const Request* req, ::grpc::WriteOptions options) {
+    StartWrite(req, options.set_last_message());
   }
 
   /// Indicate that the RPC will have no more write operations. This can only be
@@ -257,15 +310,22 @@ class ClientBidiReactor {
   /// StartWritesDone that indicates that there will be no more write ops.
   /// The number of RemoveHold calls must match the total number of AddHold
   /// calls plus the number of holds added by AddMultipleHolds.
+  /// The argument to AddMultipleHolds must be positive.
   void AddHold() { AddMultipleHolds(1); }
-  void AddMultipleHolds(int holds) { stream_->AddHold(holds); }
+  void AddMultipleHolds(int holds) {
+    GPR_CODEGEN_DEBUG_ASSERT(holds > 0);
+    stream_->AddHold(holds);
+  }
   void RemoveHold() { stream_->RemoveHold(); }
 
   /// Notifies the application that all operations associated with this RPC
-  /// have completed and provides the RPC status outcome.
+  /// have completed and all Holds have been removed. OnDone provides the RPC
+  /// status outcome for both successful and failed RPCs and will be called in
+  /// all cases. If it is not called, it indicates an application-level problem
+  /// (like failure to remove a hold).
   ///
   /// \param[in] s The status outcome of this RPC
-  virtual void OnDone(const Status& s) {}
+  void OnDone(const ::grpc::Status& /*s*/) override {}
 
   /// Notifies the application that a read of initial metadata from the
   /// server is done. If the application chooses not to implement this method,
@@ -273,28 +333,31 @@ class ClientBidiReactor {
   /// call of OnReadDone or OnDone.
   ///
   /// \param[in] ok Was the initial metadata read successfully? If false, no
-  ///               further read-side operation will succeed.
-  virtual void OnReadInitialMetadataDone(bool ok) {}
+  ///               new read/write operation will succeed, and any further
+  ///               Start* operations should not be called.
+  virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartRead operation completed.
   ///
-  /// \param[in] ok Was it successful? If false, no further read-side operation
-  ///               will succeed.
-  virtual void OnReadDone(bool ok) {}
+  /// \param[in] ok Was it successful? If false, no new read/write operation
+  ///               will succeed, and any further Start* should not be called.
+  virtual void OnReadDone(bool /*ok*/) {}
 
-  /// Notifies the application that a StartWrite operation completed.
+  /// Notifies the application that a StartWrite or StartWriteLast operation
+  /// completed.
   ///
-  /// \param[in] ok Was it successful? If false, no further write-side operation
-  ///               will succeed.
-  virtual void OnWriteDone(bool ok) {}
+  /// \param[in] ok Was it successful? If false, no new read/write operation
+  ///               will succeed, and any further Start* should not be called.
+  virtual void OnWriteDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWritesDone operation completed. Note
   /// that this is only used on explicit StartWritesDone operations and not for
   /// those that are implicitly invoked as part of a StartWriteLast.
   ///
   /// \param[in] ok Was it successful? If false, the application will later see
-  ///               the failure reflected as a bad status in OnDone.
-  virtual void OnWritesDoneDone(bool ok) {}
+  ///               the failure reflected as a bad status in OnDone and no
+  ///               further Start* should be called.
+  virtual void OnWritesDoneDone(bool /*ok*/) {}
 
  private:
   friend class ClientCallbackReaderWriter<Request, Response>;
@@ -307,20 +370,21 @@ class ClientBidiReactor {
 /// \a ClientReadReactor is the interface for a server-streaming RPC.
 /// All public methods behave as in ClientBidiReactor.
 template <class Response>
-class ClientReadReactor {
+class ClientReadReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientReadReactor() {}
-
   void StartCall() { reader_->StartCall(); }
   void StartRead(Response* resp) { reader_->Read(resp); }
 
   void AddHold() { AddMultipleHolds(1); }
-  void AddMultipleHolds(int holds) { reader_->AddHold(holds); }
+  void AddMultipleHolds(int holds) {
+    GPR_CODEGEN_DEBUG_ASSERT(holds > 0);
+    reader_->AddHold(holds);
+  }
   void RemoveHold() { reader_->RemoveHold(); }
 
-  virtual void OnDone(const Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
-  virtual void OnReadDone(bool ok) {}
+  void OnDone(const ::grpc::Status& /*s*/) override {}
+  virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
+  virtual void OnReadDone(bool /*ok*/) {}
 
  private:
   friend class ClientCallbackReader<Response>;
@@ -331,32 +395,36 @@ class ClientReadReactor {
 /// \a ClientWriteReactor is the interface for a client-streaming RPC.
 /// All public methods behave as in ClientBidiReactor.
 template <class Request>
-class ClientWriteReactor {
+class ClientWriteReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientWriteReactor() {}
-
   void StartCall() { writer_->StartCall(); }
-  void StartWrite(const Request* req) { StartWrite(req, WriteOptions()); }
-  void StartWrite(const Request* req, WriteOptions options) {
-    writer_->Write(req, std::move(options));
+  void StartWrite(const Request* req) {
+    StartWrite(req, ::grpc::WriteOptions());
   }
-  void StartWriteLast(const Request* req, WriteOptions options) {
-    StartWrite(req, std::move(options.set_last_message()));
+  void StartWrite(const Request* req, ::grpc::WriteOptions options) {
+    writer_->Write(req, options);
+  }
+  void StartWriteLast(const Request* req, ::grpc::WriteOptions options) {
+    StartWrite(req, options.set_last_message());
   }
   void StartWritesDone() { writer_->WritesDone(); }
 
   void AddHold() { AddMultipleHolds(1); }
-  void AddMultipleHolds(int holds) { writer_->AddHold(holds); }
+  void AddMultipleHolds(int holds) {
+    GPR_CODEGEN_DEBUG_ASSERT(holds > 0);
+    writer_->AddHold(holds);
+  }
   void RemoveHold() { writer_->RemoveHold(); }
 
-  virtual void OnDone(const Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
-  virtual void OnWriteDone(bool ok) {}
-  virtual void OnWritesDoneDone(bool ok) {}
+  void OnDone(const ::grpc::Status& /*s*/) override {}
+  virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
+  virtual void OnWriteDone(bool /*ok*/) {}
+  virtual void OnWritesDoneDone(bool /*ok*/) {}
 
  private:
   friend class ClientCallbackWriter<Request>;
   void BindWriter(ClientCallbackWriter<Request>* writer) { writer_ = writer; }
+
   ClientCallbackWriter<Request>* writer_;
 };
 
@@ -371,13 +439,11 @@ class ClientWriteReactor {
 /// call (that is part of the unary call itself) and there is no reactor object
 /// being created as a result of this call, we keep a consistent 2-phase
 /// initiation API among all the reactor flavors.
-class ClientUnaryReactor {
+class ClientUnaryReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientUnaryReactor() {}
-
   void StartCall() { call_->StartCall(); }
-  virtual void OnDone(const Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
+  void OnDone(const ::grpc::Status& /*s*/) override {}
+  virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
 
  private:
   friend class ClientCallbackUnary;
@@ -389,8 +455,6 @@ class ClientUnaryReactor {
 inline void ClientCallbackUnary::BindReactor(ClientUnaryReactor* reactor) {
   reactor->BindCall(this);
 }
-
-}  // namespace experimental
 
 namespace internal {
 
@@ -404,12 +468,11 @@ class ClientCallbackWriterFactory;
 
 template <class Request, class Response>
 class ClientCallbackReaderWriterImpl
-    : public ::grpc::experimental::ClientCallbackReaderWriter<Request,
-                                                              Response> {
+    : public ClientCallbackReaderWriter<Request, Response> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
-    assert(size == sizeof(ClientCallbackReaderWriterImpl));
+  static void operator delete(void* /*ptr*/, std::size_t size) {
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackReaderWriterImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -417,95 +480,59 @@ class ClientCallbackReaderWriterImpl
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
-  void MaybeFinish() {
-    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
-                         1, std::memory_order_acq_rel) == 1)) {
-      Status s = std::move(finish_status_);
-      auto* reactor = reactor_;
-      auto* call = call_.call();
-      this->~ClientCallbackReaderWriterImpl();
-      g_core_codegen_interface->grpc_call_unref(call);
-      reactor->OnDone(s);
-    }
-  }
-
-  void StartCall() override {
+  void StartCall() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any read backlog
     // 3. Any write backlog
-    // 4. Recv trailing metadata, on_completion callback
-    started_ = true;
-
-    start_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnReadInitialMetadataDone(ok);
-                     MaybeFinish();
-                   },
-                   &start_ops_);
+    // 4. Recv trailing metadata (unless corked)
     if (!start_corked_) {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
     }
-    start_ops_.RecvInitialMetadata(context_);
-    start_ops_.set_core_cq_tag(&start_tag_);
+
     call_.PerformOps(&start_ops_);
 
-    // Also set up the read and write tags so that they don't have to be set up
-    // each time
-    write_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnWriteDone(ok);
-                     MaybeFinish();
-                   },
-                   &write_ops_);
-    write_ops_.set_core_cq_tag(&write_tag_);
+    {
+      grpc::internal::MutexLock lock(&start_mu_);
 
-    read_tag_.Set(call_.call(),
-                  [this](bool ok) {
-                    reactor_->OnReadDone(ok);
-                    MaybeFinish();
-                  },
-                  &read_ops_);
-    read_ops_.set_core_cq_tag(&read_tag_);
-    if (read_ops_at_start_) {
-      call_.PerformOps(&read_ops_);
+      if (backlog_.read_ops) {
+        call_.PerformOps(&read_ops_);
+      }
+      if (backlog_.write_ops) {
+        call_.PerformOps(&write_ops_);
+      }
+      if (backlog_.writes_done_ops) {
+        call_.PerformOps(&writes_done_ops_);
+      }
+      call_.PerformOps(&finish_ops_);
+      // The last thing in this critical section is to set started_ so that it
+      // can be used lock-free as well.
+      started_.store(true, std::memory_order_release);
     }
-
-    if (write_ops_at_start_) {
-      call_.PerformOps(&write_ops_);
-    }
-
-    if (writes_done_ops_at_start_) {
-      call_.PerformOps(&writes_done_ops_);
-    }
-
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
-                    &finish_ops_);
-    finish_ops_.ClientRecvStatus(context_, &finish_status_);
-    finish_ops_.set_core_cq_tag(&finish_tag_);
-    call_.PerformOps(&finish_ops_);
+    // MaybeFinish outside the lock to make sure that destruction of this object
+    // doesn't take place while holding the lock (which would cause the lock to
+    // be released after destruction)
+    this->MaybeFinish(/*from_reaction=*/false);
   }
 
   void Read(Response* msg) override {
     read_ops_.RecvMessage(msg);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-    if (started_) {
-      call_.PerformOps(&read_ops_);
-    } else {
-      read_ops_at_start_ = true;
+    if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+      grpc::internal::MutexLock lock(&start_mu_);
+      if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+        backlog_.read_ops = true;
+        return;
+      }
     }
+    call_.PerformOps(&read_ops_);
   }
 
-  void Write(const Request* msg, WriteOptions options) override {
-    if (start_corked_) {
-      write_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
-                                     context_->initial_metadata_flags());
-      start_corked_ = false;
-    }
-
+  void Write(const Request* msg, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(start_mu_) override {
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
@@ -513,93 +540,183 @@ class ClientCallbackReaderWriterImpl
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-    if (started_) {
-      call_.PerformOps(&write_ops_);
-    } else {
-      write_ops_at_start_ = true;
+    if (GPR_UNLIKELY(corked_write_needed_)) {
+      write_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
+                                     context_->initial_metadata_flags());
+      corked_write_needed_ = false;
     }
+
+    if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+      grpc::internal::MutexLock lock(&start_mu_);
+      if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+        backlog_.write_ops = true;
+        return;
+      }
+    }
+    call_.PerformOps(&write_ops_);
   }
-  void WritesDone() override {
-    if (start_corked_) {
-      writes_done_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
-                                           context_->initial_metadata_flags());
-      start_corked_ = false;
-    }
+  void WritesDone() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     writes_done_ops_.ClientSendClose();
-    writes_done_tag_.Set(call_.call(),
-                         [this](bool ok) {
-                           reactor_->OnWritesDoneDone(ok);
-                           MaybeFinish();
-                         },
-                         &writes_done_ops_);
+    writes_done_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnWritesDoneDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &writes_done_ops_, /*can_inline=*/false);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-    if (started_) {
-      call_.PerformOps(&writes_done_ops_);
-    } else {
-      writes_done_ops_at_start_ = true;
+    if (GPR_UNLIKELY(corked_write_needed_)) {
+      writes_done_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
+                                           context_->initial_metadata_flags());
+      corked_write_needed_ = false;
     }
+    if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+      grpc::internal::MutexLock lock(&start_mu_);
+      if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+        backlog_.writes_done_ops = true;
+        return;
+      }
+    }
+    call_.PerformOps(&writes_done_ops_);
   }
 
   void AddHold(int holds) override {
     callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
   }
-  void RemoveHold() override { MaybeFinish(); }
+  void RemoveHold() override { MaybeFinish(/*from_reaction=*/false); }
 
  private:
   friend class ClientCallbackReaderWriterFactory<Request, Response>;
 
-  ClientCallbackReaderWriterImpl(
-      Call call, ::grpc_impl::ClientContext* context,
-      ::grpc::experimental::ClientBidiReactor<Request, Response>* reactor)
+  ClientCallbackReaderWriterImpl(grpc::internal::Call call,
+                                 ::grpc::ClientContext* context,
+                                 ClientBidiReactor<Request, Response>* reactor)
       : context_(context),
         call_(call),
         reactor_(reactor),
-        start_corked_(context_->initial_metadata_corked_) {
+        start_corked_(context_->initial_metadata_corked_),
+        corked_write_needed_(start_corked_) {
     this->BindReactor(reactor);
+
+    // Set up the unchanging parts of the start, read, and write tags and ops.
+    start_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadInitialMetadataDone(
+              ok && !reactor_->InternalTrailersOnly(call_.call()));
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &start_ops_, /*can_inline=*/false);
+    start_ops_.RecvInitialMetadata(context_);
+    start_ops_.set_core_cq_tag(&start_tag_);
+
+    write_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnWriteDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &write_ops_, /*can_inline=*/false);
+    write_ops_.set_core_cq_tag(&write_tag_);
+
+    read_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &read_ops_, /*can_inline=*/false);
+    read_ops_.set_core_cq_tag(&read_tag_);
+
+    // Also set up the Finish tag and op set.
+    finish_tag_.Set(
+        call_.call(),
+        [this](bool /*ok*/) { MaybeFinish(/*from_reaction=*/true); },
+        &finish_ops_,
+        /*can_inline=*/false);
+    finish_ops_.ClientRecvStatus(context_, &finish_status_);
+    finish_ops_.set_core_cq_tag(&finish_tag_);
   }
 
-  ::grpc_impl::ClientContext* const context_;
-  Call call_;
-  ::grpc::experimental::ClientBidiReactor<Request, Response>* const reactor_;
+  // MaybeFinish can be called from reactions or from user-initiated operations
+  // like StartCall or RemoveHold. If this is the last operation or hold on this
+  // object, it will invoke the OnDone reaction. If MaybeFinish was called from
+  // a reaction, it can call OnDone directly. If not, it would need to schedule
+  // OnDone onto an executor thread to avoid the possibility of deadlocking with
+  // any locks in the user code that invoked it.
+  void MaybeFinish(bool from_reaction) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
+      ::grpc::Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
+      auto* call = call_.call();
+      this->~ClientCallbackReaderWriterImpl();
+      ::grpc::g_core_codegen_interface->grpc_call_unref(call);
+      if (GPR_LIKELY(from_reaction)) {
+        reactor->OnDone(s);
+      } else {
+        reactor->InternalScheduleOnDone(std::move(s));
+      }
+    }
+  }
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpRecvInitialMetadata> start_ops_;
-  CallbackWithSuccessTag start_tag_;
-  bool start_corked_;
+  ::grpc::ClientContext* const context_;
+  grpc::internal::Call call_;
+  ClientBidiReactor<Request, Response>* const reactor_;
 
-  CallOpSet<CallOpClientRecvStatus> finish_ops_;
-  CallbackWithSuccessTag finish_tag_;
-  Status finish_status_;
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpRecvInitialMetadata>
+      start_ops_;
+  grpc::internal::CallbackWithSuccessTag start_tag_;
+  const bool start_corked_;
+  bool corked_write_needed_;  // no lock needed since only accessed in
+                              // Write/WritesDone which cannot be concurrent
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose>
+  grpc::internal::CallOpSet<grpc::internal::CallOpClientRecvStatus> finish_ops_;
+  grpc::internal::CallbackWithSuccessTag finish_tag_;
+  ::grpc::Status finish_status_;
+
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpClientSendClose>
       write_ops_;
-  CallbackWithSuccessTag write_tag_;
-  bool write_ops_at_start_{false};
+  grpc::internal::CallbackWithSuccessTag write_tag_;
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpClientSendClose> writes_done_ops_;
-  CallbackWithSuccessTag writes_done_tag_;
-  bool writes_done_ops_at_start_{false};
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpClientSendClose>
+      writes_done_ops_;
+  grpc::internal::CallbackWithSuccessTag writes_done_tag_;
 
-  CallOpSet<CallOpRecvMessage<Response>> read_ops_;
-  CallbackWithSuccessTag read_tag_;
-  bool read_ops_at_start_{false};
+  grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<Response>>
+      read_ops_;
+  grpc::internal::CallbackWithSuccessTag read_tag_;
 
-  // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic<intptr_t> callbacks_outstanding_{2};
-  bool started_{false};
+  struct StartCallBacklog {
+    bool write_ops = false;
+    bool writes_done_ops = false;
+    bool read_ops = false;
+  };
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
+
+  // Minimum of 3 callbacks to pre-register for start ops, StartCall, and finish
+  std::atomic<intptr_t> callbacks_outstanding_{3};
+  std::atomic_bool started_{false};
+  grpc::internal::Mutex start_mu_;
 };
 
 template <class Request, class Response>
 class ClientCallbackReaderWriterFactory {
  public:
-  static void Create(
-      ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context,
-      ::grpc::experimental::ClientBidiReactor<Request, Response>* reactor) {
-    Call call = channel->CreateCall(method, context, channel->CallbackCQ());
+  static void Create(::grpc::ChannelInterface* channel,
+                     const ::grpc::internal::RpcMethod& method,
+                     ::grpc::ClientContext* context,
+                     ClientBidiReactor<Request, Response>* reactor) {
+    grpc::internal::Call call =
+        channel->CreateCall(method, context, channel->CallbackCQ());
 
-    g_core_codegen_interface->grpc_call_ref(call.call());
-    new (g_core_codegen_interface->grpc_call_arena_alloc(
+    ::grpc::g_core_codegen_interface->grpc_call_ref(call.call());
+    new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackReaderWriterImpl<Request, Response>)))
         ClientCallbackReaderWriterImpl<Request, Response>(call, context,
                                                           reactor);
@@ -607,12 +724,11 @@ class ClientCallbackReaderWriterFactory {
 };
 
 template <class Response>
-class ClientCallbackReaderImpl
-    : public ::grpc::experimental::ClientCallbackReader<Response> {
+class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
-    assert(size == sizeof(ClientCallbackReaderImpl));
+  static void operator delete(void* /*ptr*/, std::size_t size) {
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackReaderImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -620,33 +736,22 @@ class ClientCallbackReaderImpl
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
-
-  void MaybeFinish() {
-    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
-                         1, std::memory_order_acq_rel) == 1)) {
-      Status s = std::move(finish_status_);
-      auto* reactor = reactor_;
-      auto* call = call_.call();
-      this->~ClientCallbackReaderImpl();
-      g_core_codegen_interface->grpc_call_unref(call);
-      reactor->OnDone(s);
-    }
-  }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   void StartCall() override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any backlog
-    // 3. Recv trailing metadata, on_completion callback
-    started_ = true;
+    // 3. Recv trailing metadata
 
-    start_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnReadInitialMetadataDone(ok);
-                     MaybeFinish();
-                   },
-                   &start_ops_);
+    start_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadInitialMetadataDone(
+              ok && !reactor_->InternalTrailersOnly(call_.call()));
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &start_ops_, /*can_inline=*/false);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
@@ -654,19 +759,27 @@ class ClientCallbackReaderImpl
     call_.PerformOps(&start_ops_);
 
     // Also set up the read tag so it doesn't have to be set up each time
-    read_tag_.Set(call_.call(),
-                  [this](bool ok) {
-                    reactor_->OnReadDone(ok);
-                    MaybeFinish();
-                  },
-                  &read_ops_);
+    read_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &read_ops_, /*can_inline=*/false);
     read_ops_.set_core_cq_tag(&read_tag_);
-    if (read_ops_at_start_) {
-      call_.PerformOps(&read_ops_);
+
+    {
+      grpc::internal::MutexLock lock(&start_mu_);
+      if (backlog_.read_ops) {
+        call_.PerformOps(&read_ops_);
+      }
+      started_.store(true, std::memory_order_release);
     }
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
-                    &finish_ops_);
+    finish_tag_.Set(
+        call_.call(),
+        [this](bool /*ok*/) { MaybeFinish(/*from_reaction=*/true); },
+        &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -675,25 +788,28 @@ class ClientCallbackReaderImpl
   void Read(Response* msg) override {
     read_ops_.RecvMessage(msg);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-    if (started_) {
-      call_.PerformOps(&read_ops_);
-    } else {
-      read_ops_at_start_ = true;
+    if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+      grpc::internal::MutexLock lock(&start_mu_);
+      if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+        backlog_.read_ops = true;
+        return;
+      }
     }
+    call_.PerformOps(&read_ops_);
   }
 
   void AddHold(int holds) override {
     callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
   }
-  void RemoveHold() override { MaybeFinish(); }
+  void RemoveHold() override { MaybeFinish(/*from_reaction=*/false); }
 
  private:
   friend class ClientCallbackReaderFactory<Response>;
 
   template <class Request>
-  ClientCallbackReaderImpl(
-      Call call, ::grpc_impl::ClientContext* context, Request* request,
-      ::grpc::experimental::ClientReadReactor<Response>* reactor)
+  ClientCallbackReaderImpl(::grpc::internal::Call call,
+                           ::grpc::ClientContext* context, Request* request,
+                           ClientReadReactor<Response>* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
@@ -701,52 +817,77 @@ class ClientCallbackReaderImpl
     start_ops_.ClientSendClose();
   }
 
-  ::grpc_impl::ClientContext* const context_;
-  Call call_;
-  ::grpc::experimental::ClientReadReactor<Response>* const reactor_;
+  // MaybeFinish behaves as in ClientCallbackReaderWriterImpl.
+  void MaybeFinish(bool from_reaction) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
+      ::grpc::Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
+      auto* call = call_.call();
+      this->~ClientCallbackReaderImpl();
+      ::grpc::g_core_codegen_interface->grpc_call_unref(call);
+      if (GPR_LIKELY(from_reaction)) {
+        reactor->OnDone(s);
+      } else {
+        reactor->InternalScheduleOnDone(std::move(s));
+      }
+    }
+  }
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose,
-            CallOpRecvInitialMetadata>
+  ::grpc::ClientContext* const context_;
+  grpc::internal::Call call_;
+  ClientReadReactor<Response>* const reactor_;
+
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpClientSendClose,
+                            grpc::internal::CallOpRecvInitialMetadata>
       start_ops_;
-  CallbackWithSuccessTag start_tag_;
+  grpc::internal::CallbackWithSuccessTag start_tag_;
 
-  CallOpSet<CallOpClientRecvStatus> finish_ops_;
-  CallbackWithSuccessTag finish_tag_;
-  Status finish_status_;
+  grpc::internal::CallOpSet<grpc::internal::CallOpClientRecvStatus> finish_ops_;
+  grpc::internal::CallbackWithSuccessTag finish_tag_;
+  ::grpc::Status finish_status_;
 
-  CallOpSet<CallOpRecvMessage<Response>> read_ops_;
-  CallbackWithSuccessTag read_tag_;
-  bool read_ops_at_start_{false};
+  grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<Response>>
+      read_ops_;
+  grpc::internal::CallbackWithSuccessTag read_tag_;
+
+  struct StartCallBacklog {
+    bool read_ops = false;
+  };
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
 
   // Minimum of 2 callbacks to pre-register for start and finish
   std::atomic<intptr_t> callbacks_outstanding_{2};
-  bool started_{false};
+  std::atomic_bool started_{false};
+  grpc::internal::Mutex start_mu_;
 };
 
 template <class Response>
 class ClientCallbackReaderFactory {
  public:
   template <class Request>
-  static void Create(
-      ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context, const Request* request,
-      ::grpc::experimental::ClientReadReactor<Response>* reactor) {
-    Call call = channel->CreateCall(method, context, channel->CallbackCQ());
+  static void Create(::grpc::ChannelInterface* channel,
+                     const ::grpc::internal::RpcMethod& method,
+                     ::grpc::ClientContext* context, const Request* request,
+                     ClientReadReactor<Response>* reactor) {
+    grpc::internal::Call call =
+        channel->CreateCall(method, context, channel->CallbackCQ());
 
-    g_core_codegen_interface->grpc_call_ref(call.call());
-    new (g_core_codegen_interface->grpc_call_arena_alloc(
+    ::grpc::g_core_codegen_interface->grpc_call_ref(call.call());
+    new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackReaderImpl<Response>)))
         ClientCallbackReaderImpl<Response>(call, context, request, reactor);
   }
 };
 
 template <class Request>
-class ClientCallbackWriterImpl
-    : public ::grpc::experimental::ClientCallbackWriter<Request> {
+class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
-    assert(size == sizeof(ClientCallbackWriterImpl));
+  static void operator delete(void* /*ptr*/, std::size_t size) {
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackWriterImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -754,178 +895,227 @@ class ClientCallbackWriterImpl
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
-  void MaybeFinish() {
-    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
-                         1, std::memory_order_acq_rel) == 1)) {
-      Status s = std::move(finish_status_);
-      auto* reactor = reactor_;
-      auto* call = call_.call();
-      this->~ClientCallbackWriterImpl();
-      g_core_codegen_interface->grpc_call_unref(call);
-      reactor->OnDone(s);
-    }
-  }
-
-  void StartCall() override {
+  void StartCall() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any backlog
-    // 3. Recv trailing metadata, on_completion callback
-    started_ = true;
+    // 3. Recv trailing metadata
 
-    start_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnReadInitialMetadataDone(ok);
-                     MaybeFinish();
-                   },
-                   &start_ops_);
     if (!start_corked_) {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
     }
-    start_ops_.RecvInitialMetadata(context_);
-    start_ops_.set_core_cq_tag(&start_tag_);
     call_.PerformOps(&start_ops_);
 
-    // Also set up the read and write tags so that they don't have to be set up
-    // each time
-    write_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnWriteDone(ok);
-                     MaybeFinish();
-                   },
-                   &write_ops_);
-    write_ops_.set_core_cq_tag(&write_tag_);
+    {
+      grpc::internal::MutexLock lock(&start_mu_);
 
-    if (write_ops_at_start_) {
-      call_.PerformOps(&write_ops_);
+      if (backlog_.write_ops) {
+        call_.PerformOps(&write_ops_);
+      }
+      if (backlog_.writes_done_ops) {
+        call_.PerformOps(&writes_done_ops_);
+      }
+      call_.PerformOps(&finish_ops_);
+      // The last thing in this critical section is to set started_ so that it
+      // can be used lock-free as well.
+      started_.store(true, std::memory_order_release);
     }
-
-    if (writes_done_ops_at_start_) {
-      call_.PerformOps(&writes_done_ops_);
-    }
-
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
-                    &finish_ops_);
-    finish_ops_.ClientRecvStatus(context_, &finish_status_);
-    finish_ops_.set_core_cq_tag(&finish_tag_);
-    call_.PerformOps(&finish_ops_);
+    // MaybeFinish outside the lock to make sure that destruction of this object
+    // doesn't take place while holding the lock (which would cause the lock to
+    // be released after destruction)
+    this->MaybeFinish(/*from_reaction=*/false);
   }
 
-  void Write(const Request* msg, WriteOptions options) override {
-    if (start_corked_) {
-      write_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
-                                     context_->initial_metadata_flags());
-      start_corked_ = false;
-    }
-
-    if (options.is_last_message()) {
+  void Write(const Request* msg, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(start_mu_) override {
+    if (GPR_UNLIKELY(options.is_last_message())) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
     // TODO(vjpai): don't assert
     GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-    if (started_) {
-      call_.PerformOps(&write_ops_);
-    } else {
-      write_ops_at_start_ = true;
+
+    if (GPR_UNLIKELY(corked_write_needed_)) {
+      write_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
+                                     context_->initial_metadata_flags());
+      corked_write_needed_ = false;
     }
+
+    if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+      grpc::internal::MutexLock lock(&start_mu_);
+      if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+        backlog_.write_ops = true;
+        return;
+      }
+    }
+    call_.PerformOps(&write_ops_);
   }
-  void WritesDone() override {
-    if (start_corked_) {
-      writes_done_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
-                                           context_->initial_metadata_flags());
-      start_corked_ = false;
-    }
+
+  void WritesDone() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     writes_done_ops_.ClientSendClose();
-    writes_done_tag_.Set(call_.call(),
-                         [this](bool ok) {
-                           reactor_->OnWritesDoneDone(ok);
-                           MaybeFinish();
-                         },
-                         &writes_done_ops_);
+    writes_done_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnWritesDoneDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &writes_done_ops_, /*can_inline=*/false);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
-    if (started_) {
-      call_.PerformOps(&writes_done_ops_);
-    } else {
-      writes_done_ops_at_start_ = true;
+
+    if (GPR_UNLIKELY(corked_write_needed_)) {
+      writes_done_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
+                                           context_->initial_metadata_flags());
+      corked_write_needed_ = false;
     }
+
+    if (GPR_UNLIKELY(!started_.load(std::memory_order_acquire))) {
+      grpc::internal::MutexLock lock(&start_mu_);
+      if (GPR_LIKELY(!started_.load(std::memory_order_relaxed))) {
+        backlog_.writes_done_ops = true;
+        return;
+      }
+    }
+    call_.PerformOps(&writes_done_ops_);
   }
 
   void AddHold(int holds) override {
     callbacks_outstanding_.fetch_add(holds, std::memory_order_relaxed);
   }
-  void RemoveHold() override { MaybeFinish(); }
+  void RemoveHold() override { MaybeFinish(/*from_reaction=*/false); }
 
  private:
   friend class ClientCallbackWriterFactory<Request>;
 
   template <class Response>
-  ClientCallbackWriterImpl(
-      Call call, ::grpc_impl::ClientContext* context, Response* response,
-      ::grpc::experimental::ClientWriteReactor<Request>* reactor)
+  ClientCallbackWriterImpl(::grpc::internal::Call call,
+                           ::grpc::ClientContext* context, Response* response,
+                           ClientWriteReactor<Request>* reactor)
       : context_(context),
         call_(call),
         reactor_(reactor),
-        start_corked_(context_->initial_metadata_corked_) {
+        start_corked_(context_->initial_metadata_corked_),
+        corked_write_needed_(start_corked_) {
     this->BindReactor(reactor);
+
+    // Set up the unchanging parts of the start and write tags and ops.
+    start_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadInitialMetadataDone(
+              ok && !reactor_->InternalTrailersOnly(call_.call()));
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &start_ops_, /*can_inline=*/false);
+    start_ops_.RecvInitialMetadata(context_);
+    start_ops_.set_core_cq_tag(&start_tag_);
+
+    write_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnWriteDone(ok);
+          MaybeFinish(/*from_reaction=*/true);
+        },
+        &write_ops_, /*can_inline=*/false);
+    write_ops_.set_core_cq_tag(&write_tag_);
+
+    // Also set up the Finish tag and op set.
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
+    finish_tag_.Set(
+        call_.call(),
+        [this](bool /*ok*/) { MaybeFinish(/*from_reaction=*/true); },
+        &finish_ops_,
+        /*can_inline=*/false);
+    finish_ops_.ClientRecvStatus(context_, &finish_status_);
+    finish_ops_.set_core_cq_tag(&finish_tag_);
   }
 
-  ::grpc_impl::ClientContext* const context_;
-  Call call_;
-  ::grpc::experimental::ClientWriteReactor<Request>* const reactor_;
+  // MaybeFinish behaves as in ClientCallbackReaderWriterImpl.
+  void MaybeFinish(bool from_reaction) {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
+      ::grpc::Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
+      auto* call = call_.call();
+      this->~ClientCallbackWriterImpl();
+      ::grpc::g_core_codegen_interface->grpc_call_unref(call);
+      if (GPR_LIKELY(from_reaction)) {
+        reactor->OnDone(s);
+      } else {
+        reactor->InternalScheduleOnDone(std::move(s));
+      }
+    }
+  }
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpRecvInitialMetadata> start_ops_;
-  CallbackWithSuccessTag start_tag_;
-  bool start_corked_;
+  ::grpc::ClientContext* const context_;
+  grpc::internal::Call call_;
+  ClientWriteReactor<Request>* const reactor_;
 
-  CallOpSet<CallOpGenericRecvMessage, CallOpClientRecvStatus> finish_ops_;
-  CallbackWithSuccessTag finish_tag_;
-  Status finish_status_;
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpRecvInitialMetadata>
+      start_ops_;
+  grpc::internal::CallbackWithSuccessTag start_tag_;
+  const bool start_corked_;
+  bool corked_write_needed_;  // no lock needed since only accessed in
+                              // Write/WritesDone which cannot be concurrent
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose>
+  grpc::internal::CallOpSet<grpc::internal::CallOpGenericRecvMessage,
+                            grpc::internal::CallOpClientRecvStatus>
+      finish_ops_;
+  grpc::internal::CallbackWithSuccessTag finish_tag_;
+  ::grpc::Status finish_status_;
+
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpClientSendClose>
       write_ops_;
-  CallbackWithSuccessTag write_tag_;
-  bool write_ops_at_start_{false};
+  grpc::internal::CallbackWithSuccessTag write_tag_;
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpClientSendClose> writes_done_ops_;
-  CallbackWithSuccessTag writes_done_tag_;
-  bool writes_done_ops_at_start_{false};
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpClientSendClose>
+      writes_done_ops_;
+  grpc::internal::CallbackWithSuccessTag writes_done_tag_;
 
-  // Minimum of 2 callbacks to pre-register for start and finish
-  std::atomic<intptr_t> callbacks_outstanding_{2};
-  bool started_{false};
+  struct StartCallBacklog {
+    bool write_ops = false;
+    bool writes_done_ops = false;
+  };
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
+
+  // Minimum of 3 callbacks to pre-register for start ops, StartCall, and finish
+  std::atomic<intptr_t> callbacks_outstanding_{3};
+  std::atomic_bool started_{false};
+  grpc::internal::Mutex start_mu_;
 };
 
 template <class Request>
 class ClientCallbackWriterFactory {
  public:
   template <class Response>
-  static void Create(
-      ChannelInterface* channel, const ::grpc::internal::RpcMethod& method,
-      ::grpc_impl::ClientContext* context, Response* response,
-      ::grpc::experimental::ClientWriteReactor<Request>* reactor) {
-    Call call = channel->CreateCall(method, context, channel->CallbackCQ());
+  static void Create(::grpc::ChannelInterface* channel,
+                     const ::grpc::internal::RpcMethod& method,
+                     ::grpc::ClientContext* context, Response* response,
+                     ClientWriteReactor<Request>* reactor) {
+    grpc::internal::Call call =
+        channel->CreateCall(method, context, channel->CallbackCQ());
 
-    g_core_codegen_interface->grpc_call_ref(call.call());
-    new (g_core_codegen_interface->grpc_call_arena_alloc(
+    ::grpc::g_core_codegen_interface->grpc_call_ref(call.call());
+    new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackWriterImpl<Request>)))
         ClientCallbackWriterImpl<Request>(call, context, response, reactor);
   }
 };
 
-class ClientCallbackUnaryImpl final
-    : public ::grpc::experimental::ClientCallbackUnary {
+class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
-    assert(size == sizeof(ClientCallbackUnaryImpl));
+  static void operator delete(void* /*ptr*/, std::size_t size) {
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackUnaryImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -933,52 +1123,42 @@ class ClientCallbackUnaryImpl final
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   void StartCall() override {
     // This call initiates two batches, each with a callback
     // 1. Send initial metadata + write + writes done + recv initial metadata
     // 2. Read message, recv trailing metadata
-    started_ = true;
 
-    start_tag_.Set(call_.call(),
-                   [this](bool ok) {
-                     reactor_->OnReadInitialMetadataDone(ok);
-                     MaybeFinish();
-                   },
-                   &start_ops_);
+    start_tag_.Set(
+        call_.call(),
+        [this](bool ok) {
+          reactor_->OnReadInitialMetadataDone(
+              ok && !reactor_->InternalTrailersOnly(call_.call()));
+          MaybeFinish();
+        },
+        &start_ops_, /*can_inline=*/false);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
     start_ops_.set_core_cq_tag(&start_tag_);
     call_.PerformOps(&start_ops_);
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
-                    &finish_ops_);
+    finish_tag_.Set(
+        call_.call(), [this](bool /*ok*/) { MaybeFinish(); }, &finish_ops_,
+        /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
-  }
-
-  void MaybeFinish() {
-    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
-                         1, std::memory_order_acq_rel) == 1)) {
-      Status s = std::move(finish_status_);
-      auto* reactor = reactor_;
-      auto* call = call_.call();
-      this->~ClientCallbackUnaryImpl();
-      g_core_codegen_interface->grpc_call_unref(call);
-      reactor->OnDone(s);
-    }
   }
 
  private:
   friend class ClientCallbackUnaryFactory;
 
   template <class Request, class Response>
-  ClientCallbackUnaryImpl(Call call, ::grpc_impl::ClientContext* context,
-                          Request* request, Response* response,
-                          ::grpc::experimental::ClientUnaryReactor* reactor)
+  ClientCallbackUnaryImpl(::grpc::internal::Call call,
+                          ::grpc::ClientContext* context, Request* request,
+                          Response* response, ClientUnaryReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
@@ -988,43 +1168,63 @@ class ClientCallbackUnaryImpl final
     finish_ops_.AllowNoMessage();
   }
 
-  ::grpc_impl::ClientContext* const context_;
-  Call call_;
-  ::grpc::experimental::ClientUnaryReactor* const reactor_;
+  // In the unary case, MaybeFinish is only ever invoked from a
+  // library-initiated reaction, so it will just directly call OnDone if this is
+  // the last reaction for this RPC.
+  void MaybeFinish() {
+    if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
+                         1, std::memory_order_acq_rel) == 1)) {
+      ::grpc::Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
+      auto* call = call_.call();
+      this->~ClientCallbackUnaryImpl();
+      ::grpc::g_core_codegen_interface->grpc_call_unref(call);
+      reactor->OnDone(s);
+    }
+  }
 
-  CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage, CallOpClientSendClose,
-            CallOpRecvInitialMetadata>
+  ::grpc::ClientContext* const context_;
+  grpc::internal::Call call_;
+  ClientUnaryReactor* const reactor_;
+
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpClientSendClose,
+                            grpc::internal::CallOpRecvInitialMetadata>
       start_ops_;
-  CallbackWithSuccessTag start_tag_;
+  grpc::internal::CallbackWithSuccessTag start_tag_;
 
-  CallOpSet<CallOpGenericRecvMessage, CallOpClientRecvStatus> finish_ops_;
-  CallbackWithSuccessTag finish_tag_;
-  Status finish_status_;
+  grpc::internal::CallOpSet<grpc::internal::CallOpGenericRecvMessage,
+                            grpc::internal::CallOpClientRecvStatus>
+      finish_ops_;
+  grpc::internal::CallbackWithSuccessTag finish_tag_;
+  ::grpc::Status finish_status_;
 
   // This call will have 2 callbacks: start and finish
   std::atomic<intptr_t> callbacks_outstanding_{2};
-  bool started_{false};
 };
 
 class ClientCallbackUnaryFactory {
  public:
-  template <class Request, class Response>
-  static void Create(ChannelInterface* channel,
+  template <class Request, class Response, class BaseRequest = Request,
+            class BaseResponse = Response>
+  static void Create(::grpc::ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
-                     ::grpc_impl::ClientContext* context,
-                     const Request* request, Response* response,
-                     ::grpc::experimental::ClientUnaryReactor* reactor) {
-    Call call = channel->CreateCall(method, context, channel->CallbackCQ());
+                     ::grpc::ClientContext* context, const Request* request,
+                     Response* response, ClientUnaryReactor* reactor) {
+    grpc::internal::Call call =
+        channel->CreateCall(method, context, channel->CallbackCQ());
 
-    g_core_codegen_interface->grpc_call_ref(call.call());
+    ::grpc::g_core_codegen_interface->grpc_call_ref(call.call());
 
-    new (g_core_codegen_interface->grpc_call_arena_alloc(
+    new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientCallbackUnaryImpl)))
-        ClientCallbackUnaryImpl(call, context, request, response, reactor);
+        ClientCallbackUnaryImpl(call, context,
+                                static_cast<const BaseRequest*>(request),
+                                static_cast<BaseResponse*>(response), reactor);
   }
 };
 
 }  // namespace internal
 }  // namespace grpc
-
 #endif  // GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H

@@ -24,7 +24,7 @@ var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('lodash');
-var grpc = require('grpc');
+var grpc = require('@grpc/grpc-js');
 
 var client = new services.RouteGuideClient('localhost:50051',
                                            grpc.credentials.createInsecure());

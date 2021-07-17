@@ -24,6 +24,9 @@
 #include <grpc/support/alloc.h>
 
 namespace grpc {
+
+namespace {
+
 grpc::protobuf::util::Status ParseJson(const char* json_str,
                                        grpc::protobuf::Message* message) {
   grpc::protobuf::json::JsonParseOptions options;
@@ -31,8 +34,11 @@ grpc::protobuf::util::Status ParseJson(const char* json_str,
   return grpc::protobuf::json::JsonStringToMessage(json_str, message, options);
 }
 
+}  // namespace
+
 Status ChannelzService::GetTopChannels(
-    ServerContext* unused, const channelz::v1::GetTopChannelsRequest* request,
+    ServerContext* /*unused*/,
+    const channelz::v1::GetTopChannelsRequest* request,
     channelz::v1::GetTopChannelsResponse* response) {
   char* json_str = grpc_channelz_get_top_channels(request->start_channel_id());
   if (json_str == nullptr) {
@@ -48,7 +54,7 @@ Status ChannelzService::GetTopChannels(
 }
 
 Status ChannelzService::GetServers(
-    ServerContext* unused, const channelz::v1::GetServersRequest* request,
+    ServerContext* /*unused*/, const channelz::v1::GetServersRequest* request,
     channelz::v1::GetServersResponse* response) {
   char* json_str = grpc_channelz_get_servers(request->start_server_id());
   if (json_str == nullptr) {
@@ -63,7 +69,7 @@ Status ChannelzService::GetServers(
   return Status::OK;
 }
 
-Status ChannelzService::GetServer(ServerContext* unused,
+Status ChannelzService::GetServer(ServerContext* /*unused*/,
                                   const channelz::v1::GetServerRequest* request,
                                   channelz::v1::GetServerResponse* response) {
   char* json_str = grpc_channelz_get_server(request->server_id());
@@ -80,7 +86,8 @@ Status ChannelzService::GetServer(ServerContext* unused,
 }
 
 Status ChannelzService::GetServerSockets(
-    ServerContext* unused, const channelz::v1::GetServerSocketsRequest* request,
+    ServerContext* /*unused*/,
+    const channelz::v1::GetServerSocketsRequest* request,
     channelz::v1::GetServerSocketsResponse* response) {
   char* json_str = grpc_channelz_get_server_sockets(
       request->server_id(), request->start_socket_id(), request->max_results());
@@ -97,7 +104,7 @@ Status ChannelzService::GetServerSockets(
 }
 
 Status ChannelzService::GetChannel(
-    ServerContext* unused, const channelz::v1::GetChannelRequest* request,
+    ServerContext* /*unused*/, const channelz::v1::GetChannelRequest* request,
     channelz::v1::GetChannelResponse* response) {
   char* json_str = grpc_channelz_get_channel(request->channel_id());
   if (json_str == nullptr) {
@@ -112,7 +119,8 @@ Status ChannelzService::GetChannel(
 }
 
 Status ChannelzService::GetSubchannel(
-    ServerContext* unused, const channelz::v1::GetSubchannelRequest* request,
+    ServerContext* /*unused*/,
+    const channelz::v1::GetSubchannelRequest* request,
     channelz::v1::GetSubchannelResponse* response) {
   char* json_str = grpc_channelz_get_subchannel(request->subchannel_id());
   if (json_str == nullptr) {
@@ -127,7 +135,7 @@ Status ChannelzService::GetSubchannel(
   return Status::OK;
 }
 
-Status ChannelzService::GetSocket(ServerContext* unused,
+Status ChannelzService::GetSocket(ServerContext* /*unused*/,
                                   const channelz::v1::GetSocketRequest* request,
                                   channelz::v1::GetSocketResponse* response) {
   char* json_str = grpc_channelz_get_socket(request->socket_id());

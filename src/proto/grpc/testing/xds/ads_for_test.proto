@@ -1,0 +1,51 @@
+// Copyright 2019 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file contains the eds protocol and its dependency.
+//
+// TODO(juanlishen): This file is a hack to avoid a problem we're
+// currently having where we can't depend on a proto file in an external
+// repo due to bazel limitations.  Once that's fixed, this should be
+// removed.  Until this, it should be used in the gRPC tests only, or else it
+// will cause a conflict due to the same proto messages being defined in
+// multiple files in the same binary.
+
+syntax = "proto3";
+
+package envoy.service.discovery.v2;
+
+import "src/proto/grpc/testing/xds/eds_for_test.proto";
+
+// [#not-implemented-hide:] Discovery services for endpoints, clusters, routes,
+// and listeners are retained in the package `envoy.api.v2` for backwards
+// compatibility with existing management servers. New development in discovery
+// services should proceed in the package `envoy.service.discovery.v2`.
+
+// See https://github.com/lyft/envoy-api#apis for a description of the role of
+// ADS and how it is intended to be used by a management server. ADS requests
+// have the same structure as their singleton xDS counterparts, but can
+// multiplex many resource types on a single stream. The type_url in the
+// DiscoveryRequest/DiscoveryResponse provides sufficient information to recover
+// the multiplexed singleton APIs at the Envoy instance and management server.
+service AggregatedDiscoveryService {
+  // This is a gRPC-only API.
+  rpc StreamAggregatedResources(stream envoy.api.v2.DiscoveryRequest)
+      returns (stream envoy.api.v2.DiscoveryResponse) {
+  }
+
+  // Commented out so that we don't have to copy the request/response protos.
+//  rpc DeltaAggregatedResources(stream api.v2.DeltaDiscoveryRequest)
+//      returns (stream api.v2.DeltaDiscoveryResponse) {
+//  }
+}

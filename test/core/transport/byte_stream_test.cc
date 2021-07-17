@@ -37,7 +37,9 @@ namespace {
 // SliceBufferByteStream tests
 //
 
-void NotCalledClosure(void* arg, grpc_error* error) { GPR_ASSERT(false); }
+void NotCalledClosure(void* /*arg*/, grpc_error_handle /*error*/) {
+  GPR_ASSERT(false);
+}
 
 TEST(SliceBufferByteStream, Basic) {
   grpc_core::ExecCtx exec_ctx;
@@ -62,7 +64,7 @@ TEST(SliceBufferByteStream, Basic) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
     ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
     grpc_slice output;
-    grpc_error* error = stream.Pull(&output);
+    grpc_error_handle error = stream.Pull(&output);
     EXPECT_TRUE(error == GRPC_ERROR_NONE);
     EXPECT_TRUE(grpc_slice_eq(input[i], output));
     grpc_slice_unref_internal(output);
@@ -93,12 +95,12 @@ TEST(SliceBufferByteStream, Shutdown) {
   // Read the first slice.
   ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error* error = stream.Pull(&output);
+  grpc_error_handle error = stream.Pull(&output);
   EXPECT_TRUE(error == GRPC_ERROR_NONE);
   EXPECT_TRUE(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(output);
   // Now shutdown.
-  grpc_error* shutdown_error =
+  grpc_error_handle shutdown_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown error");
   stream.Shutdown(GRPC_ERROR_REF(shutdown_error));
   // After shutdown, the next pull() should return the error.
@@ -140,7 +142,7 @@ TEST(CachingByteStream, Basic) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
     ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
     grpc_slice output;
-    grpc_error* error = stream.Pull(&output);
+    grpc_error_handle error = stream.Pull(&output);
     EXPECT_TRUE(error == GRPC_ERROR_NONE);
     EXPECT_TRUE(grpc_slice_eq(input[i], output));
     grpc_slice_unref_internal(output);
@@ -173,7 +175,7 @@ TEST(CachingByteStream, Reset) {
   // Read one slice.
   ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error* error = stream.Pull(&output);
+  grpc_error_handle error = stream.Pull(&output);
   EXPECT_TRUE(error == GRPC_ERROR_NONE);
   EXPECT_TRUE(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(output);
@@ -216,7 +218,7 @@ TEST(CachingByteStream, SharedCache) {
   // Read one slice from stream1.
   EXPECT_TRUE(stream1.Next(~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error* error = stream1.Pull(&output);
+  grpc_error_handle error = stream1.Pull(&output);
   EXPECT_TRUE(error == GRPC_ERROR_NONE);
   EXPECT_TRUE(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(output);
@@ -244,9 +246,9 @@ TEST(CachingByteStream, SharedCache) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   int retval = RUN_ALL_TESTS();
   grpc_shutdown();
   return retval;

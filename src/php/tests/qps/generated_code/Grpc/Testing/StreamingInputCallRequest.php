@@ -20,7 +20,7 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
      */
-    private $payload = null;
+    protected $payload = null;
     /**
      * Whether the server should expect this request to be compressed. This field
      * is "nullable" in order to interoperate seamlessly with servers not able to
@@ -29,11 +29,26 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue expect_compressed = 2;</code>
      */
-    private $expect_compressed = null;
+    protected $expect_compressed = null;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type \Grpc\Testing\Payload $payload
+     *           Optional input payload sent along with the request.
+     *     @type \Grpc\Testing\BoolValue $expect_compressed
+     *           Whether the server should expect this request to be compressed. This field
+     *           is "nullable" in order to interoperate seamlessly with servers not able to
+     *           implement the full compression tests by introspecting the call to verify
+     *           the request's compression status.
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Messages::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

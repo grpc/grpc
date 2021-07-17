@@ -56,16 +56,18 @@ static void maybe_append_error_msg(const char* appendix, char** dst) {
 
 /* Use little endian to interpret a string of bytes as uint32_t.  */
 static uint32_t load_32_le(const unsigned char* buffer) {
-  return (((uint32_t)buffer[3]) << 24) | (((uint32_t)buffer[2]) << 16) |
-         (((uint32_t)buffer[1]) << 8) | ((uint32_t)buffer[0]);
+  return (static_cast<uint32_t>(buffer[3]) << 24) |
+         (static_cast<uint32_t>(buffer[2]) << 16) |
+         (static_cast<uint32_t>(buffer[1]) << 8) |
+         static_cast<uint32_t>(buffer[0]);
 }
 
 /* Store uint32_t as a string of little endian bytes.  */
 static void store_32_le(uint32_t value, unsigned char* buffer) {
-  buffer[3] = (unsigned char)(value >> 24) & 0xFF;
-  buffer[2] = (unsigned char)(value >> 16) & 0xFF;
-  buffer[1] = (unsigned char)(value >> 8) & 0xFF;
-  buffer[0] = (unsigned char)(value)&0xFF;
+  buffer[3] = static_cast<unsigned char>(value >> 24) & 0xFF;
+  buffer[2] = static_cast<unsigned char>(value >> 16) & 0xFF;
+  buffer[1] = static_cast<unsigned char>(value >> 8) & 0xFF;
+  buffer[0] = static_cast<unsigned char>(value) & 0xFF;
 }
 
 /* Ensures header and tag iovec have sufficient length.  */

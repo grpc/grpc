@@ -25,7 +25,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
@@ -36,7 +36,7 @@ namespace testing {
 
 class BenchmarkServiceImpl final : public BenchmarkService::Service {
  public:
-  Status UnaryCall(ServerContext* context, const SimpleRequest* request,
+  Status UnaryCall(ServerContext* /*context*/, const SimpleRequest* request,
                    SimpleResponse* response) override {
     auto s = SetResponse(request, response);
     if (!s.ok()) {
@@ -45,7 +45,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     return Status::OK;
   }
   Status StreamingCall(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) override {
     SimpleRequest request;
     while (stream->Read(&request)) {
@@ -99,8 +99,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
         return done.load(std::memory_order_relaxed);
       });
     });
-    SimpleResponse dummy;
-    auto cp = ClientPull(context, stream, &dummy);
+    SimpleResponse phony;
+    auto cp = ClientPull(context, stream, &phony);
     done.store(true, std::memory_order_relaxed);  // can be lazy
     t.join();
     if (!cp.ok()) {
@@ -114,7 +114,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
 
  private:
   template <class R>
-  static Status ClientPull(ServerContext* context, R* stream,
+  static Status ClientPull(ServerContext* /*context*/, R* stream,
                            SimpleResponse* response) {
     SimpleRequest request;
     while (stream->Read(&request)) {
@@ -128,7 +128,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     return Status::OK;
   }
   template <class W>
-  static Status ServerPush(ServerContext* context, W* stream,
+  static Status ServerPush(ServerContext* /*context*/, W* stream,
                            const SimpleResponse& response,
                            const std::function<bool()>& done) {
     while ((done == nullptr) || !done()) {
@@ -160,11 +160,10 @@ class SynchronousServer final : public grpc::testing::Server {
     auto port_num = port();
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
-      char* server_address = nullptr;
-      gpr_join_host_port(&server_address, "::", port_num);
-      builder->AddListeningPort(server_address,
-                                Server::CreateServerCredentials(config));
-      gpr_free(server_address);
+      std::string server_address = grpc_core::JoinHostPort("::", port_num);
+      builder->AddListeningPort(server_address.c_str(),
+                                Server::CreateServerCredentials(config),
+                                &port_num);
     }
 
     ApplyConfigToBuilder(config, builder.get());
@@ -172,6 +171,11 @@ class SynchronousServer final : public grpc::testing::Server {
     builder->RegisterService(&service_);
 
     impl_ = builder->BuildAndStart();
+    if (impl_ == nullptr) {
+      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+    } else {
+      gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
+    }
   }
 
   std::shared_ptr<Channel> InProcessChannel(

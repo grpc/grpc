@@ -16,8 +16,6 @@
 
 #endregion
 
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
-
 using Grpc.Core.Utils;
 using System;
 using System.Threading;
@@ -103,46 +101,6 @@ namespace Grpc.Core.Internal
             {
                 Next = next;
             }        
-        }
-
-        // Allow creating instances of Memory<byte> from Slice.
-        // Represents a chunk of native memory, but doesn't manage its lifetime.
-        // Instances of this class are reuseable - they can be reset to point to a different memory chunk.
-        // That is important to make the instances cacheable (rather then creating new instances
-        // the old ones will be reused to reduce GC pressure).
-        private class SliceMemoryManager : MemoryManager<byte>
-        {
-            private Slice slice;
-
-            public void Reset(Slice slice)
-            {
-                this.slice = slice;
-            }
-
-            public void Reset()
-            {
-                Reset(new Slice(IntPtr.Zero, 0));
-            }
-
-            public override Span<byte> GetSpan()
-            {
-                return slice.ToSpanUnsafe();
-            }
-
-            public override MemoryHandle Pin(int elementIndex = 0)
-            {
-                throw new NotSupportedException();
-            }
-
-            public override void Unpin()
-            {
-            }
-
-            protected override void Dispose(bool disposing)
-            {
-                // NOP
-            }
-        }
+        }     
     }
 }
-#endif

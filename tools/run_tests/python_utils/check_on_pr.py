@@ -55,7 +55,7 @@ def _access_token():
                 url='https://api.github.com/app/installations/%s/access_tokens'
                 % _INSTALLATION_ID,
                 headers={
-                    'Authorization': 'Bearer %s' % _jwt_token().decode('ASCII'),
+                    'Authorization': 'Bearer %s' % _jwt_token(),
                     'Accept': 'application/vnd.github.machine-man-preview+json',
                 })
 
@@ -65,8 +65,8 @@ def _access_token():
                     'exp': time.time() + 60
                 }
                 break
-            except (KeyError, ValueError) as e:
-                traceback.print_exc(e)
+            except (KeyError, ValueError):
+                traceback.print_exc()
                 print('HTTP Status %d %s' % (resp.status_code, resp.reason))
                 print("Fetch access token from Github API failed:")
                 print(resp.text)
@@ -92,9 +92,9 @@ def _call(url, method='GET', json=None):
 
 
 def _latest_commit():
-    resp = _call('/repos/%s/pulls/%s/commits' %
-                 (_GITHUB_REPO,
-                  os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']))
+    resp = _call(
+        '/repos/%s/pulls/%s/commits' %
+        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']))
     return resp.json()[-1]
 
 
@@ -123,19 +123,18 @@ def check_on_pr(name, summary, success=True):
         return
     completion_time = str(
         datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + 'Z'
-    resp = _call(
-        '/repos/%s/check-runs' % _GITHUB_REPO,
-        method='POST',
-        json={
-            'name': name,
-            'head_sha': os.environ['KOKORO_GIT_COMMIT'],
-            'status': 'completed',
-            'completed_at': completion_time,
-            'conclusion': 'success' if success else 'failure',
-            'output': {
-                'title': name,
-                'summary': summary,
-            }
-        })
+    resp = _call('/repos/%s/check-runs' % _GITHUB_REPO,
+                 method='POST',
+                 json={
+                     'name': name,
+                     'head_sha': os.environ['KOKORO_GIT_COMMIT'],
+                     'status': 'completed',
+                     'completed_at': completion_time,
+                     'conclusion': 'success' if success else 'failure',
+                     'output': {
+                         'title': name,
+                         'summary': summary,
+                     }
+                 })
     print('Result of Creating/Updating Check on PR:',
           json.dumps(resp.json(), indent=2))

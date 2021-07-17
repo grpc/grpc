@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
 
 #include "src/cpp/server/load_reporter/constants.h"
 
@@ -80,33 +81,33 @@ inline ::opencensus::stats::MeasureDouble MeasureOtherCallMetric() {
 
 // Tags.
 
-inline ::opencensus::stats::TagKey TagKeyToken() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyToken);
+inline ::opencensus::tags::TagKey TagKeyToken() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyToken);
   return token;
 }
 
-inline ::opencensus::stats::TagKey TagKeyHost() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyHost);
+inline ::opencensus::tags::TagKey TagKeyHost() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyHost);
   return token;
 }
 
-inline ::opencensus::stats::TagKey TagKeyUserId() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyUserId);
+inline ::opencensus::tags::TagKey TagKeyUserId() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyUserId);
   return token;
 }
 
-inline ::opencensus::stats::TagKey TagKeyStatus() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyStatus);
+inline ::opencensus::tags::TagKey TagKeyStatus() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyStatus);
   return token;
 }
 
-inline ::opencensus::stats::TagKey TagKeyMetricName() {
-  static const ::opencensus::stats::TagKey token =
-      opencensus::stats::TagKey::Register(kTagKeyMetricName);
+inline ::opencensus::tags::TagKey TagKeyMetricName() {
+  static const ::opencensus::tags::TagKey token =
+      opencensus::tags::TagKey::Register(kTagKeyMetricName);
   return token;
 }
 

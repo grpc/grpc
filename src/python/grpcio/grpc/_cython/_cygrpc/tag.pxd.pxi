@@ -29,7 +29,6 @@ cdef class _RequestCallTag(_Tag):
 
   cdef readonly object _user_tag
   cdef Call call
-  cdef _VTable _vtable
   cdef CallDetails call_details
   cdef grpc_metadata_array c_invocation_metadata
 

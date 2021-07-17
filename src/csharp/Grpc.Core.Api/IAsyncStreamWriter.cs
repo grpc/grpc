@@ -1,4 +1,4 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
 
 // Copyright 2015 gRPC authors.
 //
@@ -28,12 +28,12 @@ namespace Grpc.Core
     /// A writable stream of messages.
     /// </summary>
     /// <typeparam name="T">The message type.</typeparam>
-    public interface IAsyncStreamWriter<T>
+    public interface IAsyncStreamWriter<in T>
     {
         /// <summary>
-        /// Writes a single asynchronously. Only one write can be pending at a time.
+        /// Writes a message asynchronously. Only one write can be pending at a time.
         /// </summary>
-        /// <param name="message">the message to be written. Cannot be null.</param>
+        /// <param name="message">The message to be written. Cannot be null.</param>
         Task WriteAsync(T message);
 
         /// <summary>

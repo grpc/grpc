@@ -59,16 +59,15 @@ def create_jobspec(name,
                    timeout_retries=0,
                    cpu_cost=1.0):
     """Creates jobspec."""
-    jobspec = jobset.JobSpec(
-        cmdline=cmdline,
-        environ=environ,
-        cwd=cwd,
-        shortname='build_package.%s' % (name),
-        timeout_seconds=10 * 60,
-        flake_retries=flake_retries,
-        timeout_retries=timeout_retries,
-        cpu_cost=cpu_cost,
-        shell=shell)
+    jobspec = jobset.JobSpec(cmdline=cmdline,
+                             environ=environ,
+                             cwd=cwd,
+                             shortname='build_package.%s' % (name),
+                             timeout_seconds=10 * 60,
+                             flake_retries=flake_retries,
+                             timeout_retries=timeout_retries,
+                             cpu_cost=cpu_cost,
+                             shell=shell)
     return jobspec
 
 
@@ -77,12 +76,12 @@ class CSharpPackage:
 
     def __init__(self, unity=False):
         self.unity = unity
-        self.labels = ['package', 'csharp', 'windows']
+        self.labels = ['package', 'csharp', 'linux']
         if unity:
-            self.name = 'csharp_package_unity_windows'
+            self.name = 'csharp_package_unity_linux'
             self.labels += ['unity']
         else:
-            self.name = 'csharp_package_nuget_windows'
+            self.name = 'csharp_package_nuget_linux'
             self.labels += ['nuget']
 
     def pre_build_jobspecs(self):
@@ -90,18 +89,13 @@ class CSharpPackage:
 
     def build_jobspec(self):
         if self.unity:
-            # use very high CPU cost to avoid running nuget package build
-            # and unity build concurrently
-            return create_jobspec(
-                self.name, ['build_unitypackage.bat'],
-                cwd='src\\csharp',
-                cpu_cost=1e6,
-                shell=True)
+            return create_docker_jobspec(
+                self.name, 'tools/dockerfile/test/csharp_buster_x64',
+                'src/csharp/build_unitypackage.sh')
         else:
-            return create_jobspec(
-                self.name, ['build_packages_dotnetcli.bat'],
-                cwd='src\\csharp',
-                shell=True)
+            return create_docker_jobspec(
+                self.name, 'tools/dockerfile/test/csharp_buster_x64',
+                'src/csharp/build_nuget.sh')
 
     def __str__(self):
         return self.name
@@ -119,7 +113,7 @@ class RubyPackage:
 
     def build_jobspec(self):
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_linux_x64',
+            self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_ruby.sh')
 
 
@@ -134,9 +128,14 @@ class PythonPackage:
         return []
 
     def build_jobspec(self):
+        # since the python package build does very little, we can use virtually
+        # any image that has new-enough python, so reusing one of the images used
+        # for artifact building seems natural.
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_linux_x64',
-            'tools/run_tests/artifacts/build_package_python.sh')
+            self.name,
+            'tools/dockerfile/grpc_artifact_python_manylinux2014_x64',
+            'tools/run_tests/artifacts/build_package_python.sh',
+            environ={'PYTHON': '/opt/python/cp39-cp39/bin/python'})
 
 
 class PHPPackage:
@@ -151,7 +150,7 @@ class PHPPackage:
 
     def build_jobspec(self):
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_linux_x64',
+            self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_php.sh')
 
 

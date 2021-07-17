@@ -100,7 +100,7 @@ There are other possible sample timelines. For example, for client-side streamin
      through an `AsyncNotifyWhenDone` API in C++
 1. Client: send\_initial\_metadata, recv\_message, recv\_trailing\_metadata
    - At API-level, that's a client invoking a client-side streaming call. The
-     send\_initial\_metadata is the call invocation, the recv\_message colects
+     send\_initial\_metadata is the call invocation, the recv\_message collects
      the final response from the server, and the recv\_trailing\_metadata gets
      the `grpc::Status` value that will be returned from the call
 1. Client: send\_message / Server: recv\_message

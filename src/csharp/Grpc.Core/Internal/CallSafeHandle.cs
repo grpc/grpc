@@ -21,6 +21,7 @@ using System.Text;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Core.Profiling;
+using System.Buffers;
 
 namespace Grpc.Core.Internal
 {
@@ -32,7 +33,7 @@ namespace Grpc.Core.Internal
         public static readonly CallSafeHandle NullInstance = new CallSafeHandle();
         static readonly NativeMethods Native = NativeMethods.Get();
 
-        // Completion handlers are pre-allocated to avoid unneccessary delegate allocations.
+        // Completion handlers are pre-allocated to avoid unnecessary delegate allocations.
         // The "state" field is used to store the actual callback to invoke.
         static readonly BatchCompletionDelegate CompletionHandler_IUnaryResponseClientCallback =
             (success, context, state) => ((IUnaryResponseClientCallback)state).OnUnaryResponseClient(success, context.GetReceivedStatusOnClient(), context.GetReceivedMessageReader(), context.GetReceivedInitialMetadata());
@@ -66,19 +67,19 @@ namespace Grpc.Core.Internal
             Native.grpcsharp_call_set_credentials(this, credentials).CheckOk();
         }
 
-        public void StartUnary(IUnaryResponseClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartUnary(IUnaryResponseClientCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_IUnaryResponseClientCallback, callback);
-                Native.grpcsharp_call_start_unary(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, metadataArray, callFlags)
+                Native.grpcsharp_call_start_unary(this, ctx, payload, writeFlags, metadataArray, callFlags)
                     .CheckOk();
             }
         }
 
-        public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartUnary(BatchContextSafeHandle ctx, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            Native.grpcsharp_call_start_unary(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, metadataArray, callFlags)
+            Native.grpcsharp_call_start_unary(this, ctx, payload, writeFlags, metadataArray, callFlags)
                 .CheckOk();
         }
 
@@ -91,12 +92,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void StartServerStreaming(IReceivedStatusOnClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartServerStreaming(IReceivedStatusOnClientCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_IReceivedStatusOnClientCallback, callback);
-                Native.grpcsharp_call_start_server_streaming(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, metadataArray, callFlags).CheckOk();
+                Native.grpcsharp_call_start_server_streaming(this, ctx, payload, writeFlags, metadataArray, callFlags).CheckOk();
             }
         }
 
@@ -109,12 +110,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void StartSendMessage(ISendCompletionCallback callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
+        public void StartSendMessage(ISendCompletionCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_ISendCompletionCallback, callback);
-                Native.grpcsharp_call_send_message(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, sendEmptyInitialMetadata ? 1 : 0).CheckOk();
+                Native.grpcsharp_call_send_message(this, ctx, payload, writeFlags, sendEmptyInitialMetadata ? 1 : 0).CheckOk();
             }
         }
 
@@ -128,15 +129,53 @@ namespace Grpc.Core.Internal
         }
 
         public void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
-            byte[] optionalPayload, WriteFlags writeFlags)
+            SliceBufferSafeHandle optionalPayload, WriteFlags writeFlags)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_ISendStatusFromServerCompletionCallback, callback);
-                var optionalPayloadLength = optionalPayload != null ? new UIntPtr((ulong)optionalPayload.Length) : UIntPtr.Zero;
-                var statusDetailBytes = MarshalUtils.GetBytesUTF8(status.Detail);
-                Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, statusDetailBytes, new UIntPtr((ulong)statusDetailBytes.Length), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
-                    optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
+                
+                const int MaxStackAllocBytes = 256;
+                int maxBytes = MarshalUtils.GetMaxByteCountUTF8(status.Detail);
+                if (maxBytes > MaxStackAllocBytes)
+                {
+                    // pay the extra to get the *actual* size; this could mean that
+                    // it ends up fitting on the stack after all, but even if not
+                    // it will mean that we ask for a *much* smaller buffer
+                    maxBytes = MarshalUtils.GetByteCountUTF8(status.Detail);
+                }
+
+                unsafe
+                {
+                    if (maxBytes <= MaxStackAllocBytes)
+                    {   // for small status, we can encode on the stack without touching arrays
+                        // note: if init-locals is disabled, it would be more efficient
+                        // to just stackalloc[MaxStackAllocBytes]; but by default, since we
+                        // expect this to be small and it needs to wipe, just use maxBytes
+                        byte* ptr = stackalloc byte[maxBytes];
+                        int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
+                        Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, new IntPtr(ptr), new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
+                            optionalPayload, writeFlags).CheckOk();
+                    }
+                    else
+                    {   // for larger status (rare), rent a buffer from the pool and
+                        // use that for encoding
+                        var statusBuffer = ArrayPool<byte>.Shared.Rent(maxBytes);
+                        try
+                        {
+                            fixed (byte* ptr = statusBuffer)
+                            {
+                                int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
+                                Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, new IntPtr(ptr), new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
+                                  optionalPayload, writeFlags).CheckOk();
+                            }
+                        }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(statusBuffer);
+                        }
+                    }
+                }
             }
         }
 

@@ -20,21 +20,19 @@ import subprocess
 
 parser = argparse.ArgumentParser(
     description='Submit the package to a PyPI repository.')
-parser.add_argument(
-    '--repository',
-    '-r',
-    metavar='r',
-    type=str,
-    default='pypi',
-    help='The repository to push the package to. '
-    'Ensure the value appears in your .pypirc file. '
-    'Defaults to "pypi".')
-parser.add_argument(
-    '--identity',
-    '-i',
-    metavar='i',
-    type=str,
-    help='GPG identity to sign the files with.')
+parser.add_argument('--repository',
+                    '-r',
+                    metavar='r',
+                    type=str,
+                    default='pypi',
+                    help='The repository to push the package to. '
+                    'Ensure the value appears in your .pypirc file. '
+                    'Defaults to "pypi".')
+parser.add_argument('--identity',
+                    '-i',
+                    metavar='i',
+                    type=str,
+                    help='GPG identity to sign the files with.')
 parser.add_argument(
     '--username',
     '-u',

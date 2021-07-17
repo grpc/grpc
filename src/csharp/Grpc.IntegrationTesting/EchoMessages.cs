@@ -28,7 +28,7 @@ namespace Grpc.Testing {
             "DGdycGMudGVzdGluZyIyCglEZWJ1Z0luZm8SFQoNc3RhY2tfZW50cmllcxgB",
             "IAMoCRIOCgZkZXRhaWwYAiABKAkiUAoLRXJyb3JTdGF0dXMSDAoEY29kZRgB",
             "IAEoBRIVCg1lcnJvcl9tZXNzYWdlGAIgASgJEhwKFGJpbmFyeV9lcnJvcl9k",
-            "ZXRhaWxzGAMgASgJIqAECg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
+            "ZXRhaWxzGAMgASgJIssECg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
             "bmUYASABKAgSHgoWY2xpZW50X2NhbmNlbF9hZnRlcl91cxgCIAEoBRIeChZz",
             "ZXJ2ZXJfY2FuY2VsX2FmdGVyX3VzGAMgASgFEhUKDWVjaG9fbWV0YWRhdGEY",
             "BCABKAgSGgoSY2hlY2tfYXV0aF9jb250ZXh0GAUgASgIEh8KF3Jlc3BvbnNl",
@@ -40,21 +40,22 @@ namespace Grpc.Testing {
             "b3JfZGV0YWlscxgNIAEoCRIxCg5leHBlY3RlZF9lcnJvchgOIAEoCzIZLmdy",
             "cGMudGVzdGluZy5FcnJvclN0YXR1cxIXCg9zZXJ2ZXJfc2xlZXBfdXMYDyAB",
             "KAUSGwoTYmFja2VuZF9jaGFubmVsX2lkeBgQIAEoBRIfChdlY2hvX21ldGFk",
-            "YXRhX2luaXRpYWxseRgRIAEoCCJKCgtFY2hvUmVxdWVzdBIPCgdtZXNzYWdl",
-            "GAEgASgJEioKBXBhcmFtGAIgASgLMhsuZ3JwYy50ZXN0aW5nLlJlcXVlc3RQ",
-            "YXJhbXMiRgoOUmVzcG9uc2VQYXJhbXMSGAoQcmVxdWVzdF9kZWFkbGluZRgB",
-            "IAEoAxIMCgRob3N0GAIgASgJEgwKBHBlZXIYAyABKAkiTAoMRWNob1Jlc3Bv",
-            "bnNlEg8KB21lc3NhZ2UYASABKAkSKwoFcGFyYW0YAiABKAsyHC5ncnBjLnRl",
-            "c3RpbmcuUmVzcG9uc2VQYXJhbXNCA/gBAWIGcHJvdG8z"));
+            "YXRhX2luaXRpYWxseRgRIAEoCBIpCiFzZXJ2ZXJfbm90aWZ5X2NsaWVudF93",
+            "aGVuX3N0YXJ0ZWQYEiABKAgiSgoLRWNob1JlcXVlc3QSDwoHbWVzc2FnZRgB",
+            "IAEoCRIqCgVwYXJhbRgCIAEoCzIbLmdycGMudGVzdGluZy5SZXF1ZXN0UGFy",
+            "YW1zIkYKDlJlc3BvbnNlUGFyYW1zEhgKEHJlcXVlc3RfZGVhZGxpbmUYASAB",
+            "KAMSDAoEaG9zdBgCIAEoCRIMCgRwZWVyGAMgASgJIkwKDEVjaG9SZXNwb25z",
+            "ZRIPCgdtZXNzYWdlGAEgASgJEisKBXBhcmFtGAIgASgLMhwuZ3JwYy50ZXN0",
+            "aW5nLlJlc3BvbnNlUGFyYW1zQgP4AQFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx", "EchoMetadataInitially" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx", "EchoMetadataInitially", "ServerNotifyClientWhenStarted" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null, null)
           }));
     }
     #endregion
@@ -64,7 +65,11 @@ namespace Grpc.Testing {
   /// <summary>
   /// Message to be echoed back serialized in trailer.
   /// </summary>
-  public sealed partial class DebugInfo : pb::IMessage<DebugInfo> {
+  public sealed partial class DebugInfo : pb::IMessage<DebugInfo>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
     private static readonly pb::MessageParser<DebugInfo> _parser = new pb::MessageParser<DebugInfo>(() => new DebugInfo());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -156,6 +161,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
       stackEntries_.WriteTo(output, _repeated_stackEntries_codec);
       if (Detail.Length != 0) {
         output.WriteRawTag(18);
@@ -164,7 +172,22 @@ namespace Grpc.Testing {
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      stackEntries_.WriteTo(ref output, _repeated_stackEntries_codec);
+      if (Detail.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Detail);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
@@ -193,6 +216,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
@@ -209,14 +235,41 @@ namespace Grpc.Testing {
           }
         }
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            stackEntries_.AddEntriesFrom(ref input, _repeated_stackEntries_codec);
+            break;
+          }
+          case 18: {
+            Detail = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
 
   }
 
   /// <summary>
   /// Error status client expects to see.
   /// </summary>
-  public sealed partial class ErrorStatus : pb::IMessage<ErrorStatus> {
+  public sealed partial class ErrorStatus : pb::IMessage<ErrorStatus>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
     private static readonly pb::MessageParser<ErrorStatus> _parser = new pb::MessageParser<ErrorStatus>(() => new ErrorStatus());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -323,6 +376,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
       if (Code != 0) {
         output.WriteRawTag(8);
         output.WriteInt32(Code);
@@ -338,7 +394,29 @@ namespace Grpc.Testing {
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Code != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(Code);
+      }
+      if (ErrorMessage.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(ErrorMessage);
+      }
+      if (BinaryErrorDetails.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(BinaryErrorDetails);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
@@ -377,6 +455,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
@@ -397,11 +478,42 @@ namespace Grpc.Testing {
           }
         }
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Code = input.ReadInt32();
+            break;
+          }
+          case 18: {
+            ErrorMessage = input.ReadString();
+            break;
+          }
+          case 26: {
+            BinaryErrorDetails = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
 
   }
 
-  public sealed partial class RequestParams : pb::IMessage<RequestParams> {
+  public sealed partial class RequestParams : pb::IMessage<RequestParams>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
     private static readonly pb::MessageParser<RequestParams> _parser = new pb::MessageParser<RequestParams>(() => new RequestParams());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -443,6 +555,7 @@ namespace Grpc.Testing {
       serverSleepUs_ = other.serverSleepUs_;
       backendChannelIdx_ = other.backendChannelIdx_;
       echoMetadataInitially_ = other.echoMetadataInitially_;
+      serverNotifyClientWhenStarted_ = other.serverNotifyClientWhenStarted_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -615,7 +728,7 @@ namespace Grpc.Testing {
     public const int ServerSleepUsFieldNumber = 15;
     private int serverSleepUs_;
     /// <summary>
-    /// Amount to sleep when invoking server
+    /// sleep when invoking server for deadline tests
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int ServerSleepUs {
@@ -650,6 +763,17 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "server_notify_client_when_started" field.</summary>
+    public const int ServerNotifyClientWhenStartedFieldNumber = 18;
+    private bool serverNotifyClientWhenStarted_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool ServerNotifyClientWhenStarted {
+      get { return serverNotifyClientWhenStarted_; }
+      set {
+        serverNotifyClientWhenStarted_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as RequestParams);
@@ -680,6 +804,7 @@ namespace Grpc.Testing {
       if (ServerSleepUs != other.ServerSleepUs) return false;
       if (BackendChannelIdx != other.BackendChannelIdx) return false;
       if (EchoMetadataInitially != other.EchoMetadataInitially) return false;
+      if (ServerNotifyClientWhenStarted != other.ServerNotifyClientWhenStarted) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -703,6 +828,7 @@ namespace Grpc.Testing {
       if (ServerSleepUs != 0) hash ^= ServerSleepUs.GetHashCode();
       if (BackendChannelIdx != 0) hash ^= BackendChannelIdx.GetHashCode();
       if (EchoMetadataInitially != false) hash ^= EchoMetadataInitially.GetHashCode();
+      if (ServerNotifyClientWhenStarted != false) hash ^= ServerNotifyClientWhenStarted.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -716,6 +842,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
       if (EchoDeadline != false) {
         output.WriteRawTag(8);
         output.WriteBool(EchoDeadline);
@@ -784,10 +913,96 @@ namespace Grpc.Testing {
         output.WriteRawTag(136, 1);
         output.WriteBool(EchoMetadataInitially);
       }
+      if (ServerNotifyClientWhenStarted != false) {
+        output.WriteRawTag(144, 1);
+        output.WriteBool(ServerNotifyClientWhenStarted);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (EchoDeadline != false) {
+        output.WriteRawTag(8);
+        output.WriteBool(EchoDeadline);
+      }
+      if (ClientCancelAfterUs != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(ClientCancelAfterUs);
+      }
+      if (ServerCancelAfterUs != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(ServerCancelAfterUs);
+      }
+      if (EchoMetadata != false) {
+        output.WriteRawTag(32);
+        output.WriteBool(EchoMetadata);
+      }
+      if (CheckAuthContext != false) {
+        output.WriteRawTag(40);
+        output.WriteBool(CheckAuthContext);
+      }
+      if (ResponseMessageLength != 0) {
+        output.WriteRawTag(48);
+        output.WriteInt32(ResponseMessageLength);
+      }
+      if (EchoPeer != false) {
+        output.WriteRawTag(56);
+        output.WriteBool(EchoPeer);
+      }
+      if (ExpectedClientIdentity.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(ExpectedClientIdentity);
+      }
+      if (SkipCancelledCheck != false) {
+        output.WriteRawTag(72);
+        output.WriteBool(SkipCancelledCheck);
+      }
+      if (ExpectedTransportSecurityType.Length != 0) {
+        output.WriteRawTag(82);
+        output.WriteString(ExpectedTransportSecurityType);
+      }
+      if (debugInfo_ != null) {
+        output.WriteRawTag(90);
+        output.WriteMessage(DebugInfo);
+      }
+      if (ServerDie != false) {
+        output.WriteRawTag(96);
+        output.WriteBool(ServerDie);
+      }
+      if (BinaryErrorDetails.Length != 0) {
+        output.WriteRawTag(106);
+        output.WriteString(BinaryErrorDetails);
+      }
+      if (expectedError_ != null) {
+        output.WriteRawTag(114);
+        output.WriteMessage(ExpectedError);
+      }
+      if (ServerSleepUs != 0) {
+        output.WriteRawTag(120);
+        output.WriteInt32(ServerSleepUs);
+      }
+      if (BackendChannelIdx != 0) {
+        output.WriteRawTag(128, 1);
+        output.WriteInt32(BackendChannelIdx);
+      }
+      if (EchoMetadataInitially != false) {
+        output.WriteRawTag(136, 1);
+        output.WriteBool(EchoMetadataInitially);
+      }
+      if (ServerNotifyClientWhenStarted != false) {
+        output.WriteRawTag(144, 1);
+        output.WriteBool(ServerNotifyClientWhenStarted);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
@@ -841,6 +1056,9 @@ namespace Grpc.Testing {
         size += 2 + pb::CodedOutputStream.ComputeInt32Size(BackendChannelIdx);
       }
       if (EchoMetadataInitially != false) {
+        size += 2 + 1;
+      }
+      if (ServerNotifyClientWhenStarted != false) {
         size += 2 + 1;
       }
       if (_unknownFields != null) {
@@ -911,11 +1129,17 @@ namespace Grpc.Testing {
       if (other.EchoMetadataInitially != false) {
         EchoMetadataInitially = other.EchoMetadataInitially;
       }
+      if (other.ServerNotifyClientWhenStarted != false) {
+        ServerNotifyClientWhenStarted = other.ServerNotifyClientWhenStarted;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
@@ -996,13 +1220,114 @@ namespace Grpc.Testing {
             EchoMetadataInitially = input.ReadBool();
             break;
           }
+          case 144: {
+            ServerNotifyClientWhenStarted = input.ReadBool();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            EchoDeadline = input.ReadBool();
+            break;
+          }
+          case 16: {
+            ClientCancelAfterUs = input.ReadInt32();
+            break;
+          }
+          case 24: {
+            ServerCancelAfterUs = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            EchoMetadata = input.ReadBool();
+            break;
+          }
+          case 40: {
+            CheckAuthContext = input.ReadBool();
+            break;
+          }
+          case 48: {
+            ResponseMessageLength = input.ReadInt32();
+            break;
+          }
+          case 56: {
+            EchoPeer = input.ReadBool();
+            break;
+          }
+          case 66: {
+            ExpectedClientIdentity = input.ReadString();
+            break;
+          }
+          case 72: {
+            SkipCancelledCheck = input.ReadBool();
+            break;
+          }
+          case 82: {
+            ExpectedTransportSecurityType = input.ReadString();
+            break;
+          }
+          case 90: {
+            if (debugInfo_ == null) {
+              DebugInfo = new global::Grpc.Testing.DebugInfo();
+            }
+            input.ReadMessage(DebugInfo);
+            break;
+          }
+          case 96: {
+            ServerDie = input.ReadBool();
+            break;
+          }
+          case 106: {
+            BinaryErrorDetails = input.ReadString();
+            break;
+          }
+          case 114: {
+            if (expectedError_ == null) {
+              ExpectedError = new global::Grpc.Testing.ErrorStatus();
+            }
+            input.ReadMessage(ExpectedError);
+            break;
+          }
+          case 120: {
+            ServerSleepUs = input.ReadInt32();
+            break;
+          }
+          case 128: {
+            BackendChannelIdx = input.ReadInt32();
+            break;
+          }
+          case 136: {
+            EchoMetadataInitially = input.ReadBool();
+            break;
+          }
+          case 144: {
+            ServerNotifyClientWhenStarted = input.ReadBool();
+            break;
+          }
         }
       }
     }
+    #endif
 
   }
 
-  public sealed partial class EchoRequest : pb::IMessage<EchoRequest> {
+  public sealed partial class EchoRequest : pb::IMessage<EchoRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
     private static readonly pb::MessageParser<EchoRequest> _parser = new pb::MessageParser<EchoRequest>(() => new EchoRequest());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1095,6 +1420,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
       if (Message.Length != 0) {
         output.WriteRawTag(10);
         output.WriteString(Message);
@@ -1106,7 +1434,25 @@ namespace Grpc.Testing {
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Message.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Message);
+      }
+      if (param_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Param);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
@@ -1142,6 +1488,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
@@ -1161,11 +1510,41 @@ namespace Grpc.Testing {
           }
         }
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Message = input.ReadString();
+            break;
+          }
+          case 18: {
+            if (param_ == null) {
+              Param = new global::Grpc.Testing.RequestParams();
+            }
+            input.ReadMessage(Param);
+            break;
+          }
+        }
+      }
+    }
+    #endif
 
   }
 
-  public sealed partial class ResponseParams : pb::IMessage<ResponseParams> {
+  public sealed partial class ResponseParams : pb::IMessage<ResponseParams>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
     private static readonly pb::MessageParser<ResponseParams> _parser = new pb::MessageParser<ResponseParams>(() => new ResponseParams());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1272,6 +1651,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
       if (RequestDeadline != 0L) {
         output.WriteRawTag(8);
         output.WriteInt64(RequestDeadline);
@@ -1287,7 +1669,29 @@ namespace Grpc.Testing {
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (RequestDeadline != 0L) {
+        output.WriteRawTag(8);
+        output.WriteInt64(RequestDeadline);
+      }
+      if (Host.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Host);
+      }
+      if (Peer.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(Peer);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
@@ -1326,6 +1730,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
@@ -1346,11 +1753,42 @@ namespace Grpc.Testing {
           }
         }
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            RequestDeadline = input.ReadInt64();
+            break;
+          }
+          case 18: {
+            Host = input.ReadString();
+            break;
+          }
+          case 26: {
+            Peer = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
 
   }
 
-  public sealed partial class EchoResponse : pb::IMessage<EchoResponse> {
+  public sealed partial class EchoResponse : pb::IMessage<EchoResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
     private static readonly pb::MessageParser<EchoResponse> _parser = new pb::MessageParser<EchoResponse>(() => new EchoResponse());
     private pb::UnknownFieldSet _unknownFields;
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1443,6 +1881,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
       if (Message.Length != 0) {
         output.WriteRawTag(10);
         output.WriteString(Message);
@@ -1454,7 +1895,25 @@ namespace Grpc.Testing {
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Message.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Message);
+      }
+      if (param_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Param);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public int CalculateSize() {
@@ -1490,6 +1949,9 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
       uint tag;
       while ((tag = input.ReadTag()) != 0) {
         switch(tag) {
@@ -1509,7 +1971,33 @@ namespace Grpc.Testing {
           }
         }
       }
+    #endif
     }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Message = input.ReadString();
+            break;
+          }
+          case 18: {
+            if (param_ == null) {
+              Param = new global::Grpc.Testing.ResponseParams();
+            }
+            input.ReadMessage(Param);
+            break;
+          }
+        }
+      }
+    }
+    #endif
 
   }
 

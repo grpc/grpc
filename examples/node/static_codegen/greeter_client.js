@@ -19,15 +19,24 @@
 var messages = require('./helloworld_pb');
 var services = require('./helloworld_grpc_pb');
 
-var grpc = require('grpc');
+var grpc = require('@grpc/grpc-js');
 
 function main() {
-  var client = new services.GreeterClient('localhost:50051',
+  var argv = parseArgs(process.argv.slice(2), {
+    string: 'target'
+  });
+  var target;
+  if (argv.target) {
+    target = argv.target;
+  } else {
+    target = 'localhost:50051';
+  }
+  var client = new services.GreeterClient(target,
                                           grpc.credentials.createInsecure());
   var request = new messages.HelloRequest();
   var user;
-  if (process.argv.length >= 3) {
-    user = process.argv[2];
+  if (argv._.length > 0) {
+    user = argv._[0]; 
   } else {
     user = 'world';
   }

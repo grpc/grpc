@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/tsi/grpc_shadow_boringssl.h"
-
 #include <grpc/slice.h>
 
 extern "C" {
@@ -57,14 +55,12 @@ class SslCachedSession {
   SslCachedSession& operator=(const SslCachedSession&) = delete;
 
   /// Create single cached instance of \a session.
-  static grpc_core::UniquePtr<SslCachedSession> Create(SslSessionPtr session);
+  static std::unique_ptr<SslCachedSession> Create(SslSessionPtr session);
 
   virtual ~SslCachedSession() = default;
 
   /// Returns a copy of previously cached session.
-  virtual SslSessionPtr CopySession() const GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual SslSessionPtr CopySession() const = 0;
 
  protected:
   SslCachedSession() = default;

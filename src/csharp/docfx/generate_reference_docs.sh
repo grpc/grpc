@@ -20,9 +20,9 @@ cd $(dirname $0)
 # cleanup temporary files
 rm -rf html obj grpc-gh-pages
 
-# generate into src/csharp/doc/html directory
+# generate into src/csharp/docfx/html directory
 cd ..
-docker run --rm -v "$(pwd)":/work -w /work/doc --user "$(id -u):$(id -g)" -it tsgkadot/docker-docfx:latest docfx
+docker run --rm -v "$(pwd)":/work -w /work/docfx --user "$(id -u):$(id -g)" -it tsgkadot/docker-docfx:latest docfx
 cd docfx
 
 # prepare a clone of "gh-pages" branch where the generated docs are stored

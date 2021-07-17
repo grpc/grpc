@@ -41,18 +41,22 @@ tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code) {
   }
 }
 
-grpc_gcp_handshaker_resp* alts_tsi_utils_deserialize_response(
-    grpc_byte_buffer* resp_buffer) {
+grpc_gcp_HandshakerResp* alts_tsi_utils_deserialize_response(
+    grpc_byte_buffer* resp_buffer, upb_arena* arena) {
   GPR_ASSERT(resp_buffer != nullptr);
+  GPR_ASSERT(arena != nullptr);
   grpc_byte_buffer_reader bbr;
   grpc_byte_buffer_reader_init(&bbr, resp_buffer);
   grpc_slice slice = grpc_byte_buffer_reader_readall(&bbr);
-  grpc_gcp_handshaker_resp* resp = grpc_gcp_handshaker_resp_create();
-  bool ok = grpc_gcp_handshaker_resp_decode(slice, resp);
+  size_t buf_size = GPR_SLICE_LENGTH(slice);
+  void* buf = upb_arena_malloc(arena, buf_size);
+  memcpy(buf, reinterpret_cast<const char*>(GPR_SLICE_START_PTR(slice)),
+         buf_size);
+  grpc_gcp_HandshakerResp* resp = grpc_gcp_HandshakerResp_parse(
+      reinterpret_cast<char*>(buf), buf_size, arena);
   grpc_slice_unref_internal(slice);
   grpc_byte_buffer_reader_destroy(&bbr);
-  if (!ok) {
-    grpc_gcp_handshaker_resp_destroy(resp);
+  if (resp == nullptr) {
     gpr_log(GPR_ERROR, "grpc_gcp_handshaker_resp_decode() failed");
     return nullptr;
   }

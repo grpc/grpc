@@ -16,11 +16,14 @@
  *
  */
 
-#import "GRPCCall.h"
+#import "GRPCCallLegacy.h"
 
-#import "GRPCCallOptions.h"
+@protocol GRPCAuthorizationProtocol;
 
-// Deprecated interface. Please use GRPCCallOptions instead.
+/**
+ * The interface is deprecated. Please use GRPCCallOptions instead for
+ * corresponding configurations.
+ */
 @interface GRPCCall (OAuth2)
 
 @property(atomic, copy) NSString* oauth2AccessToken;

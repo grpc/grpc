@@ -26,14 +26,14 @@ module Grpc
     module ReportQpsScenarioService
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
         self.service_name = 'grpc.testing.ReportQpsScenarioService'
 
         # Report results of a QPS test benchmark scenario.
-        rpc :ReportScenario, ScenarioResult, Void
+        rpc :ReportScenario, ::Grpc::Testing::ScenarioResult, ::Grpc::Testing::Void
       end
 
       Stub = Service.rpc_stub_class

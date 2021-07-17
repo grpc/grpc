@@ -1,0 +1,4 @@
+# Install buildifier v0.29.0
+RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier
+RUN chmod +x buildifier
+RUN mv buildifier /usr/local/bin

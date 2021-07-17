@@ -142,7 +142,8 @@ class _ChildProcess(object):
                              self._process.exitcode)
         try:
             exception = self._exceptions.get(block=False)
-            raise ValueError('Child process failed: %s' % exception)
+            raise ValueError('Child process failed: "%s": "%s"' %
+                             (repr(exception), exception))
         except queue.Empty:
             pass
 
@@ -298,8 +299,8 @@ def _ping_pong_with_child_processes_after_first_response(
                                            request_payload_sizes):
         request = messages_pb2.StreamingOutputCallRequest(
             response_type=messages_pb2.COMPRESSABLE,
-            response_parameters=(
-                messages_pb2.ResponseParameters(size=response_size),),
+            response_parameters=(messages_pb2.ResponseParameters(
+                size=response_size),),
             payload=messages_pb2.Payload(body=b'\x00' * payload_size))
         pipe.add(request)
         if first_message_received:
@@ -338,8 +339,8 @@ def _in_progress_bidi_continue_call(channel):
         inherited_code = parent_bidi_call.code()
         inherited_details = parent_bidi_call.details()
         if inherited_code != grpc.StatusCode.CANCELLED:
-            raise ValueError(
-                'Expected inherited code CANCELLED, got %s' % inherited_code)
+            raise ValueError('Expected inherited code CANCELLED, got %s' %
+                             inherited_code)
         if inherited_details != 'Channel closed due to fork':
             raise ValueError(
                 'Expected inherited details Channel closed due to fork, got %s'
@@ -347,8 +348,10 @@ def _in_progress_bidi_continue_call(channel):
 
     # Don't run child_target after closing the parent call, as the call may have
     # received a status from the  server before fork occurs.
-    _ping_pong_with_child_processes_after_first_response(
-        channel, None, child_target, run_after_close=False)
+    _ping_pong_with_child_processes_after_first_response(channel,
+                                                         None,
+                                                         child_target,
+                                                         run_after_close=False)
 
 
 def _in_progress_bidi_same_channel_async_call(channel):
@@ -444,6 +447,6 @@ class TestCase(enum.Enum):
         elif self is TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL:
             _in_progress_bidi_new_channel_blocking_call(channel, args)
         else:
-            raise NotImplementedError(
-                'Test case "%s" not implemented!' % self.name)
+            raise NotImplementedError('Test case "%s" not implemented!' %
+                                      self.name)
         channel.close()

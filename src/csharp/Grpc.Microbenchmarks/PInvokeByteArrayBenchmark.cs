@@ -1,4 +1,4 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
 
 // Copyright 2015 gRPC authors.
 //
@@ -16,49 +16,39 @@
 
 #endregion
 
-using System;
 using System.Runtime.InteropServices;
-using System.Threading;
-using Grpc.Core;
+using BenchmarkDotNet.Attributes;
 using Grpc.Core.Internal;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace Grpc.Microbenchmarks
 {
-    public class PInvokeByteArrayBenchmark
+    public class PInvokeByteArrayBenchmark : CommonThreadedBase
     {
         static readonly NativeMethods Native = NativeMethods.Get();
 
-        public void Init()
+        protected override bool NeedsEnvironment => false;
+
+
+        [Params(0)]
+        public int PayloadSize { get; set; }
+
+        const int Iterations = 5 * 1000 * 1000;  // High number to make the overhead of RunConcurrent negligible.
+        [Benchmark(OperationsPerInvoke = Iterations)]
+        public void AllocFree()
         {
+            RunConcurrent(RunBody);
         }
 
-        public void Cleanup()
+        private void RunBody()
         {
-        }
-
-        public void Run(int threadCount, int iterations, int payloadSize)
-        {
-            Console.WriteLine(string.Format("PInvokeByteArrayBenchmark: threads={0}, iterations={1}, payloadSize={2}", threadCount, iterations, payloadSize));
-            var threadedBenchmark = new ThreadedBenchmark(threadCount, () => ThreadBody(iterations, payloadSize));
-            threadedBenchmark.Run();
-        }
-
-        private void ThreadBody(int iterations, int payloadSize)
-        {
-            var payload = new byte[payloadSize];
-         
-            var stopwatch = Stopwatch.StartNew();
-            for (int i = 0; i < iterations; i++)
+            var payload = new byte[PayloadSize];
+            for (int i = 0; i < Iterations; i++)
             {
                 var gcHandle = GCHandle.Alloc(payload, GCHandleType.Pinned);
                 var payloadPtr = gcHandle.AddrOfPinnedObject();
                 Native.grpcsharp_test_nop(payloadPtr);
                 gcHandle.Free();
             }
-            stopwatch.Stop();
-            Console.WriteLine("Elapsed millis: " + stopwatch.ElapsedMilliseconds);
         }
     }
 }

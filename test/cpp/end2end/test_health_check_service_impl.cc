@@ -26,7 +26,7 @@ using grpc::health::v1::HealthCheckResponse;
 namespace grpc {
 namespace testing {
 
-Status HealthCheckServiceImpl::Check(ServerContext* context,
+Status HealthCheckServiceImpl::Check(ServerContext* /*context*/,
                                      const HealthCheckRequest* request,
                                      HealthCheckResponse* response) {
   std::lock_guard<std::mutex> lock(mu_);
@@ -64,7 +64,7 @@ Status HealthCheckServiceImpl::Watch(
 }
 
 void HealthCheckServiceImpl::SetStatus(
-    const grpc::string& service_name,
+    const std::string& service_name,
     HealthCheckResponse::ServingStatus status) {
   std::lock_guard<std::mutex> lock(mu_);
   if (shutdown_) {

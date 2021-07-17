@@ -62,19 +62,10 @@ class FixtureConfiguration {
 
 class BaseFixture : public TrackCounters {};
 
-// Special tag to be used in Server shutdown. This tag is *NEVER* returned when
-// Cq->Next() API is called (This is because FinalizeResult() function in this
-// class always returns 'false'). This is intentional and makes writing shutdown
-// code easier.
-class ShutdownTag : public internal::CompletionQueueTag {
- public:
-  bool FinalizeResult(void** tag, bool* status) { return false; }
-};
-
 class FullstackFixture : public BaseFixture {
  public:
   FullstackFixture(Service* service, const FixtureConfiguration& config,
-                   const grpc::string& address) {
+                   const std::string& address) {
     ServerBuilder b;
     if (address.length() > 0) {
       b.AddListeningPort(address, InsecureServerCredentials());
@@ -93,12 +84,8 @@ class FullstackFixture : public BaseFixture {
     }
   }
 
-  virtual ~FullstackFixture() {
-    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
-    // returned to the user) see ShutdownTag definition for more details
-    ShutdownTag shutdown_tag;
-    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
-                                    &shutdown_tag);
+  ~FullstackFixture() override {
+    server_->Shutdown();
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -106,7 +93,7 @@ class FullstackFixture : public BaseFixture {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) {
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
         << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
@@ -124,16 +111,17 @@ class FullstackFixture : public BaseFixture {
 
 class TCP : public FullstackFixture {
  public:
-  TCP(Service* service, const FixtureConfiguration& fixture_configuration =
-                            FixtureConfiguration())
+  explicit TCP(Service* service,
+               const FixtureConfiguration& fixture_configuration =
+                   FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
-  ~TCP() { grpc_recycle_unused_port(port_); }
+  ~TCP() override { grpc_recycle_unused_port(port_); }
 
  private:
   int port_;
 
-  static grpc::string MakeAddress(int* port) {
+  static std::string MakeAddress(int* port) {
     *port = grpc_pick_unused_port_or_die();
     std::stringstream addr;
     addr << "localhost:" << *port;
@@ -143,16 +131,17 @@ class TCP : public FullstackFixture {
 
 class UDS : public FullstackFixture {
  public:
-  UDS(Service* service, const FixtureConfiguration& fixture_configuration =
-                            FixtureConfiguration())
+  explicit UDS(Service* service,
+               const FixtureConfiguration& fixture_configuration =
+                   FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
 
-  ~UDS() { grpc_recycle_unused_port(port_); }
+  ~UDS() override { grpc_recycle_unused_port(port_); }
 
  private:
   int port_;
 
-  static grpc::string MakeAddress(int* port) {
+  static std::string MakeAddress(int* port) {
     *port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
                                              // real port
     std::stringstream addr;
@@ -163,11 +152,11 @@ class UDS : public FullstackFixture {
 
 class InProcess : public FullstackFixture {
  public:
-  InProcess(Service* service,
-            const FixtureConfiguration& fixture_configuration =
-                FixtureConfiguration())
+  explicit InProcess(Service* service,
+                     const FixtureConfiguration& fixture_configuration =
+                         FixtureConfiguration())
       : FullstackFixture(service, fixture_configuration, "") {}
-  ~InProcess() {}
+  ~InProcess() override {}
 };
 
 class EndpointPairFixture : public BaseFixture {
@@ -187,21 +176,19 @@ class EndpointPairFixture : public BaseFixture {
      * */
     {
       const grpc_channel_args* server_args =
-          grpc_server_get_channel_args(server_->c_server());
+          server_->c_server()->core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */);
 
-      grpc_pollset** pollsets;
-      size_t num_pollsets = 0;
-      grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
-
-      for (size_t i = 0; i < num_pollsets; i++) {
-        grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
+      for (grpc_pollset* pollset :
+           server_->c_server()->core_server->pollsets()) {
+        grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      grpc_server_setup_transport(server_->c_server(), server_transport_,
-                                  nullptr, server_args, nullptr);
-      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr);
+      server_->c_server()->core_server->SetupTransport(
+          server_transport_, nullptr, server_args, nullptr);
+      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
+                                          nullptr);
     }
 
     /* create channel */
@@ -216,7 +203,8 @@ class EndpointPairFixture : public BaseFixture {
       GPR_ASSERT(client_transport_);
       grpc_channel* channel = grpc_channel_create(
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
-      grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr);
+      grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
+                                          nullptr);
 
       channel_ = ::grpc::CreateChannelInternal(
           "", channel,
@@ -225,12 +213,8 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
-  virtual ~EndpointPairFixture() {
-    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
-    // returned to the user) see ShutdownTag definition for more details
-    ShutdownTag shutdown_tag;
-    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
-                                    &shutdown_tag);
+  ~EndpointPairFixture() override {
+    server_->Shutdown();
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -238,7 +222,7 @@ class EndpointPairFixture : public BaseFixture {
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) {
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
         << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
@@ -261,8 +245,9 @@ class EndpointPairFixture : public BaseFixture {
 
 class SockPair : public EndpointPairFixture {
  public:
-  SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
-                                 FixtureConfiguration())
+  explicit SockPair(Service* service,
+                    const FixtureConfiguration& fixture_configuration =
+                        FixtureConfiguration())
       : EndpointPairFixture(service,
                             grpc_iomgr_create_endpoint_pair("test", nullptr),
                             fixture_configuration) {}
@@ -281,13 +266,13 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
                             fixture_configuration),
         stats_(stats) {}
 
-  virtual ~InProcessCHTTP2WithExplicitStats() {
+  ~InProcessCHTTP2WithExplicitStats() override {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
   }
 
-  void AddToLabel(std::ostream& out, benchmark::State& state) {
+  void AddToLabel(std::ostream& out, benchmark::State& state) override {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
         << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
@@ -307,9 +292,9 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
 
 class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
  public:
-  InProcessCHTTP2(Service* service,
-                  const FixtureConfiguration& fixture_configuration =
-                      FixtureConfiguration())
+  explicit InProcessCHTTP2(Service* service,
+                           const FixtureConfiguration& fixture_configuration =
+                               FixtureConfiguration())
       : InProcessCHTTP2WithExplicitStats(service,
                                          grpc_passthru_endpoint_stats_create(),
                                          fixture_configuration) {}
@@ -333,7 +318,8 @@ class MinStackConfiguration : public FixtureConfiguration {
 template <class Base>
 class MinStackize : public Base {
  public:
-  MinStackize(Service* service) : Base(service, MinStackConfiguration()) {}
+  explicit MinStackize(Service* service)
+      : Base(service, MinStackConfiguration()) {}
 };
 
 typedef MinStackize<TCP> MinTCP;

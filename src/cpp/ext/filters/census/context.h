@@ -22,12 +22,18 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/status.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+
+#include "opencensus/context/context.h"
+#include "opencensus/tags/tag_map.h"
+#include "opencensus/trace/context_util.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/trace_params.h"
+
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/cpp/common/channel_filter.h"
 #include "src/cpp/ext/filters/census/rpc_encoding.h"
@@ -41,29 +47,36 @@ namespace grpc {
 // Thread compatible.
 class CensusContext {
  public:
-  CensusContext() : span_(::opencensus::trace::Span::BlankSpan()) {}
+  CensusContext() : span_(::opencensus::trace::Span::BlankSpan()), tags_({}) {}
 
-  explicit CensusContext(absl::string_view name)
-      : span_(::opencensus::trace::Span::StartSpan(name)) {}
+  explicit CensusContext(absl::string_view name,
+                         const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::StartSpan(name)), tags_(tags) {}
 
-  CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent)
-      : span_(::opencensus::trace::Span::StartSpan(name, parent)) {}
+  CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent,
+                const ::opencensus::tags::TagMap& tags)
+      : span_(::opencensus::trace::Span::StartSpan(name, parent)),
+        tags_(tags) {}
 
   CensusContext(absl::string_view name,
                 const ::opencensus::trace::SpanContext& parent_ctxt)
       : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
-            name, parent_ctxt)) {}
+            name, parent_ctxt)),
+        tags_({}) {}
 
-  ::opencensus::trace::SpanContext Context() const { return span_.context(); }
-  ::opencensus::trace::Span Span() const { return span_; }
-  void EndSpan() { span_.End(); }
+  const ::opencensus::trace::Span& Span() const { return span_; }
+  const ::opencensus::tags::TagMap& tags() const { return tags_; }
+
+  ::opencensus::trace::SpanContext Context() const { return Span().context(); }
+  void EndSpan() { Span().End(); }
 
  private:
   ::opencensus::trace::Span span_;
+  ::opencensus::tags::TagMap tags_;
 };
 
-// Serializes the outgoing trace context. Field IDs are 1 byte followed by
-// field data. A 1 byte version ID is always encoded first.
+// Serializes the outgoing trace context. tracing_buf must be
+// opencensus::trace::propagation::kGrpcTraceBinHeaderLen bytes long.
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
                              char* tracing_buf, size_t tracing_buf_size);
 
@@ -83,9 +96,8 @@ size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
 // Deserialize the incoming SpanContext and generate a new server context based
 // on that. This new span will never be a root span. This should only be called
 // with a blank CensusContext as it overwrites it.
-void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
-                           absl::string_view primary_role,
-                           absl::string_view method, CensusContext* context);
+void GenerateServerContext(absl::string_view tracing, absl::string_view method,
+                           CensusContext* context);
 
 // Creates a new client context that is by default a new root context.
 // If the current context is the default context then the newly created

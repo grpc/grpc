@@ -20,7 +20,7 @@
 namespace Grpc;
 
 /**
- * Represents an active call that allows for sending and recieving messages
+ * Represents an active call that allows for sending and receiving messages
  * in streams in any order.
  */
 class BidiStreamingCall extends AbstractCall

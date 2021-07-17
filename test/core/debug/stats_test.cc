@@ -26,6 +26,8 @@
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
 
+#include "test/core/util/test_config.h"
+
 namespace grpc {
 namespace testing {
 
@@ -135,8 +137,8 @@ TEST_P(HistogramTest, IncHistogram) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(HistogramTestCases, HistogramTest,
-                        ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
+INSTANTIATE_TEST_SUITE_P(HistogramTestCases, HistogramTest,
+                         ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
 
 }  // namespace testing
 }  // namespace grpc
@@ -146,10 +148,15 @@ int main(int argc, char** argv) {
  * build.
  */
 #if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
+#else
+  // Avoid unused parameter warning for conditional parameters.
+  (void)argc;
+  (void)argv;
 #endif
 }

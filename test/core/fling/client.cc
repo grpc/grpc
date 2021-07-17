@@ -104,7 +104,8 @@ static void init_ping_pong_stream(void) {
   stream_init_ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
   stream_init_ops[1].data.recv_initial_metadata.recv_initial_metadata =
       &initial_metadata_recv;
-  error = grpc_call_start_batch(call, stream_init_ops, 2, (void*)1, nullptr);
+  error = grpc_call_start_batch(call, stream_init_ops, 2,
+                                reinterpret_cast<void*>(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
@@ -119,7 +120,8 @@ static void init_ping_pong_stream(void) {
 static void step_ping_pong_stream(void) {
   GPR_TIMER_SCOPE("ping_pong", 1);
   grpc_call_error error;
-  error = grpc_call_start_batch(call, stream_step_ops, 2, (void*)1, nullptr);
+  error = grpc_call_start_batch(call, stream_step_ops, 2,
+                                reinterpret_cast<void*>(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_byte_buffer_destroy(response_payload_recv);

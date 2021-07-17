@@ -137,7 +137,7 @@ cdef class CallDetails:
   def __dealloc__(self):
     with nogil:
       grpc_call_details_destroy(&self.c_details)
-    grpc_shutdown_blocking()
+    grpc_shutdown()
 
   @property
   def method(self):

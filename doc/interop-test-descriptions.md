@@ -35,7 +35,10 @@ Clients should accept these arguments:
     * OAuth scope. For example, "https://www.googleapis.com/auth/xapi.zoo"
 * --service_account_key_file=PATH
     * The path to the service account JSON key file generated from GCE developer
-    console.
+      console.
+* --service_config_json=SERVICE_CONFIG_JSON
+    * Disables service config lookups and sets the provided string as the
+      default service config.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
@@ -1007,21 +1010,21 @@ languages. Therefore they are not part of our interop matrix.
 
 #### rpc_soak
 
-The client performs many large_unary RPCs in sequence over the same channel. 
+The client performs many large_unary RPCs in sequence over the same channel.
 The number of RPCs is configured by the experimental flag, `soak_iterations`.
 
 #### channel_soak
 
-The client performs many large_unary RPCs in sequence. Before each RPC, it 
-tears down and rebuilds the channel. The number of RPCs is configured by 
+The client performs many large_unary RPCs in sequence. Before each RPC, it
+tears down and rebuilds the channel. The number of RPCs is configured by
 the experimental flag, `soak_iterations`.
 
-This tests puts stress on several gRPC components; the resolver, the load 
+This tests puts stress on several gRPC components; the resolver, the load
 balancer, and the RPC hotpath.
 
 #### long_lived_channel
 
-The client performs a number of large_unary RPCs over a single long-lived 
+The client performs a number of large_unary RPCs over a single long-lived
 channel with a fixed but configurable interval between each RPC.
 
 ### TODO Tests
@@ -1121,7 +1124,7 @@ for the `SimpleRequest.response_type`. If the server does not support the
 Server gets the default SimpleRequest proto as the request. The content of the
 request is ignored. It returns the SimpleResponse proto with the payload set
 to current timestamp.  The timestamp is an integer representing current time
-with nanosecond resolution. This integer is formated as ASCII decimal in the
+with nanosecond resolution. This integer is formatted as ASCII decimal in the
 response. The format is not really important as long as the response payload
 is different for each request. In addition it adds
   1. cache control headers such that the response can be cached by proxies in
@@ -1172,7 +1175,7 @@ responses, it closes with OK.
 ### Echo Status
 [Echo Status]: #echo-status
 When the client sends a response_status in the request payload, the server closes
-the stream with the status code and messsage contained within said response_status.
+the stream with the status code and message contained within said response_status.
 The server will not process any further messages on the stream sent by the client.
 This can be used by clients to verify correct handling of different status codes and
 associated status messages end-to-end.
@@ -1189,7 +1192,7 @@ key and the corresponding value back to the client as trailing metadata.
 [Observe ResponseParameters.interval_us]: #observe-responseparametersinterval_us
 
 In StreamingOutputCall and FullDuplexCall, server delays sending a
-StreamingOutputCallResponse by the ResponseParameters's `interval_us` for that
+StreamingOutputCallResponse by the ResponseParameters' `interval_us` for that
 particular response, relative to the last response sent. That is, `interval_us`
 acts like a sleep *before* sending the response and accumulates from one
 response to the next.

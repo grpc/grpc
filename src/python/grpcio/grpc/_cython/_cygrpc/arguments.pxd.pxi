@@ -23,7 +23,7 @@ cdef class _ChannelArg:
 
   cdef grpc_arg c_argument
 
-  cdef void c(self, argument, _VTable vtable, references) except *
+  cdef void c(self, argument, references) except *
 
 
 cdef class _ChannelArgs:

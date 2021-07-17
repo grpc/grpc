@@ -145,7 +145,7 @@ func TestSoonTLSMaxVersion(t *testing.T) {
 	ctx := InteropCtx(t)
 	err := testTLSMaxVersion(ctx, tls.VersionTLS11)
 	// TODO(carl-mastrangelo): maybe this should be some other error.  If the server picks
-	// the wrong protocol version, thats bad too.
+	// the wrong protocol version, that's bad too.
 	matchError(t, err, "EOF", "server selected unsupported protocol")
 }
 

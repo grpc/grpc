@@ -20,8 +20,9 @@ from __future__ import print_function
 import logging
 import argparse
 import grpc
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+
+helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
+    "helloworld.proto")
 
 
 def process(stub, request):
@@ -43,18 +44,16 @@ def run(addr, n):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--addr',
-        nargs=1,
-        type=str,
-        default='[::]:50051',
-        help='the address to request')
-    parser.add_argument(
-        '-n',
-        nargs=1,
-        type=int,
-        default=10,
-        help='an integer for number of messages to sent')
+    parser.add_argument('--addr',
+                        nargs=1,
+                        type=str,
+                        default='[::]:50051',
+                        help='the address to request')
+    parser.add_argument('-n',
+                        nargs=1,
+                        type=int,
+                        default=10,
+                        help='an integer for number of messages to sent')
     args = parser.parse_args()
     run(addr=args.addr, n=args.n)
 

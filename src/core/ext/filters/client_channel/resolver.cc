@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/lib/iomgr/combiner.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
                                                            "resolver_refcount");
@@ -30,13 +29,10 @@ namespace grpc_core {
 // Resolver
 //
 
-Resolver::Resolver(grpc_combiner* combiner,
-                   UniquePtr<ResultHandler> result_handler)
-    : InternallyRefCounted(&grpc_trace_resolver_refcount),
-      result_handler_(std::move(result_handler)),
-      combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}
-
-Resolver::~Resolver() { GRPC_COMBINER_UNREF(combiner_, "resolver"); }
+Resolver::Resolver()
+    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_trace_resolver_refcount)
+                               ? "Resolver"
+                               : nullptr) {}
 
 //
 // Resolver::Result
@@ -54,7 +50,7 @@ Resolver::Result::Result(const Result& other) {
   args = grpc_channel_args_copy(other.args);
 }
 
-Resolver::Result::Result(Result&& other) {
+Resolver::Result::Result(Result&& other) noexcept {
   addresses = std::move(other.addresses);
   service_config = std::move(other.service_config);
   service_config_error = other.service_config_error;
@@ -64,6 +60,9 @@ Resolver::Result::Result(Result&& other) {
 }
 
 Resolver::Result& Resolver::Result::operator=(const Result& other) {
+  if (&other == this) {
+    return *this;
+  }
   addresses = other.addresses;
   service_config = other.service_config;
   GRPC_ERROR_UNREF(service_config_error);
@@ -73,7 +72,7 @@ Resolver::Result& Resolver::Result::operator=(const Result& other) {
   return *this;
 }
 
-Resolver::Result& Resolver::Result::operator=(Result&& other) {
+Resolver::Result& Resolver::Result::operator=(Result&& other) noexcept {
   addresses = std::move(other.addresses);
   service_config = std::move(other.service_config);
   GRPC_ERROR_UNREF(service_config_error);

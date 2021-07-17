@@ -16,9 +16,11 @@
  *
  */
 
-#import "GRPCCall.h"
+#import "GRPCCallLegacy.h"
 
-// Deprecated interface. Please use GRPCCallOptions instead.
+/**
+ * The interface is deprecated. Please use GRPCCallOptions instead for corresponding configurations.
+ */
 @interface GRPCCall (Tests)
 
 + (void)useTestCertsPath:(NSString *)certsPath

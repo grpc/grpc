@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
 
 cdef class _GrpcArgWrapper:
 
@@ -33,7 +31,7 @@ cdef grpc_arg _unwrap_grpc_arg(tuple wrapped_arg):
 
 cdef class _ChannelArg:
 
-  cdef void c(self, argument, _VTable vtable, references) except *:
+  cdef void c(self, argument, references) except *:
     key, value = argument
     cdef bytes encoded_key = _encode(key)
     if encoded_key is not key:
@@ -56,7 +54,7 @@ cdef class _ChannelArg:
       # lifecycle of the pointer is fixed to the lifecycle of the
       # python object wrapping it.
       self.c_argument.type = GRPC_ARG_POINTER
-      self.c_argument.value.pointer.vtable = &vtable.c_vtable
+      self.c_argument.value.pointer.vtable = &default_vtable
       self.c_argument.value.pointer.address = <void*>(<intptr_t>int(value))
     else:
       raise TypeError(
@@ -65,7 +63,7 @@ cdef class _ChannelArg:
 
 cdef class _ChannelArgs:
 
-  def __cinit__(self, arguments, _VTable vtable not None):
+  def __cinit__(self, arguments):
     self._arguments = () if arguments is None else tuple(arguments)
     self._channel_args = []
     self._references = []
@@ -75,7 +73,7 @@ cdef class _ChannelArgs:
           self._c_arguments.arguments_length * sizeof(grpc_arg))
       for index, argument in enumerate(self._arguments):
         channel_arg = _ChannelArg()
-        channel_arg.c(argument, vtable, self._references)
+        channel_arg.c(argument, self._references)
         self._c_arguments.arguments[index] = channel_arg.c_argument
         self._channel_args.append(channel_arg)
 

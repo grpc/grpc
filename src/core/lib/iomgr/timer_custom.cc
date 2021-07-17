@@ -30,13 +30,15 @@
 
 static grpc_custom_timer_vtable* custom_timer_impl;
 
-void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error) {
+void grpc_custom_timer_callback(grpc_custom_timer* t,
+                                grpc_error_handle /*error*/) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_timer* timer = t->original;
   GPR_ASSERT(timer->pending);
-  timer->pending = 0;
-  GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_NONE);
+  timer->pending = false;
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
   custom_timer_impl->stop(t);
   gpr_free(t);
 }
@@ -47,7 +49,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   if (deadline <= grpc_core::ExecCtx::Get()->Now()) {
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     timer->pending = false;
     return;
   } else {
@@ -56,25 +58,26 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   timer->pending = true;
   timer->closure = closure;
   grpc_custom_timer* timer_wrapper =
-      (grpc_custom_timer*)gpr_malloc(sizeof(grpc_custom_timer));
+      static_cast<grpc_custom_timer*>(gpr_malloc(sizeof(grpc_custom_timer)));
   timer_wrapper->timeout_ms = timeout;
-  timer->custom_timer = (void*)timer_wrapper;
+  timer->custom_timer = timer_wrapper;
   timer_wrapper->original = timer;
   custom_timer_impl->start(timer_wrapper);
 }
 
 static void timer_cancel(grpc_timer* timer) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  grpc_custom_timer* tw = (grpc_custom_timer*)timer->custom_timer;
+  grpc_custom_timer* tw = static_cast<grpc_custom_timer*>(timer->custom_timer);
   if (timer->pending) {
-    timer->pending = 0;
-    GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_CANCELLED);
+    timer->pending = false;
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
+                            GRPC_ERROR_CANCELLED);
     custom_timer_impl->stop(tw);
     gpr_free(tw);
   }
 }
 
-static grpc_timer_check_result timer_check(grpc_millis* next) {
+static grpc_timer_check_result timer_check(grpc_millis* /*next*/) {
   return GRPC_TIMERS_NOT_CHECKED;
 }
 

@@ -267,16 +267,22 @@ namespace Grpc.Tools
 
         /// <summary>
         /// Generated code directory. The generator property determines the language.
-        /// Switch: --GEN-out= (for different generators GEN).
+        /// Switch: --GEN_out= (for different generators GEN, e.g. --csharp_out).
         /// </summary>
         [Required]
         public string OutputDir { get; set; }
 
         /// <summary>
         /// Codegen options. See also OptionsFromMetadata.
-        /// Switch: --GEN_out= (for different generators GEN).
+        /// Switch: --GEN_opt= (for different generators GEN, e.g. --csharp_opt).
         /// </summary>
         public string[] OutputOptions { get; set; }
+
+        /// <summary>
+        /// Additional arguments that will be passed unmodified to protoc (and before any file names).
+        /// For example, "--experimental_allow_proto3_optional"
+        /// </summary>
+        public string[] AdditionalProtocArguments { get; set; }
 
         /// <summary>
         /// Full path to the gRPC plugin executable. If specified, gRPC generation
@@ -422,10 +428,21 @@ namespace Grpc.Tools
             if (ProtoPath != null)
             {
                 foreach (string path in ProtoPath)
+                {
                     cmd.AddSwitchMaybe("proto_path", TrimEndSlash(path));
+                }
             }
             cmd.AddSwitchMaybe("dependency_out", DependencyOut);
             cmd.AddSwitchMaybe("error_format", "msvs");
+
+            if (AdditionalProtocArguments != null)
+            {
+                foreach (var additionalProtocOption in AdditionalProtocArguments)
+                {
+                    cmd.AddArg(additionalProtocOption);
+                }
+            }
+
             foreach (var proto in Protobuf)
             {
                 cmd.AddArg(proto.ItemSpec);

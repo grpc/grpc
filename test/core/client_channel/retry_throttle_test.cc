@@ -98,7 +98,7 @@ TEST(ServerRetryThrottleData, Replacement) {
 
 TEST(ServerRetryThrottleMap, Replacement) {
   ServerRetryThrottleMap::Init();
-  const char kServerName[] = "server_name";
+  const std::string kServerName = "server_name";
   // Create old throttle data.
   // Max token count is 4, so threshold for retrying is 2.
   // Token count starts at 4.

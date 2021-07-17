@@ -18,6 +18,8 @@
 
 #include <gtest/gtest.h>
 
+#include "test/core/util/test_config.h"
+
 namespace grpc {
 namespace {
 
@@ -29,6 +31,7 @@ TEST_F(CodegenTestMinimal, Build) {}
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

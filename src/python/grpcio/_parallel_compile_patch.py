@@ -22,7 +22,10 @@ import os
 
 try:
     BUILD_EXT_COMPILER_JOBS = int(
-        os.environ.get('GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS', '1'))
+        os.environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'])
+except KeyError:
+    import multiprocessing
+    BUILD_EXT_COMPILER_JOBS = multiprocessing.cpu_count()
 except ValueError:
     BUILD_EXT_COMPILER_JOBS = 1
 

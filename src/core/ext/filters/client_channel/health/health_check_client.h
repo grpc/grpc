@@ -44,18 +44,13 @@ namespace grpc_core {
 
 class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
  public:
-  HealthCheckClient(const char* service_name,
+  HealthCheckClient(std::string service_name,
                     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
                     grpc_pollset_set* interested_parties,
-                    RefCountedPtr<channelz::SubchannelNode> channelz_node);
+                    RefCountedPtr<channelz::SubchannelNode> channelz_node,
+                    RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
-  ~HealthCheckClient();
-
-  // When the health state changes from *state, sets *state to the new
-  // value and schedules closure.
-  // Only one closure can be outstanding at a time.
-  void NotifyOnHealthChange(grpc_connectivity_state* state,
-                            grpc_closure* closure);
+  ~HealthCheckClient() override;
 
   void Orphan() override;
 
@@ -65,34 +60,34 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
               grpc_pollset_set* interested_parties_);
-    ~CallState();
+    ~CallState() override;
 
     void Orphan() override;
 
-    void StartCall();
+    void StartCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthCheckClient::mu_);
 
    private:
     void Cancel();
 
     void StartBatch(grpc_transport_stream_op_batch* batch);
-    static void StartBatchInCallCombiner(void* arg, grpc_error* error);
+    static void StartBatchInCallCombiner(void* arg, grpc_error_handle error);
 
-    static void CallEndedRetry(void* arg, grpc_error* error);
-    void CallEnded(bool retry);
+    void CallEndedLocked(bool retry)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(health_check_client_->mu_);
 
-    static void OnComplete(void* arg, grpc_error* error);
-    static void RecvInitialMetadataReady(void* arg, grpc_error* error);
-    static void RecvMessageReady(void* arg, grpc_error* error);
-    static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
-    static void StartCancel(void* arg, grpc_error* error);
-    static void OnCancelComplete(void* arg, grpc_error* error);
+    static void OnComplete(void* arg, grpc_error_handle error);
+    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
+    static void RecvMessageReady(void* arg, grpc_error_handle error);
+    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+    static void StartCancel(void* arg, grpc_error_handle error);
+    static void OnCancelComplete(void* arg, grpc_error_handle error);
 
-    static void OnByteStreamNext(void* arg, grpc_error* error);
+    static void OnByteStreamNext(void* arg, grpc_error_handle error);
     void ContinueReadingRecvMessage();
-    grpc_error* PullSliceFromRecvMessage();
-    void DoneReadingRecvMessage(grpc_error* error);
+    grpc_error_handle PullSliceFromRecvMessage();
+    void DoneReadingRecvMessage(grpc_error_handle error);
 
-    static void AfterCallStackDestruction(void* arg, grpc_error* error);
+    static void AfterCallStackDestruction(void* arg, grpc_error_handle error);
 
     RefCountedPtr<HealthCheckClient> health_check_client_;
     grpc_polling_entity pollent_;
@@ -133,49 +128,47 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_slice_buffer recv_message_buffer_;
     Atomic<bool> seen_response_{false};
 
+    // True if the cancel_stream batch has been started.
+    Atomic<bool> cancelled_{false};
+
     // recv_trailing_metadata
     grpc_metadata_batch recv_trailing_metadata_;
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
-
-    // True if the cancel_stream batch has been started.
-    Atomic<bool> cancelled_{false};
 
     // Closure for call stack destruction.
     grpc_closure after_call_stack_destruction_;
   };
 
   void StartCall();
-  void StartCallLocked();  // Requires holding mu_.
+  void StartCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void StartRetryTimer();
-  static void OnRetryTimer(void* arg, grpc_error* error);
+  void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  static void OnRetryTimer(void* arg, grpc_error_handle error);
 
-  void SetHealthStatus(grpc_connectivity_state state, grpc_error* error);
-  void SetHealthStatusLocked(grpc_connectivity_state state,
-                             grpc_error* error);  // Requires holding mu_.
+  void SetHealthStatus(grpc_connectivity_state state, const char* reason);
+  void SetHealthStatusLocked(grpc_connectivity_state state, const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  const char* service_name_;  // Do not own.
+  std::string service_name_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 
   Mutex mu_;
-  grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
-  grpc_error* error_ = GRPC_ERROR_NONE;
-  grpc_connectivity_state* notify_state_ = nullptr;
-  grpc_closure* on_health_changed_ = nullptr;
-  bool shutting_down_ = false;
+  RefCountedPtr<ConnectivityStateWatcherInterface> watcher_
+      ABSL_GUARDED_BY(mu_);
+  bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 
   // The data associated with the current health check call.  It holds a ref
   // to this HealthCheckClient object.
-  OrphanablePtr<CallState> call_state_;
+  OrphanablePtr<CallState> call_state_ ABSL_GUARDED_BY(mu_);
 
   // Call retry state.
-  BackOff retry_backoff_;
-  grpc_timer retry_timer_;
-  grpc_closure retry_timer_callback_;
-  bool retry_timer_callback_pending_ = false;
+  BackOff retry_backoff_ ABSL_GUARDED_BY(mu_);
+  grpc_timer retry_timer_ ABSL_GUARDED_BY(mu_);
+  grpc_closure retry_timer_callback_ ABSL_GUARDED_BY(mu_);
+  bool retry_timer_callback_pending_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 }  // namespace grpc_core

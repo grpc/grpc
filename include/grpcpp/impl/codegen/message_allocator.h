@@ -20,7 +20,6 @@
 #define GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H
 
 namespace grpc {
-namespace experimental {
 
 // NOTE: This is an API for advanced users who need custom allocators.
 // Per rpc struct for the allocator. This is the interface to return to user.
@@ -67,7 +66,6 @@ class MessageAllocator {
   virtual MessageHolder<RequestT, ResponseT>* AllocateMessages() = 0;
 };
 
-}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_MESSAGE_ALLOCATOR_H

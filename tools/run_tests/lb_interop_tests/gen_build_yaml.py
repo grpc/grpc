@@ -44,18 +44,18 @@ def generate_no_balancer_because_lb_a_record_returns_nx_domain():
         balancer_sec, backend_sec, fallback_sec = server_sec(transport_sec)
         config = {
             'name':
-            'no_balancer_because_lb_a_record_returns_nx_domain_%s' %
-            transport_sec,
+                'no_balancer_because_lb_a_record_returns_nx_domain_%s' %
+                transport_sec,
             'skip_langs': [],
             'transport_sec':
-            transport_sec,
+                transport_sec,
             'balancer_configs': [],
             'backend_configs': [],
             'fallback_configs': [{
                 'transport_sec': fallback_sec,
             }],
             'cause_no_error_no_data_for_balancer_a_record':
-            False,
+                False,
         }
         all_configs.append(config)
     return all_configs
@@ -72,18 +72,18 @@ def generate_no_balancer_because_lb_a_record_returns_no_data():
         balancer_sec, backend_sec, fallback_sec = server_sec(transport_sec)
         config = {
             'name':
-            'no_balancer_because_lb_a_record_returns_no_data_%s' %
-            transport_sec,
+                'no_balancer_because_lb_a_record_returns_no_data_%s' %
+                transport_sec,
             'skip_langs': [],
             'transport_sec':
-            transport_sec,
+                transport_sec,
             'balancer_configs': [],
             'backend_configs': [],
             'fallback_configs': [{
                 'transport_sec': fallback_sec,
             }],
             'cause_no_error_no_data_for_balancer_a_record':
-            True,
+                True,
         }
         all_configs.append(config)
     return all_configs
@@ -106,12 +106,12 @@ def generate_client_referred_to_backend():
                 skip_langs += ['java']
             config = {
                 'name':
-                'client_referred_to_backend_%s_short_stream_%s' %
-                (transport_sec, balancer_short_stream),
+                    'client_referred_to_backend_%s_short_stream_%s' %
+                    (transport_sec, balancer_short_stream),
                 'skip_langs':
-                skip_langs,
+                    skip_langs,
                 'transport_sec':
-                transport_sec,
+                    transport_sec,
                 'balancer_configs': [{
                     'transport_sec': balancer_sec,
                     'short_stream': balancer_short_stream,
@@ -121,7 +121,7 @@ def generate_client_referred_to_backend():
                 }],
                 'fallback_configs': [],
                 'cause_no_error_no_data_for_balancer_a_record':
-                False,
+                    False,
             }
             all_configs.append(config)
     return all_configs
@@ -142,12 +142,12 @@ def generate_client_referred_to_backend_fallback_broken():
                 skip_langs += ['java']
             config = {
                 'name':
-                'client_referred_to_backend_fallback_broken_%s_short_stream_%s'
-                % (transport_sec, balancer_short_stream),
+                    'client_referred_to_backend_fallback_broken_%s_short_stream_%s'
+                    % (transport_sec, balancer_short_stream),
                 'skip_langs':
-                skip_langs,
+                    skip_langs,
                 'transport_sec':
-                transport_sec,
+                    transport_sec,
                 'balancer_configs': [{
                     'transport_sec': balancer_sec,
                     'short_stream': balancer_short_stream,
@@ -159,7 +159,7 @@ def generate_client_referred_to_backend_fallback_broken():
                     'transport_sec': 'insecure',
                 }],
                 'cause_no_error_no_data_for_balancer_a_record':
-                False,
+                    False,
             }
             all_configs.append(config)
     return all_configs
@@ -182,12 +182,12 @@ def generate_client_referred_to_backend_multiple_backends():
                 skip_langs += ['java']
             config = {
                 'name':
-                'client_referred_to_backend_multiple_backends_%s_short_stream_%s'
-                % (transport_sec, balancer_short_stream),
+                    'client_referred_to_backend_multiple_backends_%s_short_stream_%s'
+                    % (transport_sec, balancer_short_stream),
                 'skip_langs':
-                skip_langs,
+                    skip_langs,
                 'transport_sec':
-                transport_sec,
+                    transport_sec,
                 'balancer_configs': [{
                     'transport_sec': balancer_sec,
                     'short_stream': balancer_short_stream,
@@ -205,7 +205,7 @@ def generate_client_referred_to_backend_multiple_backends():
                 }],
                 'fallback_configs': [],
                 'cause_no_error_no_data_for_balancer_a_record':
-                False,
+                    False,
             }
             all_configs.append(config)
     return all_configs
@@ -228,12 +228,12 @@ def generate_client_falls_back_because_no_backends():
                 skip_langs += ['java']
             config = {
                 'name':
-                'client_falls_back_because_no_backends_%s_short_stream_%s' %
-                (transport_sec, balancer_short_stream),
+                    'client_falls_back_because_no_backends_%s_short_stream_%s' %
+                    (transport_sec, balancer_short_stream),
                 'skip_langs':
-                skip_langs,
+                    skip_langs,
                 'transport_sec':
-                transport_sec,
+                    transport_sec,
                 'balancer_configs': [{
                     'transport_sec': balancer_sec,
                     'short_stream': balancer_short_stream,
@@ -243,7 +243,7 @@ def generate_client_falls_back_because_no_backends():
                     'transport_sec': fallback_sec,
                 }],
                 'cause_no_error_no_data_for_balancer_a_record':
-                False,
+                    False,
             }
             all_configs.append(config)
     return all_configs
@@ -261,12 +261,12 @@ def generate_client_falls_back_because_balancer_connection_broken():
             skip_langs = ['java']
         config = {
             'name':
-            'client_falls_back_because_balancer_connection_broken_%s' %
-            transport_sec,
+                'client_falls_back_because_balancer_connection_broken_%s' %
+                transport_sec,
             'skip_langs':
-            skip_langs,
+                skip_langs,
             'transport_sec':
-            transport_sec,
+                transport_sec,
             'balancer_configs': [{
                 'transport_sec': 'insecure',
                 'short_stream': False,
@@ -276,7 +276,7 @@ def generate_client_falls_back_because_balancer_connection_broken():
                 'transport_sec': fallback_sec,
             }],
             'cause_no_error_no_data_for_balancer_a_record':
-            False,
+                False,
         }
         all_configs.append(config)
     return all_configs
@@ -299,12 +299,12 @@ def generate_client_referred_to_backend_multiple_balancers():
                 skip_langs += ['java']
             config = {
                 'name':
-                'client_referred_to_backend_multiple_balancers_%s_short_stream_%s'
-                % (transport_sec, balancer_short_stream),
+                    'client_referred_to_backend_multiple_balancers_%s_short_stream_%s'
+                    % (transport_sec, balancer_short_stream),
                 'skip_langs':
-                skip_langs,
+                    skip_langs,
                 'transport_sec':
-                transport_sec,
+                    transport_sec,
                 'balancer_configs': [
                     {
                         'transport_sec': balancer_sec,
@@ -327,14 +327,12 @@ def generate_client_referred_to_backend_multiple_balancers():
                         'short_stream': balancer_short_stream,
                     },
                 ],
-                'backend_configs': [
-                    {
-                        'transport_sec': backend_sec,
-                    },
-                ],
+                'backend_configs': [{
+                    'transport_sec': backend_sec,
+                },],
                 'fallback_configs': [],
                 'cause_no_error_no_data_for_balancer_a_record':
-                False,
+                    False,
             }
             all_configs.append(config)
     return all_configs

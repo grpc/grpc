@@ -15,9 +15,20 @@ class PayloadConfig extends \Google\Protobuf\Internal\Message
 {
     protected $payload;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type \Grpc\Testing\ByteBufferParams $bytebuf_params
+     *     @type \Grpc\Testing\SimpleProtoParams $simple_params
+     *     @type \Grpc\Testing\ComplexProtoParams $complex_params
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Payloads::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

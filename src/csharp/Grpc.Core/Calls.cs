@@ -16,6 +16,7 @@
 
 #endregion
 
+using System;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 
@@ -33,7 +34,7 @@ namespace Grpc.Core
         /// Invokes a simple remote call in a blocking fashion.
         /// </summary>
         /// <returns>The response.</returns>
-        /// <param name="call">The call defintion.</param>
+        /// <param name="call">The call definition.</param>
         /// <param name="req">Request message.</param>
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
@@ -49,7 +50,7 @@ namespace Grpc.Core
         /// Invokes a simple remote call asynchronously.
         /// </summary>
         /// <returns>An awaitable call object providing access to the response.</returns>
-        /// <param name="call">The call defintion.</param>
+        /// <param name="call">The call definition.</param>
         /// <param name="req">Request message.</param>
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
@@ -59,7 +60,10 @@ namespace Grpc.Core
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var asyncResult = asyncCall.UnaryCallAsync(req);
-            return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncUnaryCall<TResponse>(asyncResult,
+                Callbacks<TRequest, TResponse>.GetHeaders, Callbacks<TRequest, TResponse>.GetStatus,
+                Callbacks<TRequest, TResponse>.GetTrailers, Callbacks<TRequest, TResponse>.Cancel,
+                asyncCall);
         }
 
         /// <summary>
@@ -67,7 +71,7 @@ namespace Grpc.Core
         /// In server streaming scenario, client sends on request and server responds with a stream of responses.
         /// </summary>
         /// <returns>A call object providing access to the asynchronous response stream.</returns>
-        /// <param name="call">The call defintion.</param>
+        /// <param name="call">The call definition.</param>
         /// <param name="req">Request message.</param>
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response messages.</typeparam>
@@ -78,14 +82,17 @@ namespace Grpc.Core
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             asyncCall.StartServerStreamingCall(req);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncServerStreamingCall<TResponse>(responseStream, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncServerStreamingCall<TResponse>(responseStream,
+                Callbacks<TRequest, TResponse>.GetHeaders, Callbacks<TRequest, TResponse>.GetStatus,
+                Callbacks<TRequest, TResponse>.GetTrailers, Callbacks<TRequest, TResponse>.Cancel,
+                asyncCall);
         }
 
         /// <summary>
         /// Invokes a client streaming call asynchronously.
         /// In client streaming scenario, client sends a stream of requests and server responds with a single response.
         /// </summary>
-        /// <param name="call">The call defintion.</param>
+        /// <param name="call">The call definition.</param>
         /// <returns>An awaitable call object providing access to the response.</returns>
         /// <typeparam name="TRequest">Type of request messages.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
@@ -96,7 +103,10 @@ namespace Grpc.Core
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
-            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask,
+                Callbacks<TRequest, TResponse>.GetHeaders, Callbacks<TRequest, TResponse>.GetStatus,
+                Callbacks<TRequest, TResponse>.GetTrailers, Callbacks<TRequest, TResponse>.Cancel,
+                asyncCall);
         }
 
         /// <summary>
@@ -107,7 +117,7 @@ namespace Grpc.Core
         /// <returns>A call object providing access to the asynchronous request and response streams.</returns>
         /// <param name="call">The call definition.</param>
         /// <typeparam name="TRequest">Type of request messages.</typeparam>
-        /// <typeparam name="TResponse">Type of reponse messages.</typeparam>
+        /// <typeparam name="TResponse">Type of responsemessages.</typeparam>
         public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call)
             where TRequest : class
             where TResponse : class
@@ -116,7 +126,18 @@ namespace Grpc.Core
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream,
+                Callbacks<TRequest, TResponse>.GetHeaders, Callbacks<TRequest, TResponse>.GetStatus,
+                Callbacks<TRequest, TResponse>.GetTrailers, Callbacks<TRequest, TResponse>.Cancel,
+                asyncCall);
+        }
+
+        private static class Callbacks<TRequest, TResponse>
+        {
+            internal static readonly Func<object, Task<Metadata>> GetHeaders = state => ((AsyncCall<TRequest, TResponse>)state).ResponseHeadersAsync;
+            internal static readonly Func<object, Status> GetStatus = state => ((AsyncCall<TRequest, TResponse>)state).GetStatus();
+            internal static readonly Func<object, Metadata> GetTrailers = state => ((AsyncCall<TRequest, TResponse>)state).GetTrailers();
+            internal static readonly Action<object> Cancel = state => ((AsyncCall<TRequest, TResponse>)state).Cancel();
         }
     }
 }

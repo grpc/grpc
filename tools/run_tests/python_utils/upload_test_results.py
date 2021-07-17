@@ -29,8 +29,8 @@ import big_query_utils
 
 _DATASET_ID = 'jenkins_test_results'
 _DESCRIPTION = 'Test results from master job run on Jenkins'
-# 90 days in milliseconds
-_EXPIRATION_MS = 90 * 24 * 60 * 60 * 1000
+# 365 days in milliseconds
+_EXPIRATION_MS = 365 * 24 * 60 * 60 * 1000
 _PARTITION_TYPE = 'DAY'
 _PROJECT_ID = 'grpc-testing'
 _RESULTS_SCHEMA = [
@@ -113,15 +113,14 @@ def upload_results_to_bq(resultset, bq_table, extra_fields):
       extra_fields: dict with extra values that will be uploaded along with the results
   """
     bq = big_query_utils.create_big_query()
-    big_query_utils.create_partitioned_table(
-        bq,
-        _PROJECT_ID,
-        _DATASET_ID,
-        bq_table,
-        _RESULTS_SCHEMA,
-        _DESCRIPTION,
-        partition_type=_PARTITION_TYPE,
-        expiration_ms=_EXPIRATION_MS)
+    big_query_utils.create_partitioned_table(bq,
+                                             _PROJECT_ID,
+                                             _DATASET_ID,
+                                             bq_table,
+                                             _RESULTS_SCHEMA,
+                                             _DESCRIPTION,
+                                             partition_type=_PARTITION_TYPE,
+                                             expiration_ms=_EXPIRATION_MS)
 
     bq_rows = []
     for shortname, results in six.iteritems(resultset):
@@ -150,15 +149,14 @@ def upload_interop_results_to_bq(resultset, bq_table):
       bq_table: string name of table to create/upload results to in BQ
   """
     bq = big_query_utils.create_big_query()
-    big_query_utils.create_partitioned_table(
-        bq,
-        _PROJECT_ID,
-        _DATASET_ID,
-        bq_table,
-        _INTEROP_RESULTS_SCHEMA,
-        _DESCRIPTION,
-        partition_type=_PARTITION_TYPE,
-        expiration_ms=_EXPIRATION_MS)
+    big_query_utils.create_partitioned_table(bq,
+                                             _PROJECT_ID,
+                                             _DATASET_ID,
+                                             bq_table,
+                                             _INTEROP_RESULTS_SCHEMA,
+                                             _DESCRIPTION,
+                                             partition_type=_PARTITION_TYPE,
+                                             expiration_ms=_EXPIRATION_MS)
 
     bq_rows = []
     for shortname, results in six.iteritems(resultset):

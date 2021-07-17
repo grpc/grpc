@@ -64,7 +64,7 @@ class AuthContextTest(unittest.TestCase):
     def testInsecure(self):
         handler = grpc.method_handlers_generic_handler('test', {
             'UnaryUnary':
-            grpc.unary_unary_rpc_method_handler(handle_unary_unary)
+                grpc.unary_unary_rpc_method_handler(handle_unary_unary)
         })
         server = test_common.test_server()
         server.add_generic_rpc_handlers((handler,))
@@ -83,7 +83,7 @@ class AuthContextTest(unittest.TestCase):
     def testSecureNoCert(self):
         handler = grpc.method_handlers_generic_handler('test', {
             'UnaryUnary':
-            grpc.unary_unary_rpc_method_handler(handle_unary_unary)
+                grpc.unary_unary_rpc_method_handler(handle_unary_unary)
         })
         server = test_common.test_server()
         server.add_generic_rpc_handlers((handler,))
@@ -93,10 +93,9 @@ class AuthContextTest(unittest.TestCase):
 
         channel_creds = grpc.ssl_channel_credentials(
             root_certificates=_TEST_ROOT_CERTIFICATES)
-        channel = grpc.secure_channel(
-            'localhost:{}'.format(port),
-            channel_creds,
-            options=_PROPERTY_OPTIONS)
+        channel = grpc.secure_channel('localhost:{}'.format(port),
+                                      channel_creds,
+                                      options=_PROPERTY_OPTIONS)
         response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
         channel.close()
         server.stop(None)
@@ -104,15 +103,17 @@ class AuthContextTest(unittest.TestCase):
         auth_data = pickle.loads(response)
         self.assertIsNone(auth_data[_ID])
         self.assertIsNone(auth_data[_ID_KEY])
-        self.assertDictEqual({
-            'transport_security_type': [b'ssl'],
-            'ssl_session_reused': [b'false'],
-        }, auth_data[_AUTH_CTX])
+        self.assertDictEqual(
+            {
+                'security_level': [b'TSI_PRIVACY_AND_INTEGRITY'],
+                'transport_security_type': [b'ssl'],
+                'ssl_session_reused': [b'false'],
+            }, auth_data[_AUTH_CTX])
 
     def testSecureClientCert(self):
         handler = grpc.method_handlers_generic_handler('test', {
             'UnaryUnary':
-            grpc.unary_unary_rpc_method_handler(handle_unary_unary)
+                grpc.unary_unary_rpc_method_handler(handle_unary_unary)
         })
         server = test_common.test_server()
         server.add_generic_rpc_handlers((handler,))
@@ -127,10 +128,9 @@ class AuthContextTest(unittest.TestCase):
             root_certificates=_TEST_ROOT_CERTIFICATES,
             private_key=_PRIVATE_KEY,
             certificate_chain=_CERTIFICATE_CHAIN)
-        channel = grpc.secure_channel(
-            'localhost:{}'.format(port),
-            channel_creds,
-            options=_PROPERTY_OPTIONS)
+        channel = grpc.secure_channel('localhost:{}'.format(port),
+                                      channel_creds,
+                                      options=_PROPERTY_OPTIONS)
 
         response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
         channel.close()
@@ -146,8 +146,9 @@ class AuthContextTest(unittest.TestCase):
 
     def _do_one_shot_client_rpc(self, channel_creds, channel_options, port,
                                 expect_ssl_session_reused):
-        channel = grpc.secure_channel(
-            'localhost:{}'.format(port), channel_creds, options=channel_options)
+        channel = grpc.secure_channel('localhost:{}'.format(port),
+                                      channel_creds,
+                                      options=channel_options)
         response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
         auth_data = pickle.loads(response)
         self.assertEqual(expect_ssl_session_reused,
@@ -158,7 +159,7 @@ class AuthContextTest(unittest.TestCase):
         # Set up a secure server
         handler = grpc.method_handlers_generic_handler('test', {
             'UnaryUnary':
-            grpc.unary_unary_rpc_method_handler(handle_unary_unary)
+                grpc.unary_unary_rpc_method_handler(handle_unary_unary)
         })
         server = test_common.test_server()
         server.add_generic_rpc_handlers((handler,))
@@ -174,18 +175,16 @@ class AuthContextTest(unittest.TestCase):
             ('grpc.ssl_session_cache', cache),)
 
         # Initial connection has no session to resume
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port,
-            expect_ssl_session_reused=[b'false'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port,
+                                     expect_ssl_session_reused=[b'false'])
 
         # Subsequent connections resume sessions
-        self._do_one_shot_client_rpc(
-            channel_creds,
-            channel_options,
-            port,
-            expect_ssl_session_reused=[b'true'])
+        self._do_one_shot_client_rpc(channel_creds,
+                                     channel_options,
+                                     port,
+                                     expect_ssl_session_reused=[b'true'])
         server.stop(None)
 
 

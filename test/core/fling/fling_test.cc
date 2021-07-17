@@ -19,15 +19,17 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <string>
 
-#include "src/core/lib/gpr/host_port.h"
-#include "src/core/lib/gpr/string.h"
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/alloc.h>
+
+#include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
-int main(int argc, const char** argv) {
+int main(int /*argc*/, const char** argv) {
   const char* me = argv[0];
   const char* lslash = strrchr(me, '/');
   char root[1024];
@@ -43,26 +45,26 @@ int main(int argc, const char** argv) {
     strcpy(root, ".");
   }
   /* start the server */
-  gpr_asprintf(&args[0], "%s/fling_server%s", root,
-               gpr_subprocess_binary_extension());
+  std::string command =
+      absl::StrCat(root, "/fling_server", gpr_subprocess_binary_extension());
+  args[0] = const_cast<char*>(command.c_str());
   args[1] = const_cast<char*>("--bind");
-  gpr_join_host_port(&args[2], "::", port);
+  std::string joined = grpc_core::JoinHostPort("::", port);
+  args[2] = const_cast<char*>(joined.c_str());
   args[3] = const_cast<char*>("--no-secure");
-  svr = gpr_subprocess_create(4, (const char**)args);
-  gpr_free(args[0]);
-  gpr_free(args[2]);
+  svr = gpr_subprocess_create(4, const_cast<const char**>(args));
 
   /* start the client */
-  gpr_asprintf(&args[0], "%s/fling_client%s", root,
-               gpr_subprocess_binary_extension());
+  command =
+      absl::StrCat(root, "/fling_client", gpr_subprocess_binary_extension());
+  args[0] = const_cast<char*>(command.c_str());
   args[1] = const_cast<char*>("--target");
-  gpr_join_host_port(&args[2], "127.0.0.1", port);
+  joined = grpc_core::JoinHostPort("127.0.0.1", port);
+  args[2] = const_cast<char*>(joined.c_str());
   args[3] = const_cast<char*>("--scenario=ping-pong-request");
   args[4] = const_cast<char*>("--no-secure");
   args[5] = nullptr;
-  cli = gpr_subprocess_create(6, (const char**)args);
-  gpr_free(args[0]);
-  gpr_free(args[2]);
+  cli = gpr_subprocess_create(6, const_cast<const char**>(args));
 
   /* wait for completion */
   printf("waiting for client\n");

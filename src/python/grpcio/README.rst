@@ -12,10 +12,6 @@ Supported Python Versions
 -------------------------
 Python >= 3.5
 
-Deprecated Python Versions
---------------------------
-Python == 2.7. Python 2.7 support will be removed on January 1, 2020.
-
 Installation
 ------------
 
@@ -59,7 +55,7 @@ package named :code:`python-dev`).
 ::
 
   $ export REPO_ROOT=grpc  # REPO_ROOT can be any directory of your choice
-  $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc $REPO_ROOT
+  $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc $REPO_ROOT
   $ cd $REPO_ROOT
   $ git submodule update --init
 

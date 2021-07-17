@@ -75,7 +75,7 @@ TEST_P(SimpleConvergenceTest, Converges) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     X, SimpleConvergenceTest,
     ::testing::Values(SimpleConvergenceTestArgs{0.2, 0, 0, 1, 100, 0},
                       SimpleConvergenceTestArgs{0.2, 0.1, 0, 1, 100, 0},

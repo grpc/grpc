@@ -59,7 +59,7 @@ typedef struct grpc_winsocket_callback_info {
      to hold a mutex for a long amount of time. */
   int has_pending_iocp;
   /* The results of the overlapped operation. */
-  DWORD bytes_transfered;
+  DWORD bytes_transferred;
   int wsa_error;
 } grpc_winsocket_callback_info;
 

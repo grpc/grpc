@@ -161,7 +161,7 @@ namespace Grpc.Core.Internal
                 }
             }
 
-            // If the shared pool could not accomodate all returnLimit items,
+            // If the shared pool could not accommodate all returnLimit items,
             // next time we try to return we will just dispose the item
             // instead of trying to return them to the shared queue.
             // This is to guarantee we won't be accessing the shared queue too often.

@@ -49,29 +49,35 @@ def _create_build_map():
 
     if set(target_build_map.keys()).intersection(label_build_map.keys()):
         raise Exception('Target names need to be distinct from label names')
-    return dict(target_build_map.items() + label_build_map.items())
+    return dict(list(target_build_map.items()) + list(label_build_map.items()))
 
 
 _BUILD_MAP = _create_build_map()
 
 argp = argparse.ArgumentParser(description='Runs build/test targets.')
-argp.add_argument(
-    '-b',
-    '--build',
-    choices=sorted(_BUILD_MAP.keys()),
-    nargs='+',
-    default=['all'],
-    help='Target name or target label to build.')
-argp.add_argument(
-    '-f',
-    '--filter',
-    choices=sorted(_BUILD_MAP.keys()),
-    nargs='+',
-    default=[],
-    help='Filter targets to build with AND semantics.')
+argp.add_argument('-b',
+                  '--build',
+                  choices=sorted(_BUILD_MAP.keys()),
+                  nargs='+',
+                  default=['all'],
+                  help='Target name or target label to build.')
+argp.add_argument('-f',
+                  '--filter',
+                  choices=sorted(_BUILD_MAP.keys()),
+                  nargs='+',
+                  default=[],
+                  help='Filter targets to build with AND semantics.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
-argp.add_argument(
-    '-t', '--travis', default=False, action='store_const', const=True)
+argp.add_argument('-t',
+                  '--travis',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('-x',
+                  '--xml_report',
+                  default='report_taskrunner_sponge_log.xml',
+                  type=str,
+                  help='Filename for the JUnit-compatible XML report')
 
 args = argp.parse_args()
 
@@ -82,15 +88,16 @@ for label in args.build:
 
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
-targets = sorted(set(targets))
+targets = sorted(set(targets), key=lambda target: target.name)
 
 # Execute pre-build phase
 prebuild_jobs = []
 for target in targets:
     prebuild_jobs += target.pre_build_jobspecs()
 if prebuild_jobs:
-    num_failures, _ = jobset.run(
-        prebuild_jobs, newline_on_success=True, maxjobs=args.jobs)
+    num_failures, _ = jobset.run(prebuild_jobs,
+                                 newline_on_success=True,
+                                 maxjobs=args.jobs)
     if num_failures != 0:
         jobset.message('FAILED', 'Pre-build phase failed.', do_newline=True)
         sys.exit(1)
@@ -103,13 +110,16 @@ if not build_jobs:
     sys.exit(1)
 
 jobset.message('START', 'Building targets.', do_newline=True)
-num_failures, resultset = jobset.run(
-    build_jobs, newline_on_success=True, maxjobs=args.jobs)
-report_utils.render_junit_xml_report(
-    resultset, 'report_taskrunner_sponge_log.xml', suite_name='tasks')
+num_failures, resultset = jobset.run(build_jobs,
+                                     newline_on_success=True,
+                                     maxjobs=args.jobs)
+report_utils.render_junit_xml_report(resultset,
+                                     args.xml_report,
+                                     suite_name='tasks')
 if num_failures == 0:
-    jobset.message(
-        'SUCCESS', 'All targets built successfully.', do_newline=True)
+    jobset.message('SUCCESS',
+                   'All targets built successfully.',
+                   do_newline=True)
 else:
     jobset.message('FAILED', 'Failed to build targets.', do_newline=True)
     sys.exit(1)

@@ -1,7 +1,7 @@
 [![Cocoapods](https://img.shields.io/cocoapods/v/gRPC.svg)](https://cocoapods.org/pods/gRPC)
 # gRPC for Objective-C
 gRPC Objective C library provides Objective C API for users to make gRPC calls on iOS or OS X
-platforms. Currently, the minimum supported iOS version is 7.0 and OS X version is 10.9 (Mavericks).
+platforms. Currently, the minimum supported iOS version is 9.0 and OS X version is 10.10 (Yosemite).
 
 While gRPC doesn't require the use of an IDL to describe the API of services, using one simplifies
 usage and adds some interoperability guarantees. Here we use [Protocol Buffers][], and provide a
@@ -43,8 +43,8 @@ Pod::Spec.new do |s|
   s.summary = '...'
   s.source = { :git => 'https://github.com/...' }
 
-  s.ios.deployment_target = '7.1'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
 
   # Base directory where the .proto files are.
   src = '.'

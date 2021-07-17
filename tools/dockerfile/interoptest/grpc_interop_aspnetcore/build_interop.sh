@@ -37,4 +37,7 @@ then
   ln -s $(pwd)/.dotnet/dotnet /usr/local/bin/dotnet
 fi
 
-dotnet build --configuration Debug Grpc.DotNet.sln
+# Cloning from a local path sets RepositoryUrl to a path and breaks Source Link.
+# Override RepositoryUrl to a URL to fix Source Link. The value doesn't matter.
+dotnet build --configuration Debug --output ./output/InteropTestsWebsite testassets/InteropTestsWebsite/InteropTestsWebsite.csproj -p:RepositoryUrl=https://github.com/grpc/grpc-dotnet.git -p:LatestFramework=true
+dotnet build --configuration Debug --output ./output/InteropTestsClient testassets/InteropTestsClient/InteropTestsClient.csproj -p:RepositoryUrl=https://github.com/grpc/grpc-dotnet.git -p:LatestFramework=true

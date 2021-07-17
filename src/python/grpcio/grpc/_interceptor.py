@@ -213,13 +213,12 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                  credentials=None,
                  wait_for_ready=None,
                  compression=None):
-        response, ignored_call = self._with_call(
-            request,
-            timeout=timeout,
-            metadata=metadata,
-            credentials=credentials,
-            wait_for_ready=wait_for_ready,
-            compression=compression)
+        response, ignored_call = self._with_call(request,
+                                                 timeout=timeout,
+                                                 metadata=metadata,
+                                                 credentials=credentials,
+                                                 wait_for_ready=wait_for_ready,
+                                                 compression=compression)
         return response
 
     def _with_call(self,
@@ -252,8 +251,9 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
-        call = self._interceptor.intercept_unary_unary(
-            continuation, client_call_details, request)
+        call = self._interceptor.intercept_unary_unary(continuation,
+                                                       client_call_details,
+                                                       request)
         return call.result(), call
 
     def with_call(self,
@@ -263,13 +263,12 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                   credentials=None,
                   wait_for_ready=None,
                   compression=None):
-        return self._with_call(
-            request,
-            timeout=timeout,
-            metadata=metadata,
-            credentials=credentials,
-            wait_for_ready=wait_for_ready,
-            compression=compression)
+        return self._with_call(request,
+                               timeout=timeout,
+                               metadata=metadata,
+                               credentials=credentials,
+                               wait_for_ready=wait_for_ready,
+                               compression=compression)
 
     def future(self,
                request,
@@ -325,13 +324,12 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
                  new_details, client_call_details))
-            return self._thunk(new_method)(
-                request,
-                timeout=new_timeout,
-                metadata=new_metadata,
-                credentials=new_credentials,
-                wait_for_ready=new_wait_for_ready,
-                compression=new_compression)
+            return self._thunk(new_method)(request,
+                                           timeout=new_timeout,
+                                           metadata=new_metadata,
+                                           credentials=new_credentials,
+                                           wait_for_ready=new_wait_for_ready,
+                                           compression=new_compression)
 
         try:
             return self._interceptor.intercept_unary_stream(
@@ -354,13 +352,12 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                  credentials=None,
                  wait_for_ready=None,
                  compression=None):
-        response, ignored_call = self._with_call(
-            request_iterator,
-            timeout=timeout,
-            metadata=metadata,
-            credentials=credentials,
-            wait_for_ready=wait_for_ready,
-            compression=compression)
+        response, ignored_call = self._with_call(request_iterator,
+                                                 timeout=timeout,
+                                                 metadata=metadata,
+                                                 credentials=credentials,
+                                                 wait_for_ready=wait_for_ready,
+                                                 compression=compression)
         return response
 
     def _with_call(self,
@@ -393,8 +390,9 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
-        call = self._interceptor.intercept_stream_unary(
-            continuation, client_call_details, request_iterator)
+        call = self._interceptor.intercept_stream_unary(continuation,
+                                                        client_call_details,
+                                                        request_iterator)
         return call.result(), call
 
     def with_call(self,
@@ -404,13 +402,12 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                   credentials=None,
                   wait_for_ready=None,
                   compression=None):
-        return self._with_call(
-            request_iterator,
-            timeout=timeout,
-            metadata=metadata,
-            credentials=credentials,
-            wait_for_ready=wait_for_ready,
-            compression=compression)
+        return self._with_call(request_iterator,
+                               timeout=timeout,
+                               metadata=metadata,
+                               credentials=credentials,
+                               wait_for_ready=wait_for_ready,
+                               compression=compression)
 
     def future(self,
                request_iterator,
@@ -466,13 +463,12 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
              new_wait_for_ready,
              new_compression) = (_unwrap_client_call_details(
                  new_details, client_call_details))
-            return self._thunk(new_method)(
-                request_iterator,
-                timeout=new_timeout,
-                metadata=new_metadata,
-                credentials=new_credentials,
-                wait_for_ready=new_wait_for_ready,
-                compression=new_compression)
+            return self._thunk(new_method)(request_iterator,
+                                           timeout=new_timeout,
+                                           metadata=new_metadata,
+                                           credentials=new_credentials,
+                                           wait_for_ready=new_wait_for_ready,
+                                           compression=new_compression)
 
         try:
             return self._interceptor.intercept_stream_stream(
@@ -497,7 +493,8 @@ class _Channel(grpc.Channel):
                     method,
                     request_serializer=None,
                     response_deserializer=None):
-        thunk = lambda m: self._channel.unary_unary(m, request_serializer, response_deserializer)
+        thunk = lambda m: self._channel.unary_unary(m, request_serializer,
+                                                    response_deserializer)
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
             return _UnaryUnaryMultiCallable(thunk, method, self._interceptor)
         else:
@@ -507,7 +504,8 @@ class _Channel(grpc.Channel):
                      method,
                      request_serializer=None,
                      response_deserializer=None):
-        thunk = lambda m: self._channel.unary_stream(m, request_serializer, response_deserializer)
+        thunk = lambda m: self._channel.unary_stream(m, request_serializer,
+                                                     response_deserializer)
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
             return _UnaryStreamMultiCallable(thunk, method, self._interceptor)
         else:
@@ -517,7 +515,8 @@ class _Channel(grpc.Channel):
                      method,
                      request_serializer=None,
                      response_deserializer=None):
-        thunk = lambda m: self._channel.stream_unary(m, request_serializer, response_deserializer)
+        thunk = lambda m: self._channel.stream_unary(m, request_serializer,
+                                                     response_deserializer)
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
             return _StreamUnaryMultiCallable(thunk, method, self._interceptor)
         else:
@@ -527,7 +526,8 @@ class _Channel(grpc.Channel):
                       method,
                       request_serializer=None,
                       response_deserializer=None):
-        thunk = lambda m: self._channel.stream_stream(m, request_serializer, response_deserializer)
+        thunk = lambda m: self._channel.stream_stream(m, request_serializer,
+                                                      response_deserializer)
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):
             return _StreamStreamMultiCallable(thunk, method, self._interceptor)
         else:

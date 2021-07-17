@@ -49,21 +49,17 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-# Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client oauth2client
-
 # Install Python 2.7
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
-RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
 
-# Add Debian 'testing' repository
-RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
-RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
+# Google Cloud platform API libraries
+RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
+# Add Debian 'buster' repository, we will need it for installing newer versions of python
+RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
+RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
-# Define the default command.
-CMD ["bash"]
 

@@ -23,6 +23,8 @@
 #include <benchmark/benchmark.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/byte_buffer.h>
+
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -40,7 +42,7 @@ static void BM_ByteBuffer_Copy(benchmark::State& state) {
     slices.emplace_back(buf.get(), slice_size);
   }
   grpc::ByteBuffer bb(slices.data(), num_slices);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc::ByteBuffer cc(bb);
   }
 }
@@ -60,7 +62,7 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   grpc_byte_buffer_reader reader;
   GPR_ASSERT(
       g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
             &reader, &slice))) {
@@ -93,7 +95,7 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   grpc_byte_buffer_reader reader;
   GPR_ASSERT(
       g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
             &reader, &slice))) {
@@ -122,9 +124,11 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
+
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

@@ -23,9 +23,10 @@
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser* p) {
   p->debug_data = nullptr;
@@ -35,15 +36,11 @@ void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p) {
   gpr_free(p->debug_data);
 }
 
-grpc_error* grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser* p,
-                                                  uint32_t length,
-                                                  uint8_t flags) {
+grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
+    grpc_chttp2_goaway_parser* p, uint32_t length, uint8_t /*flags*/) {
   if (length < 8) {
-    char* msg;
-    gpr_asprintf(&msg, "goaway frame too short (%d bytes)", length);
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return err;
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrFormat("goaway frame too short (%d bytes)", length).c_str());
   }
 
   gpr_free(p->debug_data);
@@ -54,11 +51,11 @@ grpc_error* grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser* p,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
-                                            grpc_chttp2_transport* t,
-                                            grpc_chttp2_stream* s,
-                                            const grpc_slice& slice,
-                                            int is_last) {
+grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
+                                                  grpc_chttp2_transport* t,
+                                                  grpc_chttp2_stream* /*s*/,
+                                                  const grpc_slice& slice,
+                                                  int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
@@ -131,15 +128,16 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_DEBUG:
-      if (end != cur)
+      if (end != cur) {
         memcpy(p->debug_data + p->debug_pos, cur,
                static_cast<size_t>(end - cur));
+      }
       GPR_ASSERT((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
       p->debug_pos += static_cast<uint32_t>(end - cur);
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
         grpc_chttp2_add_incoming_goaway(
-            t, p->error_code,
+            t, p->error_code, p->last_stream_id,
             grpc_slice_new(p->debug_data, p->debug_length, gpr_free));
         p->debug_data = nullptr;
       }

@@ -13,6 +13,7 @@
 # limitations under the License.
 """A setup module for the gRPC Python package."""
 
+import multiprocessing
 import os
 import os.path
 import sys
@@ -37,17 +38,16 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'coverage>=4.0', 'enum34>=1.0.4',
-    'grpcio>={version}'.format(version=grpc_version.VERSION),
+    'coverage>=4.0', 'grpcio>={version}'.format(version=grpc_version.VERSION),
     'grpcio-channelz>={version}'.format(version=grpc_version.VERSION),
     'grpcio-status>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7', 'protobuf>=3.6.0', 'six>=1.10', 'google-auth>=1.0.0',
-    'requests>=2.14.2')
+    'oauth2client>=1.4.7', 'protobuf>=3.6.0', 'six>=1.10',
+    'google-auth>=1.17.2', 'requests>=2.14.2')
 
 if not PY3:
-    INSTALL_REQUIRES += ('futures>=2.2.0',)
+    INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
@@ -58,6 +58,8 @@ COMMAND_CLASS = {
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite,
     'test_gevent': commands.TestGevent,
+    'test_aio': commands.TestAio,
+    'test_py3_only': commands.TestPy3Only,
 }
 
 PACKAGE_DATA = {
@@ -66,9 +68,7 @@ PACKAGE_DATA = {
         'credentials/server1.key',
         'credentials/server1.pem',
     ],
-    'tests.protoc_plugin.protos.invocation_testing': [
-        'same.proto',
-    ],
+    'tests.protoc_plugin.protos.invocation_testing': ['same.proto',],
     'tests.protoc_plugin.protos.invocation_testing.split_messages': [
         'messages.proto',
     ],
@@ -94,17 +94,19 @@ TESTS_REQUIRE = INSTALL_REQUIRES
 
 PACKAGES = setuptools.find_packages('.')
 
-setuptools.setup(
-    name='grpcio-tests',
-    version=grpc_version.VERSION,
-    license=LICENSE,
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    package_data=PACKAGE_DATA,
-    install_requires=INSTALL_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-    tests_require=TESTS_REQUIRE,
-    test_suite=TEST_SUITE,
-    test_loader=TEST_LOADER,
-    test_runner=TEST_RUNNER,
-)
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+    setuptools.setup(
+        name='grpcio-tests',
+        version=grpc_version.VERSION,
+        license=LICENSE,
+        packages=list(PACKAGES),
+        package_dir=PACKAGE_DIRECTORIES,
+        package_data=PACKAGE_DATA,
+        install_requires=INSTALL_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+        tests_require=TESTS_REQUIRE,
+        test_suite=TEST_SUITE,
+        test_loader=TEST_LOADER,
+        test_runner=TEST_RUNNER,
+    )

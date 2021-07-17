@@ -42,7 +42,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
 
 const char* kLargeString =
     "("
@@ -106,7 +105,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
   // Only implement the one method we will be calling for brevity.
   Status BidiStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     gpr_atm should_exit;

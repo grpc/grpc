@@ -21,28 +21,30 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 
 namespace grpc_core {
-
-class Subchannel;
-
 namespace channelz {
 
 class SubchannelNode : public BaseNode {
  public:
-  SubchannelNode(Subchannel* subchannel, size_t channel_tracer_max_nodes);
+  SubchannelNode(std::string target_address, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
 
-  void MarkSubchannelDestroyed() {
-    GPR_ASSERT(subchannel_ != nullptr);
-    subchannel_ = nullptr;
-  }
+  // Sets the subchannel's connectivity state without health checking.
+  void UpdateConnectivityState(grpc_connectivity_state state);
 
-  grpc_json* RenderJson() override;
+  // Used when the subchannel's child socket changes. This should be set when
+  // the subchannel's transport is created and set to nullptr when the
+  // subchannel unrefs the transport.
+  void SetChildSocket(RefCountedPtr<SocketNode> socket);
+
+  Json RenderJson() override;
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
@@ -59,10 +61,10 @@ class SubchannelNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  void PopulateConnectivityState(grpc_json* json);
-
-  Subchannel* subchannel_;
-  UniquePtr<char> target_;
+  Atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
+  Mutex socket_mu_;
+  RefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
+  std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
 };

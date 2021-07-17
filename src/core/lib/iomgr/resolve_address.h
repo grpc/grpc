@@ -41,24 +41,28 @@
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
 
-typedef struct {
+struct grpc_resolved_address {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
   socklen_t len;
-} grpc_resolved_address;
-
-typedef struct {
+};
+struct grpc_resolved_addresses {
   size_t naddrs;
   grpc_resolved_address* addrs;
-} grpc_resolved_addresses;
+};
+
+namespace grpc_core {
+extern const char* kDefaultSecurePort;
+constexpr int kDefaultSecurePortInt = 443;
+}  // namespace grpc_core
 
 typedef struct grpc_address_resolver_vtable {
   void (*resolve_address)(const char* addr, const char* default_port,
                           grpc_pollset_set* interested_parties,
                           grpc_closure* on_done,
                           grpc_resolved_addresses** addresses);
-  grpc_error* (*blocking_resolve_address)(const char* name,
-                                          const char* default_port,
-                                          grpc_resolved_addresses** addresses);
+  grpc_error_handle (*blocking_resolve_address)(
+      const char* name, const char* default_port,
+      grpc_resolved_addresses** addresses);
 } grpc_address_resolver_vtable;
 
 void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable);
@@ -76,8 +80,8 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
 
 /* Resolve addr in a blocking fashion. On success,
    result must be freed with grpc_resolved_addresses_destroy. */
-grpc_error* grpc_blocking_resolve_address(const char* name,
-                                          const char* default_port,
-                                          grpc_resolved_addresses** addresses);
+grpc_error_handle grpc_blocking_resolve_address(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */

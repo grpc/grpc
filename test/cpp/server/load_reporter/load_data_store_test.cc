@@ -33,11 +33,11 @@ namespace testing {
 namespace {
 
 using ::grpc::load_reporter::CallMetricValue;
+using ::grpc::load_reporter::kInvalidLbId;
 using ::grpc::load_reporter::LoadDataStore;
 using ::grpc::load_reporter::LoadRecordKey;
 using ::grpc::load_reporter::LoadRecordValue;
 using ::grpc::load_reporter::PerBalancerStore;
-using ::grpc::load_reporter::kInvalidLbId;
 
 class LoadDataStoreTest : public ::testing::Test {
  public:
@@ -50,8 +50,8 @@ class LoadDataStoreTest : public ::testing::Test {
   bool PerBalancerStoresContains(
       const LoadDataStore& load_data_store,
       const std::set<PerBalancerStore*>* per_balancer_stores,
-      const grpc::string& hostname, const grpc::string& lb_id,
-      const grpc::string& load_key) {
+      const std::string& hostname, const std::string& lb_id,
+      const std::string& load_key) {
     auto original_per_balancer_store =
         load_data_store.FindPerBalancerStore(hostname, lb_id);
     EXPECT_NE(original_per_balancer_store, nullptr);
@@ -65,26 +65,26 @@ class LoadDataStoreTest : public ::testing::Test {
     return false;
   }
 
-  grpc::string FormatLbId(size_t index) {
+  std::string FormatLbId(size_t index) {
     return "kLbId" + std::to_string(index);
   }
 
-  const grpc::string kHostname1 = "kHostname1";
-  const grpc::string kHostname2 = "kHostname2";
-  const grpc::string kLbId1 = "kLbId1";
-  const grpc::string kLbId2 = "kLbId2";
-  const grpc::string kLbId3 = "kLbId3";
-  const grpc::string kLbId4 = "kLbId4";
-  const grpc::string kLoadKey1 = "kLoadKey1";
-  const grpc::string kLoadKey2 = "kLoadKey2";
-  const grpc::string kLbTag1 = "kLbTag1";
-  const grpc::string kLbTag2 = "kLbTag2";
-  const grpc::string kUser1 = "kUser1";
-  const grpc::string kUser2 = "kUser2";
-  const grpc::string kClientIp1 = "00";
-  const grpc::string kClientIp2 = "02";
-  const grpc::string kMetric1 = "kMetric1";
-  const grpc::string kMetric2 = "kMetric2";
+  const std::string kHostname1 = "kHostname1";
+  const std::string kHostname2 = "kHostname2";
+  const std::string kLbId1 = "kLbId1";
+  const std::string kLbId2 = "kLbId2";
+  const std::string kLbId3 = "kLbId3";
+  const std::string kLbId4 = "kLbId4";
+  const std::string kLoadKey1 = "kLoadKey1";
+  const std::string kLoadKey2 = "kLoadKey2";
+  const std::string kLbTag1 = "kLbTag1";
+  const std::string kLbTag2 = "kLbTag2";
+  const std::string kUser1 = "kUser1";
+  const std::string kUser2 = "kUser2";
+  const std::string kClientIp1 = "00";
+  const std::string kClientIp2 = "02";
+  const std::string kMetric1 = "kMetric1";
+  const std::string kMetric2 = "kMetric2";
   const LoadRecordKey kKey1;
   const LoadRecordKey kKey2;
 };
@@ -144,17 +144,17 @@ TEST_F(LoadDataStoreTest, ReassignOrphanStores) {
 
 TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   LoadDataStore load_data_store;
-  std::set<grpc::string> active_lb_ids;
+  std::set<std::string> active_lb_ids;
   size_t num_lb_ids = 1000;
   for (size_t i = 0; i < num_lb_ids; ++i) {
     load_data_store.ReportStreamCreated(kHostname1, FormatLbId(i), kLoadKey1);
     active_lb_ids.insert(FormatLbId(i));
   }
-  grpc::string orphaned_lb_id = FormatLbId(std::rand() % num_lb_ids);
+  std::string orphaned_lb_id = FormatLbId(std::rand() % num_lb_ids);
   load_data_store.ReportStreamClosed(kHostname1, orphaned_lb_id);
   active_lb_ids.erase(orphaned_lb_id);
   // Find which LB is assigned the orphaned store.
-  grpc::string assigned_lb_id = "";
+  std::string assigned_lb_id = "";
   for (const auto& lb_id : active_lb_ids) {
     if (PerBalancerStoresContains(
             load_data_store,
@@ -168,7 +168,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   // Close 10 more stream, skipping the assigned_lb_id. The assignment of
   // orphaned_lb_id shouldn't change.
   for (size_t _ = 0; _ < 10; ++_) {
-    grpc::string lb_id_to_close = "";
+    std::string lb_id_to_close = "";
     for (const auto& lb_id : active_lb_ids) {
       if (lb_id != assigned_lb_id) {
         lb_id_to_close = lb_id;
@@ -289,7 +289,7 @@ TEST_F(LoadDataStoreTest, ExactlyOnceAssignment) {
   for (size_t i = 0; i < num_close; ++i) {
     load_data_store.ReportStreamClosed(kHostname1, FormatLbId(i));
   }
-  std::set<grpc::string> reported_lb_ids;
+  std::set<std::string> reported_lb_ids;
   for (size_t i = num_close; i < num_create; ++i) {
     for (auto assigned_store :
          *load_data_store.GetAssignedStores(kHostname1, FormatLbId(i))) {

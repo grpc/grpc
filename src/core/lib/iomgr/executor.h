@@ -54,7 +54,7 @@ enum class ExecutorJobType {
 
 class Executor {
  public:
-  Executor(const char* executor_name);
+  explicit Executor(const char* executor_name);
 
   void Init();
 
@@ -70,7 +70,7 @@ class Executor {
 
   /** Enqueue the closure onto the executor. is_short is true if the closure is
    * a short job (i.e expected to not block and complete quickly) */
-  void Enqueue(grpc_closure* closure, grpc_error* error, bool is_short);
+  void Enqueue(grpc_closure* closure, grpc_error_handle error, bool is_short);
 
   // TODO(sreek): Currently we have two executors (available globally): The
   // default executor and the resolver executor.
@@ -83,6 +83,10 @@ class Executor {
   // Initialize ALL the executors
   static void InitAll();
 
+  static void Run(grpc_closure* closure, grpc_error_handle error,
+                  ExecutorType executor_type = ExecutorType::DEFAULT,
+                  ExecutorJobType job_type = ExecutorJobType::SHORT);
+
   // Shutdown ALL the executors
   static void ShutdownAll();
 
@@ -91,13 +95,6 @@ class Executor {
 
   // Set the threading mode for ALL the executors
   static void SetThreadingDefault(bool enable);
-
-  // Get the DEFAULT executor scheduler for the given job_type
-  static grpc_closure_scheduler* Scheduler(ExecutorJobType job_type);
-
-  // Get the executor scheduler for a given executor_type and a job_type
-  static grpc_closure_scheduler* Scheduler(ExecutorType executor_type,
-                                           ExecutorJobType job_type);
 
   // Return if a given executor is running in threaded mode (i.e if
   // SetThreading(true) was called previously on that executor)
@@ -116,6 +113,9 @@ class Executor {
   gpr_atm num_threads_;
   gpr_spinlock adding_thread_lock_;
 };
+
+// Global initializer for executor
+void grpc_executor_global_init();
 
 }  // namespace grpc_core
 

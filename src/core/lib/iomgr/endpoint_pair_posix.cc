@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -32,9 +32,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
@@ -53,19 +56,16 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
                                                    grpc_channel_args* args) {
   int sv[2];
   grpc_endpoint_pair p;
-  char* final_name;
   create_sockets(sv);
 
   grpc_core::ExecCtx exec_ctx;
 
-  gpr_asprintf(&final_name, "%s:client", name);
-  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name, false), args,
-                             "socketpair-server");
-  gpr_free(final_name);
-  gpr_asprintf(&final_name, "%s:server", name);
-  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name, false), args,
-                             "socketpair-client");
-  gpr_free(final_name);
+  std::string final_name = absl::StrCat(name, ":client");
+  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false),
+                             args, "socketpair-server");
+  final_name = absl::StrCat(name, ":server");
+  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name.c_str(), false),
+                             args, "socketpair-client");
 
   return p;
 }

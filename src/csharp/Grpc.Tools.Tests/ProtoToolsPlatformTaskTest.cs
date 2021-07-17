@@ -68,6 +68,25 @@ namespace Grpc.Tools.Tests
         }
 
         [Test]
+        public void CpuIsArm64()
+        {
+            if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            {
+                _cpuMatched++;
+
+                // On macosx arm64, x64 is used until a native protoc is shipped
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                {
+                    Assert.AreEqual("x64", _task.Cpu);
+                }
+                else
+                {
+                    Assert.AreEqual("arm64", _task.Cpu);
+                }
+            }
+        }
+
+        [Test]
         public void OsIsWindows()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

@@ -1,0 +1,23 @@
+# Configuration file for Bazel CI [1].
+#
+# Also testing on Bazel CI in addition of our normal CI workflow
+# ensures that gRPC is tested against Bazel@HEAD and stays compatible
+# with the latest release.
+#
+# See [2,3] in case you have questions.
+#
+# [1] https://github.com/bazelbuild/continuous-integration
+# [2] https://github.com/grpc/grpc/issues/19171
+# [3] https://github.com/grpc/grpc/pull/20784
+---
+# TODO(yannic): Ideally, we should also enable buildifier and all platforms should test `//...`.
+tasks:
+  ubuntu1804:
+    build_targets:
+      - //:all
+      - //src/proto/...
+      - //src/python/...
+    test_targets:
+      - //:all
+      - //src/proto/...
+      - //src/python/...

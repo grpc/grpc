@@ -27,7 +27,7 @@
 #include <grpc/support/time.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -100,7 +100,7 @@ static grpc_slice generate_random_slice() {
   return out;
 }
 
-static void request_response_with_payload(grpc_end2end_test_config config,
+static void request_response_with_payload(grpc_end2end_test_config /*config*/,
                                           grpc_end2end_test_fixture f) {
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of

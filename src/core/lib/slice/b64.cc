@@ -59,14 +59,13 @@ static const char base64_url_safe_chars[] =
 char* grpc_base64_encode(const void* vdata, size_t data_size, int url_safe,
                          int multiline) {
   size_t result_projected_size =
-      grpc_base64_estimate_encoded_size(data_size, url_safe, multiline);
+      grpc_base64_estimate_encoded_size(data_size, multiline);
   char* result = static_cast<char*>(gpr_malloc(result_projected_size));
   grpc_base64_encode_core(result, vdata, data_size, url_safe, multiline);
   return result;
 }
 
-size_t grpc_base64_estimate_encoded_size(size_t data_size, int url_safe,
-                                         int multiline) {
+size_t grpc_base64_estimate_encoded_size(size_t data_size, int multiline) {
   size_t result_projected_size =
       4 * ((data_size + 3) / 3) +
       2 * (multiline ? (data_size / (3 * GRPC_BASE64_MULTILINE_NUM_BLOCKS))
@@ -81,7 +80,7 @@ void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
   const char* base64_chars =
       url_safe ? base64_url_safe_chars : base64_url_unsafe_chars;
   const size_t result_projected_size =
-      grpc_base64_estimate_encoded_size(data_size, url_safe, multiline);
+      grpc_base64_estimate_encoded_size(data_size, multiline);
 
   char* current = result;
   size_t num_blocks = 0;

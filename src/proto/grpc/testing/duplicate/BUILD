@@ -14,9 +14,12 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
-grpc_package(name = "duplicate", visibility = "public")
+grpc_package(
+    name = "duplicate",
+    visibility = "public",
+)
 
 grpc_proto_library(
     name = "echo_duplicate_proto",

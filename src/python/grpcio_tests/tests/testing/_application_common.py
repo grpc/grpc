@@ -32,5 +32,12 @@ STREAM_UNARY_RESPONSE = services_pb2.Strange(first_strange_field=17)
 STREAM_STREAM_REQUEST = requests_pb2.Top(first_top_field=19)
 STREAM_STREAM_RESPONSE = services_pb2.Bottom(first_bottom_field=23)
 TWO_STREAM_STREAM_RESPONSES = (STREAM_STREAM_RESPONSE,) * 2
+ABORT_REQUEST = requests_pb2.Up(first_up_field=42)
+ABORT_SUCCESS_QUERY = requests_pb2.Up(first_up_field=43)
+ABORT_NO_STATUS_RESPONSE = services_pb2.Down(first_down_field=50)
+ABORT_SUCCESS_RESPONSE = services_pb2.Down(first_down_field=51)
+ABORT_FAILURE_RESPONSE = services_pb2.Down(first_down_field=52)
+STREAM_STREAM_MUTATING_REQUEST = requests_pb2.Top(first_top_field=24601)
+STREAM_STREAM_MUTATING_COUNT = 2
 
 INFINITE_REQUEST_STREAM_TIMEOUT = 0.2

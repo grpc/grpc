@@ -32,14 +32,14 @@ def _validate_payload_type_and_length(response, expected_type, expected_length):
 
 def _expect_status_code(call, expected_code):
     if call.code() != expected_code:
-        raise ValueError('expected code %s, got %s' % (expected_code,
-                                                       call.code()))
+        raise ValueError('expected code %s, got %s' %
+                         (expected_code, call.code()))
 
 
 def _expect_status_details(call, expected_details):
     if call.details() != expected_details:
-        raise ValueError('expected message %s, got %s' % (expected_details,
-                                                          call.details()))
+        raise ValueError('expected message %s, got %s' %
+                         (expected_details, call.details()))
 
 
 def _validate_status_code_and_details(call, expected_code, expected_details):
@@ -102,8 +102,9 @@ def _max_streams(stub):
     for _ in range(15):
         futures.append(stub.UnaryCall.future(_SIMPLE_REQUEST))
     for future in futures:
-        _validate_payload_type_and_length(
-            future.result(), messages_pb2.COMPRESSABLE, _RESPONSE_SIZE)
+        _validate_payload_type_and_length(future.result(),
+                                          messages_pb2.COMPRESSABLE,
+                                          _RESPONSE_SIZE)
 
 
 def _run_test_case(test_case, stub):
@@ -125,21 +126,18 @@ def _run_test_case(test_case, stub):
 
 def _args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--server_host',
-        help='the host to which to connect',
-        type=str,
-        default="127.0.0.1")
-    parser.add_argument(
-        '--server_port',
-        help='the port to which to connect',
-        type=int,
-        default="8080")
-    parser.add_argument(
-        '--test_case',
-        help='the test case to execute',
-        type=str,
-        default="goaway")
+    parser.add_argument('--server_host',
+                        help='the host to which to connect',
+                        type=str,
+                        default="127.0.0.1")
+    parser.add_argument('--server_port',
+                        help='the port to which to connect',
+                        type=int,
+                        default="8080")
+    parser.add_argument('--test_case',
+                        help='the test case to execute',
+                        type=str,
+                        default="goaway")
     return parser.parse_args()
 
 

@@ -56,9 +56,8 @@ class TestService(test_pb2_grpc.TestServiceServicer):
         _maybe_echo_metadata(context)
         _maybe_echo_status_and_message(request, context)
         return messages_pb2.SimpleResponse(
-            payload=messages_pb2.Payload(
-                type=messages_pb2.COMPRESSABLE,
-                body=b'\x00' * request.response_size))
+            payload=messages_pb2.Payload(type=messages_pb2.COMPRESSABLE,
+                                         body=b'\x00' * request.response_size))
 
     def StreamingOutputCall(self, request, context):
         _maybe_echo_status_and_message(request, context)
@@ -66,9 +65,9 @@ class TestService(test_pb2_grpc.TestServiceServicer):
             if response_parameters.interval_us != 0:
                 time.sleep(response_parameters.interval_us / _US_IN_A_SECOND)
             yield messages_pb2.StreamingOutputCallResponse(
-                payload=messages_pb2.Payload(
-                    type=request.response_type,
-                    body=b'\x00' * response_parameters.size))
+                payload=messages_pb2.Payload(type=request.response_type,
+                                             body=b'\x00' *
+                                             response_parameters.size))
 
     def StreamingInputCall(self, request_iterator, context):
         aggregate_size = 0
@@ -84,12 +83,12 @@ class TestService(test_pb2_grpc.TestServiceServicer):
             _maybe_echo_status_and_message(request, context)
             for response_parameters in request.response_parameters:
                 if response_parameters.interval_us != 0:
-                    time.sleep(
-                        response_parameters.interval_us / _US_IN_A_SECOND)
+                    time.sleep(response_parameters.interval_us /
+                               _US_IN_A_SECOND)
                 yield messages_pb2.StreamingOutputCallResponse(
-                    payload=messages_pb2.Payload(
-                        type=request.payload.type,
-                        body=b'\x00' * response_parameters.size))
+                    payload=messages_pb2.Payload(type=request.payload.type,
+                                                 body=b'\x00' *
+                                                 response_parameters.size))
 
     # NOTE(nathaniel): Apparently this is the same as the full-duplex call?
     # NOTE(atash): It isn't even called in the interop spec (Oct 22 2015)...

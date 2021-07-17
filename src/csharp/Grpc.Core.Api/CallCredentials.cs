@@ -30,7 +30,7 @@ namespace Grpc.Core
     public abstract class CallCredentials
     {
         /// <summary>
-        /// Composes multiple multiple <c>CallCredentials</c> objects into
+        /// Composes multiple <c>CallCredentials</c> objects into
         /// a single <c>CallCredentials</c> object.
         /// </summary>
         /// <param name="credentials">credentials to compose</param>
@@ -51,8 +51,8 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Populates this call credential instances.
-        /// You never need to invoke this, part of internal implementation.
+        /// Populates call credentials configurator with this instance's configuration.
+        /// End users never need to invoke this method as it is part of internal implementation.
         /// </summary>
         public abstract void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state);
 

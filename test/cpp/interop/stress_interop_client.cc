@@ -67,7 +67,7 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
 }
 
 StressTestInteropClient::StressTestInteropClient(
-    int test_id, const grpc::string& server_address,
+    int test_id, const std::string& server_address,
     ChannelCreationFunc channel_creation_func,
     const WeightedRandomTestSelector& test_selector, long test_duration_secs,
     long sleep_duration_ms, bool do_not_abort_on_transient_failures)

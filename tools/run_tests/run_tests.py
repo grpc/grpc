@@ -65,41 +65,6 @@ _POLLING_STRATEGIES = {
     'mac': ['poll'],
 }
 
-BigQueryTestData = collections.namedtuple('BigQueryTestData', 'name flaky cpu')
-
-
-def get_bqtest_data(limit=None):
-    import big_query_utils
-
-    bq = big_query_utils.create_big_query()
-    query = """
-SELECT
-  filtered_test_name,
-  SUM(result != 'PASSED' AND result != 'SKIPPED') > 0 as flaky,
-  MAX(cpu_measured) + 0.01 as cpu
-  FROM (
-  SELECT
-    REGEXP_REPLACE(test_name, r'/\d+', '') AS filtered_test_name,
-    result, cpu_measured
-  FROM
-    [grpc-testing:jenkins_test_results.aggregate_results]
-  WHERE
-    timestamp >= DATE_ADD(CURRENT_DATE(), -1, "WEEK")
-    AND platform = '""" + platform_string() + """'
-    AND NOT REGEXP_MATCH(job_name, '.*portability.*') )
-GROUP BY
-  filtered_test_name"""
-    if limit:
-        query += " limit {}".format(limit)
-    query_job = big_query_utils.sync_query_job(bq, 'grpc-testing', query)
-    page = bq.jobs().getQueryResults(
-        pageToken=None, **query_job['jobReference']).execute(num_retries=3)
-    test_data = [
-        BigQueryTestData(row['f'][0]['v'], row['f'][1]['v'] == 'true',
-                         float(row['f'][2]['v'])) for row in page['rows']
-    ]
-    return test_data
-
 
 def platform_string():
     return jobset.platform_string()
@@ -170,8 +135,8 @@ class Config(object):
             shortname=shortname,
             environ=actual_environ,
             cpu_cost=cpu_cost,
-            timeout_seconds=(self.timeout_multiplier * timeout_seconds
-                             if timeout_seconds else None),
+            timeout_seconds=(self.timeout_multiplier *
+                             timeout_seconds if timeout_seconds else None),
             flake_retries=4 if flaky or args.allow_flakes else 0,
             timeout_retries=1 if flaky or args.allow_flakes else 0)
 
@@ -190,8 +155,8 @@ def get_c_tests(travis, test_lang):
 
 def _check_compiler(compiler, supported_compilers):
     if compiler not in supported_compilers:
-        raise Exception(
-            'Compiler %s not supported (on this platform).' % compiler)
+        raise Exception('Compiler %s not supported (on this platform).' %
+                        compiler)
 
 
 def _check_arch(arch, supported_archs):
@@ -220,9 +185,9 @@ def _python_config_generator(name, major, minor, bits, config_vars):
     name += '_' + config_vars.iomgr_platform
     return PythonConfig(
         name, config_vars.shell + config_vars.builder +
-        config_vars.builder_prefix_arguments + [
-            _python_pattern_function(major=major, minor=minor, bits=bits)
-        ] + [name] + config_vars.venv_relative_python + config_vars.toolchain,
+        config_vars.builder_prefix_arguments +
+        [_python_pattern_function(major=major, minor=minor, bits=bits)] +
+        [name] + config_vars.venv_relative_python + config_vars.toolchain,
         config_vars.shell + config_vars.runner + [
             os.path.join(name, config_vars.venv_relative_python[0]),
             config_vars.test_name
@@ -231,11 +196,10 @@ def _python_config_generator(name, major, minor, bits, config_vars):
 
 def _pypy_config_generator(name, major, config_vars):
     return PythonConfig(
-        name,
-        config_vars.shell + config_vars.builder +
-        config_vars.builder_prefix_arguments + [
-            _pypy_pattern_function(major=major)
-        ] + [name] + config_vars.venv_relative_python + config_vars.toolchain,
+        name, config_vars.shell + config_vars.builder +
+        config_vars.builder_prefix_arguments +
+        [_pypy_pattern_function(major=major)] + [name] +
+        config_vars.venv_relative_python + config_vars.toolchain,
         config_vars.shell + config_vars.runner +
         [os.path.join(name, config_vars.venv_relative_python[0])])
 
@@ -244,8 +208,9 @@ def _python_pattern_function(major, minor, bits):
     # Bit-ness is handled by the test machine's environment
     if os.name == "nt":
         if bits == "64":
-            return '/c/Python{major}{minor}/python.exe'.format(
-                major=major, minor=minor, bits=bits)
+            return '/c/Python{major}{minor}/python.exe'.format(major=major,
+                                                               minor=minor,
+                                                               bits=bits)
         else:
             return '/c/Python{major}{minor}_{bits}bits/python.exe'.format(
                 major=major, minor=minor, bits=bits)
@@ -272,24 +237,40 @@ class CLanguage(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
+        self._make_options = []
+        self._use_cmake = True
         if self.platform == 'windows':
-            _check_compiler(
-                self.args.compiler,
-                ['default', 'cmake', 'cmake_vs2015', 'cmake_vs2017'])
+            _check_compiler(self.args.compiler, [
+                'default', 'cmake', 'cmake_vs2015', 'cmake_vs2017',
+                'cmake_vs2019'
+            ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
-            self._cmake_generator_option = 'Visual Studio 15 2017' if self.args.compiler == 'cmake_vs2017' else 'Visual Studio 14 2015'
-            self._cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
-            self._use_cmake = True
-            self._make_options = []
-        elif self.args.compiler == 'cmake':
-            _check_arch(self.args.arch, ['default'])
-            self._use_cmake = True
-            self._docker_distro = 'jessie'
-            self._make_options = []
+            if self.args.compiler == 'cmake_vs2019':
+                cmake_generator_option = 'Visual Studio 16 2019'
+            elif self.args.compiler == 'cmake_vs2017':
+                cmake_generator_option = 'Visual Studio 15 2017'
+            else:
+                cmake_generator_option = 'Visual Studio 14 2015'
+            cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
+            self._cmake_configure_extra_args = [
+                '-G', cmake_generator_option, '-A', cmake_arch_option
+            ]
         else:
-            self._use_cmake = False
-            self._docker_distro, self._make_options = self._compiler_options(
+            if self.platform == 'linux':
+                # Allow all the known architectures. _check_arch_option has already checked that we're not doing
+                # something illegal when not running under docker.
+                _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+            else:
+                _check_arch(self.args.arch, ['default'])
+
+            self._docker_distro, self._cmake_configure_extra_args = self._compiler_options(
                 self.args.use_docker, self.args.compiler)
+
+            if self.args.arch == 'x86':
+                # disable boringssl asm optimizations when on x86
+                # see https://github.com/grpc/grpc/blob/b5b8578b3f8b4a9ce61ed6677e19d546e43c5c68/tools/run_tests/artifacts/artifact_targets.py#L253
+                self._cmake_configure_extra_args.append('-DOPENSSL_NO_ASM=ON')
+
         if args.iomgr_platform == "uv":
             cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET '
             try:
@@ -323,11 +304,11 @@ class CLanguage(object):
             for polling_strategy in polling_strategies:
                 env = {
                     'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
-                    _ROOT + '/src/core/tsi/test_creds/ca.pem',
+                        _ROOT + '/src/core/tsi/test_creds/ca.pem',
                     'GRPC_POLL_STRATEGY':
-                    polling_strategy,
+                        polling_strategy,
                     'GRPC_VERBOSITY':
-                    'DEBUG'
+                        'DEBUG'
                 }
                 resolver = os.environ.get('GRPC_DNS_RESOLVER', None)
                 if resolver:
@@ -351,9 +332,8 @@ class CLanguage(object):
                 if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
                     continue
                 if self.platform == 'windows':
-                    binary = 'cmake/build/%s/%s.exe' % (
-                        _MSBUILD_CONFIG[self.config.build_config],
-                        target['name'])
+                    binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
+                        self.config.build_config], target['name'])
                 else:
                     if self._use_cmake:
                         binary = 'cmake/build/%s' % target['name']
@@ -375,17 +355,18 @@ class CLanguage(object):
                             tests = subprocess.check_output(
                                 [binary, '--benchmark_list_tests'],
                                 stderr=fnull)
-                        for line in tests.split('\n'):
+                        for line in tests.decode().split('\n'):
                             test = line.strip()
-                            if not test: continue
+                            if not test:
+                                continue
                             cmdline = [binary,
                                        '--benchmark_filter=%s$' % test
                                       ] + target['args']
                             out.append(
                                 self.config.job_spec(
                                     cmdline,
-                                    shortname='%s %s' % (' '.join(cmdline),
-                                                         shortname_ext),
+                                    shortname='%s %s' %
+                                    (' '.join(cmdline), shortname_ext),
                                     cpu_cost=cpu_cost,
                                     timeout_seconds=target.get(
                                         'timeout_seconds',
@@ -400,10 +381,12 @@ class CLanguage(object):
                             tests = subprocess.check_output(
                                 [binary, '--gtest_list_tests'], stderr=fnull)
                         base = None
-                        for line in tests.split('\n'):
+                        for line in tests.decode().split('\n'):
                             i = line.find('#')
-                            if i >= 0: line = line[:i]
-                            if not line: continue
+                            if i >= 0:
+                                line = line[:i]
+                            if not line:
+                                continue
                             if line[0] != ' ':
                                 base = line.strip()
                             else:
@@ -416,8 +399,8 @@ class CLanguage(object):
                                 out.append(
                                     self.config.job_spec(
                                         cmdline,
-                                        shortname='%s %s' % (' '.join(cmdline),
-                                                             shortname_ext),
+                                        shortname='%s %s' %
+                                        (' '.join(cmdline), shortname_ext),
                                         cpu_cost=cpu_cost,
                                         timeout_seconds=target.get(
                                             'timeout_seconds',
@@ -426,8 +409,9 @@ class CLanguage(object):
                                         environ=env))
                     else:
                         cmdline = [binary] + target['args']
-                        shortname = target.get('shortname', ' '.join(
-                            pipes.quote(arg) for arg in cmdline))
+                        shortname = target.get(
+                            'shortname',
+                            ' '.join(pipes.quote(arg) for arg in cmdline))
                         shortname += shortname_ext
                         out.append(
                             self.config.job_spec(
@@ -436,8 +420,8 @@ class CLanguage(object):
                                 cpu_cost=cpu_cost,
                                 flaky=target.get('flaky', False),
                                 timeout_seconds=target.get(
-                                    'timeout_seconds', _DEFAULT_TIMEOUT_SECONDS)
-                                * timeout_scaling,
+                                    'timeout_seconds',
+                                    _DEFAULT_TIMEOUT_SECONDS) * timeout_scaling,
                                 environ=env))
                 elif self.args.regex == '.*' or self.platform == 'windows':
                     print('\nWARNING: binary not found, skipping', binary)
@@ -457,12 +441,11 @@ class CLanguage(object):
 
     def pre_build_steps(self):
         if self.platform == 'windows':
-            return [[
-                'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
-                self._cmake_generator_option, self._cmake_arch_option
-            ]]
+            return [['tools\\run_tests\\helper_scripts\\pre_build_cmake.bat'] +
+                    self._cmake_configure_extra_args]
         elif self._use_cmake:
-            return [['tools/run_tests/helper_scripts/pre_build_cmake.sh']]
+            return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
+                    self._cmake_configure_extra_args]
         else:
             return []
 
@@ -481,60 +464,41 @@ class CLanguage(object):
         else:
             return 'Makefile'
 
-    def _clang_make_options(self, version_suffix=''):
-        if self.args.config == 'ubsan':
-            return [
-                'CC=clang%s' % version_suffix,
-                'CXX=clang++%s' % version_suffix,
-                'LD=clang++%s' % version_suffix,
-                'LDXX=clang++%s' % version_suffix
-            ]
-
+    def _clang_cmake_configure_extra_args(self, version_suffix=''):
         return [
-            'CC=clang%s' % version_suffix,
-            'CXX=clang++%s' % version_suffix,
-            'LD=clang%s' % version_suffix,
-            'LDXX=clang++%s' % version_suffix
-        ]
-
-    def _gcc_make_options(self, version_suffix):
-        return [
-            'CC=gcc%s' % version_suffix,
-            'CXX=g++%s' % version_suffix,
-            'LD=gcc%s' % version_suffix,
-            'LDXX=g++%s' % version_suffix
+            '-DCMAKE_C_COMPILER=clang%s' % version_suffix,
+            '-DCMAKE_CXX_COMPILER=clang++%s' % version_suffix,
         ]
 
     def _compiler_options(self, use_docker, compiler):
-        """Returns docker distro and make options to use for given compiler."""
+        """Returns docker distro and cmake configure args to use for given compiler."""
         if not use_docker and not _is_use_docker_child():
-            _check_compiler(compiler, ['default'])
+            # if not running under docker, we cannot ensure the right compiler version will be used,
+            # so we only allow the non-specific choices.
+            _check_compiler(compiler, ['default', 'cmake'])
 
-        if compiler == 'gcc4.9' or compiler == 'default':
+        if compiler == 'gcc4.9' or compiler == 'default' or compiler == 'cmake':
             return ('jessie', [])
-        elif compiler == 'gcc4.8':
-            return ('jessie', self._gcc_make_options(version_suffix='-4.8'))
         elif compiler == 'gcc5.3':
             return ('ubuntu1604', [])
-        elif compiler == 'gcc7.2':
-            return ('ubuntu1710', [])
+        elif compiler == 'gcc7.4':
+            return ('ubuntu1804', [])
+        elif compiler == 'gcc8.3':
+            return ('buster', [])
+        elif compiler == 'gcc8.3_openssl102':
+            return ('buster_openssl102', [
+                "-DgRPC_SSL_PROVIDER=package",
+            ])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang3.4':
-            # on ubuntu1404, clang-3.4 alias doesn't exist, just use 'clang'
-            return ('ubuntu1404', self._clang_make_options())
-        elif compiler == 'clang3.5':
-            return ('jessie', self._clang_make_options(version_suffix='-3.5'))
-        elif compiler == 'clang3.6':
+        elif compiler == 'clang4.0':
             return ('ubuntu1604',
-                    self._clang_make_options(version_suffix='-3.6'))
-        elif compiler == 'clang3.7':
+                    self._clang_cmake_configure_extra_args(
+                        version_suffix='-4.0'))
+        elif compiler == 'clang5.0':
             return ('ubuntu1604',
-                    self._clang_make_options(version_suffix='-3.7'))
-        elif compiler == 'clang7.0':
-            # clang++-7.0 alias doesn't exist and there are no other clang versions
-            # installed.
-            return ('sanitizers_jessie', self._clang_make_options())
+                    self._clang_cmake_configure_extra_args(
+                        version_suffix='-5.0'))
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -614,47 +578,6 @@ class RemoteNodeLanguage(object):
         return 'grpc-node'
 
 
-class PhpLanguage(object):
-
-    def configure(self, config, args):
-        self.config = config
-        self.args = args
-        _check_compiler(self.args.compiler, ['default'])
-        self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
-
-    def test_specs(self):
-        return [
-            self.config.job_spec(
-                ['src/php/bin/run_tests.sh'],
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-        ]
-
-    def pre_build_steps(self):
-        return []
-
-    def make_targets(self):
-        return ['static_c', 'shared_c']
-
-    def make_options(self):
-        return self._make_options
-
-    def build_steps(self):
-        return [['tools/run_tests/helper_scripts/build_php.sh']]
-
-    def post_tests_steps(self):
-        return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
-
-    def makefile_name(self):
-        return 'Makefile'
-
-    def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php_jessie_%s' % _docker_arch_suffix(
-            self.args.arch)
-
-    def __str__(self):
-        return 'php'
-
-
 class Php7Language(object):
 
     def configure(self, config, args):
@@ -665,9 +588,8 @@ class Php7Language(object):
 
     def test_specs(self):
         return [
-            self.config.job_spec(
-                ['src/php/bin/run_tests.sh'],
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS)
+            self.config.job_spec(['src/php/bin/run_tests.sh'],
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
 
     def pre_build_steps(self):
@@ -703,6 +625,20 @@ class PythonConfig(
 
 class PythonLanguage(object):
 
+    _TEST_SPECS_FILE = {
+        'native': ['src/python/grpcio_tests/tests/tests.json'],
+        'gevent': [
+            'src/python/grpcio_tests/tests/tests.json',
+            'src/python/grpcio_tests/tests_gevent/tests.json',
+        ],
+        'asyncio': ['src/python/grpcio_tests/tests_aio/tests.json'],
+    }
+    _TEST_FOLDER = {
+        'native': 'test',
+        'gevent': 'test_gevent',
+        'asyncio': 'test_aio',
+    }
+
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -710,18 +646,26 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        with open(
-                'src/python/grpcio_tests/tests/tests.json') as tests_json_file:
-            tests_json = json.load(tests_json_file)
+        tests_json = []
+        for tests_json_file_name in self._TEST_SPECS_FILE[
+                self.args.iomgr_platform]:
+            with open(tests_json_file_name) as tests_json_file:
+                tests_json.extend(json.load(tests_json_file))
         environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+        # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
+        # designed for non-native IO manager. It has a side-effect that
+        # overrides threading settings in C-Core.
+        if args.iomgr_platform != 'native':
+            environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
         return [
             self.config.job_spec(
                 config.run,
-                timeout_seconds=5 * 60,
-                environ=dict(
-                    list(environment.items()) + [(
-                        'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
-                shortname='%s.test.%s' % (config.name, suite_name),
+                timeout_seconds=8 * 60,
+                environ=dict(GRPC_PYTHON_TESTRUNNER_FILTER=str(suite_name),
+                             **environment),
+                shortname='%s.%s.%s' %
+                (config.name, self._TEST_FOLDER[self.args.iomgr_platform],
+                 suite_name),
             ) for suite_name in tests_json for config in self.pythons
         ]
 
@@ -758,10 +702,8 @@ class PythonLanguage(object):
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
-        elif self.args.compiler == 'python3.4':
-            return 'jessie'
         else:
-            return 'stretch_3.7'
+            return 'stretch_default'
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -789,69 +731,92 @@ class PythonLanguage(object):
             venv_relative_python = ['bin/python']
             toolchain = ['unix']
 
-        test_command = 'test_lite'
-        if args.iomgr_platform == 'gevent':
+        # Selects the corresponding testing mode.
+        # See src/python/grpcio_tests/commands.py for implementation details.
+        if args.iomgr_platform == 'native':
+            test_command = 'test_lite'
+        elif args.iomgr_platform == 'gevent':
             test_command = 'test_gevent'
+        elif args.iomgr_platform == 'asyncio':
+            test_command = 'test_aio'
+        else:
+            raise ValueError('Unsupported IO Manager platform: %s' %
+                             args.iomgr_platform)
         runner = [
             os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')
         ]
 
-        config_vars = _PythonConfigVars(
-            shell, builder, builder_prefix_arguments, venv_relative_python,
-            toolchain, runner, test_command, args.iomgr_platform)
-        python27_config = _python_config_generator(
-            name='py27',
-            major='2',
-            minor='7',
-            bits=bits,
-            config_vars=config_vars)
-        python34_config = _python_config_generator(
-            name='py34',
-            major='3',
-            minor='4',
-            bits=bits,
-            config_vars=config_vars)
-        python35_config = _python_config_generator(
-            name='py35',
-            major='3',
-            minor='5',
-            bits=bits,
-            config_vars=config_vars)
-        python36_config = _python_config_generator(
-            name='py36',
-            major='3',
-            minor='6',
-            bits=bits,
-            config_vars=config_vars)
-        python37_config = _python_config_generator(
-            name='py37',
-            major='3',
-            minor='7',
-            bits=bits,
-            config_vars=config_vars)
-        python38_config = _python_config_generator(
-            name='py38',
-            major='3',
-            minor='8',
-            bits=bits,
-            config_vars=config_vars)
-        pypy27_config = _pypy_config_generator(
-            name='pypy', major='2', config_vars=config_vars)
-        pypy32_config = _pypy_config_generator(
-            name='pypy3', major='3', config_vars=config_vars)
+        config_vars = _PythonConfigVars(shell, builder,
+                                        builder_prefix_arguments,
+                                        venv_relative_python, toolchain, runner,
+                                        test_command, args.iomgr_platform)
+        python27_config = _python_config_generator(name='py27',
+                                                   major='2',
+                                                   minor='7',
+                                                   bits=bits,
+                                                   config_vars=config_vars)
+        python35_config = _python_config_generator(name='py35',
+                                                   major='3',
+                                                   minor='5',
+                                                   bits=bits,
+                                                   config_vars=config_vars)
+        python36_config = _python_config_generator(name='py36',
+                                                   major='3',
+                                                   minor='6',
+                                                   bits=bits,
+                                                   config_vars=config_vars)
+        python37_config = _python_config_generator(name='py37',
+                                                   major='3',
+                                                   minor='7',
+                                                   bits=bits,
+                                                   config_vars=config_vars)
+        python38_config = _python_config_generator(name='py38',
+                                                   major='3',
+                                                   minor='8',
+                                                   bits=bits,
+                                                   config_vars=config_vars)
+        pypy27_config = _pypy_config_generator(name='pypy',
+                                               major='2',
+                                               config_vars=config_vars)
+        pypy32_config = _pypy_config_generator(name='pypy3',
+                                               major='3',
+                                               config_vars=config_vars)
+
+        if args.iomgr_platform in ('asyncio', 'gevent'):
+            if args.compiler not in ('default', 'python3.6', 'python3.7',
+                                     'python3.8'):
+                raise Exception(
+                    'Compiler %s not supported with IO Manager platform: %s' %
+                    (args.compiler, args.iomgr_platform))
 
         if args.compiler == 'default':
             if os.name == 'nt':
-                return (python35_config,)
+                if args.iomgr_platform == 'gevent':
+                    # TODO(https://github.com/grpc/grpc/issues/23784) allow
+                    # gevent to run on later version once issue solved.
+                    return (python36_config,)
+                else:
+                    return (python38_config,)
             else:
-                return (
-                    python27_config,
-                    python37_config,
-                )
+                if args.iomgr_platform in ('asyncio', 'gevent'):
+                    return (python36_config, python38_config)
+                elif os.uname()[0] == 'Darwin':
+                    # NOTE(rbellevi): Testing takes significantly longer on
+                    # MacOS, so we restrict the number of interpreter versions
+                    # tested.
+                    return (
+                        python27_config,
+                        python38_config,
+                    )
+                else:
+                    return (
+                        python27_config,
+                        python35_config,
+                        python37_config,
+                        python38_config,
+                    )
         elif args.compiler == 'python2.7':
             return (python27_config,)
-        elif args.compiler == 'python3.4':
-            return (python34_config,)
         elif args.compiler == 'python3.5':
             return (python35_config,)
         elif args.compiler == 'python3.6':
@@ -869,11 +834,10 @@ class PythonLanguage(object):
         elif args.compiler == 'all_the_cpythons':
             return (
                 python27_config,
-                python34_config,
                 python35_config,
                 python36_config,
                 python37_config,
-                # TODO: Add Python 3.8 once it's released.
+                python38_config,
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
@@ -891,16 +855,35 @@ class RubyLanguage(object):
 
     def test_specs(self):
         tests = [
-            self.config.job_spec(
-                ['tools/run_tests/helper_scripts/run_ruby.sh'],
-                timeout_seconds=10 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS)
+            self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
+                                 timeout_seconds=10 * 60,
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
-        tests.append(
-            self.config.job_spec(
-                ['tools/run_tests/helper_scripts/run_ruby_end2end_tests.sh'],
-                timeout_seconds=20 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        for test in [
+                'src/ruby/end2end/sig_handling_test.rb',
+                'src/ruby/end2end/channel_state_test.rb',
+                'src/ruby/end2end/channel_closing_test.rb',
+                'src/ruby/end2end/sig_int_during_channel_watch_test.rb',
+                'src/ruby/end2end/killed_client_thread_test.rb',
+                'src/ruby/end2end/forking_client_test.rb',
+                'src/ruby/end2end/grpc_class_init_test.rb',
+                'src/ruby/end2end/multiple_killed_watching_threads_test.rb',
+                'src/ruby/end2end/load_grpc_with_gc_stress_test.rb',
+                'src/ruby/end2end/client_memory_usage_test.rb',
+                'src/ruby/end2end/package_with_underscore_test.rb',
+                'src/ruby/end2end/graceful_sig_handling_test.rb',
+                'src/ruby/end2end/graceful_sig_stop_test.rb',
+                'src/ruby/end2end/errors_load_before_grpc_lib_test.rb',
+                'src/ruby/end2end/logger_load_before_grpc_lib_test.rb',
+                'src/ruby/end2end/status_codes_load_before_grpc_lib_test.rb',
+                'src/ruby/end2end/call_credentials_timeout_test.rb',
+                'src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb'
+        ]:
+            tests.append(
+                self.config.job_spec(['ruby', test],
+                                     shortname=test,
+                                     timeout_seconds=20 * 60,
+                                     environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return tests
 
     def pre_build_steps(self):
@@ -922,7 +905,7 @@ class RubyLanguage(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/ruby_jessie_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/ruby_buster_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -943,7 +926,7 @@ class CSharpLanguage(object):
             self._cmake_arch_option = 'x64'
         else:
             _check_compiler(self.args.compiler, ['default', 'coreclr'])
-            self._docker_distro = 'stretch'
+            self._docker_distro = 'buster'
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -970,10 +953,8 @@ class CSharpLanguage(object):
 
         specs = []
         for assembly in six.iterkeys(tests_by_assembly):
-            assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
-                                                       assembly_subdir,
-                                                       assembly,
-                                                       assembly_extension)
+            assembly_file = 'src/csharp/%s/%s/%s%s' % (
+                assembly, assembly_subdir, assembly, assembly_extension)
             if self.config.build_config != 'gcov' or self.platform != 'windows':
                 # normally, run each test as a separate process
                 for test in tests_by_assembly[assembly]:
@@ -999,11 +980,11 @@ class CSharpLanguage(object):
                 # to prevent problems with registering the profiler.
                 run_exclusive = 1000000
                 specs.append(
-                    self.config.job_spec(
-                        cmdline,
-                        shortname='csharp.coverage.%s' % assembly,
-                        cpu_cost=run_exclusive,
-                        environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+                    self.config.job_spec(cmdline,
+                                         shortname='csharp.coverage.%s' %
+                                         assembly,
+                                         cpu_cost=run_exclusive,
+                                         environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return specs
 
     def pre_build_steps(self):
@@ -1060,18 +1041,20 @@ class ObjCLanguage(object):
         out = []
         out.append(
             self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
                 timeout_seconds=10 * 60,
                 shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample'
+                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                    'FRAMEWORKS': 'NO'
                 }))
+        # Currently not supporting compiling as frameworks in Bazel
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
+                timeout_seconds=20 * 60,
                 shortname='ios-buildtest-example-sample-frameworks',
                 cpu_cost=1e6,
                 environ={
@@ -1082,7 +1065,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
+                timeout_seconds=20 * 60,
                 shortname='ios-buildtest-example-switftsample',
                 cpu_cost=1e6,
                 environ={
@@ -1091,55 +1074,103 @@ class ObjCLanguage(object):
                 }))
         out.append(
             self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_tests.sh'],
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
+                timeout_seconds=10 * 60,
+                shortname='ios-buildtest-example-tvOS-sample',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'tvOS-sample',
+                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        # Disabled due to #20258
+        # TODO (mxyan): Reenable this test when #20258 is resolved.
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example_bazel.sh'],
+        #         timeout_seconds=20 * 60,
+        #         shortname='ios-buildtest-example-watchOS-sample',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'watchOS-sample-WatchKit-App',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+        #             'FRAMEWORKS': 'NO'
+        #         }))
+        out.append(
+            self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
+                                 timeout_seconds=60 * 60,
+                                 shortname='ios-test-plugintest',
+                                 cpu_cost=1e6,
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_plugin_option_tests.sh'],
                 timeout_seconds=60 * 60,
-                shortname='ios-test-plugintest',
+                shortname='ios-test-plugin-option-test',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         out.append(
             self.config.job_spec(
-                ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
-                timeout_seconds=20 * 60,
+                ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
+                timeout_seconds=60 * 60,
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
         out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/run_one_test.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-unittests',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'UnitTests'
-                }))
+            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
+                                 timeout_seconds=60 * 60,
+                                 shortname='ios-test-unittests',
+                                 cpu_cost=1e6,
+                                 environ={'SCHEME': 'UnitTests'}))
         out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/run_one_test.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-interoptests',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'InteropTests'
-                }))
+            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
+                                 timeout_seconds=60 * 60,
+                                 shortname='ios-test-interoptests',
+                                 cpu_cost=1e6,
+                                 environ={'SCHEME': 'InteropTests'}))
         out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/run_one_test.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-cronettests',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'CronetTests'
-                }))
+            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
+                                 timeout_seconds=60 * 60,
+                                 shortname='ios-test-cronettests',
+                                 cpu_cost=1e6,
+                                 environ={'SCHEME': 'CronetTests'}))
         out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/run_one_test.sh'],
-                timeout_seconds=60 * 60,
-                shortname='mac-test-basictests',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'MacTests',
-                    'PLATFORM': 'macos'
-                }))
+            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
+                                 timeout_seconds=30 * 60,
+                                 shortname='ios-perf-test',
+                                 cpu_cost=1e6,
+                                 environ={'SCHEME': 'PerfTests'}))
+        out.append(
+            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
+                                 timeout_seconds=30 * 60,
+                                 shortname='ios-perf-test-posix',
+                                 cpu_cost=1e6,
+                                 environ={'SCHEME': 'PerfTestsPosix'}))
+        out.append(
+            self.config.job_spec(['test/cpp/ios/build_and_run_tests.sh'],
+                                 timeout_seconds=60 * 60,
+                                 shortname='ios-cpp-test-cronet',
+                                 cpu_cost=1e6,
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
+                                 timeout_seconds=60 * 60,
+                                 shortname='mac-test-basictests',
+                                 cpu_cost=1e6,
+                                 environ={
+                                     'SCHEME': 'MacTests',
+                                     'PLATFORM': 'macos'
+                                 }))
+        out.append(
+            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
+                                 timeout_seconds=30 * 60,
+                                 shortname='tvos-test-basictests',
+                                 cpu_cost=1e6,
+                                 environ={
+                                     'SCHEME': 'TvTests',
+                                     'PLATFORM': 'tvos'
+                                 }))
 
         return sorted(out)
 
@@ -1147,16 +1178,13 @@ class ObjCLanguage(object):
         return []
 
     def make_targets(self):
-        return ['interop_server']
+        return []
 
     def make_options(self):
         return []
 
     def build_steps(self):
-        return [
-            ['src/objective-c/tests/build_tests.sh'],
-            ['test/core/iomgr/ios/CFStreamTests/build_tests.sh'],
-        ]
+        return []
 
     def post_tests_steps(self):
         return []
@@ -1185,12 +1213,17 @@ class Sanity(object):
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
                 environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
+                # sanity tests run tools/bazel wrapper concurrently
+                # and that can result in a download/run race in the wrapper.
+                # under docker we already have the right version of bazel
+                # so we can just disable the wrapper.
+                environ['DISABLE_BAZEL_WRAPPER'] = 'true'
             return [
-                self.config.job_spec(
-                    cmd['script'].split(),
-                    timeout_seconds=30 * 60,
-                    environ=environ,
-                    cpu_cost=cmd.get('cpu_cost', 1)) for cmd in yaml.load(f)
+                self.config.job_spec(cmd['script'].split(),
+                                     timeout_seconds=30 * 60,
+                                     environ=environ,
+                                     cpu_cost=cmd.get('cpu_cost', 1))
+                for cmd in yaml.load(f)
             ]
 
     def pre_build_steps(self):
@@ -1227,7 +1260,6 @@ _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
     'grpc-node': RemoteNodeLanguage(),
-    'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
@@ -1268,8 +1300,9 @@ def _check_arch_option(arch):
         elif runtime_arch == '32bit' and arch == 'x86':
             return
         else:
-            print('Architecture %s does not match current runtime architecture.'
-                  % arch)
+            print(
+                'Architecture %s does not match current runtime architecture.' %
+                arch)
             sys.exit(1)
     else:
         if args.arch != 'default':
@@ -1290,7 +1323,7 @@ def _docker_arch_suffix(arch):
 
 
 def runs_per_test_type(arg_str):
-    """Auxilary function to parse the "runs_per_test" flag.
+    """Auxiliary function to parse the "runs_per_test" flag.
 
        Returns:
            A positive integer or 0, the latter indicating an infinite number of
@@ -1303,7 +1336,8 @@ def runs_per_test_type(arg_str):
         return 0
     try:
         n = int(arg_str)
-        if n <= 0: raise ValueError
+        if n <= 0:
+            raise ValueError
         return n
     except:
         msg = '\'{}\' is not a positive integer or \'inf\''.format(arg_str)
@@ -1325,8 +1359,10 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
 
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
-argp.add_argument(
-    '-c', '--config', choices=sorted(_CONFIGS.keys()), default='opt')
+argp.add_argument('-c',
+                  '--config',
+                  choices=sorted(_CONFIGS.keys()),
+                  default='opt')
 argp.add_argument(
     '-n',
     '--runs_per_test',
@@ -1338,34 +1374,42 @@ argp.add_argument('-r', '--regex', default='.*', type=str)
 argp.add_argument('--regex_exclude', default='', type=str)
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('-s', '--slowdown', default=1.0, type=float)
-argp.add_argument(
-    '-p',
-    '--sample_percent',
-    default=100.0,
-    type=percent_type,
-    help='Run a random sample with that percentage of tests')
-argp.add_argument(
-    '-f', '--forever', default=False, action='store_const', const=True)
-argp.add_argument(
-    '-t', '--travis', default=False, action='store_const', const=True)
-argp.add_argument(
-    '--newline_on_success', default=False, action='store_const', const=True)
-argp.add_argument(
-    '-l',
-    '--language',
-    choices=sorted(_LANGUAGES.keys()),
-    nargs='+',
-    required=True)
-argp.add_argument(
-    '-S', '--stop_on_failure', default=False, action='store_const', const=True)
-argp.add_argument(
-    '--use_docker',
-    default=False,
-    action='store_const',
-    const=True,
-    help='Run all the tests under docker. That provides ' +
-    'additional isolation and prevents the need to install ' +
-    'language specific prerequisites. Only available on Linux.')
+argp.add_argument('-p',
+                  '--sample_percent',
+                  default=100.0,
+                  type=percent_type,
+                  help='Run a random sample with that percentage of tests')
+argp.add_argument('-f',
+                  '--forever',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('-t',
+                  '--travis',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('--newline_on_success',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('-l',
+                  '--language',
+                  choices=sorted(_LANGUAGES.keys()),
+                  nargs='+',
+                  required=True)
+argp.add_argument('-S',
+                  '--stop_on_failure',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('--use_docker',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run all the tests under docker. That provides ' +
+                  'additional isolation and prevents the need to install ' +
+                  'language specific prerequisites. Only available on Linux.')
 argp.add_argument(
     '--allow_flakes',
     default=False,
@@ -1384,34 +1428,50 @@ argp.add_argument(
 argp.add_argument(
     '--compiler',
     choices=[
-        'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
-        'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
-        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7',
-        'python3.8', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
-        'electron1.3', 'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015',
-        'cmake_vs2017'
+        'default',
+        'gcc4.9',
+        'gcc5.3',
+        'gcc7.4',
+        'gcc8.3',
+        'gcc8.3_openssl102',
+        'gcc_musl',
+        'clang4.0',
+        'clang5.0',
+        'python2.7',
+        'python3.5',
+        'python3.6',
+        'python3.7',
+        'python3.8',
+        'pypy',
+        'pypy3',
+        'python_alpine',
+        'all_the_cpythons',
+        'electron1.3',
+        'electron1.6',
+        'coreclr',
+        'cmake',
+        'cmake_vs2015',
+        'cmake_vs2017',
+        'cmake_vs2019',
     ],
     default='default',
     help=
     'Selects compiler to use. Allowed values depend on the platform and language.'
 )
-argp.add_argument(
-    '--iomgr_platform',
-    choices=['native', 'uv', 'gevent'],
-    default='native',
-    help='Selects iomgr platform to build on')
-argp.add_argument(
-    '--build_only',
-    default=False,
-    action='store_const',
-    const=True,
-    help='Perform all the build steps but don\'t run any tests.')
-argp.add_argument(
-    '--measure_cpu_costs',
-    default=False,
-    action='store_const',
-    const=True,
-    help='Measure the cpu costs of tests')
+argp.add_argument('--iomgr_platform',
+                  choices=['native', 'uv', 'gevent', 'asyncio'],
+                  default='native',
+                  help='Selects iomgr platform to build on')
+argp.add_argument('--build_only',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Perform all the build steps but don\'t run any tests.')
+argp.add_argument('--measure_cpu_costs',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Measure the cpu costs of tests')
 argp.add_argument(
     '--update_submodules',
     default=[],
@@ -1422,17 +1482,22 @@ argp.add_argument(
     'Submodules are specified as SUBMODULE_NAME:BRANCH; if BRANCH is omitted, master is assumed.'
 )
 argp.add_argument('-a', '--antagonists', default=0, type=int)
+argp.add_argument('-x',
+                  '--xml_report',
+                  default=None,
+                  type=str,
+                  help='Generates a JUnit-compatible XML report')
+argp.add_argument('--report_suite_name',
+                  default='tests',
+                  type=str,
+                  help='Test suite name to use in generated JUnit XML report')
 argp.add_argument(
-    '-x',
-    '--xml_report',
-    default=None,
-    type=str,
-    help='Generates a JUnit-compatible XML report')
-argp.add_argument(
-    '--report_suite_name',
-    default='tests',
-    type=str,
-    help='Test suite name to use in generated JUnit XML report')
+    '--report_multi_target',
+    default=False,
+    const=True,
+    action='store_const',
+    help='Generate separate XML report for each test job (Looks better in UIs).'
+)
 argp.add_argument(
     '--quiet_success',
     default=False,
@@ -1454,34 +1519,19 @@ argp.add_argument(
     help='Only use the specified comma-delimited list of polling engines. '
     'Example: --force_use_pollers epoll1,poll '
     ' (This flag has no effect if --force_default_poller flag is also used)')
-argp.add_argument(
-    '--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
-argp.add_argument(
-    '--bq_result_table',
-    default='',
-    type=str,
-    nargs='?',
-    help='Upload test results to a specified BQ table.')
-argp.add_argument(
-    '--auto_set_flakes',
-    default=False,
-    const=True,
-    action='store_const',
-    help=
-    'Allow repeated runs for tests that have been failing recently (based on BQ historical data).'
-)
+argp.add_argument('--max_time',
+                  default=-1,
+                  type=int,
+                  help='Maximum test runtime in seconds')
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
 args = argp.parse_args()
 
 flaky_tests = set()
 shortname_to_cpu = {}
-if args.auto_set_flakes:
-    try:
-        for test in get_bqtest_data():
-            if test.flaky: flaky_tests.add(test.name)
-            if test.cpu > 0: shortname_to_cpu[test.name] = test.cpu
-    except:
-        print(
-            "Unexpected error getting flaky tests: %s" % traceback.format_exc())
 
 if args.force_default_poller:
     _POLLING_STRATEGIES = {}
@@ -1543,8 +1593,7 @@ if any(language.make_options() for language in languages):
         # together, and is only used under gcov. All other configs should build languages individually.
         language_make_options = list(
             set([
-                make_option
-                for lang in languages
+                make_option for lang in languages
                 for make_option in lang.make_options()
             ]))
 
@@ -1593,13 +1642,12 @@ _check_arch_option(args.arch)
 def make_jobspec(cfg, targets, makefile='Makefile'):
     if platform_string() == 'windows':
         return [
-            jobset.JobSpec(
-                [
-                    'cmake', '--build', '.', '--target',
-                    '%s' % target, '--config', _MSBUILD_CONFIG[cfg]
-                ],
-                cwd=os.path.dirname(makefile),
-                timeout_seconds=None) for target in targets
+            jobset.JobSpec([
+                'cmake', '--build', '.', '--target',
+                '%s' % target, '--config', _MSBUILD_CONFIG[cfg]
+            ],
+                           cwd=os.path.dirname(makefile),
+                           timeout_seconds=None) for target in targets
         ]
     else:
         if targets and makefile.startswith('cmake/build/'):
@@ -1645,11 +1693,10 @@ def build_step_environ(cfg):
 
 build_steps = list(
     set(
-        jobset.JobSpec(
-            cmdline,
-            environ=build_step_environ(build_config),
-            timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
-            flake_retries=2)
+        jobset.JobSpec(cmdline,
+                       environ=build_step_environ(build_config),
+                       timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
+                       flake_retries=2)
         for l in languages
         for cmdline in l.pre_build_steps()))
 if make_targets:
@@ -1659,10 +1706,9 @@ if make_targets:
     build_steps.extend(set(make_commands))
 build_steps.extend(
     set(
-        jobset.JobSpec(
-            cmdline,
-            environ=build_step_environ(build_config),
-            timeout_seconds=None)
+        jobset.JobSpec(cmdline,
+                       environ=build_step_environ(build_config),
+                       timeout_seconds=None)
         for l in languages
         for cmdline in l.build_steps()))
 
@@ -1678,18 +1724,18 @@ forever = args.forever
 def _shut_down_legacy_server(legacy_server_port):
     try:
         version = int(
-            urllib.request.urlopen(
-                'http://localhost:%d/version_number' % legacy_server_port,
-                timeout=10).read())
+            urllib.request.urlopen('http://localhost:%d/version_number' %
+                                   legacy_server_port,
+                                   timeout=10).read())
     except:
         pass
     else:
-        urllib.request.urlopen(
-            'http://localhost:%d/quitquitquit' % legacy_server_port).read()
+        urllib.request.urlopen('http://localhost:%d/quitquitquit' %
+                               legacy_server_port).read()
 
 
 def _calculate_num_runs_failures(list_of_results):
-    """Caculate number of runs and failures for a particular test.
+    """Calculate number of runs and failures for a particular test.
 
   Args:
     list_of_results: (List) of JobResult object.
@@ -1735,12 +1781,11 @@ def _build_and_run(check_cancelled,
                    build_only=False):
     """Do one pass of building & running tests."""
     # build latest sequentially
-    num_failures, resultset = jobset.run(
-        build_steps,
-        maxjobs=1,
-        stop_on_failure=True,
-        newline_on_success=newline_on_success,
-        travis=args.travis)
+    num_failures, resultset = jobset.run(build_steps,
+                                         maxjobs=1,
+                                         stop_on_failure=True,
+                                         newline_on_success=newline_on_success,
+                                         travis=args.travis)
     if num_failures:
         return [BuildAndRunError.BUILD]
 
@@ -1751,8 +1796,8 @@ def _build_and_run(check_cancelled,
         return []
 
     if not args.travis and not _has_epollexclusive() and platform_string(
-    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[platform_string(
-    )]:
+    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
+            platform_string()]:
         print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
         _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
@@ -1766,11 +1811,11 @@ def _build_and_run(check_cancelled,
     num_test_failures = 0
     try:
         infinite_runs = runs_per_test == 0
-        one_run = set(
-            spec for language in languages for spec in language.test_specs()
-            if (re.search(args.regex, spec.shortname) and
-                (args.regex_exclude == '' or
-                 not re.search(args.regex_exclude, spec.shortname))))
+        one_run = set(spec for language in languages
+                      for spec in language.test_specs()
+                      if (re.search(args.regex, spec.shortname) and
+                          (args.regex_exclude == '' or
+                           not re.search(args.regex_exclude, spec.shortname))))
         # When running on travis, we want out test runs to be as similar as possible
         # for reproducibility purposes.
         if args.travis and args.max_time <= 0:
@@ -1793,9 +1838,8 @@ def _build_and_run(check_cancelled,
         if infinite_runs:
             assert len(massaged_one_run
                       ) > 0, 'Must have at least one test for a -n inf run'
-        runs_sequence = (itertools.repeat(massaged_one_run)
-                         if infinite_runs else itertools.repeat(
-                             massaged_one_run, runs_per_test))
+        runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
+                         else itertools.repeat(massaged_one_run, runs_per_test))
         all_runs = itertools.chain.from_iterable(runs_sequence)
 
         if args.quiet_success:
@@ -1820,11 +1864,10 @@ def _build_and_run(check_cancelled,
                     if num_failures == num_runs:  # what about infinite_runs???
                         jobset.message('FAILED', k, do_newline=True)
                     else:
-                        jobset.message(
-                            'FLAKE',
-                            '%s [%d/%d runs flaked]' % (k, num_failures,
-                                                        num_runs),
-                            do_newline=True)
+                        jobset.message('FLAKE',
+                                       '%s [%d/%d runs flaked]' %
+                                       (k, num_failures, num_runs),
+                                       do_newline=True)
     finally:
         for antagonist in antagonists:
             antagonist.kill()
@@ -1834,21 +1877,28 @@ def _build_and_run(check_cancelled,
                 'config': args.config,
                 'iomgr_platform': args.iomgr_platform,
                 'language': args.language[
-                    0],  # args.language is a list but will always have one element when uploading to BQ is enabled.
+                    0
+                ],  # args.language is a list but will always have one element when uploading to BQ is enabled.
                 'platform': platform_string()
             }
-            upload_results_to_bq(resultset, args.bq_result_table,
-                                 upload_extra_fields)
+            try:
+                upload_results_to_bq(resultset, args.bq_result_table,
+                                     upload_extra_fields)
+            except NameError as e:
+                logging.warning(
+                    e)  # It's fine to ignore since this is not critical
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
-                resultset, xml_report, suite_name=args.report_suite_name)
+                resultset,
+                xml_report,
+                suite_name=args.report_suite_name,
+                multi_target=args.report_multi_target)
 
-    number_failures, _ = jobset.run(
-        post_tests_steps,
-        maxjobs=1,
-        stop_on_failure=False,
-        newline_on_success=newline_on_success,
-        travis=args.travis)
+    number_failures, _ = jobset.run(post_tests_steps,
+                                    maxjobs=1,
+                                    stop_on_failure=False,
+                                    newline_on_success=newline_on_success,
+                                    travis=args.travis)
 
     out = []
     if number_failures:
@@ -1866,24 +1916,21 @@ if forever:
         initial_time = dw.most_recent_change()
         have_files_changed = lambda: dw.most_recent_change() != initial_time
         previous_success = success
-        errors = _build_and_run(
-            check_cancelled=have_files_changed,
-            newline_on_success=False,
-            build_only=args.build_only) == 0
+        errors = _build_and_run(check_cancelled=have_files_changed,
+                                newline_on_success=False,
+                                build_only=args.build_only) == 0
         if not previous_success and not errors:
-            jobset.message(
-                'SUCCESS',
-                'All tests are now passing properly',
-                do_newline=True)
+            jobset.message('SUCCESS',
+                           'All tests are now passing properly',
+                           do_newline=True)
         jobset.message('IDLE', 'No change detected')
         while not have_files_changed():
             time.sleep(1)
 else:
-    errors = _build_and_run(
-        check_cancelled=lambda: False,
-        newline_on_success=args.newline_on_success,
-        xml_report=args.xml_report,
-        build_only=args.build_only)
+    errors = _build_and_run(check_cancelled=lambda: False,
+                            newline_on_success=args.newline_on_success,
+                            xml_report=args.xml_report,
+                            build_only=args.build_only)
     if not errors:
         jobset.message('SUCCESS', 'All tests passed', do_newline=True)
     else:

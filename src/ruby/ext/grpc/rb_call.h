@@ -23,6 +23,10 @@
 
 #include <grpc/grpc.h>
 
+extern const rb_data_type_t grpc_rb_md_ary_data_type;
+
+extern VALUE grpc_rb_cMdAry;
+
 /* Gets the wrapped call from a VALUE. */
 grpc_call* grpc_rb_get_wrapped_call(VALUE v);
 

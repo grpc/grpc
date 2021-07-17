@@ -1,0 +1,56 @@
+// Copyright 2019 the gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package hash_name;
+
+// A request for a single secret whose hash is similar to a desired name.
+message HashNameRequest {
+  // The string that is desired in the secret's hash.
+  string desired_name = 1;
+
+  // The ideal Hamming distance between desired_name and the secret that will
+  // be searched for.
+  int32 ideal_hamming_distance = 2;
+
+  // A Hamming distance greater than the ideal Hamming distance. Search results
+  // with a Hamming distance less than this value but greater than the ideal
+  // distance will be returned back to the client but will not terminate the
+  // search.
+  int32 interesting_hamming_distance = 3;
+}
+
+message HashNameResponse {
+  // The search result.
+  string secret = 1;
+
+  // The hash of the search result. A substring of this is of
+  // ideal_hamming_distance Hamming distance or less from desired_name.
+  string hashed_name = 2;
+
+  // The Hamming distance between hashed_name and desired_name.
+  int32 hamming_distance = 3;
+}
+
+service HashFinder {
+
+  // Search for a single string whose hash is similar to the specified
+  // desired_name. interesting_hamming_distance is ignored.
+  rpc Find (HashNameRequest) returns (HashNameResponse) {}
+
+  // Search for a string whose hash is similar to the specified desired_name,
+  // but also stream back less-than-ideal candidates.
+  rpc FindRange (HashNameRequest) returns (stream HashNameResponse) {}
+}

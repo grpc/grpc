@@ -15,8 +15,7 @@
  * limitations under the License.
  *
  */
-
-#ifdef GRPC_COMPILE_WITH_CRONET
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,10 +24,8 @@ extern "C" {
 /**
  * Enable Cronet for once.
  */
-void configureCronet(void);
+void configureCronet(bool enable_netlog);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

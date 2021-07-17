@@ -23,5 +23,7 @@ git clone /var/local/jenkins/grpc /var/local/git/grpc
 (cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
 && git submodule update --init --reference /var/local/jenkins/grpc/${name} \
 ${name}')
-cd /var/local/git/grpc/test
-bazel test --spawn_strategy=standalone --genrule_strategy=standalone ...
+cd /var/local/git/grpc
+
+bazel test //test/...
+bazel test //test/cpp/end2end:admin_services_end2end_test --define=grpc_no_xds=true

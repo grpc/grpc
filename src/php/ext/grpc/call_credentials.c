@@ -16,6 +16,11 @@
  *
  */
 
+/**
+ * class CallCredentials
+ * @see https://github.com/grpc/grpc/tree/master/src/php/ext/grpc/call_credentials.c
+ */
+
 #include "call_credentials.h"
 
 #include <ext/spl/spl_exceptions.h>
@@ -126,9 +131,10 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   plugin.destroy = plugin_destroy_state;
   plugin.state = (void *)state;
   plugin.type = "";
-
+  // TODO(yihuazhang): Expose min_security_level via the PHP API so that
+  // applications can decide what minimum security level their plugins require.
   grpc_call_credentials *creds =
-    grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+    grpc_metadata_credentials_create_from_plugin(plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
   zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
@@ -152,16 +158,9 @@ int plugin_get_metadata(
   php_grpc_add_property_string(arg, "service_url", context.service_url, true);
   php_grpc_add_property_string(arg, "method_name", context.method_name, true);
   zval *retval = NULL;
-#if PHP_MAJOR_VERSION < 7
-  zval **params[1];
-  params[0] = &arg;
-  state->fci->params = params;
-  state->fci->retval_ptr_ptr = &retval;
-#else
   PHP_GRPC_MAKE_STD_ZVAL(retval);
   state->fci->params = arg;
   state->fci->retval = retval;
-#endif
   state->fci->param_count = 1;
 
   PHP_GRPC_DELREF(arg);
@@ -189,14 +188,10 @@ int plugin_get_metadata(
   }
 
   if (retval != NULL) {
-#if PHP_MAJOR_VERSION < 7
-    zval_ptr_dtor(&retval);
-#else
     zval_ptr_dtor(arg);
     zval_ptr_dtor(retval);
     PHP_GRPC_FREE_STD_ZVAL(arg);
     PHP_GRPC_FREE_STD_ZVAL(retval);
-#endif
   }
   if (should_return) {
     return true;
@@ -227,10 +222,6 @@ void plugin_destroy_state(void *ptr) {
   plugin_state *state = (plugin_state *)ptr;
   free(state->fci);
   free(state->fci_cache);
-#if PHP_MAJOR_VERSION < 7
-  PHP_GRPC_FREE_STD_ZVAL(state->fci->params);
-  PHP_GRPC_FREE_STD_ZVAL(state->fci->retval);
-#endif
   free(state);
 }
 

@@ -21,7 +21,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
@@ -31,25 +31,24 @@ namespace grpc {
 namespace testing {
 
 class BenchmarkCallbackServiceImpl final
-    : public BenchmarkService::ExperimentalCallbackService {
+    : public BenchmarkService::CallbackService {
  public:
-  void UnaryCall(
-      ServerContext* context, const ::grpc::testing::SimpleRequest* request,
-      ::grpc::testing::SimpleResponse* response,
-      ::grpc::experimental::ServerCallbackRpcController* controller) override {
-    auto s = SetResponse(request, response);
-    controller->Finish(s);
+  ::grpc::ServerUnaryReactor* UnaryCall(::grpc::CallbackServerContext* context,
+                                        const SimpleRequest* request,
+                                        SimpleResponse* response) override {
+    auto* reactor = context->DefaultReactor();
+    reactor->Finish(SetResponse(request, response));
+    return reactor;
   }
 
-  ::grpc::experimental::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                                          ::grpc::testing::SimpleResponse>*
-  StreamingCall() override {
+  ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
+                            ::grpc::testing::SimpleResponse>*
+  StreamingCall(::grpc::CallbackServerContext*) override {
     class Reactor
-        : public ::grpc::experimental::ServerBidiReactor<
-              ::grpc::testing::SimpleRequest, ::grpc::testing::SimpleResponse> {
+        : public ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
+                                           ::grpc::testing::SimpleResponse> {
      public:
-      Reactor() {}
-      void OnStarted(ServerContext* context) override { StartRead(&request_); }
+      Reactor() { StartRead(&request_); }
 
       void OnReadDone(bool ok) override {
         if (!ok) {
@@ -103,11 +102,10 @@ class CallbackServer final : public grpc::testing::Server {
     auto port_num = port();
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
-      char* server_address = nullptr;
-      gpr_join_host_port(&server_address, "::", port_num);
-      builder->AddListeningPort(server_address,
-                                Server::CreateServerCredentials(config));
-      gpr_free(server_address);
+      std::string server_address = grpc_core::JoinHostPort("::", port_num);
+      builder->AddListeningPort(server_address.c_str(),
+                                Server::CreateServerCredentials(config),
+                                &port_num);
     }
 
     ApplyConfigToBuilder(config, builder.get());
@@ -115,6 +113,11 @@ class CallbackServer final : public grpc::testing::Server {
     builder->RegisterService(&service_);
 
     impl_ = builder->BuildAndStart();
+    if (impl_ == nullptr) {
+      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+    } else {
+      gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
+    }
   }
 
   std::shared_ptr<Channel> InProcessChannel(

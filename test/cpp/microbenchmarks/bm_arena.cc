@@ -20,13 +20,14 @@
 
 #include <benchmark/benchmark.h>
 #include "src/core/lib/gprpp/arena.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
 using grpc_core::Arena;
 
 static void BM_Arena_NoOp(benchmark::State& state) {
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     Arena::Create(state.range(0))->Destroy();
   }
 }
@@ -49,7 +50,7 @@ static void BM_Arena_ManyAlloc(benchmark::State& state) {
 BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
 
 static void BM_Arena_Batch(benchmark::State& state) {
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     Arena* a = Arena::Create(state.range(0));
     for (int i = 0; i < state.range(1); i++) {
       a->Alloc(state.range(2));
@@ -66,6 +67,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

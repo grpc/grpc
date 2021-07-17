@@ -1,7 +1,0 @@
-TreeNode.left               type:FT_CALLBACK
-TreeNode.right              type:FT_CALLBACK
-
-Dictionary.data             type:FT_CALLBACK
-KeyValuePair.key            max_size:8
-KeyValuePair.stringValue    max_size:8
-KeyValuePair.treeValue      type:FT_CALLBACK

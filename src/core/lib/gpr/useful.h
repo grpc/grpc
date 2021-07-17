@@ -33,8 +33,8 @@
 #define GPR_SWAP(type, a, b) \
   do {                       \
     type x = a;              \
-    a = b;                   \
-    b = x;                   \
+    (a) = b;                 \
+    (b) = x;                 \
   } while (0)
 
 /** Set the \a n-th bit of \a i (a mutable pointer). */
@@ -59,7 +59,8 @@
 
 #define GPR_ICMP(a, b) ((a) < (b) ? -1 : ((a) > (b) ? 1 : 0))
 
-#define GPR_HASH_POINTER(x, range) \
-  ((((size_t)x) >> 4) ^ (((size_t)x) >> 9) ^ (((size_t)x) >> 14)) % (range)
+#define GPR_HASH_POINTER(x, range)                                         \
+  (((((size_t)(x)) >> 4) ^ (((size_t)(x)) >> 9) ^ (((size_t)(x)) >> 14)) % \
+   (range))
 
 #endif /* GRPC_CORE_LIB_GPR_USEFUL_H */

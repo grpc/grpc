@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "test/core/util/test_config.h"
 
@@ -44,7 +44,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef struct test_ctx test_ctx;
 
@@ -73,9 +73,8 @@ static test_ctx g_ctx;
 static void server_setup_transport(grpc_transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->server, grpc_cq_pollset(g_ctx.cq));
-  grpc_server_setup_transport(g_ctx.server, transport, nullptr,
-                              grpc_server_get_channel_args(g_ctx.server),
-                              nullptr);
+  g_ctx.server->core_server->SetupTransport(
+      transport, nullptr, g_ctx.server->core_server->channel_args(), nullptr);
 }
 
 static void client_setup_transport(grpc_transport* transport) {
@@ -100,7 +99,7 @@ static void init_client() {
   transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->client, true);
   client_setup_transport(transport);
   GPR_ASSERT(g_ctx.client);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }
 
 static void init_server() {
@@ -112,7 +111,7 @@ static void init_server() {
   grpc_server_start(g_ctx.server);
   transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->server, false);
   server_setup_transport(transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }
 
 static void test_init() {
@@ -751,8 +750,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_TCP */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_TCP */

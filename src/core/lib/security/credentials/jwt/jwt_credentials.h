@@ -21,6 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include <grpc/support/time.h>
+
+#include "absl/strings/str_format.h"
+#include "absl/time/time.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
@@ -35,13 +41,20 @@ class grpc_service_account_jwt_access_credentials
                             grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* on_request_metadata,
-                            grpc_error** error) override;
+                            grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error* error) override;
+                                   grpc_error_handle error) override;
 
   const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
   const grpc_auth_json_key& key() const { return key_; }
+
+  std::string debug_string() override {
+    return absl::StrFormat(
+        "JWTAccessCredentials{ExpirationTime:%s}",
+        absl::FormatTime(absl::FromUnixMicros(
+            static_cast<int64_t>(gpr_timespec_to_micros(jwt_lifetime_)))));
+  };
 
  private:
   void reset_cache();

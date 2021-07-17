@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+# https://github.com/abseil/abseil-cpp/issues/626
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DABSL_NO_XRAY_ATTRIBUTES=1")
+
 set(PROTOBUF_PROTOC_EXECUTABLE "/usr/local/bin/protoc" CACHE STRING "Protoc binary on host")
 set(gRPC_CPP_PLUGIN_EXECUTABLE "/usr/local/bin/grpc_cpp_plugin" CACHE STRING "gRPC CPP plugin binary on host")
 
@@ -14,6 +17,7 @@ add_subdirectory(${GRPC_SRC_DIR} ${GRPC_BUILD_DIR})
 
 #include_directories(${GRPC_SRC_DIR}/include)
 include_directories(${GRPC_SRC_DIR})
+include_directories(${_gRPC_ABSL_INCLUDE_DIR})
 
 set(GRPC_PROTO_GENS_DIR ${CMAKE_BINARY_DIR}/gens)
 file(MAKE_DIRECTORY ${GRPC_PROTO_GENS_DIR})
@@ -109,7 +113,9 @@ add_library(grpc-interop
   SHARED
   src/main/cpp/grpc-interop.cc
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.h
-  ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc)
+  ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc
+  ${GRPC_SRC_DIR}/test/core/util/histogram.h
+  ${GRPC_SRC_DIR}/test/core/util/histogram.cc)
 
 target_link_libraries(grpc-interop
   messages_proto_lib

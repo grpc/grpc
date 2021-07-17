@@ -18,6 +18,7 @@ import unittest
 from concurrent import futures
 
 import grpc
+
 from grpc_channelz.v1 import channelz
 from grpc_channelz.v1 import channelz_pb2
 from grpc_channelz.v1 import channelz_pb2_grpc
@@ -69,9 +70,9 @@ class _ChannelServerPair(object):
 
     def __init__(self):
         # Server will enable channelz service
-        self.server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=3),
-            options=_DISABLE_REUSE_PORT + _ENABLE_CHANNELZ)
+        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=3),
+                                  options=_DISABLE_REUSE_PORT +
+                                  _ENABLE_CHANNELZ)
         port = self.server.add_insecure_port('[::]:0')
         self.server.add_generic_rpc_handlers((_GenericHandler(),))
         self.server.start()
@@ -127,9 +128,9 @@ class ChannelzServicerTest(unittest.TestCase):
         self._pairs = []
         # This server is for Channelz info fetching only
         # It self should not enable Channelz
-        self._server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=3),
-            options=_DISABLE_REUSE_PORT + _DISABLE_CHANNELZ)
+        self._server = grpc.server(futures.ThreadPoolExecutor(max_workers=3),
+                                   options=_DISABLE_REUSE_PORT +
+                                   _DISABLE_CHANNELZ)
         port = self._server.add_insecure_port('[::]:0')
         channelz.add_channelz_servicer(self._server)
         self._server.start()
@@ -263,8 +264,8 @@ class ChannelzServicerTest(unittest.TestCase):
             self.assertGreater(len(gtc_resp.channel[i].subchannel_ref), 0)
             gsc_resp = self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
-                    subchannel_id=gtc_resp.channel[i].subchannel_ref[
-                        0].subchannel_id))
+                    subchannel_id=gtc_resp.channel[i].subchannel_ref[0].
+                    subchannel_id))
             self.assertEqual(gtc_resp.channel[i].data.calls_started,
                              gsc_resp.subchannel.data.calls_started)
             self.assertEqual(gtc_resp.channel[i].data.calls_succeeded,
@@ -331,8 +332,8 @@ class ChannelzServicerTest(unittest.TestCase):
             self.assertGreater(len(gtc_resp.channel[i].subchannel_ref), 0)
             gsc_resp = self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
-                    subchannel_id=gtc_resp.channel[i].subchannel_ref[
-                        0].subchannel_id))
+                    subchannel_id=gtc_resp.channel[i].subchannel_ref[0].
+                    subchannel_id))
             self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
             gs_resp = self._channelz_stub.GetSocket(
@@ -348,6 +349,15 @@ class ChannelzServicerTest(unittest.TestCase):
             # Only receive responses when the RPC was successful
             self.assertEqual(gsc_resp.subchannel.data.calls_succeeded,
                              gs_resp.socket.data.messages_received)
+
+            if gs_resp.socket.remote.HasField("tcpip_address"):
+                address = gs_resp.socket.remote.tcpip_address.ip_address
+                self.assertTrue(
+                    len(address) == 4 or len(address) == 16, address)
+            if gs_resp.socket.local.HasField("tcpip_address"):
+                address = gs_resp.socket.local.tcpip_address.ip_address
+                self.assertTrue(
+                    len(address) == 4 or len(address) == 16, address)
 
     def test_streaming_rpc(self):
         self._pairs = _generate_channel_server_pairs(1)
@@ -412,6 +422,7 @@ class ChannelzServicerTest(unittest.TestCase):
         gs_resp = self._channelz_stub.GetSocket(
             channelz_pb2.GetSocketRequest(
                 socket_id=gss_resp.server[0].listen_socket[0].socket_id))
+
         # If the RPC call failed, it will raise a grpc.RpcError
         # So, if there is no exception raised, considered pass
 

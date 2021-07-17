@@ -23,7 +23,8 @@
 
 #include <grpc/support/atm.h>
 
-#include "src/core/lib/gprpp/inlined_vector.h"
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -33,14 +34,14 @@ namespace grpc_core {
 class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
  public:
   struct DropTokenCount {
-    UniquePtr<char> token;
+    grpc_core::UniquePtr<char> token;
     int64_t count;
 
-    DropTokenCount(UniquePtr<char> token, int64_t count)
+    DropTokenCount(grpc_core::UniquePtr<char> token, int64_t count)
         : token(std::move(token)), count(count) {}
   };
 
-  typedef InlinedVector<DropTokenCount, 10> DroppedCallCounts;
+  typedef absl::InlinedVector<DropTokenCount, 10> DroppedCallCounts;
 
   void AddCallStarted();
   void AddCallFinished(bool finished_with_client_failed_to_send,
@@ -51,7 +52,7 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
   void Get(int64_t* num_calls_started, int64_t* num_calls_finished,
            int64_t* num_calls_finished_with_client_failed_to_send,
            int64_t* num_calls_finished_known_received,
-           UniquePtr<DroppedCallCounts>* drop_token_counts);
+           std::unique_ptr<DroppedCallCounts>* drop_token_counts);
 
   // A destruction function to use as the user_data key when attaching
   // client stats to a grpc_mdelem.
@@ -65,7 +66,8 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
   gpr_atm num_calls_finished_with_client_failed_to_send_ = 0;
   gpr_atm num_calls_finished_known_received_ = 0;
   Mutex drop_count_mu_;  // Guards drop_token_counts_.
-  UniquePtr<DroppedCallCounts> drop_token_counts_;
+  std::unique_ptr<DroppedCallCounts> drop_token_counts_
+      ABSL_GUARDED_BY(drop_count_mu_);
 };
 
 }  // namespace grpc_core

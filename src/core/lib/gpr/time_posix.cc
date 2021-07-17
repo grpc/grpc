@@ -82,7 +82,7 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   }
 }
 #else
-  /* For some reason Apple's OSes haven't implemented clock_gettime. */
+/* For some reason Apple's OSes haven't implemented clock_gettime. */
 
 #include <mach/mach.h>
 #include <mach/mach_time.h>

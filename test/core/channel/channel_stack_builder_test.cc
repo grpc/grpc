@@ -29,26 +29,26 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/util/test_config.h"
 
-static grpc_error* channel_init_func(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error_handle channel_init_func(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* call_init_func(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error_handle call_init_func(
+    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static void channel_destroy_func(grpc_channel_element* elem) {}
+static void channel_destroy_func(grpc_channel_element* /*elem*/) {}
 
-static void call_destroy_func(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {}
+static void call_destroy_func(grpc_call_element* /*elem*/,
+                              const grpc_call_final_info* /*final_info*/,
+                              grpc_closure* /*ignored*/) {}
 
 bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
-void set_arg_once_fn(grpc_channel_stack* channel_stack,
-                     grpc_channel_element* elem, void* arg) {
+void set_arg_once_fn(grpc_channel_stack* /*channel_stack*/,
+                     grpc_channel_element* /*elem*/, void* arg) {
   bool* called = static_cast<bool*>(arg);
   // Make sure this function is only called once per arg.
   GPR_ASSERT(*called == false);
@@ -111,12 +111,12 @@ static bool add_original_filter(grpc_channel_stack_builder* builder,
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   add_original_filter,
-                                   (void*)&original_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   add_replacement_filter,
-                                   (void*)&replacement_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, INT_MAX, add_original_filter,
+      const_cast<grpc_channel_filter*>(&original_filter));
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, INT_MAX, add_replacement_filter,
+      const_cast<grpc_channel_filter*>(&replacement_filter));
 }
 
 static void destroy_plugin(void) {}

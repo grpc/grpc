@@ -196,6 +196,34 @@ static void test_bad_decompression_data_crc(void) {
   grpc_slice_buffer_destroy(&output);
 }
 
+static void test_bad_decompression_data_missing_trailer(void) {
+  grpc_slice_buffer input;
+  grpc_slice_buffer decompressed;
+  grpc_slice_buffer garbage;
+  grpc_slice_buffer output;
+
+  grpc_slice_buffer_init(&input);
+  grpc_slice_buffer_init(&decompressed);
+  grpc_slice_buffer_init(&garbage);
+  grpc_slice_buffer_init(&output);
+  grpc_slice_buffer_add(&input, create_test_value(ONE_MB_A));
+
+  grpc_core::ExecCtx exec_ctx;
+  /* compress it */
+  grpc_msg_compress(GRPC_MESSAGE_COMPRESS_GZIP, &input, &decompressed);
+  GPR_ASSERT(decompressed.length > 8);
+  /* Remove the footer from the decompressed message */
+  grpc_slice_buffer_trim_end(&decompressed, 8, &garbage);
+  /* try (and fail) to decompress the compressed buffer without the footer */
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_MESSAGE_COMPRESS_GZIP, &decompressed,
+                                      &output));
+
+  grpc_slice_buffer_destroy(&input);
+  grpc_slice_buffer_destroy(&decompressed);
+  grpc_slice_buffer_destroy(&garbage);
+  grpc_slice_buffer_destroy(&output);
+}
+
 static void test_bad_decompression_data_trailing_garbage(void) {
   grpc_slice_buffer input;
   grpc_slice_buffer output;
@@ -315,6 +343,7 @@ int main(int argc, char** argv) {
 
   test_tiny_data_compress();
   test_bad_decompression_data_crc();
+  test_bad_decompression_data_missing_trailer();
   test_bad_decompression_data_stream();
   test_bad_decompression_data_trailing_garbage();
   test_bad_compression_algorithm();

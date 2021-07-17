@@ -18,7 +18,7 @@
 
 #import "GRPCCall+Tests.h"
 
-#import "private/GRPCHost.h"
+#import "private/GRPCCore/GRPCHost.h"
 
 #import "GRPCCallOptions.h"
 
@@ -27,12 +27,19 @@
 + (void)useTestCertsPath:(NSString *)certsPath
                 testName:(NSString *)testName
                  forHost:(NSString *)host {
-  if (!host || !certsPath || !testName) {
-    [NSException raise:NSInvalidArgumentException format:@"host, path and name must be provided."];
+  if (!host) {
+    [NSException raise:NSInvalidArgumentException format:@"host must be provided."];
+  }
+  if (!certsPath) {
+    [NSException raise:NSInvalidArgumentException format:@"certpath be provided."];
+  }
+  if (!testName) {
+    [NSException raise:NSInvalidArgumentException format:@"testname must be provided."];
   }
   NSError *error = nil;
-  NSString *certs =
-      [NSString stringWithContentsOfFile:certsPath encoding:NSUTF8StringEncoding error:&error];
+  NSString *certs = [NSString stringWithContentsOfFile:certsPath
+                                              encoding:NSUTF8StringEncoding
+                                                 error:&error];
   if (error != nil) {
     [NSException raise:[error localizedDescription] format:@"failed to load certs"];
   }

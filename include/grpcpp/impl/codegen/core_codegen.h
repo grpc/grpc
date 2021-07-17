@@ -31,10 +31,9 @@ namespace grpc {
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
  private:
-  virtual const grpc_completion_queue_factory*
-  grpc_completion_queue_factory_lookup(
+  const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
       const grpc_completion_queue_attributes* attributes) override;
-  virtual grpc_completion_queue* grpc_completion_queue_create(
+  grpc_completion_queue* grpc_completion_queue_create(
       const grpc_completion_queue_factory* factory,
       const grpc_completion_queue_attributes* attributes,
       void* reserved) override;
@@ -73,7 +72,8 @@ class CoreCodegen final : public CoreCodegenInterface {
                                                void* reserved) override;
   void grpc_call_ref(grpc_call* call) override;
   void grpc_call_unref(grpc_call* call) override;
-  virtual void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;
+  void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;
+  const char* grpc_call_error_to_string(grpc_call_error error) override;
 
   grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) override;
   void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
@@ -114,8 +114,8 @@ class CoreCodegen final : public CoreCodegenInterface {
   gpr_timespec gpr_inf_future(gpr_clock_type type) override;
   gpr_timespec gpr_time_0(gpr_clock_type type) override;
 
-  virtual const Status& ok() override;
-  virtual const Status& cancelled() override;
+  const Status& ok() override;
+  const Status& cancelled() override;
 
   void assert_fail(const char* failed_assertion, const char* file,
                    int line) override;

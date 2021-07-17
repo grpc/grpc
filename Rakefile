@@ -7,7 +7,7 @@ require 'fileutils'
 
 require_relative 'build_config.rb'
 
-load 'tools/distrib/docker_for_windows.rb'
+load 'tools/distrib/rake_compiler_docker_image.rb'
 
 # Add rubocop style checking tasks
 RuboCop::RakeTask.new(:rubocop) do |task|
@@ -88,7 +88,7 @@ task 'dlls' do
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
-  env += 'CXXFLAGS="-std=c++11" '
+  env += 'CXXFLAGS="-std=c++11 -fno-exceptions" '
   env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
@@ -98,14 +98,20 @@ task 'dlls' do
   env += "V=#{verbose} "
   out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
-  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby' }
-  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby' }
+  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
+  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
 
   [ w64, w32 ].each do |opt|
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
-    docker_for_windows "gem update --system --no-document && #{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}"
+    env_comp += "LDXX=#{opt[:cross]}-g++ "
+    run_rake_compiler opt[:platform], <<-EOT
+      gem update --system --no-document && \
+      #{env} #{env_comp} make -j`nproc` #{out} && \
+      #{opt[:cross]}-strip -x -S #{out} && \
+      cp #{out} #{opt[:out]}
+    EOT
   end
 
 end
@@ -115,6 +121,7 @@ task 'gem:native' do
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
+  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0', '2.4.0'].join(':')
 
   if RUBY_PLATFORM =~ /darwin/
     FileUtils.touch 'grpc_c.32.ruby'
@@ -124,10 +131,32 @@ task 'gem:native' do
         "invoked on macos with ruby #{RUBY_VERSION}. The ruby macos artifact " \
         "build should be running on ruby 2.5."
     end
-    system "rake cross native gem RUBY_CC_VERSION=2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    system "rake cross native gem RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
     Rake::Task['dlls'].execute
-    docker_for_windows "gem update --system --no-document && bundle && rake cross native gem RUBY_CC_VERSION=2.6.0:2.5.0:2.4.0:2.3.0 V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    ['x86-mingw32', 'x64-mingw32'].each do |plat|
+      run_rake_compiler plat, <<-EOT
+        gem update --system --no-document && \
+        bundle && \
+        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
+          RUBY_CC_VERSION=#{ruby_cc_versions} \
+          V=#{verbose} \
+          GRPC_CONFIG=#{grpc_config}
+      EOT
+    end
+    # Truncate grpc_c.*.ruby files because they're for Windows only.
+    File.truncate('grpc_c.32.ruby', 0)
+    File.truncate('grpc_c.64.ruby', 0)
+    ['x86_64-linux', 'x86-linux'].each do |plat|
+      run_rake_compiler plat, <<-EOT
+        gem update --system --no-document && \
+        bundle && \
+        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
+          RUBY_CC_VERSION=#{ruby_cc_versions} \
+          V=#{verbose} \
+          GRPC_CONFIG=#{grpc_config}
+      EOT
+    end
   end
 end
 

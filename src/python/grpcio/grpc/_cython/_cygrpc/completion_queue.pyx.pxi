@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import threading
-import time
 
 cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 
@@ -35,7 +31,7 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
       c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
       if gpr_time_cmp(c_timeout, c_deadline) > 0:
         c_timeout = c_deadline
-  
+
       c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
   
       if (c_event.type != GRPC_QUEUE_TIMEOUT or
@@ -119,4 +115,4 @@ cdef class CompletionQueue:
             self.c_completion_queue, c_deadline, NULL)
         self._interpret_event(event)
       grpc_completion_queue_destroy(self.c_completion_queue)
-    grpc_shutdown_blocking()
+    grpc_shutdown()

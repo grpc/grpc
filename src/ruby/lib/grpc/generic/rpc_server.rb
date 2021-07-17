@@ -210,7 +210,7 @@ module GRPC
     # A server arguments hash to be passed down to the underlying core server
     #
     # * interceptors:
-    # Am array of GRPC::ServerInterceptor objects that will be used for
+    # An array of GRPC::ServerInterceptor objects that will be used for
     # intercepting server handlers to provide extra functionality.
     # Interceptors are an EXPERIMENTAL API.
     #
@@ -241,7 +241,7 @@ module GRPC
     # server's current call loop is it's last.
     def stop
       # if called via run_till_terminated_or_interrupted,
-      #   signal stop_server_thread and dont do anything
+      #   signal stop_server_thread and don't do anything
       if @stop_server.nil? == false && @stop_server == false
         @stop_server = true
         @stop_server_cv.broadcast
@@ -391,22 +391,21 @@ module GRPC
       # register signal handlers
       signals.each do |sig|
         # input validation
-        if sig.class == String
-          sig.upcase!
-          if sig.start_with?('SIG')
-            # cut out the SIG prefix to see if valid signal
-            sig = sig[3..-1]
-          end
-        end
+        target_sig = if sig.class == String
+                       # cut out the SIG prefix to see if valid signal
+                       sig.upcase.start_with?('SIG') ? sig.upcase[3..-1] : sig.upcase
+                     else
+                       sig
+                     end
 
         # register signal traps for all valid signals
-        if valid_signals.value?(sig) || valid_signals.key?(sig)
-          Signal.trap(sig) do
+        if valid_signals.value?(target_sig) || valid_signals.key?(target_sig)
+          Signal.trap(target_sig) do
             @stop_server = true
             @stop_server_cv.broadcast
           end
         else
-          fail "#{sig} not a valid signal"
+          fail "#{target_sig} not a valid signal"
         end
       end
 

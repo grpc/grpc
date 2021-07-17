@@ -1,0 +1,110 @@
+source 'https://github.com/CocoaPods/Specs.git'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+# Location of gRPC's repo root relative to this file.
+GRPC_LOCAL_SRC = '../../..'
+
+
+target 'CronetTests' do
+  platform :ios, '9.0'
+  pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
+
+  pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler-gRPCCppPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod 'Protobuf-C++', :podspec => "#{GRPC_LOCAL_SRC}/src/cpp", :inhibit_warnings => true
+
+  pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+
+  pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
+  pod 'gRPC-C++/Cronet-Implementation',      :path => GRPC_LOCAL_SRC
+  pod 'gRPC-C++/Protobuf',       :path => GRPC_LOCAL_SRC
+  pod 'RemoteTestCpp', :path => "RemoteTestClientCpp", :inhibit_warnings => true
+
+  pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
+  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+end
+
+# gRPC-Core.podspec needs to be modified to be successfully used for local development. A Podfile's
+# pre_install hook lets us do that. The block passed to it runs after the podspecs are downloaded
+# and before they are installed in the user project.
+#
+# This podspec searches for the gRPC core library headers under "$(PODS_ROOT)/gRPC-Core", where
+# Cocoapods normally places the downloaded sources. When doing local development of the libraries,
+# though, Cocoapods just takes the sources from whatever directory was specified using `:path`, and
+# doesn't copy them under $(PODS_ROOT). When using static libraries, one can sometimes rely on the
+# symbolic links to the pods headers that Cocoapods creates under "$(PODS_ROOT)/Headers". But those
+# aren't created when using dynamic frameworks. So our solution is to modify the podspec on the fly
+# to point at the local directory where the sources are.
+#
+# TODO(jcanizales): Send a PR to Cocoapods to get rid of this need.
+pre_install do |installer|
+  # This is the gRPC-Core podspec object, as initialized by its podspec file.
+  grpc_core_spec = installer.pod_targets.find{|t| t.name.start_with?('gRPC-Core')}.root_spec
+
+  # Copied from gRPC-Core.podspec, except for the adjusted src_root:
+  src_root = "$(PODS_ROOT)/../#{GRPC_LOCAL_SRC}"
+  grpc_core_spec.pod_target_xcconfig = {
+    'GRPC_SRC_ROOT' => src_root,
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
+    'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
+    # If we don't set these two settings, `include/grpc/support/time.h` and
+    # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+    # build.
+    'USE_HEADERMAP' => 'NO',
+    'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+  }
+
+  # This is the RemoteTestCpp podspec object.
+  remote_test_cpp_spec = installer.pod_targets.find{|t| t.name.start_with?('RemoteTestCpp')}.root_spec
+
+  # ios-cpp-test-cronet failes by chance because the RemoteTestCpp target cannot find Protobuf-C++.
+  remote_test_cpp_spec.pod_target_xcconfig = {
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_ROOT)/header/Public/Protobuf-C++"',
+  }
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
+    end
+
+    # CocoaPods creates duplicated library targets of gRPC-Core when the test targets include
+    # non-default subspecs of gRPC-Core. All of these library targets start with prefix 'gRPC-Core'
+    # and require the same error suppresion.
+    if target.name.start_with?('gRPC-Core')
+      target.build_configurations.each do |config|
+        # TODO(zyc): Remove this setting after the issue is resolved
+        # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
+        # function" warning
+        config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
+      end
+    end
+
+    # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
+    # the test target 'InteropTestsRemoteWithCronet'
+    # Activate GRPCCall+InternalTests functions for the dedicated build configuration 'Test', which will
+    # be used by all test targets using it.
+    if /gRPC-(mac|i)OS/.match(target.name)
+      target.build_configurations.each do |config|
+        if config.name == 'Cronet'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1 GRPC_TEST_OBJC=1'
+        elsif config.name == 'Test'
+          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_TEST_OBJC=1'
+        end
+      end
+    end
+
+    # Enable NSAssert on gRPC
+    if /(gRPC|ProtoRPC|RxLibrary)-(mac|i)OS/.match(target.name)
+      target.build_configurations.each do |config|
+        if config.name != 'Release'
+          config.build_settings['ENABLE_NS_ASSERTIONS'] = 'YES'
+        end
+      end
+    end
+  end
+end

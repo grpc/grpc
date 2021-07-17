@@ -37,7 +37,7 @@
 
 constexpr size_t kMinFrameLength = 1024;
 constexpr size_t kDefaultFrameLength = 16 * 1024;
-constexpr size_t kMaxFrameLength = 1024 * 1024;
+constexpr size_t kMaxFrameLength = 16 * 1024 * 1024;
 
 /**
  * Main struct for alts_zero_copy_grpc_protector.
@@ -87,10 +87,10 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
   }
   GPR_ASSERT(remaining == 0);
   /* Gets little-endian frame size.  */
-  uint32_t frame_size = (((uint32_t)frame_size_buffer[3]) << 24) |
-                        (((uint32_t)frame_size_buffer[2]) << 16) |
-                        (((uint32_t)frame_size_buffer[1]) << 8) |
-                        ((uint32_t)frame_size_buffer[0]);
+  uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
+                        (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
+                        (static_cast<uint32_t>(frame_size_buffer[1]) << 8) |
+                        static_cast<uint32_t>(frame_size_buffer[0]);
   if (frame_size > kMaxFrameLength) {
     gpr_log(GPR_ERROR, "Frame size is larger than maximum frame size");
     return false;
@@ -233,11 +233,21 @@ static void alts_zero_copy_grpc_protector_destroy(
   gpr_free(protector);
 }
 
+static tsi_result alts_zero_copy_grpc_protector_max_frame_size(
+    tsi_zero_copy_grpc_protector* self, size_t* max_frame_size) {
+  if (self == nullptr || max_frame_size == nullptr) return TSI_INVALID_ARGUMENT;
+  alts_zero_copy_grpc_protector* protector =
+      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
+  *max_frame_size = protector->max_protected_frame_size;
+  return TSI_OK;
+}
+
 static const tsi_zero_copy_grpc_protector_vtable
     alts_zero_copy_grpc_protector_vtable = {
         alts_zero_copy_grpc_protector_protect,
         alts_zero_copy_grpc_protector_unprotect,
-        alts_zero_copy_grpc_protector_destroy};
+        alts_zero_copy_grpc_protector_destroy,
+        alts_zero_copy_grpc_protector_max_frame_size};
 
 tsi_result alts_zero_copy_grpc_protector_create(
     const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,

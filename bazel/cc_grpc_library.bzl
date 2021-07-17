@@ -1,5 +1,19 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Generates and compiles C++ grpc stubs from proto_library rules."""
 
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:generate_cc.bzl", "generate_cc")
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
 
@@ -63,8 +77,7 @@ def cc_grpc_library(
         proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1]
         if well_known_protos:
             proto_deps += well_known_proto_libs()
-
-        native.proto_library(
+        proto_library(
             name = proto_target,
             srcs = srcs,
             deps = proto_deps,
@@ -88,7 +101,7 @@ def cc_grpc_library(
         generate_cc(
             name = codegen_grpc_target,
             srcs = proto_targets,
-            plugin = "@com_github_grpc_grpc//:grpc_cpp_plugin",
+            plugin = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
             well_known_protos = well_known_protos,
             generate_mocks = generate_mocks,
             **kwargs

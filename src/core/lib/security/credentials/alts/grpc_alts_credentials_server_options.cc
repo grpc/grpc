@@ -31,7 +31,7 @@ static grpc_alts_credentials_options* alts_server_options_copy(
     const grpc_alts_credentials_options* options);
 
 static void alts_server_options_destroy(
-    grpc_alts_credentials_options* options) {}
+    grpc_alts_credentials_options* /*options*/) {}
 
 static const grpc_alts_credentials_options_vtable vtable = {
     alts_server_options_copy, alts_server_options_destroy};

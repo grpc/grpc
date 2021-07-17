@@ -1,0 +1,86 @@
+# Copyright 2019 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package(
+    default_testonly = 1,
+    default_visibility = ["//visibility:public"],
+)
+
+GRPC_ASYNC_TESTS = glob(["*_test.py"])
+
+py_library(
+    name = "_test_base",
+    srcs = ["_test_base.py"],
+    srcs_version = "PY3",
+)
+
+py_library(
+    name = "_constants",
+    srcs = ["_constants.py"],
+    srcs_version = "PY3",
+)
+
+py_library(
+    name = "_test_server",
+    srcs = ["_test_server.py"],
+    srcs_version = "PY3",
+    deps = [
+        ":_constants",
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:resources",
+    ],
+)
+
+py_library(
+    name = "_common",
+    srcs = ["_common.py"],
+    srcs_version = "PY3",
+)
+
+_FLAKY_TESTS = [
+    # TODO(https://github.com/grpc/grpc/issues/22347) remove from this list.
+    "channel_argument_test.py",
+]
+
+[
+    py_test(
+        name = test_file_name[:-3],
+        size = "small",
+        srcs = [test_file_name],
+        data = [
+            "//src/python/grpcio_tests/tests/unit/credentials",
+        ],
+        flaky = test_file_name in _FLAKY_TESTS,
+        imports = ["../../"],
+        main = test_file_name,
+        python_version = "PY3",
+        deps = [
+            ":_common",
+            ":_constants",
+            ":_test_base",
+            ":_test_server",
+            "//src/proto/grpc/testing:benchmark_service_py_pb2",
+            "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
+            "//src/proto/grpc/testing:py_messages_proto",
+            "//src/python/grpcio/grpc:grpcio",
+            "//src/python/grpcio_tests/tests/unit:resources",
+            "//src/python/grpcio_tests/tests/unit/framework/common",
+            "@six",
+        ],
+    )
+    for test_file_name in GRPC_ASYNC_TESTS
+]

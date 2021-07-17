@@ -33,6 +33,7 @@
 #include <mutex>
 #include <thread>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -57,7 +58,7 @@ namespace {
 class TestScenario {
  public:
   TestScenario(bool server_port, bool pending_data,
-               const grpc::string& creds_type)
+               const std::string& creds_type)
       : server_has_port(server_port),
         queue_pending_data(pending_data),
         credentials_type(creds_type) {}
@@ -66,7 +67,7 @@ class TestScenario {
   bool server_has_port;
   // whether tcp server should read some data before handoff
   bool queue_pending_data;
-  const grpc::string credentials_type;
+  const std::string credentials_type;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -114,7 +115,7 @@ class TestTcpServer {
     gpr_log(GPR_INFO, "Test TCP server started at %s", address_.c_str());
   }
 
-  const grpc::string& address() { return address_; }
+  const std::string& address() { return address_; }
 
   void SetAcceptor(
       std::unique_ptr<experimental::ExternalConnectionAcceptor> acceptor) {
@@ -147,17 +148,16 @@ class TestTcpServer {
     self->OnConnect(tcp, accepting_pollset, acceptor);
   }
 
-  static void OnFdReleased(void* arg, grpc_error* err) {
+  static void OnFdReleased(void* arg, grpc_error_handle err) {
     auto* self = static_cast<TestTcpServer*>(arg);
     self->OnFdReleased(err);
   }
 
  private:
-  void OnConnect(grpc_endpoint* tcp, grpc_pollset* accepting_pollset,
+  void OnConnect(grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
                  grpc_tcp_server_acceptor* acceptor) {
-    char* peer = grpc_endpoint_get_peer(tcp);
-    gpr_log(GPR_INFO, "Got incoming connection! from %s", peer);
-    gpr_free(peer);
+    std::string peer(grpc_endpoint_get_peer(tcp));
+    gpr_log(GPR_INFO, "Got incoming connection! from %s", peer.c_str());
     EXPECT_FALSE(acceptor->external_connection);
     listener_fd_ = grpc_tcp_server_port_fd(
         acceptor->from_server, acceptor->port_index, acceptor->fd_index);
@@ -165,7 +165,7 @@ class TestTcpServer {
     grpc_tcp_destroy_and_release_fd(tcp, &fd_, &on_fd_released_);
   }
 
-  void OnFdReleased(grpc_error* err) {
+  void OnFdReleased(grpc_error_handle err) {
     EXPECT_EQ(GRPC_ERROR_NONE, err);
     experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
     p.listener_fd = listener_fd_;
@@ -194,7 +194,7 @@ class TestTcpServer {
   grpc_closure on_fd_released_;
   std::thread running_thread_;
   int port_ = -1;
-  grpc::string address_;
+  std::string address_;
   std::unique_ptr<experimental::ExternalConnectionAcceptor>
       connection_acceptor_;
   test_tcp_server tcp_server_;
@@ -309,7 +309,13 @@ static void SendRpc(EchoTestService::Stub* stub, int num_rpcs) {
 
 std::vector<TestScenario> CreateTestScenarios() {
   std::vector<TestScenario> scenarios;
-  std::vector<grpc::string> credentials_types;
+  std::vector<std::string> credentials_types;
+
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  gpr_setenv("grpc_cfstream", "0");
+#endif
+
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   // Only allow insecure credentials type when it is registered with the
   // provider. User may create providers that do not have insecure.
@@ -352,8 +358,8 @@ TEST_P(PortSharingEnd2endTest, TwoHandoffPorts) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(PortSharingEnd2end, PortSharingEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(PortSharingEnd2end, PortSharingEnd2endTest,
+                         ::testing::ValuesIn(CreateTestScenarios()));
 
 }  // namespace
 }  // namespace testing

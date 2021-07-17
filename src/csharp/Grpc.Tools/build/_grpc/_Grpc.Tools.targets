@@ -42,9 +42,6 @@
       <Protobuf_Compile Condition=" '%(Protobuf_Compile.GrpcServices)' == 'Server' ">
         <_GrpcOutputOptions>%(Protobuf_Compile._GrpcOutputOptions);no_client</_GrpcOutputOptions>
       </Protobuf_Compile>
-      <Protobuf_Compile Condition=" '%(Protobuf_Compile.GrpcServices)' == 'Client' or  '%(Protobuf_Compile.GrpcServices)' == 'Both' ">
-        <_GrpcOutputOptions Condition=" '%(Protobuf_Compile.ClientBaseType)' == 'LiteClientBase' ">%(Protobuf_Compile._GrpcOutputOptions);lite_client</_GrpcOutputOptions>
-      </Protobuf_Compile>
     </ItemGroup>
   </Target>
 </Project>

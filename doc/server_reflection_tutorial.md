@@ -178,15 +178,12 @@ descriptor database.
         desc_pool->FindMethodByName("helloworld.Greeter.SayHello");
     ```
 
-  * Get message type descriptors.
+  * Get message type descriptors and create messages dynamically.
 
     ```c++
     const google::protobuf::Descriptor* request_desc =
         desc_pool->FindMessageTypeByName("helloworld.HelloRequest");
+    google::protobuf::DynamicMessageFactory dmf;
+    google::protobuf::Message* request = dmf.GetPrototype(request_desc)->New();
     ```
 
-  * Feed [google::protobuf::DynamicMessageFactory](https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.dynamic_message#DynamicMessageFactory).
-
-    ```c++
-    google::protobuf::DynamicMessageFactory(&desc_pool);
-    ```

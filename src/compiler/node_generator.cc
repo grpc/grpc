@@ -37,7 +37,7 @@ namespace {
 // Returns the alias we assign to the module of the given .proto filename
 // when importing. Copied entirely from
 // github:google/protobuf/src/google/protobuf/compiler/js/js_generator.cc#L154
-grpc::string ModuleAlias(const grpc::string filename) {
+std::string ModuleAlias(const std::string filename) {
   // This scheme could technically cause problems if a file includes any 2 of:
   //   foo/bar_baz.proto
   //   foo_bar_baz.proto
@@ -45,7 +45,7 @@ grpc::string ModuleAlias(const grpc::string filename) {
   //
   // We'll worry about this problem if/when we actually see it.  This name isn't
   // exposed to users so we can change it later if we need to.
-  grpc::string basename = grpc_generator::StripProto(filename);
+  std::string basename = grpc_generator::StripProto(filename);
   basename = grpc_generator::StringReplace(basename, "-", "$");
   basename = grpc_generator::StringReplace(basename, "/", "_");
   basename = grpc_generator::StringReplace(basename, ".", "_");
@@ -54,15 +54,15 @@ grpc::string ModuleAlias(const grpc::string filename) {
 
 // Given a filename like foo/bar/baz.proto, returns the corresponding JavaScript
 // message file foo/bar/baz.js
-grpc::string GetJSMessageFilename(const grpc::string& filename) {
-  grpc::string name = filename;
+std::string GetJSMessageFilename(const std::string& filename) {
+  std::string name = filename;
   return grpc_generator::StripProto(name) + "_pb.js";
 }
 
 // Given a filename like foo/bar/baz.proto, returns the root directory
 // path ../../
-grpc::string GetRootPath(const grpc::string& from_filename,
-                         const grpc::string& to_filename) {
+std::string GetRootPath(const std::string& from_filename,
+                        const std::string& to_filename) {
   if (to_filename.find("google/protobuf") == 0) {
     // Well-known types (.proto files in the google/protobuf directory) are
     // assumed to come from the 'google-protobuf' npm package.  We may want to
@@ -74,7 +74,7 @@ grpc::string GetRootPath(const grpc::string& from_filename,
   if (slashes == 0) {
     return "./";
   }
-  grpc::string result = "";
+  std::string result = "";
   for (size_t i = 0; i < slashes; i++) {
     result += "../";
   }
@@ -83,16 +83,15 @@ grpc::string GetRootPath(const grpc::string& from_filename,
 
 // Return the relative path to load to_file from the directory containing
 // from_file, assuming that both paths are relative to the same directory
-grpc::string GetRelativePath(const grpc::string& from_file,
-                             const grpc::string& to_file) {
+std::string GetRelativePath(const std::string& from_file,
+                            const std::string& to_file) {
   return GetRootPath(from_file, to_file) + to_file;
 }
 
 /* Finds all message types used in all services in the file, and returns them
  * as a map of fully qualified message type name to message descriptor */
-map<grpc::string, const Descriptor*> GetAllMessages(
-    const FileDescriptor* file) {
-  map<grpc::string, const Descriptor*> message_types;
+map<std::string, const Descriptor*> GetAllMessages(const FileDescriptor* file) {
+  map<std::string, const Descriptor*> message_types;
   for (int service_num = 0; service_num < file->service_count();
        service_num++) {
     const ServiceDescriptor* service = file->service(service_num);
@@ -108,13 +107,13 @@ map<grpc::string, const Descriptor*> GetAllMessages(
   return message_types;
 }
 
-grpc::string MessageIdentifierName(const grpc::string& name) {
+std::string MessageIdentifierName(const std::string& name) {
   return grpc_generator::StringReplace(name, ".", "_");
 }
 
-grpc::string NodeObjectPath(const Descriptor* descriptor) {
-  grpc::string module_alias = ModuleAlias(descriptor->file()->name());
-  grpc::string name = descriptor->full_name();
+std::string NodeObjectPath(const Descriptor* descriptor) {
+  std::string module_alias = ModuleAlias(descriptor->file()->name());
+  std::string name = descriptor->full_name();
   grpc_generator::StripPrefix(&name, descriptor->file()->package() + ".");
   return module_alias + "." + name;
 }
@@ -122,8 +121,8 @@ grpc::string NodeObjectPath(const Descriptor* descriptor) {
 // Prints out the message serializer and deserializer functions
 void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
                              const Parameters& params) {
-  map<grpc::string, grpc::string> template_vars;
-  grpc::string full_name = descriptor->full_name();
+  map<std::string, std::string> template_vars;
+  std::string full_name = descriptor->full_name();
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
   template_vars["name"] = full_name;
   template_vars["node_name"] = NodeObjectPath(descriptor);
@@ -159,7 +158,7 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
 void PrintMethod(const MethodDescriptor* method, Printer* out) {
   const Descriptor* input_type = method->input_type();
   const Descriptor* output_type = method->output_type();
-  map<grpc::string, grpc::string> vars;
+  map<std::string, std::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
   vars["input_type"] = NodeObjectPath(input_type);
@@ -185,13 +184,13 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
 
 // Prints out the service descriptor object
 void PrintService(const ServiceDescriptor* service, Printer* out) {
-  map<grpc::string, grpc::string> template_vars;
+  map<std::string, std::string> template_vars;
   out->Print(GetNodeComments(service, true).c_str());
   template_vars["name"] = service->name();
   out->Print(template_vars, "var $name$Service = exports.$name$Service = {\n");
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
-    grpc::string method_name =
+    std::string method_name =
         grpc_generator::LowercaseFirstLetter(service->method(i)->name());
     out->Print(GetNodeComments(service->method(i), true).c_str());
     out->Print("$method_name$: ", "method_name", method_name);
@@ -210,14 +209,14 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
 void PrintImports(const FileDescriptor* file, Printer* out) {
   out->Print("var grpc = require('grpc');\n");
   if (file->message_type_count() > 0) {
-    grpc::string file_path =
+    std::string file_path =
         GetRelativePath(file->name(), GetJSMessageFilename(file->name()));
     out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
                ModuleAlias(file->name()), "file_path", file_path);
   }
 
   for (int i = 0; i < file->dependency_count(); i++) {
-    grpc::string file_path = GetRelativePath(
+    std::string file_path = GetRelativePath(
         file->name(), GetJSMessageFilename(file->dependency(i)->name()));
     out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
                ModuleAlias(file->dependency(i)->name()), "file_path",
@@ -228,9 +227,8 @@ void PrintImports(const FileDescriptor* file, Printer* out) {
 
 void PrintTransformers(const FileDescriptor* file, Printer* out,
                        const Parameters& params) {
-  map<grpc::string, const Descriptor*> messages = GetAllMessages(file);
-  for (std::map<grpc::string, const Descriptor*>::iterator it =
-           messages.begin();
+  map<std::string, const Descriptor*> messages = GetAllMessages(file);
+  for (std::map<std::string, const Descriptor*>::iterator it = messages.begin();
        it != messages.end(); it++) {
     PrintMessageTransformer(it->second, out, params);
   }
@@ -244,9 +242,8 @@ void PrintServices(const FileDescriptor* file, Printer* out) {
 }
 }  // namespace
 
-grpc::string GenerateFile(const FileDescriptor* file,
-                          const Parameters& params) {
-  grpc::string output;
+std::string GenerateFile(const FileDescriptor* file, const Parameters& params) {
+  std::string output;
   {
     StringOutputStream output_stream(&output);
     Printer out(&output_stream, '$');
@@ -256,7 +253,7 @@ grpc::string GenerateFile(const FileDescriptor* file,
     }
     out.Print("// GENERATED CODE -- DO NOT EDIT!\n\n");
 
-    grpc::string leading_comments = GetNodeComments(file, true);
+    std::string leading_comments = GetNodeComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("// Original file comments:\n");
       out.PrintRaw(leading_comments.c_str());

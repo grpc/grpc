@@ -45,8 +45,8 @@ class OpenLoopClientRunner(ClientRunner):
         super(OpenLoopClientRunner, self).__init__(client)
         self._is_running = False
         self._interval_generator = interval_generator
-        self._dispatch_thread = threading.Thread(
-            target=self._dispatch_requests, args=())
+        self._dispatch_thread = threading.Thread(target=self._dispatch_requests,
+                                                 args=())
 
     def start(self):
         self._is_running = True
@@ -67,12 +67,15 @@ class OpenLoopClientRunner(ClientRunner):
 
 class ClosedLoopClientRunner(ClientRunner):
 
-    def __init__(self, client, request_count):
+    def __init__(self, client, request_count, no_ping_pong):
         super(ClosedLoopClientRunner, self).__init__(client)
         self._is_running = False
         self._request_count = request_count
-        # Send a new request on each response for closed loop
-        self._client.add_response_callback(self._send_request)
+        # For server-streaming RPC, don't spawn new RPC after each responses.
+        # This yield at most ~17% for single RPC scenarios.
+        if not no_ping_pong:
+            # Send a new request on each response for closed loop
+            self._client.add_response_callback(self._send_request)
 
     def start(self):
         self._is_running = True
@@ -85,6 +88,6 @@ class ClosedLoopClientRunner(ClientRunner):
         self._client.stop()
         self._client = None
 
-    def _send_request(self, client, response_time):
+    def _send_request(self, client, unused_response_time):
         if self._is_running:
             client.send_request()

@@ -25,13 +25,14 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
+using Grpc.Core.Internal;
 using Grpc.Testing;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
 {
     /// <summary>
-    /// See https://github.com/grpc/issues/18074, this test is meant to
+    /// See https://github.com/grpc/grpc/issues/18074, this test is meant to
     /// try to trigger the described bug.
     /// Runs interop tests in-process, with that client using a target
     /// name that using a target name that triggers interaction with
@@ -42,27 +43,35 @@ namespace Grpc.IntegrationTesting
         Server server;
         Channel channel;
         TestService.TestServiceClient client;
-        SocketUsingLogger newLogger;
 
         [OneTimeSetUp]
         public void Init()
         {
-            // TODO(https://github.com/grpc/grpc/issues/14963): on linux, setting
-            // these environment variables might not actually have any affect.
-            // This is OK because we only really care about running this test on
-            // Windows, however, a fix made for $14963 should be applied here.
-            Environment.SetEnvironmentVariable("GRPC_TRACE", "all");
-            Environment.SetEnvironmentVariable("GRPC_VERBOSITY", "DEBUG");
-            newLogger = new SocketUsingLogger(GrpcEnvironment.Logger);
-            GrpcEnvironment.SetLogger(newLogger);
+            // We only care about running this test on Windows (see #18074)
+            // TODO(jtattermusch): We could run it on Linux and Mac as well,
+            // but there are two issues.
+            // 1. Due to https://github.com/grpc/grpc/issues/14963, setting the
+            // enviroment variables actually has no effect on CoreCLR.
+            // 2. On mono the test with enabled tracing sometimes times out
+            // due to suspected mono-related issue on shutdown
+            // See https://github.com/grpc/grpc/issues/18126
+            if (PlatformApis.IsWindows)
+            {
+                Environment.SetEnvironmentVariable("GRPC_TRACE", "all");
+                Environment.SetEnvironmentVariable("GRPC_VERBOSITY", "DEBUG");
+                var newLogger = new SocketUsingLogger(GrpcEnvironment.Logger);
+                GrpcEnvironment.SetLogger(newLogger);
+            }
             // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
             server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
             {
                 Services = { TestService.BindService(new TestServiceImpl()) },
-                Ports = { { "[::1]", ServerPort.PickUnused, ServerCredentials.Insecure } }
+                Ports = { { "[::1]", ServerPort.PickUnused, ServerCredentials.Insecure } },
+                // reduce the number of request call tokens to
+                // avoid flooding the logs with token-related messages
+                RequestCallTokensPerCompletionQueue = 3,
             };
             server.Start();
-
             int port = server.Ports.Single().BoundPort;
             channel = new Channel("loopback6.unittest.grpc.io", port, ChannelCredentials.Insecure);
             client = new TestService.TestServiceClient(channel);

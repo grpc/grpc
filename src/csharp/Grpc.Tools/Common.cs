@@ -21,8 +21,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
-
-[assembly: InternalsVisibleTo("Grpc.Tools.Tests")]
+using Grpc.Core.Internal;
 
 namespace Grpc.Tools
 {
@@ -41,54 +40,14 @@ namespace Grpc.Tools
     // A few flags used to control the behavior under various platforms.
     internal static class Platform
     {
-        public enum OsKind { Unknown, Windows, Linux, MacOsX };
-        public static readonly OsKind Os;
+        public static readonly CommonPlatformDetection.OSKind Os = CommonPlatformDetection.GetOSKind();
 
-        public enum CpuKind { Unknown, X86, X64 };
-        public static readonly CpuKind Cpu;
+        public static readonly CommonPlatformDetection.CpuArchitecture Cpu = CommonPlatformDetection.GetProcessArchitecture();
 
         // This is not necessarily true, but good enough. BCL lacks a per-FS
         // API to determine file case sensitivity.
-        public static bool IsFsCaseInsensitive => Os == OsKind.Windows;
-        public static bool IsWindows => Os == OsKind.Windows;
-
-        static Platform()
-        {
-#if NETCORE
-            Os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OsKind.Windows
-               : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? OsKind.Linux
-               : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OsKind.MacOsX
-               : OsKind.Unknown;
-
-            switch (RuntimeInformation.ProcessArchitecture)
-            {
-                case Architecture.X86: Cpu = CpuKind.X86; break;
-                case Architecture.X64: Cpu = CpuKind.X64; break;
-                // We do not have build tools for other architectures.
-                default: Cpu = CpuKind.Unknown; break;
-            }
-#else
-            // Running under either Mono or full MS framework.
-            Os = OsKind.Windows;
-            if (Type.GetType("Mono.Runtime", throwOnError: false) != null)
-            {
-                // Congratulations. We are running under Mono.
-                var plat = Environment.OSVersion.Platform;
-                if (plat == PlatformID.MacOSX)
-                {
-                    Os = OsKind.MacOsX;
-                }
-                else if (plat == PlatformID.Unix || (int)plat == 128)
-                {
-                    // This is how Mono detects OSX internally.
-                    Os = File.Exists("/usr/lib/libc.dylib") ? OsKind.MacOsX : OsKind.Linux;
-                }
-            }
-
-            // Hope we are not building on ARM under Xamarin!
-            Cpu = Environment.Is64BitProcess ? CpuKind.X64 : CpuKind.X86;
-#endif
-        }
+        public static bool IsFsCaseInsensitive => Os == CommonPlatformDetection.OSKind.Windows;
+        public static bool IsWindows => Os == CommonPlatformDetection.OSKind.Windows;
     };
 
     // Exception handling helpers.

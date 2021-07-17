@@ -145,7 +145,7 @@ class PolymorphicManualConstructor {
   }
   template <class DerivedType>
   void Init(DerivedType&& x) {
-    FinishInit(new (&space_) DerivedType(std::move(x)));
+    FinishInit(new (&space_) DerivedType(std::forward<DerivedType>(x)));
   }
 
   void Destroy() { get()->~BaseType(); }

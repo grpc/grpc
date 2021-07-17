@@ -17,6 +17,7 @@ import time
 import weakref
 import unittest
 import threading
+import logging
 import socket
 from six.moves import queue
 
@@ -24,6 +25,8 @@ import grpc
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
+import tests.unit.framework.common
+from tests.unit.framework.common import get_socket
 
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
@@ -66,13 +69,17 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_unary = None
         self.stream_stream = None
         if self.request_streaming and self.response_streaming:
-            self.stream_stream = lambda req, ctx: handle_stream_stream(test, req, ctx)
+            self.stream_stream = lambda req, ctx: handle_stream_stream(
+                test, req, ctx)
         elif self.request_streaming:
-            self.stream_unary = lambda req, ctx: handle_stream_unary(test, req, ctx)
+            self.stream_unary = lambda req, ctx: handle_stream_unary(
+                test, req, ctx)
         elif self.response_streaming:
-            self.unary_stream = lambda req, ctx: handle_unary_stream(test, req, ctx)
+            self.unary_stream = lambda req, ctx: handle_unary_stream(
+                test, req, ctx)
         else:
-            self.unary_unary = lambda req, ctx: handle_unary_unary(test, req, ctx)
+            self.unary_unary = lambda req, ctx: handle_unary_unary(
+                test, req, ctx)
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -93,17 +100,11 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
-def get_free_loopback_tcp_port():
-    tcp = socket.socket(socket.AF_INET6)
-    tcp.bind(('', 0))
-    address_tuple = tcp.getsockname()
-    return tcp, "[::1]:%s" % (address_tuple[1])
-
-
-def create_dummy_channel():
-    """Creating dummy channels is a workaround for retries"""
-    _, addr = get_free_loopback_tcp_port()
-    return grpc.insecure_channel(addr)
+def create_phony_channel():
+    """Creating phony channels is a workaround for retries"""
+    host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
+    sock.close()
+    return grpc.insecure_channel('{}:{}'.format(host, port))
 
 
 def perform_unary_unary_call(channel, wait_for_ready=None):
@@ -183,18 +184,19 @@ class MetadataFlagsTest(unittest.TestCase):
             fn(channel, wait_for_ready)
             self.fail("The Call should fail")
         except BaseException as e:  # pylint: disable=broad-except
-            self.assertIn('StatusCode.UNAVAILABLE', str(e))
+            self.assertIs(grpc.StatusCode.UNAVAILABLE, e.code())
 
     def test_call_wait_for_ready_default(self):
         for perform_call in _ALL_CALL_CASES:
-            with create_dummy_channel() as channel:
+            with create_phony_channel() as channel:
                 self.check_connection_does_failfast(perform_call, channel)
 
     def test_call_wait_for_ready_disabled(self):
         for perform_call in _ALL_CALL_CASES:
-            with create_dummy_channel() as channel:
-                self.check_connection_does_failfast(
-                    perform_call, channel, wait_for_ready=False)
+            with create_phony_channel() as channel:
+                self.check_connection_does_failfast(perform_call,
+                                                    channel,
+                                                    wait_for_ready=False)
 
     def test_call_wait_for_ready_enabled(self):
         # To test the wait mechanism, Python thread is required to make
@@ -203,7 +205,12 @@ class MetadataFlagsTest(unittest.TestCase):
         #   main thread. So, it need another method to store the
         #   exceptions and raise them again in main thread.
         unhandled_exceptions = queue.Queue()
-        tcp, addr = get_free_loopback_tcp_port()
+
+        # We just need an unused TCP port
+        host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
+        sock.close()
+
+        addr = '{}:{}'.format(host, port)
         wg = test_common.WaitGroup(len(_ALL_CALL_CASES))
 
         def wait_for_transient_failure(channel_connectivity):
@@ -224,16 +231,16 @@ class MetadataFlagsTest(unittest.TestCase):
 
         test_threads = []
         for perform_call in _ALL_CALL_CASES:
-            test_thread = threading.Thread(
-                target=test_call, args=(perform_call,))
+            test_thread = threading.Thread(target=test_call,
+                                           args=(perform_call,))
+            test_thread.daemon = True
             test_thread.exception = None
             test_thread.start()
             test_threads.append(test_thread)
 
         # Start the server after the connections are waiting
         wg.wait()
-        tcp.close()
-        server = test_common.test_server()
+        server = test_common.test_server(reuse_port=True)
         server.add_generic_rpc_handlers((_GenericHandler(weakref.proxy(self)),))
         server.add_insecure_port(addr)
         server.start()
@@ -249,4 +256,5 @@ class MetadataFlagsTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

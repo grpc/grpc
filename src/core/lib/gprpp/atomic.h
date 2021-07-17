@@ -28,12 +28,12 @@
 namespace grpc_core {
 
 enum class MemoryOrder {
-  RELAXED = std::memory_order_relaxed,
-  CONSUME = std::memory_order_consume,
-  ACQUIRE = std::memory_order_acquire,
-  RELEASE = std::memory_order_release,
-  ACQ_REL = std::memory_order_acq_rel,
-  SEQ_CST = std::memory_order_seq_cst
+  RELAXED = static_cast<int>(std::memory_order_relaxed),
+  CONSUME = static_cast<int>(std::memory_order_consume),
+  ACQUIRE = static_cast<int>(std::memory_order_acquire),
+  RELEASE = static_cast<int>(std::memory_order_release),
+  ACQ_REL = static_cast<int>(std::memory_order_acq_rel),
+  SEQ_CST = static_cast<int>(std::memory_order_seq_cst)
 };
 
 template <typename T>
@@ -47,6 +47,10 @@ class Atomic {
 
   void Store(T val, MemoryOrder order) {
     storage_.store(val, static_cast<std::memory_order>(order));
+  }
+
+  T Exchange(T desired, MemoryOrder order) {
+    return storage_.exchange(desired, static_cast<std::memory_order>(order));
   }
 
   bool CompareExchangeWeak(T* expected, T desired, MemoryOrder success,
@@ -77,8 +81,8 @@ class Atomic {
 
   // Atomically increment a counter only if the counter value is not zero.
   // Returns true if increment took place; false if counter is zero.
-  bool IncrementIfNonzero(MemoryOrder load_order = MemoryOrder::ACQUIRE) {
-    T count = storage_.load(static_cast<std::memory_order>(load_order));
+  bool IncrementIfNonzero() {
+    T count = storage_.load(std::memory_order_acquire);
     do {
       // If zero, we are done (without an increment). If not, we must do a CAS
       // to maintain the contract: do not increment the counter if it is already
@@ -87,7 +91,7 @@ class Atomic {
         return false;
       }
     } while (!CompareExchangeWeak(&count, count + 1, MemoryOrder::ACQ_REL,
-                                  load_order));
+                                  MemoryOrder::ACQUIRE));
     return true;
   }
 

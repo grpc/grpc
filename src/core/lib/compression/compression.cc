@@ -127,7 +127,8 @@ void grpc_compression_options_disable_algorithm(
 int grpc_compression_options_is_algorithm_enabled(
     const grpc_compression_options* opts,
     grpc_compression_algorithm algorithm) {
-  return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
+  return grpc_compression_options_is_algorithm_enabled_internal(opts,
+                                                                algorithm);
 }
 
 grpc_slice grpc_compression_algorithm_slice(
@@ -149,14 +150,18 @@ grpc_slice grpc_compression_algorithm_slice(
 
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
     const grpc_slice& str) {
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_COMPRESS_NONE;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE)) {
     return GRPC_COMPRESS_DEFLATE;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP)) {
     return GRPC_COMPRESS_GZIP;
-  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_STREAM_SLASH_GZIP))
+  }
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_STREAM_SLASH_GZIP)) {
     return GRPC_COMPRESS_STREAM_GZIP;
+  }
   return GRPC_COMPRESS_ALGORITHMS_COUNT;
 }
 

@@ -12,102 +12,95 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Change comments style of source files from // to /** */"""
 
 import re
 import sys
 
-
 if len(sys.argv) < 2:
-  print("Please provide at least one source file name as argument.")
-  sys.exit()
+    print("Please provide at least one source file name as argument.")
+    sys.exit()
 
 for file_name in sys.argv[1:]:
 
-  print("Modifying format of {file} comments in place...".format(
-      file=file_name,
-  ))
+    print("Modifying format of {file} comments in place...".format(
+        file=file_name,))
 
+    # Input
 
-  # Input
+    with open(file_name, "r") as input_file:
+        lines = input_file.readlines()
 
-  with open(file_name, "r") as input_file:
-    lines = input_file.readlines()
+    def peek():
+        return lines[0]
 
-  def peek():
-    return lines[0]
+    def read_line():
+        return lines.pop(0)
 
-  def read_line():
-    return lines.pop(0)
+    def more_input_available():
+        return lines
 
-  def more_input_available():
-    return lines
+    # Output
 
+    output_lines = []
 
-  # Output
+    def write(line):
+        output_lines.append(line)
 
-  output_lines = []
+    def flush_output():
+        with open(file_name, "w") as output_file:
+            for line in output_lines:
+                output_file.write(line)
 
-  def write(line):
-    output_lines.append(line)
+    # Pattern matching
 
-  def flush_output():
-    with open(file_name, "w") as output_file:
-      for line in output_lines:
-        output_file.write(line)
+    comment_regex = r'^(\s*)//\s(.*)$'
 
+    def is_comment(line):
+        return re.search(comment_regex, line)
 
-  # Pattern matching
+    def isnt_comment(line):
+        return not is_comment(line)
 
-  comment_regex = r'^(\s*)//\s(.*)$'
+    def next_line(predicate):
+        return more_input_available() and predicate(peek())
 
-  def is_comment(line):
-    return re.search(comment_regex, line)
+    # Transformation
 
-  def isnt_comment(line):
-    return not is_comment(line)
+    def indentation_of(line):
+        match = re.search(comment_regex, line)
+        return match.group(1)
 
-  def next_line(predicate):
-    return more_input_available() and predicate(peek())
+    def content(line):
+        match = re.search(comment_regex, line)
+        return match.group(2)
 
+    def format_as_block(comment_block):
+        if len(comment_block) == 0:
+            return []
 
-  # Transformation
+        indent = indentation_of(comment_block[0])
 
-  def indentation_of(line):
-    match = re.search(comment_regex, line)
-    return match.group(1)
+        if len(comment_block) == 1:
+            return [indent + "/** " + content(comment_block[0]) + " */\n"]
 
-  def content(line):
-    match = re.search(comment_regex, line)
-    return match.group(2)
+        block = ["/**"] + [" * " + content(line) for line in comment_block
+                          ] + [" */"]
+        return [indent + line.rstrip() + "\n" for line in block]
 
-  def format_as_block(comment_block):
-    if len(comment_block) == 0:
-      return []
+    # Main algorithm
 
-    indent = indentation_of(comment_block[0])
+    while more_input_available():
+        while next_line(isnt_comment):
+            write(read_line())
 
-    if len(comment_block) == 1:
-      return [indent + "/** " + content(comment_block[0]) + " */\n"]
+        comment_block = []
+        # Get all lines in the same comment block. We could restrict the indentation
+        # to be the same as the first line of the block, but it's probably ok.
+        while (next_line(is_comment)):
+            comment_block.append(read_line())
 
-    block = ["/**"] + [" * " + content(line) for line in comment_block] + [" */"]
-    return [indent + line.rstrip() + "\n" for line in block]
+        for line in format_as_block(comment_block):
+            write(line)
 
-
-  # Main algorithm
-
-  while more_input_available():
-    while next_line(isnt_comment):
-      write(read_line())
-
-    comment_block = []
-    # Get all lines in the same comment block. We could restrict the indentation
-    # to be the same as the first line of the block, but it's probably ok.
-    while (next_line(is_comment)):
-      comment_block.append(read_line())
-
-    for line in format_as_block(comment_block):
-      write(line)
-
-  flush_output()
+    flush_output()

@@ -25,13 +25,17 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -41,10 +45,12 @@
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
-// Handshake completed signal to server thread.
-static gpr_event client_handshake_complete;
+namespace {
 
-static int create_socket(int port) {
+// Handshake completed signal to server thread.
+gpr_event client_handshake_complete;
+
+int create_socket(int port) {
   int s;
   struct sockaddr_in addr;
 
@@ -66,9 +72,34 @@ static int create_socket(int port) {
   return s;
 }
 
+class ServerInfo {
+ public:
+  explicit ServerInfo(int p) : port_(p) {}
+
+  int port() const { return port_; }
+
+  void Activate() {
+    grpc_core::MutexLock lock(&mu_);
+    ready_ = true;
+    cv_.Signal();
+  }
+
+  void Await() {
+    grpc_core::MutexLock lock(&mu_);
+    grpc_core::WaitUntil(&cv_, &mu_, [this] { return ready_; });
+  }
+
+ private:
+  const int port_;
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cv_;
+  bool ready_ = false;
+};
+
 // Simple gRPC server. This listens until client_handshake_complete occurs.
-static void server_thread(void* arg) {
-  const int port = *static_cast<int*>(arg);
+void server_thread(void* arg) {
+  ServerInfo* s = static_cast<ServerInfo*>(arg);
+  const int port = s->port();
 
   // Load key pair and establish server SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
@@ -89,16 +120,19 @@ static void server_thread(void* arg) {
       ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
   // Start server listening on local port.
-  char* addr;
-  gpr_asprintf(&addr, "127.0.0.1:%d", port);
+  std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
-  free(addr);
+  GPR_ASSERT(
+      grpc_server_add_secure_http2_port(server, addr.c_str(), ssl_creds));
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
+
+  // Notify the other side that it is now ok to start working since SSL is
+  // definitely already started.
+  s->Activate();
 
   // Wait a bounded number of time until client_handshake_complete is set,
   // sleeping between polls.
@@ -125,6 +159,8 @@ static void server_thread(void* arg) {
   grpc_slice_unref(ca_slice);
 }
 
+}  // namespace
+
 // This test launches a gRPC server on a separate thread and then establishes a
 // TLS handshake via a minimal TLS client. The TLS client has configurable (via
 // alpn_list) ALPN settings and can probe at the supported ALPN preferences
@@ -134,17 +170,19 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   bool success = true;
 
   grpc_init();
-  int port = grpc_pick_unused_port_or_die();
+  ServerInfo s(grpc_pick_unused_port_or_die());
   gpr_event_init(&client_handshake_complete);
 
   // Launch the gRPC server thread.
   bool ok;
-  grpc_core::Thread thd("grpc_ssl_test", server_thread, &port, &ok);
+  grpc_core::Thread thd("grpc_ssl_test", server_thread, &s, &ok);
   GPR_ASSERT(ok);
   thd.Start();
 
-  SSL_load_error_strings();
-  OpenSSL_add_ssl_algorithms();
+  // The work in server_thread will cause the SSL initialization to take place
+  // so long as we wait for it to reach beyond the point of adding a secure
+  // server port.
+  s.Await();
 
   const SSL_METHOD* method = TLSv1_2_client_method();
   SSL_CTX* ctx = SSL_CTX_new(method);
@@ -197,13 +235,13 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   int retries = 10;
   int sock = -1;
   while (sock == -1 && retries-- > 0) {
-    sock = create_socket(port);
+    sock = create_socket(s.port());
     if (sock < 0) {
       sleep(1);
     }
   }
   GPR_ASSERT(sock > 0);
-  gpr_log(GPR_INFO, "Connected to server on port %d", port);
+  gpr_log(GPR_INFO, "Connected to server on port %d", s.port());
 
   // Establish a SSL* and connect at SSL layer.
   SSL* ssl = SSL_new(ctx);
@@ -231,7 +269,6 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   SSL_free(ssl);
   gpr_free(alpn_protos);
   SSL_CTX_free(ctx);
-  EVP_cleanup();
   close(sock);
 
   thd.Join();
@@ -240,3 +277,5 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
 
   return success;
 }
+
+void CleanupSslLibrary() { EVP_cleanup(); }

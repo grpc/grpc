@@ -26,6 +26,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -36,7 +38,6 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-using std::chrono::system_clock;
 
 static std::string g_root;
 
@@ -50,7 +51,7 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 
   Status BidiStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     bidi_stream_count_++;
     EchoRequest request;
@@ -65,7 +66,8 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* context, const EchoRequest* request,
+  Status ResponseStream(ServerContext* /*context*/,
+                        const EchoRequest* /*request*/,
                         ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     response_stream_count_++;
@@ -98,7 +100,8 @@ class CrashTest : public ::testing::Test {
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     auto addr = addr_stream.str();
-    client_.reset(new SubProcess({g_root + "/server_crash_test_client",
+    client_ = absl::make_unique<SubProcess>(
+        std::vector<std::string>({g_root + "/server_crash_test_client",
                                   "--address=" + addr, "--mode=" + mode}));
     GPR_ASSERT(client_);
 

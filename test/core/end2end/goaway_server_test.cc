@@ -23,11 +23,16 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
+#include <string.h>
+
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <string.h>
+
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -39,7 +44,7 @@
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolver;
 
-static void* tag(intptr_t i) { return (void*)i; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
@@ -47,9 +52,10 @@ static int g_resolve_port = -1;
 static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
-    grpc_combiner* combiner);
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
+    char** service_config_json, int query_timeout_ms,
+    std::shared_ptr<grpc_core::WorkSerializer> combiner);
 
 static void (*iomgr_cancel_ares_request_locked)(grpc_ares_request* request);
 
@@ -69,7 +75,7 @@ static void my_resolve_address(const char* addr, const char* default_port,
     return;
   }
 
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
@@ -88,10 +94,10 @@ static void my_resolve_address(const char* addr, const char* default_port,
     (*addrs)->addrs[0].len = static_cast<socklen_t>(sizeof(*sa));
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
-static grpc_error* my_blocking_resolve_address(
+static grpc_error_handle my_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   return default_resolver->blocking_resolve_address(name, default_port,
@@ -104,22 +110,24 @@ static grpc_address_resolver_vtable test_resolver = {
 static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
-    grpc_combiner* combiner) {
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
+    char** service_config_json, int query_timeout_ms,
+    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   if (0 != strcmp(addr, "test")) {
     return iomgr_dns_lookup_ares_locked(
         dns_server, addr, default_port, interested_parties, on_done, addresses,
-        check_grpclb, service_config_json, query_timeout_ms, combiner);
+        balancer_addresses, service_config_json, query_timeout_ms,
+        std::move(work_serializer));
   }
 
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
-    *addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
+    *addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_sockaddr_in sa;
     sa.sin_family = GRPC_AF_INET;
     sa.sin_addr.s_addr = 0x100007f;
@@ -127,7 +135,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     (*addresses)->emplace_back(&sa, sizeof(sa), nullptr);
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
   return nullptr;
 }
 
@@ -182,16 +190,26 @@ int main(int argc, char** argv) {
   int port1 = grpc_pick_unused_port_or_die();
   int port2 = grpc_pick_unused_port_or_die();
 
-  char* addr;
+  std::string addr;
 
   grpc_channel_args client_args;
-  grpc_arg arg_array[1];
+  grpc_arg arg_array[2];
   arg_array[0].type = GRPC_ARG_INTEGER;
   arg_array[0].key =
       const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
   arg_array[0].value.integer = 1000;
+  /* When this test brings down server1 and then brings up server2,
+   * the targetted server port number changes, and the client channel
+   * needs to re-resolve to pick this up. This test requires that
+   * happen within 10 seconds, but gRPC's DNS resolvers rate limit
+   * resolution attempts to at most once every 30 seconds by default.
+   * So we tweak it for this test. */
+  arg_array[1].type = GRPC_ARG_INTEGER;
+  arg_array[1].key =
+      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
+  arg_array[1].value.integer = 1000;
   client_args.args = arg_array;
-  client_args.num_args = 1;
+  client_args.num_args = 2;
 
   /* create a channel that picks first amongst the servers */
   grpc_channel* chan =
@@ -229,10 +247,9 @@ int main(int argc, char** argv) {
 
   /* bring a server up on the first port */
   grpc_server* server1 = grpc_server_create(nullptr, nullptr);
-  gpr_asprintf(&addr, "127.0.0.1:%d", port1);
-  grpc_server_add_insecure_http2_port(server1, addr);
+  addr = absl::StrCat("127.0.0.1:", port1);
+  grpc_server_add_insecure_http2_port(server1, addr.c_str());
   grpc_server_register_completion_queue(server1, cq, nullptr);
-  gpr_free(addr);
   grpc_server_start(server1);
 
   /* request a call to the server */
@@ -306,10 +323,9 @@ int main(int argc, char** argv) {
   /* and bring up second server */
   set_resolve_port(port2);
   grpc_server* server2 = grpc_server_create(nullptr, nullptr);
-  gpr_asprintf(&addr, "127.0.0.1:%d", port2);
-  grpc_server_add_insecure_http2_port(server2, addr);
+  addr = absl::StrCat("127.0.0.1:", port2);
+  grpc_server_add_insecure_http2_port(server2, addr.c_str());
   grpc_server_register_completion_queue(server2, cq, nullptr);
-  gpr_free(addr);
   grpc_server_start(server2);
 
   /* request a call to the server */

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -15,38 +15,35 @@
 # limitations under the License.
 """ Python utility to run opt and counters benchmarks and save json output """
 
-import bm_constants
-
 import argparse
-import subprocess
-import multiprocessing
-import random
 import itertools
-import sys
+import multiprocessing
 import os
+import random
+import subprocess
+import sys
+
+import bm_constants
+import jobset
 
 sys.path.append(
-    os.path.join(
-        os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
-        'python_utils'))
-import jobset
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', '..', 'run_tests',
+                 'python_utils'))
 
 
 def _args():
     argp = argparse.ArgumentParser(description='Runs microbenchmarks')
-    argp.add_argument(
-        '-b',
-        '--benchmarks',
-        nargs='+',
-        choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-        help='Benchmarks to run')
-    argp.add_argument(
-        '-j',
-        '--jobs',
-        type=int,
-        default=multiprocessing.cpu_count(),
-        help='Number of CPUs to use')
+    argp.add_argument('-b',
+                      '--benchmarks',
+                      nargs='+',
+                      choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      help='Benchmarks to run')
+    argp.add_argument('-j',
+                      '--jobs',
+                      type=int,
+                      default=multiprocessing.cpu_count(),
+                      help='Number of CPUs to use')
     argp.add_argument(
         '-n',
         '--name',
@@ -54,12 +51,11 @@ def _args():
         help=
         'Unique name of the build to run. Needs to match the handle passed to bm_build.py'
     )
-    argp.add_argument(
-        '-r',
-        '--regex',
-        type=str,
-        default="",
-        help='Regex to filter benchmarks run')
+    argp.add_argument('-r',
+                      '--regex',
+                      type=str,
+                      default="",
+                      help='Regex to filter benchmarks run')
     argp.add_argument(
         '-l',
         '--loops',
@@ -74,7 +70,8 @@ def _args():
     args = argp.parse_args()
     assert args.name
     if args.loops < 3:
-        print "WARNING: This run will likely be noisy. Increase loops to at least 3."
+        print("WARNING: This run will likely be noisy. Increase loops to at "
+              "least 3.")
     return args
 
 
@@ -84,24 +81,24 @@ def _collect_bm_data(bm, cfg, name, regex, idx, loops):
             'bm_diff_%s/%s/%s' % (name, cfg, bm), '--benchmark_list_tests',
             '--benchmark_filter=%s' % regex
     ]).splitlines():
+        line = line.decode('UTF-8')
         stripped_line = line.strip().replace("/",
                                              "_").replace("<", "_").replace(
                                                  ">", "_").replace(", ", "_")
         cmd = [
             'bm_diff_%s/%s/%s' % (name, cfg, bm),
             '--benchmark_filter=^%s$' % line,
-            '--benchmark_out=%s.%s.%s.%s.%d.json' % (bm, stripped_line, cfg,
-                                                     name, idx),
+            '--benchmark_out=%s.%s.%s.%s.%d.json' %
+            (bm, stripped_line, cfg, name, idx),
             '--benchmark_out_format=json',
         ]
         jobs_list.append(
-            jobset.JobSpec(
-                cmd,
-                shortname='%s %s %s %s %d/%d' % (bm, line, cfg, name, idx + 1,
-                                                 loops),
-                verbose_success=True,
-                cpu_cost=2,
-                timeout_seconds=60 * 60))  # one hour
+            jobset.JobSpec(cmd,
+                           shortname='%s %s %s %s %d/%d' %
+                           (bm, line, cfg, name, idx + 1, loops),
+                           verbose_success=True,
+                           cpu_cost=2,
+                           timeout_seconds=60 * 60))  # one hour
     return jobs_list
 
 

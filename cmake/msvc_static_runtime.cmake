@@ -23,8 +23,8 @@ if(gRPC_MSVC_STATIC_RUNTIME)
     CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
 
     if(${flag_var} MATCHES "/MD")
-    string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-    endif(${flag_var} MATCHES "/MD")
-  endforeach(flag_var)
+      string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+    endif()
+  endforeach()
 endif()
 

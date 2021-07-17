@@ -14,10 +14,12 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../debian_jessie_header.include"/>
+  FROM debian:bullseye
   
-  <%include file="../clang5.include"/>
-  <%include file="../python_deps.include"/>
+  # Install clang-tidy 11
+  RUN apt-get update && apt-get install -y clang-tidy-11 jq
+  ENV CLANG_TIDY=clang-tidy-11
+
   ADD clang_tidy_all_the_things.sh /
   
   # When running locally, we'll be impersonating the current user, so we need

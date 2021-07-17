@@ -35,7 +35,7 @@ option java_outer_classname = "ChannelzProto";
 
 // Channel is a logical grouping of channels, subchannels, and sockets.
 message Channel {
-  // The identifier for this channel. This should bet set.
+  // The identifier for this channel. This should be set.
   ChannelRef ref = 1;
   // Data specific to this channel.
   ChannelData data = 2;
@@ -165,7 +165,7 @@ message ChannelRef {
   reserved 3, 4, 5, 6, 7, 8;
 }
 
-// ChannelRef is a reference to a Subchannel.
+// SubchannelRef is a reference to a Subchannel.
 message SubchannelRef {
   // The globally unique id for this subchannel.  Must be a positive number.
   int64 subchannel_id = 7;

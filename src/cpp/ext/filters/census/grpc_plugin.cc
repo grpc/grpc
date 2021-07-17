@@ -22,6 +22,7 @@
 
 #include <grpcpp/server_context.h>
 
+#include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
 #include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
@@ -30,30 +31,62 @@
 
 namespace grpc {
 
+void RegisterOpenCensusPlugin() {
+  RegisterChannelFilter<CensusChannelData, CensusClientCallData>(
+      "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
+      nullptr /* condition function */);
+  RegisterChannelFilter<CensusChannelData, CensusServerCallData>(
+      "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
+      nullptr /* condition function */);
+
+  // Access measures to ensure they are initialized. Otherwise, creating a view
+  // before the first RPC would cause an error.
+  RpcClientSentBytesPerRpc();
+  RpcClientReceivedBytesPerRpc();
+  RpcClientRoundtripLatency();
+  RpcClientServerLatency();
+  RpcClientSentMessagesPerRpc();
+  RpcClientReceivedMessagesPerRpc();
+
+  RpcServerSentBytesPerRpc();
+  RpcServerReceivedBytesPerRpc();
+  RpcServerServerLatency();
+  RpcServerSentMessagesPerRpc();
+  RpcServerReceivedMessagesPerRpc();
+}
+
+::opencensus::trace::Span GetSpanFromServerContext(
+    grpc::ServerContext* context) {
+  if (context == nullptr) return opencensus::trace::Span::BlankSpan();
+
+  return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
+      ->Span();
+}
+
 // These measure definitions should be kept in sync across opencensus
 // implementations--see
 // https://github.com/census-instrumentation/opencensus-java/blob/master/contrib/grpc_metrics/src/main/java/io/opencensus/contrib/grpc/metrics/RpcMeasureConstants.java.
-::opencensus::stats::TagKey ClientMethodTagKey() {
+::opencensus::tags::TagKey ClientMethodTagKey() {
   static const auto method_tag_key =
-      ::opencensus::stats::TagKey::Register("grpc_client_method");
+      ::opencensus::tags::TagKey::Register("grpc_client_method");
   return method_tag_key;
 }
 
-::opencensus::stats::TagKey ClientStatusTagKey() {
+::opencensus::tags::TagKey ClientStatusTagKey() {
   static const auto status_tag_key =
-      ::opencensus::stats::TagKey::Register("grpc_client_status");
+      ::opencensus::tags::TagKey::Register("grpc_client_status");
   return status_tag_key;
 }
 
-::opencensus::stats::TagKey ServerMethodTagKey() {
+::opencensus::tags::TagKey ServerMethodTagKey() {
   static const auto method_tag_key =
-      ::opencensus::stats::TagKey::Register("grpc_server_method");
+      ::opencensus::tags::TagKey::Register("grpc_server_method");
   return method_tag_key;
 }
 
-::opencensus::stats::TagKey ServerStatusTagKey() {
+::opencensus::tags::TagKey ServerStatusTagKey() {
   static const auto status_tag_key =
-      ::opencensus::stats::TagKey::Register("grpc_server_status");
+      ::opencensus::tags::TagKey::Register("grpc_server_status");
   return status_tag_key;
 }
 
@@ -98,38 +131,3 @@ ABSL_CONST_INIT const absl::string_view
 ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
     "grpc.io/server/server_latency";
 }  // namespace grpc
-namespace grpc_impl {
-
-void RegisterOpenCensusPlugin() {
-  grpc::RegisterChannelFilter<grpc::CensusChannelData,
-                              grpc::CensusClientCallData>(
-      "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
-      nullptr /* condition function */);
-  grpc::RegisterChannelFilter<grpc::CensusChannelData,
-                              grpc::CensusServerCallData>(
-      "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
-      nullptr /* condition function */);
-
-  // Access measures to ensure they are initialized. Otherwise, creating a view
-  // before the first RPC would cause an error.
-  grpc::RpcClientSentBytesPerRpc();
-  grpc::RpcClientReceivedBytesPerRpc();
-  grpc::RpcClientRoundtripLatency();
-  grpc::RpcClientServerLatency();
-  grpc::RpcClientSentMessagesPerRpc();
-  grpc::RpcClientReceivedMessagesPerRpc();
-
-  grpc::RpcServerSentBytesPerRpc();
-  grpc::RpcServerReceivedBytesPerRpc();
-  grpc::RpcServerServerLatency();
-  grpc::RpcServerSentMessagesPerRpc();
-  grpc::RpcServerReceivedMessagesPerRpc();
-}
-
-::opencensus::trace::Span GetSpanFromServerContext(
-    grpc::ServerContext* context) {
-  return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
-      ->Span();
-}
-
-}  // namespace grpc_impl

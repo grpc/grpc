@@ -130,15 +130,15 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    logging.info(explanatory_text)
+                    logging.info(explanatory_text.decode('utf8'))
                 logging.info('%s: %s', tag, msg)
             else:
                 sys.stdout.write(
                     '%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' %
-                    (_BEGINNING_OF_LINE, _CLEAR_LINE, '\n%s' % explanatory_text
-                     if explanatory_text is not None else '',
-                     _COLORS[_TAG_COLOR[tag]][1], _COLORS[_TAG_COLOR[tag]][0],
-                     tag, msg, '\n'
+                    (_BEGINNING_OF_LINE, _CLEAR_LINE, '\n%s' %
+                     explanatory_text.decode('utf8') if explanatory_text
+                     is not None else '', _COLORS[_TAG_COLOR[tag]][1],
+                     _COLORS[_TAG_COLOR[tag]][0], tag, msg, '\n'
                      if do_newline or explanatory_text is not None else ''))
             sys.stdout.flush()
             return
@@ -212,14 +212,17 @@ class JobSpec(object):
     def __cmp__(self, other):
         return self.identity() == other.identity()
 
+    def __lt__(self, other):
+        return self.identity() < other.identity()
+
     def __repr__(self):
         return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname,
                                                       self.cmdline)
 
     def __str__(self):
         return '%s: %s %s' % (self.shortname, ' '.join(
-            '%s=%s' % kv for kv in self.environ.items()),
-                              ' '.join(self.cmdline))
+            '%s=%s' % kv for kv in self.environ.items()), ' '.join(
+                self.cmdline))
 
 
 class JobResult(object):
@@ -274,7 +277,10 @@ class Job(object):
                 os.makedirs(logfile_dir)
             self._logfile = open(self._spec.logfilename, 'w+')
         else:
-            self._logfile = tempfile.TemporaryFile()
+            # macOS: a series of quick os.unlink invocation might cause OS
+            # error during the creation of temporary file. By using
+            # NamedTemporaryFile, we defer the removal of file and directory.
+            self._logfile = tempfile.NamedTemporaryFile()
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)
@@ -300,9 +306,9 @@ class Job(object):
                 self._process = try_start()
                 break
             except OSError:
-                message('WARNING',
-                        'Failed to start %s, retrying in %f seconds' %
-                        (self._spec.shortname, delay))
+                message(
+                    'WARNING', 'Failed to start %s, retrying in %f seconds' %
+                    (self._spec.shortname, delay))
                 time.sleep(delay)
                 delay *= 2
         else:
@@ -322,13 +328,12 @@ class Job(object):
             self.result.elapsed_time = elapsed
             if self._process.returncode != 0:
                 if self._retries < self._spec.flake_retries:
-                    message(
-                        'FLAKE',
-                        '%s [ret=%d, pid=%d]' %
-                        (self._spec.shortname, self._process.returncode,
-                         self._process.pid),
-                        stdout(),
-                        do_newline=True)
+                    message('FLAKE',
+                            '%s [ret=%d, pid=%d]' %
+                            (self._spec.shortname, self._process.returncode,
+                             self._process.pid),
+                            stdout(),
+                            do_newline=True)
                     self._retries += 1
                     self.result.num_failures += 1
                     self.result.retries = self._timeout_retries + self._retries
@@ -337,13 +342,12 @@ class Job(object):
                 else:
                     self._state = _FAILURE
                     if not self._suppress_failure_message:
-                        message(
-                            'FAILED',
-                            '%s [ret=%d, pid=%d, time=%.1fsec]' %
-                            (self._spec.shortname, self._process.returncode,
-                             self._process.pid, elapsed),
-                            stdout(),
-                            do_newline=True)
+                        message('FAILED',
+                                '%s [ret=%d, pid=%d, time=%.1fsec]' %
+                                (self._spec.shortname, self._process.returncode,
+                                 self._process.pid, elapsed),
+                                stdout(),
+                                do_newline=True)
                     self.result.state = 'FAILED'
                     self.result.num_failures += 1
                     self.result.returncode = self._process.returncode
@@ -360,18 +364,17 @@ class Job(object):
                     if real > 0.5:
                         cores = (user + sys) / real
                         self.result.cpu_measured = float('%.01f' % cores)
-                        self.result.cpu_estimated = float(
-                            '%.01f' % self._spec.cpu_cost)
+                        self.result.cpu_estimated = float('%.01f' %
+                                                          self._spec.cpu_cost)
                         measurement = '; cpu_cost=%.01f; estimated=%.01f' % (
                             self.result.cpu_measured, self.result.cpu_estimated)
                 if not self._quiet_success:
-                    message(
-                        'PASSED',
-                        '%s [time=%.1fsec, retries=%d:%d%s]' %
-                        (self._spec.shortname, elapsed, self._retries,
-                         self._timeout_retries, measurement),
-                        stdout() if self._spec.verbose_success else None,
-                        do_newline=self._newline_on_success or self._travis)
+                    message('PASSED',
+                            '%s [time=%.1fsec, retries=%d:%d%s]' %
+                            (self._spec.shortname, elapsed, self._retries,
+                             self._timeout_retries, measurement),
+                            stdout() if self._spec.verbose_success else None,
+                            do_newline=self._newline_on_success or self._travis)
                 self.result.state = 'PASSED'
         elif (self._state == _RUNNING and
               self._spec.timeout_seconds is not None and
@@ -379,11 +382,11 @@ class Job(object):
             elapsed = time.time() - self._start
             self.result.elapsed_time = elapsed
             if self._timeout_retries < self._spec.timeout_retries:
-                message(
-                    'TIMEOUT_FLAKE',
-                    '%s [pid=%d]' % (self._spec.shortname, self._process.pid),
-                    stdout(),
-                    do_newline=True)
+                message('TIMEOUT_FLAKE',
+                        '%s [pid=%d]' %
+                        (self._spec.shortname, self._process.pid),
+                        stdout(),
+                        do_newline=True)
                 self._timeout_retries += 1
                 self.result.num_failures += 1
                 self.result.retries = self._timeout_retries + self._retries
@@ -393,12 +396,11 @@ class Job(object):
                 # NOTE: job is restarted regardless of jobset's max_time setting
                 self.start()
             else:
-                message(
-                    'TIMEOUT',
-                    '%s [pid=%d, time=%.1fsec]' % (self._spec.shortname,
-                                                   self._process.pid, elapsed),
-                    stdout(),
-                    do_newline=True)
+                message('TIMEOUT',
+                        '%s [pid=%d, time=%.1fsec]' %
+                        (self._spec.shortname, self._process.pid, elapsed),
+                        stdout(),
+                        do_newline=True)
                 self.kill()
                 self.result.state = 'TIMEOUT'
                 self.result.num_failures += 1
@@ -460,14 +462,17 @@ class Jobset(object):
                 message('SKIPPED', spec.shortname, do_newline=True)
                 self.resultset[spec.shortname] = [skipped_job_result]
                 return True
-            if self.cancelled(): return False
+            if self.cancelled():
+                return False
             current_cpu_cost = self.cpu_cost()
-            if current_cpu_cost == 0: break
+            if current_cpu_cost == 0:
+                break
             if current_cpu_cost + spec.cpu_cost <= self._maxjobs:
                 if len(self._running) < self._maxjobs_cpu_agnostic:
                     break
             self.reap(spec.shortname, spec.cpu_cost)
-        if self.cancelled(): return False
+        if self.cancelled():
+            return False
         job = Job(spec, self._newline_on_success, self._travis, self._add_env,
                   self._quiet_success)
         self._running.add(job)
@@ -481,7 +486,8 @@ class Jobset(object):
             dead = set()
             for job in self._running:
                 st = eintr_be_gone(lambda: job.state())
-                if st == _RUNNING: continue
+                if st == _RUNNING:
+                    continue
                 if st == _FAILURE or st == _KILLED:
                     self._failures += 1
                     if self._stop_on_failure:
@@ -495,14 +501,15 @@ class Jobset(object):
                 if not self._quiet_success or job.result.state != 'PASSED':
                     self.resultset[job.GetSpec().shortname].append(job.result)
                 self._running.remove(job)
-            if dead: return
+            if dead:
+                return
             if not self._travis and platform_string() != 'windows':
                 rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
                 if self._remaining is not None and self._completed > 0:
                     now = time.time()
                     sofar = now - self._start_time
-                    remaining = sofar / self._completed * (
-                        self._remaining + len(self._running))
+                    remaining = sofar / self._completed * (self._remaining +
+                                                           len(self._running))
                     rstr = 'ETA %.1f sec; %s' % (remaining, rstr)
                 if waiting_for is not None:
                     wstr = ' next: %s @ %.2f cpu' % (waiting_for,
@@ -522,8 +529,10 @@ class Jobset(object):
 
     def cancelled(self):
         """Poll for cancellation."""
-        if self._cancelled: return True
-        if not self._check_cancelled(): return False
+        if self._cancelled:
+            return True
+        if not self._check_cancelled():
+            return False
         for job in self._running:
             job.kill()
         self._cancelled = True
@@ -531,7 +540,8 @@ class Jobset(object):
 
     def finish(self):
         while self._running:
-            if self.cancelled(): pass  # poll cancellation
+            if self.cancelled():
+                pass  # poll cancellation
             self.reap()
         if platform_string() != 'windows':
             signal.alarm(0)
@@ -573,11 +583,11 @@ def run(cmdlines,
             message('SKIPPED', job.shortname, do_newline=True)
             resultset[job.shortname] = [skipped_job_result]
         return 0, resultset
-    js = Jobset(check_cancelled, maxjobs if maxjobs is not None else
-                _DEFAULT_MAX_JOBS, maxjobs_cpu_agnostic
-                if maxjobs_cpu_agnostic is not None else _DEFAULT_MAX_JOBS,
-                newline_on_success, travis, stop_on_failure, add_env,
-                quiet_success, max_time)
+    js = Jobset(
+        check_cancelled, maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
+        maxjobs_cpu_agnostic if maxjobs_cpu_agnostic is not None else
+        _DEFAULT_MAX_JOBS, newline_on_success, travis, stop_on_failure, add_env,
+        quiet_success, max_time)
     for cmdline, remaining in tag_remaining(cmdlines):
         if not js.start(cmdline):
             break

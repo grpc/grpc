@@ -49,8 +49,8 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
                 "ProtoBufferWriter must be a subclass of "
                 "::protobuf::io::ZeroCopyOutputStream");
   *own_buffer = true;
-  int byte_size = msg.ByteSize();
-  if ((size_t)byte_size <= GRPC_SLICE_INLINED_SIZE) {
+  int byte_size = static_cast<int>(msg.ByteSizeLong());
+  if (static_cast<size_t>(byte_size) <= GRPC_SLICE_INLINED_SIZE) {
     Slice slice(byte_size);
     // We serialize directly into the allocated slices memory
     GPR_CODEGEN_ASSERT(slice.end() == msg.SerializeWithCachedSizesToArray(
@@ -83,13 +83,8 @@ Status GenericDeserialize(ByteBuffer* buffer,
     if (!reader.status().ok()) {
       return reader.status();
     }
-    ::grpc::protobuf::io::CodedInputStream decoder(&reader);
-    decoder.SetTotalBytesLimit(INT_MAX, INT_MAX);
-    if (!msg->ParseFromCodedStream(&decoder)) {
+    if (!msg->ParseFromZeroCopyStream(&reader)) {
       result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
-    }
-    if (!decoder.ConsumedEntireMessage()) {
-      result = Status(StatusCode::INTERNAL, "Did not read entire message");
     }
   }
   buffer->Clear();

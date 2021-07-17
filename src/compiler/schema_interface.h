@@ -22,16 +22,20 @@
 #include "src/compiler/config.h"
 
 #include <memory>
+#include <string>
 #include <vector>
 
-#ifndef GRPC_CUSTOM_STRING
-#include <string>
-#define GRPC_CUSTOM_STRING std::string
+#ifdef GRPC_CUSTOM_STRING
+#warning GRPC_CUSTOM_STRING is no longer supported. Please use std::string.
 #endif
 
 namespace grpc {
 
-typedef GRPC_CUSTOM_STRING string;
+// Using grpc::string and grpc::to_string is discouraged in favor of
+// std::string and std::to_string. This is only for legacy code using
+// them explictly.
+using std::string;     // deprecated
+using std::to_string;  // deprecated
 
 }  // namespace grpc
 
@@ -41,31 +45,31 @@ namespace grpc_generator {
 // Return formatted comments to be inserted in generated code.
 struct CommentHolder {
   virtual ~CommentHolder() {}
-  virtual grpc::string GetLeadingComments(const grpc::string prefix) const = 0;
-  virtual grpc::string GetTrailingComments(const grpc::string prefix) const = 0;
-  virtual std::vector<grpc::string> GetAllComments() const = 0;
+  virtual std::string GetLeadingComments(const std::string prefix) const = 0;
+  virtual std::string GetTrailingComments(const std::string prefix) const = 0;
+  virtual std::vector<std::string> GetAllComments() const = 0;
 };
 
 // An abstract interface representing a method.
 struct Method : public CommentHolder {
   virtual ~Method() {}
 
-  virtual grpc::string name() const = 0;
+  virtual std::string name() const = 0;
 
-  virtual grpc::string input_type_name() const = 0;
-  virtual grpc::string output_type_name() const = 0;
+  virtual std::string input_type_name() const = 0;
+  virtual std::string output_type_name() const = 0;
 
   virtual bool get_module_and_message_path_input(
-      grpc::string* str, grpc::string generator_file_name,
-      bool generate_in_pb2_grpc, grpc::string import_prefix,
-      const std::vector<grpc::string>& prefixes_to_filter) const = 0;
+      std::string* str, std::string generator_file_name,
+      bool generate_in_pb2_grpc, std::string import_prefix,
+      const std::vector<std::string>& prefixes_to_filter) const = 0;
   virtual bool get_module_and_message_path_output(
-      grpc::string* str, grpc::string generator_file_name,
-      bool generate_in_pb2_grpc, grpc::string import_prefix,
-      const std::vector<grpc::string>& prefixes_to_filter) const = 0;
+      std::string* str, std::string generator_file_name,
+      bool generate_in_pb2_grpc, std::string import_prefix,
+      const std::vector<std::string>& prefixes_to_filter) const = 0;
 
-  virtual grpc::string get_input_type_name() const = 0;
-  virtual grpc::string get_output_type_name() const = 0;
+  virtual std::string get_input_type_name() const = 0;
+  virtual std::string get_output_type_name() const = 0;
   virtual bool NoStreaming() const = 0;
   virtual bool ClientStreaming() const = 0;
   virtual bool ServerStreaming() const = 0;
@@ -76,7 +80,7 @@ struct Method : public CommentHolder {
 struct Service : public CommentHolder {
   virtual ~Service() {}
 
-  virtual grpc::string name() const = 0;
+  virtual std::string name() const = 0;
 
   virtual int method_count() const = 0;
   virtual std::unique_ptr<const Method> method(int i) const = 0;
@@ -85,7 +89,7 @@ struct Service : public CommentHolder {
 struct Printer {
   virtual ~Printer() {}
 
-  virtual void Print(const std::map<grpc::string, grpc::string>& vars,
+  virtual void Print(const std::map<std::string, std::string>& vars,
                      const char* template_string) = 0;
   virtual void Print(const char* string) = 0;
   virtual void PrintRaw(const char* string) = 0;
@@ -98,17 +102,17 @@ struct Printer {
 struct File : public CommentHolder {
   virtual ~File() {}
 
-  virtual grpc::string filename() const = 0;
-  virtual grpc::string filename_without_ext() const = 0;
-  virtual grpc::string package() const = 0;
-  virtual std::vector<grpc::string> package_parts() const = 0;
-  virtual grpc::string additional_headers() const = 0;
-  virtual std::vector<grpc::string> GetImportNames() const { return {}; }
+  virtual std::string filename() const = 0;
+  virtual std::string filename_without_ext() const = 0;
+  virtual std::string package() const = 0;
+  virtual std::vector<std::string> package_parts() const = 0;
+  virtual std::string additional_headers() const = 0;
+  virtual std::vector<std::string> GetImportNames() const { return {}; }
 
   virtual int service_count() const = 0;
   virtual std::unique_ptr<const Service> service(int i) const = 0;
 
-  virtual std::unique_ptr<Printer> CreatePrinter(grpc::string* str) const = 0;
+  virtual std::unique_ptr<Printer> CreatePrinter(std::string* str) const = 0;
 };
 }  // namespace grpc_generator
 

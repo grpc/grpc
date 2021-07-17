@@ -19,6 +19,10 @@
 #ifndef GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
 #define GRPC_TEST_CORE_END2END_DATA_SSL_TEST_DATA_H
 
+// These credentials are hardcoded as char arrays and are hence considered to
+// be deprecated. Please consider using credentials in
+// "src/core/tsi/test_creds" instead.
+
 extern const char test_root_cert[];
 extern const char test_server1_cert[];
 extern const char test_server1_key[];

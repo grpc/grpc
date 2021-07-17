@@ -64,14 +64,14 @@ Arena* Arena::Create(size_t initial_size) {
   return new (ArenaStorage(initial_size)) Arena(initial_size);
 }
 
-Pair<Arena*, void*> Arena::CreateWithAlloc(size_t initial_size,
-                                           size_t alloc_size) {
+std::pair<Arena*, void*> Arena::CreateWithAlloc(size_t initial_size,
+                                                size_t alloc_size) {
   static constexpr size_t base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
   auto* new_arena =
       new (ArenaStorage(initial_size)) Arena(initial_size, alloc_size);
   void* first_alloc = reinterpret_cast<char*>(new_arena) + base_size;
-  return MakePair(new_arena, first_alloc);
+  return std::make_pair(new_arena, first_alloc);
 }
 
 size_t Arena::Destroy() {

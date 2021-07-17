@@ -28,7 +28,7 @@ namespace experimental {
 /// Otherwise, returns the validation error.
 /// TODO(yashykt): Promote it to out of experimental once it is proved useful
 /// and gRFC is accepted.
-grpc::string ValidateServiceConfigJSON(const grpc::string& service_config_json);
+std::string ValidateServiceConfigJSON(const std::string& service_config_json);
 }  // namespace experimental
 
 }  // namespace grpc

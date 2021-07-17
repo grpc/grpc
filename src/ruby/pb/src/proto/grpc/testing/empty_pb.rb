@@ -12,6 +12,6 @@ end
 
 module Grpc
   module Testing
-    Empty = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Empty").msgclass
+    Empty = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Empty").msgclass
   end
 end

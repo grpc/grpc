@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/resolver_factory.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -47,8 +46,12 @@ class ResolverRegistry {
     /// Registers a resolver factory.  The factory will be used to create a
     /// resolver for any URI whose scheme matches that of the factory.
     /// Calls InitRegistry() if it has not already been called.
-    static void RegisterResolverFactory(UniquePtr<ResolverFactory> factory);
+    static void RegisterResolverFactory(
+        std::unique_ptr<ResolverFactory> factory);
   };
+
+  /// Checks whether the user input \a target is valid to create a resolver.
+  static bool IsValidTarget(absl::string_view target);
 
   /// Creates a resolver given \a target.
   /// First tries to parse \a target as a URI. If this succeeds, tries
@@ -57,22 +60,24 @@ class ResolverRegistry {
   /// prepends default_prefix to target and tries again.
   /// If a resolver factory is found, uses it to instantiate a resolver and
   /// returns it; otherwise, returns nullptr.
-  /// \a args, \a pollset_set, and \a combiner are passed to the factory's
-  /// \a CreateResolver() method.
-  /// \a args are the channel args to be included in resolver results.
-  /// \a pollset_set is used to drive I/O in the name resolution process.
-  /// \a combiner is the combiner under which all resolver calls will be run.
-  /// \a result_handler is used to return results from the resolver.
+  /// \a args, \a pollset_set, and \a work_serializer are passed to the
+  /// factory's \a CreateResolver() method. \a args are the channel args to be
+  /// included in resolver results. \a pollset_set is used to drive I/O in the
+  /// name resolution process. \a work_serializer is the work_serializer under
+  /// which all resolver calls will be run. \a result_handler is used to return
+  /// results from the resolver.
   static OrphanablePtr<Resolver> CreateResolver(
       const char* target, const grpc_channel_args* args,
-      grpc_pollset_set* pollset_set, grpc_combiner* combiner,
-      UniquePtr<Resolver::ResultHandler> result_handler);
+      grpc_pollset_set* pollset_set,
+      std::shared_ptr<WorkSerializer> work_serializer,
+      std::unique_ptr<Resolver::ResultHandler> result_handler);
 
   /// Returns the default authority to pass from a client for \a target.
-  static UniquePtr<char> GetDefaultAuthority(const char* target);
+  static std::string GetDefaultAuthority(absl::string_view target);
 
   /// Returns \a target with the default prefix prepended, if needed.
-  static UniquePtr<char> AddDefaultPrefixIfNeeded(const char* target);
+  static grpc_core::UniquePtr<char> AddDefaultPrefixIfNeeded(
+      const char* target);
 
   /// Returns the resolver factory for \a scheme.
   /// Caller does NOT own the return value.

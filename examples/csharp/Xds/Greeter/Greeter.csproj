@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.12.2" />
+    <PackageReference Include="Grpc.Core" Version="2.29.0" />
+    <PackageReference Include="Grpc.HealthCheck" Version="2.29.0" />
+    <PackageReference Include="Grpc.Reflection" Version="2.29.0"/>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.29.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="../../../protos/helloworld.proto" Link="helloworld.proto" />
+  </ItemGroup>
+
+</Project>

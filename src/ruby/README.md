@@ -18,6 +18,11 @@ INSTALLATION
 gem install grpc
 ```
 
+If using a Gemfile and you wish to pull from a git repository or GitHub, make sure to tell bundler to retrieve submodules:
+```
+gem 'grpc', github: 'grpc/grpc', submodules: true
+```
+
 BUILD FROM SOURCE
 ---------------------
 - Clone this repository
@@ -74,5 +79,5 @@ Directory structure is the layout for [ruby extensions][]
 
 [ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
 [rubydoc]: http://www.rubydoc.info/gems/grpc
-[grpc.io]: https://grpc.io/docs/quickstart/ruby.html
+[grpc.io]: https://grpc.io/docs/languages/ruby/quickstart
 [Debian jessie-backports]:http://backports.debian.org/Instructions/

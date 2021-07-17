@@ -42,9 +42,9 @@ class CompressionExampleTest(unittest.TestCase):
 
     def test_compression_example(self):
         with _get_port() as test_port:
-            server_process = subprocess.Popen((_SERVER_PATH, '--port',
-                                               str(test_port),
-                                               '--server_compression', 'gzip'))
+            server_process = subprocess.Popen(
+                (_SERVER_PATH, '--port', str(test_port), '--server_compression',
+                 'gzip'))
             try:
                 server_target = 'localhost:{}'.format(test_port)
                 client_process = subprocess.Popen(

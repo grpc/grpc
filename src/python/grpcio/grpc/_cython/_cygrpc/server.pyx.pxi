@@ -12,18 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import logging
-import time
-import grpc
-
-_LOGGER = logging.getLogger(__name__)
-
 
 cdef class Server:
 
-  def __cinit__(self, object arguments):
+  def __cinit__(self, object arguments, bint xds):
     fork_handlers_and_grpc_init()
     self.references = []
     self.registered_completion_queues = []
@@ -31,9 +23,14 @@ cdef class Server:
     self.is_shutting_down = False
     self.is_shutdown = False
     self.c_server = NULL
-    self._vtable = _VTable()
-    cdef _ChannelArgs channel_args = _ChannelArgs(arguments, self._vtable)
+    cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
+    cdef grpc_server_xds_status_notifier notifier
+    notifier.on_serving_status_update = NULL
+    notifier.user_data = NULL
+    if xds:
+      grpc_server_set_config_fetcher(self.c_server,
+        grpc_server_config_fetcher_xds_create(notifier, channel_args.c_args()))
     self.references.append(arguments)
 
   def request_call(
@@ -43,7 +40,7 @@ cdef class Server:
       raise ValueError("server must be started and not shutting down")
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
-    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag, self._vtable)
+    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag)
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
     return grpc_server_request_call(
@@ -62,16 +59,25 @@ cdef class Server:
           self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
 
-  def start(self):
+  def start(self, backup_queue=True):
+    """Start the Cython gRPC Server.
+    
+    Args:
+      backup_queue: a bool indicates whether to spawn a backup completion
+        queue. In the case that no CQ is bound to the server, and the shutdown
+        of server becomes un-observable.
+    """
     if self.is_started:
       raise ValueError("the server has already started")
-    self.backup_shutdown_queue = CompletionQueue(shutdown_cq=True)
-    self.register_completion_queue(self.backup_shutdown_queue)
+    if backup_queue:
+      self.backup_shutdown_queue = CompletionQueue(shutdown_cq=True)
+      self.register_completion_queue(self.backup_shutdown_queue)
     self.is_started = True
     with nogil:
       grpc_server_start(self.c_server)
-    # Ensure the core has gotten a chance to do the start-up work
-    self.backup_shutdown_queue.poll(deadline=time.time())
+    if backup_queue:
+      # Ensure the core has gotten a chance to do the start-up work
+      self.backup_shutdown_queue.poll(deadline=time.time())
 
   def add_http2_port(self, bytes address,
                      ServerCredentials server_credentials=None):
@@ -118,7 +124,7 @@ cdef class Server:
 
   def cancel_all_calls(self):
     if not self.is_shutting_down:
-      raise RuntimeError("the server must be shutting down to cancel all calls")
+      raise UsageError("the server must be shutting down to cancel all calls")
     elif self.is_shutdown:
       return
     else:
@@ -135,19 +141,23 @@ cdef class Server:
       elif self.is_shutdown:
         pass
       elif not self.is_shutting_down:
-        # the user didn't call shutdown - use our backup queue
-        self._c_shutdown(self.backup_shutdown_queue, None)
-        # and now we wait
-        while not self.is_shutdown:
-          self.backup_shutdown_queue.poll()
+        if self.backup_shutdown_queue is None:
+          raise InternalError('Server shutdown failed: no completion queue.')
+        else:
+          # the user didn't call shutdown - use our backup queue
+          self._c_shutdown(self.backup_shutdown_queue, None)
+          # and now we wait
+          while not self.is_shutdown:
+            self.backup_shutdown_queue.poll()
       else:
         # We're in the process of shutting down, but have not shutdown; can't do
         # much but repeatedly release the GIL and wait
         while not self.is_shutdown:
           time.sleep(0)
-      grpc_server_destroy(self.c_server)
-      self.c_server = NULL
+      with nogil:
+        grpc_server_destroy(self.c_server)
+        self.c_server = NULL
 
   def __dealloc__(self):
     if self.c_server == NULL:
-      grpc_shutdown_blocking()
+      grpc_shutdown()

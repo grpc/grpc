@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2018 gRPC authors.
 #
@@ -13,8 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from __future__ import print_function
 
 import os
 import sys
@@ -51,10 +49,8 @@ expected_files = [
     "include/grpc++/impl/rpc_service_method.h",
     "include/grpc++/impl/method_handler_impl.h",
     "include/grpc++/impl/server_builder_plugin.h",
-    "include/grpc++/impl/sync_cxx11.h",
     "include/grpc++/impl/server_initializer.h",
     "include/grpc++/impl/serialization_traits.h",
-    "include/grpc++/impl/sync_no_cxx11.h",
     "include/grpc++/impl/codegen/sync_stream.h",
     "include/grpc++/impl/codegen/channel_interface.h",
     "include/grpc++/impl/codegen/config_protobuf.h",

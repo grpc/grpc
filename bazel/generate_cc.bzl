@@ -1,12 +1,26 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Generates C++ grpc stubs from proto_library rules.
 
 This is an internal rule used by cc_grpc_library, and shouldn't be used
 directly.
 """
 
+load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
-    "get_include_protoc_args",
+    "get_include_directory",
     "get_plugin_args",
     "get_proto_root",
     "proto_path_to_generated_filename",
@@ -107,7 +121,10 @@ def generate_cc_impl(ctx):
         arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
         tools = []
 
-    arguments += get_include_protoc_args(includes)
+    arguments += [
+        "--proto_path={}".format(get_include_directory(i))
+        for i in includes
+    ]
 
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
@@ -137,6 +154,7 @@ def generate_cc_impl(ctx):
         outputs = out_files,
         executable = ctx.executable._protoc,
         arguments = arguments,
+        use_default_shell_env = True,
     )
 
     return struct(files = depset(out_files))

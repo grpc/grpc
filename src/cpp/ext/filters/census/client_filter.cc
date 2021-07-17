@@ -18,11 +18,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "src/cpp/ext/filters/census/client_filter.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
 #include "src/core/lib/surface/call.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
@@ -47,8 +53,8 @@ void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
 
 }  // namespace
 
-void CensusClientCallData::OnDoneRecvTrailingMetadataCb(void* user_data,
-                                                        grpc_error* error) {
+void CensusClientCallData::OnDoneRecvTrailingMetadataCb(
+    void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
   CensusClientCallData* calld =
       reinterpret_cast<CensusClientCallData*>(elem->call_data);
@@ -58,12 +64,13 @@ void CensusClientCallData::OnDoneRecvTrailingMetadataCb(void* user_data,
     FilterTrailingMetadata(calld->recv_trailing_metadata_,
                            &calld->elapsed_time_);
   }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_trailing_metadata_,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->initial_on_done_recv_trailing_metadata_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CensusClientCallData::OnDoneRecvMessageCb(void* user_data,
-                                               grpc_error* error) {
+                                               grpc_error_handle error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
   CensusClientCallData* calld =
       reinterpret_cast<CensusClientCallData*>(elem->call_data);
@@ -75,7 +82,8 @@ void CensusClientCallData::OnDoneRecvMessageCb(void* user_data,
   if ((*calld->recv_message_) != nullptr) {
     calld->recv_message_count_++;
   }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_message_, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, calld->initial_on_done_recv_message_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CensusClientCallData::StartTransportStreamOpBatch(
@@ -94,17 +102,19 @@ void CensusClientCallData::StartTransportStreamOpBatch(
               op->send_initial_metadata()->batch(), &tracing_bin_,
               grpc_mdelem_from_slices(
                   GRPC_MDSTR_GRPC_TRACE_BIN,
-                  grpc_slice_from_copied_buffer(tracing_buf_, tracing_len))));
+                  grpc_core::UnmanagedMemorySlice(tracing_buf_, tracing_len)),
+              GRPC_BATCH_GRPC_TRACE_BIN));
     }
     grpc_slice tags = grpc_empty_slice();
-    // TODO: Add in tagging serialization.
+    // TODO(unknown): Add in tagging serialization.
     size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
     if (encoded_tags_len > 0) {
       GRPC_LOG_IF_ERROR(
           "census grpc_filter",
           grpc_metadata_batch_add_tail(
               op->send_initial_metadata()->batch(), &stats_bin_,
-              grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TAGS_BIN, tags)));
+              grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TAGS_BIN, tags),
+              GRPC_BATCH_GRPC_TAGS_BIN));
     }
   }
 
@@ -128,8 +138,8 @@ void CensusClientCallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, op->op());
 }
 
-grpc_error* CensusClientCallData::Init(grpc_call_element* elem,
-                                       const grpc_call_element_args* args) {
+grpc_error_handle CensusClientCallData::Init(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   path_ = grpc_slice_ref_internal(args->path);
   start_time_ = absl::Now();
   method_ = GetMethod(&path_);
@@ -142,12 +152,19 @@ grpc_error* CensusClientCallData::Init(grpc_call_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-void CensusClientCallData::Destroy(grpc_call_element* elem,
+void CensusClientCallData::Destroy(grpc_call_element* /*elem*/,
                                    const grpc_call_final_info* final_info,
-                                   grpc_closure* then_call_closure) {
+                                   grpc_closure* /*then_call_closure*/) {
   const uint64_t request_size = GetOutgoingDataSize(final_info);
   const uint64_t response_size = GetIncomingDataSize(final_info);
   double latency_ms = absl::ToDoubleMilliseconds(absl::Now() - start_time_);
+  std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
+      context_.tags().tags();
+  std::string method = absl::StrCat(method_);
+  tags.emplace_back(ClientMethodTagKey(), method);
+  std::string final_status =
+      absl::StrCat(StatusCodeToString(final_info->final_status));
+  tags.emplace_back(ClientStatusTagKey(), final_status);
   ::opencensus::stats::Record(
       {{RpcClientSentBytesPerRpc(), static_cast<double>(request_size)},
        {RpcClientReceivedBytesPerRpc(), static_cast<double>(response_size)},
@@ -156,9 +173,13 @@ void CensusClientCallData::Destroy(grpc_call_element* elem,
         ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time_))},
        {RpcClientSentMessagesPerRpc(), sent_message_count_},
        {RpcClientReceivedMessagesPerRpc(), recv_message_count_}},
-      {{ClientMethodTagKey(), method_},
-       {ClientStatusTagKey(), StatusCodeToString(final_info->final_status)}});
+      tags);
   grpc_slice_unref_internal(path_);
+  if (final_info->final_status != GRPC_STATUS_OK) {
+    // TODO(unknown): Map grpc_status_code to trace::StatusCode.
+    context_.Span().SetStatus(opencensus::trace::StatusCode::UNKNOWN,
+                              StatusCodeToString(final_info->final_status));
+  }
   context_.EndSpan();
 }
 

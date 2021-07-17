@@ -35,6 +35,8 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/generic/generic_stub.h>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
@@ -86,7 +88,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     GPR_ASSERT(!config.use_coalesce_api());  // not supported.
     StartInternal(cq);
   }
-  bool RunNextState(bool ok, HistogramEntry* entry) override {
+  bool RunNextState(bool /*ok*/, HistogramEntry* entry) override {
     switch (next_state_) {
       case State::READY:
         start_ = UsageTimer::Now();
@@ -140,7 +142,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     if (!next_issue_) {  // ready to issue
       RunNextState(true, nullptr);
     } else {  // wait for the issue time
-      alarm_.reset(new Alarm);
+      alarm_ = absl::make_unique<Alarm>();
       alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
     }
   }
@@ -151,9 +153,9 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   // Specify which protected members we are using since there is no
   // member name resolution until the template types are fully resolved
  public:
+  using Client::closed_loop_;
   using Client::NextIssuer;
   using Client::SetupLoadTest;
-  using Client::closed_loop_;
   using ClientImpl<StubType, RequestType>::cores_;
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;
@@ -191,7 +193,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
       t = (t + 1) % cli_cqs_.size();
     }
   }
-  virtual ~AsyncClient() {
+  ~AsyncClient() override {
     for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
       void* got_tag;
       bool ok;
@@ -227,7 +229,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     }
     return num_threads;
   }
-  void DestroyMultithreading() override final {
+  void DestroyMultithreading() final {
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       std::lock_guard<std::mutex> lock((*ss)->mutex);
       (*ss)->shutdown = true;
@@ -254,7 +256,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     return ctx;
   }
 
-  void ThreadFunc(size_t thread_idx, Client::Thread* t) override final {
+  void ThreadFunc(size_t thread_idx, Client::Thread* t) final {
     void* got_tag;
     bool ok;
 
@@ -314,7 +316,7 @@ class AsyncUnaryClient final
   ~AsyncUnaryClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, SimpleResponse* response,
+  static void CheckDone(const grpc::Status& s, SimpleResponse* /*response*/,
                         HistogramEntry* entry) {
     entry->set_status(s.error_code());
   }
@@ -369,7 +371,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           break;  // loop around, don't return
         case State::WAIT:
           next_state_ = State::READY_TO_WRITE;
-          alarm_.reset(new Alarm);
+          alarm_ = absl::make_unique<Alarm>();
           alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           return true;
         case State::READY_TO_WRITE:
@@ -498,7 +500,8 @@ class AsyncStreamingPingPongClient final
   ~AsyncStreamingPingPongClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& /*s*/,
+                        SimpleResponse* /*response*/) {}
   static std::unique_ptr<
       grpc::ClientAsyncReaderWriter<SimpleRequest, SimpleResponse>>
   PrepareReq(BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
@@ -553,7 +556,7 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
           }
           break;  // loop around, don't return
         case State::WAIT:
-          alarm_.reset(new Alarm);
+          alarm_ = absl::make_unique<Alarm>();
           alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           next_state_ = State::READY_TO_WRITE;
           return true;
@@ -630,7 +633,8 @@ class AsyncStreamingFromClientClient final
   ~AsyncStreamingFromClientClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& /*s*/,
+                        SimpleResponse* /*response*/) {}
   static std::unique_ptr<grpc::ClientAsyncWriter<SimpleRequest>> PrepareReq(
       BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
       SimpleResponse* resp, CompletionQueue* cq) {
@@ -745,7 +749,8 @@ class AsyncStreamingFromServerClient final
   ~AsyncStreamingFromServerClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& /*s*/,
+                        SimpleResponse* /*response*/) {}
   static std::unique_ptr<grpc::ClientAsyncReader<SimpleResponse>> PrepareReq(
       BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
       const SimpleRequest& req, CompletionQueue* cq) {
@@ -770,7 +775,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
       std::function<gpr_timespec()> next_issue,
       std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
           grpc::GenericStub*, grpc::ClientContext*,
-          const grpc::string& method_name, CompletionQueue*)>
+          const std::string& method_name, CompletionQueue*)>
           prepare_req,
       std::function<void(grpc::Status, ByteBuffer*)> on_done)
       : context_(),
@@ -799,7 +804,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
           break;  // loop around, don't return
         case State::WAIT:
           next_state_ = State::READY_TO_WRITE;
-          alarm_.reset(new Alarm);
+          alarm_ = absl::make_unique<Alarm>();
           alarm_->Set(cq_, next_issue_(), ClientRpcContext::tag(this));
           return true;
         case State::READY_TO_WRITE:
@@ -871,7 +876,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
   std::function<void(grpc::Status, ByteBuffer*)> callback_;
   std::function<gpr_timespec()> next_issue_;
   std::function<std::unique_ptr<grpc::GenericClientAsyncReaderWriter>(
-      grpc::GenericStub*, grpc::ClientContext*, const grpc::string&,
+      grpc::GenericStub*, grpc::ClientContext*, const std::string&,
       CompletionQueue*)>
       prepare_req_;
   grpc::Status status_;
@@ -884,7 +889,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
 
   void StartInternal(CompletionQueue* cq, int messages_per_stream) {
     cq_ = cq;
-    const grpc::string kMethodName(
+    const std::string kMethodName(
         "/grpc.testing.BenchmarkService/StreamingCall");
     messages_per_stream_ = messages_per_stream;
     messages_issued_ = 0;
@@ -896,7 +901,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
 
 static std::unique_ptr<grpc::GenericStub> GenericStubCreator(
     const std::shared_ptr<Channel>& ch) {
-  return std::unique_ptr<grpc::GenericStub>(new grpc::GenericStub(ch));
+  return absl::make_unique<grpc::GenericStub>(ch);
 }
 
 class GenericAsyncStreamingClient final
@@ -911,10 +916,10 @@ class GenericAsyncStreamingClient final
   ~GenericAsyncStreamingClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, ByteBuffer* response) {}
+  static void CheckDone(const grpc::Status& /*s*/, ByteBuffer* /*response*/) {}
   static std::unique_ptr<grpc::GenericClientAsyncReaderWriter> PrepareReq(
       grpc::GenericStub* stub, grpc::ClientContext* ctx,
-      const grpc::string& method_name, CompletionQueue* cq) {
+      const std::string& method_name, CompletionQueue* cq) {
     auto stream = stub->PrepareCall(ctx, method_name, cq);
     return stream;
   };
@@ -950,8 +955,8 @@ std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& config) {
   }
 }
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
-    const ClientConfig& args) {
-  return std::unique_ptr<Client>(new GenericAsyncStreamingClient(args));
+    const ClientConfig& config) {
+  return std::unique_ptr<Client>(new GenericAsyncStreamingClient(config));
 }
 
 }  // namespace testing

@@ -42,14 +42,14 @@ _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
 
 def _expect_status_code(call, expected_code):
     if call.code() != expected_code:
-        raise ValueError('expected code %s, got %s' % (expected_code,
-                                                       call.code()))
+        raise ValueError('expected code %s, got %s' %
+                         (expected_code, call.code()))
 
 
 def _expect_status_details(call, expected_details):
     if call.details() != expected_details:
-        raise ValueError('expected message %s, got %s' % (expected_details,
-                                                          call.details()))
+        raise ValueError('expected message %s, got %s' %
+                         (expected_details, call.details()))
 
 
 def _validate_status_code_and_details(call, expected_code, expected_details):
@@ -75,8 +75,8 @@ def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope,
         payload=messages_pb2.Payload(body=b'\x00' * 271828),
         fill_username=fill_username,
         fill_oauth_scope=fill_oauth_scope)
-    response_future = stub.UnaryCall.future(
-        request, credentials=call_credentials)
+    response_future = stub.UnaryCall.future(request,
+                                            credentials=call_credentials)
     response = response_future.result()
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
     return response
@@ -85,8 +85,8 @@ def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope,
 def _empty_unary(stub):
     response = stub.EmptyCall(empty_pb2.Empty())
     if not isinstance(response, empty_pb2.Empty):
-        raise TypeError(
-            'response is of type "%s", not empty_pb2.Empty!' % type(response))
+        raise TypeError('response is of type "%s", not empty_pb2.Empty!' %
+                        type(response))
 
 
 def _large_unary(stub):
@@ -106,8 +106,8 @@ def _client_streaming(stub):
                 for payload in payloads)
     response = stub.StreamingInputCall(requests)
     if response.aggregated_payload_size != 74922:
-        raise ValueError(
-            'incorrect size %d!' % response.aggregated_payload_size)
+        raise ValueError('incorrect size %d!' %
+                         response.aggregated_payload_size)
 
 
 def _server_streaming(stub):
@@ -191,13 +191,14 @@ def _ping_pong(stub):
                                                request_payload_sizes):
             request = messages_pb2.StreamingOutputCallRequest(
                 response_type=messages_pb2.COMPRESSABLE,
-                response_parameters=(
-                    messages_pb2.ResponseParameters(size=response_size),),
+                response_parameters=(messages_pb2.ResponseParameters(
+                    size=response_size),),
                 payload=messages_pb2.Payload(body=b'\x00' * payload_size))
             pipe.add(request)
             response = next(response_iterator)
-            _validate_payload_type_and_length(
-                response, messages_pb2.COMPRESSABLE, response_size)
+            _validate_payload_type_and_length(response,
+                                              messages_pb2.COMPRESSABLE,
+                                              response_size)
 
 
 def _cancel_after_begin(stub):
@@ -230,8 +231,8 @@ def _cancel_after_first_response(stub):
         payload_size = request_payload_sizes[0]
         request = messages_pb2.StreamingOutputCallRequest(
             response_type=messages_pb2.COMPRESSABLE,
-            response_parameters=(
-                messages_pb2.ResponseParameters(size=response_size),),
+            response_parameters=(messages_pb2.ResponseParameters(
+                size=response_size),),
             payload=messages_pb2.Payload(body=b'\x00' * payload_size))
         pipe.add(request)
         response = next(response_iterator)
@@ -300,6 +301,10 @@ def _status_code_and_message(stub):
             payload=messages_pb2.Payload(body=b'\x00'),
             response_status=messages_pb2.EchoStatus(code=code, message=details))
         pipe.add(request)  # sends the initial request.
+    try:
+        next(response_iterator)
+    except grpc.RpcError as rpc_error:
+        assert rpc_error.code() == status
     # Dropping out of with block closes the pipe
     _validate_status_code_and_details(response_iterator, status, details)
 
@@ -366,8 +371,8 @@ def _oauth2_auth_token(stub, args):
     wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError('expected username %s, got %s' %
+                         (wanted_email, response.username))
     if args.oauth_scope.find(response.oauth_scope) == -1:
         raise ValueError(
             'expected to find oauth scope "{}" in received "{}"'.format(
@@ -379,8 +384,8 @@ def _jwt_token_creds(stub, args):
     wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError('expected username %s, got %s' %
+                         (wanted_email, response.username))
 
 
 def _per_rpc_creds(stub, args):
@@ -394,8 +399,8 @@ def _per_rpc_creds(stub, args):
             request=google_auth_transport_requests.Request()))
     response = _large_unary_common_behavior(stub, True, False, call_credentials)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError('expected username %s, got %s' %
+                         (wanted_email, response.username))
 
 
 def _special_status_message(stub, args):
@@ -473,5 +478,5 @@ class TestCase(enum.Enum):
         elif self is TestCase.SPECIAL_STATUS_MESSAGE:
             _special_status_message(stub, args)
         else:
-            raise NotImplementedError(
-                'Test case "%s" not implemented!' % self.name)
+            raise NotImplementedError('Test case "%s" not implemented!' %
+                                      self.name)

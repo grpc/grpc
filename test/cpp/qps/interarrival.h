@@ -81,7 +81,6 @@ class InterarrivalTimer {
     for (int i = 0; i < entries; i++) {
       random_table_.push_back(
           static_cast<int64_t>(1e9 * r.transform(rando(generator))));
-      ;
     }
     // Now set up the thread positions
     for (int i = 0; i < threads; i++) {
@@ -92,8 +91,9 @@ class InterarrivalTimer {
 
   int64_t next(int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);
-    if (thread_posns_[thread_num] == random_table_.end())
+    if (thread_posns_[thread_num] == random_table_.end()) {
       thread_posns_[thread_num] = random_table_.begin();
+    }
     return ret;
   }
 

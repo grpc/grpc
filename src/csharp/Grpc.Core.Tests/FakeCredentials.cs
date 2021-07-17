@@ -34,9 +34,9 @@ namespace Grpc.Core.Tests
             get { return composable; }
         }
 
-        internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
+        public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
         {
-            return null;
+            // not invoking configuration on purpose
         }
     }
 

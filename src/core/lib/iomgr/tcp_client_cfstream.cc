@@ -33,20 +33,20 @@
 
 #include <netinet/in.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint_cfstream.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-typedef struct CFStreamConnect {
+struct CFStreamConnect {
   gpr_mu mu;
   gpr_refcount refcount;
 
@@ -65,9 +65,9 @@ typedef struct CFStreamConnect {
   grpc_closure* closure;
   grpc_endpoint** endpoint;
   int refs;
-  char* addr_name;
+  std::string addr_name;
   grpc_resource_quota* resource_quota;
-} CFStreamConnect;
+};
 
 static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   grpc_resource_quota_unref_internal(connect->resource_quota);
@@ -75,11 +75,10 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   CFRelease(connect->read_stream);
   CFRelease(connect->write_stream);
   gpr_mu_destroy(&connect->mu);
-  gpr_free(connect->addr_name);
-  gpr_free(connect);
+  delete connect;
 }
 
-static void OnAlarm(void* arg, grpc_error* error) {
+static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%p", connect, error);
@@ -94,13 +93,13 @@ static void OnAlarm(void* arg, grpc_error* error) {
   if (done) {
     CFStreamConnectCleanup(connect);
   } else {
-    grpc_error* error =
+    grpc_error_handle error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
-    GRPC_CLOSURE_SCHED(closure, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
 
-static void OnOpen(void* arg, grpc_error* error) {
+static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%p", connect, error);
@@ -130,26 +129,26 @@ static void OnOpen(void* arg, grpc_error* error) {
       }
       if (error == GRPC_ERROR_NONE) {
         *endpoint = grpc_cfstream_endpoint_create(
-            connect->read_stream, connect->write_stream, connect->addr_name,
-            connect->resource_quota, connect->stream_handle);
+            connect->read_stream, connect->write_stream,
+            connect->addr_name.c_str(), connect->resource_quota,
+            connect->stream_handle);
       }
     } else {
       GRPC_ERROR_REF(error);
     }
     gpr_mu_unlock(&connect->mu);
-    GRPC_CLOSURE_SCHED(closure, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
 
 static void ParseResolvedAddress(const grpc_resolved_address* addr,
                                  CFStringRef* host, int* port) {
-  char *host_port, *host_string, *port_string;
-  grpc_sockaddr_to_string(&host_port, addr, 1);
-  gpr_split_host_port(host_port, &host_string, &port_string);
-  *host = CFStringCreateWithCString(NULL, host_string, kCFStringEncodingUTF8);
-  gpr_free(host_string);
-  gpr_free(port_string);
-  gpr_free(host_port);
+  std::string host_port = grpc_sockaddr_to_string(addr, true);
+  std::string host_string;
+  std::string port_string;
+  grpc_core::SplitHostPort(host_port, &host_string, &port_string);
+  *host = CFStringCreateWithCString(NULL, host_string.c_str(),
+                                    kCFStringEncodingUTF8);
   *port = grpc_sockaddr_get_port(addr);
 }
 
@@ -158,9 +157,7 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
                                   const grpc_channel_args* channel_args,
                                   const grpc_resolved_address* resolved_addr,
                                   grpc_millis deadline) {
-  CFStreamConnect* connect;
-
-  connect = (CFStreamConnect*)gpr_zalloc(sizeof(CFStreamConnect));
+  CFStreamConnect* connect = new CFStreamConnect();
   connect->closure = closure;
   connect->endpoint = ep;
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
@@ -171,7 +168,7 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
 
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
-            connect, connect->addr_name);
+            connect, connect->addr_name.c_str());
   }
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);

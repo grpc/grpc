@@ -37,6 +37,7 @@
 #include "test/core/handshake/server_ssl_common.h"
 
 int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment env(argc, argv);
   // Handshake succeeeds when the client supplies the standard ALPN list.
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
@@ -53,5 +54,6 @@ int main(int argc, char* argv[]) {
   // and sanity checks the server_ssl_test.
   const char* fake_alpn_list[] = {"foo"};
   GPR_ASSERT(!server_ssl_test(fake_alpn_list, 1, "foo"));
+  CleanupSslLibrary();
   return 0;
 }

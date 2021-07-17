@@ -165,8 +165,9 @@ if __name__ == '__main__':
     logging.basicConfig()
     parser = argparse.ArgumentParser()
     parser.add_argument('scenario', type=str)
-    parser.add_argument(
-        '--wait_for_interrupt', dest='wait_for_interrupt', action='store_true')
+    parser.add_argument('--wait_for_interrupt',
+                        dest='wait_for_interrupt',
+                        action='store_true')
     args = parser.parse_args()
 
     if args.scenario == UNSTARTED_SERVER:

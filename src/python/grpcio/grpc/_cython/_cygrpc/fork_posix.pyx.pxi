@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-import os
-import threading
-
-_LOGGER = logging.getLogger(__name__)
 
 _AWAIT_THREADS_TIMEOUT_SECONDS = 5
 
@@ -32,6 +27,7 @@ _TRUE_VALUES = ['yes',  'Yes',  'YES', 'true', 'True', 'TRUE', '1']
 # must  not block and should execute quickly.
 #
 # This flag is not supported on Windows.
+# This flag is also not supported for non-native IO manager.
 _GRPC_ENABLE_FORK_SUPPORT = (
     os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
         .lower() in _TRUE_VALUES)
@@ -98,6 +94,8 @@ def fork_handlers_and_grpc_init():
                 _fork_state.fork_handler_registered = True
 
 
+
+
 class ForkManagedThread(object):
     def __init__(self, target, args=()):
         if _GRPC_ENABLE_FORK_SUPPORT:
@@ -106,9 +104,9 @@ class ForkManagedThread(object):
                     target(*args)
                 finally:
                     _fork_state.active_thread_count.decrement()
-            self._thread = threading.Thread(target=managed_target, args=args)
+            self._thread = threading.Thread(target=_run_with_context(managed_target), args=args)
         else:
-            self._thread = threading.Thread(target=target, args=args)
+            self._thread = threading.Thread(target=_run_with_context(target), args=args)
 
     def setDaemon(self, daemonic):
         self._thread.daemon = daemonic

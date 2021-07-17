@@ -39,19 +39,18 @@ namespace grpc {
 template <typename T>
 class TimePoint {
  public:
-  TimePoint(const T& time) { you_need_a_specialization_of_TimePoint(); }
-  gpr_timespec raw_time() {
-    gpr_timespec t;
-    return t;
-  }
-
- private:
-  void you_need_a_specialization_of_TimePoint();
+  // If you see the error with methods below, you may need either
+  // i) using the existing types having a conversion class such as
+  // gpr_timespec and std::chrono::system_clock::time_point or
+  // ii) writing a new TimePoint<YourType> to address your case.
+  TimePoint(const T& /*time*/) = delete;
+  gpr_timespec raw_time() = delete;
 };
 
 template <>
 class TimePoint<gpr_timespec> {
  public:
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
   TimePoint(const gpr_timespec& time) : time_(time) {}
   gpr_timespec raw_time() { return time_; }
 
@@ -75,6 +74,7 @@ std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
 template <>
 class TimePoint<std::chrono::system_clock::time_point> {
  public:
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
   TimePoint(const std::chrono::system_clock::time_point& time) {
     Timepoint2Timespec(time, &time_);
   }

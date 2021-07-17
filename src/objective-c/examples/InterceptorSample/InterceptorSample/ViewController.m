@@ -19,15 +19,20 @@
 #import "ViewController.h"
 
 #import <GRPCClient/GRPCCall.h>
+#if USE_FRAMEWORKS
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
+#else
+#import "src/objective-c/examples/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/examples/RemoteTestClient/Test.pbrpc.h"
+#endif
 
 #import "CacheInterceptor.h"
 
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
 
-@interface ViewController ()<GRPCResponseHandler>
+@interface ViewController () <GRPCResponseHandler>
 
 @end
 
@@ -46,8 +51,9 @@ static NSString *const kService = @"TestService";
 }
 
 - (IBAction)tapCall:(id)sender {
-  GRPCProtoMethod *kUnaryCallMethod =
-      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"UnaryCall"];
+  GRPCProtoMethod *kUnaryCallMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
+                                                                       service:kService
+                                                                        method:@"UnaryCall"];
 
   GRPCRequestOptions *requestOptions =
       [[GRPCRequestOptions alloc] initWithHost:@"grpc-test.sandbox.googleapis.com"

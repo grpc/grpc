@@ -1,16 +1,28 @@
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "foundation",
-    srcs = ["__init__.py",],
+    srcs = ["__init__.py"],
     deps = [
         ":abandonment",
         ":callable_util",
         ":future",
         ":logging_pool",
-        ":stream_util",
         ":stream",
+        ":stream_util",
     ],
 )
 
@@ -23,9 +35,9 @@ py_library(
     name = "callable_util",
     srcs = ["callable_util.py"],
     deps = [
-        requirement("six"),
+        "@six//:six",
     ] + select({
-        "//conditions:default": [requirement('enum34'),],
+        "//conditions:default": ["@enum34//:enum34"],
         "//:python3": [],
     }),
 )
@@ -34,7 +46,7 @@ py_library(
     name = "future",
     srcs = ["future.py"],
     deps = [
-        requirement("six"),
+        "@six",
     ],
 )
 
@@ -42,7 +54,7 @@ py_library(
     name = "logging_pool",
     srcs = ["logging_pool.py"],
     deps = select({
-        "//conditions:default": [requirement('futures'),],
+        "//conditions:default": ["@futures//:futures"],
         "//:python3": [],
     }),
 )
@@ -59,6 +71,6 @@ py_library(
     name = "stream",
     srcs = ["stream.py"],
     deps = [
-        requirement("six"),
+        "@six",
     ],
 )

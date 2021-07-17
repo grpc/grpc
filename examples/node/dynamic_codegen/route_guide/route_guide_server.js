@@ -22,7 +22,7 @@ var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('lodash');
-var grpc = require('grpc');
+var grpc = require('@grpc/grpc-js');
 var protoLoader = require('@grpc/proto-loader');
 var packageDefinition = protoLoader.loadSync(
     PROTO_PATH,
@@ -218,7 +218,7 @@ function routeChat(call) {
  */
 function getServer() {
   var server = new grpc.Server();
-  server.addProtoService(routeguide.RouteGuide.service, {
+  server.addService(routeguide.RouteGuide.service, {
     getFeature: getFeature,
     listFeatures: listFeatures,
     recordRoute: recordRoute,
@@ -230,14 +230,15 @@ function getServer() {
 if (require.main === module) {
   // If this is run as a script, start a server on an unused port
   var routeServer = getServer();
-  routeServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
-  var argv = parseArgs(process.argv, {
-    string: 'db_path'
-  });
-  fs.readFile(path.resolve(argv.db_path), function(err, data) {
-    if (err) throw err;
-    feature_list = JSON.parse(data);
-    routeServer.start();
+  routeServer.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
+    var argv = parseArgs(process.argv, {
+      string: 'db_path'
+    });
+    fs.readFile(path.resolve(argv.db_path), function(err, data) {
+      if (err) throw err;
+      feature_list = JSON.parse(data);
+      routeServer.start();
+    });
   });
 }
 

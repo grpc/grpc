@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
+# The CMakeLists.txt for zlib doesn't propagate include directories
+# transitively so `_gRPC_ZLIB_INCLUDE_DIR` should be set for gRPC
+# to find header files.
+
+if(gRPC_ZLIB_PROVIDER STREQUAL "module")
   if(NOT ZLIB_ROOT_DIR)
     set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
   endif()
@@ -24,15 +28,21 @@ if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
     if(TARGET zlibstatic)
       set(_gRPC_ZLIB_LIBRARIES zlibstatic)
       set(_gRPC_ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib")
+      if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+        install(TARGETS zlibstatic EXPORT gRPCTargets
+          RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+          LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+          ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR})
+      endif()
     endif()
   else()
-      message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
+    message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
   endif()
-  if(gRPC_INSTALL)
-    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"")
+  if(gRPC_INSTALL AND NOT _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+    message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"  and CMake version (${CMAKE_VERSION}) is less than 3.13.")
     set(gRPC_INSTALL FALSE)
   endif()
-elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
+elseif(gRPC_ZLIB_PROVIDER STREQUAL "package")
   # zlib installation directory can be configured by setting ZLIB_ROOT
   # We allow locating zlib using both "CONFIG" and "MODULE" as the expectation
   # is that many Linux systems will have zlib installed via a distribution

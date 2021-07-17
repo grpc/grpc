@@ -17,7 +17,7 @@ require_relative '../grpc'
 
 # GRPC contains the General RPC module.
 module GRPC
-  # The BiDiCall class orchestrates exection of a BiDi stream on a client or
+  # The BiDiCall class orchestrates execution of a BiDi stream on a client or
   # server.
   class BidiCall
     include Core::CallOps

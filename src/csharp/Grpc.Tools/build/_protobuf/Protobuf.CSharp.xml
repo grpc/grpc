@@ -82,7 +82,7 @@
       <EnumValue Name="Internal" DisplayName="Internal" />
       <EnumProperty.DataSource>
         <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
-                    PersistenceStyle="Attribute" />
+                    PersistenceStyle="Attribute" HasConfigurationCondition="false" />
       </EnumProperty.DataSource>
     </EnumProperty>
 
@@ -91,7 +91,7 @@
                   Description="Specifies if this file is compiled or only imported by other files.">
       <BoolProperty.DataSource>
         <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
-                    PersistenceStyle="Attribute" />
+                    PersistenceStyle="Attribute" HasConfigurationCondition="false" />
       </BoolProperty.DataSource>
     </BoolProperty>
 

@@ -57,22 +57,6 @@ static void ApplyCommonChannelArguments(ChannelArguments* c) {
   c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
 }
 
-static class InitializeStuff {
- public:
-  InitializeStuff() {
-    init_lib_.init();
-    rq_ = grpc_resource_quota_create("bm");
-  }
-
-  ~InitializeStuff() { init_lib_.shutdown(); }
-
-  grpc_resource_quota* rq() { return rq_; }
-
- private:
-  internal::GrpcLibrary init_lib_;
-  grpc_resource_quota* rq_;
-} initialize_stuff;
-
 class EndpointPairFixture {
  public:
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints) {
@@ -87,21 +71,18 @@ class EndpointPairFixture {
     /* add server endpoint to server_ */
     {
       const grpc_channel_args* server_args =
-          grpc_server_get_channel_args(server_->c_server());
+          server_->c_server()->core_server->channel_args();
       grpc_transport* transport = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */);
 
-      grpc_pollset** pollsets;
-      size_t num_pollsets = 0;
-      grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
-
-      for (size_t i = 0; i < num_pollsets; i++) {
-        grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
+      for (grpc_pollset* pollset :
+           server_->c_server()->core_server->pollsets()) {
+        grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      grpc_server_setup_transport(server_->c_server(), transport, nullptr,
-                                  server_args, nullptr);
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+      server_->c_server()->core_server->SetupTransport(transport, nullptr,
+                                                       server_args, nullptr);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     }
 
     /* create channel */
@@ -116,7 +97,7 @@ class EndpointPairFixture {
       GPR_ASSERT(transport);
       grpc_channel* channel = grpc_channel_create(
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
       channel_ = ::grpc::CreateChannelInternal(
           "", channel,
@@ -148,7 +129,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
       : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
 
-  virtual ~InProcessCHTTP2() {
+  ~InProcessCHTTP2() override {
     if (stats_ != nullptr) {
       grpc_passthru_endpoint_stats_destroy(stats_);
     }
@@ -160,9 +141,9 @@ class InProcessCHTTP2 : public EndpointPairFixture {
   grpc_passthru_endpoint_stats* stats_;
 
   static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
+    static grpc_resource_quota* rq = grpc_resource_quota_create("bm");
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
-                                  stats);
+    grpc_passthru_endpoint_create(&p.client, &p.server, rq, stats);
     return p;
   }
 };
@@ -255,7 +236,10 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

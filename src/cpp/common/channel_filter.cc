@@ -87,7 +87,7 @@ void ChannelFilterPluginInit() {
   for (size_t i = 0; i < channel_filters->size(); ++i) {
     FilterRecord& filter = (*channel_filters)[i];
     grpc_channel_init_register_stage(filter.stack_type, filter.priority,
-                                     MaybeAddFilter, (void*)&filter);
+                                     MaybeAddFilter, &filter);
   }
 }
 

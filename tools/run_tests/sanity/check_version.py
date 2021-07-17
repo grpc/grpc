@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2016 gRPC authors.
 #
@@ -13,8 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from __future__ import print_function
 
 import sys
 import yaml
@@ -31,8 +29,8 @@ sys.path.insert(0, os.path.abspath('tools/buildgen/plugins'))
 from expand_version import Version
 
 try:
-    branch_name = subprocess.check_output(
-        'git rev-parse --abbrev-ref HEAD', shell=True)
+    branch_name = subprocess.check_output('git rev-parse --abbrev-ref HEAD',
+                                          shell=True)
 except:
     print('WARNING: not a git repository')
     branch_name = None
@@ -42,9 +40,8 @@ if branch_name is not None:
     if m:
         print('RELEASE branch')
         # version number should align with the branched version
-        check_version = lambda version: (
-          version.major == int(m.group(1)) and
-          version.minor == int(m.group(2)))
+        check_version = lambda version: (version.major == int(m.group(1)) and
+                                         version.minor == int(m.group(2)))
         warning = 'Version key "%%s" value "%%s" should have a major version %s and minor version %s' % (
             m.group(1), m.group(2))
     elif re.match(r'^debian/.*$', branch_name):
@@ -57,7 +54,7 @@ if branch_name is not None:
 else:
     check_version = lambda version: True
 
-with open('build.yaml', 'r') as f:
+with open('build_handwritten.yaml', 'r') as f:
     build_yaml = yaml.load(f.read())
 
 settings = build_yaml['settings']
@@ -67,7 +64,7 @@ if not check_version(top_version):
     errors += 1
     print(warning % ('version', top_version))
 
-for tag, value in settings.iteritems():
+for tag, value in settings.items():
     if re.match(r'^[a-z]+_version$', tag):
         value = Version(value)
         if tag != 'core_version':

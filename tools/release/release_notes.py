@@ -32,7 +32,7 @@ import json
 
 content_header = """Draft Release Notes For {version}
 --
-Final release notes will be generated from the PR titles that have *"release notes:yes"* label. If you have any additional notes please add them below. These will be appended to auto generated release notes. Previous releases notes are [here](https://github.com/grpc/grpc/releases).
+Final release notes will be generated from the PR titles that have *"release notes:yes"* label. If you have any additional notes please add them below. These will be appended to auto generated release notes. Previous release notes are [here](https://github.com/grpc/grpc/releases).
 
 **Also, look at the PRs listed below against your name.** Please apply the missing labels and make necessary corrections (like fixing the title) to the PR in Github. Final release notes will be generated just before the release on {date}.
 
@@ -69,9 +69,9 @@ Ruby
 
 """
 
-rl_header = """This is the {version} release ([{name}](https://github.com/grpc/grpc/blob/master/doc/g_stands_for.md)) of gRPC Core.
+rl_header = """This is release {version} ([{name}](https://github.com/grpc/grpc/blob/master/doc/g_stands_for.md)) of gRPC Core.
 
-Please see the notes for the previous releases here: https://github.com/grpc/grpc/releases. Please consult https://grpc.io/ for all information regarding this product.
+For gRPC documentation, see [grpc.io](https://grpc.io/). For previous releases, see [Releases](https://github.com/grpc/grpc/releases).
 
 This release contains refinements, improvements, and bug fixes, with highlights listed below.
 
@@ -83,15 +83,15 @@ API_URL = 'https://api.github.com/repos/grpc/grpc/pulls/'
 
 
 def get_commit_log(prevRelLabel, relBranch):
-    """Return the output of 'git log --pretty=online --merges prevRelLabel..relBranch' """
+    """Return the output of 'git log prevRelLabel..relBranch' """
 
     import subprocess
-    print("Running git log --pretty=oneline --merges " + prevRelLabel + ".." +
-          relBranch)
-    return subprocess.check_output([
-        "git", "log", "--pretty=oneline", "--merges",
+    glg_command = [
+        "git", "log", "--pretty=oneline", "--committer=GitHub",
         "%s..%s" % (prevRelLabel, relBranch)
-    ])
+    ]
+    print("Running ", " ".join(glg_command))
+    return subprocess.check_output(glg_command)
 
 
 def get_pr_data(pr_num):
@@ -120,11 +120,19 @@ def get_pr_data(pr_num):
 def get_pr_titles(gitLogs):
     import re
     error_count = 0
-    match = b"Merge pull request #(\d+)"
-    prlist = re.findall(match, gitLogs, re.MULTILINE)
+    # PRs with merge commits
+    match_merge_pr = b"Merge pull request #(\d+)"
+    prlist_merge_pr = re.findall(match_merge_pr, gitLogs, re.MULTILINE)
     print("\nPRs matching 'Merge pull request #<num>':")
-    print(prlist)
+    print(prlist_merge_pr)
     print("\n")
+    # PRs using Github's squash & merge feature
+    match_sq = b"\(#(\d+)\)$"
+    prlist_sq = re.findall(match_sq, gitLogs, re.MULTILINE)
+    print("\nPRs matching '[PR Description](#<num>)$'")
+    print(prlist_sq)
+    print("\n")
+    prlist = prlist_merge_pr + prlist_sq
     langs_pr = defaultdict(list)
     for pr_num in prlist:
         pr_num = str(pr_num)
@@ -286,31 +294,31 @@ def write_rel_notes(langs_pr, file, version, name):
 def build_args_parser():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'release_version', type=str, help='New release version e.g. 1.14.0')
-    parser.add_argument(
-        'release_name', type=str, help='New release name e.g. gladiolus')
-    parser.add_argument(
-        'release_date', type=str, help='Release date e.g. 7/30/18')
-    parser.add_argument(
-        'previous_release_label',
-        type=str,
-        help='Previous release branch/tag e.g. v1.13.x')
-    parser.add_argument(
-        'release_branch',
-        type=str,
-        help='Current release branch e.g. origin/v1.14.x')
-    parser.add_argument(
-        'draft_filename', type=str, help='Name of the draft file e.g. draft.md')
-    parser.add_argument(
-        'release_notes_filename',
-        type=str,
-        help='Name of the release notes file e.g. relnotes.md')
-    parser.add_argument(
-        '--token',
-        type=str,
-        default='',
-        help='GitHub API token to avoid being rate limited')
+    parser.add_argument('release_version',
+                        type=str,
+                        help='New release version e.g. 1.14.0')
+    parser.add_argument('release_name',
+                        type=str,
+                        help='New release name e.g. gladiolus')
+    parser.add_argument('release_date',
+                        type=str,
+                        help='Release date e.g. 7/30/18')
+    parser.add_argument('previous_release_label',
+                        type=str,
+                        help='Previous release branch/tag e.g. v1.13.x')
+    parser.add_argument('release_branch',
+                        type=str,
+                        help='Current release branch e.g. origin/v1.14.x')
+    parser.add_argument('draft_filename',
+                        type=str,
+                        help='Name of the draft file e.g. draft.md')
+    parser.add_argument('release_notes_filename',
+                        type=str,
+                        help='Name of the release notes file e.g. relnotes.md')
+    parser.add_argument('--token',
+                        type=str,
+                        default='',
+                        help='GitHub API token to avoid being rate limited')
     return parser
 
 

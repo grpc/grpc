@@ -39,7 +39,7 @@ extern std::vector<grpc::testing::Server*>* g_inproc_servers;
 class QpsWorker {
  public:
   explicit QpsWorker(int driver_port, int server_port,
-                     const grpc::string& credential_type);
+                     const std::string& credential_type);
   ~QpsWorker();
 
   bool Done() const;

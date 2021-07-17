@@ -27,7 +27,7 @@
 #include <grpc/support/time.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -83,7 +83,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config config,
+static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_call* s;
@@ -175,7 +175,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -343,7 +343,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
        * both);
        * check this here */
       /* We'll get tag 303 or 403, we want 300, 400 */
-      live_call = (static_cast<int>((intptr_t)ev.tag)) - 1;
+      live_call = (static_cast<int>(reinterpret_cast<intptr_t>(ev.tag))) - 1;
       got_client_start = 1;
     }
   }

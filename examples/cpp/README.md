@@ -1,44 +1,13 @@
-# gRPC in 3 minutes (C++)
+# gRPC C++ Examples
 
-## Installation
+- **[Hello World][]!** Eager to run your first gRPC example? You'll find
+  instructions for building gRPC and running a simple "Hello World" app in [Quick Start][].
+- **[Route Guide][].** For a basic tutorial on gRPC see [gRPC Basics][].
 
-To install gRPC on your system, follow the instructions to build from source
-[here](../../BUILDING.md). This also installs the protocol buffer compiler
-`protoc` (if you don't have it already), and the C++ gRPC plugin for `protoc`.
+For information about the other examples in this directory, see their respective
+README files.
 
-## Hello C++ gRPC!
-
-Here's how to build and run the C++ implementation of the [Hello
-World](../protos/helloworld.proto) example used in [Getting started](..).
-
-### Client and server implementations
-
-The client implementation is at [greeter_client.cc](helloworld/greeter_client.cc).
-
-The server implementation is at [greeter_server.cc](helloworld/greeter_server.cc).
-
-### Try it!
-Build client and server:
-
-```sh
-$ make
-```
-
-Run the server, which will listen on port 50051:
-
-```sh
-$ ./greeter_server
-```
-
-Run the client (in a different terminal):
-
-```sh
-$ ./greeter_client
-```
-
-If things go smoothly, you will see the "Greeter received: Hello world" in the
-client side output.
-
-## Tutorial
-
-You can find a more detailed tutorial in [gRPC Basics: C++](cpptutorial.md)
+[gRPC Basics]: https://grpc.io/docs/languages/cpp/basics
+[Hello World]: helloworld
+[Quick Start]: https://grpc.io/docs/languages/cpp/quickstart
+[Route Guide]: route_guide

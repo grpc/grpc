@@ -25,12 +25,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static void* tag(intptr_t i) { return (void*)i; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 struct test_state {
   int is_client;
@@ -54,7 +55,6 @@ static struct test_state g_state;
 
 static void prepare_test(int is_client) {
   int port = grpc_pick_unused_port_or_die();
-  char* server_hostport;
   grpc_op* op;
   g_state.is_client = is_client;
   grpc_metadata_array_init(&g_state.initial_metadata_recv);
@@ -77,14 +77,13 @@ static void prepare_test(int is_client) {
   } else {
     g_state.server = grpc_server_create(nullptr, nullptr);
     grpc_server_register_completion_queue(g_state.server, g_state.cq, nullptr);
-    gpr_join_host_port(&server_hostport, "0.0.0.0", port);
-    grpc_server_add_insecure_http2_port(g_state.server, server_hostport);
+    std::string server_hostport = grpc_core::JoinHostPort("0.0.0.0", port);
+    grpc_server_add_insecure_http2_port(g_state.server,
+                                        server_hostport.c_str());
     grpc_server_start(g_state.server);
-    gpr_free(server_hostport);
-    gpr_join_host_port(&server_hostport, "localhost", port);
+    server_hostport = grpc_core::JoinHostPort("localhost", port);
     g_state.chan =
-        grpc_insecure_channel_create(server_hostport, nullptr, nullptr);
-    gpr_free(server_hostport);
+        grpc_insecure_channel_create(server_hostport.c_str(), nullptr, nullptr);
     grpc_slice host = grpc_slice_from_static_string("bar");
     g_state.call = grpc_channel_create_call(
         g_state.chan, nullptr, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
@@ -137,8 +136,8 @@ static void cleanup_test() {
   grpc_completion_queue_shutdown(g_state.cq);
   while (grpc_completion_queue_next(g_state.cq,
                                     gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-             .type != GRPC_QUEUE_SHUTDOWN)
-    ;
+             .type != GRPC_QUEUE_SHUTDOWN) {
+  }
   grpc_completion_queue_destroy(g_state.cq);
 }
 

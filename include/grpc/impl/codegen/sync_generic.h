@@ -18,7 +18,7 @@
 
 #ifndef GRPC_IMPL_CODEGEN_SYNC_GENERIC_H
 #define GRPC_IMPL_CODEGEN_SYNC_GENERIC_H
-/* Generic type defintions for gpr_sync. */
+/* Generic type definitions for gpr_sync. */
 
 #include <grpc/impl/codegen/port_platform.h>
 

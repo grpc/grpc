@@ -15,6 +15,4 @@
   # limitations under the License.
 
   <%include file="../../python_stretch.include"/>
-
-  RUN apt-get update && apt-get -t testing install -y python3.6 python3-all-dev
-  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.6
+  <%include file="../../compile_python_36.include"/>

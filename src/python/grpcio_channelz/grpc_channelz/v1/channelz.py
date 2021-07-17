@@ -13,130 +13,61 @@
 # limitations under the License.
 """Channelz debug service implementation in gRPC Python."""
 
+import sys
 import grpc
-from grpc._cython import cygrpc
 
-import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
 import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
+from grpc_channelz.v1._servicer import ChannelzServicer
 
-from google.protobuf import json_format
+_add_channelz_servicer_doc = """Add Channelz servicer to a server.
 
+Channelz servicer is in charge of
+pulling information from C-Core for entire process. It will allow the
+server to response to Channelz queries.
 
-class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
-    """Servicer handling RPCs for service statuses."""
+The Channelz statistic is enabled by default inside C-Core. Whether the
+statistic is enabled or not is isolated from adding Channelz servicer.
+That means you can query Channelz info with a Channelz-disabled channel,
+and you can add Channelz servicer to a Channelz-disabled server.
 
-    @staticmethod
-    def GetTopChannels(request, context):
-        try:
-            return json_format.Parse(
-                cygrpc.channelz_get_top_channels(request.start_channel_id),
-                _channelz_pb2.GetTopChannelsResponse(),
-            )
-        except (ValueError, json_format.ParseError) as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(str(e))
+The Channelz statistic can be enabled or disabled by channel option
+'grpc.enable_channelz'. Set to 1 to enable, set to 0 to disable.
 
-    @staticmethod
-    def GetServers(request, context):
-        try:
-            return json_format.Parse(
-                cygrpc.channelz_get_servers(request.start_server_id),
-                _channelz_pb2.GetServersResponse(),
-            )
-        except (ValueError, json_format.ParseError) as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(str(e))
+This is an EXPERIMENTAL API.
 
-    @staticmethod
-    def GetServer(request, context):
-        try:
-            return json_format.Parse(
-                cygrpc.channelz_get_server(request.server_id),
-                _channelz_pb2.GetServerResponse(),
-            )
-        except ValueError as e:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(str(e))
-        except json_format.ParseError as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(str(e))
+Args:
+    server: A gRPC server to which Channelz service will be added.
+"""
 
-    @staticmethod
-    def GetServerSockets(request, context):
-        try:
-            return json_format.Parse(
-                cygrpc.channelz_get_server_sockets(request.server_id,
-                                                   request.start_socket_id,
-                                                   request.max_results),
-                _channelz_pb2.GetServerSocketsResponse(),
-            )
-        except ValueError as e:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(str(e))
-        except json_format.ParseError as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(str(e))
+if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
+    from grpc_channelz.v1 import _async as aio
 
-    @staticmethod
-    def GetChannel(request, context):
-        try:
-            return json_format.Parse(
-                cygrpc.channelz_get_channel(request.channel_id),
-                _channelz_pb2.GetChannelResponse(),
-            )
-        except ValueError as e:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(str(e))
-        except json_format.ParseError as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(str(e))
+    def add_channelz_servicer(server):
 
-    @staticmethod
-    def GetSubchannel(request, context):
-        try:
-            return json_format.Parse(
-                cygrpc.channelz_get_subchannel(request.subchannel_id),
-                _channelz_pb2.GetSubchannelResponse(),
-            )
-        except ValueError as e:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(str(e))
-        except json_format.ParseError as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(str(e))
+        if isinstance(server, grpc.experimental.aio.Server):
+            _channelz_pb2_grpc.add_ChannelzServicer_to_server(
+                aio.ChannelzServicer(), server)
+        else:
+            _channelz_pb2_grpc.add_ChannelzServicer_to_server(
+                ChannelzServicer(), server)
 
-    @staticmethod
-    def GetSocket(request, context):
-        try:
-            return json_format.Parse(
-                cygrpc.channelz_get_socket(request.socket_id),
-                _channelz_pb2.GetSocketResponse(),
-            )
-        except ValueError as e:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details(str(e))
-        except json_format.ParseError as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(str(e))
+    add_channelz_servicer.__doc__ = _add_channelz_servicer_doc
 
+    __all__ = [
+        "aio",
+        "add_channelz_servicer",
+        "ChannelzServicer",
+    ]
 
-def add_channelz_servicer(server):
-    """Add Channelz servicer to a server. Channelz servicer is in charge of
-    pulling information from C-Core for entire process. It will allow the
-    server to response to Channelz queries.
+else:
 
-    The Channelz statistic is enabled by default inside C-Core. Whether the
-    statistic is enabled or not is isolated from adding Channelz servicer.
-    That means you can query Channelz info with a Channelz-disabled channel,
-    and you can add Channelz servicer to a Channelz-disabled server.
+    def add_channelz_servicer(server):
+        _channelz_pb2_grpc.add_ChannelzServicer_to_server(
+            ChannelzServicer(), server)
 
-    The Channelz statistic can be enabled or disabled by channel option
-    'grpc.enable_channelz'. Set to 1 to enable, set to 0 to disable.
+    add_channelz_servicer.__doc__ = _add_channelz_servicer_doc
 
-    This is an EXPERIMENTAL API.
-
-    Args:
-      server: grpc.Server to which Channelz service will be added.
-    """
-    _channelz_pb2_grpc.add_ChannelzServicer_to_server(ChannelzServicer(),
-                                                      server)
+    __all__ = [
+        "add_channelz_servicer",
+        "ChannelzServicer",
+    ]

@@ -1,0 +1,3 @@
+dl.field-list > dt {
+    word-break: keep-all !important;
+}

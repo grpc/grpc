@@ -88,14 +88,14 @@ class Status {
 
   /// Construct an instance with associated \a code and \a error_message.
   /// It is an error to construct an OK status with non-empty \a error_message.
-  Status(StatusCode code, const grpc::string& error_message)
+  Status(StatusCode code, const std::string& error_message)
       : code_(code), error_message_(error_message) {}
 
   /// Construct an instance with \a code,  \a error_message and
   /// \a error_details. It is an error to construct an OK status with non-empty
   /// \a error_message and/or \a error_details.
-  Status(StatusCode code, const grpc::string& error_message,
-         const grpc::string& error_details)
+  Status(StatusCode code, const std::string& error_message,
+         const std::string& error_details)
       : code_(code),
         error_message_(error_message),
         binary_error_details_(error_details) {}
@@ -109,10 +109,10 @@ class Status {
   /// Return the instance's error code.
   StatusCode error_code() const { return code_; }
   /// Return the instance's error message.
-  grpc::string error_message() const { return error_message_; }
+  std::string error_message() const { return error_message_; }
   /// Return the (binary) error details.
   // Usually it contains a serialized google.rpc.Status proto.
-  grpc::string error_details() const { return binary_error_details_; }
+  std::string error_details() const { return binary_error_details_; }
 
   /// Is the status OK?
   bool ok() const { return code_ == StatusCode::OK; }
@@ -124,8 +124,8 @@ class Status {
 
  private:
   StatusCode code_;
-  grpc::string error_message_;
-  grpc::string binary_error_details_;
+  std::string error_message_;
+  std::string binary_error_details_;
 };
 
 }  // namespace grpc

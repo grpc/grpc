@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include <string>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
@@ -118,27 +120,27 @@ void ServerRetryThrottleData::RecordSuccess() {
 
 namespace {
 
-void* copy_server_name(void* key, void* unused) {
+void* copy_server_name(void* key, void* /*unused*/) {
   return gpr_strdup(static_cast<const char*>(key));
 }
 
-long compare_server_name(void* key1, void* key2, void* unused) {
+long compare_server_name(void* key1, void* key2, void* /*unused*/) {
   return strcmp(static_cast<const char*>(key1), static_cast<const char*>(key2));
 }
 
-void destroy_server_retry_throttle_data(void* value, void* unused) {
+void destroy_server_retry_throttle_data(void* value, void* /*unused*/) {
   ServerRetryThrottleData* throttle_data =
       static_cast<ServerRetryThrottleData*>(value);
   throttle_data->Unref();
 }
 
-void* copy_server_retry_throttle_data(void* value, void* unused) {
+void* copy_server_retry_throttle_data(void* value, void* /*unused*/) {
   ServerRetryThrottleData* throttle_data =
       static_cast<ServerRetryThrottleData*>(value);
   return throttle_data->Ref().release();
 }
 
-void destroy_server_name(void* key, void* unused) { gpr_free(key); }
+void destroy_server_name(void* key, void* /*unused*/) { gpr_free(key); }
 
 const grpc_avl_vtable avl_vtable = {
     destroy_server_name, copy_server_name, compare_server_name,
@@ -164,20 +166,20 @@ void ServerRetryThrottleMap::Shutdown() {
 }
 
 RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
-    const char* server_name, intptr_t max_milli_tokens,
+    const std::string& server_name, intptr_t max_milli_tokens,
     intptr_t milli_token_ratio) {
   RefCountedPtr<ServerRetryThrottleData> result;
   gpr_mu_lock(&g_mu);
   ServerRetryThrottleData* throttle_data =
       static_cast<ServerRetryThrottleData*>(
-          grpc_avl_get(g_avl, const_cast<char*>(server_name), nullptr));
+          grpc_avl_get(g_avl, const_cast<char*>(server_name.c_str()), nullptr));
   if (throttle_data == nullptr ||
       throttle_data->max_milli_tokens() != max_milli_tokens ||
       throttle_data->milli_token_ratio() != milli_token_ratio) {
     // Entry not found, or found with old parameters.  Create a new one.
     result = MakeRefCounted<ServerRetryThrottleData>(
         max_milli_tokens, milli_token_ratio, throttle_data);
-    g_avl = grpc_avl_add(g_avl, gpr_strdup(server_name),
+    g_avl = grpc_avl_add(g_avl, gpr_strdup(server_name.c_str()),
                          result->Ref().release(), nullptr);
   } else {
     // Entry found.  Return a new ref to it.

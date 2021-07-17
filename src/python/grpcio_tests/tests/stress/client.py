@@ -42,37 +42,34 @@ def _args():
         help='comma separated list of testcase:weighting of tests to run',
         default='large_unary:100',
         type=str)
-    parser.add_argument(
-        '--test_duration_secs',
-        help='number of seconds to run the stress test',
-        default=-1,
-        type=int)
-    parser.add_argument(
-        '--num_channels_per_server',
-        help='number of channels per server',
-        default=1,
-        type=int)
-    parser.add_argument(
-        '--num_stubs_per_channel',
-        help='number of stubs to create per channel',
-        default=1,
-        type=int)
-    parser.add_argument(
-        '--metrics_port',
-        help='the port to listen for metrics requests on',
-        default=8081,
-        type=int)
+    parser.add_argument('--test_duration_secs',
+                        help='number of seconds to run the stress test',
+                        default=-1,
+                        type=int)
+    parser.add_argument('--num_channels_per_server',
+                        help='number of channels per server',
+                        default=1,
+                        type=int)
+    parser.add_argument('--num_stubs_per_channel',
+                        help='number of stubs to create per channel',
+                        default=1,
+                        type=int)
+    parser.add_argument('--metrics_port',
+                        help='the port to listen for metrics requests on',
+                        default=8081,
+                        type=int)
     parser.add_argument(
         '--use_test_ca',
         help='Whether to use our fake CA. Requires --use_tls=true',
         default=False,
         type=bool)
-    parser.add_argument(
-        '--use_tls', help='Whether to use TLS', default=False, type=bool)
-    parser.add_argument(
-        '--server_host_override',
-        help='the server host to which to claim to connect',
-        type=str)
+    parser.add_argument('--use_tls',
+                        help='Whether to use TLS',
+                        default=False,
+                        type=bool)
+    parser.add_argument('--server_host_override',
+                        help='the server host to which to claim to connect',
+                        type=str)
     return parser.parse_args()
 
 
@@ -105,8 +102,9 @@ def _get_channel(target, args):
             'grpc.ssl_target_name_override',
             args.server_host_override,
         ),)
-        channel = grpc.secure_channel(
-            target, channel_credentials, options=options)
+        channel = grpc.secure_channel(target,
+                                      channel_credentials,
+                                      options=options)
     else:
         channel = grpc.insecure_channel(target)
 

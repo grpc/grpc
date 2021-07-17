@@ -33,7 +33,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/profiling/timers.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/cmdline.h"
@@ -59,7 +59,7 @@ static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 typedef enum {
   FLING_SERVER_NEW_REQUEST = 1,
@@ -167,12 +167,12 @@ static void start_send_status(void) {
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
    When that is resolved, please remove the #include <unistd.h> above. */
-static void sigint_handler(int x) { _exit(0); }
+static void sigint_handler(int /*x*/) { _exit(0); }
 
 int main(int argc, char** argv) {
   grpc_event ev;
   call_state* s;
-  char* addr_buf = nullptr;
+  std::string addr_buf;
   gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
@@ -199,8 +199,8 @@ int main(int argc, char** argv) {
   gpr_cmdline_destroy(cl);
 
   if (addr == nullptr) {
-    gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
-    addr = addr_buf;
+    addr_buf = grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
+    addr = addr_buf.c_str();
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
@@ -220,8 +220,8 @@ int main(int argc, char** argv) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
-  gpr_free(addr_buf);
-  addr = addr_buf = nullptr;
+  addr = nullptr;
+  addr_buf.clear();
 
   grpc_call_details_init(&call_details);
 
@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
     s = static_cast<call_state*>(ev.tag);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        switch ((intptr_t)s) {
+        switch (reinterpret_cast<intptr_t>(s)) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != nullptr) {
               if (0 == grpc_slice_str_cmp(call_details.method,

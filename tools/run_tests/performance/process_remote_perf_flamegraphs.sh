@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -ex
+
 mkdir -p "$OUTPUT_DIR"
 
 PERF_DATA_FILE="${PERF_BASE_NAME}-perf.data"
@@ -27,4 +29,5 @@ scp "$USER_AT_HOST:~/performance_workspace/grpc/$PERF_SCRIPT_OUTPUT.gz" .
 
 gzip -d -f "$PERF_SCRIPT_OUTPUT.gz"
 
+# use https://github.com/brendangregg/FlameGraph
 ~/FlameGraph/stackcollapse-perf.pl --kernel "$PERF_SCRIPT_OUTPUT" | ~/FlameGraph/flamegraph.pl --color=java --hash > "${OUTPUT_DIR}/${OUTPUT_FILENAME}.svg"

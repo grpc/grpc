@@ -16,19 +16,30 @@ class ResponseParams extends \Google\Protobuf\Internal\Message
     /**
      * Generated from protobuf field <code>int64 request_deadline = 1;</code>
      */
-    private $request_deadline = 0;
+    protected $request_deadline = 0;
     /**
      * Generated from protobuf field <code>string host = 2;</code>
      */
-    private $host = '';
+    protected $host = '';
     /**
      * Generated from protobuf field <code>string peer = 3;</code>
      */
-    private $peer = '';
+    protected $peer = '';
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type int|string $request_deadline
+     *     @type string $host
+     *     @type string $peer
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\EchoMessages::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

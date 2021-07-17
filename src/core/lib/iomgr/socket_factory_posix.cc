@@ -87,8 +87,9 @@ static const grpc_arg_pointer_vtable socket_factory_arg_vtable = {
     socket_factory_arg_copy, socket_factory_arg_destroy, socket_factory_cmp};
 
 grpc_arg grpc_socket_factory_to_arg(grpc_socket_factory* factory) {
-  return grpc_channel_arg_pointer_create((char*)GRPC_ARG_SOCKET_FACTORY,
-                                         factory, &socket_factory_arg_vtable);
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_SOCKET_FACTORY), factory,
+      &socket_factory_arg_vtable);
 }
 
 #endif

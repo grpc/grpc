@@ -16,111 +16,33 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "merge_dicts")
+
 alias(
     name = "rbe_windows",
-    actual = ":rbe_windows_1803",
+    actual = ":rbe_windows_2019",
 )
 
 # RBE Windows
 platform(
-    name = "rbe_windows_1803",
+    name = "rbe_windows_2019",
     constraint_values = [
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:windows",
-        "@bazel_tools//tools/cpp:msvc",
     ],
-    remote_execution_properties = """
-        properties: {
-          name: "container-image"
-          value:"docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:689b177e4a157c431c7077d19d043de27922c37de835031f29c9093b8d5c6370"
-        }
-        properties: {
-          name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-highmem-2"
-        }
-        properties:{
-            name: "OSFamily"
-            value: "Windows"
-        }
-
-        """,
-)
-
-# RBE Ubuntu16_04 r346485
-platform(
-    name = "rbe_ubuntu1604",
-    parents = ["@rbe_default//config:platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:standard",
-    ],
-    remote_execution_properties = """
-        {PARENT_REMOTE_EXECUTION_PROPERTIES}
-        properties: {
-          name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-highmem-2"
-        }
-        properties: {
-            name: "dockerSiblingContainers"
-            value: "false"
-        }
-        properties: {
-            name: "dockerNetwork"
-            value: "off"
-        }
-        properties: {
-            name: "dockerAddCapabilities"
-            value: "SYS_PTRACE"
-        }
-        properties: {
-            name: "dockerPrivileged"
-            value: "true"
-        }
-        """,
-)
-
-platform(
-    name = "rbe_ubuntu1604_large",
-    parents = ["@rbe_default//config:platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:large",
-    ],
-    remote_execution_properties = """
-        {PARENT_REMOTE_EXECUTION_PROPERTIES}
-        properties: {
-          name: "gceMachineType"  # Large machines for some resource demanding tests (TSAN).
-          value: "n1-standard-8"
-        }
-        properties: {
-            name: "dockerSiblingContainers"
-            value: "false"
-        }
-        properties: {
-            name: "dockerNetwork"
-            value: "off"
-        }
-        properties: {
-            name: "dockerAddCapabilities"
-            value: "SYS_PTRACE"
-        }
-        properties: {
-            name: "dockerPrivileged"
-            value: "true"
-        }
-    """,
-)
-
-platform(
-    name = "local",
-    parents = ["@bazel_tools//platforms:target_platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:standard",
-    ],
-)
-
-platform(
-    name = "local_large",
-    parents = ["@bazel_tools//platforms:target_platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:large",
-    ],
+    exec_properties = merge_dicts(
+        create_exec_properties_dict(
+            # See rbe_win2019/Dockerfile for image details
+            container_image = "docker://gcr.io/grpc-testing/rbe_windows2019_withdbg_toolchain@sha256:7b04ee7e29f942adbf4f70edd2ec4ba20a3e7237e1b54f5cae4b239c6ca41105",
+            os_family = "Windows",
+        ),
+        # TODO(jtattermusch): specifying 'labels = {"abc": "xyz"}' in create_exec_properties_dict
+        # is not possible without https://github.com/bazelbuild/bazel-toolchains/pull/748
+        # and currently the toolchain we're using is too old for that. To be able to select worker
+        # pools through labels, we use a workaround and populate the corresponding label values
+        # manually (see create_exec_properties_dict logic for how labels get transformed)
+        # Remove this workaround once we transition to a new-enough bazel toolchain.
+        # The next line corresponds to 'labels = {"os": "windows_2019", "machine_size": "small"}'
+        {"label:os": "windows_2019", "label:machine_size": "small"}
+    ),
 )

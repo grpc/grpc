@@ -24,24 +24,23 @@ cd "$(dirname "$0")/../../.."
 submodules=$(mktemp /tmp/submXXXXXX)
 want_submodules=$(mktemp /tmp/submXXXXXX)
 
-git submodule | awk '{ print $1 }' | sort > "$submodules"
-cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
- cc4bed2d74f7c8717e31f9579214ab52a9c9c610 third_party/abseil-cpp (cc4bed2)
- e776aa0275e293707b6a0901e0e8d8a8a3679508 third_party/benchmark (v1.2.0)
- 73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty (remotes/origin/wide-14-g73594cd)
- b29b21a81b32ec273f118f589f46d56ad3332420 third_party/boringssl (remotes/origin/chromium-stable)
- afc30d43eef92979b05776ec0963c9cede5fb80f third_party/boringssl-with-bazel (fips-20180716-116-gafc30d43e)
- e982924acee7f7313b4baa4ee5ec000c5e373c30 third_party/cares/cares (cares-1_15_0)
- 911001cdca003337bdb93fab32740cde61bafee3 third_party/data-plane-api (heads/master)
- 28f50e0fed19872e0fd50dd23ce2ee8cd759338e third_party/gflags (v2.2.0-5-g30dbc81)
- 80ed4d0bbf65d57cc267dfc63bd2584557f11f9b third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
- 2fe3bd994b3189899d93f1d5a881e725e046fdc2 third_party/googletest (release-1.8.1)
- 6599cac0965be8e5a835ab7a5684bbef033d5ad0 third_party/libcxx (heads/release_60)
- 9245d481eb3e890f708ff2d7dadf2a10c04748ba third_party/libcxxabi (heads/release_60)
- 09745575a923640154bcf307fba8aedff47f240a third_party/protobuf (v3.7.0-rc.2-247-g09745575)
- e143189bf6f37b3957fb31743df6a1bcf4a8c685 third_party/protoc-gen-validate (v0.0.10)
- fa88c6017ddb490aa78c57bea682193f533ed69a third_party/upb (heads/master)
- cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
+git submodule | awk '{ print $2 " " $1 }' | sort > "$submodules"
+cat << EOF | sort > "$want_submodules"
+third_party/abseil-cpp 997aaf3a28308eba1b9156aa35ab7bca9688e9f6
+third_party/benchmark 73d4d5e8d6d449fc8663765a42aa8aeeee844489
+third_party/bloaty 73594cde8c9a52a102c4341c244c833aa61b9c06
+third_party/boringssl-with-bazel bcc01b6c66b1c6fa2816b108e50a544b757fbd7b
+third_party/cares/cares e982924acee7f7313b4baa4ee5ec000c5e373c30
+third_party/envoy-api 18b54850c9b7ba29a4ab67cbd7ed7eab7b0bbdb2
+third_party/googleapis 82944da21578a53b74e547774cf62ed31a05b841
+third_party/googletest c9ccac7cb7345901884aabf5d1a786cfa6e2f397
+third_party/libuv 15ae750151ac9341e5945eb38f8982d59fb99201
+third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
+third_party/protobuf 436bd7880e458532901c58f4d9d1ea23fa7edd52
+third_party/protoc-gen-validate 872b28c457822ed9c2a5405da3c33f386ac0e86f
+third_party/re2 aecba11114cf1fac5497aeb844b6966106de3eb6
+third_party/udpa cc1b757b3eddccaaaf0743cbb107742bb7e3ee4f
+third_party/zlib cacf7f1d4e3d44d871b605da3b647f07d718623f
 EOF
 
 diff -u "$submodules" "$want_submodules"

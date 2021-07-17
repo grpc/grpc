@@ -54,10 +54,41 @@ typedef struct callback_params {
   grpc_credentials_plugin_metadata_cb callback;
 } callback_params;
 
-static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
+static VALUE grpc_rb_call_credentials_callback(VALUE args) {
   VALUE result = rb_hash_new();
-  VALUE metadata = rb_funcall(rb_ary_entry(callback_args, 0), rb_intern("call"),
-                              1, rb_ary_entry(callback_args, 1));
+  VALUE callback_func = rb_ary_entry(args, 0);
+  VALUE callback_args = rb_ary_entry(args, 1);
+  VALUE md_ary_obj = rb_ary_entry(args, 2);
+  if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    VALUE callback_func_str = rb_funcall(callback_func, rb_intern("to_s"), 0);
+    VALUE callback_args_str = rb_funcall(callback_args, rb_intern("to_s"), 0);
+    VALUE callback_source_info =
+        rb_funcall(callback_func, rb_intern("source_location"), 0);
+    if (callback_source_info != Qnil) {
+      VALUE source_filename = rb_ary_entry(callback_source_info, 0);
+      VALUE source_line_number = rb_funcall(
+          rb_ary_entry(callback_source_info, 1), rb_intern("to_s"), 0);
+      gpr_log(GPR_DEBUG,
+              "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
+              "source_filename:%s line_number:%s with arguments:|%s|",
+              StringValueCStr(callback_func_str),
+              StringValueCStr(source_filename),
+              StringValueCStr(source_line_number),
+              StringValueCStr(callback_args_str));
+    } else {
+      gpr_log(GPR_DEBUG,
+              "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
+              "(failed to get source filename and line) with arguments:|%s|",
+              StringValueCStr(callback_func_str),
+              StringValueCStr(callback_args_str));
+    }
+  }
+  VALUE metadata =
+      rb_funcall(callback_func, rb_intern("call"), 1, callback_args);
+  grpc_metadata_array* md_ary = NULL;
+  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
+                       &grpc_rb_md_ary_data_type, md_ary);
+  grpc_rb_md_ary_convert(metadata, md_ary);
   rb_hash_aset(result, rb_str_new2("metadata"), metadata);
   rb_hash_aset(result, rb_str_new2("status"), INT2NUM(GRPC_STATUS_OK));
   rb_hash_aset(result, rb_str_new2("details"), rb_str_new2(""));
@@ -67,14 +98,23 @@ static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
 static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
                                                       VALUE exception_object) {
   VALUE result = rb_hash_new();
-  VALUE backtrace =
-      rb_funcall(rb_funcall(exception_object, rb_intern("backtrace"), 0),
-                 rb_intern("join"), 1, rb_str_new2("\n\tfrom "));
+  VALUE backtrace = rb_funcall(exception_object, rb_intern("backtrace"), 0);
+  VALUE backtrace_str;
+  if (backtrace != Qnil) {
+    backtrace_str =
+        rb_funcall(backtrace, rb_intern("join"), 1, rb_str_new2("\n\tfrom "));
+  } else {
+    backtrace_str = rb_str_new2(
+        "failed to get backtrace, this exception was likely thrown from native "
+        "code");
+  }
   VALUE rb_exception_info =
       rb_funcall(exception_object, rb_intern("inspect"), 0);
   (void)args;
-  gpr_log(GPR_INFO, "Call credentials callback failed: %s\n%s",
-          StringValueCStr(rb_exception_info), StringValueCStr(backtrace));
+  gpr_log(GPR_INFO,
+          "GRPC_RUBY call credentials callback failed, exception inspect:|%s| "
+          "backtrace:|%s|",
+          StringValueCStr(rb_exception_info), StringValueCStr(backtrace_str));
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
   rb_hash_aset(result, rb_str_new2("status"),
                INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
@@ -98,17 +138,22 @@ static void grpc_rb_call_credentials_callback_with_gil(void* param) {
   rb_hash_aset(args, ID2SYM(rb_intern("jwt_aud_uri")), auth_uri);
   rb_ary_push(callback_args, params->get_metadata);
   rb_ary_push(callback_args, args);
+  // Wrap up the grpc_metadata_array into a ruby object and do the conversion
+  // from hash to grpc_metadata_array within the rescue block, because the
+  // conversion can throw exceptions.
+  rb_ary_push(callback_args,
+              TypedData_Wrap_Struct(grpc_rb_cMdAry, &grpc_rb_md_ary_data_type,
+                                    &md_ary));
   result = rb_rescue(grpc_rb_call_credentials_callback, callback_args,
                      grpc_rb_call_credentials_callback_rescue, Qnil);
   // Both callbacks return a hash, so result should be a hash
-  grpc_rb_md_ary_convert(rb_hash_aref(result, rb_str_new2("metadata")),
-                         &md_ary);
   status = NUM2INT(rb_hash_aref(result, rb_str_new2("status")));
   details = rb_hash_aref(result, rb_str_new2("details"));
   error_details = StringValueCStr(details);
   params->callback(params->user_data, md_ary.metadata, md_ary.count, status,
                    error_details);
   grpc_rb_metadata_array_destroy_including_entries(&md_ary);
+  grpc_auth_metadata_context_reset(&params->context);
   gpr_free(params);
 }
 
@@ -118,9 +163,9 @@ static int grpc_rb_call_credentials_plugin_get_metadata(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* num_creds_md, grpc_status_code* status,
     const char** error_details) {
-  callback_params* params = gpr_malloc(sizeof(callback_params));
+  callback_params* params = gpr_zalloc(sizeof(callback_params));
   params->get_metadata = (VALUE)state;
-  params->context = context;
+  grpc_auth_metadata_context_copy(&context, &params->context);
   params->user_data = user_data;
   params->callback = cb;
 
@@ -229,7 +274,10 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
   plugin.state = (void*)proc;
   plugin.type = "";
 
-  creds = grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+  // TODO(yihuazhang): Expose min_security_level via the Ruby API so that
+  // applications can decide what minimum security level their plugins require.
+  creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
     return Qnil;

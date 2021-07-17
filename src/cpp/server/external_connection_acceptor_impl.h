@@ -20,14 +20,13 @@
 #define SRC_CPP_SERVER_EXTERNAL_CONNECTION_ACCEPTOR_IMPL_H_
 
 #include <memory>
-#include <mutex>
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/security/server_credentials.h>
-#include <grpcpp/security/server_credentials_impl.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
 namespace grpc {
@@ -37,7 +36,7 @@ class ExternalConnectionAcceptorImpl
     : public std::enable_shared_from_this<ExternalConnectionAcceptorImpl> {
  public:
   ExternalConnectionAcceptorImpl(
-      const grpc::string& name,
+      const std::string& name,
       ServerBuilder::experimental_type::ExternalConnectionType type,
       std::shared_ptr<ServerCredentials> creds);
   // Should only be called once.
@@ -57,10 +56,10 @@ class ExternalConnectionAcceptorImpl
   void SetToChannelArgs(::grpc::ChannelArguments* args);
 
  private:
-  const grpc::string name_;
+  const std::string name_;
   std::shared_ptr<ServerCredentials> creds_;
   grpc_core::TcpServerFdHandler* handler_ = nullptr;  // not owned
-  std::mutex mu_;
+  grpc_core::Mutex mu_;
   bool has_acceptor_ = false;
   bool started_ = false;
   bool shutdown_ = false;

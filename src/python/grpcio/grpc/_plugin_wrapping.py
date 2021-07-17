@@ -68,15 +68,25 @@ class _Plugin(object):
 
     def __init__(self, metadata_plugin):
         self._metadata_plugin = metadata_plugin
+        self._stored_ctx = None
+
+        try:
+            import contextvars  # pylint: disable=wrong-import-position
+            # The plugin may be invoked on a thread created by Core, which will not
+            # have the context propagated. This context is stored and installed in
+            # the thread invoking the plugin.
+            self._stored_ctx = contextvars.copy_context()
+        except ImportError:
+            # Support versions predating contextvars.
+            pass
 
     def __call__(self, service_url, method_name, callback):
-        context = _AuthMetadataContext(
-            _common.decode(service_url), _common.decode(method_name))
+        context = _AuthMetadataContext(_common.decode(service_url),
+                                       _common.decode(method_name))
         callback_state = _CallbackState()
         try:
-            self._metadata_plugin(context,
-                                  _AuthMetadataPluginCallback(
-                                      callback_state, callback))
+            self._metadata_plugin(
+                context, _AuthMetadataPluginCallback(callback_state, callback))
         except Exception as exception:  # pylint: disable=broad-except
             _LOGGER.exception(
                 'AuthMetadataPluginCallback "%s" raised exception!',
@@ -98,5 +108,5 @@ def metadata_plugin_call_credentials(metadata_plugin, name):
     else:
         effective_name = name
     return grpc.CallCredentials(
-        cygrpc.MetadataPluginCallCredentials(
-            _Plugin(metadata_plugin), _common.encode(effective_name)))
+        cygrpc.MetadataPluginCallCredentials(_Plugin(metadata_plugin),
+                                             _common.encode(effective_name)))

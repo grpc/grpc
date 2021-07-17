@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: @PC_NAME@
+Description: @PC_DESCRIPTION@
+Version: @PC_VERSION@
+Cflags: -I${includedir}
+Requires: @PC_REQUIRES@
+Libs: -L${libdir} @PC_LIB@
+Libs.private: @PC_LIBS_PRIVATE@

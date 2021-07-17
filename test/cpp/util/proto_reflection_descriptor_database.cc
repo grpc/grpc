@@ -257,7 +257,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
 }
 
 bool ProtoReflectionDescriptorDatabase::GetServices(
-    std::vector<grpc::string>* output) {
+    std::vector<std::string>* output) {
   ServerReflectionRequest request;
   request.set_list_services("");
   ServerReflectionResponse response;
@@ -290,9 +290,9 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   return false;
 }
 
-const protobuf::FileDescriptorProto
+protobuf::FileDescriptorProto
 ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
-    const grpc::string& byte_fd_proto) {
+    const std::string& byte_fd_proto) {
   protobuf::FileDescriptorProto file_desc_proto;
   file_desc_proto.ParseFromString(byte_fd_proto);
   return file_desc_proto;
@@ -310,7 +310,7 @@ void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
   }
 }
 
-const std::shared_ptr<ProtoReflectionDescriptorDatabase::ClientStream>
+std::shared_ptr<ProtoReflectionDescriptorDatabase::ClientStream>
 ProtoReflectionDescriptorDatabase::GetStream() {
   if (!stream_) {
     stream_ = stub_->ServerReflectionInfo(&ctx_);

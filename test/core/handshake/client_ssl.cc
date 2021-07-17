@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <arpa/inet.h>
 #include <openssl/err.h>
@@ -29,12 +29,17 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <string>
+
+#include "absl/strings/str_cat.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -44,10 +49,34 @@
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
+grpc_core::TraceFlag client_ssl_tsi_tracing_enabled(false, "tsi");
+
+class SslLibraryInfo {
+ public:
+  SslLibraryInfo() {}
+
+  void Notify() {
+    grpc_core::MutexLock lock(&mu_);
+    ready_ = true;
+    cv_.Signal();
+  }
+
+  void Await() {
+    grpc_core::MutexLock lock(&mu_);
+    grpc_core::WaitUntil(&cv_, &mu_, [this] { return ready_; });
+  }
+
+ private:
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cv_;
+  bool ready_ = false;
+};
+
 // Arguments for TLS server thread.
 typedef struct {
   int socket;
   char* alpn_preferred;
+  SslLibraryInfo* ssl_library_info;
 } server_args;
 
 // Based on https://wiki.openssl.org/index.php/Simple_TLS_Server.
@@ -98,12 +127,13 @@ static int create_socket(int* out_port) {
 
 // Server callback during ALPN negotiation. See man page for
 // SSL_CTX_set_alpn_select_cb.
-static int alpn_select_cb(SSL* ssl, const uint8_t** out, uint8_t* out_len,
+static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
                           const uint8_t* in, unsigned in_len, void* arg) {
   const uint8_t* alpn_preferred = static_cast<const uint8_t*>(arg);
 
   *out = alpn_preferred;
-  *out_len = static_cast<uint8_t>(strlen((char*)alpn_preferred));
+  *out_len = static_cast<uint8_t>(
+      strlen(reinterpret_cast<const char*>(alpn_preferred)));
 
   // Validate that the ALPN list includes "h2" and "grpc-exp", that "grpc-exp"
   // precedes "h2".
@@ -131,6 +161,28 @@ static int alpn_select_cb(SSL* ssl, const uint8_t** out, uint8_t* out_len,
   return SSL_TLSEXT_ERR_OK;
 }
 
+static void ssl_log_where_info(const SSL* ssl, int where, int flag,
+                               const char* msg) {
+  if ((where & flag) &&
+      GRPC_TRACE_FLAG_ENABLED(client_ssl_tsi_tracing_enabled)) {
+    gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
+            SSL_state_string_long(ssl), SSL_state_string(ssl));
+  }
+}
+
+static void ssl_server_info_callback(const SSL* ssl, int where, int ret) {
+  if (ret == 0) {
+    gpr_log(GPR_ERROR, "ssl_server_info_callback: error occurred.\n");
+    return;
+  }
+
+  ssl_log_where_info(ssl, where, SSL_CB_LOOP, "Server: LOOP");
+  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_START,
+                     "Server: HANDSHAKE START");
+  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_DONE,
+                     "Server: HANDSHAKE DONE");
+}
+
 // Minimal TLS server. This is largely based on the example at
 // https://wiki.openssl.org/index.php/Simple_TLS_Server and the gRPC core
 // internals in src/core/tsi/ssl_transport_security.c.
@@ -139,6 +191,7 @@ static void server_thread(void* arg) {
 
   SSL_load_error_strings();
   OpenSSL_add_ssl_algorithms();
+  args->ssl_library_info->Notify();
 
   const SSL_METHOD* method = TLSv1_2_server_method();
   SSL_CTX* ctx = SSL_CTX_new(method);
@@ -150,22 +203,37 @@ static void server_thread(void* arg) {
 
   // Load key pair.
   if (SSL_CTX_use_certificate_file(ctx, SSL_CERT_PATH, SSL_FILETYPE_PEM) < 0) {
+    perror("Unable to use certificate file.");
     ERR_print_errors_fp(stderr);
     abort();
   }
   if (SSL_CTX_use_PrivateKey_file(ctx, SSL_KEY_PATH, SSL_FILETYPE_PEM) < 0) {
+    perror("Unable to use private key file.");
+    ERR_print_errors_fp(stderr);
+    abort();
+  }
+  if (SSL_CTX_check_private_key(ctx) != 1) {
+    perror("Check private key failed.");
     ERR_print_errors_fp(stderr);
     abort();
   }
 
   // Set the cipher list to match the one expressed in
-  // src/core/tsi/ssl_transport_security.c.
+  // src/core/tsi/ssl_transport_security.cc.
   const char* cipher_list =
       "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
     gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
+    abort();
+  }
+
+  // Enable automatic curve selection. This is a NO-OP when using OpenSSL
+  // versions > 1.0.2.
+  if (!SSL_CTX_set_ecdh_auto(ctx, /*onoff=*/1)) {
+    ERR_print_errors_fp(stderr);
+    gpr_log(GPR_ERROR, "Couldn't set automatic curve selection.");
     abort();
   }
 
@@ -186,6 +254,7 @@ static void server_thread(void* arg) {
 
   // Establish a SSL* and accept at SSL layer.
   SSL* ssl = SSL_new(ctx);
+  SSL_set_info_callback(ssl, ssl_server_info_callback);
   GPR_ASSERT(ssl);
   SSL_set_fd(ssl, client);
   if (SSL_accept(ssl) <= 0) {
@@ -195,16 +264,19 @@ static void server_thread(void* arg) {
     gpr_log(GPR_INFO, "Handshake successful.");
   }
 
+  // Send out the settings frame.
+  const char settings_frame[] = "\x00\x00\x00\x04\x00\x00\x00\x00\x00";
+  SSL_write(ssl, settings_frame, sizeof(settings_frame) - 1);
+
   // Wait until the client drops its connection.
   char buf;
-  while (SSL_read(ssl, &buf, sizeof(buf)) > 0)
-    ;
+  while (SSL_read(ssl, &buf, sizeof(buf)) > 0) {
+  }
 
   SSL_free(ssl);
   close(client);
   close(sock);
   SSL_CTX_free(ctx);
-  EVP_cleanup();
 }
 
 // This test launches a minimal TLS server on a separate thread and then
@@ -230,11 +302,13 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   GPR_ASSERT(server_socket > 0 && port > 0);
 
   // Launch the TLS server thread.
-  server_args args = {server_socket, server_alpn_preferred};
+  SslLibraryInfo ssl_library_info;
+  server_args args = {server_socket, server_alpn_preferred, &ssl_library_info};
   bool ok;
   grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
   GPR_ASSERT(ok);
   thd.Start();
+  ssl_library_info.Await();
 
   // Load key pair and establish client SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
@@ -256,8 +330,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
 
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
-  char* target;
-  gpr_asprintf(&target, "127.0.0.1:%d", port);
+  std::string target = absl::StrCat("127.0.0.1:", port);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
@@ -265,10 +338,9 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   grpc_channel_args grpc_args;
   grpc_args.num_args = 1;
   grpc_args.args = &ssl_name_override;
-  grpc_channel* channel =
-      grpc_secure_channel_create(ssl_creds, target, &grpc_args, nullptr);
+  grpc_channel* channel = grpc_secure_channel_create(ssl_creds, target.c_str(),
+                                                     &grpc_args, nullptr);
   GPR_ASSERT(channel);
-  gpr_free(target);
 
   // Initially the channel will be idle, the
   // grpc_channel_check_connectivity_state triggers an attempt to connect.
@@ -310,6 +382,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
 }
 
 int main(int argc, char* argv[]) {
+  grpc::testing::TestEnvironment env(argc, argv);
   // Handshake succeeeds when the server has grpc-exp as the ALPN preference.
   GPR_ASSERT(client_ssl_test(const_cast<char*>("grpc-exp")));
   // Handshake succeeeds when the server has h2 as the ALPN preference. This
@@ -319,11 +392,13 @@ int main(int argc, char* argv[]) {
   // preference. This validates the client is correctly validating ALPN returns
   // and sanity checks the client_ssl_test.
   GPR_ASSERT(!client_ssl_test(const_cast<char*>("foo")));
+  // Clean up the SSL libraries.
+  EVP_cleanup();
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_TCP */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_TCP */

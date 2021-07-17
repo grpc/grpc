@@ -28,7 +28,6 @@
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
@@ -38,9 +37,8 @@ namespace internal {
 class ThreadInternalsInterface {
  public:
   virtual ~ThreadInternalsInterface() {}
-  virtual void Start() GRPC_ABSTRACT;
-  virtual void Join() GRPC_ABSTRACT;
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual void Start() = 0;
+  virtual void Join() = 0;
 };
 
 }  // namespace internal
@@ -49,7 +47,7 @@ class Thread {
  public:
   class Options {
    public:
-    Options() : joinable_(true), tracked_(true) {}
+    Options() : joinable_(true), tracked_(true), stack_size_(0) {}
     /// Set whether the thread is joinable or detached.
     Options& set_joinable(bool joinable) {
       joinable_ = joinable;
@@ -64,9 +62,18 @@ class Thread {
     }
     bool tracked() const { return tracked_; }
 
+    /// Sets thread stack size (in bytes). Sets to 0 will use the default stack
+    /// size which is 64KB for Windows threads and 2MB for Posix(x86) threads.
+    Options& set_stack_size(size_t bytes) {
+      stack_size_ = bytes;
+      return *this;
+    }
+    size_t stack_size() const { return stack_size_; }
+
    private:
     bool joinable_;
     bool tracked_;
+    size_t stack_size_;
   };
   /// Default constructor only to allow use in structs that lack constructors
   /// Does not produce a validly-constructed thread; must later
@@ -84,7 +91,7 @@ class Thread {
 
   /// Move constructor for thread. After this is called, the other thread
   /// no longer represents a living thread object
-  Thread(Thread&& other)
+  Thread(Thread&& other) noexcept
       : state_(other.state_), impl_(other.impl_), options_(other.options_) {
     other.state_ = MOVED;
     other.impl_ = nullptr;
@@ -94,7 +101,7 @@ class Thread {
   /// Move assignment operator for thread. After this is called, the other
   /// thread no longer represents a living thread object. Not allowed if this
   /// thread actually exists
-  Thread& operator=(Thread&& other) {
+  Thread& operator=(Thread&& other) noexcept {
     if (this != &other) {
       // TODO(vjpai): if we can be sure that all Thread's are actually
       // constructed, then we should assert GPR_ASSERT(impl_ == nullptr) here.
@@ -137,7 +144,7 @@ class Thread {
   void Join() {
     if (impl_ != nullptr) {
       impl_->Join();
-      grpc_core::Delete(impl_);
+      delete impl_;
       state_ = DONE;
       impl_ = nullptr;
     } else {
@@ -150,7 +157,7 @@ class Thread {
   Thread& operator=(const Thread&) = delete;
 
   /// The thread states are as follows:
-  /// FAKE -- just a dummy placeholder Thread created by the default constructor
+  /// FAKE -- just a phony placeholder Thread created by the default constructor
   /// ALIVE -- an actual thread of control exists associated with this thread
   /// STARTED -- the thread of control has been started
   /// DONE -- the thread of control has completed and been joined

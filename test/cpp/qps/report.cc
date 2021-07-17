@@ -164,44 +164,44 @@ void GprLogReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
 }
 
 void JsonReporter::ReportQPS(const ScenarioResult& result) {
-  grpc::string json_string =
+  std::string json_string =
       SerializeJson(result, "type.googleapis.com/grpc.testing.ScenarioResult");
   std::ofstream output_file(report_file_);
   output_file << json_string;
   output_file.close();
 }
 
-void JsonReporter::ReportQPSPerCore(const ScenarioResult& result) {
+void JsonReporter::ReportQPSPerCore(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportLatency(const ScenarioResult& result) {
+void JsonReporter::ReportLatency(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportTimes(const ScenarioResult& result) {
+void JsonReporter::ReportTimes(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportCpuUsage(const ScenarioResult& result) {
+void JsonReporter::ReportCpuUsage(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportPollCount(const ScenarioResult& result) {
+void JsonReporter::ReportPollCount(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void JsonReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+void JsonReporter::ReportQueriesPerCpuSec(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
 void RpcReporter::ReportQPS(const ScenarioResult& result) {
   grpc::ClientContext context;
   grpc::Status status;
-  Void dummy;
+  Void phony;
 
   gpr_log(GPR_INFO, "RPC reporter sending scenario result to server");
-  status = stub_->ReportScenario(&context, result, &dummy);
+  status = stub_->ReportScenario(&context, result, &phony);
 
   if (status.ok()) {
     gpr_log(GPR_INFO, "RpcReporter report RPC success!");
@@ -211,27 +211,27 @@ void RpcReporter::ReportQPS(const ScenarioResult& result) {
   }
 }
 
-void RpcReporter::ReportQPSPerCore(const ScenarioResult& result) {
+void RpcReporter::ReportQPSPerCore(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportLatency(const ScenarioResult& result) {
+void RpcReporter::ReportLatency(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportTimes(const ScenarioResult& result) {
+void RpcReporter::ReportTimes(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportCpuUsage(const ScenarioResult& result) {
+void RpcReporter::ReportCpuUsage(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportPollCount(const ScenarioResult& result) {
+void RpcReporter::ReportPollCount(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 
-void RpcReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
+void RpcReporter::ReportQueriesPerCpuSec(const ScenarioResult& /*result*/) {
   // NOP - all reporting is handled by ReportQPS.
 }
 

@@ -13,7 +13,6 @@
 # limitations under the License.
 """The Python example of utilizing wait-for-ready flag."""
 
-from __future__ import print_function
 import logging
 from concurrent import futures
 from contextlib import contextmanager
@@ -22,13 +21,11 @@ import threading
 
 import grpc
 
-from examples import helloworld_pb2
-from examples import helloworld_pb2_grpc
+helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
+    "helloworld.proto")
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 @contextmanager
@@ -59,9 +56,8 @@ def create_server(server_address):
 
 def process(stub, wait_for_ready=None):
     try:
-        response = stub.SayHello(
-            helloworld_pb2.HelloRequest(name='you'),
-            wait_for_ready=wait_for_ready)
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'),
+                                 wait_for_ready=wait_for_ready)
         message = response.message
     except grpc.RpcError as rpc_error:
         assert rpc_error.code() == grpc.StatusCode.UNAVAILABLE
@@ -69,8 +65,8 @@ def process(stub, wait_for_ready=None):
         message = rpc_error
     else:
         assert wait_for_ready
-    _LOGGER.info("Wait-for-ready %s, client received: %s", "enabled"
-                 if wait_for_ready else "disabled", message)
+    _LOGGER.info("Wait-for-ready %s, client received: %s",
+                 "enabled" if wait_for_ready else "disabled", message)
 
 
 def main():
@@ -90,12 +86,12 @@ def main():
         stub = helloworld_pb2_grpc.GreeterStub(channel)
 
         # Fire an RPC without wait_for_ready
-        thread_disabled_wait_for_ready = threading.Thread(
-            target=process, args=(stub, False))
+        thread_disabled_wait_for_ready = threading.Thread(target=process,
+                                                          args=(stub, False))
         thread_disabled_wait_for_ready.start()
         # Fire an RPC with wait_for_ready
-        thread_enabled_wait_for_ready = threading.Thread(
-            target=process, args=(stub, True))
+        thread_enabled_wait_for_ready = threading.Thread(target=process,
+                                                         args=(stub, True))
         thread_enabled_wait_for_ready.start()
 
     # Wait for the channel entering TRANSIENT FAILURE state.

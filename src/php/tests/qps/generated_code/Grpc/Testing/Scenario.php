@@ -20,53 +20,77 @@ class Scenario extends \Google\Protobuf\Internal\Message
      *
      * Generated from protobuf field <code>string name = 1;</code>
      */
-    private $name = '';
+    protected $name = '';
     /**
      * Client configuration
      *
      * Generated from protobuf field <code>.grpc.testing.ClientConfig client_config = 2;</code>
      */
-    private $client_config = null;
+    protected $client_config = null;
     /**
      * Number of clients to start for the test
      *
      * Generated from protobuf field <code>int32 num_clients = 3;</code>
      */
-    private $num_clients = 0;
+    protected $num_clients = 0;
     /**
      * Server configuration
      *
      * Generated from protobuf field <code>.grpc.testing.ServerConfig server_config = 4;</code>
      */
-    private $server_config = null;
+    protected $server_config = null;
     /**
      * Number of servers to start for the test
      *
      * Generated from protobuf field <code>int32 num_servers = 5;</code>
      */
-    private $num_servers = 0;
+    protected $num_servers = 0;
     /**
      * Warmup period, in seconds
      *
      * Generated from protobuf field <code>int32 warmup_seconds = 6;</code>
      */
-    private $warmup_seconds = 0;
+    protected $warmup_seconds = 0;
     /**
      * Benchmark time, in seconds
      *
      * Generated from protobuf field <code>int32 benchmark_seconds = 7;</code>
      */
-    private $benchmark_seconds = 0;
+    protected $benchmark_seconds = 0;
     /**
      * Number of workers to spawn locally (usually zero)
      *
      * Generated from protobuf field <code>int32 spawn_local_worker_count = 8;</code>
      */
-    private $spawn_local_worker_count = 0;
+    protected $spawn_local_worker_count = 0;
 
-    public function __construct() {
+    /**
+     * Constructor.
+     *
+     * @param array $data {
+     *     Optional. Data for populating the Message object.
+     *
+     *     @type string $name
+     *           Human readable name for this scenario
+     *     @type \Grpc\Testing\ClientConfig $client_config
+     *           Client configuration
+     *     @type int $num_clients
+     *           Number of clients to start for the test
+     *     @type \Grpc\Testing\ServerConfig $server_config
+     *           Server configuration
+     *     @type int $num_servers
+     *           Number of servers to start for the test
+     *     @type int $warmup_seconds
+     *           Warmup period, in seconds
+     *     @type int $benchmark_seconds
+     *           Benchmark time, in seconds
+     *     @type int $spawn_local_worker_count
+     *           Number of workers to spawn locally (usually zero)
+     * }
+     */
+    public function __construct($data = NULL) {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
-        parent::__construct();
+        parent::__construct($data);
     }
 
     /**

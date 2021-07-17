@@ -25,20 +25,36 @@ set -ev
 # CocoaPods requires the terminal to be using UTF-8 encoding.
 export LANG=en_US.UTF-8
 
+TEST_PATH=$(cd "$(dirname $0)" > /dev/null ; pwd)
+
 cd `dirname $0`/../../..
 
 cd $EXAMPLE_PATH
 
 # clean the directory
 rm -rf Pods
-rm -rf $SCHEME.xcworkspace
+rm -rf *.xcworkspace
 rm -f Podfile.lock
 
-pod install
+pod install | $TEST_PATH/verbose_time.sh
 
 set -o pipefail
 XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
-xcodebuild \
+if [ "$SCHEME" == "tvOS-sample" ]; then
+  xcodebuild \
+    build \
+    -workspace *.xcworkspace \
+    -scheme $SCHEME \
+    -destination generic/platform=tvOS \
+    -derivedDataPath Build/Build \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO \
+    | $TEST_PATH/verbose_time.sh \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v "^$" -
+else
+  xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
@@ -46,5 +62,9 @@ xcodebuild \
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
+    CODE_SIGNING_ALLOWED=NO \
+    | $TEST_PATH/verbose_time.sh \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -
+fi
+

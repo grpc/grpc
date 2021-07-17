@@ -31,7 +31,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -87,7 +87,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config config,
+static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_call* s;

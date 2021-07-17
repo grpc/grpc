@@ -31,12 +31,12 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Timeout** → "grpc-timeout" TimeoutValue TimeoutUnit
 * **TimeoutValue** → {_positive integer as ASCII string of at most 8 digits_}
 * **TimeoutUnit** → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond
-* **Hour** → "H"
-* **Minute** → "M"
-* **Second** → "S"
-* **Millisecond** → "m"
-* **Microsecond** → "u"
-* **Nanosecond** → "n"
+  * **Hour** → "H"
+  * **Minute** → "M"
+  * **Second** → "S"
+  * **Millisecond** → "m"
+  * **Microsecond** → "u"
+  * **Nanosecond** → "n"
 * **Content-Type** → "content-type" "application/grpc" [("+proto" / "+json" / {_custom_})]
 * **Content-Coding** → "identity" / "gzip" / "deflate" / "snappy" / {_custom_}
 * <a name="message-encoding"></a>**Message-Encoding** → "grpc-encoding" Content-Coding
@@ -52,12 +52,12 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
 HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
 
-Some gRPC implementations may allow the **Path** format shown above
-to be overridden, but this functionality is strongly discouraged.
-gRPC does not go out of its way to break users that are using this kind
-of override, but we do not actively support it, and some functionality
-(e.g., service config support) will not work when the path is not of
-the form shown above.
+**Path** is case-sensitive. Some gRPC implementations may allow the **Path**
+format shown above to be overridden, but this functionality is strongly
+discouraged. gRPC does not go out of its way to break users that are using this
+kind of override, but we do not actively support it, and some functionality
+(e.g., service config support) will not work when the path is not of the form
+shown above.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
@@ -215,7 +215,7 @@ The following mapping from RST_STREAM error codes to GRPC error codes is applied
 
 HTTP2 Code|GRPC Code
 ----------|-----------
-NO_ERROR(0)|INTERNAL - An explicit GRPC status of OK should have been sent but this might be used to aggressively lameduck in some scenarios.
+NO_ERROR(0)|INTERNAL - An explicit GRPC status of OK should have been sent but this might be used to aggressively [lameduck](https://landing.google.com/sre/sre-book/chapters/load-balancing-datacenter/#identifying-bad-tasks-flow-control-and-lame-ducks-bEs0uy) in some scenarios.
 PROTOCOL_ERROR(1)|INTERNAL
 INTERNAL_ERROR(2)|INTERNAL
 FLOW_CONTROL_ERROR(3)|INTERNAL

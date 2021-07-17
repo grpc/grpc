@@ -31,7 +31,7 @@ class Foo : public Orphanable {
  public:
   Foo() : Foo(0) {}
   explicit Foo(int value) : value_(value) {}
-  void Orphan() override { Delete(this); }
+  void Orphan() override { delete this; }
   int value() const { return value_; }
 
  private:
@@ -39,12 +39,12 @@ class Foo : public Orphanable {
 };
 
 TEST(Orphanable, Basic) {
-  Foo* foo = New<Foo>();
+  Foo* foo = new Foo();
   foo->Orphan();
 }
 
 TEST(OrphanablePtr, Basic) {
-  OrphanablePtr<Foo> foo(New<Foo>());
+  OrphanablePtr<Foo> foo(new Foo());
   EXPECT_EQ(0, foo->value());
 }
 
@@ -79,15 +79,10 @@ TEST(OrphanablePtr, InternallyRefCounted) {
   bar->FinishWork();
 }
 
-// Note: We use DebugOnlyTraceFlag instead of TraceFlag to ensure that
-// things build properly in both debug and non-debug cases.
-DebugOnlyTraceFlag baz_tracer(true, "baz");
-
 class Baz : public InternallyRefCounted<Baz> {
  public:
   Baz() : Baz(0) {}
-  explicit Baz(int value)
-      : InternallyRefCounted<Baz>(&baz_tracer), value_(value) {}
+  explicit Baz(int value) : InternallyRefCounted<Baz>("Baz"), value_(value) {}
   void Orphan() override { Unref(); }
   int value() const { return value_; }
 

@@ -75,7 +75,7 @@ static void test1(void) {
   gpr_cv_destroy(&t.done_cv);
 }
 
-static void thd_body2(void* v) {}
+static void thd_body2(void* /*v*/) {}
 
 /* Test that we can create a number of threads and join them. */
 static void test2(void) {

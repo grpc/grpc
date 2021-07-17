@@ -17,8 +17,8 @@
   <%include file="../../debian_jessie_header.include"/>
   
   <%include file="../../php7_deps.include"/>
-  <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../python_deps.include"/>
+  <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../php_valgrind.include"/>
   <%include file="../../run_tests_addons.include"/>
   # Define the default command.

@@ -27,6 +27,30 @@
  *  - some syscalls to be made directly
  */
 
+// [[deprecated]] attribute is only available since C++14
+#if __cplusplus >= 201402L
+#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
+#else
+#define GRPC_DEPRECATED(reason)
+#endif  // __cplusplus >= 201402L
+
+/*
+ * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
+ */
+#ifndef GPR_ABSEIL_SYNC
+#if defined(__APPLE__)
+// This is disabled on Apple platforms because macos/grpc_basictests_c_cpp
+// fails with this. https://github.com/grpc/grpc/issues/23661
+#else
+#define GPR_ABSEIL_SYNC 1
+#endif
+#endif  // GPR_ABSEIL_SYNC
+
+/*
+ * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
+ */
+// #define GRPC_ERROR_IS_ABSEIL_STATUS 1
+
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -39,6 +63,8 @@
 #define NOMINMAX
 #endif /* NOMINMAX */
 
+#include <windows.h>
+
 #ifndef _WIN32_WINNT
 #error \
     "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
@@ -48,8 +74,6 @@
     "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* defined(_WIN32_WINNT) */
-
-#include <windows.h>
 
 #ifdef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
 #undef GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
@@ -88,41 +112,16 @@
 #define GPR_WINDOWS_TMPFILE
 #define GPR_WINDOWS_LOG
 #define GPR_WINDOWS_CRASH_HANDLER 1
+#define GPR_WINDOWS_STAT
 #define GPR_WINDOWS_STRING
 #define GPR_WINDOWS_TIME
 #endif
 #ifdef __GNUC__
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
 #else
 #define GPR_WINDOWS_ATOMIC 1
-#define GPR_MSVC_TLS 1
 #endif
-#elif defined(GPR_MANYLINUX1)
-// TODO(atash): manylinux1 is just another __linux__ but with ancient
-// libraries; it should be integrated with the `__linux__` definitions below.
-#define GPR_PLATFORM_STRING "manylinux"
-#define GPR_POSIX_CRASH_HANDLER 1
-#define GPR_CPU_POSIX 1
-#define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
-#define GPR_LINUX 1
-#define GPR_LINUX_LOG 1
-#define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_LINUX_ENV 1
-#define GPR_POSIX_TMPFILE 1
-#define GPR_POSIX_STRING 1
-#define GPR_POSIX_SUBPROCESS 1
-#define GPR_POSIX_SYNC 1
-#define GPR_POSIX_TIME 1
-#define GPR_HAS_PTHREAD_H 1
-#define GPR_GETPID_IN_UNISTD_H 1
-#ifdef _LP64
-#define GPR_ARCH_64 1
-#else /* _LP64 */
-#define GPR_ARCH_32 1
-#endif /* _LP64 */
-#include <linux/version.h>
+#define GPR_STDCPP_TLS 1
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
@@ -137,9 +136,10 @@
 #endif /* _LP64 */
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_SYNC 1
-#define GPR_GCC_TLS 1
+#define GPR_STDCPP_TLS 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_ANDROID_LOG 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
@@ -162,12 +162,13 @@
 #include <features.h>
 #define GPR_CPU_LINUX 1
 #define GPR_GCC_ATOMIC 1
-#define GPR_GCC_TLS 1
+#define GPR_STDCPP_TLS 1
 #define GPR_LINUX 1
 #define GPR_LINUX_LOG
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #define GPR_LINUX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -186,6 +187,26 @@
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1
 #endif
+#elif defined(__ASYLO__)
+#define GPR_ARCH_64 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_TLS 1
+#define GPR_PLATFORM_STRING "asylo"
+#define GPR_GCC_SYNC 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_TIME 1
+#define GPR_POSIX_ENV 1
+#define GPR_ASYLO 1
+#define GRPC_POSIX_SOCKET 1
+#define GRPC_POSIX_SOCKETADDR
+#define GRPC_POSIX_SOCKETUTILS 1
+#define GRPC_TIMER_USE_GENERIC 1
+#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#define GRPC_POSIX_WAKEUP_FD 1
+#define GRPC_ARES 0
+#define GPR_NO_AUTODETECT_PLATFORM 1
 #elif defined(__APPLE__)
 #include <Availability.h>
 #include <TargetConditionals.h>
@@ -195,45 +216,28 @@
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
-#define GPR_PTHREAD_TLS 1
 #define GRPC_CFSTREAM 1
-/* the c-ares resolver isnt safe to enable on iOS */
+/* the c-ares resolver isn't safe to enable on iOS */
 #define GRPC_ARES 0
 #else /* TARGET_OS_IPHONE */
 #define GPR_PLATFORM_STRING "osx"
-#ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
-#if __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7
-#define GPR_CPU_IPHONE 1
-#define GPR_PTHREAD_TLS 1
-#else /* __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7 */
 #define GPR_CPU_POSIX 1
-/* TODO(vjpai): there is a reported issue in bazel build for Mac where __thread
-   in a header is currently not working (bazelbuild/bazel#4341). Remove
-   the following conditional and use GPR_GCC_TLS when that is fixed */
-#ifndef GRPC_BAZEL_BUILD
-#define GPR_GCC_TLS 1
-#else /* GRPC_BAZEL_BUILD */
-#define GPR_PTHREAD_TLS 1
-#endif /* GRPC_BAZEL_BUILD */
-#define GPR_APPLE_PTHREAD_NAME 1
-#endif
-#else /* __MAC_OS_X_VERSION_MIN_REQUIRED */
-#define GPR_CPU_POSIX 1
-/* TODO(vjpai): Remove the following conditional and use only GPR_GCC_TLS
-   when bazelbuild/bazel#4341 is fixed */
-#ifndef GRPC_BAZEL_BUILD
-#define GPR_GCC_TLS 1
-#else /* GRPC_BAZEL_BUILD */
-#define GPR_PTHREAD_TLS 1
-#endif /* GRPC_BAZEL_BUILD */
-#endif
 #define GPR_POSIX_CRASH_HANDLER 1
+#endif
+#ifdef __has_feature
+#if __has_feature(cxx_thread_local)
+#define GPR_STDCPP_TLS 1
+#endif
+#endif
+#ifndef GPR_STDCPP_TLS
+#define GPR_PTHREAD_TLS 1
 #endif
 #define GPR_APPLE 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -260,6 +264,7 @@
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -284,6 +289,7 @@
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -305,6 +311,7 @@
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -328,6 +335,7 @@
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -357,6 +365,7 @@
 #define GPR_POSIX_LOG 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
@@ -369,6 +378,7 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__Fuchsia__)
+#define GRPC_ARES 0
 #define GPR_FUCHSIA 1
 #define GPR_ARCH_64 1
 #define GPR_PLATFORM_STRING "fuchsia"
@@ -383,40 +393,30 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_ENV 1
 #define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_TIME 1
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GRPC_ROOT_PEM_PATH "/config/ssl/cert.pem"
 #else
 #error "Could not auto-detect platform"
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
 /*
- *  There are platforms for which TLS should not be used even though the
- * compiler makes it seem like it's supported (Android NDK < r12b for example).
- * This is primarily because of linker problems and toolchain misconfiguration:
- * TLS isn't supported until NDK r12b per
- * https://developer.android.com/ndk/downloads/revision_history.html
- * TLS also does not work with Android NDK if GCC is being used as the compiler
- * instead of Clang.
- * Since NDK r16, `__NDK_MAJOR__` and `__NDK_MINOR__` are defined in
- * <android/ndk-version.h>. For NDK < r16, users should define these macros,
- * e.g. `-D__NDK_MAJOR__=11 -D__NKD_MINOR__=0` for NDK r11. */
-#if defined(__ANDROID__) && defined(GPR_GCC_TLS)
-#if __has_include(<android/ndk-version.h>)
-#include <android/ndk-version.h>
-#endif /* __has_include(<android/ndk-version.h>) */
-#if (defined(__clang__) && defined(__NDK_MAJOR__) && defined(__NDK_MINOR__) && \
-     ((__NDK_MAJOR__ < 12) ||                                                  \
-      ((__NDK_MAJOR__ == 12) && (__NDK_MINOR__ < 1)))) ||                      \
-    (defined(__GNUC__) && !defined(__clang__))
-#undef GPR_GCC_TLS
-#define GPR_PTHREAD_TLS 1
+ * For backward compatibility mode, reset _FORTIFY_SOURCE to prevent
+ * a library from having non-standard symbols such as __asprintf_chk.
+ * This helps non-glibc systems such as alpine using musl to find symbols.
+ */
+#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
+#undef _FORTIFY_SOURCE
+#define _FORTIFY_SOURCE 0
 #endif
-#endif /*defined(__ANDROID__) && defined(GPR_GCC_TLS) */
+#endif
 
 #if defined(__has_include)
 #if __has_include(<atomic>)
@@ -450,6 +450,23 @@ typedef unsigned __int64 uint64_t;
 #else
 #include <stdint.h>
 #endif /* _MSC_VER */
+
+/* Type of cycle clock implementation */
+#ifdef GPR_LINUX
+/* Disable cycle clock by default.
+   TODO(soheil): enable when we support fallback for unstable cycle clocks.
+#if defined(__i386__)
+#define GPR_CYCLE_COUNTER_RDTSC_32 1
+#elif defined(__x86_64__) || defined(__amd64__)
+#define GPR_CYCLE_COUNTER_RDTSC_64 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif
+*/
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif /* GPR_LINUX */
 
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG
@@ -489,9 +506,9 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 #if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \
-        defined(GPR_CUSTOM_TLS) !=                                            \
+        defined(GPR_STDCPP_TLS) + defined(GPR_CUSTOM_TLS) !=                  \
     1
-#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_CUSTOM_TLS
+#error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_STDCPP_TLS, GPR_CUSTOM_TLS
 #endif
 
 /* maximum alignment needed for any type on this platform, rounded up to a
@@ -603,25 +620,33 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
 
 /* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */
+#ifndef GRPC_TSAN_SUPPRESSED
 #if defined(__SANITIZE_THREAD__)
 #define GRPC_TSAN_ENABLED
 #elif GPR_HAS_FEATURE(thread_sanitizer)
 #define GRPC_TSAN_ENABLED
 #endif
+#endif
 
 /* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */
+#ifndef GRPC_ASAN_SUPPRESSED
 #if defined(__SANITIZE_ADDRESS__)
 #define GRPC_ASAN_ENABLED
 #elif GPR_HAS_FEATURE(address_sanitizer)
 #define GRPC_ASAN_ENABLED
 #endif
+#endif
 
 /* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */
 #ifndef GRPC_ALLOW_EXCEPTIONS
-/* If not already set, set to 1 on Windows (style guide standard) but to
- * 0 on non-Windows platforms unless the compiler defines __EXCEPTIONS */
 #ifdef GPR_WINDOWS
+#if defined(_MSC_VER) && defined(_CPPUNWIND)
 #define GRPC_ALLOW_EXCEPTIONS 1
+#elif defined(__EXCEPTIONS)
+#define GRPC_ALLOW_EXCEPTIONS 1
+#else
+#define GRPC_ALLOW_EXCEPTIONS 0
+#endif
 #else /* GPR_WINDOWS */
 #ifdef __EXCEPTIONS
 #define GRPC_ALLOW_EXCEPTIONS 1
@@ -645,5 +670,22 @@ typedef unsigned __int64 uint64_t;
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
+
+/* Selectively enable EventEngine on specific platforms. This default can be
+ * overridden using the GRPC_USE_EVENT_ENGINE compiler flag.
+ */
+#ifndef GRPC_USE_EVENT_ENGINE
+/* Not enabled by default on any platforms yet. (2021.06) */
+#elif GRPC_USE_EVENT_ENGINE == 0
+/* Building with `-DGRPC_USE_EVENT_ENGINE=0` will override the default. */
+#undef GRPC_USE_EVENT_ENGINE
+#endif /* GRPC_USE_EVENT_ENGINE */
+
+#ifdef GRPC_USE_EVENT_ENGINE
+#undef GPR_SUPPORT_CHANNELS_FROM_FD
+#define GRPC_ARES 0
+#endif /* GRPC_USE_EVENT_ENGINE */
+
+#define GRPC_CALLBACK_API_NONEXPERIMENTAL
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

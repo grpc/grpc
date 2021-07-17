@@ -27,4 +27,4 @@ then
   flags="-use_traces=1 $flags"
 fi
 
-bins/$config/uri_fuzzer_test $flags fuzzer_output test/core/client_channel/uri_corpus
+bins/$config/uri_fuzzer_test $flags fuzzer_output test/core/uri/uri_corpus

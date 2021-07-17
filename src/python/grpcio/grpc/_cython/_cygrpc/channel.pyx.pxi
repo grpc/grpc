@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
-import threading
-import time
 
 _INTERNAL_CALL_ERROR_MESSAGE_FORMAT = (
     'Internal gRPC call error %d. ' +
@@ -146,12 +142,36 @@ cdef _cancel(
 
 cdef _next_call_event(
     _ChannelState channel_state, grpc_completion_queue *c_completion_queue,
-    on_success, deadline):
-  tag, event = _latent_event(c_completion_queue, deadline)
-  with channel_state.condition:
-    on_success(tag)
-    channel_state.condition.notify_all()
-  return event
+    on_success, on_failure, deadline):
+  """Block on the next event out of the completion queue.
+
+  On success, `on_success` will be invoked with the tag taken from the CQ.
+  In the case of a failure due to an exception raised in a signal handler,
+  `on_failure` will be invoked with no arguments. Note that this situation
+  can only occur on the main thread.
+
+  Args:
+    channel_state: The state for the channel on which the RPC is running.
+    c_completion_queue: The CQ which will be polled.
+    on_success: A callable object to be invoked upon successful receipt of a
+      tag from the CQ.
+    on_failure: A callable object to be invoked in case a Python exception is
+      raised from a signal handler during polling.
+    deadline: The point after which the RPC will time out.
+  """
+  try:
+    tag, event = _latent_event(c_completion_queue, deadline)
+  # NOTE(rbellevi): This broad except enables us to clean up resources before
+  # propagating any exceptions raised by signal handlers to the application.
+  except:
+    if on_failure is not None:
+      on_failure()
+    raise
+  else:
+    with channel_state.condition:
+      on_success(tag)
+      channel_state.condition.notify_all()
+    return event
 
 
 # TODO(https://github.com/grpc/grpc/issues/14569): This could be a lot simpler.
@@ -236,6 +256,8 @@ cdef void _call(
         on_success(started_tags)
     else:
       raise ValueError('Cannot invoke RPC: %s' % channel_state.closed_reason)
+
+
 cdef void _process_integrated_call_tag(
     _ChannelState state, _BatchOperationTag tag) except *:
   cdef _CallState call_state = state.integrated_call_states.pop(tag)
@@ -307,8 +329,14 @@ cdef class SegregatedCall:
     def on_success(tag):
       _process_segregated_call_tag(
         self._channel_state, self._call_state, self._c_completion_queue, tag)
+    def on_failure():
+      self._call_state.due.clear()
+      grpc_call_unref(self._call_state.c_call)
+      self._call_state.c_call = NULL
+      self._channel_state.segregated_call_states.remove(self._call_state)
+      _destroy_c_completion_queue(self._c_completion_queue)
     return _next_call_event(
-        self._channel_state, self._c_completion_queue, on_success, None)
+        self._channel_state, self._c_completion_queue, on_success, on_failure, None)
 
 
 cdef SegregatedCall _segregated_call(
@@ -390,8 +418,6 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       else:
         while state.integrated_call_states:
           state.condition.wait()
-        while state.segregated_call_states:
-          state.condition.wait()
         while state.connectivity_due:
           state.condition.wait()
 
@@ -399,7 +425,7 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       _destroy_c_completion_queue(state.c_connectivity_completion_queue)
       grpc_channel_destroy(state.c_channel)
       state.c_channel = NULL
-      grpc_shutdown_blocking()
+      grpc_shutdown()
       state.condition.notify_all()
     else:
       # Another call to close already completed in the past or is currently
@@ -425,9 +451,7 @@ cdef class Channel:
     self._state.c_connectivity_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
     self._arguments = arguments
-    self._vtable = _VTable()
-    cdef _ChannelArgs channel_args = _ChannelArgs(
-        arguments, self._vtable)
+    cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     if channel_credentials is None:
       self._state.c_channel = grpc_insecure_channel_create(
           <char *>target, channel_args.c_args(), NULL)
@@ -461,8 +485,11 @@ cdef class Channel:
       queue_deadline = time.time() + 1.0
     else:
       queue_deadline = None
+    # NOTE(gnossen): It is acceptable for on_failure to be None here because
+    # failure conditions can only ever happen on the main thread and this
+    # method is only ever invoked on the channel spin thread.
     return _next_call_event(self._state, self._state.c_call_completion_queue,
-                            on_success, queue_deadline)
+                            on_success, None, queue_deadline)
 
   def segregated_call(
       self, int flags, method, host, object deadline, object metadata,

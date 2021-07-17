@@ -50,7 +50,7 @@ typedef struct handshaker_args {
   bool is_client;
   bool transferred_data;
   bool appended_unused_bytes;
-  grpc_error* error;
+  grpc_error_handle error;
 } handshaker_args;
 
 static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
@@ -197,7 +197,8 @@ void tsi_test_frame_protector_send_message_to_peer(
   uint8_t* message =
       is_client ? config->client_message : config->server_message;
   GPR_ASSERT(message != nullptr);
-  const unsigned char* message_bytes = (const unsigned char*)message;
+  const unsigned char* message_bytes =
+      reinterpret_cast<unsigned char*>(message);
   tsi_result result = TSI_OK;
   /* Do protect and send protected data to peer. */
   while (message_size > 0 && result == TSI_OK) {
@@ -288,15 +289,14 @@ void tsi_test_frame_protector_receive_message_from_peer(
   gpr_free(message_buffer);
 }
 
-grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
-                                   const unsigned char* bytes_to_send,
-                                   size_t bytes_to_send_size,
-                                   tsi_handshaker_result* handshaker_result) {
+grpc_error_handle on_handshake_next_done(
+    tsi_result result, void* user_data, const unsigned char* bytes_to_send,
+    size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
@@ -340,11 +340,8 @@ static bool is_handshake_finished_properly(handshaker_args* args) {
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  if ((args->is_client && fixture->client_result != nullptr) ||
-      (!args->is_client && fixture->server_result != nullptr)) {
-    return true;
-  }
-  return false;
+  return (args->is_client && fixture->client_result != nullptr) ||
+         (!args->is_client && fixture->server_result != nullptr);
 }
 
 static void do_handshaker_next(handshaker_args* args) {
@@ -370,10 +367,10 @@ static void do_handshaker_next(handshaker_args* args) {
       args->transferred_data = true;
     }
     /* Peform handshaker next. */
-    result = tsi_handshaker_next(handshaker, args->handshake_buffer, buf_size,
-                                 (const unsigned char**)&bytes_to_send,
-                                 &bytes_to_send_size, &handshaker_result,
-                                 &on_handshake_next_done_wrapper, args);
+    result = tsi_handshaker_next(
+        handshaker, args->handshake_buffer, buf_size,
+        const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
+        &handshaker_result, &on_handshake_next_done_wrapper, args);
     if (result != TSI_ASYNC) {
       args->error = on_handshake_next_done(
           result, args, bytes_to_send, bytes_to_send_size, handshaker_result);

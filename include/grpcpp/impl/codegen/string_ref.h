@@ -51,15 +51,18 @@ class string_ref {
   string_ref() : data_(nullptr), length_(0) {}
   string_ref(const string_ref& other)
       : data_(other.data_), length_(other.length_) {}
+  // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   string_ref& operator=(const string_ref& rhs) {
     data_ = rhs.data_;
     length_ = rhs.length_;
     return *this;
   }
 
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
   string_ref(const char* s) : data_(s), length_(strlen(s)) {}
   string_ref(const char* s, size_t l) : data_(s), length_(l) {}
-  string_ref(const grpc::string& s) : data_(s.data()), length_(s.length()) {}
+  /* NOLINTNEXTLINE(google-explicit-constructor) */
+  string_ref(const std::string& s) : data_(s.data()), length_(s.length()) {}
 
   /// iterators
   const_iterator begin() const { return data_; }
@@ -138,7 +141,7 @@ inline bool operator>(string_ref x, string_ref y) { return x.compare(y) > 0; }
 inline bool operator>=(string_ref x, string_ref y) { return x.compare(y) >= 0; }
 
 inline std::ostream& operator<<(std::ostream& out, const string_ref& string) {
-  return out << grpc::string(string.begin(), string.end());
+  return out << std::string(string.begin(), string.end());
 }
 
 }  // namespace grpc

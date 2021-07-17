@@ -17,17 +17,20 @@
  */
 
 #include <memory>
-#include <mutex>
+
+#include "absl/memory/memory.h"
+#include "upb/upb.hpp"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/method_handler_impl.h>
+#include <grpcpp/impl/codegen/method_handler.h>
 
-#include "pb_decode.h"
-#include "pb_encode.h"
-#include "src/core/ext/filters/client_channel/health/health.pb.h"
 #include "src/cpp/server/health/default_health_check_service.h"
+#include "src/proto/grpc/health/v1/health.upb.h"
+#include "upb/upb.hpp"
+
+#define MAX_SERVICE_NAME_LENGTH 200
 
 namespace grpc {
 
@@ -40,7 +43,7 @@ DefaultHealthCheckService::DefaultHealthCheckService() {
 }
 
 void DefaultHealthCheckService::SetServingStatus(
-    const grpc::string& service_name, bool serving) {
+    const std::string& service_name, bool serving) {
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_) {
     // Set to NOT_SERVING in case service_name is not in the map.
@@ -75,7 +78,7 @@ void DefaultHealthCheckService::Shutdown() {
 
 DefaultHealthCheckService::ServingStatus
 DefaultHealthCheckService::GetServingStatus(
-    const grpc::string& service_name) const {
+    const std::string& service_name) const {
   grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) {
@@ -86,7 +89,7 @@ DefaultHealthCheckService::GetServingStatus(
 }
 
 void DefaultHealthCheckService::RegisterCallHandler(
-    const grpc::string& service_name,
+    const std::string& service_name,
     std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
   grpc_core::MutexLock lock(&mu_);
   ServiceData& service_data = services_map_[service_name];
@@ -96,7 +99,7 @@ void DefaultHealthCheckService::RegisterCallHandler(
 }
 
 void DefaultHealthCheckService::UnregisterCallHandler(
-    const grpc::string& service_name,
+    const std::string& service_name,
     const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler) {
   grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
@@ -112,7 +115,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl*
 DefaultHealthCheckService::GetHealthCheckService(
     std::unique_ptr<ServerCompletionQueue> cq) {
   GPR_ASSERT(impl_ == nullptr);
-  impl_.reset(new HealthCheckServiceImpl(this, std::move(cq)));
+  impl_ = absl::make_unique<HealthCheckServiceImpl>(this, std::move(cq));
   return impl_.get();
 }
 
@@ -158,8 +161,8 @@ DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
   AddMethod(new internal::RpcServiceMethod(
       kHealthWatchMethodName, internal::RpcMethod::SERVER_STREAMING, nullptr));
   // Create serving thread.
-  thread_ = std::unique_ptr<::grpc_core::Thread>(
-      new ::grpc_core::Thread("grpc_health_check_service", Serve, this));
+  thread_ = absl::make_unique<::grpc_core::Thread>("grpc_health_check_service",
+                                                   Serve, this);
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {
@@ -183,8 +186,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::StartServingThread() {
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
-  HealthCheckServiceImpl* service =
-      reinterpret_cast<HealthCheckServiceImpl*>(arg);
+  HealthCheckServiceImpl* service = static_cast<HealthCheckServiceImpl*>(arg);
   void* tag;
   bool ok;
   while (true) {
@@ -199,13 +201,11 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
 }
 
 bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
-    const ByteBuffer& request, grpc::string* service_name) {
+    const ByteBuffer& request, std::string* service_name) {
   std::vector<Slice> slices;
   if (!request.Dump(&slices).ok()) return false;
   uint8_t* request_bytes = nullptr;
   size_t request_size = 0;
-  grpc_health_v1_HealthCheckRequest request_struct;
-  request_struct.has_service = false;
   if (slices.size() == 1) {
     request_bytes = const_cast<uint8_t*>(slices[0].begin());
     request_size = slices[0].size();
@@ -217,37 +217,42 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
       copy_to += slices[i].size();
     }
   }
-  pb_istream_t istream = pb_istream_from_buffer(request_bytes, request_size);
-  bool decode_status = pb_decode(
-      &istream, grpc_health_v1_HealthCheckRequest_fields, &request_struct);
+  upb::Arena arena;
+  grpc_health_v1_HealthCheckRequest* request_struct =
+      grpc_health_v1_HealthCheckRequest_parse(
+          reinterpret_cast<char*>(request_bytes), request_size, arena.ptr());
   if (slices.size() > 1) {
     gpr_free(request_bytes);
   }
-  if (!decode_status) return false;
-  *service_name = request_struct.has_service ? request_struct.service : "";
+  if (request_struct == nullptr) {
+    return false;
+  }
+  upb_strview service =
+      grpc_health_v1_HealthCheckRequest_service(request_struct);
+  if (service.size > MAX_SERVICE_NAME_LENGTH) {
+    return false;
+  }
+  service_name->assign(service.data, service.size);
   return true;
 }
 
 bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
     ServingStatus status, ByteBuffer* response) {
-  grpc_health_v1_HealthCheckResponse response_struct;
-  response_struct.has_status = true;
-  response_struct.status =
-      status == NOT_FOUND
-          ? grpc_health_v1_HealthCheckResponse_ServingStatus_SERVICE_UNKNOWN
-          : status == SERVING
-                ? grpc_health_v1_HealthCheckResponse_ServingStatus_SERVING
-                : grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING;
-  pb_ostream_t ostream;
-  memset(&ostream, 0, sizeof(ostream));
-  pb_encode(&ostream, grpc_health_v1_HealthCheckResponse_fields,
-            &response_struct);
-  grpc_slice response_slice = grpc_slice_malloc(ostream.bytes_written);
-  ostream = pb_ostream_from_buffer(GRPC_SLICE_START_PTR(response_slice),
-                                   GRPC_SLICE_LENGTH(response_slice));
-  bool encode_status = pb_encode(
-      &ostream, grpc_health_v1_HealthCheckResponse_fields, &response_struct);
-  if (!encode_status) return false;
+  upb::Arena arena;
+  grpc_health_v1_HealthCheckResponse* response_struct =
+      grpc_health_v1_HealthCheckResponse_new(arena.ptr());
+  grpc_health_v1_HealthCheckResponse_set_status(
+      response_struct,
+      status == NOT_FOUND ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
+      : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
+                          : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
+  size_t buf_length;
+  char* buf = grpc_health_v1_HealthCheckResponse_serialize(
+      response_struct, arena.ptr(), &buf_length);
+  if (buf == nullptr) {
+    return false;
+  }
+  grpc_slice response_slice = grpc_slice_from_copied_buffer(buf, buf_length);
   Slice encoded_response(response_slice, Slice::STEAL_REF);
   ByteBuffer response_buffer(&encoded_response, 1);
   response->Swap(&response_buffer);
@@ -296,7 +301,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
   // Process request.
   gpr_log(GPR_DEBUG, "[HCS %p] Health check started for handler %p", service_,
           this);
-  grpc::string service_name;
+  std::string service_name;
   grpc::Status status = Status::OK;
   ByteBuffer response;
   if (!service_->DecodeRequest(request_, &service_name)) {

@@ -41,7 +41,7 @@ typedef struct {
   gpr_mu mu;
   grpc_slice_buffer write_buffer;
   grpc_slice_buffer writing_buffer;
-  grpc_error* error;
+  grpc_error_handle error;
   bool writing;
   grpc_closure* write_cb;
 } trickle_endpoint;
@@ -56,13 +56,14 @@ static void maybe_call_write_cb_locked(trickle_endpoint* te) {
   if (te->write_cb != nullptr &&
       (te->error != GRPC_ERROR_NONE ||
        te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
-    GRPC_CLOSURE_SCHED(te->write_cb, GRPC_ERROR_REF(te->error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, te->write_cb,
+                            GRPC_ERROR_REF(te->error));
     te->write_cb = nullptr;
   }
 }
 
 static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* arg) {
+                     grpc_closure* cb, void* /*arg*/) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   GPR_ASSERT(te->write_cb == nullptr);
@@ -95,7 +96,7 @@ static void te_delete_from_pollset_set(grpc_endpoint* ep,
   grpc_endpoint_delete_from_pollset_set(te->wrapped, pollset_set);
 }
 
-static void te_shutdown(grpc_endpoint* ep, grpc_error* why) {
+static void te_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   if (te->error == GRPC_ERROR_NONE) {
@@ -121,9 +122,14 @@ static grpc_resource_user* te_get_resource_user(grpc_endpoint* ep) {
   return grpc_endpoint_get_resource_user(te->wrapped);
 }
 
-static char* te_get_peer(grpc_endpoint* ep) {
+static absl::string_view te_get_peer(grpc_endpoint* ep) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   return grpc_endpoint_get_peer(te->wrapped);
+}
+
+static absl::string_view te_get_local_address(grpc_endpoint* ep) {
+  trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
+  return grpc_endpoint_get_local_address(te->wrapped);
 }
 
 static int te_get_fd(grpc_endpoint* ep) {
@@ -131,9 +137,9 @@ static int te_get_fd(grpc_endpoint* ep) {
   return grpc_endpoint_get_fd(te->wrapped);
 }
 
-static bool te_can_track_err(grpc_endpoint* ep) { return false; }
+static bool te_can_track_err(grpc_endpoint* /*ep*/) { return false; }
 
-static void te_finish_write(void* arg, grpc_error* error) {
+static void te_finish_write(void* arg, grpc_error_handle /*error*/) {
   trickle_endpoint* te = static_cast<trickle_endpoint*>(arg);
   gpr_mu_lock(&te->mu);
   te->writing = false;
@@ -150,6 +156,7 @@ static const grpc_endpoint_vtable vtable = {te_read,
                                             te_destroy,
                                             te_get_resource_user,
                                             te_get_peer,
+                                            te_get_local_address,
                                             te_get_fd,
                                             te_can_track_err};
 

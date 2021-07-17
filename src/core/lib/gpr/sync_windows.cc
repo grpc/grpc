@@ -20,7 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_WINDOWS
+#if defined(GPR_WINDOWS) && !defined(GPR_ABSEIL_SYNC) && \
+    !defined(GPR_CUSTOM_SYNC)
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -99,7 +100,7 @@ void gpr_cv_broadcast(gpr_cv* cv) { WakeAllConditionVariable(cv); }
 
 /*----------------------------------------*/
 
-static void* dummy;
+static void* phony;
 struct run_once_func_arg {
   void (*init_function)(void);
 };
@@ -112,7 +113,8 @@ static BOOL CALLBACK run_once_func(gpr_once* once, void* v, void** pv) {
 void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   struct run_once_func_arg arg;
   arg.init_function = init_function;
-  InitOnceExecuteOnce(once, run_once_func, &arg, &dummy);
+  InitOnceExecuteOnce(once, run_once_func, &arg, &phony);
 }
 
-#endif /* GPR_WINDOWS */
+#endif /* defined(GPR_WINDOWS) && !defined(GPR_ABSEIL_SYNC) && \
+          !defined(GPR_CUSTOM_SYNC) */

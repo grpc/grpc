@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include <grpcpp/server_builder_impl.h>
+#include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
@@ -42,7 +42,7 @@ class AcceptorWrapper : public experimental::ExternalConnectionAcceptor {
 }  // namespace
 
 ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
-    const grpc::string& name,
+    const std::string& name,
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
@@ -52,7 +52,7 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
 ExternalConnectionAcceptorImpl::GetAcceptor() {
-  std::lock_guard<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(!has_acceptor_);
   has_acceptor_ = true;
   return std::unique_ptr<experimental::ExternalConnectionAcceptor>(
@@ -61,7 +61,7 @@ ExternalConnectionAcceptorImpl::GetAcceptor() {
 
 void ExternalConnectionAcceptorImpl::HandleNewConnection(
     experimental::ExternalConnectionAcceptor::NewConnectionParameters* p) {
-  std::lock_guard<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
     gpr_log(
@@ -76,12 +76,12 @@ void ExternalConnectionAcceptorImpl::HandleNewConnection(
 }
 
 void ExternalConnectionAcceptorImpl::Shutdown() {
-  std::lock_guard<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   shutdown_ = true;
 }
 
 void ExternalConnectionAcceptorImpl::Start() {
-  std::lock_guard<std::mutex> lock(mu_);
+  grpc_core::MutexLock lock(&mu_);
   GPR_ASSERT(!started_);
   GPR_ASSERT(has_acceptor_);
   GPR_ASSERT(!shutdown_);

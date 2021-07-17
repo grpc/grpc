@@ -15,23 +15,24 @@
  * limitations under the License.
  *
  */
-#include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
-
-#include <sstream>
-
-#include <gflags/gflags.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/server_builder.h>
 
+#include <sstream>
+
+#include "absl/flags/flag.h"
+#include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_int32(handshaker_port, 55056,
-             "TCP port on which the fake handshaker server listens to.");
+ABSL_FLAG(int32_t, handshaker_port, 55056,
+          "TCP port on which the fake handshaker server listens to.");
 
 static void RunFakeHandshakerServer(const std::string& server_address) {
   std::unique_ptr<grpc::Service> service =
-      grpc::gcp::CreateFakeHandshakerService();
+      grpc::gcp::CreateFakeHandshakerService(
+          0 /* expected max concurrent rpcs unset */);
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(service.get());
@@ -42,11 +43,12 @@ static void RunFakeHandshakerServer(const std::string& server_address) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
-  GPR_ASSERT(FLAGS_handshaker_port != 0);
+  GPR_ASSERT(absl::GetFlag(FLAGS_handshaker_port) != 0);
   std::ostringstream server_address;
-  server_address << "[::1]:" << FLAGS_handshaker_port;
+  server_address << "[::1]:" << absl::GetFlag(FLAGS_handshaker_port);
 
   RunFakeHandshakerServer(server_address.str());
   return 0;

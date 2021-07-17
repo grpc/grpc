@@ -27,7 +27,7 @@
 #include <grpc/support/time.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             const char* test_name,
@@ -166,9 +166,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 
   grpc_server_destroy(f.server);
 
-  // new code should give INTERNAL, some older code will give UNAVAILABLE
-  GPR_ASSERT(status == GRPC_STATUS_INTERNAL ||
-             status == GRPC_STATUS_UNAVAILABLE);
+  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   GPR_ASSERT(was_cancelled == 1);
 

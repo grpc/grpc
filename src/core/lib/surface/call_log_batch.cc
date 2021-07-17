@@ -22,99 +22,90 @@
 
 #include <inttypes.h>
 
+#include <vector>
+
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
-static void add_metadata(gpr_strvec* b, const grpc_metadata* md, size_t count) {
-  size_t i;
+static void add_metadata(const grpc_metadata* md, size_t count,
+                         std::vector<std::string>* b) {
   if (md == nullptr) {
-    gpr_strvec_add(b, gpr_strdup("(nil)"));
+    b->push_back("(nil)");
     return;
   }
-  for (i = 0; i < count; i++) {
-    gpr_strvec_add(b, gpr_strdup("\nkey="));
-    gpr_strvec_add(b, grpc_slice_to_c_string(md[i].key));
-
-    gpr_strvec_add(b, gpr_strdup(" value="));
-    gpr_strvec_add(b,
-                   grpc_dump_slice(md[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+  for (size_t i = 0; i < count; i++) {
+    b->push_back("\nkey=");
+    b->push_back(std::string(grpc_core::StringViewFromSlice(md[i].key)));
+    b->push_back(" value=");
+    char* dump = grpc_dump_slice(md[i].value, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+    b->push_back(dump);
+    gpr_free(dump);
   }
 }
 
-char* grpc_op_string(const grpc_op* op) {
-  char* tmp;
-  char* out;
-
-  gpr_strvec b;
-  gpr_strvec_init(&b);
-
+static std::string grpc_op_string(const grpc_op* op) {
+  std::vector<std::string> parts;
   switch (op->op) {
     case GRPC_OP_SEND_INITIAL_METADATA:
-      gpr_strvec_add(&b, gpr_strdup("SEND_INITIAL_METADATA"));
-      add_metadata(&b, op->data.send_initial_metadata.metadata,
-                   op->data.send_initial_metadata.count);
+      parts.push_back("SEND_INITIAL_METADATA");
+      add_metadata(op->data.send_initial_metadata.metadata,
+                   op->data.send_initial_metadata.count, &parts);
       break;
     case GRPC_OP_SEND_MESSAGE:
-      gpr_asprintf(&tmp, "SEND_MESSAGE ptr=%p",
-                   op->data.send_message.send_message);
-      gpr_strvec_add(&b, tmp);
+      parts.push_back(absl::StrFormat("SEND_MESSAGE ptr=%p",
+                                      op->data.send_message.send_message));
       break;
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-      gpr_strvec_add(&b, gpr_strdup("SEND_CLOSE_FROM_CLIENT"));
+      parts.push_back("SEND_CLOSE_FROM_CLIENT");
       break;
     case GRPC_OP_SEND_STATUS_FROM_SERVER:
-      gpr_asprintf(&tmp, "SEND_STATUS_FROM_SERVER status=%d details=",
-                   op->data.send_status_from_server.status);
-      gpr_strvec_add(&b, tmp);
+      parts.push_back(
+          absl::StrFormat("SEND_STATUS_FROM_SERVER status=%d details=",
+                          op->data.send_status_from_server.status));
       if (op->data.send_status_from_server.status_details != nullptr) {
-        gpr_strvec_add(&b, grpc_dump_slice(
-                               *op->data.send_status_from_server.status_details,
-                               GPR_DUMP_ASCII));
+        char* dump = grpc_dump_slice(
+            *op->data.send_status_from_server.status_details, GPR_DUMP_ASCII);
+        parts.push_back(dump);
+        gpr_free(dump);
       } else {
-        gpr_strvec_add(&b, gpr_strdup("(null)"));
+        parts.push_back("(null)");
       }
-      add_metadata(&b, op->data.send_status_from_server.trailing_metadata,
-                   op->data.send_status_from_server.trailing_metadata_count);
+      add_metadata(op->data.send_status_from_server.trailing_metadata,
+                   op->data.send_status_from_server.trailing_metadata_count,
+                   &parts);
       break;
     case GRPC_OP_RECV_INITIAL_METADATA:
-      gpr_asprintf(&tmp, "RECV_INITIAL_METADATA ptr=%p",
-                   op->data.recv_initial_metadata.recv_initial_metadata);
-      gpr_strvec_add(&b, tmp);
+      parts.push_back(absl::StrFormat(
+          "RECV_INITIAL_METADATA ptr=%p",
+          op->data.recv_initial_metadata.recv_initial_metadata));
       break;
     case GRPC_OP_RECV_MESSAGE:
-      gpr_asprintf(&tmp, "RECV_MESSAGE ptr=%p",
-                   op->data.recv_message.recv_message);
-      gpr_strvec_add(&b, tmp);
+      parts.push_back(absl::StrFormat("RECV_MESSAGE ptr=%p",
+                                      op->data.recv_message.recv_message));
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
-      gpr_asprintf(&tmp,
-                   "RECV_STATUS_ON_CLIENT metadata=%p status=%p details=%p",
-                   op->data.recv_status_on_client.trailing_metadata,
-                   op->data.recv_status_on_client.status,
-                   op->data.recv_status_on_client.status_details);
-      gpr_strvec_add(&b, tmp);
+      parts.push_back(absl::StrFormat(
+          "RECV_STATUS_ON_CLIENT metadata=%p status=%p details=%p",
+          op->data.recv_status_on_client.trailing_metadata,
+          op->data.recv_status_on_client.status,
+          op->data.recv_status_on_client.status_details));
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
-      gpr_asprintf(&tmp, "RECV_CLOSE_ON_SERVER cancelled=%p",
-                   op->data.recv_close_on_server.cancelled);
-      gpr_strvec_add(&b, tmp);
+      parts.push_back(absl::StrFormat("RECV_CLOSE_ON_SERVER cancelled=%p",
+                                      op->data.recv_close_on_server.cancelled));
   }
-  out = gpr_strvec_flatten(&b, nullptr);
-  gpr_strvec_destroy(&b);
-
-  return out;
+  return absl::StrJoin(parts, "");
 }
 
 void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
-                         grpc_call* call, const grpc_op* ops, size_t nops,
-                         void* tag) {
-  char* tmp;
-  size_t i;
-  for (i = 0; i < nops; i++) {
-    tmp = grpc_op_string(&ops[i]);
-    gpr_log(file, line, severity, "ops[%" PRIuPTR "]: %s", i, tmp);
-    gpr_free(tmp);
+                         const grpc_op* ops, size_t nops) {
+  for (size_t i = 0; i < nops; i++) {
+    gpr_log(file, line, severity, "ops[%" PRIuPTR "]: %s", i,
+            grpc_op_string(&ops[i]).c_str());
   }
 }

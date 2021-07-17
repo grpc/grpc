@@ -24,14 +24,14 @@
 
 #include <grpc/support/log.h>
 
-namespace grpc_impl {
+namespace grpc {
 namespace load_reporter {
 namespace experimental {
 
 void AddLoadReportingCost(grpc::ServerContext* ctx,
-                          const grpc::string& cost_name, double cost_value) {
+                          const std::string& cost_name, double cost_value) {
   if (std::isnormal(cost_value)) {
-    grpc::string buf;
+    std::string buf;
     buf.resize(sizeof(cost_value) + cost_name.size());
     memcpy(&(*buf.begin()), &cost_value, sizeof(cost_value));
     memcpy(&(*buf.begin()) + sizeof(cost_value), cost_name.data(),
@@ -44,4 +44,4 @@ void AddLoadReportingCost(grpc::ServerContext* ctx,
 
 }  // namespace experimental
 }  // namespace load_reporter
-}  // namespace grpc_impl
+}  // namespace grpc

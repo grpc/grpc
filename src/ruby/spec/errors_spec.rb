@@ -14,6 +14,7 @@
 
 require 'spec_helper'
 require 'google/protobuf/well_known_types'
+require 'google/rpc/status_pb'
 require_relative '../pb/src/proto/grpc/testing/messages_pb'
 
 describe GRPC::BadStatus do
@@ -130,7 +131,7 @@ describe GRPC::BadStatus do
 
       error_msg = 'parse error: to_rpc_status failed'
       error_desc = '<Google::Protobuf::ParseError> ' \
-        'Error occurred during parsing: Invalid wire type'
+        'Error occurred during parsing'
 
       # Check that the parse error was logged correctly
       log_contents = @log_output.read

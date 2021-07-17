@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_UDP_SERVER
 
 #include "src/core/lib/iomgr/udp_server.h"
 
@@ -27,6 +27,8 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <vector>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -85,8 +87,8 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
     return false;
   }
 
-  void OnCanWrite(void* user_data,
-                  grpc_closure* notify_on_write_closure) override {
+  void OnCanWrite(void* /*user_data*/,
+                  grpc_closure* /*notify_on_write_closure*/) override {
     gpr_mu_lock(g_mu);
     g_number_of_writes++;
 
@@ -96,10 +98,10 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
   }
 
   void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure,
-                         void* user_data) override {
+                         void* /*user_data*/) override {
     gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
             grpc_fd_wrapped_fd(emfd()));
-    GRPC_CLOSURE_SCHED(orphan_fd_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, orphan_fd_closure, GRPC_ERROR_NONE);
     g_number_of_orphan_calls++;
   }
 
@@ -113,12 +115,12 @@ class TestGrpcUdpHandlerFactory : public GrpcUdpHandlerFactory {
  public:
   GrpcUdpHandler* CreateUdpHandler(grpc_fd* emfd, void* user_data) override {
     gpr_log(GPR_INFO, "create udp handler for fd %d", grpc_fd_wrapped_fd(emfd));
-    return grpc_core::New<TestGrpcUdpHandler>(emfd, user_data);
+    return new TestGrpcUdpHandler(emfd, user_data);
   }
 
   void DestroyUdpHandler(GrpcUdpHandler* handler) override {
     gpr_log(GPR_INFO, "Destroy handler");
-    grpc_core::Delete(reinterpret_cast<TestGrpcUdpHandler*>(handler));
+    delete reinterpret_cast<TestGrpcUdpHandler*>(handler);
   }
 };
 
@@ -170,7 +172,7 @@ static test_socket_factory* test_socket_factory_create(void) {
   return factory;
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
@@ -198,7 +200,8 @@ static void test_no_op_with_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_start");
-  grpc_udp_server_start(s, nullptr, 0, nullptr);
+  std::vector<grpc_pollset*> empty_pollset;
+  grpc_udp_server_start(s, &empty_pollset, nullptr);
   grpc_udp_server_destroy(s, nullptr);
   shutdown_and_destroy_pollset();
 }
@@ -218,7 +221,7 @@ static void test_no_op_with_port(void) {
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
-                                      g_num_listeners));
+                                      g_num_listeners) > 0);
 
   grpc_udp_server_destroy(s, nullptr);
 
@@ -250,7 +253,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
-                                      g_num_listeners));
+                                      g_num_listeners) > 0);
   GPR_ASSERT(socket_factory->number_of_socket_calls == g_num_listeners);
   GPR_ASSERT(socket_factory->number_of_bind_calls == g_num_listeners);
 
@@ -278,9 +281,10 @@ static void test_no_op_with_port_and_start(void) {
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
-                                      g_num_listeners));
+                                      g_num_listeners) > 0);
 
-  grpc_udp_server_start(s, nullptr, 0, nullptr);
+  std::vector<grpc_pollset*> empty_pollset;
+  grpc_udp_server_start(s, &empty_pollset, nullptr);
   GPR_ASSERT(g_number_of_starts == g_num_listeners);
   grpc_udp_server_destroy(s, nullptr);
 
@@ -300,7 +304,6 @@ static void test_receive(int number_of_clients) {
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   int i;
   grpc_millis deadline;
-  grpc_pollset* pollsets[1];
   LOG_TEST("test_receive");
   gpr_log(GPR_INFO, "clients=%d", number_of_clients);
 
@@ -312,7 +315,7 @@ static void test_receive(int number_of_clients) {
   addr->ss_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
-                                      g_num_listeners));
+                                      g_num_listeners) > 0);
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
@@ -320,8 +323,9 @@ static void test_receive(int number_of_clients) {
                          (socklen_t*)&resolved_addr.len) == 0);
   GPR_ASSERT(resolved_addr.len <= sizeof(struct sockaddr_storage));
 
-  pollsets[0] = g_pollset;
-  grpc_udp_server_start(s, pollsets, 1, nullptr);
+  std::vector<grpc_pollset*> test_pollsets;
+  test_pollsets.emplace_back(g_pollset);
+  grpc_udp_server_start(s, &test_pollsets, nullptr);
 
   gpr_mu_lock(g_mu);
 
@@ -383,8 +387,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_UDP_SERVER */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_UDP_SERVER */

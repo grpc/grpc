@@ -66,9 +66,10 @@ class State(_common.ChannelRpcHandler):
                         return _common.ChannelRpcRead(response, None, None,
                                                       None)
                     else:
-                        return _common.ChannelRpcRead(
-                            None, self._trailing_metadata, grpc.StatusCode.OK,
-                            self._details)
+                        return _common.ChannelRpcRead(None,
+                                                      self._trailing_metadata,
+                                                      grpc.StatusCode.OK,
+                                                      self._details)
                 elif self._code is None:
                     if self._responses:
                         response = self._responses.pop(0)

@@ -8,22 +8,18 @@
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://github.com/google/protobuf.git
-	branch = 3.0.x
-[submodule "third_party/gflags"]
-	path = third_party/gflags
-	url = https://github.com/gflags/gflags.git
 [submodule "third_party/googletest"]
 	path = third_party/googletest
 	url = https://github.com/google/googletest.git
-[submodule "third_party/boringssl"]
-	path = third_party/boringssl
-	url = https://github.com/google/boringssl.git
 [submodule "third_party/benchmark"]
 	path = third_party/benchmark
 	url = https://github.com/google/benchmark
 [submodule "third_party/boringssl-with-bazel"]
 	path = third_party/boringssl-with-bazel
 	url = https://github.com/google/boringssl.git
+[submodule "third_party/re2"]
+	path = third_party/re2
+	url = https://github.com/google/re2.git
 [submodule "third_party/cares/cares"]
 	path = third_party/cares/cares
 	url = https://github.com/c-ares/c-ares.git
@@ -33,17 +29,10 @@
 	url = https://github.com/google/bloaty.git
 [submodule "third_party/abseil-cpp"]
 	path = third_party/abseil-cpp
-	url = https://github.com/abseil/abseil-cpp
-[submodule "third_party/libcxxabi"]
-	path = third_party/libcxxabi
-	url = https://github.com/llvm-mirror/libcxxabi.git
-	branch = release_60
-[submodule "third_party/libcxx"]
-	path = third_party/libcxx
-	url = https://github.com/llvm-mirror/libcxx.git
-	branch = release_60
-[submodule "third_party/data-plane-api"]
-	path = third_party/data-plane-api
+	url = https://github.com/abseil/abseil-cpp.git
+	branch = lts_2020_02_25
+[submodule "third_party/envoy-api"]
+	path = third_party/envoy-api
 	url = https://github.com/envoyproxy/data-plane-api.git
 [submodule "third_party/googleapis"]
 	path = third_party/googleapis
@@ -51,6 +40,12 @@
 [submodule "third_party/protoc-gen-validate"]
 	path = third_party/protoc-gen-validate
 	url = https://github.com/envoyproxy/protoc-gen-validate.git
-[submodule "third_party/upb"]
-	path = third_party/upb
-	url = https://github.com/google/upb.git
+[submodule "third_party/udpa"]
+	path = third_party/udpa
+	url = https://github.com/cncf/udpa.git
+[submodule "third_party/libuv"]
+	path = third_party/libuv
+	url = https://github.com/libuv/libuv.git
+[submodule "third_party/opencensus-proto"]
+	path = third_party/opencensus-proto
+	url = https://github.com/census-instrumentation/opencensus-proto.git

@@ -20,7 +20,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RequestCacheEntry : NSObject<NSCopying>
+@interface RequestCacheEntry : NSObject <NSCopying>
 
 @property(readonly, copy, nullable) NSString *path;
 @property(readonly, copy, nullable) id message;
@@ -34,7 +34,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface ResponseCacheEntry : NSObject<NSCopying>
+@interface ResponseCacheEntry : NSObject <NSCopying>
 
 @property(readonly, copy, nullable) NSDate *deadline;
 
@@ -54,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface CacheContext : NSObject<GRPCInterceptorFactory>
+@interface CacheContext : NSObject <GRPCInterceptorFactory>
 
 - (nullable instancetype)init;
 
@@ -68,7 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 - (nullable instancetype)initWithInterceptorManager:
                              (GRPCInterceptorManager *_Nonnull)intercepterManager

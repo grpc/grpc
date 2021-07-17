@@ -47,7 +47,6 @@ before_install:
   - pod --version
   # Recent pods aren't found if we don't explicitly update Cocoapods' repo.
   - pod repo update
-  - brew install gflags
 install:
   - pushd $TEST_PATH
   - pod install

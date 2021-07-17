@@ -4,15 +4,17 @@
 require 'google/protobuf'
 
 Google::Protobuf::DescriptorPool.generated_pool.build do
-  add_message "echo.EchoRequest" do
-    optional :request, :string, 1
-  end
-  add_message "echo.EchoReply" do
-    optional :response, :string, 1
+  add_file("echo.proto", :syntax => :proto3) do
+    add_message "echo.EchoRequest" do
+      optional :request, :string, 1
+    end
+    add_message "echo.EchoReply" do
+      optional :response, :string, 1
+    end
   end
 end
 
 module Echo
-  EchoRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("echo.EchoRequest").msgclass
-  EchoReply = Google::Protobuf::DescriptorPool.generated_pool.lookup("echo.EchoReply").msgclass
+  EchoRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("echo.EchoRequest").msgclass
+  EchoReply = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("echo.EchoReply").msgclass
 end

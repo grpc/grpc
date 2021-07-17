@@ -1,0 +1,85 @@
+# gRPC Bazel BUILD file.
+#
+# Copyright 2019 The gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+
+package(default_testonly = 1)
+
+proto_library(
+    name = "hash_name_proto",
+    srcs = ["hash_name.proto"],
+)
+
+py_proto_library(
+    name = "hash_name_py_pb2",
+    deps = [":hash_name_proto"],
+)
+
+py_grpc_library(
+    name = "hash_name_py_pb2_grpc",
+    srcs = [":hash_name_proto"],
+    deps = [":hash_name_py_pb2"],
+)
+
+py_binary(
+    name = "client",
+    srcs = ["client.py"],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
+    deps = [
+        ":hash_name_py_pb2",
+        ":hash_name_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "@six",
+    ],
+)
+
+py_library(
+    name = "search",
+    srcs = ["search.py"],
+    srcs_version = "PY2AND3",
+    deps = [
+        ":hash_name_py_pb2",
+    ],
+)
+
+py_binary(
+    name = "server",
+    srcs = ["server.py"],
+    python_version = "PY3",
+    srcs_version = "PY2AND3",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        ":hash_name_py_pb2",
+        ":search",
+    ] + select({
+        "//conditions:default": ["@futures//:futures"],
+        "//:python3": [],
+    }),
+)
+
+py_test(
+    name = "test/_cancellation_example_test",
+    size = "small",
+    srcs = ["test/_cancellation_example_test.py"],
+    data = [
+        ":client",
+        ":server",
+    ],
+    python_version = "PY3",
+)

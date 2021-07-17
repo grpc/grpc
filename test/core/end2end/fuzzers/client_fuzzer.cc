@@ -26,22 +26,20 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
 bool leak_check = true;
 
-static void discard_write(grpc_slice slice) {}
+static void discard_write(grpc_slice /*slice*/) {}
 
-static void* tag(int n) { return (void*)static_cast<uintptr_t>(n); }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
-  grpc_core::testing::LeakDetector leak_detector(leak_check);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
@@ -56,7 +54,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_transport* transport =
         grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
@@ -118,7 +116,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
 
     grpc_event ev;
-    while (1) {
+    while (true) {
       grpc_core::ExecCtx::Get()->Flush();
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
@@ -158,6 +156,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_byte_buffer_destroy(response_payload_recv);
     }
   }
-  grpc_shutdown_blocking();
+  grpc_shutdown();
   return 0;
 }

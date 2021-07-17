@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/fuzzer_util.h"
-#include "test/core/util/memory_counters.h"
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
@@ -39,7 +38,7 @@ using grpc_core::testing::input_stream;
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 // Add a random number of target service accounts to client options.
 static void read_target_service_accounts(
@@ -66,7 +65,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     gpr_set_log_function(dont_log);
   }
   gpr_free(grpc_trace_fuzzer);
-  grpc_core::testing::LeakDetector leak_detector(leak_check);
   input_stream inp = {data, data + size};
   grpc_init();
   bool is_on_gcp = grpc_alts_is_running_on_gcp();

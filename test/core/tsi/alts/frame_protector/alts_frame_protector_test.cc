@@ -386,7 +386,7 @@ static void alts_test_do_round_trip_all(bool rekey) {
   gpr_free(bit_array);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   alts_test_do_round_trip_vector_tests();
   alts_test_do_round_trip_all(/*rekey=*/false);
   alts_test_do_round_trip_all(/*rekey=*/true);

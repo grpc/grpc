@@ -31,22 +31,26 @@ grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
   return buffer;
 }
 
-void byte_buffer_to_string(grpc_byte_buffer *buffer, char **out_string,
-                           size_t *out_length) {
+zend_string* byte_buffer_to_zend_string(grpc_byte_buffer *buffer) {
   grpc_byte_buffer_reader reader;
   if (buffer == NULL || !grpc_byte_buffer_reader_init(&reader, buffer)) {
     /* TODO(dgq): distinguish between the error cases. */
-    *out_string = NULL;
-    *out_length = 0;
-    return;
+    return NULL;
   }
 
-  grpc_slice slice = grpc_byte_buffer_reader_readall(&reader);
-  size_t length = GRPC_SLICE_LENGTH(slice);
-  char *string = ecalloc(length + 1, sizeof(char));
-  memcpy(string, GRPC_SLICE_START_PTR(slice), length);
-  grpc_slice_unref(slice);
+  const size_t length = grpc_byte_buffer_length(reader.buffer_out);
+  zend_string* zstr = zend_string_alloc(length, 0);
 
-  *out_string = string;
-  *out_length = length;
+  char* buf = ZSTR_VAL(zstr);
+  grpc_slice next;
+  while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
+    const size_t next_len = GRPC_SLICE_LENGTH(next);
+    memcpy(buf, GRPC_SLICE_START_PTR(next), next_len);
+    buf += next_len;
+    grpc_slice_unref(next);
+  }
+
+  *buf = '\0';
+  
+  return zstr;
 }

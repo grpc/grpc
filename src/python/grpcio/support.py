@@ -28,18 +28,25 @@ int main(int argc, char **argv) { return 0; }
 """
 C_PYTHON_DEV_ERROR_MESSAGE = """
 Could not find <Python.h>. This could mean the following:
-  * You're on Ubuntu and haven't run `apt-get install python-dev`.
-  * You're on RHEL/Fedora and haven't run `yum install python-devel` or
-    `dnf install python-devel` (make sure you also have redhat-rpm-config
+  * You're on Ubuntu and haven't run `apt-get install <PY_REPR>-dev`.
+  * You're on RHEL/Fedora and haven't run `yum install <PY_REPR>-devel` or
+    `dnf install <PY_REPR>-devel` (make sure you also have redhat-rpm-config
     installed)
   * You're on Mac OS X and the usual Python framework was somehow corrupted
     (check your environment variables or try re-installing?)
   * You're on Windows and your Python installation was somehow corrupted
     (check your environment variables or try re-installing?)
 """
+if sys.version_info[0] == 2:
+    PYTHON_REPRESENTATION = 'python'
+elif sys.version_info[0] == 3:
+    PYTHON_REPRESENTATION = 'python3'
+else:
+    raise NotImplementedError('Unsupported Python version: %s' % sys.version)
 
 C_CHECKS = {
-    C_PYTHON_DEV: C_PYTHON_DEV_ERROR_MESSAGE,
+    C_PYTHON_DEV:
+        C_PYTHON_DEV_ERROR_MESSAGE.replace('<PY_REPR>', PYTHON_REPRESENTATION),
 }
 
 
@@ -60,8 +67,8 @@ def _expect_compile(compiler, source_string, error_message):
     if _compile(compiler, source_string) is not None:
         sys.stderr.write(error_message)
         raise commands.CommandError(
-            "Diagnostics found a compilation environment issue:\n{}"
-            .format(error_message))
+            "Diagnostics found a compilation environment issue:\n{}".format(
+                error_message))
 
 
 def diagnose_compile_error(build_ext, error):

@@ -27,7 +27,7 @@
 #include <grpc/support/time.h>
 #include "test/core/end2end/cq_verifier.h"
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
@@ -75,7 +75,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
                                         grpc_end2end_test_fixture* f,
                                         grpc_channel_args* client_args,
                                         grpc_channel_args* server_args,
-                                        long delay_us) {
+                                        long /*delay_us*/) {
   grpc_call* c;
   grpc_call* s;
   cq_verifier* cqv = cq_verifier_create(f->cq);
@@ -169,7 +169,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

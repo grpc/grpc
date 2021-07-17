@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -28,7 +29,7 @@ namespace Routeguide
     /// </summary>
     public static class RouteGuideUtil
     {
-        public const string DefaultFeaturesFile = "route_guide_db.json";
+        public const string DefaultFeaturesResourceName = "RouteGuide.route_guide_db.json";
 
         private const double CoordFactor = 1e7;
 
@@ -90,12 +91,12 @@ namespace Routeguide
         }
 
         /// <summary>
-        /// Parses features from a JSON file.
+        /// Parses features from an embedded resource.
         /// </summary>
-        public static List<Feature> ParseFeatures(string filename)
+        public static List<Feature> LoadFeatures()
         {
             var features = new List<Feature>();
-            var jsonFeatures = JsonConvert.DeserializeObject<List<JsonFeature>>(File.ReadAllText(filename));
+            var jsonFeatures = JsonConvert.DeserializeObject<List<JsonFeature>>(ReadFeaturesFromResource());
 
             foreach(var jsonFeature in jsonFeatures)
             {
@@ -106,6 +107,19 @@ namespace Routeguide
                 });
             }
             return features;
+        }
+
+        private static string ReadFeaturesFromResource()
+        {
+            var stream = typeof(RouteGuideUtil).GetTypeInfo().Assembly.GetManifestResourceStream(DefaultFeaturesResourceName);
+            if (stream == null)
+            {
+                throw new IOException(string.Format("Error loading the embedded resource \"{0}\"", DefaultFeaturesResourceName));
+            }
+            using (var streamReader = new StreamReader(stream))
+            {
+                return streamReader.ReadToEnd();
+            }
         }
 
 #pragma warning disable 0649  // Suppresses "Field 'x' is never assigned to".

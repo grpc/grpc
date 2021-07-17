@@ -22,7 +22,7 @@ syntax = "proto3";
 
 package grpc.testing;
 
-// Reponse message containing the gauge name and value
+// Response message containing the gauge name and value
 message GaugeResponse {
   string name = 1;
   oneof value {

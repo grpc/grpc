@@ -15,6 +15,9 @@
 
 set -ex
 
+# NOTE(rbellevi): We ignore generated code.
+IGNORE_PATTERNS=--ignore-patterns='.*pb2\.py,.*pb2_grpc\.py'
+
 # change to root directory
 cd "$(dirname "$0")/../.."
 
@@ -29,6 +32,7 @@ DIRS=(
 
 TEST_DIRS=(
     'src/python/grpcio_tests/tests'
+    'src/python/grpcio_tests/tests_gevent'
 )
 
 VIRTUALENV=python_pylint_venv
@@ -36,22 +40,24 @@ python3 -m virtualenv $VIRTUALENV -p $(which python3)
 
 PYTHON=$VIRTUALENV/bin/python
 
-$PYTHON -m pip install --upgrade pip==18.1
-$PYTHON -m pip install --upgrade pylint==2.2.2
+$PYTHON -m pip install --upgrade pip==19.3.1
+
+# TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
+$PYTHON -m pip install --upgrade astroid==2.3.3 pylint==2.2.2 "isort>=4.3.0,<5.0.0"
 
 EXIT=0
 for dir in "${DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || EXIT=1
+  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
 done
 
 for dir in "${TEST_DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || EXIT=1
+  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
 done
 
 find examples/python \
   -iname "*.py" \
   -not -name "*_pb2.py" \
   -not -name "*_pb2_grpc.py" \
-  | xargs $PYTHON -m pylint --rcfile=.pylintrc-examples -rn
+  | xargs $PYTHON -m pylint --rcfile=.pylintrc-examples -rn ${IGNORE_PATTERNS}
 
 exit $EXIT

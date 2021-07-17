@@ -1,7 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\Grpc.Core\Common.csproj.include" />
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
     <OutputType>Exe</OutputType>
@@ -10,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Grpc.Reflection/Grpc.Reflection.csproj" />
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

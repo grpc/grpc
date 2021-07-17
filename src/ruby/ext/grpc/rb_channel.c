@@ -34,6 +34,7 @@
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 #include "rb_server.h"
+#include "rb_xds_channel_credentials.h"
 
 /* id_channel is the name of the hidden ivar that preserves a reference to the
  * channel on a call, so that calls are not GCed before their channel.  */
@@ -119,7 +120,7 @@ static void grpc_rb_channel_watch_connection_state_op_complete(
   GPR_ASSERT(!op->op.api_callback_args.called_back);
   op->op.api_callback_args.called_back = 1;
   op->op.api_callback_args.success = success;
-  // wake up the watch API call thats waiting on this op
+  // wake up the watch API call that's waiting on this op
   gpr_cv_broadcast(&global_connection_polling_cv);
 }
 
@@ -242,7 +243,15 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
     ch = grpc_insecure_channel_create(target_chars, &args, NULL);
   } else {
     wrapper->credentials = credentials;
-    creds = grpc_rb_get_wrapped_channel_credentials(credentials);
+    if (grpc_rb_is_channel_credentials(credentials)) {
+      creds = grpc_rb_get_wrapped_channel_credentials(credentials);
+    } else if (grpc_rb_is_xds_channel_credentials(credentials)) {
+      creds = grpc_rb_get_wrapped_xds_channel_credentials(credentials);
+    } else {
+      rb_raise(rb_eTypeError,
+               "bad creds, want ChannelCredentials or XdsChannelCredentials");
+      return Qnil;
+    }
     ch = grpc_secure_channel_create(creds, target_chars, &args, NULL);
   }
 

@@ -15,7 +15,10 @@
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-call tools/internal_ci/helper_scripts/prepare_build_windows.bat
+If Not "%RUN_TESTS_FLAGS%"=="%RUN_TESTS_FLAGS:python=%" (
+    set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+)
+call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 python tools/run_tests/run_tests_matrix.py %RUN_TESTS_FLAGS%
 set RUNTESTS_EXITCODE=%errorlevel%

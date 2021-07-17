@@ -55,6 +55,8 @@ describe GenericService do
       expect(GenericService.underscore('AMethod')).to eq('a_method')
       expect(GenericService.underscore('PrintHTML')).to eq('print_html')
       expect(GenericService.underscore('SeeHTMLBooks')).to eq('see_html_books')
+
+      expect(GenericService.underscore('SeeHTMLBooks'.freeze)).to eq('see_html_books')
     end
   end
 

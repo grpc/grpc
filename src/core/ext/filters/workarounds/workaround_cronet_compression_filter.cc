@@ -54,7 +54,8 @@ static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
 }
 
 // Callback invoked when we receive an initial metadata.
-static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
+static void recv_initial_metadata_ready(void* user_data,
+                                        grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
 
@@ -70,12 +71,13 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
   }
 
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->next_recv_initial_metadata_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 // Start transport stream op.
-static void start_transport_stream_op_batch(
+static void cronet_compression_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
 
@@ -104,8 +106,8 @@ static void start_transport_stream_op_batch(
 }
 
 // Constructor for call_data.
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error_handle cronet_compression_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->next_recv_initial_metadata_ready = nullptr;
   calld->workaround_active = false;
@@ -116,18 +118,19 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 }
 
 // Destructor for call_data.
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {}
+static void cronet_compression_destroy_call_elem(
+    grpc_call_element* /*elem*/, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {}
 
 // Constructor for channel_data.
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error_handle cronet_compression_init_channel_elem(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
 // Destructor for channel_data.
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void cronet_compression_destroy_channel_elem(
+    grpc_channel_element* /*elem*/) {}
 
 // Parse the user agent
 static bool parse_user_agent(grpc_mdelem md) {
@@ -169,20 +172,20 @@ static bool parse_user_agent(grpc_mdelem md) {
 }
 
 const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
-    start_transport_stream_op_batch,
+    cronet_compression_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
+    cronet_compression_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    cronet_compression_destroy_call_elem,
     0,
-    init_channel_elem,
-    destroy_channel_elem,
+    cronet_compression_init_channel_elem,
+    cronet_compression_destroy_channel_elem,
     grpc_channel_next_get_info,
     "workaround_cronet_compression"};
 
 static bool register_workaround_cronet_compression(
-    grpc_channel_stack_builder* builder, void* arg) {
+    grpc_channel_stack_builder* builder, void* /*arg*/) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_arg* a = grpc_channel_args_find(
@@ -190,7 +193,7 @@ static bool register_workaround_cronet_compression(
   if (a == nullptr) {
     return true;
   }
-  if (grpc_channel_arg_get_bool(a, false) == false) {
+  if (!grpc_channel_arg_get_bool(a, false)) {
     return true;
   }
   return grpc_channel_stack_builder_prepend_filter(

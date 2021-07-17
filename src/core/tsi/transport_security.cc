@@ -67,6 +67,19 @@ const char* tsi_result_to_string(tsi_result result) {
   }
 }
 
+const char* tsi_security_level_to_string(tsi_security_level security_level) {
+  switch (security_level) {
+    case TSI_SECURITY_NONE:
+      return "TSI_SECURITY_NONE";
+    case TSI_INTEGRITY_ONLY:
+      return "TSI_INTEGRITY_ONLY";
+    case TSI_PRIVACY_AND_INTEGRITY:
+      return "TSI_PRIVACY_AND_INTEGRITY";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 /* --- tsi_frame_protector common implementation. ---
 
    Calls specific implementation after state/input validation. */
@@ -137,8 +150,9 @@ tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
-  if (self->vtable->get_bytes_to_send_to_peer == nullptr)
+  if (self->vtable->get_bytes_to_send_to_peer == nullptr) {
     return TSI_UNIMPLEMENTED;
+  }
   return self->vtable->get_bytes_to_send_to_peer(self, bytes, bytes_size);
 }
 
@@ -151,8 +165,9 @@ tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
-  if (self->vtable->process_bytes_from_peer == nullptr)
+  if (self->vtable->process_bytes_from_peer == nullptr) {
     return TSI_UNIMPLEMENTED;
+  }
   return self->vtable->process_bytes_from_peer(self, bytes, bytes_size);
 }
 
@@ -179,7 +194,7 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer) {
 }
 
 tsi_result tsi_handshaker_create_frame_protector(
-    tsi_handshaker* self, size_t* max_protected_frame_size,
+    tsi_handshaker* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {
   tsi_result result;
   if (self == nullptr || self->vtable == nullptr || protector == nullptr) {
@@ -189,8 +204,8 @@ tsi_result tsi_handshaker_create_frame_protector(
   if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
   if (tsi_handshaker_get_result(self) != TSI_OK) return TSI_FAILED_PRECONDITION;
   if (self->vtable->create_frame_protector == nullptr) return TSI_UNIMPLEMENTED;
-  result = self->vtable->create_frame_protector(self, max_protected_frame_size,
-                                                protector);
+  result = self->vtable->create_frame_protector(
+      self, max_output_protected_frame_size, protector);
   if (result == TSI_OK) {
     self->frame_protector_created = true;
   }
@@ -237,14 +252,14 @@ tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
 }
 
 tsi_result tsi_handshaker_result_create_frame_protector(
-    const tsi_handshaker_result* self, size_t* max_protected_frame_size,
+    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {
   if (self == nullptr || self->vtable == nullptr || protector == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->vtable->create_frame_protector == nullptr) return TSI_UNIMPLEMENTED;
-  return self->vtable->create_frame_protector(self, max_protected_frame_size,
-                                              protector);
+  return self->vtable->create_frame_protector(
+      self, max_output_protected_frame_size, protector);
 }
 
 tsi_result tsi_handshaker_result_get_unused_bytes(

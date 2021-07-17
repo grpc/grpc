@@ -25,7 +25,7 @@ ZONE=us-central1-b  # this zone allows 32core machines
 LATEST_PERF_WORKER_IMAGE=grpc-performance-kokoro-v5  # update if newer image exists
 
 INSTANCE_NAME="${1:-grpc-kokoro-performance-server}"
-MACHINE_TYPE="${2:-n1-standard-32}"
+MACHINE_TYPE="${2:-e2-standard-32}"
 
 gcloud compute instances create "$INSTANCE_NAME" \
     --project="$CLOUD_PROJECT" \

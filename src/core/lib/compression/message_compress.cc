@@ -34,7 +34,7 @@
 static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
                      grpc_slice_buffer* output,
                      int (*flate)(z_stream* zs, int flush)) {
-  int r;
+  int r = Z_STREAM_END; /* Do not fail on an empty input. */
   int flush;
   size_t i;
   grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
@@ -68,6 +68,10 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
       goto error;
     }
   }
+  if (r != Z_STREAM_END) {
+    gpr_log(GPR_INFO, "zlib: Data error");
+    goto error;
+  }
 
   GPR_ASSERT(outbuf.refcount);
   outbuf.data.refcounted.length -= zs->avail_out;
@@ -80,11 +84,12 @@ error:
   return 0;
 }
 
-static void* zalloc_gpr(void* opaque, unsigned int items, unsigned int size) {
+static void* zalloc_gpr(void* /*opaque*/, unsigned int items,
+                        unsigned int size) {
   return gpr_malloc(items * size);
 }
 
-static void zfree_gpr(void* opaque, void* address) { gpr_free(address); }
+static void zfree_gpr(void* /*opaque*/, void* address) { gpr_free(address); }
 
 static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
                          int gzip) {

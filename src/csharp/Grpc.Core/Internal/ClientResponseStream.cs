@@ -49,8 +49,7 @@ namespace Grpc.Core.Internal
 
         public async Task<bool> MoveNext(CancellationToken token)
         {
-            var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(() => call.Cancel()) : (IDisposable) null;
-            using (cancellationTokenRegistration)
+            using (call.RegisterCancellationCallbackForToken(token))
             {
                 var result = await call.ReadMessageAsync().ConfigureAwait(false);
                 this.current = result;

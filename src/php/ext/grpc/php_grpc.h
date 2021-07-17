@@ -46,6 +46,14 @@ extern zend_module_entry grpc_module_entry;
 #define PHP_GRPC_API
 #endif
 
+#if PHP_MAJOR_VERSION >= 8
+#define TSRMLS_CC
+#define TSRMLS_C
+#define TSRMLS_DC
+#define TSRMLS_D
+#define TSRMLS_FETCH()
+#endif
+
 #ifdef ZTS
 #include "TSRM.h"
 #endif
@@ -68,6 +76,9 @@ ZEND_BEGIN_MODULE_GLOBALS(grpc)
   zend_bool initialized;
   zend_bool enable_fork_support;
   char *poll_strategy;
+  char *grpc_verbosity;
+  char *grpc_trace;
+  char *log_filename;
 ZEND_END_MODULE_GLOBALS(grpc)
 
 ZEND_EXTERN_MODULE_GLOBALS(grpc);

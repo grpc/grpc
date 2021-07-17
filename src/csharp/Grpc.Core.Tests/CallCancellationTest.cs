@@ -178,5 +178,16 @@ namespace Grpc.Core.Tests
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
             }
         }
+
+        [Test]
+        public void CanDisposeDefaultCancellationRegistration()
+        {
+            // prove that we're fine to dispose default CancellationTokenRegistration
+            // values without boxing them to IDisposable for a null-check
+            var obj = default(CancellationTokenRegistration);
+            obj.Dispose();
+
+            using (obj) {}
+        }
     }
 }

@@ -20,6 +20,10 @@
 
 #include <string.h>
 
+#include <string>
+
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -291,16 +295,13 @@ static tsi_peer peer_from_cert_name_test_entry(
   return peer;
 }
 
-char* cert_name_test_entry_to_string(const cert_name_test_entry* entry) {
-  char* s;
-  gpr_asprintf(&s,
-               "{ success = %s, host_name = %s, common_name = %s, dns_names = "
-               "%s, ip_names = %s}",
-               entry->expected ? "true" : "false", entry->host_name,
-               entry->common_name,
-               entry->dns_names != nullptr ? entry->dns_names : "",
-               entry->ip_names != nullptr ? entry->ip_names : "");
-  return s;
+std::string cert_name_test_entry_to_string(const cert_name_test_entry* entry) {
+  return absl::StrFormat(
+      "{ success = %s, host_name = %s, common_name = %s, dns_names = "
+      "%s, ip_names = %s}",
+      entry->expected ? "true" : "false", entry->host_name, entry->common_name,
+      entry->dns_names != nullptr ? entry->dns_names : "",
+      entry->ip_names != nullptr ? entry->ip_names : "");
 }
 
 static void test_peer_matches_name(void) {
@@ -310,9 +311,7 @@ static void test_peer_matches_name(void) {
     tsi_peer peer = peer_from_cert_name_test_entry(entry);
     int result = tsi_ssl_peer_matches_name(&peer, entry->host_name);
     if (result != entry->expected) {
-      char* entry_str = cert_name_test_entry_to_string(entry);
-      gpr_log(GPR_ERROR, "%s", entry_str);
-      gpr_free(entry_str);
+      gpr_log(GPR_ERROR, "%s", cert_name_test_entry_to_string(entry).c_str());
       GPR_ASSERT(0); /* Unexpected result. */
     }
     tsi_peer_destruct(&peer);

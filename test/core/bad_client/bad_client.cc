@@ -53,26 +53,26 @@ static void thd_func(void* arg) {
   if (a->validator != nullptr) {
     a->validator(a->server, a->cq, a->registered_method);
   }
-  gpr_event_set(&a->done_thd, (void*)1);
+  gpr_event_set(&a->done_thd, reinterpret_cast<void*>(1));
 }
 
 /* Sets the done_write event */
-static void set_done_write(void* arg, grpc_error* error) {
+static void set_done_write(void* arg, grpc_error_handle /*error*/) {
   gpr_event* done_write = static_cast<gpr_event*>(arg);
-  gpr_event_set(done_write, (void*)1);
+  gpr_event_set(done_write, reinterpret_cast<void*>(1));
 }
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
-  grpc_server_setup_transport(a->server, transport, nullptr,
-                              grpc_server_get_channel_args(a->server), nullptr);
+  a->server->core_server->SetupTransport(
+      transport, nullptr, a->server->core_server->channel_args(), nullptr);
 }
 
 /* Sets the read_done event */
-static void set_read_done(void* arg, grpc_error* error) {
+static void set_read_done(void* arg, grpc_error_handle /*error*/) {
   gpr_event* read_done = static_cast<gpr_event*>(arg);
-  gpr_event_set(read_done, (void*)1);
+  gpr_event_set(read_done, reinterpret_cast<void*>(1));
 }
 
 /* shutdown client */
@@ -212,14 +212,14 @@ void grpc_run_bad_client_test(
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(nullptr, sfd.server, false);
   server_setup_transport(&a, transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
   /* Bind fds to pollsets */
   grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(client_cq));
   grpc_endpoint_add_to_pollset(sfd.server, grpc_cq_pollset(a.cq));
 
   /* Check a ground truth */
-  GPR_ASSERT(grpc_server_has_open_connections(a.server));
+  GPR_ASSERT(a.server->core_server->HasOpenConnections());
 
   gpr_event_init(&a.done_thd);
   a.validator = server_validator;
@@ -252,7 +252,7 @@ void grpc_run_bad_client_test(
 }
 
 bool client_connection_preface_validator(grpc_slice_buffer* incoming,
-                                         void* arg) {
+                                         void* /*arg*/) {
   if (incoming->count < 1) {
     return false;
   }
@@ -263,10 +263,7 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
   }
   const uint8_t* p = GRPC_SLICE_START_PTR(slice);
   /* Check the frame type (SETTINGS) */
-  if (*(p + 3) != 4) {
-    return false;
-  }
-  return true;
+  return *(p + 3) == 4;
 }
 
 /* connection preface and settings frame to be sent by the client */
@@ -278,7 +275,7 @@ grpc_bad_client_arg connection_preface_arg = {
     client_connection_preface_validator, nullptr,
     CONNECTION_PREFACE_FROM_CLIENT, sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
 
-bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* arg) {
+bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   // Get last frame from incoming slice buffer.
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
@@ -307,11 +304,11 @@ bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* arg) {
   return success;
 }
 
-static void* tag(intptr_t t) { return (void*)t; }
+static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 void server_verifier_request_call(grpc_server* server,
                                   grpc_completion_queue* cq,
-                                  void* registered_method) {
+                                  void* /*registered_method*/) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
