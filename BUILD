@@ -720,7 +720,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_platform",
     language = "c++",
-    pubilc_hdrs = [
+    public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
     ],
 )
@@ -760,6 +760,7 @@ grpc_cc_library(
     name = "overload",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/overload.h"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -769,7 +770,10 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/match.h"],
-    deps = ["overload"],
+    deps = [
+        "gpr_platform",
+        "overload",
+    ],
 )
 
 grpc_cc_library(
