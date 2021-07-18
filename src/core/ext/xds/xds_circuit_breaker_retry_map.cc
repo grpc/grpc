@@ -37,9 +37,8 @@ namespace grpc_core {
 XdsCircuitBreakerRetryMap* g_retry_map = nullptr;
 
 RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter>
-XdsCircuitBreakerRetryMap::GetOrCreate(const std::string& cluster,
-                                       const std::string& eds_service_name) {
-  Key key(cluster, eds_service_name);
+XdsCircuitBreakerRetryMap::GetOrCreate(const std::string& cluster) {
+  Key key(cluster);
   RefCountedPtr<RetryCounter> result;
   MutexLock lock(&g_retry_map->mu_);
   auto it = g_retry_map->map_.find(key);

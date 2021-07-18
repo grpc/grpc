@@ -39,8 +39,7 @@ namespace grpc_core {
 
 class XdsCircuitBreakerRetryMap {
  public:
-  using Key =
-      std::pair<std::string /*cluster*/, std::string /*eds_service_name*/>;
+  using Key = std::string;
 
   class RetryCounter : public RefCounted<RetryCounter> {
    public:
@@ -56,8 +55,7 @@ class XdsCircuitBreakerRetryMap {
     Atomic<uint32_t> concurrent_requests_{0};
   };
 
-  static RefCountedPtr<RetryCounter> GetOrCreate(
-      const std::string& cluster, const std::string& eds_service_name);
+  static RefCountedPtr<RetryCounter> GetOrCreate(const std::string& cluster);
 
   // Global Init and Shutdown
   static void Init();

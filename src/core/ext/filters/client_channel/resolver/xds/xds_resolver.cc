@@ -29,6 +29,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_channel_args.h"
+#include "src/core/ext/xds/xds_circuit_breaker_retry_map.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -141,11 +142,13 @@ class XdsResolver : public Resolver {
     using ClusterStateMap =
         std::map<std::string, WeakRefCountedPtr<ClusterState>>;
 
-    ClusterState(RefCountedPtr<XdsResolver> resolver,
-                 const std::string& cluster_name)
+    ClusterState(
+        RefCountedPtr<XdsResolver> resolver, const std::string& cluster_name,
+        RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter)
         : resolver_(std::move(resolver)),
           it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
-                  .first) {}
+                  .first),
+          retry_counter_(std::move(retry_counter)) {}
 
     void Orphan() override {
       auto* resolver = resolver_.release();
@@ -159,9 +162,15 @@ class XdsResolver : public Resolver {
 
     const std::string& cluster() const { return it_->first; }
 
+    RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter()
+        const {
+      return retry_counter_;
+    }
+
    private:
     RefCountedPtr<XdsResolver> resolver_;
     ClusterStateMap::iterator it_;
+    RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter_;
   };
 
   // Call dispatch controller, created for each call handled by the
@@ -176,12 +185,15 @@ class XdsResolver : public Resolver {
 
     bool ShouldRetry() override {
       // TODO(donnadionne): Implement the retry circuit breaker here.
+      uint32_t current = cluster_state_->retry_counter()->Load();
+      cluster_state_->retry_counter()->Increment();
       return true;
     }
 
     void Commit() override {
       // TODO(donnadionne): If ShouldRetry() was called previously,
       // decrement the retry circuit breaker counter.
+      cluster_state_->retry_counter()->Decrement();
       cluster_state_.reset();
     }
 
@@ -190,6 +202,7 @@ class XdsResolver : public Resolver {
     // so do not add any data members that require destruction unless you have
     // some other way to clean them up.
     RefCountedPtr<ClusterState> cluster_state_;
+    RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -244,6 +257,7 @@ class XdsResolver : public Resolver {
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
     grpc_error_handle filter_error_ = GRPC_ERROR_NONE;
+    RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter_;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
@@ -570,7 +584,9 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (clusters_.find(name) == clusters_.end()) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
-      auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
+      auto new_cluster_state = MakeRefCounted<ClusterState>(
+          resolver_, name,
+          grpc_core::XdsCircuitBreakerRetryMap::GetOrCreate(name));
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
       clusters_[it->second->cluster()] = it->second->Ref();
