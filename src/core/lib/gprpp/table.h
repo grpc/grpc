@@ -15,11 +15,11 @@
 #ifndef GRPC_CORE_LIB_GPRPP_TABLE_H
 #define GRPC_CORE_LIB_GPRPP_TABLE_H
 
-// Portable code. port_platform.h is not required.
+#include <grpc/impl/codegen/port_platform.h>
 
-#include <bitset>
 #include <utility>
 #include "absl/utility/utility.h"
+#include "src/core/lib/gprpp/bitset.h"
 
 namespace grpc_core {
 
@@ -208,7 +208,7 @@ class Table {
   // Check if this table has index I.
   template <size_t I>
       absl::enable_if_t < I<sizeof...(Ts), bool> has() const {
-    return present_bits_[I];
+    return present_bits_.is_set(I);
   }
 
   // Return the value for type T, or nullptr if it is un-set.
@@ -291,7 +291,7 @@ class Table {
  private:
   // Bit field for which elements of the table are set (true) or un-set (false,
   // the default) -- one bit for each type in Ts.
-  using PresentBits = std::bitset<sizeof...(Ts)>;
+  using PresentBits = BitSet<sizeof...(Ts)>;
   // The tuple-like backing structure for Table.
   using Elements = table_detail::Elements<Ts...>;
   // Extractor from Elements
@@ -323,8 +323,8 @@ class Table {
   // transition edges.
   template <size_t I>
   bool set_present(bool value) {
-    bool out = present_bits_[I];
-    present_bits_[I] = value;
+    bool out = present_bits_.is_set(I);
+    present_bits_.set(I, value);
     return out;
   }
 
