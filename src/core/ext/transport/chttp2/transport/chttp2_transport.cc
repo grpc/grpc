@@ -1286,7 +1286,6 @@ static void continue_fetching_send_locked(grpc_chttp2_transport* t,
     if (s->fetching_send_message == nullptr) {
       // Stream was cancelled before message fetch completed
       abort(); /* TODO(ctiller): what cleanup here? */
-      return;  /* early out */
     }
     if (s->fetched_send_message_length == s->fetching_send_message->length()) {
       int64_t notify_offset = s->next_message_end_offset;
