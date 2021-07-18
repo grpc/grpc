@@ -26,6 +26,7 @@
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_max_retries_map.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"

@@ -32,6 +32,7 @@
 #include "src/core/ext/xds/xds_circuit_breaker_retry_map.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_max_retries_map.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -289,6 +290,7 @@ class XdsResolver : public Resolver {
   XdsApi::RdsUpdate::VirtualHost current_virtual_host_;
 
   ClusterState::ClusterStateMap cluster_state_map_;
+  std::map<std::string, uint32_t> cluster_max_retries_map_;
 };
 
 //
