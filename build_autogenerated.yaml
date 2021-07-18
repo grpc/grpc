@@ -3181,6 +3181,7 @@ targets:
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
@@ -4333,6 +4334,7 @@ targets:
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
@@ -5568,6 +5570,7 @@ targets:
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
@@ -6153,6 +6156,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -6234,6 +6238,7 @@ targets:
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
@@ -6753,6 +6758,7 @@ targets:
   - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/examine_stack.h
@@ -7608,6 +7614,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/promise/detail/basic_join.h
   - src/core/lib/promise/detail/promise_factory.h
