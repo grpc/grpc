@@ -83,10 +83,11 @@ class BitSet {
 
   // Set bit i to is_set
   void set(int i, bool is_set) {
-    if (is_set)
+    if (is_set) {
       set(i);
-    else
+    } else {
       clear(i);
+    }
   }
 
   // Set bit i to false
