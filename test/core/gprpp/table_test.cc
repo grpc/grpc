@@ -116,11 +116,8 @@ template <typename T>
 struct TableSizeTest : public ::testing::Test {};
 
 using SizeTests = ::testing::Types<
-std::tuple<char>,
-std::tuple<char,char>,
-std::tuple<char,char,char>,
-	std::tuple<int>,
-	std::tuple<std::string>,
+    std::tuple<char>, std::tuple<char, char>, std::tuple<char, char, char>,
+    std::tuple<int>, std::tuple<std::string>,
     std::tuple<int, int, int, int, int, int, int, int, int, int>>;
 
 TYPED_TEST_SUITE(TableSizeTest, SizeTests);

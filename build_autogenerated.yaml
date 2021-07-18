@@ -6512,6 +6512,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/table.h
   src:
   - test/core/gprpp/table_test.cc
