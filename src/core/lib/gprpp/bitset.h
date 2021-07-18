@@ -102,24 +102,24 @@ class BitSet {
     if (kTotalBits % kUnitBits == 0) {
       // kTotalBits is a multiple of kUnitBits ==> we can just check for all
       // ones in each unit.
-      for (size_t i = 0; i < kUnits; i++) {
-        if (units_[i] != ~Uint<kUnitBits>(0)) return false;
+      for (std::size_t i = 0; i < kUnits; i++) {
+        if (units_[i] != all_ones()) return false;
       }
+      return true;
     } else {
       // kTotalBits is not a multiple of kUnitBits ==> we need special handling
       // for checking partial filling of the last unit (since not all of its
       // bits are used!)
-      for (size_t i = 0; i < kUnits - 1; i++) {
-        if (units_[i] != ~Uint<kUnitBits>(0)) return false;
+      for (std::size_t i = 0; i < kUnits - 1; i++) {
+        if (units_[i] != all_ones()) return false;
       }
-      return units_[kUnits - 1] ==
-             (Uint<kUnitBits>(1) << (kTotalBits % kUnitBits)) - 1;
+      return units_[kUnits - 1] == n_ones(kTotalBits % kUnitBits);
     }
   }
 
   // Return true if *no* bits are set.
   bool none() const {
-    for (size_t i = 0; i < kUnits; i++) {
+    for (std::size_t i = 0; i < kUnits; i++) {
       if (units_[i] != 0) return false;
     }
     return true;
@@ -134,6 +134,16 @@ class BitSet {
   // Given a bit index, return a mask to access that bit within it's unit.
   static constexpr Uint<kUnitBits> mask_for(std::size_t bit) {
     return Uint<kUnitBits>{1} << (bit % kUnitBits);
+  }
+
+  // Return a value that is all ones
+  static constexpr Uint<kUnitBits> all_ones() {
+    return Uint<kUnitBits>(~Uint<kUnitBits>(0));
+  }
+
+  // Return a value with n bottom bits ones
+  static constexpr Uint<kUnitBits> n_ones(std::size_t n) {
+    return n == kUnitBits ? all_ones() : (Uint<kUnitBits>(1) << n) - 1;
   }
 
   // The set of units - kUnitBits sized integers that store kUnitBits bits!
