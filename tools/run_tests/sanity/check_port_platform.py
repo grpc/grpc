@@ -65,7 +65,7 @@ all_bad_files = []
 all_bad_files += check_port_platform_inclusion(os.path.join('src', 'core'))
 all_bad_files += check_port_platform_inclusion(os.path.join('include', 'grpc'))
 
-if sys.argv[1] == '--fix':
+if sys.argv[1:] == ['--fix']:
     for path in all_bad_files:
         text = ''
         found = False
