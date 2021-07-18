@@ -73,6 +73,18 @@ class OpenSslX509InfoStack {
   STACK_OF(X509_INFO) * info_stack_ = nullptr;
 };
 
+// A class for managing openssl `SSL_CTX` structures.
+class OwnedOpenSslTLSConfig {
+ public:
+  explicit OwnedOpenSslTLSConfig(const SSL_METHOD* method);
+
+  ~OwnedOpenSslTLSConfig();
+
+  SSL_CTX* get_config() { return ssl_ctx_; }
+
+ private:
+  SSL_CTX * ssl_ctx_ = nullptr;
+};
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_TSI_OPENSSL_UTILS_H

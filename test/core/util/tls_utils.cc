@@ -15,13 +15,11 @@
 //
 
 #include "test/core/util/tls_utils.h"
-#include "src/core/lib/security/credentials/tls/tls_utils.h"
-#include "src/core/tsi/openssl_utils.h"
 
-#include "openssl/pem.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/tsi/openssl_utils.h"
 
 namespace grpc_core {
 
