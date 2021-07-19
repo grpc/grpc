@@ -30,30 +30,30 @@ package(
 )
 
 load(
-    "//bazel:grpc_build_system.bzl",
-    "grpc_cc_library",
-    "grpc_generate_one_off_targets",
-    "grpc_upb_proto_library",
+    "//bazel:bobs-rpc_build_system.bzl",
+    "bobs-rpc_cc_library",
+    "bobs-rpc_generate_one_off_targets",
+    "bobs-rpc_upb_proto_library",
     "python_config_settings",
 )
 
 config_setting(
-    name = "grpc_no_ares",
-    values = {"define": "grpc_no_ares=true"},
+    name = "bobs-rpc_no_ares",
+    values = {"define": "bobs-rpc_no_ares=true"},
 )
 
 config_setting(
-    name = "grpc_no_xds",
-    values = {"define": "grpc_no_xds=true"},
+    name = "bobs-rpc_no_xds",
+    values = {"define": "bobs-rpc_no_xds=true"},
 )
 
 config_setting(
-    name = "grpc_allow_exceptions",
+    name = "bobs-rpc_allow_exceptions",
     values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
 )
 
 config_setting(
-    name = "grpc_disallow_exceptions",
+    name = "bobs-rpc_disallow_exceptions",
     values = {"define": "GRPC_ALLOW_EXCEPTIONS=0"},
 )
 
@@ -92,53 +92,53 @@ core_version = "18.0.0"  # @unused
 version = "1.40.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
-    "include/grpc/support/alloc.h",
-    "include/grpc/support/atm.h",
-    "include/grpc/support/atm_gcc_atomic.h",
-    "include/grpc/support/atm_gcc_sync.h",
-    "include/grpc/support/atm_windows.h",
-    "include/grpc/support/cpu.h",
-    "include/grpc/support/log.h",
-    "include/grpc/support/log_windows.h",
-    "include/grpc/support/port_platform.h",
-    "include/grpc/support/string_util.h",
-    "include/grpc/support/sync.h",
-    "include/grpc/support/sync_abseil.h",
-    "include/grpc/support/sync_custom.h",
-    "include/grpc/support/sync_generic.h",
-    "include/grpc/support/sync_posix.h",
-    "include/grpc/support/sync_windows.h",
-    "include/grpc/support/thd_id.h",
-    "include/grpc/support/time.h",
+    "include/bobs-rpc/support/alloc.h",
+    "include/bobs-rpc/support/atm.h",
+    "include/bobs-rpc/support/atm_gcc_atomic.h",
+    "include/bobs-rpc/support/atm_gcc_sync.h",
+    "include/bobs-rpc/support/atm_windows.h",
+    "include/bobs-rpc/support/cpu.h",
+    "include/bobs-rpc/support/log.h",
+    "include/bobs-rpc/support/log_windows.h",
+    "include/bobs-rpc/support/port_platform.h",
+    "include/bobs-rpc/support/string_util.h",
+    "include/bobs-rpc/support/sync.h",
+    "include/bobs-rpc/support/sync_abseil.h",
+    "include/bobs-rpc/support/sync_custom.h",
+    "include/bobs-rpc/support/sync_generic.h",
+    "include/bobs-rpc/support/sync_posix.h",
+    "include/bobs-rpc/support/sync_windows.h",
+    "include/bobs-rpc/support/thd_id.h",
+    "include/bobs-rpc/support/time.h",
 ]
 
 GRPC_PUBLIC_HDRS = [
-    "include/grpc/byte_buffer.h",
-    "include/grpc/byte_buffer_reader.h",
-    "include/grpc/compression.h",
-    "include/grpc/fork.h",
-    "include/grpc/grpc.h",
-    "include/grpc/grpc_posix.h",
-    "include/grpc/grpc_security_constants.h",
-    "include/grpc/slice.h",
-    "include/grpc/slice_buffer.h",
-    "include/grpc/status.h",
-    "include/grpc/load_reporting.h",
-    "include/grpc/support/workaround_list.h",
+    "include/bobs-rpc/byte_buffer.h",
+    "include/bobs-rpc/byte_buffer_reader.h",
+    "include/bobs-rpc/compression.h",
+    "include/bobs-rpc/fork.h",
+    "include/bobs-rpc/bobs-rpc.h",
+    "include/bobs-rpc/bobs-rpc_posix.h",
+    "include/bobs-rpc/bobs-rpc_security_constants.h",
+    "include/bobs-rpc/slice.h",
+    "include/bobs-rpc/slice_buffer.h",
+    "include/bobs-rpc/status.h",
+    "include/bobs-rpc/load_reporting.h",
+    "include/bobs-rpc/support/workaround_list.h",
 ]
 
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
-    "include/grpc/event_engine/endpoint_config.h",
-    "include/grpc/event_engine/event_engine.h",
-    "include/grpc/event_engine/port.h",
-    "include/grpc/event_engine/slice_allocator.h",
+    "include/bobs-rpc/event_engine/endpoint_config.h",
+    "include/bobs-rpc/event_engine/event_engine.h",
+    "include/bobs-rpc/event_engine/port.h",
+    "include/bobs-rpc/event_engine/slice_allocator.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
-    "include/grpc/grpc_security.h",
+    "include/bobs-rpc/bobs-rpc_security.h",
 ]
 
-# TODO(ctiller): layer grpc atop grpc_unsecure, layer grpc++ atop grpc++_unsecure
+# TODO(ctiller): layer bobs-rpc atop bobs-rpc_unsecure, layer bobs-rpc++ atop bobs-rpc++_unsecure
 GRPCXX_SRCS = [
     "src/cpp/client/channel_cc.cc",
     "src/cpp/client/client_callback.cc",
@@ -189,195 +189,195 @@ GRPCXX_HDRS = [
 ]
 
 GRPCXX_PUBLIC_HDRS = [
-    "include/grpc++/alarm.h",
-    "include/grpc++/channel.h",
-    "include/grpc++/client_context.h",
-    "include/grpc++/completion_queue.h",
-    "include/grpc++/create_channel.h",
-    "include/grpc++/create_channel_posix.h",
-    "include/grpc++/ext/health_check_service_server_builder_option.h",
-    "include/grpc++/generic/async_generic_service.h",
-    "include/grpc++/generic/generic_stub.h",
-    "include/grpc++/grpc++.h",
-    "include/grpc++/health_check_service_interface.h",
-    "include/grpc++/impl/call.h",
-    "include/grpc++/impl/channel_argument_option.h",
-    "include/grpc++/impl/client_unary_call.h",
-    "include/grpc++/impl/codegen/core_codegen.h",
-    "include/grpc++/impl/grpc_library.h",
-    "include/grpc++/impl/method_handler_impl.h",
-    "include/grpc++/impl/rpc_method.h",
-    "include/grpc++/impl/rpc_service_method.h",
-    "include/grpc++/impl/serialization_traits.h",
-    "include/grpc++/impl/server_builder_option.h",
-    "include/grpc++/impl/server_builder_plugin.h",
-    "include/grpc++/impl/server_initializer.h",
-    "include/grpc++/impl/service_type.h",
-    "include/grpc++/security/auth_context.h",
-    "include/grpc++/resource_quota.h",
-    "include/grpc++/security/auth_metadata_processor.h",
-    "include/grpc++/security/credentials.h",
-    "include/grpc++/security/server_credentials.h",
-    "include/grpc++/server.h",
-    "include/grpc++/server_builder.h",
-    "include/grpc++/server_context.h",
-    "include/grpc++/server_posix.h",
-    "include/grpc++/support/async_stream.h",
-    "include/grpc++/support/async_unary_call.h",
-    "include/grpc++/support/byte_buffer.h",
-    "include/grpc++/support/channel_arguments.h",
-    "include/grpc++/support/config.h",
-    "include/grpc++/support/slice.h",
-    "include/grpc++/support/status.h",
-    "include/grpc++/support/status_code_enum.h",
-    "include/grpc++/support/string_ref.h",
-    "include/grpc++/support/stub_options.h",
-    "include/grpc++/support/sync_stream.h",
-    "include/grpc++/support/time.h",
-    "include/grpcpp/alarm.h",
-    "include/grpcpp/channel.h",
-    "include/grpcpp/client_context.h",
-    "include/grpcpp/completion_queue.h",
-    "include/grpcpp/create_channel.h",
-    "include/grpcpp/create_channel_posix.h",
-    "include/grpcpp/ext/health_check_service_server_builder_option.h",
-    "include/grpcpp/generic/async_generic_service.h",
-    "include/grpcpp/generic/generic_stub.h",
-    "include/grpcpp/grpcpp.h",
-    "include/grpcpp/health_check_service_interface.h",
-    "include/grpcpp/impl/call.h",
-    "include/grpcpp/impl/channel_argument_option.h",
-    "include/grpcpp/impl/client_unary_call.h",
-    "include/grpcpp/impl/codegen/core_codegen.h",
-    "include/grpcpp/impl/grpc_library.h",
-    "include/grpcpp/impl/method_handler_impl.h",
-    "include/grpcpp/impl/rpc_method.h",
-    "include/grpcpp/impl/rpc_service_method.h",
-    "include/grpcpp/impl/serialization_traits.h",
-    "include/grpcpp/impl/server_builder_option.h",
-    "include/grpcpp/impl/server_builder_plugin.h",
-    "include/grpcpp/impl/server_initializer.h",
-    "include/grpcpp/impl/service_type.h",
-    "include/grpcpp/resource_quota.h",
-    "include/grpcpp/security/auth_context.h",
-    "include/grpcpp/security/auth_metadata_processor.h",
-    "include/grpcpp/security/credentials.h",
-    "include/grpcpp/security/server_credentials.h",
-    "include/grpcpp/security/tls_certificate_provider.h",
-    "include/grpcpp/security/authorization_policy_provider.h",
-    "include/grpcpp/security/tls_credentials_options.h",
-    "include/grpcpp/server.h",
-    "include/grpcpp/server_builder.h",
-    "include/grpcpp/server_context.h",
-    "include/grpcpp/server_posix.h",
-    "include/grpcpp/support/async_stream.h",
-    "include/grpcpp/support/async_unary_call.h",
-    "include/grpcpp/support/byte_buffer.h",
-    "include/grpcpp/support/channel_arguments.h",
-    "include/grpcpp/support/client_callback.h",
-    "include/grpcpp/support/client_interceptor.h",
-    "include/grpcpp/support/config.h",
-    "include/grpcpp/support/interceptor.h",
-    "include/grpcpp/support/message_allocator.h",
-    "include/grpcpp/support/method_handler.h",
-    "include/grpcpp/support/proto_buffer_reader.h",
-    "include/grpcpp/support/proto_buffer_writer.h",
-    "include/grpcpp/support/server_callback.h",
-    "include/grpcpp/support/server_interceptor.h",
-    "include/grpcpp/support/slice.h",
-    "include/grpcpp/support/status.h",
-    "include/grpcpp/support/status_code_enum.h",
-    "include/grpcpp/support/string_ref.h",
-    "include/grpcpp/support/stub_options.h",
-    "include/grpcpp/support/sync_stream.h",
-    "include/grpcpp/support/time.h",
-    "include/grpcpp/support/validate_service_config.h",
+    "include/bobs-rpc++/alarm.h",
+    "include/bobs-rpc++/channel.h",
+    "include/bobs-rpc++/client_context.h",
+    "include/bobs-rpc++/completion_queue.h",
+    "include/bobs-rpc++/create_channel.h",
+    "include/bobs-rpc++/create_channel_posix.h",
+    "include/bobs-rpc++/ext/health_check_service_server_builder_option.h",
+    "include/bobs-rpc++/generic/async_generic_service.h",
+    "include/bobs-rpc++/generic/generic_stub.h",
+    "include/bobs-rpc++/bobs-rpc++.h",
+    "include/bobs-rpc++/health_check_service_interface.h",
+    "include/bobs-rpc++/impl/call.h",
+    "include/bobs-rpc++/impl/channel_argument_option.h",
+    "include/bobs-rpc++/impl/client_unary_call.h",
+    "include/bobs-rpc++/impl/codegen/core_codegen.h",
+    "include/bobs-rpc++/impl/bobs-rpc_library.h",
+    "include/bobs-rpc++/impl/method_handler_impl.h",
+    "include/bobs-rpc++/impl/rpc_method.h",
+    "include/bobs-rpc++/impl/rpc_service_method.h",
+    "include/bobs-rpc++/impl/serialization_traits.h",
+    "include/bobs-rpc++/impl/server_builder_option.h",
+    "include/bobs-rpc++/impl/server_builder_plugin.h",
+    "include/bobs-rpc++/impl/server_initializer.h",
+    "include/bobs-rpc++/impl/service_type.h",
+    "include/bobs-rpc++/security/auth_context.h",
+    "include/bobs-rpc++/resource_quota.h",
+    "include/bobs-rpc++/security/auth_metadata_processor.h",
+    "include/bobs-rpc++/security/credentials.h",
+    "include/bobs-rpc++/security/server_credentials.h",
+    "include/bobs-rpc++/server.h",
+    "include/bobs-rpc++/server_builder.h",
+    "include/bobs-rpc++/server_context.h",
+    "include/bobs-rpc++/server_posix.h",
+    "include/bobs-rpc++/support/async_stream.h",
+    "include/bobs-rpc++/support/async_unary_call.h",
+    "include/bobs-rpc++/support/byte_buffer.h",
+    "include/bobs-rpc++/support/channel_arguments.h",
+    "include/bobs-rpc++/support/config.h",
+    "include/bobs-rpc++/support/slice.h",
+    "include/bobs-rpc++/support/status.h",
+    "include/bobs-rpc++/support/status_code_enum.h",
+    "include/bobs-rpc++/support/string_ref.h",
+    "include/bobs-rpc++/support/stub_options.h",
+    "include/bobs-rpc++/support/sync_stream.h",
+    "include/bobs-rpc++/support/time.h",
+    "include/bobs-rpcpp/alarm.h",
+    "include/bobs-rpcpp/channel.h",
+    "include/bobs-rpcpp/client_context.h",
+    "include/bobs-rpcpp/completion_queue.h",
+    "include/bobs-rpcpp/create_channel.h",
+    "include/bobs-rpcpp/create_channel_posix.h",
+    "include/bobs-rpcpp/ext/health_check_service_server_builder_option.h",
+    "include/bobs-rpcpp/generic/async_generic_service.h",
+    "include/bobs-rpcpp/generic/generic_stub.h",
+    "include/bobs-rpcpp/bobs-rpcpp.h",
+    "include/bobs-rpcpp/health_check_service_interface.h",
+    "include/bobs-rpcpp/impl/call.h",
+    "include/bobs-rpcpp/impl/channel_argument_option.h",
+    "include/bobs-rpcpp/impl/client_unary_call.h",
+    "include/bobs-rpcpp/impl/codegen/core_codegen.h",
+    "include/bobs-rpcpp/impl/bobs-rpc_library.h",
+    "include/bobs-rpcpp/impl/method_handler_impl.h",
+    "include/bobs-rpcpp/impl/rpc_method.h",
+    "include/bobs-rpcpp/impl/rpc_service_method.h",
+    "include/bobs-rpcpp/impl/serialization_traits.h",
+    "include/bobs-rpcpp/impl/server_builder_option.h",
+    "include/bobs-rpcpp/impl/server_builder_plugin.h",
+    "include/bobs-rpcpp/impl/server_initializer.h",
+    "include/bobs-rpcpp/impl/service_type.h",
+    "include/bobs-rpcpp/resource_quota.h",
+    "include/bobs-rpcpp/security/auth_context.h",
+    "include/bobs-rpcpp/security/auth_metadata_processor.h",
+    "include/bobs-rpcpp/security/credentials.h",
+    "include/bobs-rpcpp/security/server_credentials.h",
+    "include/bobs-rpcpp/security/tls_certificate_provider.h",
+    "include/bobs-rpcpp/security/authorization_policy_provider.h",
+    "include/bobs-rpcpp/security/tls_credentials_options.h",
+    "include/bobs-rpcpp/server.h",
+    "include/bobs-rpcpp/server_builder.h",
+    "include/bobs-rpcpp/server_context.h",
+    "include/bobs-rpcpp/server_posix.h",
+    "include/bobs-rpcpp/support/async_stream.h",
+    "include/bobs-rpcpp/support/async_unary_call.h",
+    "include/bobs-rpcpp/support/byte_buffer.h",
+    "include/bobs-rpcpp/support/channel_arguments.h",
+    "include/bobs-rpcpp/support/client_callback.h",
+    "include/bobs-rpcpp/support/client_interceptor.h",
+    "include/bobs-rpcpp/support/config.h",
+    "include/bobs-rpcpp/support/interceptor.h",
+    "include/bobs-rpcpp/support/message_allocator.h",
+    "include/bobs-rpcpp/support/method_handler.h",
+    "include/bobs-rpcpp/support/proto_buffer_reader.h",
+    "include/bobs-rpcpp/support/proto_buffer_writer.h",
+    "include/bobs-rpcpp/support/server_callback.h",
+    "include/bobs-rpcpp/support/server_interceptor.h",
+    "include/bobs-rpcpp/support/slice.h",
+    "include/bobs-rpcpp/support/status.h",
+    "include/bobs-rpcpp/support/status_code_enum.h",
+    "include/bobs-rpcpp/support/string_ref.h",
+    "include/bobs-rpcpp/support/stub_options.h",
+    "include/bobs-rpcpp/support/sync_stream.h",
+    "include/bobs-rpcpp/support/time.h",
+    "include/bobs-rpcpp/support/validate_service_config.h",
 ]
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "gpr",
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     standalone = True,
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
         "gpr_base",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_unsecure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_unsecure",
     srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
         "src/core/lib/surface/init.cc",
         "src/core/lib/surface/init_unsecure.cc",
-        "src/core/plugin_registry/grpc_unsecure_plugin_registry.cc",
+        "src/core/plugin_registry/bobs-rpc_unsecure_plugin_registry.cc",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     standalone = True,
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_common",
-        "grpc_lb_policy_grpclb",
-        "grpc_trace",
+        "bobs-rpc_base_c",
+        "bobs-rpc_common",
+        "bobs-rpc_lb_policy_bobs-rpclb",
+        "bobs-rpc_trace",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc",
+bobs-rpc_cc_library(
+    name = "bobs-rpc",
     srcs = [
         "src/core/lib/surface/init.cc",
-        "src/core/plugin_registry/grpc_plugin_registry.cc",
+        "src/core/plugin_registry/bobs-rpc_plugin_registry.cc",
     ],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
+        "bobs-rpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     select_deps = {
-        "grpc_no_xds": [],
+        "bobs-rpc_no_xds": [],
         "//conditions:default": [
-            "grpc_lb_policy_cds",
-            "grpc_lb_policy_xds_cluster_impl",
-            "grpc_lb_policy_xds_cluster_manager",
-            "grpc_lb_policy_xds_cluster_resolver",
-            "grpc_resolver_xds",
-            "grpc_resolver_c2p",
-            "grpc_xds_server_config_fetcher",
+            "bobs-rpc_lb_policy_cds",
+            "bobs-rpc_lb_policy_xds_cluster_impl",
+            "bobs-rpc_lb_policy_xds_cluster_manager",
+            "bobs-rpc_lb_policy_xds_cluster_resolver",
+            "bobs-rpc_resolver_xds",
+            "bobs-rpc_resolver_c2p",
+            "bobs-rpc_xds_server_config_fetcher",
         ],
     },
     standalone = True,
     visibility = [
-        "@grpc:public",
+        "@bobs-rpc:public",
     ],
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_common",
-        "grpc_lb_policy_grpclb_secure",
-        "grpc_secure",
-        "grpc_trace",
-        "grpc_transport_chttp2_client_secure",
-        "grpc_transport_chttp2_server_secure",
+        "bobs-rpc_base_c",
+        "bobs-rpc_common",
+        "bobs-rpc_lb_policy_bobs-rpclb_secure",
+        "bobs-rpc_secure",
+        "bobs-rpc_trace",
+        "bobs-rpc_transport_chttp2_client_secure",
+        "bobs-rpc_transport_chttp2_server_secure",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_public_hdrs",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
     external_deps = [
         "absl/synchronization",
         "protobuf_headers",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
 )
 
-grpc_cc_library(
-    name = "grpc++",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++",
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
@@ -387,23 +387,23 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
-        "grpc_no_xds": [],
+        "bobs-rpc_no_xds": [],
         "//conditions:default": [
-            "grpc++_xds_client",
-            "grpc++_xds_server",
+            "bobs-rpc++_xds_client",
+            "bobs-rpc++_xds_server",
         ],
     },
     standalone = True,
     visibility = [
-        "@grpc:public",
+        "@bobs-rpc:public",
     ],
     deps = [
-        "grpc++_internals",
+        "bobs-rpc++_internals",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_internals",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_internals",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
@@ -433,20 +433,20 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "gpr_base",
-        "grpc",
-        "grpc++_base",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
-        "grpc++_codegen_proto",
-        "grpc_base_c",
-        "grpc_codegen",
-        "grpc_secure",
+        "bobs-rpc",
+        "bobs-rpc++_base",
+        "bobs-rpc++_codegen_base",
+        "bobs-rpc++_codegen_base_src",
+        "bobs-rpc++_codegen_proto",
+        "bobs-rpc_base_c",
+        "bobs-rpc_codegen",
+        "bobs-rpc_secure",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_xds_client",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_xds_client",
     srcs = [
         "src/cpp/client/xds_credentials.cc",
     ],
@@ -458,12 +458,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "grpc++_internals",
+        "bobs-rpc++_internals",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_xds_server",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_xds_server",
     srcs = [
         "src/cpp/server/xds_server_credentials.cc",
     ],
@@ -472,16 +472,16 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpcpp/xds_server_builder.h",
+        "include/bobs-rpcpp/xds_server_builder.h",
     ],
-    visibility = ["@grpc:xds"],
+    visibility = ["@bobs-rpc:xds"],
     deps = [
-        "grpc++_internals",
+        "bobs-rpc++_internals",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_unsecure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_unsecure",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
@@ -489,91 +489,91 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
         "gpr",
-        "grpc++_base_unsecure",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
-        "grpc++_codegen_proto",
-        "grpc_unsecure",
+        "bobs-rpc++_base_unsecure",
+        "bobs-rpc++_codegen_base",
+        "bobs-rpc++_codegen_base_src",
+        "bobs-rpc++_codegen_proto",
+        "bobs-rpc_unsecure",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_error_details",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_error_details",
     srcs = [
         "src/cpp/util/error_details.cc",
     ],
     hdrs = [
-        "include/grpc++/support/error_details.h",
-        "include/grpcpp/support/error_details.h",
+        "include/bobs-rpc++/support/error_details.h",
+        "include/bobs-rpcpp/support/error_details.h",
     ],
     language = "c++",
     standalone = True,
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
-        "grpc++",
+        "bobs-rpc++",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_alts",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_alts",
     srcs = [
         "src/cpp/common/alts_context.cc",
         "src/cpp/common/alts_util.cc",
     ],
     hdrs = [
-        "include/grpcpp/security/alts_context.h",
-        "include/grpcpp/security/alts_util.h",
+        "include/bobs-rpcpp/security/alts_context.h",
+        "include/bobs-rpcpp/security/alts_util.h",
     ],
     external_deps = [
         "upb_lib",
     ],
     language = "c++",
     standalone = True,
-    visibility = ["@grpc:tsi"],
+    visibility = ["@bobs-rpc:tsi"],
     deps = [
         "alts_upb",
         "alts_util",
         "gpr_base",
-        "grpc++",
+        "bobs-rpc++",
         "tsi",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_csharp_ext",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_csharp_ext",
     srcs = [
-        "src/csharp/ext/grpc_csharp_ext.c",
+        "src/csharp/ext/bobs-rpc_csharp_ext.c",
     ],
     language = "csharp",
     deps = [
         "gpr",
-        "grpc",
+        "bobs-rpc",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "census",
     srcs = [
-        "src/core/ext/filters/census/grpc_context.cc",
+        "src/core/ext/filters/census/bobs-rpc_context.cc",
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpc/census.h",
+        "include/bobs-rpc/census.h",
     ],
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_trace",
+        "bobs-rpc_base_c",
+        "bobs-rpc_trace",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_internal_hdrs_only",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_internal_hdrs_only",
     hdrs = [
-        "include/grpcpp/impl/codegen/sync.h",
+        "include/bobs-rpcpp/impl/codegen/sync.h",
     ],
     external_deps = [
         "absl/synchronization",
@@ -584,7 +584,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -683,52 +683,52 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
-    visibility = ["@grpc:alt_gpr_base_legacy"],
+    visibility = ["@bobs-rpc:alt_gpr_base_legacy"],
     deps = [
         "debug_location",
         "google_api_upb",
         "gpr_codegen",
-        "grpc_codegen",
+        "bobs-rpc_codegen",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "gpr_codegen",
     language = "c++",
     public_hdrs = [
-        "include/grpc/impl/codegen/atm.h",
-        "include/grpc/impl/codegen/atm_gcc_atomic.h",
-        "include/grpc/impl/codegen/atm_gcc_sync.h",
-        "include/grpc/impl/codegen/atm_windows.h",
-        "include/grpc/impl/codegen/fork.h",
-        "include/grpc/impl/codegen/gpr_slice.h",
-        "include/grpc/impl/codegen/gpr_types.h",
-        "include/grpc/impl/codegen/log.h",
-        "include/grpc/impl/codegen/port_platform.h",
-        "include/grpc/impl/codegen/sync.h",
-        "include/grpc/impl/codegen/sync_abseil.h",
-        "include/grpc/impl/codegen/sync_custom.h",
-        "include/grpc/impl/codegen/sync_generic.h",
-        "include/grpc/impl/codegen/sync_posix.h",
-        "include/grpc/impl/codegen/sync_windows.h",
+        "include/bobs-rpc/impl/codegen/atm.h",
+        "include/bobs-rpc/impl/codegen/atm_gcc_atomic.h",
+        "include/bobs-rpc/impl/codegen/atm_gcc_sync.h",
+        "include/bobs-rpc/impl/codegen/atm_windows.h",
+        "include/bobs-rpc/impl/codegen/fork.h",
+        "include/bobs-rpc/impl/codegen/gpr_slice.h",
+        "include/bobs-rpc/impl/codegen/gpr_types.h",
+        "include/bobs-rpc/impl/codegen/log.h",
+        "include/bobs-rpc/impl/codegen/port_platform.h",
+        "include/bobs-rpc/impl/codegen/sync.h",
+        "include/bobs-rpc/impl/codegen/sync_abseil.h",
+        "include/bobs-rpc/impl/codegen/sync_custom.h",
+        "include/bobs-rpc/impl/codegen/sync_generic.h",
+        "include/bobs-rpc/impl/codegen/sync_posix.h",
+        "include/bobs-rpc/impl/codegen/sync_windows.h",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
 )
 
-grpc_cc_library(
-    name = "grpc_trace",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_trace",
     srcs = ["src/core/lib/debug/trace.cc"],
     hdrs = ["src/core/lib/debug/trace.h"],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
-    visibility = ["@grpc:trace"],
+    visibility = ["@bobs-rpc:trace"],
     deps = [
         "gpr",
-        "grpc_codegen",
+        "bobs-rpc_codegen",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "atomic",
     language = "c++",
     public_hdrs = [
@@ -739,20 +739,20 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "debug_location",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
-    visibility = ["@grpc:debug_location"],
+    visibility = ["@bobs-rpc:debug_location"],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "overload",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/overload.h"],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "match",
     external_deps = [
         "absl/types:variant",
@@ -762,21 +762,21 @@ grpc_cc_library(
     deps = ["overload"],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
-    visibility = ["@grpc:client_channel"],
+    visibility = ["@bobs-rpc:client_channel"],
     deps = [
         "debug_location",
         "gpr_base",
-        "grpc_trace",
+        "bobs-rpc_trace",
         "ref_counted",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
@@ -784,12 +784,12 @@ grpc_cc_library(
         "atomic",
         "debug_location",
         "gpr_base",
-        "grpc_trace",
+        "bobs-rpc_trace",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "dual_ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/dual_ref_counted.h"],
@@ -797,24 +797,24 @@ grpc_cc_library(
         "atomic",
         "debug_location",
         "gpr_base",
-        "grpc_trace",
+        "bobs-rpc_trace",
         "orphanable",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "ref_counted_ptr",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted_ptr.h"],
-    visibility = ["@grpc:ref_counted_ptr"],
+    visibility = ["@bobs-rpc:ref_counted_ptr"],
     deps = [
         "gpr_base",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_base_c",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/address_utils/sockaddr_utils.cc",
@@ -882,8 +882,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/gethostname_fallback.cc",
         "src/core/lib/iomgr/gethostname_host_name_max.cc",
         "src/core/lib/iomgr/gethostname_sysconf.cc",
-        "src/core/lib/iomgr/grpc_if_nametoindex_posix.cc",
-        "src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc",
+        "src/core/lib/iomgr/bobs-rpc_if_nametoindex_posix.cc",
+        "src/core/lib/iomgr/bobs-rpc_if_nametoindex_unsupported.cc",
         "src/core/lib/iomgr/internal_errqueue.cc",
         "src/core/lib/iomgr/iocp_windows.cc",
         "src/core/lib/iomgr/iomgr.cc",
@@ -1050,7 +1050,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
-        "src/core/lib/iomgr/grpc_if_nametoindex.h",
+        "src/core/lib/iomgr/bobs-rpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
@@ -1152,65 +1152,65 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
-    visibility = ["@grpc:alt_grpc_base_legacy"],
+    visibility = ["@bobs-rpc:alt_bobs-rpc_base_legacy"],
     deps = [
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
-        "grpc_codegen",
-        "grpc_trace",
+        "bobs-rpc_codegen",
+        "bobs-rpc_trace",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_base",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_base",
     srcs = [
         "src/core/lib/surface/lame_client.cc",
     ],
     language = "c++",
-    visibility = ["@grpc:alt_grpc_base_legacy"],
+    visibility = ["@bobs-rpc:alt_bobs-rpc_base_legacy"],
     deps = [
         "atomic",
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_common",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_common",
     language = "c++",
     deps = [
-        "grpc_base",
+        "bobs-rpc_base",
         # standard plugins
         "census",
-        "grpc_deadline_filter",
-        "grpc_client_authority_filter",
-        "grpc_lb_policy_pick_first",
-        "grpc_lb_policy_priority",
-        "grpc_lb_policy_ring_hash",
-        "grpc_lb_policy_round_robin",
-        "grpc_lb_policy_weighted_target",
-        "grpc_client_idle_filter",
-        "grpc_max_age_filter",
-        "grpc_message_size_filter",
-        "grpc_resolver_dns_ares",
-        "grpc_resolver_fake",
-        "grpc_resolver_dns_native",
-        "grpc_resolver_sockaddr",
-        "grpc_transport_chttp2_client_insecure",
-        "grpc_transport_chttp2_server_insecure",
-        "grpc_transport_inproc",
-        "grpc_fault_injection_filter",
-        "grpc_workaround_cronet_compression_filter",
-        "grpc_server_backward_compatibility",
+        "bobs-rpc_deadline_filter",
+        "bobs-rpc_client_authority_filter",
+        "bobs-rpc_lb_policy_pick_first",
+        "bobs-rpc_lb_policy_priority",
+        "bobs-rpc_lb_policy_ring_hash",
+        "bobs-rpc_lb_policy_round_robin",
+        "bobs-rpc_lb_policy_weighted_target",
+        "bobs-rpc_client_idle_filter",
+        "bobs-rpc_max_age_filter",
+        "bobs-rpc_message_size_filter",
+        "bobs-rpc_resolver_dns_ares",
+        "bobs-rpc_resolver_fake",
+        "bobs-rpc_resolver_dns_native",
+        "bobs-rpc_resolver_sockaddr",
+        "bobs-rpc_transport_chttp2_client_insecure",
+        "bobs-rpc_transport_chttp2_server_insecure",
+        "bobs-rpc_transport_inproc",
+        "bobs-rpc_fault_injection_filter",
+        "bobs-rpc_workaround_cronet_compression_filter",
+        "bobs-rpc_server_backward_compatibility",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_client_channel",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backend_metric.cc",
         "src/core/ext/filters/client_channel/backup_poller.cc",
@@ -1287,15 +1287,15 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
-    visibility = ["@grpc:client_channel"],
+    visibility = ["@bobs-rpc:client_channel"],
     deps = [
         "debug_location",
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_authority_filter",
-        "grpc_deadline_filter",
-        "grpc_health_upb",
-        "grpc_trace",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_authority_filter",
+        "bobs-rpc_deadline_filter",
+        "bobs-rpc_health_upb",
+        "bobs-rpc_trace",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -1303,20 +1303,20 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_client_idle_filter",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_client_idle_filter",
     srcs = [
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_max_age_filter",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_max_age_filter",
     srcs = [
         "src/core/ext/filters/max_age/max_age_filter.cc",
     ],
@@ -1326,12 +1326,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_deadline_filter",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_deadline_filter",
     srcs = [
         "src/core/ext/filters/deadline/deadline_filter.cc",
     ],
@@ -1341,12 +1341,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_client_authority_filter",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_client_authority_filter",
     srcs = [
         "src/core/ext/filters/http/client_authority_filter.cc",
     ],
@@ -1356,12 +1356,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_message_size_filter",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_message_size_filter",
     srcs = [
         "src/core/ext/filters/message_size/message_size_filter.cc",
     ],
@@ -1372,16 +1372,16 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_codegen",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_codegen",
         "ref_counted",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_fault_injection_filter",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_fault_injection_filter",
     srcs = [
         "src/core/ext/filters/fault_injection/fault_injection_filter.cc",
         "src/core/ext/filters/fault_injection/service_config_parser.cc",
@@ -1394,13 +1394,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_http_filters",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_http_filters",
     srcs = [
         "src/core/ext/filters/http/client/http_client_filter.cc",
         "src/core/ext/filters/http/http_filters_plugin.cc",
@@ -1422,13 +1422,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_message_size_filter",
+        "bobs-rpc_base_c",
+        "bobs-rpc_message_size_filter",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_workaround_cronet_compression_filter",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_workaround_cronet_compression_filter",
     srcs = [
         "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc",
     ],
@@ -1438,62 +1438,62 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_server_backward_compatibility",
+        "bobs-rpc_base_c",
+        "bobs-rpc_server_backward_compatibility",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_codegen",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_codegen",
     language = "c++",
     public_hdrs = [
-        "include/grpc/impl/codegen/byte_buffer.h",
-        "include/grpc/impl/codegen/byte_buffer_reader.h",
-        "include/grpc/impl/codegen/compression_types.h",
-        "include/grpc/impl/codegen/connectivity_state.h",
-        "include/grpc/impl/codegen/grpc_types.h",
-        "include/grpc/impl/codegen/propagation_bits.h",
-        "include/grpc/impl/codegen/status.h",
-        "include/grpc/impl/codegen/slice.h",
+        "include/bobs-rpc/impl/codegen/byte_buffer.h",
+        "include/bobs-rpc/impl/codegen/byte_buffer_reader.h",
+        "include/bobs-rpc/impl/codegen/compression_types.h",
+        "include/bobs-rpc/impl/codegen/connectivity_state.h",
+        "include/bobs-rpc/impl/codegen/bobs-rpc_types.h",
+        "include/bobs-rpc/impl/codegen/propagation_bits.h",
+        "include/bobs-rpc/impl/codegen/status.h",
+        "include/bobs-rpc/impl/codegen/slice.h",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
         "gpr_codegen",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_grpclb_balancer_addresses",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_bobs-rpclb_balancer_addresses",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_balancer_addresses.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_balancer_addresses.h",
     ],
     language = "c++",
-    visibility = ["@grpc:grpclb"],
+    visibility = ["@bobs-rpc:bobs-rpclb"],
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_grpclb",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_bobs-rpclb",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/client_load_reporting_filter.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_channel.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_client_stats.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/load_balancer_api.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/client_load_reporting_filter.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_channel.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_client_stats.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/load_balancer_api.h",
     ],
     external_deps = [
         "absl/memory",
@@ -1506,32 +1506,32 @@ grpc_cc_library(
     deps = [
         "google_api_upb",
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_grpclb_balancer_addresses",
-        "grpc_lb_upb",
-        "grpc_resolver_fake",
-        "grpc_transport_chttp2_client_insecure",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_bobs-rpclb_balancer_addresses",
+        "bobs-rpc_lb_upb",
+        "bobs-rpc_resolver_fake",
+        "bobs-rpc_transport_chttp2_client_insecure",
         "orphanable",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_grpclb_secure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_bobs-rpclb_secure",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/client_load_reporting_filter.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_channel_secure.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_client_stats.cc",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/load_balancer_api.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/client_load_reporting_filter.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_channel.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_client_stats.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/load_balancer_api.h",
     ],
     external_deps = [
         "absl/memory",
@@ -1544,20 +1544,20 @@ grpc_cc_library(
     deps = [
         "google_api_upb",
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_grpclb_balancer_addresses",
-        "grpc_lb_upb",
-        "grpc_resolver_fake",
-        "grpc_secure",
-        "grpc_transport_chttp2_client_secure",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_bobs-rpclb_balancer_addresses",
+        "bobs-rpc_lb_upb",
+        "bobs-rpc_resolver_fake",
+        "bobs-rpc_secure",
+        "bobs-rpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_xds_client",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_xds_client",
     srcs = [
         "src/core/ext/xds/certificate_provider_registry.cc",
         "src/core/ext/xds/certificate_provider_store.cc",
@@ -1608,14 +1608,14 @@ grpc_cc_library(
         "google_api_upb",
         "gpr_base",
         "gpr_codegen",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_codegen",
-        "grpc_fault_injection_filter",
-        "grpc_lb_xds_channel_args",
-        "grpc_matchers",
-        "grpc_secure",
-        "grpc_transport_chttp2_client_secure",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_codegen",
+        "bobs-rpc_fault_injection_filter",
+        "bobs-rpc_lb_xds_channel_args",
+        "bobs-rpc_matchers",
+        "bobs-rpc_secure",
+        "bobs-rpc_transport_chttp2_client_secure",
         "orphanable",
         "ref_counted_ptr",
         "udpa_type_upb",
@@ -1623,8 +1623,8 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_xds_server_config_fetcher",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_xds_server_config_fetcher",
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
     ],
@@ -1634,13 +1634,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_xds_client",
+        "bobs-rpc_base_c",
+        "bobs-rpc_xds_client",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_google_mesh_ca_certificate_provider_factory",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_google_mesh_ca_certificate_provider_factory",
     srcs = [
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc",
     ],
@@ -1653,13 +1653,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_xds_client",
+        "bobs-rpc_base_c",
+        "bobs-rpc_xds_client",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_cds",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_cds",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
     ],
@@ -1669,38 +1669,38 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_xds_client",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_xds_client",
         "orphanable",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_xds_channel_args",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_xds_channel_args",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
     ],
     language = "c++",
 )
 
-grpc_cc_library(
-    name = "grpc_lb_xds_common",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_xds_common",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
     ],
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_xds_client",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_xds_client",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_xds_cluster_resolver",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_xds_cluster_resolver",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
     ],
@@ -1711,21 +1711,21 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_lb_address_filtering",
-        "grpc_lb_policy_ring_hash",
-        "grpc_lb_xds_channel_args",
-        "grpc_lb_xds_common",
-        "grpc_resolver_fake",
-        "grpc_xds_client",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_lb_address_filtering",
+        "bobs-rpc_lb_policy_ring_hash",
+        "bobs-rpc_lb_xds_channel_args",
+        "bobs-rpc_lb_xds_common",
+        "bobs-rpc_resolver_fake",
+        "bobs-rpc_xds_client",
         "orphanable",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_xds_cluster_impl",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_xds_cluster_impl",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc",
     ],
@@ -1735,18 +1735,18 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_lb_xds_channel_args",
-        "grpc_lb_xds_common",
-        "grpc_xds_client",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_lb_xds_channel_args",
+        "bobs-rpc_lb_xds_common",
+        "bobs-rpc_xds_client",
         "orphanable",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_xds_cluster_manager",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_xds_cluster_manager",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
     ],
@@ -1757,17 +1757,17 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_resolver_xds_header",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_resolver_xds_header",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_address_filtering",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_address_filtering",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/address_filtering.cc",
     ],
@@ -1780,40 +1780,40 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_subchannel_list",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_subchannel_list",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_pick_first",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_pick_first",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
     ],
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_lb_subchannel_list",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_lb_subchannel_list",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_ring_hash",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_ring_hash",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc",
     ],
@@ -1827,32 +1827,32 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_lb_subchannel_list",
-        "grpc_trace",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_lb_subchannel_list",
+        "bobs-rpc_trace",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_round_robin",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_round_robin",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
     ],
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_lb_subchannel_list",
-        "grpc_trace",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_lb_subchannel_list",
+        "bobs-rpc_trace",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_priority",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_priority",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/priority/priority.cc",
     ],
@@ -1863,16 +1863,16 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_lb_address_filtering",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_lb_address_filtering",
         "orphanable",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_lb_policy_weighted_target",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_policy_weighted_target",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
@@ -1883,15 +1883,15 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_lb_address_filtering",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_lb_address_filtering",
         "orphanable",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "lb_server_load_reporting_filter",
     srcs = [
         "src/core/ext/filters/load_reporting/server_load_reporting_filter.cc",
@@ -1909,14 +1909,14 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr",
-        "grpc++_base",
-        "grpc_base_c",
-        "grpc_secure",
+        "bobs-rpc++_base",
+        "bobs-rpc_base_c",
+        "bobs-rpc_secure",
     ],
     alwayslink = 1,
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "lb_load_data_store",
     srcs = [
         "src/cpp/server/load_reporter/load_data_store.cc",
@@ -1929,12 +1929,12 @@ grpc_cc_library(
     deps = [
         "gpr",
         "gpr_codegen",
-        "grpc++",
-        "grpc_base_c",
+        "bobs-rpc++",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "lb_server_load_reporting_service_server_builder_plugin",
     srcs = [
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.cc",
@@ -1945,20 +1945,20 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr",
-        "grpc++",
+        "bobs-rpc++",
         "lb_load_reporter_service",
     ],
 )
 
-grpc_cc_library(
-    name = "grpcpp_server_load_reporting",
+bobs-rpc_cc_library(
+    name = "bobs-rpcpp_server_load_reporting",
     srcs = [
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.cc",
         "src/cpp/server/load_reporter/util.cc",
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpcpp/ext/server_load_reporting.h",
+        "include/bobs-rpcpp/ext/server_load_reporting.h",
     ],
     deps = [
         "gpr",
@@ -1968,7 +1968,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "lb_load_reporter_service",
     srcs = [
         "src/cpp/server/load_reporter/load_reporter_async_service_impl.cc",
@@ -1984,7 +1984,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "lb_get_cpu_stats",
     srcs = [
         "src/cpp/server/load_reporter/get_cpu_stats_linux.cc",
@@ -1998,11 +1998,11 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc++",
+        "bobs-rpc++",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "lb_load_reporter",
     srcs = [
         "src/cpp/server/load_reporter/load_reporter.cc",
@@ -2021,12 +2021,12 @@ grpc_cc_library(
         "gpr_codegen",
         "lb_get_cpu_stats",
         "lb_load_data_store",
-        "//src/proto/grpc/lb/v1:load_reporter_proto",
+        "//src/proto/bobs-rpc/lb/v1:load_reporter_proto",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_resolver_dns_selection",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_resolver_dns_selection",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
     ],
@@ -2036,12 +2036,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_resolver_dns_native",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_resolver_dns_native",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
     ],
@@ -2051,29 +2051,29 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_resolver_dns_selection",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_resolver_dns_selection",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_resolver_dns_ares",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_resolver_dns_ares",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_ev_driver_event_engine.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_ev_driver_libuv.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_ev_driver_posix.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_ev_driver_windows.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_wrapper.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_wrapper_event_engine.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_wrapper_libuv.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_wrapper_posix.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_wrapper_windows.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_ev_driver.h",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/bobs-rpc_ares_wrapper.h",
     ],
     external_deps = [
         "absl/strings",
@@ -2085,15 +2085,15 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_grpclb_balancer_addresses",
-        "grpc_resolver_dns_selection",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_bobs-rpclb_balancer_addresses",
+        "bobs-rpc_resolver_dns_selection",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_resolver_sockaddr",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_resolver_sockaddr",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
     ],
@@ -2103,37 +2103,37 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_resolver_fake",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_resolver_fake",
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     language = "c++",
     visibility = [
         "//test:__subpackages__",
-        "@grpc:grpc_resolver_fake",
+        "@bobs-rpc:bobs-rpc_resolver_fake",
     ],
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_resolver_xds_header",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_resolver_xds_header",
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
     ],
     language = "c++",
 )
 
-grpc_cc_library(
-    name = "grpc_resolver_xds",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_resolver_xds",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
@@ -2145,15 +2145,15 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_lb_policy_ring_hash",
-        "grpc_xds_client",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_lb_policy_ring_hash",
+        "bobs-rpc_xds_client",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_resolver_c2p",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_resolver_c2p",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
     ],
@@ -2161,14 +2161,14 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_xds_client",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_xds_client",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_secure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
         "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
@@ -2195,9 +2195,9 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
-        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
+        "src/core/lib/security/credentials/tls/bobs-rpc_tls_certificate_distributor.cc",
+        "src/core/lib/security/credentials/tls/bobs-rpc_tls_certificate_provider.cc",
+        "src/core/lib/security/credentials/tls/bobs-rpc_tls_credentials_options.cc",
         "src/core/lib/security/credentials/tls/tls_credentials.cc",
         "src/core/lib/security/credentials/tls/tls_utils.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
@@ -2220,7 +2220,7 @@ grpc_cc_library(
         "src/core/lib/surface/init_secure.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
+        "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/authorization_policy_provider.h",
@@ -2244,9 +2244,9 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h",
-        "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h",
-        "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h",
+        "src/core/lib/security/credentials/tls/bobs-rpc_tls_certificate_distributor.h",
+        "src/core/lib/security/credentials/tls/bobs-rpc_tls_certificate_provider.h",
+        "src/core/lib/security/credentials/tls/bobs-rpc_tls_credentials_options.h",
         "src/core/lib/security/credentials/tls/tls_credentials.h",
         "src/core/lib/security/credentials/tls/tls_utils.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
@@ -2276,17 +2276,17 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
         "alts_util",
         "gpr_base",
-        "grpc_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_codegen",
-        "grpc_lb_xds_channel_args",
-        "grpc_trace",
-        "grpc_transport_chttp2_alpn",
+        "bobs-rpc_base",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_codegen",
+        "bobs-rpc_lb_xds_channel_args",
+        "bobs-rpc_trace",
+        "bobs-rpc_transport_chttp2_alpn",
         "ref_counted",
         "ref_counted_ptr",
         "tsi",
@@ -2294,8 +2294,8 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_mock_cel",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_mock_cel",
     hdrs = [
         "src/core/lib/security/authorization/mock_cel/activation.h",
         "src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h",
@@ -2307,13 +2307,13 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "google_api_upb",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-# This target depends on RE2 and should not be linked into grpc by default for binary-size reasons.
-grpc_cc_library(
-    name = "grpc_matchers",
+# This target depends on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
+bobs-rpc_cc_library(
+    name = "bobs-rpc_matchers",
     srcs = [
         "src/core/lib/matchers/matchers.cc",
     ],
@@ -2329,20 +2329,20 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
-grpc_cc_library(
-    name = "grpc_rbac_engine",
+# This target pulls in a dependency on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
+bobs-rpc_cc_library(
+    name = "bobs-rpc_rbac_engine",
     srcs = [
-        "src/core/lib/security/authorization/grpc_authorization_engine.cc",
+        "src/core/lib/security/authorization/bobs-rpc_authorization_engine.cc",
         "src/core/lib/security/authorization/matchers.cc",
         "src/core/lib/security/authorization/rbac_policy.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/grpc_authorization_engine.h",
+        "src/core/lib/security/authorization/bobs-rpc_authorization_engine.h",
         "src/core/lib/security/authorization/matchers.h",
         "src/core/lib/security/authorization/rbac_policy.h",
     ],
@@ -2353,21 +2353,21 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_matchers",
-        "grpc_secure",
+        "bobs-rpc_base_c",
+        "bobs-rpc_matchers",
+        "bobs-rpc_secure",
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
-grpc_cc_library(
-    name = "grpc_authorization_provider",
+# This target pulls in a dependency on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
+bobs-rpc_cc_library(
+    name = "bobs-rpc_authorization_provider",
     srcs = [
-        "src/core/lib/security/authorization/grpc_authorization_policy_provider.cc",
+        "src/core/lib/security/authorization/bobs-rpc_authorization_policy_provider.cc",
         "src/core/lib/security/authorization/rbac_translator.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/grpc_authorization_policy_provider.h",
+        "src/core/lib/security/authorization/bobs-rpc_authorization_policy_provider.h",
         "src/core/lib/security/authorization/rbac_translator.h",
     ],
     external_deps = [
@@ -2377,15 +2377,15 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_matchers",
-        "grpc_rbac_engine",
-        "grpc_secure",
+        "bobs-rpc_matchers",
+        "bobs-rpc_rbac_engine",
+        "bobs-rpc_secure",
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
-grpc_cc_library(
-    name = "grpc++_authorization_provider",
+# This target pulls in a dependency on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_authorization_provider",
     srcs = [
         "src/cpp/server/authorization_policy_provider.cc",
     ],
@@ -2397,14 +2397,14 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "gpr_base",
-        "grpc++_codegen_base",
-        "grpc_authorization_provider",
+        "bobs-rpc++_codegen_base",
+        "bobs-rpc_authorization_provider",
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
-grpc_cc_library(
-    name = "grpc_cel_engine",
+# This target pulls in a dependency on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
+bobs-rpc_cc_library(
+    name = "bobs-rpc_cel_engine",
     srcs = [
         "src/core/lib/security/authorization/cel_authorization_engine.cc",
     ],
@@ -2420,14 +2420,14 @@ grpc_cc_library(
         "envoy_ads_upb",
         "google_api_upb",
         "gpr_base",
-        "grpc_base_c",
-        "grpc_mock_cel",
-        "grpc_rbac_engine",
+        "bobs-rpc_base_c",
+        "bobs-rpc_mock_cel",
+        "bobs-rpc_rbac_engine",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_chttp2",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
@@ -2481,18 +2481,18 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    visibility = ["@grpc:grpclb"],
+    visibility = ["@bobs-rpc:bobs-rpclb"],
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_http_filters",
-        "grpc_trace",
-        "grpc_transport_chttp2_alpn",
+        "bobs-rpc_base_c",
+        "bobs-rpc_http_filters",
+        "bobs-rpc_trace",
+        "bobs-rpc_transport_chttp2_alpn",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_chttp2_alpn",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_chttp2_alpn",
     srcs = [
         "src/core/ext/transport/chttp2/alpn/alpn.cc",
     ],
@@ -2505,8 +2505,8 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_chttp2_client_connector",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_chttp2_client_connector",
     srcs = [
         "src/core/ext/transport/chttp2/client/authority.cc",
         "src/core/ext/transport/chttp2/client/chttp2_connector.cc",
@@ -2518,14 +2518,14 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_transport_chttp2",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_transport_chttp2",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_chttp2_client_insecure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_chttp2_client_insecure",
     srcs = [
         "src/core/ext/transport/chttp2/client/insecure/channel_create.cc",
         "src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc",
@@ -2533,31 +2533,31 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_transport_chttp2",
-        "grpc_transport_chttp2_client_connector",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_transport_chttp2",
+        "bobs-rpc_transport_chttp2_client_connector",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_chttp2_client_secure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_chttp2_client_secure",
     srcs = [
         "src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc",
     ],
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_secure",
-        "grpc_transport_chttp2",
-        "grpc_transport_chttp2_client_connector",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_secure",
+        "bobs-rpc_transport_chttp2",
+        "bobs-rpc_transport_chttp2_client_connector",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_chttp2_server",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_chttp2_server",
     srcs = [
         "src/core/ext/transport/chttp2/server/chttp2_server.cc",
     ],
@@ -2571,17 +2571,17 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_codegen",
-        "grpc_http_filters",
-        "grpc_transport_chttp2",
+        "bobs-rpc_base_c",
+        "bobs-rpc_codegen",
+        "bobs-rpc_http_filters",
+        "bobs-rpc_transport_chttp2",
         "ref_counted",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_chttp2_server_insecure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_chttp2_server_insecure",
     srcs = [
         "src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc",
         "src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc",
@@ -2592,14 +2592,14 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_transport_chttp2",
-        "grpc_transport_chttp2_server",
+        "bobs-rpc_base_c",
+        "bobs-rpc_transport_chttp2",
+        "bobs-rpc_transport_chttp2_server",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_chttp2_server_secure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_chttp2_server_secure",
     srcs = [
         "src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc",
     ],
@@ -2609,16 +2609,16 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_secure",
-        "grpc_transport_chttp2",
-        "grpc_transport_chttp2_server",
+        "bobs-rpc_base_c",
+        "bobs-rpc_secure",
+        "bobs-rpc_transport_chttp2",
+        "bobs-rpc_transport_chttp2_server",
         "ref_counted_ptr",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_transport_inproc",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_transport_inproc",
     srcs = [
         "src/core/ext/transport/inproc/inproc_plugin.cc",
         "src/core/ext/transport/inproc/inproc_transport.cc",
@@ -2629,12 +2629,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
-        "grpc_trace",
+        "bobs-rpc_base_c",
+        "bobs-rpc_trace",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "tsi_interface",
     srcs = [
         "src/core/tsi/transport_security.cc",
@@ -2644,14 +2644,14 @@ grpc_cc_library(
         "src/core/tsi/transport_security_interface.h",
     ],
     language = "c++",
-    visibility = ["@grpc:tsi_interface"],
+    visibility = ["@bobs-rpc:tsi_interface"],
     deps = [
         "gpr",
-        "grpc_trace",
+        "bobs-rpc_trace",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "alts_frame_protector",
     srcs = [
         "src/core/tsi/alts/crypt/aes_gcm.cc",
@@ -2663,11 +2663,11 @@ grpc_cc_library(
         "src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc",
         "src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc",
         "src/core/tsi/alts/frame_protector/frame_handler.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_bobs-rpc_integrity_only_record_protocol.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_bobs-rpc_privacy_integrity_record_protocol.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_bobs-rpc_record_protocol_common.cc",
         "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_bobs-rpc_protector.cc",
     ],
     hdrs = [
         "src/core/tsi/alts/crypt/gsec.h",
@@ -2676,42 +2676,42 @@ grpc_cc_library(
         "src/core/tsi/alts/frame_protector/alts_frame_protector.h",
         "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h",
         "src/core/tsi/alts/frame_protector/frame_handler.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_bobs-rpc_integrity_only_record_protocol.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_bobs-rpc_privacy_integrity_record_protocol.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_bobs-rpc_record_protocol.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_bobs-rpc_record_protocol_common.h",
         "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h",
-        "src/core/tsi/transport_security_grpc.h",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_bobs-rpc_protector.h",
+        "src/core/tsi/transport_security_bobs-rpc.h",
     ],
     external_deps = [
         "libssl",
         "libcrypto",
     ],
     language = "c++",
-    visibility = ["@grpc:alts_frame_protector"],
+    visibility = ["@bobs-rpc:alts_frame_protector"],
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
         "tsi_interface",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "alts_util",
     srcs = [
         "src/core/lib/security/credentials/alts/check_gcp_environment.cc",
         "src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc",
         "src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc",
         "src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc",
-        "src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc",
-        "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc",
-        "src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc",
+        "src/core/lib/security/credentials/alts/bobs-rpc_alts_credentials_client_options.cc",
+        "src/core/lib/security/credentials/alts/bobs-rpc_alts_credentials_options.cc",
+        "src/core/lib/security/credentials/alts/bobs-rpc_alts_credentials_server_options.cc",
         "src/core/tsi/alts/handshaker/transport_security_common_api.cc",
     ],
     hdrs = [
         "src/core/lib/security/credentials/alts/check_gcp_environment.h",
-        "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h",
+        "src/core/lib/security/credentials/alts/bobs-rpc_alts_credentials_options.h",
         "src/core/tsi/alts/handshaker/transport_security_common_api.h",
     ],
     external_deps = [
@@ -2719,15 +2719,15 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
-    visibility = ["@grpc:tsi"],
+    visibility = ["@bobs-rpc:tsi"],
     deps = [
         "alts_upb",
         "gpr",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
@@ -2740,7 +2740,7 @@ grpc_cc_library(
         "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
         "src/core/tsi/ssl_transport_security.cc",
-        "src/core/tsi/transport_security_grpc.cc",
+        "src/core/tsi/transport_security_bobs-rpc.cc",
     ],
     hdrs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.h",
@@ -2754,7 +2754,7 @@ grpc_cc_library(
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",
         "src/core/tsi/ssl_types.h",
-        "src/core/tsi/transport_security_grpc.h",
+        "src/core/tsi/transport_security_bobs-rpc.h",
     ],
     external_deps = [
         "libssl",
@@ -2763,19 +2763,19 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
-    visibility = ["@grpc:tsi"],
+    visibility = ["@bobs-rpc:tsi"],
     deps = [
         "alts_frame_protector",
         "alts_util",
         "gpr_base",
-        "grpc_base_c",
-        "grpc_transport_chttp2_client_insecure",
+        "bobs-rpc_base_c",
+        "bobs-rpc_transport_chttp2_client_insecure",
         "tsi_interface",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_base",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_base",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
     external_deps = [
@@ -2786,25 +2786,25 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    visibility = ["@grpc:alt_grpc++_base_legacy"],
+    visibility = ["@bobs-rpc:alt_bobs-rpc++_base_legacy"],
     deps = [
         "gpr_base",
-        "grpc",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
-        "grpc++_internal_hdrs_only",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_codegen",
-        "grpc_health_upb",
-        "grpc_trace",
-        "grpc_transport_inproc",
+        "bobs-rpc",
+        "bobs-rpc++_codegen_base",
+        "bobs-rpc++_codegen_base_src",
+        "bobs-rpc++_internal_hdrs_only",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_codegen",
+        "bobs-rpc_health_upb",
+        "bobs-rpc_trace",
+        "bobs-rpc_transport_inproc",
         "ref_counted",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_base_unsecure",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_base_unsecure",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
     external_deps = [
@@ -2815,155 +2815,155 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
+    visibility = ["@bobs-rpc:alt_bobs-rpc++_base_unsecure_legacy"],
     deps = [
         "gpr_base",
-        "grpc++_codegen_base",
-        "grpc++_codegen_base_src",
-        "grpc++_internal_hdrs_only",
-        "grpc_base_c",
-        "grpc_client_channel",
-        "grpc_codegen",
-        "grpc_health_upb",
-        "grpc_trace",
-        "grpc_transport_inproc",
-        "grpc_unsecure",
+        "bobs-rpc++_codegen_base",
+        "bobs-rpc++_codegen_base_src",
+        "bobs-rpc++_internal_hdrs_only",
+        "bobs-rpc_base_c",
+        "bobs-rpc_client_channel",
+        "bobs-rpc_codegen",
+        "bobs-rpc_health_upb",
+        "bobs-rpc_trace",
+        "bobs-rpc_transport_inproc",
+        "bobs-rpc_unsecure",
         "ref_counted",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_codegen_base",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_codegen_base",
     language = "c++",
     public_hdrs = [
-        "include/grpc++/impl/codegen/async_stream.h",
-        "include/grpc++/impl/codegen/async_unary_call.h",
-        "include/grpc++/impl/codegen/byte_buffer.h",
-        "include/grpc++/impl/codegen/call_hook.h",
-        "include/grpc++/impl/codegen/call.h",
-        "include/grpc++/impl/codegen/channel_interface.h",
-        "include/grpc++/impl/codegen/client_context.h",
-        "include/grpc++/impl/codegen/client_unary_call.h",
-        "include/grpc++/impl/codegen/completion_queue_tag.h",
-        "include/grpc++/impl/codegen/completion_queue.h",
-        "include/grpc++/impl/codegen/config.h",
-        "include/grpc++/impl/codegen/core_codegen_interface.h",
-        "include/grpc++/impl/codegen/create_auth_context.h",
-        "include/grpc++/impl/codegen/grpc_library.h",
-        "include/grpc++/impl/codegen/metadata_map.h",
-        "include/grpc++/impl/codegen/method_handler_impl.h",
-        "include/grpc++/impl/codegen/rpc_method.h",
-        "include/grpc++/impl/codegen/rpc_service_method.h",
-        "include/grpc++/impl/codegen/security/auth_context.h",
-        "include/grpc++/impl/codegen/serialization_traits.h",
-        "include/grpc++/impl/codegen/server_context.h",
-        "include/grpc++/impl/codegen/server_interface.h",
-        "include/grpc++/impl/codegen/service_type.h",
-        "include/grpc++/impl/codegen/slice.h",
-        "include/grpc++/impl/codegen/status_code_enum.h",
-        "include/grpc++/impl/codegen/status.h",
-        "include/grpc++/impl/codegen/string_ref.h",
-        "include/grpc++/impl/codegen/stub_options.h",
-        "include/grpc++/impl/codegen/sync_stream.h",
-        "include/grpc++/impl/codegen/time.h",
-        "include/grpcpp/impl/codegen/async_generic_service.h",
-        "include/grpcpp/impl/codegen/async_stream.h",
-        "include/grpcpp/impl/codegen/async_unary_call.h",
-        "include/grpcpp/impl/codegen/byte_buffer.h",
-        "include/grpcpp/impl/codegen/call_hook.h",
-        "include/grpcpp/impl/codegen/call_op_set_interface.h",
-        "include/grpcpp/impl/codegen/call_op_set.h",
-        "include/grpcpp/impl/codegen/call.h",
-        "include/grpcpp/impl/codegen/callback_common.h",
-        "include/grpcpp/impl/codegen/channel_interface.h",
-        "include/grpcpp/impl/codegen/client_callback.h",
-        "include/grpcpp/impl/codegen/client_context.h",
-        "include/grpcpp/impl/codegen/client_interceptor.h",
-        "include/grpcpp/impl/codegen/client_unary_call.h",
-        "include/grpcpp/impl/codegen/completion_queue_tag.h",
-        "include/grpcpp/impl/codegen/completion_queue.h",
-        "include/grpcpp/impl/codegen/config.h",
-        "include/grpcpp/impl/codegen/core_codegen_interface.h",
-        "include/grpcpp/impl/codegen/create_auth_context.h",
-        "include/grpcpp/impl/codegen/delegating_channel.h",
-        "include/grpcpp/impl/codegen/grpc_library.h",
-        "include/grpcpp/impl/codegen/intercepted_channel.h",
-        "include/grpcpp/impl/codegen/interceptor_common.h",
-        "include/grpcpp/impl/codegen/interceptor.h",
-        "include/grpcpp/impl/codegen/message_allocator.h",
-        "include/grpcpp/impl/codegen/metadata_map.h",
-        "include/grpcpp/impl/codegen/method_handler_impl.h",
-        "include/grpcpp/impl/codegen/method_handler.h",
-        "include/grpcpp/impl/codegen/rpc_method.h",
-        "include/grpcpp/impl/codegen/rpc_service_method.h",
-        "include/grpcpp/impl/codegen/security/auth_context.h",
-        "include/grpcpp/impl/codegen/serialization_traits.h",
-        "include/grpcpp/impl/codegen/server_callback_handlers.h",
-        "include/grpcpp/impl/codegen/server_callback.h",
-        "include/grpcpp/impl/codegen/server_context.h",
-        "include/grpcpp/impl/codegen/server_interceptor.h",
-        "include/grpcpp/impl/codegen/server_interface.h",
-        "include/grpcpp/impl/codegen/service_type.h",
-        "include/grpcpp/impl/codegen/slice.h",
-        "include/grpcpp/impl/codegen/status_code_enum.h",
-        "include/grpcpp/impl/codegen/status.h",
-        "include/grpcpp/impl/codegen/string_ref.h",
-        "include/grpcpp/impl/codegen/stub_options.h",
-        "include/grpcpp/impl/codegen/sync_stream.h",
-        "include/grpcpp/impl/codegen/time.h",
+        "include/bobs-rpc++/impl/codegen/async_stream.h",
+        "include/bobs-rpc++/impl/codegen/async_unary_call.h",
+        "include/bobs-rpc++/impl/codegen/byte_buffer.h",
+        "include/bobs-rpc++/impl/codegen/call_hook.h",
+        "include/bobs-rpc++/impl/codegen/call.h",
+        "include/bobs-rpc++/impl/codegen/channel_interface.h",
+        "include/bobs-rpc++/impl/codegen/client_context.h",
+        "include/bobs-rpc++/impl/codegen/client_unary_call.h",
+        "include/bobs-rpc++/impl/codegen/completion_queue_tag.h",
+        "include/bobs-rpc++/impl/codegen/completion_queue.h",
+        "include/bobs-rpc++/impl/codegen/config.h",
+        "include/bobs-rpc++/impl/codegen/core_codegen_interface.h",
+        "include/bobs-rpc++/impl/codegen/create_auth_context.h",
+        "include/bobs-rpc++/impl/codegen/bobs-rpc_library.h",
+        "include/bobs-rpc++/impl/codegen/metadata_map.h",
+        "include/bobs-rpc++/impl/codegen/method_handler_impl.h",
+        "include/bobs-rpc++/impl/codegen/rpc_method.h",
+        "include/bobs-rpc++/impl/codegen/rpc_service_method.h",
+        "include/bobs-rpc++/impl/codegen/security/auth_context.h",
+        "include/bobs-rpc++/impl/codegen/serialization_traits.h",
+        "include/bobs-rpc++/impl/codegen/server_context.h",
+        "include/bobs-rpc++/impl/codegen/server_interface.h",
+        "include/bobs-rpc++/impl/codegen/service_type.h",
+        "include/bobs-rpc++/impl/codegen/slice.h",
+        "include/bobs-rpc++/impl/codegen/status_code_enum.h",
+        "include/bobs-rpc++/impl/codegen/status.h",
+        "include/bobs-rpc++/impl/codegen/string_ref.h",
+        "include/bobs-rpc++/impl/codegen/stub_options.h",
+        "include/bobs-rpc++/impl/codegen/sync_stream.h",
+        "include/bobs-rpc++/impl/codegen/time.h",
+        "include/bobs-rpcpp/impl/codegen/async_generic_service.h",
+        "include/bobs-rpcpp/impl/codegen/async_stream.h",
+        "include/bobs-rpcpp/impl/codegen/async_unary_call.h",
+        "include/bobs-rpcpp/impl/codegen/byte_buffer.h",
+        "include/bobs-rpcpp/impl/codegen/call_hook.h",
+        "include/bobs-rpcpp/impl/codegen/call_op_set_interface.h",
+        "include/bobs-rpcpp/impl/codegen/call_op_set.h",
+        "include/bobs-rpcpp/impl/codegen/call.h",
+        "include/bobs-rpcpp/impl/codegen/callback_common.h",
+        "include/bobs-rpcpp/impl/codegen/channel_interface.h",
+        "include/bobs-rpcpp/impl/codegen/client_callback.h",
+        "include/bobs-rpcpp/impl/codegen/client_context.h",
+        "include/bobs-rpcpp/impl/codegen/client_interceptor.h",
+        "include/bobs-rpcpp/impl/codegen/client_unary_call.h",
+        "include/bobs-rpcpp/impl/codegen/completion_queue_tag.h",
+        "include/bobs-rpcpp/impl/codegen/completion_queue.h",
+        "include/bobs-rpcpp/impl/codegen/config.h",
+        "include/bobs-rpcpp/impl/codegen/core_codegen_interface.h",
+        "include/bobs-rpcpp/impl/codegen/create_auth_context.h",
+        "include/bobs-rpcpp/impl/codegen/delegating_channel.h",
+        "include/bobs-rpcpp/impl/codegen/bobs-rpc_library.h",
+        "include/bobs-rpcpp/impl/codegen/intercepted_channel.h",
+        "include/bobs-rpcpp/impl/codegen/interceptor_common.h",
+        "include/bobs-rpcpp/impl/codegen/interceptor.h",
+        "include/bobs-rpcpp/impl/codegen/message_allocator.h",
+        "include/bobs-rpcpp/impl/codegen/metadata_map.h",
+        "include/bobs-rpcpp/impl/codegen/method_handler_impl.h",
+        "include/bobs-rpcpp/impl/codegen/method_handler.h",
+        "include/bobs-rpcpp/impl/codegen/rpc_method.h",
+        "include/bobs-rpcpp/impl/codegen/rpc_service_method.h",
+        "include/bobs-rpcpp/impl/codegen/security/auth_context.h",
+        "include/bobs-rpcpp/impl/codegen/serialization_traits.h",
+        "include/bobs-rpcpp/impl/codegen/server_callback_handlers.h",
+        "include/bobs-rpcpp/impl/codegen/server_callback.h",
+        "include/bobs-rpcpp/impl/codegen/server_context.h",
+        "include/bobs-rpcpp/impl/codegen/server_interceptor.h",
+        "include/bobs-rpcpp/impl/codegen/server_interface.h",
+        "include/bobs-rpcpp/impl/codegen/service_type.h",
+        "include/bobs-rpcpp/impl/codegen/slice.h",
+        "include/bobs-rpcpp/impl/codegen/status_code_enum.h",
+        "include/bobs-rpcpp/impl/codegen/status.h",
+        "include/bobs-rpcpp/impl/codegen/string_ref.h",
+        "include/bobs-rpcpp/impl/codegen/stub_options.h",
+        "include/bobs-rpcpp/impl/codegen/sync_stream.h",
+        "include/bobs-rpcpp/impl/codegen/time.h",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
-        "grpc++_internal_hdrs_only",
-        "grpc_codegen",
+        "bobs-rpc++_internal_hdrs_only",
+        "bobs-rpc_codegen",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_codegen_base_src",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_codegen_base_src",
     srcs = [
         "src/cpp/codegen/codegen_init.cc",
     ],
     language = "c++",
     deps = [
-        "grpc++_codegen_base",
+        "bobs-rpc++_codegen_base",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_codegen_proto",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_codegen_proto",
     external_deps = [
         "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpc++/impl/codegen/proto_utils.h",
-        "include/grpcpp/impl/codegen/proto_buffer_reader.h",
-        "include/grpcpp/impl/codegen/proto_buffer_writer.h",
-        "include/grpcpp/impl/codegen/proto_utils.h",
+        "include/bobs-rpc++/impl/codegen/proto_utils.h",
+        "include/bobs-rpcpp/impl/codegen/proto_buffer_reader.h",
+        "include/bobs-rpcpp/impl/codegen/proto_buffer_writer.h",
+        "include/bobs-rpcpp/impl/codegen/proto_utils.h",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
-        "grpc++_codegen_base",
-        "grpc++_config_proto",
+        "bobs-rpc++_codegen_base",
+        "bobs-rpc++_config_proto",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_config_proto",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_config_proto",
     external_deps = [
         "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpc++/impl/codegen/config_protobuf.h",
-        "include/grpcpp/impl/codegen/config_protobuf.h",
+        "include/bobs-rpc++/impl/codegen/config_protobuf.h",
+        "include/bobs-rpcpp/impl/codegen/config_protobuf.h",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
 )
 
-grpc_cc_library(
-    name = "grpc++_reflection",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_reflection",
     srcs = [
         "src/cpp/ext/proto_server_reflection.cc",
         "src/cpp/ext/proto_server_reflection_plugin.cc",
@@ -2973,19 +2973,19 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpc++/ext/proto_server_reflection_plugin.h",
-        "include/grpcpp/ext/proto_server_reflection_plugin.h",
+        "include/bobs-rpc++/ext/proto_server_reflection_plugin.h",
+        "include/bobs-rpcpp/ext/proto_server_reflection_plugin.h",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["@bobs-rpc:public"],
     deps = [
-        "grpc++",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "bobs-rpc++",
+        "//src/proto/bobs-rpc/reflection/v1alpha:reflection_proto",
     ],
     alwayslink = 1,
 )
 
-grpc_cc_library(
-    name = "grpcpp_channelz",
+bobs-rpc_cc_library(
+    name = "bobs-rpcpp_channelz",
     srcs = [
         "src/cpp/server/channelz/channelz_service.cc",
         "src/cpp/server/channelz/channelz_service_plugin.cc",
@@ -2995,19 +2995,19 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpcpp/ext/channelz_service_plugin.h",
+        "include/bobs-rpcpp/ext/channelz_service_plugin.h",
     ],
     deps = [
         "gpr",
-        "grpc",
-        "grpc++",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "bobs-rpc",
+        "bobs-rpc++",
+        "//src/proto/bobs-rpc/channelz:channelz_proto",
     ],
     alwayslink = 1,
 )
 
-grpc_cc_library(
-    name = "grpcpp_csds",
+bobs-rpc_cc_library(
+    name = "bobs-rpcpp_csds",
     srcs = [
         "src/cpp/server/csds/csds.cc",
     ],
@@ -3018,22 +3018,22 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr",
-        "grpc",
-        "grpc++_codegen_base",
-        "grpc++_internals",
-        "//src/proto/grpc/testing/xds/v3:csds_proto",
+        "bobs-rpc",
+        "bobs-rpc++_codegen_base",
+        "bobs-rpc++_internals",
+        "//src/proto/bobs-rpc/testing/xds/v3:csds_proto",
     ],
     alwayslink = 1,
 )
 
-grpc_cc_library(
-    name = "grpcpp_admin",
+bobs-rpc_cc_library(
+    name = "bobs-rpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",
     ],
     hdrs = [],
     defines = select({
-        "grpc_no_xds": ["GRPC_NO_XDS"],
+        "bobs-rpc_no_xds": ["GRPC_NO_XDS"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -3041,22 +3041,22 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpcpp/ext/admin_services.h",
+        "include/bobs-rpcpp/ext/admin_services.h",
     ],
     select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": ["//:grpcpp_csds"],
+        "bobs-rpc_no_xds": [],
+        "//conditions:default": ["//:bobs-rpcpp_csds"],
     },
     deps = [
         "gpr",
-        "grpc++",
-        "grpcpp_channelz",
+        "bobs-rpc++",
+        "bobs-rpcpp_channelz",
     ],
     alwayslink = 1,
 )
 
-grpc_cc_library(
-    name = "grpc++_test",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_test",
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
     ],
@@ -3064,24 +3064,24 @@ grpc_cc_library(
         "gtest",
     ],
     public_hdrs = [
-        "include/grpc++/test/mock_stream.h",
-        "include/grpc++/test/server_context_test_spouse.h",
-        "include/grpcpp/test/channel_test_peer.h",
-        "include/grpcpp/test/client_context_test_peer.h",
-        "include/grpcpp/test/default_reactor_test_peer.h",
-        "include/grpcpp/test/mock_stream.h",
-        "include/grpcpp/test/server_context_test_spouse.h",
+        "include/bobs-rpc++/test/mock_stream.h",
+        "include/bobs-rpc++/test/server_context_test_spouse.h",
+        "include/bobs-rpcpp/test/channel_test_peer.h",
+        "include/bobs-rpcpp/test/client_context_test_peer.h",
+        "include/bobs-rpcpp/test/default_reactor_test_peer.h",
+        "include/bobs-rpcpp/test/mock_stream.h",
+        "include/bobs-rpcpp/test/server_context_test_spouse.h",
     ],
-    visibility = ["@grpc:grpc++_test"],
+    visibility = ["@bobs-rpc:bobs-rpc++_test"],
     deps = [
         "gpr_base",
-        "grpc++",
-        "grpc_base_c",
+        "bobs-rpc++",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_server_backward_compatibility",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_server_backward_compatibility",
     srcs = [
         "src/core/ext/filters/workarounds/workaround_utils.cc",
     ],
@@ -3091,12 +3091,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
-        "grpc_base_c",
+        "bobs-rpc_base_c",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc++_core_stats",
+bobs-rpc_cc_library(
+    name = "bobs-rpc++_core_stats",
     srcs = [
         "src/cpp/util/core_stats.cc",
     ],
@@ -3106,29 +3106,29 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr",
-        "grpc++",
-        "//src/proto/grpc/core:stats_proto",
+        "bobs-rpc++",
+        "//src/proto/bobs-rpc/core:stats_proto",
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_opencensus_plugin",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_opencensus_plugin",
     srcs = [
         "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
-        "src/cpp/ext/filters/census/grpc_plugin.cc",
+        "src/cpp/ext/filters/census/bobs-rpc_plugin.cc",
         "src/cpp/ext/filters/census/measures.cc",
         "src/cpp/ext/filters/census/rpc_encoding.cc",
         "src/cpp/ext/filters/census/server_filter.cc",
         "src/cpp/ext/filters/census/views.cc",
     ],
     hdrs = [
-        "include/grpcpp/opencensus.h",
+        "include/bobs-rpcpp/opencensus.h",
         "src/cpp/ext/filters/census/channel_filter.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",
-        "src/cpp/ext/filters/census/grpc_plugin.h",
+        "src/cpp/ext/filters/census/bobs-rpc_plugin.h",
         "src/cpp/ext/filters/census/measures.h",
         "src/cpp/ext/filters/census/rpc_encoding.h",
         "src/cpp/ext/filters/census/server_filter.h",
@@ -3146,34 +3146,34 @@ grpc_cc_library(
         "opencensus-context",
     ],
     language = "c++",
-    visibility = ["@grpc:grpc_opencensus_plugin"],
+    visibility = ["@bobs-rpc:bobs-rpc_opencensus_plugin"],
     deps = [
         "census",
         "gpr_base",
-        "grpc++",
-        "grpc_base_c",
+        "bobs-rpc++",
+        "bobs-rpc_base_c",
     ],
 )
 
 # Once upb code-gen issue is resolved, use the targets commented below to replace the ones using
 # upb-generated files.
 
-# grpc_upb_proto_library(
+# bobs-rpc_upb_proto_library(
 #     name = "upb_load_report",
 #     deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"],
 # )
 #
-# grpc_upb_proto_library(
+# bobs-rpc_upb_proto_library(
 #     name = "upb_lrs",
 #     deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"],
 # )
 #
-# grpc_upb_proto_library(
+# bobs-rpc_upb_proto_library(
 #     name = "upb_cds",
 #     deps = ["@envoy_api//envoy/api/v2:cds_export"],
 # )
 
-# grpc_cc_library(
+# bobs-rpc_cc_library(
 #    name = "envoy_lrs_upb",
 #    external_deps = [
 #        "upb_lib",
@@ -3186,7 +3186,7 @@ grpc_cc_library(
 #    ],
 # )
 
-# grpc_cc_library(
+# bobs-rpc_cc_library(
 #    name = "envoy_ads_upb",
 #    external_deps = [
 #        "upb_lib",
@@ -3198,7 +3198,7 @@ grpc_cc_library(
 #    ],
 # )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "envoy_ads_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c",
@@ -3299,7 +3299,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "envoy_ads_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c",
@@ -3401,7 +3401,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "envoy_annotations_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c",
@@ -3422,7 +3422,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "envoy_annotations_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c",
@@ -3446,7 +3446,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "envoy_core_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c",
@@ -3455,7 +3455,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.c",
         "src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.c",
         "src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.c",
-        "src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.c",
+        "src/core/ext/upb-generated/envoy/config/core/v3/bobs-rpc_service.upb.c",
         "src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.c",
         "src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.c",
         "src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.c",
@@ -3470,7 +3470,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/core/v3/config_source.upb.h",
         "src/core/ext/upb-generated/envoy/config/core/v3/event_service_config.upb.h",
         "src/core/ext/upb-generated/envoy/config/core/v3/extension.upb.h",
-        "src/core/ext/upb-generated/envoy/config/core/v3/grpc_service.upb.h",
+        "src/core/ext/upb-generated/envoy/config/core/v3/bobs-rpc_service.upb.h",
         "src/core/ext/upb-generated/envoy/config/core/v3/health_check.upb.h",
         "src/core/ext/upb-generated/envoy/config/core/v3/http_uri.upb.h",
         "src/core/ext/upb-generated/envoy/config/core/v3/protocol.upb.h",
@@ -3494,7 +3494,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "envoy_core_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/address.upbdefs.c",
@@ -3503,7 +3503,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/config_source.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/event_service_config.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/extension.upbdefs.c",
-        "src/core/ext/upbdefs-generated/envoy/config/core/v3/grpc_service.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/config/core/v3/bobs-rpc_service.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/health_check.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.c",
@@ -3518,7 +3518,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/config_source.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/event_service_config.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/extension.upbdefs.h",
-        "src/core/ext/upbdefs-generated/envoy/config/core/v3/grpc_service.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/config/core/v3/bobs-rpc_service.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/health_check.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/http_uri.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/protocol.upbdefs.h",
@@ -3544,7 +3544,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "envoy_type_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c",
@@ -3592,7 +3592,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "envoy_type_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c",
@@ -3641,7 +3641,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "proto_gen_validate_upb",
     srcs = [
         "src/core/ext/upb-generated/validate/validate.upb.c",
@@ -3660,7 +3660,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "proto_gen_validate_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/validate/validate.upbdefs.c",
@@ -3683,12 +3683,12 @@ grpc_cc_library(
 )
 
 # Once upb code-gen issue is resolved, replace udpa_orca_upb with this.
-# grpc_upb_proto_library(
+# bobs-rpc_upb_proto_library(
 #     name = "udpa_orca_upb",
 #     deps = ["@envoy_api//udpa/data/orca/v1:orca_load_report"]
 # )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "udpa_orca_upb",
     srcs = [
         "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
@@ -3707,7 +3707,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "udpa_annotations_upb",
     srcs = [
         "src/core/ext/upb-generated/udpa/annotations/migrate.upb.c",
@@ -3735,7 +3735,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "udpa_annotations_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c",
@@ -3765,7 +3765,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "xds_core_upb",
     srcs = [
         "src/core/ext/upb-generated/xds/core/v3/authority.upb.c",
@@ -3796,7 +3796,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "xds_core_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c",
@@ -3830,7 +3830,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "udpa_type_upb",
     srcs = [
         "src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c",
@@ -3850,7 +3850,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "udpa_type_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c",
@@ -3872,19 +3872,19 @@ grpc_cc_library(
     ],
 )
 
-# Once upb code-gen issue is resolved, replace grpc_health_upb with this.
-# grpc_upb_proto_library(
-#     name = "grpc_health_upb",
-#     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+# Once upb code-gen issue is resolved, replace bobs-rpc_health_upb with this.
+# bobs-rpc_upb_proto_library(
+#     name = "bobs-rpc_health_upb",
+#     deps = ["//src/proto/bobs-rpc/health/v1:health_proto_descriptor"],
 # )
 
-grpc_cc_library(
-    name = "grpc_health_upb",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_health_upb",
     srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/health/v1/health.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/health/v1/health.upb.h",
     ],
     external_deps = [
         "upb_lib",
@@ -3895,7 +3895,7 @@ grpc_cc_library(
 )
 
 # Once upb code-gen issue is resolved, remove this.
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "google_api_upb",
     srcs = [
         "src/core/ext/upb-generated/google/api/annotations.upb.c",
@@ -3931,7 +3931,7 @@ grpc_cc_library(
     language = "c++",
 )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "google_api_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
@@ -3968,19 +3968,19 @@ grpc_cc_library(
     ],
 )
 
-# Once upb code-gen issue is resolved, replace grpc_lb_upb with this.
-# grpc_upb_proto_library(
-#     name = "grpc_lb_upb",
-#     deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
+# Once upb code-gen issue is resolved, replace bobs-rpc_lb_upb with this.
+# bobs-rpc_upb_proto_library(
+#     name = "bobs-rpc_lb_upb",
+#     deps = ["//src/proto/bobs-rpc/lb/v1:load_balancer_proto_descriptor"],
 # )
 
-grpc_cc_library(
-    name = "grpc_lb_upb",
+bobs-rpc_cc_library(
+    name = "bobs-rpc_lb_upb",
     srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/lb/v1/load_balancer.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/lb/v1/load_balancer.upb.h",
     ],
     external_deps = [
         "upb_lib",
@@ -3999,7 +3999,7 @@ grpc_cc_library(
 #     deps = ["//third_party/istio/security/proto/providers/google:meshca_proto"],
 # )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "meshca_upb",
     srcs = [
         "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c",
@@ -4017,22 +4017,22 @@ grpc_cc_library(
 )
 
 # Once upb code-gen issue is resolved, replace alts_upb with this.
-# grpc_upb_proto_library(
+# bobs-rpc_upb_proto_library(
 #     name = "alts_upb",
-#     deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+#     deps = ["//src/proto/bobs-rpc/gcp:alts_handshaker_proto"],
 # )
 
-grpc_cc_library(
+bobs-rpc_cc_library(
     name = "alts_upb",
     srcs = [
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/gcp/altscontext.upb.c",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/gcp/handshaker.upb.c",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/gcp/transport_security_common.upb.c",
     ],
     hdrs = [
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/gcp/altscontext.upb.h",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/gcp/handshaker.upb.h",
+        "src/core/ext/upb-generated/src/proto/bobs-rpc/gcp/transport_security_common.upb.h",
     ],
     external_deps = [
         "upb_lib",
@@ -4042,7 +4042,7 @@ grpc_cc_library(
     language = "c++",
 )
 
-grpc_generate_one_off_targets()
+bobs-rpc_generate_one_off_targets()
 
 filegroup(
     name = "root_certificates",
