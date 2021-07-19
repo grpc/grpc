@@ -612,7 +612,7 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
 #else
 #define GRPC_DEPRECATED(reason)
-#endif 
+#endif
 #endif /* GRPC_DEPRECATED */
 
 #ifndef GPR_ATTRIBUTE_WEAK
