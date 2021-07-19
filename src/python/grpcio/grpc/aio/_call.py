@@ -403,18 +403,20 @@ class _StreamRequestMixin(Call):
                     try:
                         await self._write(request)
                     except AioRpcError as rpc_error:
-                        _LOGGER.debug('Exception while consuming the request_iterator: %s', rpc_error)
+                        _LOGGER.debug(
+                            'Exception while consuming the request_iterator: %s', rpc_error)
                         return
             else:
                 for request in request_iterator:
                     try:
                         await self._write(request)
                     except AioRpcError as rpc_error:
-                        _LOGGER.debug('Exception while consuming the request_iterator: %s', rpc_error)
+                        _LOGGER.debug(
+                            'Exception while consuming the request_iterator: %s', rpc_error)
                         return
 
             await self._done_writing()
-        except:
+        except:  # pylint: disable=bare-except
             # Client iterators can raise exceptions, which we should handle by
             # cancelling the RPC and logging the client's error. No exceptions
             # should escape this function.
