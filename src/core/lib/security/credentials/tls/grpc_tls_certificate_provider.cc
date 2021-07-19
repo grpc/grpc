@@ -205,21 +205,15 @@ void FileWatcherCertificateProvider::ForceUpdate() {
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
-      bool reload;
+      bool reload = true;
       for (int i = 0; i < pem_key_cert_pairs->size(); i++) {
         key_cert_catch = PrivateKeyAndCertificateMatch(
           pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
-        reload = key_cert_catch.ok() && *key_cert_catch;
-        if (!reload) {
+        if (!(key_cert_catch.ok() && *key_cert_catch)) {
+          reload = false;
           gpr_log(GPR_ERROR,
                   "Certificate-key match status result: %s, bool result: %d",
                   key_cert_catch.status().ToString().c_str(), key_cert_catch.value());
-//          gpr_log(GPR_ERROR,
-//                  "Certificate old: %s",
-//                  pem_key_cert_pairs_.at(i).cert_chain().c_str());
-          gpr_log(GPR_ERROR,
-                  "Certificate new: %s",
-                  pem_key_cert_pairs->at(i).cert_chain().c_str());
           break;
         }
       }
@@ -231,6 +225,9 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       pem_key_cert_pairs_ = {};
     }
   }
+  gpr_log(GPR_ERROR,
+                  "Certificate old empty? line 239: %d",
+                  pem_key_cert_pairs_.empty());
   if (root_cert_changed || identity_cert_changed) {
     ExecCtx exec_ctx;
     grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
