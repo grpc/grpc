@@ -181,12 +181,14 @@ class XdsResolver : public Resolver {
       : public ConfigSelector::CallDispatchController {
    public:
     explicit XdsCallDispatchController(
-        RefCountedPtr<ClusterState> cluster_state)
-        : cluster_state_(std::move(cluster_state)) {}
+        RefCountedPtr<ClusterState> cluster_state, const uint32_t max_retries)
+        : cluster_state_(std::move(cluster_state)), max_retries_(max_retries) {}
 
     bool ShouldRetry() override {
       // TODO(donnadionne): Implement the retry circuit breaker here.
       uint32_t current = cluster_state_->retry_counter()->Load();
+      // Check and see if we exceeded the max retries
+      if (current >= max_retries_) return false;
       cluster_state_->retry_counter()->Increment();
       return true;
     }
@@ -203,7 +205,7 @@ class XdsResolver : public Resolver {
     // so do not add any data members that require destruction unless you have
     // some other way to clean them up.
     RefCountedPtr<ClusterState> cluster_state_;
-    RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter_;
+    uint32_t max_retries_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -754,8 +756,15 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     memcpy(hash_value, hash_string.c_str(), hash_string.size());
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
+    // Look up max retry value, should have been filled by CDS udpates.
+    auto max_retry =
+        resolver_->cluster_max_retries_map_->Lookup(std::string(cluster_name));
+    gpr_log(GPR_INFO, "donna looked up newly updated max retry value of %d",
+            max_retry);
     call_config.call_dispatch_controller =
-        args.arena->New<XdsCallDispatchController>(it->second->Ref());
+        args.arena->New<XdsCallDispatchController>(
+            it->second->Ref(), resolver_->cluster_max_retries_map_->Lookup(
+                                   std::string(cluster_name)));
     return call_config;
   }
   return CallConfig();
