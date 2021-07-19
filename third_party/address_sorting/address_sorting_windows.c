@@ -50,12 +50,10 @@
 #include <sys/types.h>
 
 static bool windows_source_addr_factory_get_source_addr(
-    address_sorting_source_addr_factory* factory,
-    const address_sorting_address* dest_addr,
+    address_sorting_source_addr_factory* factory, const address_sorting_address* dest_addr,
     address_sorting_address* source_addr) {
   bool source_addr_exists = false;
-  SOCKET s = socket(((struct sockaddr_in6*)dest_addr)->sin6_family, SOCK_DGRAM,
-                    IPPROTO_UDP);
+  SOCKET s = socket(((struct sockaddr_in6*)dest_addr)->sin6_family, SOCK_DGRAM, IPPROTO_UDP);
   if (s != INVALID_SOCKET) {
     if (connect(s, (struct sockaddr*)dest_addr, (int)dest_addr->len) == 0) {
       address_sorting_address found_source_addr;
@@ -72,15 +70,13 @@ static bool windows_source_addr_factory_get_source_addr(
   return source_addr_exists;
 }
 
-static void windows_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* self) {
+static void windows_source_addr_factory_destroy(address_sorting_source_addr_factory* self) {
   free(self);
 }
 
-static const address_sorting_source_addr_factory_vtable
-    windows_source_addr_factory_vtable = {
-        windows_source_addr_factory_get_source_addr,
-        windows_source_addr_factory_destroy,
+static const address_sorting_source_addr_factory_vtable windows_source_addr_factory_vtable = {
+    windows_source_addr_factory_get_source_addr,
+    windows_source_addr_factory_destroy,
 };
 
 address_sorting_source_addr_factory*

@@ -26,13 +26,11 @@
 
 namespace grpc {
 
-ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
-    : thd_mgr_(thd_mgr) {
+ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr) : thd_mgr_(thd_mgr) {
   // Make thread creation exclusive with respect to its join happening in
   // ~WorkerThread().
   thd_ = grpc_core::Thread(
-      "grpcpp_sync_server",
-      [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
+      "grpcpp_sync_server", [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
       this, &created_);
   if (!created_) {
     gpr_log(GPR_ERROR, "Could not create grpc_sync_server worker-thread");
@@ -49,9 +47,8 @@ ThreadManager::WorkerThread::~WorkerThread() {
   thd_.Join();
 }
 
-ThreadManager::ThreadManager(const char* name,
-                             grpc_resource_quota* resource_quota,
-                             int min_pollers, int max_pollers)
+ThreadManager::ThreadManager(const char* name, grpc_resource_quota* resource_quota, int min_pollers,
+                             int max_pollers)
     : shutdown_(false),
       num_pollers_(0),
       min_pollers_(min_pollers),

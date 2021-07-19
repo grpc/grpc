@@ -157,8 +157,7 @@ static void test_periodic_compaction(uint32_t n) {
     grpc_chttp2_stream_map_add(&map, i, reinterpret_cast<void*>(i));
     if (i > 8) {
       del = i - 8;
-      GPR_ASSERT((void*)(uintptr_t)del ==
-                 grpc_chttp2_stream_map_delete(&map, del));
+      GPR_ASSERT((void*)(uintptr_t)del == grpc_chttp2_stream_map_delete(&map, del));
     }
   }
   GPR_ASSERT(map.capacity == 16);

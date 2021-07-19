@@ -31,25 +31,21 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void test_ping(grpc_end2end_test_config config,
-                      int min_time_between_pings_ms) {
+static void test_ping(grpc_end2end_test_config config, int min_time_between_pings_ms) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
   grpc_arg client_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS),
+                                      1)};
   grpc_arg server_a[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
-          0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+          const_cast<char*>(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS), 0),
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS),
+                                      1)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
@@ -60,22 +56,19 @@ static void test_ping(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(0), 0);
 
   /* check that we're still in idle, and start connecting */
-  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
-             GRPC_CHANNEL_IDLE);
+  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) == GRPC_CHANNEL_IDLE);
   /* we'll go through some set of transitions (some might be missed), until
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state,
         gpr_time_add(grpc_timeout_seconds_to_deadline(3),
-                     gpr_time_from_millis(min_time_between_pings_ms * PING_NUM,
-                                          GPR_TIMESPAN)),
+                     gpr_time_from_millis(min_time_between_pings_ms * PING_NUM, GPR_TIMESPAN)),
         f.cq, tag(99));
     CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);
-    GPR_ASSERT(state == GRPC_CHANNEL_READY ||
-               state == GRPC_CHANNEL_CONNECTING ||
+    GPR_ASSERT(state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_CONNECTING ||
                state == GRPC_CHANNEL_TRANSIENT_FAILURE);
   }
 

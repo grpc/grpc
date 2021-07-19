@@ -30,18 +30,14 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 
-class grpc_service_account_jwt_access_credentials
-    : public grpc_call_credentials {
+class grpc_service_account_jwt_access_credentials : public grpc_call_credentials {
  public:
-  grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
-                                              gpr_timespec token_lifetime);
+  grpc_service_account_jwt_access_credentials(grpc_auth_json_key key, gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
+  bool get_request_metadata(grpc_polling_entity* pollent, grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
+                            grpc_closure* on_request_metadata, grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error_handle error) override;
@@ -50,10 +46,9 @@ class grpc_service_account_jwt_access_credentials
   const grpc_auth_json_key& key() const { return key_; }
 
   std::string debug_string() override {
-    return absl::StrFormat(
-        "JWTAccessCredentials{ExpirationTime:%s}",
-        absl::FormatTime(absl::FromUnixMicros(
-            static_cast<int64_t>(gpr_timespec_to_micros(jwt_lifetime_)))));
+    return absl::StrFormat("JWTAccessCredentials{ExpirationTime:%s}",
+                           absl::FormatTime(absl::FromUnixMicros(
+                               static_cast<int64_t>(gpr_timespec_to_micros(jwt_lifetime_)))));
   };
 
  private:
@@ -75,7 +70,7 @@ class grpc_service_account_jwt_access_credentials
 // Private constructor for jwt credentials from an already parsed json key.
 // Takes ownership of the key.
 grpc_core::RefCountedPtr<grpc_call_credentials>
-grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-    grpc_auth_json_key key, gpr_timespec token_lifetime);
+grpc_service_account_jwt_access_credentials_create_from_auth_json_key(grpc_auth_json_key key,
+                                                                      gpr_timespec token_lifetime);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H */

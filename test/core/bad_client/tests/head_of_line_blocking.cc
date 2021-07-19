@@ -68,8 +68,7 @@ static const char prefix[] =
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* registered_method) {
+static void verifier(grpc_server* server, grpc_completion_queue* cq, void* registered_method) {
   grpc_call_error error;
   grpc_call* s;
   cq_verifier* cqv = cq_verifier_create(cq);
@@ -79,9 +78,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
   grpc_metadata_array_init(&request_metadata_recv);
 
-  error = grpc_server_request_registered_call(server, registered_method, &s,
-                                              &deadline, &request_metadata_recv,
-                                              &payload, cq, cq, tag(101));
+  error = grpc_server_request_registered_call(server, registered_method, &s, &deadline,
+                                              &request_metadata_recv, &payload, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);

@@ -60,8 +60,7 @@ struct Rbac {
 
     Permission() = default;
     // For kAnd/kOr RuleType.
-    Permission(Permission::RuleType type,
-               std::vector<std::unique_ptr<Permission>> permissions);
+    Permission(Permission::RuleType type, std::vector<std::unique_ptr<Permission>> permissions);
     // For kNot RuleType.
     Permission(Permission::RuleType type, Permission permission);
     // For kAny RuleType.
@@ -106,8 +105,7 @@ struct Rbac {
 
     Principal() = default;
     // For kAnd/kOr RuleType.
-    Principal(Principal::RuleType type,
-              std::vector<std::unique_ptr<Principal>> principals);
+    Principal(Principal::RuleType type, std::vector<std::unique_ptr<Principal>> principals);
     // For kNot RuleType.
     Principal(Principal::RuleType type, Principal principal);
     // For kAny RuleType.

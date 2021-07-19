@@ -47,15 +47,12 @@ grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
-  grpc_iomgr_register_object(
-      &r->iomgr_object, absl::StrFormat("%s:socket=0x%p", name, r).c_str());
+  grpc_iomgr_register_object(&r->iomgr_object, absl::StrFormat("%s:socket=0x%p", name, r).c_str());
   grpc_iocp_add_socket(r);
   return r;
 }
 
-SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket) {
-  return socket->socket;
-}
+SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket) { return socket->socket; }
 
 /* Schedule a shutdown of the socket operations. Will call the pending
    operations to abort them. We need to do that this way because of the
@@ -77,16 +74,14 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
   winsocket->shutdown_called = true;
   gpr_mu_unlock(&winsocket->state_mu);
 
-  status = WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
-                    &guid, sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
-                    &ioctl_num_bytes, NULL, NULL);
+  status = WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
+                    &DisconnectEx, sizeof(DisconnectEx), &ioctl_num_bytes, NULL, NULL);
 
   if (status == 0) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_INFO, "Unable to retrieve DisconnectEx pointer : %s",
-            utf8_message);
+    gpr_log(GPR_INFO, "Unable to retrieve DisconnectEx pointer : %s", utf8_message);
     gpr_free(utf8_message);
   }
   closesocket(winsocket->socket);
@@ -99,8 +94,7 @@ static void destroy(grpc_winsocket* winsocket) {
 }
 
 static bool check_destroyable(grpc_winsocket* winsocket) {
-  return winsocket->destroy_called == true &&
-         winsocket->write_info.closure == NULL &&
+  return winsocket->destroy_called == true && winsocket->write_info.closure == NULL &&
          winsocket->read_info.closure == NULL;
 }
 
@@ -130,8 +124,7 @@ static void socket_notify_on_iocp(grpc_winsocket* socket, grpc_closure* closure,
   gpr_mu_unlock(&socket->state_mu);
 }
 
-void grpc_socket_notify_on_write(grpc_winsocket* socket,
-                                 grpc_closure* closure) {
+void grpc_socket_notify_on_write(grpc_winsocket* socket, grpc_closure* closure) {
   socket_notify_on_iocp(socket, closure, &socket->write_info);
 }
 
@@ -139,8 +132,7 @@ void grpc_socket_notify_on_read(grpc_winsocket* socket, grpc_closure* closure) {
   socket_notify_on_iocp(socket, closure, &socket->read_info);
 }
 
-void grpc_socket_become_ready(grpc_winsocket* socket,
-                              grpc_winsocket_callback_info* info) {
+void grpc_socket_become_ready(grpc_winsocket* socket, grpc_winsocket_callback_info* info) {
   GPR_ASSERT(!info->has_pending_iocp);
   gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
@@ -170,8 +162,7 @@ static void probe_ipv6_once(void) {
     if (bind(s, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
-      gpr_log(GPR_INFO,
-              "Disabling AF_INET6 sockets because ::1 is not available.");
+      gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because ::1 is not available.");
     }
     closesocket(s);
   }

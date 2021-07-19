@@ -69,8 +69,7 @@ absl::Time ToAbslTime(gpr_timespec ts) {
   } else if (gpr_time_cmp(rts, gpr_inf_past(GPR_CLOCK_REALTIME)) == 0) {
     return absl::InfinitePast();
   } else {
-    return absl::UnixEpoch() + absl::Seconds(rts.tv_sec) +
-           absl::Nanoseconds(rts.tv_nsec);
+    return absl::UnixEpoch() + absl::Seconds(rts.tv_sec) + absl::Nanoseconds(rts.tv_nsec);
   }
 }
 

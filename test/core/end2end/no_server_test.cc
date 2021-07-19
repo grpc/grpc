@@ -37,20 +37,17 @@ void run_test(bool wait_for_ready) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
 
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      response_generator =
-          grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-      response_generator.get());
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator> response_generator =
+      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+  grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(response_generator.get());
   grpc_channel_args args = {1, &arg};
 
   /* create a call, channel to a non existant server */
-  grpc_channel* chan =
-      grpc_insecure_channel_create("fake:nonexistant", &args, nullptr);
+  grpc_channel* chan = grpc_insecure_channel_create("fake:nonexistant", &args, nullptr);
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
-  grpc_call* call = grpc_channel_create_call(
-      chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-      grpc_slice_from_static_string("/Foo"), nullptr, deadline, nullptr);
+  grpc_call* call =
+      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                               grpc_slice_from_static_string("/Foo"), nullptr, deadline, nullptr);
 
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
@@ -71,9 +68,7 @@ void run_test(bool wait_for_ready) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), tag(1),
-                                                   nullptr));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr));
 
   {
     grpc_core::ExecCtx exec_ctx;
@@ -95,9 +90,8 @@ void run_test(bool wait_for_ready) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_completion_queue_shutdown(cq);
-  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                    nullptr)
-             .type != GRPC_QUEUE_SHUTDOWN) {
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr).type !=
+         GRPC_QUEUE_SHUTDOWN) {
   }
   grpc_completion_queue_destroy(cq);
   grpc_call_unref(call);

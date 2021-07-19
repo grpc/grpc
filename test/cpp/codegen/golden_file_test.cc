@@ -25,10 +25,9 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(
-    std::string, generated_file_path, "",
-    "path to the directory containing generated files compiler_test.grpc.pb.h "
-    "and compiler_test_mock.grpc.pb.h");
+ABSL_FLAG(std::string, generated_file_path, "",
+          "path to the directory containing generated files compiler_test.grpc.pb.h "
+          "and compiler_test_mock.grpc.pb.h");
 
 const char kGoldenFilePath[] = "test/cpp/codegen/compiler_test_golden";
 const char kMockGoldenFilePath[] = "test/cpp/codegen/compiler_test_mock_golden";
@@ -52,14 +51,12 @@ void run_test(const std::basic_string<char>& generated_file,
 }
 
 TEST(GoldenFileTest, TestGeneratedFile) {
-  run_test(absl::GetFlag(FLAGS_generated_file_path) + "compiler_test.grpc.pb.h",
-           kGoldenFilePath);
+  run_test(absl::GetFlag(FLAGS_generated_file_path) + "compiler_test.grpc.pb.h", kGoldenFilePath);
 }
 
 TEST(GoldenMockFileTest, TestGeneratedMockFile) {
-  run_test(
-      absl::GetFlag(FLAGS_generated_file_path) + "compiler_test_mock.grpc.pb.h",
-      kMockGoldenFilePath);
+  run_test(absl::GetFlag(FLAGS_generated_file_path) + "compiler_test_mock.grpc.pb.h",
+           kMockGoldenFilePath);
 }
 
 int main(int argc, char** argv) {
@@ -70,8 +67,7 @@ int main(int argc, char** argv) {
     absl::SetFlag(&FLAGS_generated_file_path, "gens/src/proto/grpc/testing/");
   }
   if (absl::GetFlag(FLAGS_generated_file_path).back() != '/') {
-    absl::SetFlag(&FLAGS_generated_file_path,
-                  absl::GetFlag(FLAGS_generated_file_path).append("/"));
+    absl::SetFlag(&FLAGS_generated_file_path, absl::GetFlag(FLAGS_generated_file_path).append("/"));
   }
   return RUN_ALL_TESTS();
 }

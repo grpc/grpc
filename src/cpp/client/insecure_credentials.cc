@@ -29,24 +29,21 @@ namespace grpc {
 namespace {
 class InsecureChannelCredentialsImpl final : public ChannelCredentials {
  public:
-  std::shared_ptr<Channel> CreateChannelImpl(
-      const std::string& target, const ChannelArguments& args) override {
+  std::shared_ptr<Channel> CreateChannelImpl(const std::string& target,
+                                             const ChannelArguments& args) override {
     return CreateChannelWithInterceptors(
         target, args,
-        std::vector<std::unique_ptr<
-            grpc::experimental::ClientInterceptorFactoryInterface>>());
+        std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>());
   }
 
   std::shared_ptr<Channel> CreateChannelWithInterceptors(
       const std::string& target, const ChannelArguments& args,
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
+      std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
     return ::grpc::CreateChannelInternal(
-        "",
-        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr),
+        "", grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr),
         std::move(interceptor_creators));
   }
 
@@ -58,8 +55,7 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
 }  // namespace
 
 std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
-  return std::shared_ptr<ChannelCredentials>(
-      new InsecureChannelCredentialsImpl());
+  return std::shared_ptr<ChannelCredentials>(new InsecureChannelCredentialsImpl());
 }
 
 }  // namespace grpc

@@ -41,11 +41,9 @@ static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
 }
 
 // Unary ping pong with different message size of request and response
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
-                   NoOpMutator)
+BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator, NoOpMutator)
     ->Apply(SweepSizesArgs);
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, MinInProcess, NoOpMutator,
-                   NoOpMutator)
+BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, MinInProcess, NoOpMutator, NoOpMutator)
     ->Apply(SweepSizesArgs);
 
 // Client context with different metadata
@@ -56,8 +54,7 @@ BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<31>, 1>, NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
-                   NoOpMutator)
+                   Client_AddMetadata<RandomBinaryMetadata<100>, 1>, NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<10>, 2>, NoOpMutator)
@@ -66,8 +63,7 @@ BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<31>, 2>, NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
-                   NoOpMutator)
+                   Client_AddMetadata<RandomBinaryMetadata<100>, 2>, NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
                    Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator)

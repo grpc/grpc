@@ -84,21 +84,19 @@ CallCountingHelper::CallCountingHelper() {
 }
 
 void CallCountingHelper::RecordCallStarted() {
-  AtomicCounterData& data =
-      per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()];
+  AtomicCounterData& data = per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()];
   data.calls_started.FetchAdd(1, MemoryOrder::RELAXED);
-  data.last_call_started_cycle.Store(gpr_get_cycle_counter(),
-                                     MemoryOrder::RELAXED);
+  data.last_call_started_cycle.Store(gpr_get_cycle_counter(), MemoryOrder::RELAXED);
 }
 
 void CallCountingHelper::RecordCallFailed() {
-  per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()]
-      .calls_failed.FetchAdd(1, MemoryOrder::RELAXED);
+  per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()].calls_failed.FetchAdd(
+      1, MemoryOrder::RELAXED);
 }
 
 void CallCountingHelper::RecordCallSucceeded() {
-  per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()]
-      .calls_succeeded.FetchAdd(1, MemoryOrder::RELAXED);
+  per_cpu_counter_data_storage_[ExecCtx::Get()->starting_cpu()].calls_succeeded.FetchAdd(
+      1, MemoryOrder::RELAXED);
 }
 
 void CallCountingHelper::CollectData(CounterData* out) {
@@ -107,13 +105,11 @@ void CallCountingHelper::CollectData(CounterData* out) {
 
     out->calls_started += data.calls_started.Load(MemoryOrder::RELAXED);
     out->calls_succeeded +=
-        per_cpu_counter_data_storage_[core].calls_succeeded.Load(
-            MemoryOrder::RELAXED);
-    out->calls_failed += per_cpu_counter_data_storage_[core].calls_failed.Load(
-        MemoryOrder::RELAXED);
+        per_cpu_counter_data_storage_[core].calls_succeeded.Load(MemoryOrder::RELAXED);
+    out->calls_failed +=
+        per_cpu_counter_data_storage_[core].calls_failed.Load(MemoryOrder::RELAXED);
     const gpr_cycle_counter last_call =
-        per_cpu_counter_data_storage_[core].last_call_started_cycle.Load(
-            MemoryOrder::RELAXED);
+        per_cpu_counter_data_storage_[core].last_call_started_cycle.Load(MemoryOrder::RELAXED);
     if (last_call > out->last_call_started_cycle) {
       out->last_call_started_cycle = last_call;
     }
@@ -126,8 +122,7 @@ void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
   if (data.calls_started != 0) {
     (*json)["callsStarted"] = std::to_string(data.calls_started);
     gpr_timespec ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_time(data.last_call_started_cycle),
-        GPR_CLOCK_REALTIME);
+        gpr_cycle_counter_to_time(data.last_call_started_cycle), GPR_CLOCK_REALTIME);
     (*json)["lastCallStartedTimestamp"] = gpr_format_timespec(ts);
   }
   if (data.calls_succeeded != 0) {
@@ -144,14 +139,12 @@ void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
 
 ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
                          bool is_internal_channel)
-    : BaseNode(is_internal_channel ? EntityType::kInternalChannel
-                                   : EntityType::kTopLevelChannel,
+    : BaseNode(is_internal_channel ? EntityType::kInternalChannel : EntityType::kTopLevelChannel,
                target),
       target_(std::move(target)),
       trace_(channel_tracer_max_nodes) {}
 
-const char* ChannelNode::GetChannelConnectivityStateChangeString(
-    grpc_connectivity_state state) {
+const char* ChannelNode::GetChannelConnectivityStateChangeString(grpc_connectivity_state state) {
   switch (state) {
     case GRPC_CHANNEL_IDLE:
       return "Channel state change to IDLE";
@@ -175,8 +168,7 @@ Json ChannelNode::RenderJson() {
   // If low-order bit is on, then the field is set.
   int state_field = connectivity_state_.Load(MemoryOrder::RELAXED);
   if ((state_field & 1) != 0) {
-    grpc_connectivity_state state =
-        static_cast<grpc_connectivity_state>(state_field >> 1);
+    grpc_connectivity_state state = static_cast<grpc_connectivity_state>(state_field >> 1);
     data["state"] = Json::Object{
         {"state", ConnectivityStateName(state)},
     };
@@ -279,8 +271,7 @@ void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
   child_listen_sockets_.erase(child_uuid);
 }
 
-std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
-                                            intptr_t max_results) {
+std::string ServerNode::RenderServerSockets(intptr_t start_socket_id, intptr_t max_results) {
   GPR_ASSERT(start_socket_id >= 0);
   GPR_ASSERT(max_results >= 0);
   // If user does not set max_results, we choose 500.
@@ -386,34 +377,31 @@ Json SocketNode::Security::RenderJson() {
 namespace {
 
 void* SecurityArgCopy(void* p) {
-  SocketNode::Security* xds_certificate_provider =
-      static_cast<SocketNode::Security*>(p);
+  SocketNode::Security* xds_certificate_provider = static_cast<SocketNode::Security*>(p);
   return xds_certificate_provider->Ref().release();
 }
 
 void SecurityArgDestroy(void* p) {
-  SocketNode::Security* xds_certificate_provider =
-      static_cast<SocketNode::Security*>(p);
+  SocketNode::Security* xds_certificate_provider = static_cast<SocketNode::Security*>(p);
   xds_certificate_provider->Unref();
 }
 
 int SecurityArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 
-const grpc_arg_pointer_vtable kChannelArgVtable = {
-    SecurityArgCopy, SecurityArgDestroy, SecurityArgCmp};
+const grpc_arg_pointer_vtable kChannelArgVtable = {SecurityArgCopy, SecurityArgDestroy,
+                                                   SecurityArgCmp};
 
 }  // namespace
 
 grpc_arg SocketNode::Security::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_SECURITY),
-      const_cast<SocketNode::Security*>(this), &kChannelArgVtable);
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_CHANNELZ_SECURITY),
+                                         const_cast<SocketNode::Security*>(this),
+                                         &kChannelArgVtable);
 }
 
 RefCountedPtr<SocketNode::Security> SocketNode::Security::GetFromChannelArgs(
     const grpc_channel_args* args) {
-  Security* security = grpc_channel_args_find_pointer<Security>(
-      args, GRPC_ARG_CHANNELZ_SECURITY);
+  Security* security = grpc_channel_args_find_pointer<Security>(args, GRPC_ARG_CHANNELZ_SECURITY);
   return security != nullptr ? security->Ref() : nullptr;
 }
 
@@ -423,23 +411,20 @@ RefCountedPtr<SocketNode::Security> SocketNode::Security::GetFromChannelArgs(
 
 namespace {
 
-void PopulateSocketAddressJson(Json::Object* json, const char* name,
-                               const char* addr_str) {
+void PopulateSocketAddressJson(Json::Object* json, const char* name, const char* addr_str) {
   if (addr_str == nullptr) return;
   Json::Object data;
   absl::StatusOr<URI> uri = URI::Parse(addr_str);
   if (uri.ok() && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
     std::string host;
     std::string port;
-    GPR_ASSERT(
-        SplitHostPort(absl::StripPrefix(uri->path(), "/"), &host, &port));
+    GPR_ASSERT(SplitHostPort(absl::StripPrefix(uri->path(), "/"), &host, &port));
     int port_num = -1;
     if (!port.empty()) {
       port_num = atoi(port.data());
     }
     grpc_resolved_address resolved_host;
-    grpc_error_handle error =
-        grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
+    grpc_error_handle error = grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
     if (error == GRPC_ERROR_NONE) {
       std::string packed_host = grpc_sockaddr_get_packed_host(&resolved_host);
       std::string b64_host = absl::Base64Escape(packed_host);
@@ -475,14 +460,12 @@ SocketNode::SocketNode(std::string local, std::string remote, std::string name,
 
 void SocketNode::RecordStreamStartedFromLocal() {
   streams_started_.FetchAdd(1, MemoryOrder::RELAXED);
-  last_local_stream_created_cycle_.Store(gpr_get_cycle_counter(),
-                                         MemoryOrder::RELAXED);
+  last_local_stream_created_cycle_.Store(gpr_get_cycle_counter(), MemoryOrder::RELAXED);
 }
 
 void SocketNode::RecordStreamStartedFromRemote() {
   streams_started_.FetchAdd(1, MemoryOrder::RELAXED);
-  last_remote_stream_created_cycle_.Store(gpr_get_cycle_counter(),
-                                          MemoryOrder::RELAXED);
+  last_remote_stream_created_cycle_.Store(gpr_get_cycle_counter(), MemoryOrder::RELAXED);
 }
 
 void SocketNode::RecordMessagesSent(uint32_t num_sent) {
@@ -492,8 +475,7 @@ void SocketNode::RecordMessagesSent(uint32_t num_sent) {
 
 void SocketNode::RecordMessageReceived() {
   messages_received_.FetchAdd(1, MemoryOrder::RELAXED);
-  last_message_received_cycle_.Store(gpr_get_cycle_counter(),
-                                     MemoryOrder::RELAXED);
+  last_message_received_cycle_.Store(gpr_get_cycle_counter(), MemoryOrder::RELAXED);
 }
 
 Json SocketNode::RenderJson() {
@@ -506,17 +488,15 @@ Json SocketNode::RenderJson() {
     gpr_cycle_counter last_local_stream_created_cycle =
         last_local_stream_created_cycle_.Load(MemoryOrder::RELAXED);
     if (last_local_stream_created_cycle != 0) {
-      ts = gpr_convert_clock_type(
-          gpr_cycle_counter_to_time(last_local_stream_created_cycle),
-          GPR_CLOCK_REALTIME);
+      ts = gpr_convert_clock_type(gpr_cycle_counter_to_time(last_local_stream_created_cycle),
+                                  GPR_CLOCK_REALTIME);
       data["lastLocalStreamCreatedTimestamp"] = gpr_format_timespec(ts);
     }
     gpr_cycle_counter last_remote_stream_created_cycle =
         last_remote_stream_created_cycle_.Load(MemoryOrder::RELAXED);
     if (last_remote_stream_created_cycle != 0) {
-      ts = gpr_convert_clock_type(
-          gpr_cycle_counter_to_time(last_remote_stream_created_cycle),
-          GPR_CLOCK_REALTIME);
+      ts = gpr_convert_clock_type(gpr_cycle_counter_to_time(last_remote_stream_created_cycle),
+                                  GPR_CLOCK_REALTIME);
       data["lastRemoteStreamCreatedTimestamp"] = gpr_format_timespec(ts);
     }
   }
@@ -532,8 +512,7 @@ Json SocketNode::RenderJson() {
   if (messages_sent != 0) {
     data["messagesSent"] = std::to_string(messages_sent);
     ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_time(
-            last_message_sent_cycle_.Load(MemoryOrder::RELAXED)),
+        gpr_cycle_counter_to_time(last_message_sent_cycle_.Load(MemoryOrder::RELAXED)),
         GPR_CLOCK_REALTIME);
     data["lastMessageSentTimestamp"] = gpr_format_timespec(ts);
   }
@@ -541,8 +520,7 @@ Json SocketNode::RenderJson() {
   if (messages_received != 0) {
     data["messagesReceived"] = std::to_string(messages_received);
     ts = gpr_convert_clock_type(
-        gpr_cycle_counter_to_time(
-            last_message_received_cycle_.Load(MemoryOrder::RELAXED)),
+        gpr_cycle_counter_to_time(last_message_received_cycle_.Load(MemoryOrder::RELAXED)),
         GPR_CLOCK_REALTIME);
     data["lastMessageReceivedTimestamp"] = gpr_format_timespec(ts);
   }
@@ -559,8 +537,7 @@ Json SocketNode::RenderJson() {
        }},
       {"data", std::move(data)},
   };
-  if (security_ != nullptr &&
-      security_->type != SocketNode::Security::ModelType::kUnset) {
+  if (security_ != nullptr && security_->type != SocketNode::Security::ModelType::kUnset) {
     object["security"] = security_->RenderJson();
   }
   PopulateSocketAddressJson(&object, "remote", remote_.c_str());
@@ -573,8 +550,7 @@ Json SocketNode::RenderJson() {
 //
 
 ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
-    : BaseNode(EntityType::kSocket, std::move(name)),
-      local_addr_(std::move(local_addr)) {}
+    : BaseNode(EntityType::kSocket, std::move(name)), local_addr_(std::move(local_addr)) {}
 
 Json ListenSocketNode::RenderJson() {
   Json::Object object = {

@@ -27,8 +27,7 @@ std::atomic<int> PhonyInterceptor::num_times_run_;
 std::atomic<int> PhonyInterceptor::num_times_run_reverse_;
 std::atomic<int> PhonyInterceptor::num_times_cancel_;
 
-void MakeCall(const std::shared_ptr<Channel>& channel,
-              const StubOptions& options) {
+void MakeCall(const std::shared_ptr<Channel>& channel, const StubOptions& options) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel, options);
   ClientContext ctx;
   EchoRequest req;
@@ -117,8 +116,7 @@ void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_TRUE(recv_status.ok());
 }
 
-void MakeAsyncCQClientStreamingCall(
-    const std::shared_ptr<Channel>& /*channel*/) {
+void MakeAsyncCQClientStreamingCall(const std::shared_ptr<Channel>& /*channel*/) {
   // TODO(yashykt) : Fill this out
 }
 
@@ -178,8 +176,8 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
   }
 }
 
-bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
-                   const string& key, const string& value) {
+bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map, const string& key,
+                   const string& value) {
   for (const auto& pair : map) {
     if (pair.first.starts_with(key) && pair.second.starts_with(value)) {
       return true;
@@ -188,8 +186,8 @@ bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
   return false;
 }
 
-bool CheckMetadata(const std::multimap<std::string, std::string>& map,
-                   const string& key, const string& value) {
+bool CheckMetadata(const std::multimap<std::string, std::string>& map, const string& key,
+                   const string& value) {
   for (const auto& pair : map) {
     if (pair.first == key && pair.second == value) {
       return true;
@@ -200,8 +198,7 @@ bool CheckMetadata(const std::multimap<std::string, std::string>& map,
 
 std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreatePhonyClientInterceptors() {
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-      creators;
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>> creators;
   // Add 20 phony interceptors before hijacking interceptor
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {

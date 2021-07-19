@@ -32,8 +32,8 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
  public:
   const char* name() const override { return "fake1"; }
 
-  RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+  RefCountedPtr<Config> CreateCertificateProviderConfig(const Json& /*config_json*/,
+                                                        grpc_error_handle* /*error*/) override {
     return nullptr;
   }
 
@@ -47,8 +47,8 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
  public:
   const char* name() const override { return "fake2"; }
 
-  RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+  RefCountedPtr<Config> CreateCertificateProviderConfig(const Json& /*config_json*/,
+                                                        grpc_error_handle* /*error*/) override {
     return nullptr;
   }
 
@@ -66,15 +66,9 @@ TEST(CertificateProviderRegistryTest, Basic) {
       std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
   CertificateProviderRegistry::RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory>(fake_factory_2));
-  EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake1"),
-      fake_factory_1);
-  EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake2"),
-      fake_factory_2);
-  EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake3"),
-      nullptr);
+  EXPECT_EQ(CertificateProviderRegistry::LookupCertificateProviderFactory("fake1"), fake_factory_1);
+  EXPECT_EQ(CertificateProviderRegistry::LookupCertificateProviderFactory("fake2"), fake_factory_2);
+  EXPECT_EQ(CertificateProviderRegistry::LookupCertificateProviderFactory("fake3"), nullptr);
   CertificateProviderRegistry::ShutdownRegistry();
 }
 

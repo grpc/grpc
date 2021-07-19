@@ -35,8 +35,7 @@ grpc_error_handle grpc_chttp2_incoming_metadata_buffer_add(
     storage = &buffer->preallocated_mdelems[buffer->count];
     buffer->count++;
   } else {
-    storage = static_cast<grpc_linked_mdelem*>(
-        buffer->arena->Alloc(sizeof(grpc_linked_mdelem)));
+    storage = static_cast<grpc_linked_mdelem*>(buffer->arena->Alloc(sizeof(grpc_linked_mdelem)));
   }
   storage->md = elem;
   return grpc_metadata_batch_link_tail(&buffer->batch, storage);
@@ -44,8 +43,7 @@ grpc_error_handle grpc_chttp2_incoming_metadata_buffer_add(
 
 grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) {
-  for (grpc_linked_mdelem* l = buffer->batch.list.head; l != nullptr;
-       l = l->next) {
+  for (grpc_linked_mdelem* l = buffer->batch.list.head; l != nullptr; l = l->next) {
     if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDKEY(elem))) {
       GRPC_MDELEM_UNREF(l->md);
       l->md = elem;
@@ -55,12 +53,12 @@ grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
   return grpc_chttp2_incoming_metadata_buffer_add(buffer, elem);
 }
 
-void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_millis deadline) {
+void grpc_chttp2_incoming_metadata_buffer_set_deadline(grpc_chttp2_incoming_metadata_buffer* buffer,
+                                                       grpc_millis deadline) {
   buffer->batch.deadline = deadline;
 }
 
-void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_metadata_batch* batch) {
+void grpc_chttp2_incoming_metadata_buffer_publish(grpc_chttp2_incoming_metadata_buffer* buffer,
+                                                  grpc_metadata_batch* batch) {
   grpc_metadata_batch_move(&buffer->batch, batch);
 }

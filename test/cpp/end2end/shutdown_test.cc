@@ -71,8 +71,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     std::string server_address = "localhost:" + to_string(port);
 
     ServerBuilder builder;
-    auto server_creds =
-        GetCredentialsProvider()->GetServerCredentials(GetParam());
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(GetParam());
     builder.AddListeningPort(server_address, server_creds);
     builder.RegisterService(&service_);
     std::unique_ptr<Server> server = builder.BuildAndStart();
@@ -84,8 +83,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
     ChannelArguments args;
-    auto channel_creds =
-        GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args);
+    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args);
     channel_ = ::grpc::CreateCustomChannel(target, channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
@@ -118,8 +116,8 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
 
 std::vector<string> GetAllCredentialsTypeList() {
   std::vector<std::string> credentials_types;
-  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
-                                                      nullptr) != nullptr) {
+  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType, nullptr) !=
+      nullptr) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
@@ -152,8 +150,7 @@ TEST_P(ShutdownTest, ShutdownTest) {
   shutdown_ = true;
 
   // shutdown should trigger cancellation causing everything to shutdown
-  auto deadline =
-      std::chrono::system_clock::now() + std::chrono::microseconds(100);
+  auto deadline = std::chrono::system_clock::now() + std::chrono::microseconds(100);
   server_->Shutdown(deadline);
   EXPECT_GE(std::chrono::system_clock::now(), deadline);
 

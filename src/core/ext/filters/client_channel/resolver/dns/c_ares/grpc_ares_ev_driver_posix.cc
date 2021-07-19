@@ -68,13 +68,10 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return ioctl(grpc_fd_wrapped_fd(fd_), FIONREAD, &bytes_available) == 0 &&
-           bytes_available > 0;
+    return ioctl(grpc_fd_wrapped_fd(fd_), FIONREAD, &bytes_available) == 0 && bytes_available > 0;
   }
 
-  void ShutdownLocked(grpc_error_handle error) override {
-    grpc_fd_shutdown(fd_, error);
-  }
+  void ShutdownLocked(grpc_error_handle error) override { grpc_fd_shutdown(fd_, error); }
 
   ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
 

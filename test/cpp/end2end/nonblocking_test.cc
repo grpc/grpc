@@ -48,8 +48,7 @@ GPR_TLS_DECL(g_is_nonblocking_poll);
 
 namespace {
 
-int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
-                                   int timeout) {
+int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds, int timeout) {
   // Only assert that this poll should have zero timeout if we're in the
   // middle of a zero-timeout CQ Next.
   if (gpr_tls_get(&g_is_nonblocking_poll)) {
@@ -109,18 +108,16 @@ class NonblockingTest : public ::testing::Test {
 
   void BuildAndStartServer() {
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
-                             grpc::InsecureServerCredentials());
-    service_ =
-        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
+    builder.AddListeningPort(server_address_.str(), grpc::InsecureServerCredentials());
+    service_ = absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
   }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), grpc::InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel =
+        grpc::CreateChannel(server_address_.str(), grpc::InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -143,8 +140,8 @@ class NonblockingTest : public ::testing::Test {
       response_reader->StartCall();
       response_reader->Finish(&recv_response, &recv_status, tag(4));
 
-      service_->RequestEcho(&srv_ctx, &recv_request, &response_writer,
-                            cq_.get(), cq_.get(), tag(2));
+      service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(),
+                            tag(2));
 
       void* got_tag;
       bool ok;

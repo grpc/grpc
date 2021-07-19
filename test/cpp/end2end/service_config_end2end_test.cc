@@ -77,8 +77,7 @@ class MyTestServiceImpl : public TestServiceImpl {
  public:
   MyTestServiceImpl() : request_count_(0) {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext* context, const EchoRequest* request, EchoResponse* response) override {
     {
       grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
@@ -119,8 +118,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   ServiceConfigEnd2endTest()
       : server_host_("localhost"),
         kRequestMessage_("Live long and prosper."),
-        creds_(new SecureChannelCredentials(
-            grpc_fake_transport_security_credentials_create())) {}
+        creds_(new SecureChannelCredentials(grpc_fake_transport_security_credentials_create())) {}
 
   static void SetUpTestCase() {
     // Make the backup poller poll very frequently in order to pick up
@@ -130,12 +128,10 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   void SetUp() override {
     grpc_init();
-    response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    response_generator_ = grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
-    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
-                                 &localhost_resolves_to_ipv6);
+    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4, &localhost_resolves_to_ipv6);
     ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
   }
 
@@ -152,8 +148,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_shutdown();
   }
 
-  void CreateServers(size_t num_servers,
-                     std::vector<int> ports = std::vector<int>()) {
+  void CreateServers(size_t num_servers, std::vector<int> ports = std::vector<int>()) {
     servers_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
       int port = 0;
@@ -164,8 +159,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   void StartServer(size_t index) { servers_[index]->Start(server_host_); }
 
-  void StartServers(size_t num_servers,
-                    std::vector<int> ports = std::vector<int>()) {
+  void StartServers(size_t num_servers, std::vector<int> ports = std::vector<int>()) {
     CreateServers(num_servers, std::move(ports));
     for (size_t i = 0; i < num_servers; ++i) {
       StartServer(i);
@@ -175,14 +169,12 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
     grpc_core::Resolver::Result result;
     for (const int& port : ports) {
-      std::string lb_uri_str =
-          absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
+      std::string lb_uri_str = absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(lb_uri_str);
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      result.addresses.emplace_back(address.addr, address.len,
-                                    nullptr /* args */);
+      result.addresses.emplace_back(address.addr, address.len, nullptr /* args */);
     }
     return result;
   }
@@ -196,25 +188,24 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, "{}", &result.service_config_error);
+    result.service_config =
+        grpc_core::ServiceConfig::Create(nullptr, "{}", &result.service_config_error);
     response_generator_->SetResponse(result);
   }
 
   void SetNextResolutionInvalidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, "{", &result.service_config_error);
+    result.service_config =
+        grpc_core::ServiceConfig::Create(nullptr, "{", &result.service_config_error);
     response_generator_->SetResponse(result);
   }
 
-  void SetNextResolutionWithServiceConfig(const std::vector<int>& ports,
-                                          const char* svc_cfg) {
+  void SetNextResolutionWithServiceConfig(const std::vector<int>& ports, const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, svc_cfg, &result.service_config_error);
+    result.service_config =
+        grpc_core::ServiceConfig::Create(nullptr, svc_cfg, &result.service_config_error);
     response_generator_->SetResponse(result);
   }
 
@@ -233,37 +224,31 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannel() {
     ChannelArguments args;
-    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_.get());
+    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR, response_generator_.get());
     return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   std::shared_ptr<Channel> BuildChannelWithDefaultServiceConfig() {
     ChannelArguments args;
-    EXPECT_THAT(grpc::experimental::ValidateServiceConfigJSON(
-                    ValidDefaultServiceConfig()),
+    EXPECT_THAT(grpc::experimental::ValidateServiceConfigJSON(ValidDefaultServiceConfig()),
                 ::testing::StrEq(""));
     args.SetServiceConfigJSON(ValidDefaultServiceConfig());
-    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_.get());
+    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR, response_generator_.get());
     return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   std::shared_ptr<Channel> BuildChannelWithInvalidDefaultServiceConfig() {
     ChannelArguments args;
-    EXPECT_THAT(grpc::experimental::ValidateServiceConfigJSON(
-                    InvalidDefaultServiceConfig()),
+    EXPECT_THAT(grpc::experimental::ValidateServiceConfigJSON(InvalidDefaultServiceConfig()),
                 ::testing::HasSubstr("JSON parse error"));
     args.SetServiceConfigJSON(InvalidDefaultServiceConfig());
-    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_.get());
+    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR, response_generator_.get());
     return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
-  bool SendRpc(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      EchoResponse* response = nullptr, int timeout_ms = 1000,
-      Status* result = nullptr, bool wait_for_ready = false) {
+  bool SendRpc(const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+               EchoResponse* response = nullptr, int timeout_ms = 1000, Status* result = nullptr,
+               bool wait_for_ready = false) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
@@ -277,24 +262,19 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     return status.ok();
   }
 
-  void CheckRpcSendOk(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      const grpc_core::DebugLocation& location, bool wait_for_ready = false) {
+  void CheckRpcSendOk(const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+                      const grpc_core::DebugLocation& location, bool wait_for_ready = false) {
     EchoResponse response;
     Status status;
-    const bool success =
-        SendRpc(stub, &response, 2000, &status, wait_for_ready);
-    ASSERT_TRUE(success) << "From " << location.file() << ":" << location.line()
-                         << "\n"
-                         << "Error: " << status.error_message() << " "
-                         << status.error_details();
+    const bool success = SendRpc(stub, &response, 2000, &status, wait_for_ready);
+    ASSERT_TRUE(success) << "From " << location.file() << ":" << location.line() << "\n"
+                         << "Error: " << status.error_message() << " " << status.error_details();
     ASSERT_EQ(response.message(), kRequestMessage_)
         << "From " << location.file() << ":" << location.line();
     if (!success) abort();
   }
 
-  void CheckRpcSendFailure(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub) {
+  void CheckRpcSendFailure(const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub) {
     const bool success = SendRpc(stub);
     EXPECT_FALSE(success);
   }
@@ -307,9 +287,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     bool server_ready_ = false;
     bool started_ = false;
 
-    explicit ServerData(int port = 0) {
-      port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
-    }
+    explicit ServerData(int port = 0) { port_ = port > 0 ? port : grpc_pick_unused_port_or_die(); }
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
@@ -329,8 +307,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
-          grpc_fake_transport_security_server_credentials_create()));
+      std::shared_ptr<ServerCredentials> creds(
+          new SecureServerCredentials(grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
@@ -355,10 +333,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     for (const auto& server : servers_) server->service_.ResetCounters();
   }
 
-  void WaitForServer(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      size_t server_idx, const grpc_core::DebugLocation& location,
-      bool ignore_failure = false) {
+  void WaitForServer(const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+                     size_t server_idx, const grpc_core::DebugLocation& location,
+                     bool ignore_failure = false) {
     do {
       if (ignore_failure) {
         SendRpc(stub);
@@ -370,22 +347,18 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   }
 
   bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
-    while ((state = channel->GetState(false /* try_to_connect */)) ==
-           GRPC_CHANNEL_READY) {
+    while ((state = channel->GetState(false /* try_to_connect */)) == GRPC_CHANNEL_READY) {
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
     return true;
   }
 
   bool WaitForChannelReady(Channel* channel, int timeout_seconds = 5) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
-    while ((state = channel->GetState(true /* try_to_connect */)) !=
-           GRPC_CHANNEL_READY) {
+    while ((state = channel->GetState(true /* try_to_connect */)) != GRPC_CHANNEL_READY) {
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
     return true;
@@ -400,14 +373,12 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   // Updates \a connection_order by appending to it the index of the newly
   // connected server. Must be called after every single RPC.
-  void UpdateConnectionOrder(
-      const std::vector<std::unique_ptr<ServerData>>& servers,
-      std::vector<int>* connection_order) {
+  void UpdateConnectionOrder(const std::vector<std::unique_ptr<ServerData>>& servers,
+                             std::vector<int>* connection_order) {
     for (size_t i = 0; i < servers.size(); ++i) {
       if (servers[i]->service_.request_count() == 1) {
         // Was the server index known? If not, update connection_order.
-        const auto it =
-            std::find(connection_order->begin(), connection_order->end(), i);
+        const auto it = std::find(connection_order->begin(), connection_order->end(), i);
         if (it == connection_order->end()) {
           connection_order->push_back(i);
           return;
@@ -420,20 +391,15 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   const char* ValidServiceConfigV2() { return "{\"version\": \"2\"}"; }
 
-  const char* ValidDefaultServiceConfig() {
-    return "{\"version\": \"valid_default\"}";
-  }
+  const char* ValidDefaultServiceConfig() { return "{\"version\": \"valid_default\"}"; }
 
-  const char* InvalidDefaultServiceConfig() {
-    return "{\"version\": \"invalid_default\"";
-  }
+  const char* InvalidDefaultServiceConfig() { return "{\"version\": \"invalid_default\""; }
 
   bool ipv6_only_ = false;
   const std::string server_host_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator> response_generator_;
   const std::string kRequestMessage_;
   std::shared_ptr<ChannelCredentials> creds_;
 };
@@ -453,8 +419,7 @@ TEST_F(ServiceConfigEnd2endTest, NoServiceConfigWithDefaultConfigTest) {
   auto stub = BuildStub(channel);
   SetNextResolutionNoServiceConfig(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
-  EXPECT_STREQ(ValidDefaultServiceConfig(),
-               channel->GetServiceConfigJSON().c_str());
+  EXPECT_STREQ(ValidDefaultServiceConfig(), channel->GetServiceConfigJSON().c_str());
 }
 
 TEST_F(ServiceConfigEnd2endTest, InvalidServiceConfigTest) {
@@ -477,8 +442,7 @@ TEST_F(ServiceConfigEnd2endTest, ValidServiceConfigUpdatesTest) {
   EXPECT_STREQ(ValidServiceConfigV2(), channel->GetServiceConfigJSON().c_str());
 }
 
-TEST_F(ServiceConfigEnd2endTest,
-       NoServiceConfigUpdateAfterValidServiceConfigTest) {
+TEST_F(ServiceConfigEnd2endTest, NoServiceConfigUpdateAfterValidServiceConfigTest) {
   StartServers(1);
   auto channel = BuildChannel();
   auto stub = BuildStub(channel);
@@ -500,12 +464,10 @@ TEST_F(ServiceConfigEnd2endTest,
   EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
   SetNextResolutionNoServiceConfig(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
-  EXPECT_STREQ(ValidDefaultServiceConfig(),
-               channel->GetServiceConfigJSON().c_str());
+  EXPECT_STREQ(ValidDefaultServiceConfig(), channel->GetServiceConfigJSON().c_str());
 }
 
-TEST_F(ServiceConfigEnd2endTest,
-       InvalidServiceConfigUpdateAfterValidServiceConfigTest) {
+TEST_F(ServiceConfigEnd2endTest, InvalidServiceConfigUpdateAfterValidServiceConfigTest) {
   StartServers(1);
   auto channel = BuildChannel();
   auto stub = BuildStub(channel);
@@ -530,8 +492,7 @@ TEST_F(ServiceConfigEnd2endTest,
   EXPECT_STREQ(ValidServiceConfigV1(), channel->GetServiceConfigJSON().c_str());
 }
 
-TEST_F(ServiceConfigEnd2endTest,
-       ValidServiceConfigAfterInvalidServiceConfigTest) {
+TEST_F(ServiceConfigEnd2endTest, ValidServiceConfigAfterInvalidServiceConfigTest) {
   StartServers(1);
   auto channel = BuildChannel();
   auto stub = BuildStub(channel);
@@ -552,8 +513,7 @@ TEST_F(ServiceConfigEnd2endTest, NoServiceConfigAfterInvalidServiceConfigTest) {
   EXPECT_STREQ("{}", channel->GetServiceConfigJSON().c_str());
 }
 
-TEST_F(ServiceConfigEnd2endTest,
-       AnotherInvalidServiceConfigAfterInvalidServiceConfigTest) {
+TEST_F(ServiceConfigEnd2endTest, AnotherInvalidServiceConfigAfterInvalidServiceConfigTest) {
   StartServers(1);
   auto channel = BuildChannel();
   auto stub = BuildStub(channel);
@@ -572,8 +532,7 @@ TEST_F(ServiceConfigEnd2endTest, InvalidDefaultServiceConfigTest) {
   CheckRpcSendFailure(stub);
 }
 
-TEST_F(ServiceConfigEnd2endTest,
-       InvalidDefaultServiceConfigTestWithValidServiceConfig) {
+TEST_F(ServiceConfigEnd2endTest, InvalidDefaultServiceConfigTestWithValidServiceConfig) {
   StartServers(1);
   auto channel = BuildChannelWithInvalidDefaultServiceConfig();
   auto stub = BuildStub(channel);
@@ -584,8 +543,7 @@ TEST_F(ServiceConfigEnd2endTest,
   CheckRpcSendFailure(stub);
 }
 
-TEST_F(ServiceConfigEnd2endTest,
-       InvalidDefaultServiceConfigTestWithInvalidServiceConfig) {
+TEST_F(ServiceConfigEnd2endTest, InvalidDefaultServiceConfigTestWithInvalidServiceConfig) {
   StartServers(1);
   auto channel = BuildChannelWithInvalidDefaultServiceConfig();
   auto stub = BuildStub(channel);
@@ -596,8 +554,7 @@ TEST_F(ServiceConfigEnd2endTest,
   CheckRpcSendFailure(stub);
 }
 
-TEST_F(ServiceConfigEnd2endTest,
-       InvalidDefaultServiceConfigTestWithNoServiceConfig) {
+TEST_F(ServiceConfigEnd2endTest, InvalidDefaultServiceConfigTestWithNoServiceConfig) {
   StartServers(1);
   auto channel = BuildChannelWithInvalidDefaultServiceConfig();
   auto stub = BuildStub(channel);

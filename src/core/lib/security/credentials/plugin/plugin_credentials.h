@@ -43,11 +43,9 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
                                    grpc_security_level min_security_level);
   ~grpc_plugin_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
+  bool get_request_metadata(grpc_polling_entity* pollent, grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
+                            grpc_closure* on_request_metadata, grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error_handle error) override;

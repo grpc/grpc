@@ -24,17 +24,14 @@
 
 struct grpc_event_engine_endpoint {
   grpc_endpoint base;
-  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-      endpoint;
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint> endpoint;
   std::string peer_address;
   std::string local_address;
   grpc_resource_user* ru = nullptr;
-  std::aligned_storage<
-      sizeof(grpc_event_engine::experimental::SliceBuffer),
-      alignof(grpc_event_engine::experimental::SliceBuffer)>::type read_buffer;
-  std::aligned_storage<
-      sizeof(grpc_event_engine::experimental::SliceBuffer),
-      alignof(grpc_event_engine::experimental::SliceBuffer)>::type write_buffer;
+  std::aligned_storage<sizeof(grpc_event_engine::experimental::SliceBuffer),
+                       alignof(grpc_event_engine::experimental::SliceBuffer)>::type read_buffer;
+  std::aligned_storage<sizeof(grpc_event_engine::experimental::SliceBuffer),
+                       alignof(grpc_event_engine::experimental::SliceBuffer)>::type write_buffer;
 };
 
 /// Creates an internal grpc_endpoint struct from an EventEngine Endpoint.

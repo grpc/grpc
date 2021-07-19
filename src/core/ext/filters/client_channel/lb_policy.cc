@@ -33,17 +33,13 @@ DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
 
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
     : InternallyRefCounted(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
-              ? "LoadBalancingPolicy"
-              : nullptr,
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount) ? "LoadBalancingPolicy" : nullptr,
           initial_refcount),
       work_serializer_(std::move(args.work_serializer)),
       interested_parties_(grpc_pollset_set_create()),
       channel_control_helper_(std::move(args.channel_control_helper)) {}
 
-LoadBalancingPolicy::~LoadBalancingPolicy() {
-  grpc_pollset_set_destroy(interested_parties_);
-}
+LoadBalancingPolicy::~LoadBalancingPolicy() { grpc_pollset_set_destroy(interested_parties_); }
 
 void LoadBalancingPolicy::Orphan() {
   ShutdownLocked();
@@ -95,8 +91,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 // LoadBalancingPolicy::QueuePicker
 //
 
-LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
-    PickArgs /*args*/) {
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(PickArgs /*args*/) {
   // We invoke the parent's ExitIdleLocked() via a closure instead
   // of doing it directly here, for two reasons:
   // 1. ExitIdleLocked() may cause the policy's state to change and
@@ -134,8 +129,8 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
 // LoadBalancingPolicy::TransientFailurePicker
 //
 
-LoadBalancingPolicy::PickResult
-LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs /*args*/) {
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::TransientFailurePicker::Pick(
+    PickArgs /*args*/) {
   PickResult result;
   result.type = PickResult::PICK_FAILED;
   result.error = GRPC_ERROR_REF(error_);

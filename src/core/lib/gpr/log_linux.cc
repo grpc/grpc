@@ -48,8 +48,7 @@ int gpr_should_log_stacktrace(gpr_log_severity severity);
 
 static long sys_gettid(void) { return syscall(__NR_gettid); }
 
-void gpr_log(const char* file, int line, gpr_log_severity severity,
-             const char* format, ...) {
+void gpr_log(const char* file, int line, gpr_log_severity severity, const char* format, ...) {
   /* Avoid message construction if gpr_log_message won't log */
   if (gpr_should_log(severity) == 0) {
     return;
@@ -87,22 +86,18 @@ void gpr_default_log(gpr_log_func_args* args) {
 
   if (!localtime_r(&timer, &tm)) {
     strcpy(time_buffer, "error:localtime");
-  } else if (0 ==
-             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
+  } else if (0 == strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
     strcpy(time_buffer, "error:strftime");
   }
 
-  std::string prefix = absl::StrFormat(
-      "%s%s.%09" PRId32 " %7ld %s:%d]", gpr_log_severity_string(args->severity),
-      time_buffer, now.tv_nsec, tid, display_file, args->line);
+  std::string prefix =
+      absl::StrFormat("%s%s.%09" PRId32 " %7ld %s:%d]", gpr_log_severity_string(args->severity),
+                      time_buffer, now.tv_nsec, tid, display_file, args->line);
 
   absl::optional<std::string> stack_trace =
-      gpr_should_log_stacktrace(args->severity)
-          ? grpc_core::GetCurrentStackTrace()
-          : absl::nullopt;
+      gpr_should_log_stacktrace(args->severity) ? grpc_core::GetCurrentStackTrace() : absl::nullopt;
   if (stack_trace) {
-    fprintf(stderr, "%-60s %s\n%s\n", prefix.c_str(), args->message,
-            stack_trace->c_str());
+    fprintf(stderr, "%-60s %s\n%s\n", prefix.c_str(), args->message, stack_trace->c_str());
   } else {
     fprintf(stderr, "%-60s %s\n", prefix.c_str(), args->message);
   }

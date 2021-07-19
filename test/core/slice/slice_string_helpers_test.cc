@@ -32,8 +32,7 @@
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
-static void expect_slice_dump(grpc_slice slice, uint32_t flags,
-                              const char* result) {
+static void expect_slice_dump(grpc_slice slice, uint32_t flags, const char* result) {
   char* got = grpc_dump_slice(slice, flags);
   GPR_ASSERT(0 == strcmp(got, result));
   gpr_free(got);
@@ -52,12 +51,10 @@ static void test_dump_slice(void) {
   LOG_TEST_NAME("test_dump_slice");
 
   expect_slice_dump(grpc_slice_from_copied_string(text), GPR_DUMP_ASCII, text);
-  expect_slice_dump(grpc_slice_from_copied_string(long_text), GPR_DUMP_ASCII,
-                    long_text);
-  expect_slice_dump(grpc_slice_from_copied_buffer("\x01", 1), GPR_DUMP_HEX,
-                    "01");
-  expect_slice_dump(grpc_slice_from_copied_buffer("\x01", 1),
-                    GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
+  expect_slice_dump(grpc_slice_from_copied_string(long_text), GPR_DUMP_ASCII, long_text);
+  expect_slice_dump(grpc_slice_from_copied_buffer("\x01", 1), GPR_DUMP_HEX, "01");
+  expect_slice_dump(grpc_slice_from_copied_buffer("\x01", 1), GPR_DUMP_HEX | GPR_DUMP_ASCII,
+                    "01 '.'");
 }
 
 static void test_strsplit(void) {
@@ -66,8 +63,7 @@ static void test_strsplit(void) {
 
   LOG_TEST_NAME("test_strsplit");
 
-  parts =
-      static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(grpc_slice_buffer)));
+  parts = static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(grpc_slice_buffer)));
   grpc_slice_buffer_init(parts);
 
   str = grpc_slice_from_copied_string("one, two, three, four");
@@ -133,8 +129,7 @@ static void test_strsplit_nospace(void) {
 
   LOG_TEST_NAME("test_strsplit_nospace");
 
-  parts =
-      static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(grpc_slice_buffer)));
+  parts = static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(grpc_slice_buffer)));
   grpc_slice_buffer_init(parts);
 
   str = grpc_slice_from_copied_string("one  ,two,   three  , four");

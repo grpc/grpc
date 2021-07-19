@@ -38,13 +38,11 @@ struct WorkItem {
 // produced items on destructing.
 class ProducerThread {
  public:
-  ProducerThread(grpc_core::InfLenFIFOQueue* queue, int start_index,
-                 int num_items)
+  ProducerThread(grpc_core::InfLenFIFOQueue* queue, int start_index, int num_items)
       : start_index_(start_index), num_items_(num_items), queue_(queue) {
     items_ = nullptr;
     thd_ = grpc_core::Thread(
-        "mpmcq_test_producer_thd",
-        [](void* th) { static_cast<ProducerThread*>(th)->Run(); }, this);
+        "mpmcq_test_producer_thd", [](void* th) { static_cast<ProducerThread*>(th)->Run(); }, this);
   }
   ~ProducerThread() {
     for (int i = 0; i < num_items_; ++i) {
@@ -59,8 +57,7 @@ class ProducerThread {
 
  private:
   void Run() {
-    items_ =
-        static_cast<WorkItem**>(gpr_zalloc(num_items_ * sizeof(WorkItem*)));
+    items_ = static_cast<WorkItem**>(gpr_zalloc(num_items_ * sizeof(WorkItem*)));
     for (int i = 0; i < num_items_; ++i) {
       items_[i] = new WorkItem(start_index_ + i);
       queue_->Put(items_[i]);
@@ -79,8 +76,7 @@ class ConsumerThread {
  public:
   explicit ConsumerThread(grpc_core::InfLenFIFOQueue* queue) : queue_(queue) {
     thd_ = grpc_core::Thread(
-        "mpmcq_test_consumer_thd",
-        [](void* th) { static_cast<ConsumerThread*>(th)->Run(); }, this);
+        "mpmcq_test_consumer_thd", [](void* th) { static_cast<ConsumerThread*>(th)->Run(); }, this);
   }
   ~ConsumerThread() {}
 
@@ -175,15 +171,14 @@ static void test_many_thread(void) {
   const int num_producer_threads = 10;
   const int num_consumer_threads = 20;
   grpc_core::InfLenFIFOQueue queue;
-  ProducerThread** producer_threads = static_cast<ProducerThread**>(
-      gpr_zalloc(num_producer_threads * sizeof(ProducerThread*)));
-  ConsumerThread** consumer_threads = static_cast<ConsumerThread**>(
-      gpr_zalloc(num_consumer_threads * sizeof(ConsumerThread*)));
+  ProducerThread** producer_threads =
+      static_cast<ProducerThread**>(gpr_zalloc(num_producer_threads * sizeof(ProducerThread*)));
+  ConsumerThread** consumer_threads =
+      static_cast<ConsumerThread**>(gpr_zalloc(num_consumer_threads * sizeof(ConsumerThread*)));
 
   gpr_log(GPR_DEBUG, "Fork ProducerThreads...");
   for (int i = 0; i < num_producer_threads; ++i) {
-    producer_threads[i] =
-        new ProducerThread(&queue, i * TEST_NUM_ITEMS, TEST_NUM_ITEMS);
+    producer_threads[i] = new ProducerThread(&queue, i * TEST_NUM_ITEMS, TEST_NUM_ITEMS);
     producer_threads[i]->Start();
   }
   gpr_log(GPR_DEBUG, "ProducerThreads Started.");

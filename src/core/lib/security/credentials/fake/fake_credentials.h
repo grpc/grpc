@@ -25,8 +25,7 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.fake_security.expected_targets"
+#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS "grpc.fake_security.expected_targets"
 
 /* -- Fake transport security credentials. -- */
 
@@ -34,8 +33,7 @@
 grpc_channel_credentials* grpc_fake_transport_security_credentials_create(void);
 
 /* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
-    void);
+grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(void);
 
 /* Used to verify the target names given to the fake transport security
  * connector.
@@ -52,27 +50,22 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets);
 
 /* Return the value associated with the expected targets channel arg or NULL */
-const char* grpc_fake_transport_get_expected_targets(
-    const grpc_channel_args* args);
+const char* grpc_fake_transport_get_expected_targets(const grpc_channel_args* args);
 
 /* --  Metadata-only Test credentials. -- */
 
 class grpc_md_only_test_credentials : public grpc_call_credentials {
  public:
-  grpc_md_only_test_credentials(const char* md_key, const char* md_value,
-                                bool is_async)
-      : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
-                              GRPC_SECURITY_NONE),
+  grpc_md_only_test_credentials(const char* md_key, const char* md_value, bool is_async)
+      : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2, GRPC_SECURITY_NONE),
         md_(grpc_mdelem_from_slices(grpc_slice_from_copied_string(md_key),
                                     grpc_slice_from_copied_string(md_value))),
         is_async_(is_async) {}
   ~grpc_md_only_test_credentials() override { GRPC_MDELEM_UNREF(md_); }
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
+  bool get_request_metadata(grpc_polling_entity* pollent, grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
+                            grpc_closure* on_request_metadata, grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error_handle error) override;

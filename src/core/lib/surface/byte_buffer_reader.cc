@@ -30,8 +30,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
-                                 grpc_byte_buffer* buffer) {
+int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader, grpc_byte_buffer* buffer) {
   reader->buffer_in = buffer;
   switch (reader->buffer_in->type) {
     case GRPC_BB_RAW:
@@ -46,8 +45,7 @@ void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader) {
   reader->buffer_out = nullptr;
 }
 
-int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
-                                 grpc_slice** slice) {
+int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader, grpc_slice** slice) {
   switch (reader->buffer_in->type) {
     case GRPC_BB_RAW: {
       grpc_slice_buffer* slice_buffer;
@@ -63,15 +61,13 @@ int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
   return 0;
 }
 
-int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
-                                 grpc_slice* slice) {
+int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader, grpc_slice* slice) {
   switch (reader->buffer_in->type) {
     case GRPC_BB_RAW: {
       grpc_slice_buffer* slice_buffer;
       slice_buffer = &reader->buffer_out->data.raw.slice_buffer;
       if (reader->current.index < slice_buffer->count) {
-        *slice = grpc_slice_ref_internal(
-            slice_buffer->slices[reader->current.index]);
+        *slice = grpc_slice_ref_internal(slice_buffer->slices[reader->current.index]);
         reader->current.index += 1;
         return 1;
       }

@@ -48,12 +48,12 @@ class CertificateProviderFactory {
   // Name of the plugin.
   virtual const char* name() const = 0;
 
-  virtual RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& config_json, grpc_error_handle* error) = 0;
+  virtual RefCountedPtr<Config> CreateCertificateProviderConfig(const Json& config_json,
+                                                                grpc_error_handle* error) = 0;
 
   // Create a CertificateProvider instance from config.
-  virtual RefCountedPtr<grpc_tls_certificate_provider>
-  CreateCertificateProvider(RefCountedPtr<Config> config) = 0;
+  virtual RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
+      RefCountedPtr<Config> config) = 0;
 };
 
 }  // namespace grpc_core

@@ -58,18 +58,16 @@ class CallCombiner {
 #define GRPC_CALL_COMBINER_STOP(call_combiner, reason) \
   (call_combiner)->Stop(__FILE__, __LINE__, (reason))
   /// Starts processing \a closure.
-  void Start(grpc_closure* closure, grpc_error_handle error, const char* file,
-             int line, const char* reason);
+  void Start(grpc_closure* closure, grpc_error_handle error, const char* file, int line,
+             const char* reason);
   /// Yields the call combiner to the next closure in the queue, if any.
   void Stop(const char* file, int line, const char* reason);
 #else
 #define GRPC_CALL_COMBINER_START(call_combiner, closure, error, reason) \
   (call_combiner)->Start((closure), (error), (reason))
-#define GRPC_CALL_COMBINER_STOP(call_combiner, reason) \
-  (call_combiner)->Stop((reason))
+#define GRPC_CALL_COMBINER_STOP(call_combiner, reason) (call_combiner)->Stop((reason))
   /// Starts processing \a closure.
-  void Start(grpc_closure* closure, grpc_error_handle error,
-             const char* reason);
+  void Start(grpc_closure* closure, grpc_error_handle error, const char* reason);
   /// Yields the call combiner to the next closure in the queue, if any.
   void Stop(const char* reason);
 #endif
@@ -165,16 +163,14 @@ class CallCombinerClosureList {
     }
     for (size_t i = 1; i < closures_.size(); ++i) {
       auto& closure = closures_[i];
-      GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
-                               closure.reason);
+      GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error, closure.reason);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO,
               "CallCombinerClosureList executing closure while already "
               "holding call_combiner %p: closure=%p error=%s reason=%s",
               call_combiner, closures_[0].closure,
-              grpc_error_std_string(closures_[0].error).c_str(),
-              closures_[0].reason);
+              grpc_error_std_string(closures_[0].error).c_str(), closures_[0].reason);
     }
     // This will release the call combiner.
     ExecCtx::Run(DEBUG_LOCATION, closures_[0].closure, closures_[0].error);
@@ -186,8 +182,7 @@ class CallCombinerClosureList {
   void RunClosuresWithoutYielding(CallCombiner* call_combiner) {
     for (size_t i = 0; i < closures_.size(); ++i) {
       auto& closure = closures_[i];
-      GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
-                               closure.reason);
+      GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error, closure.reason);
     }
     closures_.clear();
   }
@@ -200,8 +195,7 @@ class CallCombinerClosureList {
     grpc_error_handle error;
     const char* reason;
 
-    CallCombinerClosure(grpc_closure* closure, grpc_error_handle error,
-                        const char* reason)
+    CallCombinerClosure(grpc_closure* closure, grpc_error_handle error, const char* reason)
         : closure(closure), error(error), reason(reason) {}
   };
 

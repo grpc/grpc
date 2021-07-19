@@ -61,11 +61,10 @@ template <class W, class R>
 class ServerReaderWriterBody;
 
 template <class ResponseType>
-void UnaryRunHandlerHelper(
-    const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
-    ::grpc::Status&);
-template <class ServiceType, class RequestType, class ResponseType,
-          class BaseRequestType, class BaseResponseType>
+void UnaryRunHandlerHelper(const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
+                           ::grpc::Status&);
+template <class ServiceType, class RequestType, class ResponseType, class BaseRequestType,
+          class BaseResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
@@ -104,9 +103,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
   CompletionQueue()
-      : CompletionQueue(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING,
-            nullptr}) {}
+      : CompletionQueue(grpc_completion_queue_attributes{GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT,
+                                                         GRPC_CQ_DEFAULT_POLLING, nullptr}) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -175,9 +173,9 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// \return true if got an event, false if the queue is fully drained and
   ///         shut down.
   bool Next(void** tag, bool* ok) {
-    return (AsyncNextInternal(tag, ok,
-                              ::grpc::g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
+    return (AsyncNextInternal(
+                tag, ok, ::grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME)) !=
+            SHUTDOWN);
   }
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
@@ -245,8 +243,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// Private constructor of CompletionQueue only visible to friend classes
   explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
     cq_ = ::grpc::g_core_codegen_interface->grpc_completion_queue_create(
-        ::grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
-            &attributes),
+        ::grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(&attributes),
         &attributes, nullptr);
     InitialAvalanching();  // reserve this for the future shutdown
   }
@@ -273,8 +270,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ResponseType>
   friend void ::grpc::internal::UnaryRunHandlerHelper(
-      const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
-      ::grpc::Status&);
+      const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*, ::grpc::Status&);
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ::grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
@@ -315,11 +311,10 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
   bool Pluck(::grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        ::grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
+    auto deadline = ::grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
-      auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-          cq_, tag, deadline, nullptr);
+      auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(cq_, tag, deadline,
+                                                                              nullptr);
       bool ok = ev.success != 0;
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
@@ -338,10 +333,9 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(::grpc::internal::CompletionQueueTag* tag) {
-    auto deadline =
-        ::grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
-    auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+    auto deadline = ::grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
+    auto ev =
+        ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
     void* ignored = tag;
@@ -354,10 +348,9 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   ///
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
-  void TryPluck(::grpc::internal::CompletionQueueTag* tag,
-                gpr_timespec deadline) {
-    auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
+  void TryPluck(::grpc::internal::CompletionQueueTag* tag, gpr_timespec deadline) {
+    auto ev =
+        ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
       return;
     }
@@ -373,16 +366,12 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// been finalized. Note that we maintain the requirement that an avalanche
   /// registration must take place before CQ shutdown (which must be maintained
   /// elsehwere)
-  void InitialAvalanching() {
-    gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1));
-  }
+  void InitialAvalanching() { gpr_atm_rel_store(&avalanches_in_flight_, static_cast<gpr_atm>(1)); }
   void RegisterAvalanching() {
-    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                 static_cast<gpr_atm>(1));
+    gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, static_cast<gpr_atm>(1));
   }
   void CompleteAvalanching() {
-    if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                     static_cast<gpr_atm>(-1)) == 1) {
+    if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_, static_cast<gpr_atm>(-1)) == 1) {
       ::grpc::g_core_codegen_interface->grpc_completion_queue_shutdown(cq_);
     }
   }
@@ -420,8 +409,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   // NDEBUG, instantiate it in all cases since otherwise the size will be
   // inconsistent.
   mutable grpc::internal::Mutex server_list_mutex_;
-  std::list<const ::grpc::Server*>
-      server_list_ /* GUARDED_BY(server_list_mutex_) */;
+  std::list<const ::grpc::Server*> server_list_ /* GUARDED_BY(server_list_mutex_) */;
 };
 
 /// A specific type of completion queue used by the processing of notifications
@@ -441,12 +429,10 @@ class ServerCompletionQueue : public CompletionQueue {
   /// allowed on this completion queue. See grpc_cq_polling_type's description
   /// in grpc_types.h for more details.
   /// \param shutdown_cb is the shutdown callback used for CALLBACK api queues
-  ServerCompletionQueue(grpc_cq_completion_type completion_type,
-                        grpc_cq_polling_type polling_type,
+  ServerCompletionQueue(grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
                         grpc_completion_queue_functor* shutdown_cb)
-      : CompletionQueue(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, completion_type, polling_type,
-            shutdown_cb}),
+      : CompletionQueue(grpc_completion_queue_attributes{GRPC_CQ_CURRENT_VERSION, completion_type,
+                                                         polling_type, shutdown_cb}),
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;

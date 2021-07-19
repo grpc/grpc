@@ -69,8 +69,7 @@ GPR_GLOBAL_CONFIG_DEFINE_INT32(
 
 void grpc_client_channel_global_init_backup_polling() {
   gpr_once_init(&g_once, [] { gpr_mu_init(&g_poller_mu); });
-  int32_t poll_interval_ms =
-      GPR_GLOBAL_CONFIG_GET(grpc_client_channel_backup_poll_interval_ms);
+  int32_t poll_interval_ms = GPR_GLOBAL_CONFIG_GET(grpc_client_channel_backup_poll_interval_ms);
   if (poll_interval_ms < 0) {
     gpr_log(GPR_ERROR,
             "Invalid GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS: %d, "
@@ -101,9 +100,8 @@ static void g_poller_unref() {
     gpr_mu_unlock(&g_poller_mu);
     gpr_mu_lock(p->pollset_mu);
     p->shutting_down = true;
-    grpc_pollset_shutdown(
-        p->pollset, GRPC_CLOSURE_INIT(&p->shutdown_closure, done_poller, p,
-                                      grpc_schedule_on_exec_ctx));
+    grpc_pollset_shutdown(p->pollset, GRPC_CLOSURE_INIT(&p->shutdown_closure, done_poller, p,
+                                                        grpc_schedule_on_exec_ctx));
     gpr_mu_unlock(p->pollset_mu);
     grpc_timer_cancel(&p->polling_timer);
     backup_poller_shutdown_unref(p);
@@ -127,20 +125,17 @@ static void run_poller(void* arg, grpc_error_handle error) {
     backup_poller_shutdown_unref(p);
     return;
   }
-  grpc_error_handle err =
-      grpc_pollset_work(p->pollset, nullptr, grpc_core::ExecCtx::Get()->Now());
+  grpc_error_handle err = grpc_pollset_work(p->pollset, nullptr, grpc_core::ExecCtx::Get()->Now());
   gpr_mu_unlock(p->pollset_mu);
   GRPC_LOG_IF_ERROR("Run client channel backup poller", err);
-  grpc_timer_init(&p->polling_timer,
-                  grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
+  grpc_timer_init(&p->polling_timer, grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
                   &p->run_poller_closure);
 }
 
 static void g_poller_init_locked() {
   if (g_poller == nullptr) {
     g_poller = static_cast<backup_poller*>(gpr_zalloc(sizeof(backup_poller)));
-    g_poller->pollset =
-        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    g_poller->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     g_poller->shutting_down = false;
     grpc_pollset_init(g_poller->pollset, &g_poller->pollset_mu);
     gpr_ref_init(&g_poller->refs, 0);
@@ -148,14 +143,12 @@ static void g_poller_init_locked() {
     gpr_ref_init(&g_poller->shutdown_refs, 3);
     GRPC_CLOSURE_INIT(&g_poller->run_poller_closure, run_poller, g_poller,
                       grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&g_poller->polling_timer,
-                    grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
+    grpc_timer_init(&g_poller->polling_timer, grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
                     &g_poller->run_poller_closure);
   }
 }
 
-void grpc_client_channel_start_backup_polling(
-    grpc_pollset_set* interested_parties) {
+void grpc_client_channel_start_backup_polling(grpc_pollset_set* interested_parties) {
   if (g_poll_interval_ms == 0 || grpc_iomgr_run_in_background()) {
     return;
   }
@@ -172,8 +165,7 @@ void grpc_client_channel_start_backup_polling(
   grpc_pollset_set_add_pollset(interested_parties, pollset);
 }
 
-void grpc_client_channel_stop_backup_polling(
-    grpc_pollset_set* interested_parties) {
+void grpc_client_channel_stop_backup_polling(grpc_pollset_set* interested_parties) {
   if (g_poll_interval_ms == 0 || grpc_iomgr_run_in_background()) {
     return;
   }

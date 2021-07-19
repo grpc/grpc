@@ -78,8 +78,7 @@ TEST_F(ChannelzRegistryTest, UuidsAreIncreasing) {
 
 TEST_F(ChannelzRegistryTest, RegisterGetTest) {
   RefCountedPtr<BaseNode> channelz_channel = CreateTestNode();
-  RefCountedPtr<BaseNode> retrieved =
-      ChannelzRegistry::Get(channelz_channel->uuid());
+  RefCountedPtr<BaseNode> retrieved = ChannelzRegistry::Get(channelz_channel->uuid());
   EXPECT_EQ(channelz_channel, retrieved);
 }
 
@@ -87,8 +86,7 @@ TEST_F(ChannelzRegistryTest, RegisterManyItems) {
   std::vector<RefCountedPtr<BaseNode>> channelz_channels;
   for (int i = 0; i < 100; i++) {
     channelz_channels.push_back(CreateTestNode());
-    RefCountedPtr<BaseNode> retrieved =
-        ChannelzRegistry::Get(channelz_channels[i]->uuid());
+    RefCountedPtr<BaseNode> retrieved = ChannelzRegistry::Get(channelz_channels[i]->uuid());
     EXPECT_EQ(channelz_channels[i], retrieved);
   }
 }
@@ -96,11 +94,9 @@ TEST_F(ChannelzRegistryTest, RegisterManyItems) {
 TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
   RefCountedPtr<BaseNode> channelz_channel = CreateTestNode();
   // try to pull out a uuid that does not exist.
-  RefCountedPtr<BaseNode> nonexistant =
-      ChannelzRegistry::Get(channelz_channel->uuid() + 1);
+  RefCountedPtr<BaseNode> nonexistant = ChannelzRegistry::Get(channelz_channel->uuid() + 1);
   EXPECT_EQ(nonexistant, nullptr);
-  RefCountedPtr<BaseNode> retrieved =
-      ChannelzRegistry::Get(channelz_channel->uuid());
+  RefCountedPtr<BaseNode> retrieved = ChannelzRegistry::Get(channelz_channel->uuid());
   EXPECT_EQ(channelz_channel, retrieved);
 }
 
@@ -123,8 +119,7 @@ TEST_F(ChannelzRegistryTest, TestUnregistration) {
   }
   // Check that the even channels are present and the odd channels are not.
   for (int i = 0; i < kLoopIterations; i++) {
-    RefCountedPtr<BaseNode> retrieved =
-        ChannelzRegistry::Get(even_channels[i]->uuid());
+    RefCountedPtr<BaseNode> retrieved = ChannelzRegistry::Get(even_channels[i]->uuid());
     EXPECT_EQ(even_channels[i], retrieved);
     retrieved = ChannelzRegistry::Get(odd_uuids[i]);
     EXPECT_EQ(retrieved, nullptr);
@@ -135,8 +130,7 @@ TEST_F(ChannelzRegistryTest, TestUnregistration) {
   more_channels.reserve(kLoopIterations);
   for (int i = 0; i < kLoopIterations; i++) {
     more_channels.push_back(CreateTestNode());
-    RefCountedPtr<BaseNode> retrieved =
-        ChannelzRegistry::Get(more_channels[i]->uuid());
+    RefCountedPtr<BaseNode> retrieved = ChannelzRegistry::Get(more_channels[i]->uuid());
     EXPECT_EQ(more_channels[i], retrieved);
   }
 }

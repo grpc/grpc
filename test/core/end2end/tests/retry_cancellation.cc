@@ -42,8 +42,7 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -54,13 +53,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -73,8 +68,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+                                         grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -97,8 +91,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests retry cancellation.
-static void test_retry_cancellation(grpc_end2end_test_config config,
-                                    cancellation_mode mode) {
+static void test_retry_cancellation(grpc_end2end_test_config config, cancellation_mode mode) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -109,10 +102,8 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   grpc_call_details call_details;
   grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
   grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer* response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_byte_buffer* request_payload_recv = nullptr;
   grpc_byte_buffer* response_payload_recv = nullptr;
   grpc_status_code status;
@@ -122,38 +113,35 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   char* peer;
 
   grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 3,\n"
-              "      \"initialBackoff\": \"1s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    },\n"
-              "    \"timeout\": \"5s\"\n"
-              "  } ]\n"
-              "}")),
+          const_cast<char*>("{\n"
+                            "  \"methodConfig\": [ {\n"
+                            "    \"name\": [\n"
+                            "      { \"service\": \"service\", \"method\": \"method\" }\n"
+                            "    ],\n"
+                            "    \"retryPolicy\": {\n"
+                            "      \"maxAttempts\": 3,\n"
+                            "      \"initialBackoff\": \"1s\",\n"
+                            "      \"maxBackoff\": \"120s\",\n"
+                            "      \"backoffMultiplier\": 1.6,\n"
+                            "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+                            "    },\n"
+                            "    \"timeout\": \"5s\"\n"
+                            "  } ]\n"
+                            "}")),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   std::string name = absl::StrCat("retry_cancellation/", mode.name);
-  grpc_end2end_test_fixture f =
-      begin_test(config, name.c_str(), &client_args, nullptr);
+  grpc_end2end_test_fixture f = begin_test(config, name.c_str(), &client_args, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
+                               grpc_slice_from_static_string("/service/method"), nullptr, deadline,
+                               nullptr);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -189,14 +177,12 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call and fails with retryable status.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
@@ -223,8 +209,7 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
@@ -237,9 +222,8 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   grpc_call_details_init(&call_details);
 
   // Server gets a second call (the retry).
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(201));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(201), true);
   cq_verify(cqv);

@@ -32,11 +32,9 @@
 
 /* V-table for alts_grpc_record_protocol implementations.  */
 struct alts_grpc_record_protocol_vtable {
-  tsi_result (*protect)(alts_grpc_record_protocol* self,
-                        grpc_slice_buffer* unprotected_slices,
+  tsi_result (*protect)(alts_grpc_record_protocol* self, grpc_slice_buffer* unprotected_slices,
                         grpc_slice_buffer* protected_slices);
-  tsi_result (*unprotect)(alts_grpc_record_protocol* self,
-                          grpc_slice_buffer* protected_slices,
+  tsi_result (*unprotect)(alts_grpc_record_protocol* self, grpc_slice_buffer* protected_slices,
                           grpc_slice_buffer* unprotected_slices);
   void (*destruct)(alts_grpc_record_protocol* self);
 };
@@ -60,16 +58,15 @@ struct alts_grpc_record_protocol {
  * rp->iovec_buf. Note that the actual data are not copied, only
  * pointers and lengths are copied.
  */
-void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
-    alts_grpc_record_protocol* rp, const grpc_slice_buffer* sb);
+void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(alts_grpc_record_protocol* rp,
+                                                             const grpc_slice_buffer* sb);
 
 /**
  * Copies bytes from slice buffer to destination buffer. Caller is responsible
  * for allocating enough memory of destination buffer. This method is used for
  * copying frame header and tag in case they are stored in multiple slices.
  */
-void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
-                                                 unsigned char* dst);
+void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src, unsigned char* dst);
 
 /**
  * This method returns an iovec object pointing to the frame header stored in
@@ -78,8 +75,7 @@ void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
  * rp->header_buf, and return an iovec object pointing to
  * rp->header_buf.
  */
-iovec_t alts_grpc_record_protocol_get_header_iovec(
-    alts_grpc_record_protocol* rp);
+iovec_t alts_grpc_record_protocol_get_header_iovec(alts_grpc_record_protocol* rp);
 
 /**
  * Initializes an alts_grpc_record_protocol object, given a gsec_aead_crypter
@@ -89,11 +85,9 @@ iovec_t alts_grpc_record_protocol_get_header_iovec(
  * protect or unprotect. The ownership of gsec_aead_crypter object is
  * transferred to the alts_grpc_record_protocol object.
  */
-tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
-                                          gsec_aead_crypter* crypter,
+tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp, gsec_aead_crypter* crypter,
                                           size_t overflow_size, bool is_client,
-                                          bool is_integrity_only,
-                                          bool is_protect);
+                                          bool is_integrity_only, bool is_protect);
 
 #endif /* GRPC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_RECORD_PROTOCOL_COMMON_H \
         */

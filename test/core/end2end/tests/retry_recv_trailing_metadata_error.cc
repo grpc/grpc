@@ -40,8 +40,7 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -52,13 +51,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -71,8 +66,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+                                         grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -100,8 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // - 1 retry allowed for ABORTED status
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
-static void test_retry_recv_trailing_metadata_error(
-    grpc_end2end_test_config config) {
+static void test_retry_recv_trailing_metadata_error(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -112,10 +105,8 @@ static void test_retry_recv_trailing_metadata_error(
   grpc_call_details call_details;
   grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
   grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer* response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_byte_buffer* request_payload_recv = nullptr;
   grpc_byte_buffer* response_payload_recv = nullptr;
   grpc_status_code status;
@@ -125,36 +116,34 @@ static void test_retry_recv_trailing_metadata_error(
   char* peer;
 
   grpc_arg args[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 2,\n"
-              "      \"initialBackoff\": \"1s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    }\n"
-              "  } ]\n"
-              "}")),
+          const_cast<char*>("{\n"
+                            "  \"methodConfig\": [ {\n"
+                            "    \"name\": [\n"
+                            "      { \"service\": \"service\", \"method\": \"method\" }\n"
+                            "    ],\n"
+                            "    \"retryPolicy\": {\n"
+                            "      \"maxAttempts\": 2,\n"
+                            "      \"initialBackoff\": \"1s\",\n"
+                            "      \"maxBackoff\": \"120s\",\n"
+                            "      \"backoffMultiplier\": 1.6,\n"
+                            "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+                            "    }\n"
+                            "  } ]\n"
+                            "}")),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  grpc_end2end_test_fixture f = begin_test(
-      config, "retry_recv_trailing_metadata_error", &client_args, nullptr);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "retry_recv_trailing_metadata_error", &client_args, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
+                               grpc_slice_from_static_string("/service/method"), nullptr, deadline,
+                               nullptr);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -184,13 +173,11 @@ static void test_retry_recv_trailing_metadata_error(
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
@@ -217,8 +204,7 @@ static void test_retry_recv_trailing_metadata_error(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
@@ -232,8 +218,7 @@ static void test_retry_recv_trailing_metadata_error(
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(2), true);
@@ -274,21 +259,19 @@ class InjectStatusFilter {
  public:
   class CallData {
    public:
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* /*args*/) {
+    static grpc_error_handle Init(grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
       new (elem->call_data) CallData();
       return GRPC_ERROR_NONE;
     }
 
-    static void Destroy(grpc_call_element* elem,
-                        const grpc_call_final_info* /*final_info*/,
+    static void Destroy(grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
                         grpc_closure* /*ignored*/) {
       auto* calld = static_cast<CallData*>(elem->call_data);
       calld->~CallData();
     }
 
-    static void StartTransportStreamOpBatch(
-        grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+    static void StartTransportStreamOpBatch(grpc_call_element* elem,
+                                            grpc_transport_stream_op_batch* batch) {
       auto* calld = static_cast<CallData*>(elem->call_data);
       if (batch->recv_trailing_metadata) {
         calld->original_recv_trailing_metadata_ready_ =
@@ -301,18 +284,15 @@ class InjectStatusFilter {
 
    private:
     CallData() {
-      GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
-                        RecvTrailingMetadataReady, this, nullptr);
+      GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady, this, nullptr);
     }
 
-    static void RecvTrailingMetadataReady(void* arg,
-                                          grpc_error_handle /*error*/) {
+    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle /*error*/) {
       auto* calld = static_cast<CallData*>(arg);
       grpc_core::Closure::Run(
           DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("injected error"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT));
+          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("injected error"),
+                             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT));
     }
 
     grpc_closure recv_trailing_metadata_ready_;
@@ -347,19 +327,17 @@ bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* /*arg*/) {
   // Skip if filter is not enabled.
   if (!g_enable_filter) return true;
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const grpc_channel_args* args = grpc_channel_stack_builder_get_channel_arguments(builder);
   if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
     return true;
   }
   // Install filter.
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &InjectStatusFilter::kFilterVtable, nullptr, nullptr);
+  return grpc_channel_stack_builder_prepend_filter(builder, &InjectStatusFilter::kFilterVtable,
+                                                   nullptr, nullptr);
 }
 
 void InitPlugin(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, 0, MaybeAddFilter,
-                                   nullptr);
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, 0, MaybeAddFilter, nullptr);
 }
 
 void DestroyPlugin(void) {}

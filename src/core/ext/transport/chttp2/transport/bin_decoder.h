@@ -47,8 +47,7 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input);
 /* base64 decode a slice without pad chars, data length is needed. Returns a new
    slice, does not take ownership of the input. Returns an empty slice if
    decoding is failed. */
-grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
-                                                 size_t output_length);
+grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input, size_t output_length);
 
 /* Infer the length of decoded data from encoded data. */
 size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice);

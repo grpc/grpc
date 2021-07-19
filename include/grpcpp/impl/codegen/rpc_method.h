@@ -36,10 +36,7 @@ class RpcMethod {
   };
 
   RpcMethod(const char* name, RpcType type)
-      : name_(name),
-        suffix_for_stats_(nullptr),
-        method_type_(type),
-        channel_tag_(nullptr) {}
+      : name_(name), suffix_for_stats_(nullptr), method_type_(type), channel_tag_(nullptr) {}
 
   RpcMethod(const char* name, const char* suffix_for_stats, RpcType type)
       : name_(name),
@@ -47,8 +44,7 @@ class RpcMethod {
         method_type_(type),
         channel_tag_(nullptr) {}
 
-  RpcMethod(const char* name, RpcType type,
-            const std::shared_ptr<ChannelInterface>& channel)
+  RpcMethod(const char* name, RpcType type, const std::shared_ptr<ChannelInterface>& channel)
       : name_(name),
         suffix_for_stats_(nullptr),
         method_type_(type),

@@ -86,8 +86,7 @@ void grpc_http2_encode_timeout(grpc_millis timeout, char* buffer) {
   } else if (timeout >= kMaxTimeout) {
     enc_huge(buffer);
   } else {
-    enc_seconds(buffer,
-                timeout / GPR_MS_PER_SEC + (timeout % GPR_MS_PER_SEC != 0));
+    enc_seconds(buffer, timeout / GPR_MS_PER_SEC + (timeout % GPR_MS_PER_SEC != 0));
   }
 }
 
@@ -146,6 +145,5 @@ int grpc_http2_decode_timeout(const grpc_slice& text, grpc_millis* timeout) {
       return 0;
   }
   p++;
-  return is_all_whitespace(reinterpret_cast<const char*>(p),
-                           reinterpret_cast<const char*>(end));
+  return is_all_whitespace(reinterpret_cast<const char*>(p), reinterpret_cast<const char*>(end));
 }

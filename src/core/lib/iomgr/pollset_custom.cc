@@ -63,8 +63,7 @@ static void pollset_destroy(grpc_pollset* pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-static grpc_error_handle pollset_work(grpc_pollset* pollset,
-                                      grpc_pollset_worker** /*worker_hdl*/,
+static grpc_error_handle pollset_work(grpc_pollset* pollset, grpc_pollset_worker** /*worker_hdl*/,
                                       grpc_millis deadline) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   gpr_mu_unlock(&pollset->mu);
@@ -87,18 +86,17 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
   return err;
 }
 
-static grpc_error_handle pollset_kick(
-    grpc_pollset* /*pollset*/, grpc_pollset_worker* /*specific_worker*/) {
+static grpc_error_handle pollset_kick(grpc_pollset* /*pollset*/,
+                                      grpc_pollset_worker* /*specific_worker*/) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   poller_vtable->kick();
   return GRPC_ERROR_NONE;
 }
 
-grpc_pollset_vtable custom_pollset_vtable = {
-    pollset_global_init, pollset_global_shutdown,
-    pollset_init,        pollset_shutdown,
-    pollset_destroy,     pollset_work,
-    pollset_kick,        pollset_size};
+grpc_pollset_vtable custom_pollset_vtable = {pollset_global_init, pollset_global_shutdown,
+                                             pollset_init,        pollset_shutdown,
+                                             pollset_destroy,     pollset_work,
+                                             pollset_kick,        pollset_size};
 
 void grpc_custom_pollset_init(grpc_custom_poller_vtable* vtable) {
   poller_vtable = vtable;

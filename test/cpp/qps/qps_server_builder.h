@@ -37,8 +37,7 @@ std::unique_ptr<ServerBuilder> CreateQpsServerBuilder();
 // SetCreateQpsServerBuilderFunc sets a function to use to create new
 // ServerBuilders in "CreateQpsServerBuilder". It can be used to modify options
 // that the server is built with.
-void SetCreateQpsServerBuilderFunc(
-    std::function<std::unique_ptr<ServerBuilder>()>);
+void SetCreateQpsServerBuilderFunc(std::function<std::unique_ptr<ServerBuilder>()>);
 
 }  // namespace testing
 }  // namespace grpc

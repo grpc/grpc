@@ -29,8 +29,8 @@ class TimerState;
 // State used for filters that enforce call deadlines.
 // Must be the first field in the filter's call_data.
 struct grpc_deadline_state {
-  grpc_deadline_state(grpc_call_element* elem,
-                      const grpc_call_element_args& args, grpc_millis deadline);
+  grpc_deadline_state(grpc_call_element* elem, const grpc_call_element_args& args,
+                      grpc_millis deadline);
   ~grpc_deadline_state();
 
   // We take a reference to the call stack for the timer callback.
@@ -60,8 +60,7 @@ struct grpc_deadline_state {
 // deadline may result in the timer being called twice.
 //
 // Note: Must be called while holding the call combiner.
-void grpc_deadline_state_reset(grpc_call_element* elem,
-                               grpc_millis new_deadline);
+void grpc_deadline_state_reset(grpc_call_element* elem, grpc_millis new_deadline);
 
 // To be called from the client-side filter's start_transport_stream_op_batch()
 // method.  Ensures that the deadline timer is cancelled when the call
@@ -71,8 +70,8 @@ void grpc_deadline_state_reset(grpc_call_element* elem,
 // necessary after this function returns.
 //
 // Note: Must be called while holding the call combiner.
-void grpc_deadline_state_client_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op);
+void grpc_deadline_state_client_start_transport_stream_op_batch(grpc_call_element* elem,
+                                                                grpc_transport_stream_op_batch* op);
 
 // Should deadline checking be performed (according to channel args)
 bool grpc_deadline_checking_enabled(const grpc_channel_args* args);

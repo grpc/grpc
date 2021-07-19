@@ -27,11 +27,7 @@
 
 #include "test/core/end2end/cq_verifier_internal.h"
 
-typedef enum timer_state {
-  TIMER_STARTED,
-  TIMER_TRIGGERED,
-  TIMER_CLOSED
-} timer_state;
+typedef enum timer_state { TIMER_STARTED, TIMER_TRIGGERED, TIMER_CLOSED } timer_state;
 
 /* the verifier itself */
 struct cq_verifier {
@@ -51,9 +47,7 @@ cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
   return v;
 }
 
-static void timer_close_cb(uv_handle_t* handle) {
-  handle->data = (void*)TIMER_CLOSED;
-}
+static void timer_close_cb(uv_handle_t* handle) { handle->data = (void*)TIMER_CLOSED; }
 
 void cq_verifier_destroy(cq_verifier* v) {
   cq_verify(v);
@@ -64,32 +58,23 @@ void cq_verifier_destroy(cq_verifier* v) {
   gpr_free(v);
 }
 
-expectation* cq_verifier_get_first_expectation(cq_verifier* v) {
-  return v->first_expectation;
-}
+expectation* cq_verifier_get_first_expectation(cq_verifier* v) { return v->first_expectation; }
 
-void cq_verifier_set_first_expectation(cq_verifier* v, expectation* e) {
-  v->first_expectation = e;
-}
+void cq_verifier_set_first_expectation(cq_verifier* v, expectation* e) { v->first_expectation = e; }
 
-static void timer_run_cb(uv_timer_t* timer) {
-  timer->data = (void*)TIMER_TRIGGERED;
-}
+static void timer_run_cb(uv_timer_t* timer) { timer->data = (void*)TIMER_TRIGGERED; }
 
 grpc_event cq_verifier_next_event(cq_verifier* v, int timeout_seconds) {
-  uint64_t timeout_ms =
-      timeout_seconds < 0 ? 0 : (uint64_t)timeout_seconds * 1000;
+  uint64_t timeout_ms = timeout_seconds < 0 ? 0 : (uint64_t)timeout_seconds * 1000;
   grpc_event ev;
   v->timer.data = (void*)TIMER_STARTED;
   uv_timer_start(&v->timer, timer_run_cb, timeout_ms, 0);
-  ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),
-                                  NULL);
+  ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
   // Stop the loop if the timer goes off or we get a non-timeout event
   while ((static_cast<timer_state>(v->timer.data) != TIMER_TRIGGERED) &&
          ev.type == GRPC_QUEUE_TIMEOUT) {
     uv_run(uv_default_loop(), UV_RUN_ONCE);
-    ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),
-                                    NULL);
+    ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
   }
   return ev;
 }

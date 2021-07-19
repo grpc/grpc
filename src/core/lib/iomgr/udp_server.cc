@@ -74,8 +74,7 @@
  * I/O events*/
 class GrpcUdpListener {
  public:
-  GrpcUdpListener(grpc_udp_server* server, int fd,
-                  const grpc_resolved_address* addr);
+  GrpcUdpListener(grpc_udp_server* server, int fd, const grpc_resolved_address* addr);
   ~GrpcUdpListener();
 
   /* Called when grpc server starts to listening on the grpc_fd. */
@@ -147,12 +146,8 @@ class GrpcUdpListener {
   gpr_mu mutex_;
 };
 
-GrpcUdpListener::GrpcUdpListener(grpc_udp_server* server, int fd,
-                                 const grpc_resolved_address* addr)
-    : fd_(fd),
-      server_(server),
-      orphan_notified_(false),
-      already_shutdown_(false) {
+GrpcUdpListener::GrpcUdpListener(grpc_udp_server* server, int fd, const grpc_resolved_address* addr)
+    : fd_(fd), server_(server), orphan_notified_(false), already_shutdown_(false) {
   std::string addr_str = grpc_sockaddr_to_string(addr, true);
   std::string name = absl::StrCat("udp-server-listener:", addr_str);
   emfd_ = grpc_fd_create(fd, name.c_str(), true);
@@ -244,8 +239,7 @@ void GrpcUdpListener::shutdown_fd(void* args, grpc_error_handle error) {
 
 static void finish_shutdown(grpc_udp_server* s) {
   if (s->shutdown_complete != nullptr) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
-                            GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -298,8 +292,7 @@ void GrpcUdpListener::OrphanFd() {
   gpr_log(GPR_DEBUG, "Orphan fd %d, emfd %p", fd_, emfd_);
   grpc_unlink_if_unix_domain_socket(&addr_);
 
-  GRPC_CLOSURE_INIT(&destroyed_closure_, destroyed_port, server_,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&destroyed_closure_, destroyed_port, server_, grpc_schedule_on_exec_ctx);
   /* Because at this point, all listening sockets have been shutdown already, no
    * need to call OnFdAboutToOrphan() to notify the handler again. */
   grpc_fd_orphan(emfd_, &destroyed_closure_, nullptr, "udp_listener_shutdown");
@@ -331,13 +324,11 @@ void GrpcUdpListener::OnFdAboutToOrphan() {
   gpr_mu_lock(&mutex_);
   grpc_unlink_if_unix_domain_socket(&addr_);
 
-  GRPC_CLOSURE_INIT(&destroyed_closure_, destroyed_port, server_,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&destroyed_closure_, destroyed_port, server_, grpc_schedule_on_exec_ctx);
   if (!orphan_notified_ && udp_handler_ != nullptr) {
     /* Signals udp_handler that the FD is about to be closed and
      * should no longer be used. */
-    GRPC_CLOSURE_INIT(&orphan_fd_closure_, shutdown_fd, this,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&orphan_fd_closure_, shutdown_fd, this, grpc_schedule_on_exec_ctx);
     gpr_log(GPR_DEBUG, "fd %d about to be orphaned", fd_);
     udp_handler_->OnFdAboutToOrphan(&orphan_fd_closure_, server_->user_data);
     orphan_notified_ = true;
@@ -349,19 +340,16 @@ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
                        const grpc_resolved_address* addr) {
   return (socket_factory != nullptr)
              ? grpc_socket_factory_bind(socket_factory, sockfd, addr)
-             : bind(sockfd,
-                    reinterpret_cast<grpc_sockaddr*>(
-                        const_cast<char*>(addr->addr)),
+             : bind(sockfd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
                     addr->len);
 }
 
 /* Prepare a recently-created socket for listening. */
 static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
-                          const grpc_resolved_address* addr, int rcv_buf_size,
-                          int snd_buf_size, bool so_reuseport) {
+                          const grpc_resolved_address* addr, int rcv_buf_size, int snd_buf_size,
+                          bool so_reuseport) {
   grpc_resolved_address sockname_temp;
-  grpc_sockaddr* addr_ptr =
-      reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr));
+  grpc_sockaddr* addr_ptr = reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr));
 
   if (fd < 0) {
     goto error;
@@ -387,21 +375,18 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
   }
 
   if (grpc_set_socket_sndbuf(fd, snd_buf_size) != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
-            snd_buf_size);
+    gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes", snd_buf_size);
     goto error;
   }
 
   if (grpc_set_socket_rcvbuf(fd, rcv_buf_size) != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes",
-            rcv_buf_size);
+    gpr_log(GPR_ERROR, "Failed to set receive buffer size to %d bytes", rcv_buf_size);
     goto error;
   }
 
   {
     int get_overflow = 1;
-    if (0 != setsockopt(fd, SOL_SOCKET, SO_RXQ_OVFL, &get_overflow,
-                        sizeof(get_overflow))) {
+    if (0 != setsockopt(fd, SOL_SOCKET, SO_RXQ_OVFL, &get_overflow, sizeof(get_overflow))) {
       gpr_log(GPR_INFO, "Failed to set socket overflow support");
     }
   }
@@ -420,10 +405,9 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
 
   sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
-                  &sockname_temp.len) < 0) {
-    gpr_log(GPR_ERROR, "Unable to get the address socket %d is bound to: %s",
-            fd, strerror(errno));
+  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr), &sockname_temp.len) <
+      0) {
+    gpr_log(GPR_ERROR, "Unable to get the address socket %d is bound to: %s", fd, strerror(errno));
     goto error;
   }
 
@@ -449,8 +433,7 @@ void GrpcUdpListener::do_read(void* arg, grpc_error_handle error) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
      * after finishing this event loop. */
     grpc_core::Executor::Run(&sp->do_read_closure_, GRPC_ERROR_NONE,
-                             grpc_core::ExecutorType::DEFAULT,
-                             grpc_core::ExecutorJobType::LONG);
+                             grpc_core::ExecutorType::DEFAULT, grpc_core::ExecutorJobType::LONG);
   } else {
     /* Finish reading all the packets, re-arm the notification event so we can
      * get another chance to read. Or fd already shutdown, re-arm to get a
@@ -484,8 +467,7 @@ void GrpcUdpListener::OnRead(grpc_error_handle error, void* do_read_arg) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
      * after finishing this event loop. */
     GRPC_CLOSURE_INIT(&do_read_closure_, do_read, do_read_arg, nullptr);
-    grpc_core::Executor::Run(&do_read_closure_, GRPC_ERROR_NONE,
-                             grpc_core::ExecutorType::DEFAULT,
+    grpc_core::Executor::Run(&do_read_closure_, GRPC_ERROR_NONE, grpc_core::ExecutorType::DEFAULT,
                              grpc_core::ExecutorJobType::LONG);
   } else {
     /* Finish reading all the packets, re-arm the notification event so we can
@@ -497,8 +479,7 @@ void GrpcUdpListener::OnRead(grpc_error_handle error, void* do_read_arg) {
 
 // static
 // Wrapper of grpc_fd_notify_on_write() with a grpc_closure callback interface.
-void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg,
-                                                 grpc_error_handle /*error*/) {
+void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg, grpc_error_handle /*error*/) {
   GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   gpr_mu_lock(sp->mutex());
   if (!sp->notify_on_write_armed_) {
@@ -519,10 +500,9 @@ void GrpcUdpListener::do_write(void* arg, grpc_error_handle error) {
     sp->notify_on_write_armed_ = false;
     /* Tell the registered callback that the socket is writeable. */
     GPR_ASSERT(error == GRPC_ERROR_NONE);
-    GRPC_CLOSURE_INIT(&sp->notify_on_write_closure_, fd_notify_on_write_wrapper,
-                      arg, grpc_schedule_on_exec_ctx);
-    sp->udp_handler_->OnCanWrite(sp->server_->user_data,
-                                 &sp->notify_on_write_closure_);
+    GRPC_CLOSURE_INIT(&sp->notify_on_write_closure_, fd_notify_on_write_wrapper, arg,
+                      grpc_schedule_on_exec_ctx);
+    sp->udp_handler_->OnCanWrite(sp->server_->user_data, &sp->notify_on_write_closure_);
   }
   gpr_mu_unlock(sp->mutex());
 }
@@ -548,32 +528,28 @@ void GrpcUdpListener::OnCanWrite(grpc_error_handle error, void* do_write_arg) {
   /* Schedule actual write in another thread. */
   GRPC_CLOSURE_INIT(&do_write_closure_, do_write, do_write_arg, nullptr);
 
-  grpc_core::Executor::Run(&do_write_closure_, GRPC_ERROR_NONE,
-                           grpc_core::ExecutorType::DEFAULT,
+  grpc_core::Executor::Run(&do_write_closure_, GRPC_ERROR_NONE, grpc_core::ExecutorType::DEFAULT,
                            grpc_core::ExecutorJobType::LONG);
 }
 
-static int add_socket_to_server(grpc_udp_server* s, int fd,
-                                const grpc_resolved_address* addr,
+static int add_socket_to_server(grpc_udp_server* s, int fd, const grpc_resolved_address* addr,
                                 int rcv_buf_size, int snd_buf_size) {
   gpr_log(GPR_DEBUG, "add socket %d to server", fd);
 
-  int port = prepare_socket(s->socket_factory, fd, addr, rcv_buf_size,
-                            snd_buf_size, s->so_reuseport);
+  int port =
+      prepare_socket(s->socket_factory, fd, addr, rcv_buf_size, snd_buf_size, s->so_reuseport);
   if (port >= 0) {
     gpr_mu_lock(&s->mu);
     s->listeners.emplace_back(s, fd, addr);
-    gpr_log(GPR_DEBUG,
-            "add socket %d to server for port %d, %zu listener(s) in total", fd,
-            port, s->listeners.size());
+    gpr_log(GPR_DEBUG, "add socket %d to server for port %d, %zu listener(s) in total", fd, port,
+            s->listeners.size());
     gpr_mu_unlock(&s->mu);
   }
   return port;
 }
 
-int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
-                             int rcv_buf_size, int snd_buf_size,
-                             GrpcUdpHandlerFactory* handler_factory,
+int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr, int rcv_buf_size,
+                             int snd_buf_size, GrpcUdpHandlerFactory* handler_factory,
                              size_t num_listeners) {
   if (num_listeners > 1 && !s->so_reuseport) {
     gpr_log(GPR_ERROR,
@@ -600,16 +576,15 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
   if (grpc_sockaddr_get_port(addr) == 0) {
     /* Loop through existing listeners to find the port in use. */
     for (size_t i = 0; i < s->listeners.size(); ++i) {
-      sockname_temp.len =
-          static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+      sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
       if (0 == getsockname(s->listeners[i].fd(),
                            reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
                            &sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
           /* Found such a port, update |addr| to reflects this port. */
-          allocated_addr = static_cast<grpc_resolved_address*>(
-              gpr_malloc(sizeof(grpc_resolved_address)));
+          allocated_addr =
+              static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(grpc_resolved_address)));
           memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
           grpc_sockaddr_set_port(allocated_addr, port);
           addr = allocated_addr;
@@ -634,8 +609,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
       // TODO(rjshade): Test and propagate the returned grpc_error_handle:
       GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
           s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
-      allocated_port1 =
-          add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size);
+      allocated_port1 = add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size);
       if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
         if (port == 0) {
           /* This is the first time to bind to |addr|. If its port is still
@@ -668,17 +642,15 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
     }
 
     // TODO(rjshade): Test and propagate the returned grpc_error_handle:
-    GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
-        s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
+    GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(s->socket_factory, addr, SOCK_DGRAM,
+                                                                IPPROTO_UDP, &dsmode, &fd));
     if (fd < 0) {
       gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
     }
-    if (dsmode == GRPC_DSMODE_IPV4 &&
-        grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
+    if (dsmode == GRPC_DSMODE_IPV4 && grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
       addr = &addr4_copy;
     }
-    allocated_port2 =
-        add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size);
+    allocated_port2 = add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size);
     if (port == 0) {
       /* Update |addr| with the ephermeral port returned by kernel. So |addr|
        * can have a specific port in following iterations. */
@@ -701,8 +673,7 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index) {
   return s->listeners[port_index].fd();
 }
 
-void grpc_udp_server_start(grpc_udp_server* udp_server,
-                           const std::vector<grpc_pollset*>* pollsets,
+void grpc_udp_server_start(grpc_udp_server* udp_server, const std::vector<grpc_pollset*>* pollsets,
                            void* user_data) {
   gpr_log(GPR_DEBUG, "grpc_udp_server_start");
   gpr_mu_lock(&udp_server->mu);

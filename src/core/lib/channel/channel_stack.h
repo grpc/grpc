@@ -125,18 +125,15 @@ struct grpc_channel_filter {
      transport and is on the server. Most filters want to ignore this
      argument.
      Implementations may assume that elem->call_data is all zeros. */
-  grpc_error_handle (*init_call_elem)(grpc_call_element* elem,
-                                      const grpc_call_element_args* args);
-  void (*set_pollset_or_pollset_set)(grpc_call_element* elem,
-                                     grpc_polling_entity* pollent);
+  grpc_error_handle (*init_call_elem)(grpc_call_element* elem, const grpc_call_element_args* args);
+  void (*set_pollset_or_pollset_set)(grpc_call_element* elem, grpc_polling_entity* pollent);
   /* Destroy per call data.
      The filter does not need to do any chaining.
      The bottom filter of a stack will be passed a non-NULL pointer to
      \a then_schedule_closure that should be passed to GRPC_CLOSURE_SCHED when
      destruction is complete. \a final_info contains data about the completed
      call, mainly for reporting purposes. */
-  void (*destroy_call_elem)(grpc_call_element* elem,
-                            const grpc_call_final_info* final_info,
+  void (*destroy_call_elem)(grpc_call_element* elem, const grpc_call_final_info* final_info,
                             grpc_closure* then_schedule_closure);
 
   /* sizeof(per channel data) */
@@ -155,8 +152,7 @@ struct grpc_channel_filter {
   void (*destroy_channel_elem)(grpc_channel_element* elem);
 
   /* Implement grpc_channel_get_info() */
-  void (*get_channel_info)(grpc_channel_element* elem,
-                           const grpc_channel_info* channel_info);
+  void (*get_channel_info)(grpc_channel_element* elem, const grpc_channel_info* channel_info);
 
   /* The name of this filter */
   const char* name;
@@ -199,40 +195,35 @@ struct grpc_call_stack {
 };
 
 /* Get a channel element given a channel stack and its index */
-grpc_channel_element* grpc_channel_stack_element(grpc_channel_stack* stack,
-                                                 size_t i);
+grpc_channel_element* grpc_channel_stack_element(grpc_channel_stack* stack, size_t i);
 /* Get the last channel element in a channel stack */
-grpc_channel_element* grpc_channel_stack_last_element(
-    grpc_channel_stack* stack);
+grpc_channel_element* grpc_channel_stack_last_element(grpc_channel_stack* stack);
 
 // A utility function for a filter to determine how many other instances
 // of the same filter exist above it in the same stack.  Intended to be
 // used in the filter's init_channel_elem() method.
-size_t grpc_channel_stack_filter_instance_number(
-    grpc_channel_stack* channel_stack, grpc_channel_element* elem);
+size_t grpc_channel_stack_filter_instance_number(grpc_channel_stack* channel_stack,
+                                                 grpc_channel_element* elem);
 
 /* Get a call stack element given a call stack and an index */
 grpc_call_element* grpc_call_stack_element(grpc_call_stack* stack, size_t i);
 
 /* Determine memory required for a channel stack containing a set of filters */
-size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
-                               size_t filter_count);
+size_t grpc_channel_stack_size(const grpc_channel_filter** filters, size_t filter_count);
 /* Initialize a channel stack given some filters */
-grpc_error_handle grpc_channel_stack_init(
-    int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
-    const grpc_channel_filter** filters, size_t filter_count,
-    const grpc_channel_args* args, grpc_transport* optional_transport,
-    const char* name, grpc_channel_stack* stack);
+grpc_error_handle grpc_channel_stack_init(int initial_refs, grpc_iomgr_cb_func destroy,
+                                          void* destroy_arg, const grpc_channel_filter** filters,
+                                          size_t filter_count, const grpc_channel_args* args,
+                                          grpc_transport* optional_transport, const char* name,
+                                          grpc_channel_stack* stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
-grpc_error_handle grpc_call_stack_init(grpc_channel_stack* channel_stack,
-                                       int initial_refs,
-                                       grpc_iomgr_cb_func destroy,
-                                       void* destroy_arg,
+grpc_error_handle grpc_call_stack_init(grpc_channel_stack* channel_stack, int initial_refs,
+                                       grpc_iomgr_cb_func destroy, void* destroy_arg,
                                        const grpc_call_element_args* elem_args);
 /* Set a pollset or a pollset_set for a call stack: must occur before the first
  * op is started */
@@ -240,10 +231,8 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
                                                 grpc_polling_entity* pollent);
 
 #ifndef NDEBUG
-#define GRPC_CALL_STACK_REF(call_stack, reason) \
-  grpc_stream_ref(&(call_stack)->refcount, reason)
-#define GRPC_CALL_STACK_UNREF(call_stack, reason) \
-  grpc_stream_unref(&(call_stack)->refcount, reason)
+#define GRPC_CALL_STACK_REF(call_stack, reason) grpc_stream_ref(&(call_stack)->refcount, reason)
+#define GRPC_CALL_STACK_UNREF(call_stack, reason) grpc_stream_unref(&(call_stack)->refcount, reason)
 #define GRPC_CHANNEL_STACK_REF(channel_stack, reason) \
   grpc_stream_ref(&(channel_stack)->refcount, reason)
 #define GRPC_CHANNEL_STACK_UNREF(channel_stack, reason) \
@@ -272,33 +261,28 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
 #endif
 
 /* Destroy a call stack */
-void grpc_call_stack_destroy(grpc_call_stack* stack,
-                             const grpc_call_final_info* final_info,
+void grpc_call_stack_destroy(grpc_call_stack* stack, const grpc_call_final_info* final_info,
                              grpc_closure* then_schedule_closure);
 
 /* Ignore set pollset{_set} - used by filters if they don't care about pollsets
  * at all. Does nothing. */
-void grpc_call_stack_ignore_set_pollset_or_pollset_set(
-    grpc_call_element* elem, grpc_polling_entity* pollent);
+void grpc_call_stack_ignore_set_pollset_or_pollset_set(grpc_call_element* elem,
+                                                       grpc_polling_entity* pollent);
 /* Call the next operation in a call stack */
-void grpc_call_next_op(grpc_call_element* elem,
-                       grpc_transport_stream_op_batch* op);
+void grpc_call_next_op(grpc_call_element* elem, grpc_transport_stream_op_batch* op);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_channel_element* elem, grpc_transport_op* op);
 /* Pass through a request to get_channel_info() to the next child element */
-void grpc_channel_next_get_info(grpc_channel_element* elem,
-                                const grpc_channel_info* channel_info);
+void grpc_channel_next_get_info(grpc_channel_element* elem, const grpc_channel_info* channel_info);
 
 /* Given the top element of a channel stack, get the channel stack itself */
-grpc_channel_stack* grpc_channel_stack_from_top_element(
-    grpc_channel_element* elem);
+grpc_channel_stack* grpc_channel_stack_from_top_element(grpc_channel_element* elem);
 /* Given the top element of a call stack, get the call stack itself */
 grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem);
 
 void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
-                      grpc_call_element* elem,
-                      grpc_transport_stream_op_batch* op);
+                      grpc_call_element* elem, grpc_transport_stream_op_batch* op);
 
 extern grpc_core::TraceFlag grpc_trace_channel;
 

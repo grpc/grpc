@@ -32,13 +32,11 @@
 
 static int all_ok = 1;
 
-static void expect_slice_eq(grpc_slice expected, grpc_slice slice,
-                            const char* debug, int line) {
+static void expect_slice_eq(grpc_slice expected, grpc_slice slice, const char* debug, int line) {
   if (!grpc_slice_eq(slice, expected)) {
     char* hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char* he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
-            he);
+    gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs, he);
     gpr_free(hs);
     gpr_free(he);
     all_ok = 0;
@@ -61,8 +59,7 @@ static grpc_slice base64_decode(const char* s) {
   return out;
 }
 
-static grpc_slice base64_decode_with_length(const char* s,
-                                            size_t output_length) {
+static grpc_slice base64_decode_with_length(const char* s, size_t output_length) {
   grpc_slice ss = grpc_slice_from_copied_string(s);
   grpc_slice out = grpc_chttp2_base64_decode_with_length(ss, output_length);
   grpc_slice_unref_internal(ss);
@@ -76,17 +73,14 @@ static size_t base64_infer_length(const char* s) {
   return out;
 }
 
-#define EXPECT_DECODED_LENGTH(s, expected) \
-  GPR_ASSERT((expected) == base64_infer_length((s)));
+#define EXPECT_DECODED_LENGTH(s, expected) GPR_ASSERT((expected) == base64_infer_length((s)));
 
-#define EXPECT_SLICE_EQ(expected, slice)                                    \
-  expect_slice_eq(                                                          \
-      grpc_slice_from_copied_buffer(expected, sizeof(expected) - 1), slice, \
-      #slice, __LINE__);
+#define EXPECT_SLICE_EQ(expected, slice)                                                        \
+  expect_slice_eq(grpc_slice_from_copied_buffer(expected, sizeof(expected) - 1), slice, #slice, \
+                  __LINE__);
 
 #define ENCODE_AND_DECODE(s) \
-  EXPECT_SLICE_EQ(           \
-      s, grpc_chttp2_base64_decode_with_length(base64_encode(s), strlen(s)));
+  EXPECT_SLICE_EQ(s, grpc_chttp2_base64_decode_with_length(base64_encode(s), strlen(s)));
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

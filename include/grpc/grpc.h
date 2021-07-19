@@ -97,19 +97,16 @@ GRPCAPI const char* grpc_g_stands_for(void);
 
 /** Returns the completion queue factory based on the attributes. MAY return a
     NULL if no factory can be found */
-GRPCAPI const grpc_completion_queue_factory*
-grpc_completion_queue_factory_lookup(
+GRPCAPI const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
     const grpc_completion_queue_attributes* attributes);
 
 /** Helper function to create a completion queue with grpc_cq_completion_type
     of GRPC_CQ_NEXT and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING */
-GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_next(
-    void* reserved);
+GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved);
 
 /** Helper function to create a completion queue with grpc_cq_completion_type
     of GRPC_CQ_PLUCK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING */
-GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
-    void* reserved);
+GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved);
 
 /** Helper function to create a completion queue with grpc_cq_completion_type
     of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
@@ -130,8 +127,7 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
 
     Callers must not call grpc_completion_queue_next and
     grpc_completion_queue_pluck simultaneously on the same completion queue. */
-GRPCAPI grpc_event grpc_completion_queue_next(grpc_completion_queue* cq,
-                                              gpr_timespec deadline,
+GRPCAPI grpc_event grpc_completion_queue_next(grpc_completion_queue* cq, gpr_timespec deadline,
                                               void* reserved);
 
 /** Blocks until an event with tag 'tag' is available, the completion queue is
@@ -145,9 +141,8 @@ GRPCAPI grpc_event grpc_completion_queue_next(grpc_completion_queue* cq,
 
     Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
     concurrently executing plucks at any time. */
-GRPCAPI grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq,
-                                               void* tag, gpr_timespec deadline,
-                                               void* reserved);
+GRPCAPI grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
+                                               gpr_timespec deadline, void* reserved);
 
 /** Maximum number of outstanding grpc_completion_queue_pluck executions per
     completion queue */
@@ -171,8 +166,7 @@ GRPCAPI void grpc_completion_queue_destroy(grpc_completion_queue* cq);
  * grpc_flush_cq_tls_cache() MUST be called on the same thread,
  * with the same cq.
  */
-GRPCAPI void grpc_completion_queue_thread_local_cache_init(
-    grpc_completion_queue* cq);
+GRPCAPI void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq);
 
 /*********** EXPERIMENTAL API ************/
 /** Flushes the thread local cache for \a cq.
@@ -180,27 +174,27 @@ GRPCAPI void grpc_completion_queue_thread_local_cache_init(
  * in \a cq tls cache, its tag is placed in tag, and ok is set to the
  * event success.
  */
-GRPCAPI int grpc_completion_queue_thread_local_cache_flush(
-    grpc_completion_queue* cq, void** tag, int* ok);
+GRPCAPI int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq, void** tag,
+                                                           int* ok);
 
 /** Check the connectivity state of a channel. */
-GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
-    grpc_channel* channel, int try_to_connect);
+GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(grpc_channel* channel,
+                                                                      int try_to_connect);
 
 /** Number of active "external connectivity state watchers" attached to a
  * channel.
  * Useful for testing. **/
-GRPCAPI int grpc_channel_num_external_connectivity_watchers(
-    grpc_channel* channel);
+GRPCAPI int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel);
 
 /** Watch for a change in connectivity state.
     Once the channel connectivity state is different from last_observed_state,
     tag will be enqueued on cq with success=1.
     If deadline expires BEFORE the state is changed, tag will be enqueued on cq
     with success=0. */
-GRPCAPI void grpc_channel_watch_connectivity_state(
-    grpc_channel* channel, grpc_connectivity_state last_observed_state,
-    gpr_timespec deadline, grpc_completion_queue* cq, void* tag);
+GRPCAPI void grpc_channel_watch_connectivity_state(grpc_channel* channel,
+                                                   grpc_connectivity_state last_observed_state,
+                                                   gpr_timespec deadline, grpc_completion_queue* cq,
+                                                   void* tag);
 
 /** Check whether a grpc channel supports connectivity watcher */
 GRPCAPI int grpc_channel_support_connectivity_watcher(grpc_channel* channel);
@@ -212,24 +206,26 @@ GRPCAPI int grpc_channel_support_connectivity_watcher(grpc_channel* channel);
     to propagate properties from the server call to this new client call,
     depending on the value of \a propagation_mask (see propagation_bits.h for
     possible values). */
-GRPCAPI grpc_call* grpc_channel_create_call(
-    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* completion_queue, grpc_slice method,
-    const grpc_slice* host, gpr_timespec deadline, void* reserved);
+GRPCAPI grpc_call* grpc_channel_create_call(grpc_channel* channel, grpc_call* parent_call,
+                                            uint32_t propagation_mask,
+                                            grpc_completion_queue* completion_queue,
+                                            grpc_slice method, const grpc_slice* host,
+                                            gpr_timespec deadline, void* reserved);
 
 /** Pre-register a method/host pair on a channel.
     method and host are not owned and must remain alive while the channel is
     alive. */
-GRPCAPI void* grpc_channel_register_call(grpc_channel* channel,
-                                         const char* method, const char* host,
-                                         void* reserved);
+GRPCAPI void* grpc_channel_register_call(grpc_channel* channel, const char* method,
+                                         const char* host, void* reserved);
 
 /** Create a call given a handle returned from grpc_channel_register_call.
     \sa grpc_channel_create_call. */
-GRPCAPI grpc_call* grpc_channel_create_registered_call(
-    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* completion_queue, void* registered_call_handle,
-    gpr_timespec deadline, void* reserved);
+GRPCAPI grpc_call* grpc_channel_create_registered_call(grpc_channel* channel,
+                                                       grpc_call* parent_call,
+                                                       uint32_t propagation_mask,
+                                                       grpc_completion_queue* completion_queue,
+                                                       void* registered_call_handle,
+                                                       gpr_timespec deadline, void* reserved);
 
 /** Allocate memory in the grpc_call arena: this memory is automatically
     discarded at call completion */
@@ -255,8 +251,7 @@ GRPCAPI void* grpc_call_arena_alloc(grpc_call* call, size_t size);
     containing just send operations independently from batches containing just
     receive operations. Access to grpc_call_start_batch with an empty batch is
     thread-compatible. */
-GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call* call,
-                                              const grpc_op* ops, size_t nops,
+GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops, size_t nops,
                                               void* tag, void* reserved);
 
 /** Returns a newly allocated string representing the endpoint to which this
@@ -273,8 +268,7 @@ struct census_context;
 
 /** Set census context for a call; Must be called before first call to
    grpc_call_start_batch(). */
-GRPCAPI void grpc_census_call_set_context(grpc_call* call,
-                                          struct census_context* context);
+GRPCAPI void grpc_census_call_set_context(grpc_call* call, struct census_context* context);
 
 /** Retrieve the calls current census context. */
 GRPCAPI struct census_context* grpc_census_call_get_context(grpc_call* call);
@@ -287,8 +281,7 @@ GRPCAPI char* grpc_channel_get_target(grpc_channel* channel);
     \a channel_info indicates what information is being requested and
     how that information will be returned.
     \a channel_info is owned by the caller. */
-GRPCAPI void grpc_channel_get_info(grpc_channel* channel,
-                                   const grpc_channel_info* channel_info);
+GRPCAPI void grpc_channel_get_info(grpc_channel* channel, const grpc_channel_info* channel_info);
 
 /** EXPERIMENTAL.  Resets the channel's connect backoff.
     TODO(roth): When we see whether this proves useful, either promote
@@ -302,12 +295,13 @@ GRPCAPI void grpc_channel_reset_connect_backoff(grpc_channel* channel);
     'pointer' type are passed, then the referenced vtable must be maintained
     by the caller until grpc_channel_destroy terminates. See grpc_channel_args
     definition for more on this. */
-GRPCAPI grpc_channel* grpc_insecure_channel_create(
-    const char* target, const grpc_channel_args* args, void* reserved);
+GRPCAPI grpc_channel* grpc_insecure_channel_create(const char* target,
+                                                   const grpc_channel_args* args, void* reserved);
 
 /** Create a lame client: this client fails every operation attempted on it. */
-GRPCAPI grpc_channel* grpc_lame_client_channel_create(
-    const char* target, grpc_status_code error_code, const char* error_message);
+GRPCAPI grpc_channel* grpc_lame_client_channel_create(const char* target,
+                                                      grpc_status_code error_code,
+                                                      const char* error_message);
 
 /** Close and destroy a grpc channel */
 GRPCAPI void grpc_channel_destroy(grpc_channel* channel);
@@ -335,10 +329,8 @@ GRPCAPI grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved);
     It doesn't need to be alive after the call to
     grpc_call_cancel_with_status completes.
     */
-GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
-                                                     grpc_status_code status,
-                                                     const char* description,
-                                                     void* reserved);
+GRPCAPI grpc_call_error grpc_call_cancel_with_status(grpc_call* call, grpc_status_code status,
+                                                     const char* description, void* reserved);
 
 /** Ref a call.
     THREAD SAFETY: grpc_call_ref is thread-compatible */
@@ -356,11 +348,12 @@ GRPCAPI void grpc_call_unref(grpc_call* call);
     to \a cq_bound_to_call.
     Note that \a cq_for_notification must have been registered to the server via
     \a grpc_server_register_completion_queue. */
-GRPCAPI grpc_call_error grpc_server_request_call(
-    grpc_server* server, grpc_call** call, grpc_call_details* details,
-    grpc_metadata_array* request_metadata,
-    grpc_completion_queue* cq_bound_to_call,
-    grpc_completion_queue* cq_for_notification, void* tag_new);
+GRPCAPI grpc_call_error grpc_server_request_call(grpc_server* server, grpc_call** call,
+                                                 grpc_call_details* details,
+                                                 grpc_metadata_array* request_metadata,
+                                                 grpc_completion_queue* cq_bound_to_call,
+                                                 grpc_completion_queue* cq_for_notification,
+                                                 void* tag_new);
 
 /** How to handle payloads for a registered method */
 typedef enum {
@@ -379,18 +372,16 @@ typedef enum {
     Returns NULL on failure. */
 GRPCAPI void* grpc_server_register_method(
     grpc_server* server, const char* method, const char* host,
-    grpc_server_register_method_payload_handling payload_handling,
-    uint32_t flags);
+    grpc_server_register_method_payload_handling payload_handling, uint32_t flags);
 
 /** Request notification of a new pre-registered call. 'cq_for_notification'
     must have been registered to the server via
     grpc_server_register_completion_queue. */
 GRPCAPI grpc_call_error grpc_server_request_registered_call(
-    grpc_server* server, void* registered_method, grpc_call** call,
-    gpr_timespec* deadline, grpc_metadata_array* request_metadata,
-    grpc_byte_buffer** optional_payload,
-    grpc_completion_queue* cq_bound_to_call,
-    grpc_completion_queue* cq_for_notification, void* tag_new);
+    grpc_server* server, void* registered_method, grpc_call** call, gpr_timespec* deadline,
+    grpc_metadata_array* request_metadata, grpc_byte_buffer** optional_payload,
+    grpc_completion_queue* cq_bound_to_call, grpc_completion_queue* cq_for_notification,
+    void* tag_new);
 
 /** Create a server. Additional configuration for each incoming channel can
     be specified with args. If no additional configuration is needed, args can
@@ -399,22 +390,19 @@ GRPCAPI grpc_call_error grpc_server_request_registered_call(
     the referenced vtable must be maintained by the caller until
     grpc_server_destroy terminates. See grpc_channel_args definition for more
     on this. */
-GRPCAPI grpc_server* grpc_server_create(const grpc_channel_args* args,
-                                        void* reserved);
+GRPCAPI grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved);
 
 /** Register a completion queue with the server. Must be done for any
     notification completion queue that is passed to grpc_server_request_*_call
     and to grpc_server_shutdown_and_notify. Must be performed prior to
     grpc_server_start. */
-GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
-                                                   grpc_completion_queue* cq,
+GRPCAPI void grpc_server_register_completion_queue(grpc_server* server, grpc_completion_queue* cq,
                                                    void* reserved);
 
 // There might be more methods added later, so users should take care to memset
 // this to 0 before using it.
 typedef struct {
-  void (*on_serving_status_update)(void* user_data, const char* uri,
-                                   grpc_status_code code,
+  void (*on_serving_status_update)(void* user_data, const char* uri, grpc_status_code code,
                                    const char* error_message);
   void* user_data;
 } grpc_server_xds_status_notifier;
@@ -426,19 +414,17 @@ GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args);
 
 /** EXPERIMENTAL.  Destroys a config fetcher. */
-GRPCAPI void grpc_server_config_fetcher_destroy(
-    grpc_server_config_fetcher* config_fetcher);
+GRPCAPI void grpc_server_config_fetcher_destroy(grpc_server_config_fetcher* config_fetcher);
 
 /** EXPERIMENTAL.  Sets the server's config fetcher.  Takes ownership.
     Must be called before adding ports */
-GRPCAPI void grpc_server_set_config_fetcher(
-    grpc_server* server, grpc_server_config_fetcher* config_fetcher);
+GRPCAPI void grpc_server_set_config_fetcher(grpc_server* server,
+                                            grpc_server_config_fetcher* config_fetcher);
 
 /** Add a HTTP2 over plaintext over tcp listener.
     Returns bound port number on success, 0 on failure.
     REQUIRES: server not started */
-GRPCAPI int grpc_server_add_insecure_http2_port(grpc_server* server,
-                                                const char* addr);
+GRPCAPI int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr);
 
 /** Start a server - tells all listeners to start listening */
 GRPCAPI void grpc_server_start(grpc_server* server);
@@ -450,8 +436,7 @@ GRPCAPI void grpc_server_start(grpc_server* server);
     Shutdown is idempotent, and all tags will be notified at once if multiple
     grpc_server_shutdown_and_notify calls are made. 'cq' must have been
     registered to this server via grpc_server_register_completion_queue. */
-GRPCAPI void grpc_server_shutdown_and_notify(grpc_server* server,
-                                             grpc_completion_queue* cq,
+GRPCAPI void grpc_server_shutdown_and_notify(grpc_server* server, grpc_completion_queue* cq,
                                              void* tag);
 
 /** Cancel all in-progress calls.
@@ -497,12 +482,11 @@ GRPCAPI void grpc_resource_quota_ref(grpc_resource_quota* resource_quota);
 GRPCAPI void grpc_resource_quota_unref(grpc_resource_quota* resource_quota);
 
 /** Update the size of a buffer pool */
-GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
-                                        size_t new_size);
+GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota, size_t new_size);
 
 /** Update the size of the maximum number of threads allowed */
-GRPCAPI void grpc_resource_quota_set_max_threads(
-    grpc_resource_quota* resource_quota, int new_max_threads);
+GRPCAPI void grpc_resource_quota_set_max_threads(grpc_resource_quota* resource_quota,
+                                                 int new_max_threads);
 
 /** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
     The full name of the proto is envoy.service.status.v3.ClientConfig. */
@@ -538,8 +522,7 @@ GRPCAPI char* grpc_channelz_get_servers(intptr_t start_server_id);
 GRPCAPI char* grpc_channelz_get_server(intptr_t server_id);
 
 /* Gets all server sockets that exist in the server. */
-GRPCAPI char* grpc_channelz_get_server_sockets(intptr_t server_id,
-                                               intptr_t start_socket_id,
+GRPCAPI char* grpc_channelz_get_server_sockets(intptr_t server_id, intptr_t start_socket_id,
                                                intptr_t max_results);
 
 /* Returns a single Channel, or else a NOT_FOUND code. The returned string
@@ -559,8 +542,7 @@ GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
  * Fetch a vtable for grpc_channel_arg that points to
  * grpc_authorization_policy_provider.
  */
-GRPCAPI const grpc_arg_pointer_vtable*
-grpc_authorization_policy_provider_arg_vtable(void);
+GRPCAPI const grpc_arg_pointer_vtable* grpc_authorization_policy_provider_arg_vtable(void);
 
 #ifdef __cplusplus
 }

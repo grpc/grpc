@@ -21,13 +21,11 @@
 namespace grpc {
 
 namespace internal {
-experimental::ClientInterceptorFactoryInterface*
-    g_global_client_interceptor_factory = nullptr;
+experimental::ClientInterceptorFactoryInterface* g_global_client_interceptor_factory = nullptr;
 }
 
 namespace experimental {
-void RegisterGlobalClientInterceptorFactory(
-    ClientInterceptorFactoryInterface* factory) {
+void RegisterGlobalClientInterceptorFactory(ClientInterceptorFactoryInterface* factory) {
   if (internal::g_global_client_interceptor_factory != nullptr) {
     GPR_ASSERT(false &&
                "It is illegal to call RegisterGlobalClientInterceptorFactory "

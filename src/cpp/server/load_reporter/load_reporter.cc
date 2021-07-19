@@ -44,140 +44,130 @@ CensusViewProvider::CensusViewProvider()
       tag_key_host_(::opencensus::tags::TagKey::Register(kTagKeyHost)),
       tag_key_user_id_(::opencensus::tags::TagKey::Register(kTagKeyUserId)),
       tag_key_status_(::opencensus::tags::TagKey::Register(kTagKeyStatus)),
-      tag_key_metric_name_(
-          ::opencensus::tags::TagKey::Register(kTagKeyMetricName)) {
+      tag_key_metric_name_(::opencensus::tags::TagKey::Register(kTagKeyMetricName)) {
   // One view related to starting a call.
-  auto vd_start_count =
-      ::opencensus::stats::ViewDescriptor()
-          .set_name(kViewStartCount)
-          .set_measure(kMeasureStartCount)
-          .set_aggregation(::opencensus::stats::Aggregation::Sum())
-          .add_column(tag_key_token_)
-          .add_column(tag_key_host_)
-          .add_column(tag_key_user_id_)
-          .set_description(
-              "Delta count of calls started broken down by <token, host, "
-              "user_id>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_start_count);
+  auto vd_start_count = ::opencensus::stats::ViewDescriptor()
+                            .set_name(kViewStartCount)
+                            .set_measure(kMeasureStartCount)
+                            .set_aggregation(::opencensus::stats::Aggregation::Sum())
+                            .add_column(tag_key_token_)
+                            .add_column(tag_key_host_)
+                            .add_column(tag_key_user_id_)
+                            .set_description(
+                                "Delta count of calls started broken down by <token, host, "
+                                "user_id>.");
+  ::opencensus::stats::SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                                            &vd_start_count);
   view_descriptor_map_.emplace(kViewStartCount, vd_start_count);
   // Four views related to ending a call.
   // If this view is set as Count of kMeasureEndBytesSent (in hope of saving one
   // measure), it's infeasible to prepare fake data for testing. That's because
   // the OpenCensus API to make up view data will add the input data as separate
   // measurements instead of setting the data values directly.
-  auto vd_end_count =
-      ::opencensus::stats::ViewDescriptor()
-          .set_name(kViewEndCount)
-          .set_measure(kMeasureEndCount)
-          .set_aggregation(::opencensus::stats::Aggregation::Sum())
-          .add_column(tag_key_token_)
-          .add_column(tag_key_host_)
-          .add_column(tag_key_user_id_)
-          .add_column(tag_key_status_)
-          .set_description(
-              "Delta count of calls ended broken down by <token, host, "
-              "user_id, status>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_end_count);
+  auto vd_end_count = ::opencensus::stats::ViewDescriptor()
+                          .set_name(kViewEndCount)
+                          .set_measure(kMeasureEndCount)
+                          .set_aggregation(::opencensus::stats::Aggregation::Sum())
+                          .add_column(tag_key_token_)
+                          .add_column(tag_key_host_)
+                          .add_column(tag_key_user_id_)
+                          .add_column(tag_key_status_)
+                          .set_description(
+                              "Delta count of calls ended broken down by <token, host, "
+                              "user_id, status>.");
+  ::opencensus::stats::SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                                            &vd_end_count);
   view_descriptor_map_.emplace(kViewEndCount, vd_end_count);
-  auto vd_end_bytes_sent =
-      ::opencensus::stats::ViewDescriptor()
-          .set_name(kViewEndBytesSent)
-          .set_measure(kMeasureEndBytesSent)
-          .set_aggregation(::opencensus::stats::Aggregation::Sum())
-          .add_column(tag_key_token_)
-          .add_column(tag_key_host_)
-          .add_column(tag_key_user_id_)
-          .add_column(tag_key_status_)
-          .set_description(
-              "Delta sum of bytes sent broken down by <token, host, user_id, "
-              "status>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_end_bytes_sent);
+  auto vd_end_bytes_sent = ::opencensus::stats::ViewDescriptor()
+                               .set_name(kViewEndBytesSent)
+                               .set_measure(kMeasureEndBytesSent)
+                               .set_aggregation(::opencensus::stats::Aggregation::Sum())
+                               .add_column(tag_key_token_)
+                               .add_column(tag_key_host_)
+                               .add_column(tag_key_user_id_)
+                               .add_column(tag_key_status_)
+                               .set_description(
+                                   "Delta sum of bytes sent broken down by <token, host, user_id, "
+                                   "status>.");
+  ::opencensus::stats::SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                                            &vd_end_bytes_sent);
   view_descriptor_map_.emplace(kViewEndBytesSent, vd_end_bytes_sent);
-  auto vd_end_bytes_received =
-      ::opencensus::stats::ViewDescriptor()
-          .set_name(kViewEndBytesReceived)
-          .set_measure(kMeasureEndBytesReceived)
-          .set_aggregation(::opencensus::stats::Aggregation::Sum())
-          .add_column(tag_key_token_)
-          .add_column(tag_key_host_)
-          .add_column(tag_key_user_id_)
-          .add_column(tag_key_status_)
-          .set_description(
-              "Delta sum of bytes received broken down by <token, host, "
-              "user_id, status>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_end_bytes_received);
+  auto vd_end_bytes_received = ::opencensus::stats::ViewDescriptor()
+                                   .set_name(kViewEndBytesReceived)
+                                   .set_measure(kMeasureEndBytesReceived)
+                                   .set_aggregation(::opencensus::stats::Aggregation::Sum())
+                                   .add_column(tag_key_token_)
+                                   .add_column(tag_key_host_)
+                                   .add_column(tag_key_user_id_)
+                                   .add_column(tag_key_status_)
+                                   .set_description(
+                                       "Delta sum of bytes received broken down by <token, host, "
+                                       "user_id, status>.");
+  ::opencensus::stats::SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                                            &vd_end_bytes_received);
   view_descriptor_map_.emplace(kViewEndBytesReceived, vd_end_bytes_received);
-  auto vd_end_latency_ms =
-      ::opencensus::stats::ViewDescriptor()
-          .set_name(kViewEndLatencyMs)
-          .set_measure(kMeasureEndLatencyMs)
-          .set_aggregation(::opencensus::stats::Aggregation::Sum())
-          .add_column(tag_key_token_)
-          .add_column(tag_key_host_)
-          .add_column(tag_key_user_id_)
-          .add_column(tag_key_status_)
-          .set_description(
-              "Delta sum of latency in ms broken down by <token, host, "
-              "user_id, status>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_end_latency_ms);
+  auto vd_end_latency_ms = ::opencensus::stats::ViewDescriptor()
+                               .set_name(kViewEndLatencyMs)
+                               .set_measure(kMeasureEndLatencyMs)
+                               .set_aggregation(::opencensus::stats::Aggregation::Sum())
+                               .add_column(tag_key_token_)
+                               .add_column(tag_key_host_)
+                               .add_column(tag_key_user_id_)
+                               .add_column(tag_key_status_)
+                               .set_description(
+                                   "Delta sum of latency in ms broken down by <token, host, "
+                                   "user_id, status>.");
+  ::opencensus::stats::SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                                            &vd_end_latency_ms);
   view_descriptor_map_.emplace(kViewEndLatencyMs, vd_end_latency_ms);
   // Two views related to other call metrics.
-  auto vd_metric_call_count =
-      ::opencensus::stats::ViewDescriptor()
-          .set_name(kViewOtherCallMetricCount)
-          .set_measure(kMeasureOtherCallMetric)
-          .set_aggregation(::opencensus::stats::Aggregation::Count())
-          .add_column(tag_key_token_)
-          .add_column(tag_key_host_)
-          .add_column(tag_key_user_id_)
-          .add_column(tag_key_metric_name_)
-          .set_description(
-              "Delta count of calls broken down by <token, host, user_id, "
-              "metric_name>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_metric_call_count);
+  auto vd_metric_call_count = ::opencensus::stats::ViewDescriptor()
+                                  .set_name(kViewOtherCallMetricCount)
+                                  .set_measure(kMeasureOtherCallMetric)
+                                  .set_aggregation(::opencensus::stats::Aggregation::Count())
+                                  .add_column(tag_key_token_)
+                                  .add_column(tag_key_host_)
+                                  .add_column(tag_key_user_id_)
+                                  .add_column(tag_key_metric_name_)
+                                  .set_description(
+                                      "Delta count of calls broken down by <token, host, user_id, "
+                                      "metric_name>.");
+  ::opencensus::stats::SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                                            &vd_metric_call_count);
   view_descriptor_map_.emplace(kViewOtherCallMetricCount, vd_metric_call_count);
-  auto vd_metric_value =
-      ::opencensus::stats::ViewDescriptor()
-          .set_name(kViewOtherCallMetricValue)
-          .set_measure(kMeasureOtherCallMetric)
-          .set_aggregation(::opencensus::stats::Aggregation::Sum())
-          .add_column(tag_key_token_)
-          .add_column(tag_key_host_)
-          .add_column(tag_key_user_id_)
-          .add_column(tag_key_metric_name_)
-          .set_description(
-              "Delta sum of call metric value broken down "
-              "by <token, host, user_id, metric_name>.");
-  ::opencensus::stats::SetAggregationWindow(
-      ::opencensus::stats::AggregationWindow::Delta(), &vd_metric_value);
+  auto vd_metric_value = ::opencensus::stats::ViewDescriptor()
+                             .set_name(kViewOtherCallMetricValue)
+                             .set_measure(kMeasureOtherCallMetric)
+                             .set_aggregation(::opencensus::stats::Aggregation::Sum())
+                             .add_column(tag_key_token_)
+                             .add_column(tag_key_host_)
+                             .add_column(tag_key_user_id_)
+                             .add_column(tag_key_metric_name_)
+                             .set_description(
+                                 "Delta sum of call metric value broken down "
+                                 "by <token, host, user_id, metric_name>.");
+  ::opencensus::stats::SetAggregationWindow(::opencensus::stats::AggregationWindow::Delta(),
+                                            &vd_metric_value);
   view_descriptor_map_.emplace(kViewOtherCallMetricValue, vd_metric_value);
 }
 
-double CensusViewProvider::GetRelatedViewDataRowDouble(
-    const ViewDataMap& view_data_map, const char* view_name,
-    size_t view_name_len, const std::vector<std::string>& tag_values) {
+double CensusViewProvider::GetRelatedViewDataRowDouble(const ViewDataMap& view_data_map,
+                                                       const char* view_name, size_t view_name_len,
+                                                       const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
   GPR_ASSERT(it_vd != view_data_map.end());
-  GPR_ASSERT(it_vd->second.type() ==
-             ::opencensus::stats::ViewData::Type::kDouble);
+  GPR_ASSERT(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kDouble);
   auto it_row = it_vd->second.double_data().find(tag_values);
   GPR_ASSERT(it_row != it_vd->second.double_data().end());
   return it_row->second;
 }
 
-uint64_t CensusViewProvider::GetRelatedViewDataRowInt(
-    const ViewDataMap& view_data_map, const char* view_name,
-    size_t view_name_len, const std::vector<std::string>& tag_values) {
+uint64_t CensusViewProvider::GetRelatedViewDataRowInt(const ViewDataMap& view_data_map,
+                                                      const char* view_name, size_t view_name_len,
+                                                      const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
   GPR_ASSERT(it_vd != view_data_map.end());
-  GPR_ASSERT(it_vd->second.type() ==
-             ::opencensus::stats::ViewData::Type::kInt64);
+  GPR_ASSERT(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kInt64);
   auto it_row = it_vd->second.int_data().find(tag_values);
   GPR_ASSERT(it_row != it_vd->second.int_data().end());
   GPR_ASSERT(it_row->second >= 0);
@@ -190,8 +180,7 @@ CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
     const ::opencensus::stats::ViewDescriptor& vd = p.second;
     // We need to use pair's piecewise ctor here, otherwise the deleted copy
     // ctor of View will be called.
-    view_map_.emplace(std::piecewise_construct,
-                      std::forward_as_tuple(view_name),
+    view_map_.emplace(std::piecewise_construct, std::forward_as_tuple(view_name),
                       std::forward_as_tuple(vd));
   }
 }
@@ -204,13 +193,10 @@ CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
     ::opencensus::stats::View& view = p.second;
     if (view.IsValid()) {
       view_data_map.emplace(view_name, view.GetData());
-      gpr_log(GPR_DEBUG, "[CVP %p] Fetched view data (view: %s).", this,
-              view_name.c_str());
+      gpr_log(GPR_DEBUG, "[CVP %p] Fetched view data (view: %s).", this, view_name.c_str());
     } else {
-      gpr_log(
-          GPR_DEBUG,
-          "[CVP %p] Can't fetch view data because view is invalid (view: %s).",
-          this, view_name.c_str());
+      gpr_log(GPR_DEBUG, "[CVP %p] Can't fetch view data because view is invalid (view: %s).", this,
+              view_name.c_str());
     }
   }
   return view_data_map;
@@ -219,8 +205,7 @@ CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
 std::string LoadReporter::GenerateLbId() {
   while (true) {
     if (next_lb_id_ > UINT32_MAX) {
-      gpr_log(GPR_ERROR, "[LR %p] The LB ID exceeds the max valid value!",
-              this);
+      gpr_log(GPR_ERROR, "[LR %p] The LB ID exceeds the max valid value!", this);
       return "";
     }
     int64_t lb_id = next_lb_id_++;
@@ -239,14 +224,12 @@ std::string LoadReporter::GenerateLbId() {
   }
 }
 
-::grpc::lb::v1::LoadBalancingFeedback
-LoadReporter::GenerateLoadBalancingFeedback() {
+::grpc::lb::v1::LoadBalancingFeedback LoadReporter::GenerateLoadBalancingFeedback() {
   grpc_core::ReleasableMutexLock lock(&feedback_mu_);
   auto now = std::chrono::system_clock::now();
   // Discard records outside the window until there is only one record
   // outside the window, which is used as the base for difference.
-  while (feedback_records_.size() > 1 &&
-         !IsRecordInWindow(feedback_records_[1], now)) {
+  while (feedback_records_.size() > 1 && !IsRecordInWindow(feedback_records_[1], now)) {
     feedback_records_.pop_front();
   }
   if (feedback_records_.size() < 2) {
@@ -255,15 +238,13 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   // Find the longest range with valid ends.
   auto oldest = feedback_records_.begin();
   auto newest = feedback_records_.end() - 1;
-  while (std::distance(oldest, newest) > 0 &&
-         (newest->cpu_limit == 0 || oldest->cpu_limit == 0)) {
+  while (std::distance(oldest, newest) > 0 && (newest->cpu_limit == 0 || oldest->cpu_limit == 0)) {
     // A zero limit means that the system info reading was failed, so these
     // records can't be used to calculate CPU utilization.
     if (newest->cpu_limit == 0) --newest;
     if (oldest->cpu_limit == 0) ++oldest;
   }
-  if (std::distance(oldest, newest) < 1 ||
-      oldest->end_time == newest->end_time ||
+  if (std::distance(oldest, newest) < 1 || oldest->end_time == newest->end_time ||
       newest->cpu_limit == oldest->cpu_limit) {
     return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
@@ -277,21 +258,17 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   }
   double cpu_usage = newest->cpu_usage - oldest->cpu_usage;
   double cpu_limit = newest->cpu_limit - oldest->cpu_limit;
-  std::chrono::duration<double> duration_seconds =
-      newest->end_time - oldest->end_time;
+  std::chrono::duration<double> duration_seconds = newest->end_time - oldest->end_time;
   lock.Release();
   ::grpc::lb::v1::LoadBalancingFeedback feedback;
   feedback.set_server_utilization(static_cast<float>(cpu_usage / cpu_limit));
-  feedback.set_calls_per_second(
-      static_cast<float>(rpcs / duration_seconds.count()));
-  feedback.set_errors_per_second(
-      static_cast<float>(errors / duration_seconds.count()));
+  feedback.set_calls_per_second(static_cast<float>(rpcs / duration_seconds.count()));
+  feedback.set_errors_per_second(static_cast<float>(errors / duration_seconds.count()));
   return feedback;
 }
 
-::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load>
-LoadReporter::GenerateLoads(const std::string& hostname,
-                            const std::string& lb_id) {
+::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> LoadReporter::GenerateLoads(
+    const std::string& hostname, const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
   GPR_ASSERT(assigned_stores != nullptr);
@@ -308,26 +285,20 @@ LoadReporter::GenerateLoads(const std::string& hostname,
         load->set_user_id(key.user_id());
         load->set_client_ip_address(key.GetClientIpBytes());
         load->set_num_calls_started(static_cast<int64_t>(value.start_count()));
-        load->set_num_calls_finished_without_error(
-            static_cast<int64_t>(value.ok_count()));
-        load->set_num_calls_finished_with_error(
-            static_cast<int64_t>(value.error_count()));
+        load->set_num_calls_finished_without_error(static_cast<int64_t>(value.ok_count()));
+        load->set_num_calls_finished_with_error(static_cast<int64_t>(value.error_count()));
         load->set_total_bytes_sent(static_cast<int64_t>(value.bytes_sent()));
-        load->set_total_bytes_received(
-            static_cast<int64_t>(value.bytes_recv()));
-        load->mutable_total_latency()->set_seconds(
-            static_cast<int64_t>(value.latency_ms() / 1000));
-        load->mutable_total_latency()->set_nanos(
-            (static_cast<int32_t>(value.latency_ms()) % 1000) * 1000000);
+        load->set_total_bytes_received(static_cast<int64_t>(value.bytes_recv()));
+        load->mutable_total_latency()->set_seconds(static_cast<int64_t>(value.latency_ms() / 1000));
+        load->mutable_total_latency()->set_nanos((static_cast<int32_t>(value.latency_ms()) % 1000) *
+                                                 1000000);
         for (const auto& p : value.call_metrics()) {
           const std::string& metric_name = p.first;
           const CallMetricValue& metric_value = p.second;
           auto call_metric_data = load->add_metric_data();
           call_metric_data->set_metric_name(metric_name);
-          call_metric_data->set_num_calls_finished_with_metric(
-              metric_value.num_calls());
-          call_metric_data->set_total_metric_value(
-              metric_value.total_metric_value());
+          call_metric_data->set_num_calls_finished_with_metric(metric_value.num_calls());
+          call_metric_data->set_total_metric_value(metric_value.total_metric_value());
         }
         if (per_balancer_store->lb_id() != lb_id) {
           // This per-balancer store is an orphan assigned to this receiving
@@ -339,8 +310,7 @@ LoadReporter::GenerateLoads(const std::string& hostname,
     }
     if (per_balancer_store->IsNumCallsInProgressChangedSinceLastReport()) {
       auto load = loads.Add();
-      load->set_num_calls_in_progress(
-          per_balancer_store->GetNumCallsInProgressForReport());
+      load->set_num_calls_in_progress(per_balancer_store->GetNumCallsInProgressForReport());
       if (per_balancer_store->lb_id() != lb_id) {
         // This per-balancer store is an orphan assigned to this receiving
         // balancer.
@@ -351,17 +321,15 @@ LoadReporter::GenerateLoads(const std::string& hostname,
   return loads;
 }
 
-void LoadReporter::AttachOrphanLoadId(
-    ::grpc::lb::v1::Load* load, const PerBalancerStore& per_balancer_store) {
+void LoadReporter::AttachOrphanLoadId(::grpc::lb::v1::Load* load,
+                                      const PerBalancerStore& per_balancer_store) {
   if (per_balancer_store.lb_id() == kInvalidLbId) {
     load->set_load_key_unknown(true);
   } else {
     // We shouldn't set load_key_unknown to any value in this case because
     // load_key_unknown and orphaned_load_identifier are under an oneof struct.
-    load->mutable_orphaned_load_identifier()->set_load_key(
-        per_balancer_store.load_key());
-    load->mutable_orphaned_load_identifier()->set_load_balancer_id(
-        per_balancer_store.lb_id());
+    load->mutable_orphaned_load_identifier()->set_load_key(per_balancer_store.load_key());
+    load->mutable_orphaned_load_identifier()->set_load_balancer_id(per_balancer_store.lb_id());
   }
 }
 
@@ -374,30 +342,26 @@ void LoadReporter::AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors) {
     cpu_stats = {0, 0};
   }
   grpc_core::MutexLock lock(&feedback_mu_);
-  feedback_records_.emplace_back(std::chrono::system_clock::now(), rpcs, errors,
-                                 cpu_stats.first, cpu_stats.second);
+  feedback_records_.emplace_back(std::chrono::system_clock::now(), rpcs, errors, cpu_stats.first,
+                                 cpu_stats.second);
 }
 
-void LoadReporter::ReportStreamCreated(const std::string& hostname,
-                                       const std::string& lb_id,
+void LoadReporter::ReportStreamCreated(const std::string& hostname, const std::string& lb_id,
                                        const std::string& load_key) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamCreated(hostname, lb_id, load_key);
-  gpr_log(GPR_INFO,
-          "[LR %p] Report stream created (host: %s, LB ID: %s, load key: %s).",
-          this, hostname.c_str(), lb_id.c_str(), load_key.c_str());
+  gpr_log(GPR_INFO, "[LR %p] Report stream created (host: %s, LB ID: %s, load key: %s).", this,
+          hostname.c_str(), lb_id.c_str(), load_key.c_str());
 }
 
-void LoadReporter::ReportStreamClosed(const std::string& hostname,
-                                      const std::string& lb_id) {
+void LoadReporter::ReportStreamClosed(const std::string& hostname, const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamClosed(hostname, lb_id);
-  gpr_log(GPR_INFO, "[LR %p] Report stream closed (host: %s, LB ID: %s).", this,
-          hostname.c_str(), lb_id.c_str());
+  gpr_log(GPR_INFO, "[LR %p] Report stream closed (host: %s, LB ID: %s).", this, hostname.c_str(),
+          lb_id.c_str());
 }
 
-void LoadReporter::ProcessViewDataCallStart(
-    const CensusViewProvider::ViewDataMap& view_data_map) {
+void LoadReporter::ProcessViewDataCallStart(const CensusViewProvider::ViewDataMap& view_data_map) {
   auto it = view_data_map.find(kViewStartCount);
   if (it != view_data_map.end()) {
     for (const auto& p : it->second.int_data()) {
@@ -416,8 +380,7 @@ void LoadReporter::ProcessViewDataCallStart(
   }
 }
 
-void LoadReporter::ProcessViewDataCallEnd(
-    const CensusViewProvider::ViewDataMap& view_data_map) {
+void LoadReporter::ProcessViewDataCallEnd(const CensusViewProvider::ViewDataMap& view_data_map) {
   uint64_t total_end_count = 0;
   uint64_t total_error_count = 0;
   auto it = view_data_map.find(kViewEndCount);
@@ -440,15 +403,11 @@ void LoadReporter::ProcessViewDataCallEnd(
       }
       LoadRecordKey key(client_ip_and_token, user_id);
       const uint64_t bytes_sent = CensusViewProvider::GetRelatedViewDataRowInt(
-          view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent) - 1,
-          tag_values);
-      const uint64_t bytes_received =
-          CensusViewProvider::GetRelatedViewDataRowInt(
-              view_data_map, kViewEndBytesReceived,
-              sizeof(kViewEndBytesReceived) - 1, tag_values);
+          view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent) - 1, tag_values);
+      const uint64_t bytes_received = CensusViewProvider::GetRelatedViewDataRowInt(
+          view_data_map, kViewEndBytesReceived, sizeof(kViewEndBytesReceived) - 1, tag_values);
       const uint64_t latency_ms = CensusViewProvider::GetRelatedViewDataRowInt(
-          view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1,
-          tag_values);
+          view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1, tag_values);
       uint64_t ok_count = 0;
       uint64_t error_count = 0;
       total_end_count += end_count;
@@ -458,8 +417,8 @@ void LoadReporter::ProcessViewDataCallEnd(
         error_count = end_count;
         total_error_count += end_count;
       }
-      LoadRecordValue value = LoadRecordValue(
-          0, ok_count, error_count, bytes_sent, bytes_received, latency_ms);
+      LoadRecordValue value =
+          LoadRecordValue(0, ok_count, error_count, bytes_sent, bytes_received, latency_ms);
       {
         grpc_core::MutexLock lock(&store_mu_);
         load_data_store_.MergeRow(host, key, value);
@@ -481,12 +440,11 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
       const std::string& user_id = tag_values[2];
       const std::string& metric_name = tag_values[3];
       LoadRecordKey key(client_ip_and_token, user_id);
-      const double total_metric_value =
-          CensusViewProvider::GetRelatedViewDataRowDouble(
-              view_data_map, kViewOtherCallMetricValue,
-              sizeof(kViewOtherCallMetricValue) - 1, tag_values);
-      LoadRecordValue value = LoadRecordValue(
-          metric_name, static_cast<uint64_t>(num_calls), total_metric_value);
+      const double total_metric_value = CensusViewProvider::GetRelatedViewDataRowDouble(
+          view_data_map, kViewOtherCallMetricValue, sizeof(kViewOtherCallMetricValue) - 1,
+          tag_values);
+      LoadRecordValue value =
+          LoadRecordValue(metric_name, static_cast<uint64_t>(num_calls), total_metric_value);
       {
         grpc_core::MutexLock lock(&store_mu_);
         load_data_store_.MergeRow(host, key, value);
@@ -500,8 +458,7 @@ void LoadReporter::FetchAndSample() {
           "[LR %p] Starts fetching Census view data and sampling LB feedback "
           "record.",
           this);
-  CensusViewProvider::ViewDataMap view_data_map =
-      census_view_provider_->FetchViewData();
+  CensusViewProvider::ViewDataMap view_data_map = census_view_provider_->FetchViewData();
   ProcessViewDataCallStart(view_data_map);
   ProcessViewDataCallEnd(view_data_map);
   ProcessViewDataOtherCallMetrics(view_data_map);

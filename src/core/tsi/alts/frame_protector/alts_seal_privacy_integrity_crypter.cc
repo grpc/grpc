@@ -37,8 +37,7 @@ static grpc_status_code seal_check(alts_crypter* c, const unsigned char* data,
                                    size_t* output_size, char** error_details) {
   /* Do common input sanity check. */
   grpc_status_code status = input_sanity_check(
-      reinterpret_cast<const alts_record_protocol_crypter*>(c), data,
-      output_size, error_details);
+      reinterpret_cast<const alts_record_protocol_crypter*>(c), data, output_size, error_details);
   if (status != GRPC_STATUS_OK) return status;
   /* Do seal-specific check. */
   size_t num_overhead_bytes =
@@ -58,22 +57,21 @@ static grpc_status_code seal_check(alts_crypter* c, const unsigned char* data,
   return GRPC_STATUS_OK;
 }
 
-static grpc_status_code alts_seal_crypter_process_in_place(
-    alts_crypter* c, unsigned char* data, size_t data_allocated_size,
-    size_t data_size, size_t* output_size, char** error_details) {
-  grpc_status_code status = seal_check(c, data, data_allocated_size, data_size,
-                                       output_size, error_details);
+static grpc_status_code alts_seal_crypter_process_in_place(alts_crypter* c, unsigned char* data,
+                                                           size_t data_allocated_size,
+                                                           size_t data_size, size_t* output_size,
+                                                           char** error_details) {
+  grpc_status_code status =
+      seal_check(c, data, data_allocated_size, data_size, output_size, error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
   /* Do AEAD encryption. */
-  alts_record_protocol_crypter* rp_crypter =
-      reinterpret_cast<alts_record_protocol_crypter*>(c);
-  status = gsec_aead_crypter_encrypt(
-      rp_crypter->crypter, alts_counter_get_counter(rp_crypter->ctr),
-      alts_counter_get_size(rp_crypter->ctr), nullptr /* aad */,
-      0 /* aad_length */, data, data_size, data, data_allocated_size,
-      output_size, error_details);
+  alts_record_protocol_crypter* rp_crypter = reinterpret_cast<alts_record_protocol_crypter*>(c);
+  status = gsec_aead_crypter_encrypt(rp_crypter->crypter, alts_counter_get_counter(rp_crypter->ctr),
+                                     alts_counter_get_size(rp_crypter->ctr), nullptr /* aad */,
+                                     0 /* aad_length */, data, data_size, data, data_allocated_size,
+                                     output_size, error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
@@ -81,13 +79,12 @@ static grpc_status_code alts_seal_crypter_process_in_place(
   return increment_counter(rp_crypter, error_details);
 }
 
-static const alts_crypter_vtable vtable = {
-    alts_record_protocol_crypter_num_overhead_bytes,
-    alts_seal_crypter_process_in_place, alts_record_protocol_crypter_destruct};
+static const alts_crypter_vtable vtable = {alts_record_protocol_crypter_num_overhead_bytes,
+                                           alts_seal_crypter_process_in_place,
+                                           alts_record_protocol_crypter_destruct};
 
 grpc_status_code alts_seal_crypter_create(gsec_aead_crypter* gc, bool is_client,
-                                          size_t overflow_size,
-                                          alts_crypter** crypter,
+                                          size_t overflow_size, alts_crypter** crypter,
                                           char** error_details) {
   if (crypter == nullptr) {
     const char error_msg[] = "crypter is nullptr.";

@@ -32,8 +32,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
                                      pair.certificate_chain.c_str());
   }
-  c_provider_ = grpc_tls_certificate_provider_static_data_create(
-      root_certificate.c_str(), pairs_core);
+  c_provider_ =
+      grpc_tls_certificate_provider_static_data_create(root_certificate.c_str(), pairs_core);
   GPR_ASSERT(c_provider_ != nullptr);
 };
 
@@ -42,12 +42,11 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
 };
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
-    const std::string& private_key_path,
-    const std::string& identity_certificate_path,
+    const std::string& private_key_path, const std::string& identity_certificate_path,
     const std::string& root_cert_path, unsigned int refresh_interval_sec) {
   c_provider_ = grpc_tls_certificate_provider_file_watcher_create(
-      private_key_path.c_str(), identity_certificate_path.c_str(),
-      root_cert_path.c_str(), refresh_interval_sec);
+      private_key_path.c_str(), identity_certificate_path.c_str(), root_cert_path.c_str(),
+      refresh_interval_sec);
   GPR_ASSERT(c_provider_ != nullptr);
 };
 

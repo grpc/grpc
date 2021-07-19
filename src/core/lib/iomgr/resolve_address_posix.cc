@@ -42,9 +42,8 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-static grpc_error_handle posix_blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+static grpc_error_handle posix_blocking_resolve_address(const char* name, const char* default_port,
+                                                        grpc_resolved_addresses** addresses) {
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = nullptr, *resp;
@@ -57,17 +56,15 @@ static grpc_error_handle posix_blocking_resolve_address(
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    err = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+    err = grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
+                             GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
 
   if (port.empty()) {
     if (default_port == nullptr) {
-      err = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+      err = grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
+                               GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
       goto done;
     }
     port = default_port;
@@ -100,20 +97,16 @@ static grpc_error_handle posix_blocking_resolve_address(
     err = grpc_error_set_str(
         grpc_error_set_str(
             grpc_error_set_str(
-                grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
-                    GRPC_ERROR_INT_ERRNO, s),
-                GRPC_ERROR_STR_OS_ERROR,
-                grpc_slice_from_static_string(gai_strerror(s))),
-            GRPC_ERROR_STR_SYSCALL,
-            grpc_slice_from_static_string("getaddrinfo")),
+                grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
+                                   GRPC_ERROR_INT_ERRNO, s),
+                GRPC_ERROR_STR_OS_ERROR, grpc_slice_from_static_string(gai_strerror(s))),
+            GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string("getaddrinfo")),
         GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
     goto done;
   }
 
   /* Success path: set addrs non-NULL, fill it in */
-  *addresses = static_cast<grpc_resolved_addresses*>(
-      gpr_malloc(sizeof(grpc_resolved_addresses)));
+  *addresses = static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(grpc_resolved_addresses)));
   (*addresses)->naddrs = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
     (*addresses)->naddrs++;
@@ -147,17 +140,15 @@ struct request {
  * grpc_blocking_resolve_address */
 static void do_request_thread(void* rp, grpc_error_handle /*error*/) {
   request* r = static_cast<request*>(rp);
-  grpc_core::ExecCtx::Run(
-      DEBUG_LOCATION, r->on_done,
-      grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
+                          grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out));
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r);
 }
 
 static void posix_resolve_address(const char* name, const char* default_port,
-                                  grpc_pollset_set* /*interested_parties*/,
-                                  grpc_closure* on_done,
+                                  grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
                                   grpc_resolved_addresses** addrs) {
   request* r = static_cast<request*>(gpr_malloc(sizeof(request)));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r, nullptr);
@@ -165,10 +156,9 @@ static void posix_resolve_address(const char* name, const char* default_port,
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;
   r->addrs_out = addrs;
-  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
-                           grpc_core::ExecutorType::RESOLVER);
+  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE, grpc_core::ExecutorType::RESOLVER);
 }
 
-grpc_address_resolver_vtable grpc_posix_resolver_vtable = {
-    posix_resolve_address, posix_blocking_resolve_address};
+grpc_address_resolver_vtable grpc_posix_resolver_vtable = {posix_resolve_address,
+                                                           posix_blocking_resolve_address};
 #endif

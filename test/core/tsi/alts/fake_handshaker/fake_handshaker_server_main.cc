@@ -31,13 +31,11 @@ ABSL_FLAG(int32_t, handshaker_port, 55056,
 
 static void RunFakeHandshakerServer(const std::string& server_address) {
   std::unique_ptr<grpc::Service> service =
-      grpc::gcp::CreateFakeHandshakerService(
-          0 /* expected max concurrent rpcs unset */);
+      grpc::gcp::CreateFakeHandshakerService(0 /* expected max concurrent rpcs unset */);
   grpc::ServerBuilder builder;
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(service.get());
-  gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
-          server_address.c_str());
+  gpr_log(GPR_INFO, "Fake handshaker server listening on %s", server_address.c_str());
   std::unique_ptr<grpc::Server> server = builder.BuildAndStart();
   server->Wait();
 }

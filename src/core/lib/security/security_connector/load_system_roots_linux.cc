@@ -45,26 +45,24 @@
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/load_file.h"
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
-                                "Custom directory to SSL Roots");
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "", "Custom directory to SSL Roots");
 
 namespace grpc_core {
 namespace {
 
-const char* kLinuxCertFiles[] = {
-    "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt",
-    "/etc/ssl/ca-bundle.pem", "/etc/pki/tls/cacert.pem",
-    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"};
-const char* kLinuxCertDirectories[] = {
-    "/etc/ssl/certs", "/system/etc/security/cacerts", "/usr/local/share/certs",
-    "/etc/pki/tls/certs", "/etc/openssl/certs"};
+const char* kLinuxCertFiles[] = {"/etc/ssl/certs/ca-certificates.crt",
+                                 "/etc/pki/tls/certs/ca-bundle.crt", "/etc/ssl/ca-bundle.pem",
+                                 "/etc/pki/tls/cacert.pem",
+                                 "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"};
+const char* kLinuxCertDirectories[] = {"/etc/ssl/certs", "/system/etc/security/cacerts",
+                                       "/usr/local/share/certs", "/etc/pki/tls/certs",
+                                       "/etc/openssl/certs"};
 
 grpc_slice GetSystemRootCerts() {
   grpc_slice valid_bundle_slice = grpc_empty_slice();
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kLinuxCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
-    grpc_error_handle error =
-        grpc_load_file(kLinuxCertFiles[i], 1, &valid_bundle_slice);
+    grpc_error_handle error = grpc_load_file(kLinuxCertFiles[i], 1, &valid_bundle_slice);
     if (error == GRPC_ERROR_NONE) {
       return valid_bundle_slice;
     } else {
@@ -76,14 +74,12 @@ grpc_slice GetSystemRootCerts() {
 
 }  // namespace
 
-void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, char* path_buffer) {
+void GetAbsoluteFilePath(const char* valid_file_dir, const char* file_entry_name,
+                         char* path_buffer) {
   if (valid_file_dir != nullptr && file_entry_name != nullptr) {
-    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
-                            file_entry_name);
+    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir, file_entry_name);
     if (path_len == 0) {
-      gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
-              file_entry_name);
+      gpr_log(GPR_ERROR, "failed to get absolute path for file: %s", file_entry_name);
     }
   }
 }
@@ -129,8 +125,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     if (file_descriptor != -1) {
       // Read file into bundle.
       size_t cert_file_size = roots_filenames[i].size;
-      int read_ret =
-          read(file_descriptor, bundle_string + bytes_read, cert_file_size);
+      int read_ret = read(file_descriptor, bundle_string + bytes_read, cert_file_size);
       if (read_ret != -1) {
         bytes_read += read_ret;
       } else {
@@ -145,8 +140,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // Prioritize user-specified custom directory if flag is set.
-  grpc_core::UniquePtr<char> custom_dir =
-      GPR_GLOBAL_CONFIG_GET(grpc_system_ssl_roots_dir);
+  grpc_core::UniquePtr<char> custom_dir = GPR_GLOBAL_CONFIG_GET(grpc_system_ssl_roots_dir);
   if (strlen(custom_dir.get()) > 0) {
     result = CreateRootCertsBundle(custom_dir.get());
   }

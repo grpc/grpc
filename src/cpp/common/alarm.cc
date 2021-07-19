@@ -65,14 +65,12 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
           grpc_completion_queue* cq = alarm->cq_;
           alarm->cq_ = nullptr;
           grpc_cq_end_op(
-              cq, alarm, error,
-              [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, arg,
+              cq, alarm, error, [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, arg,
               &alarm->completion_);
           GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
         },
         this, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline),
-                    &on_alarm_);
+    grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline), &on_alarm_);
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -83,19 +81,17 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     GRPC_CLOSURE_INIT(
         &on_alarm_,
         [](void* arg, grpc_error_handle error) {
-          grpc_core::Executor::Run(
-              GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error_handle error) {
-                    AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-                    alarm->callback_(error == GRPC_ERROR_NONE);
-                    alarm->Unref();
-                  },
-                  arg, nullptr),
-              error);
+          grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(
+                                       [](void* arg, grpc_error_handle error) {
+                                         AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
+                                         alarm->callback_(error == GRPC_ERROR_NONE);
+                                         alarm->Unref();
+                                       },
+                                       arg, nullptr),
+                                   error);
         },
         this, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline),
-                    &on_alarm_);
+    grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline), &on_alarm_);
   }
   void Cancel() {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -128,12 +124,9 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
 
 static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 
-Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
-  g_gli_initializer.summon();
-}
+Alarm::Alarm() : alarm_(new internal::AlarmImpl()) { g_gli_initializer.summon(); }
 
-void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
-                        void* tag) {
+void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration
   // or exposing core data structures in the C++ public headers.

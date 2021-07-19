@@ -43,12 +43,10 @@ void pollset_destroy(grpc_pollset* pollset) {}
 grpc_error* pollset_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
                          grpc_millis deadline) {
   (void)worker;
-  gpr_cv_wait(&g_cv, &g_mu,
-              grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME));
+  gpr_cv_wait(&g_cv, &g_mu, grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME));
   return GRPC_ERROR_NONE;
 }
-grpc_error* pollset_kick(grpc_pollset* pollset,
-                         grpc_pollset_worker* specific_worker) {
+grpc_error* pollset_kick(grpc_pollset* pollset, grpc_pollset_worker* specific_worker) {
   (void)pollset;
   (void)specific_worker;
   return GRPC_ERROR_NONE;
@@ -58,15 +56,11 @@ size_t pollset_size(void) { return 1; }
 // --- pollset_set vtable API ---
 grpc_pollset_set* pollset_set_create(void) { return nullptr; }
 void pollset_set_destroy(grpc_pollset_set* pollset_set) {}
-void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
-                             grpc_pollset* pollset) {}
+void pollset_set_add_pollset(grpc_pollset_set* pollset_set, grpc_pollset* pollset) {}
 
-void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
-                             grpc_pollset* pollset) {}
-void pollset_set_add_pollset_set(grpc_pollset_set* bag,
-                                 grpc_pollset_set* item) {}
-void pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                 grpc_pollset_set* item) {}
+void pollset_set_del_pollset(grpc_pollset_set* pollset_set, grpc_pollset* pollset) {}
+void pollset_set_add_pollset_set(grpc_pollset_set* bag, grpc_pollset_set* item) {}
+void pollset_set_del_pollset_set(grpc_pollset_set* bag, grpc_pollset_set* item) {}
 
 }  // namespace
 
@@ -80,8 +74,7 @@ grpc_pollset_vtable grpc_event_engine_pollset_vtable = {
     pollset_kick,        pollset_size};
 
 grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable = {
-    pollset_set_create,          pollset_set_destroy,
-    pollset_set_add_pollset,     pollset_set_del_pollset,
-    pollset_set_add_pollset_set, pollset_set_del_pollset_set};
+    pollset_set_create,      pollset_set_destroy,         pollset_set_add_pollset,
+    pollset_set_del_pollset, pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
 #endif  // GRPC_USE_EVENT_ENGINE

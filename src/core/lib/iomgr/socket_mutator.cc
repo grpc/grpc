@@ -38,8 +38,7 @@ grpc_socket_mutator* grpc_socket_mutator_ref(grpc_socket_mutator* mutator) {
   return mutator;
 }
 
-bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
-                                   grpc_fd_usage usage) {
+bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd, grpc_fd_usage usage) {
   if (mutator->vtable->mutate_fd_2 != nullptr) {
     grpc_mutate_socket_info info{fd, usage};
     return mutator->vtable->mutate_fd_2(&info, mutator);
@@ -54,8 +53,7 @@ bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
   GPR_UNREACHABLE_CODE(return false);
 }
 
-int grpc_socket_mutator_compare(grpc_socket_mutator* a,
-                                grpc_socket_mutator* b) {
+int grpc_socket_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
   int c = GPR_ICMP(a, b);
   if (c != 0) {
     grpc_socket_mutator* sma = a;
@@ -91,7 +89,6 @@ static const grpc_arg_pointer_vtable socket_mutator_arg_vtable = {
     socket_mutator_arg_copy, socket_mutator_arg_destroy, socket_mutator_cmp};
 
 grpc_arg grpc_socket_mutator_to_arg(grpc_socket_mutator* mutator) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SOCKET_MUTATOR), mutator,
-      &socket_mutator_arg_vtable);
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_SOCKET_MUTATOR), mutator,
+                                         &socket_mutator_arg_vtable);
 }

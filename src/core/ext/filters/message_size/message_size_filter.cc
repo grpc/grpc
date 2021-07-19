@@ -38,8 +38,7 @@
 #include "src/core/lib/surface/channel_init.h"
 
 static void recv_message_ready(void* user_data, grpc_error_handle error);
-static void recv_trailing_metadata_ready(void* user_data,
-                                         grpc_error_handle error);
+static void recv_trailing_metadata_ready(void* user_data, grpc_error_handle error);
 
 namespace grpc_core {
 
@@ -54,35 +53,30 @@ size_t g_message_size_parser_index;
 const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
     const grpc_call_context_element* context) {
   if (context == nullptr) return nullptr;
-  auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
-      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto* svc_cfg_call_data =
+      static_cast<ServiceConfigCallData*>(context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const MessageSizeParsedConfig*>(
-      svc_cfg_call_data->GetMethodParsedConfig(
-          MessageSizeParser::ParserIndex()));
+      svc_cfg_call_data->GetMethodParsedConfig(MessageSizeParser::ParserIndex()));
 }
 
 //
 // MessageSizeParser
 //
 
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
-MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
-                                        const Json& json,
-                                        grpc_error_handle* error) {
+std::unique_ptr<ServiceConfigParser::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
+    const grpc_channel_args* /*args*/, const Json& json, grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error_handle> error_list;
   // Max request size.
   int max_request_message_bytes = -1;
   auto it = json.object_value().find("maxRequestMessageBytes");
   if (it != json.object_value().end()) {
-    if (it->second.type() != Json::Type::STRING &&
-        it->second.type() != Json::Type::NUMBER) {
+    if (it->second.type() != Json::Type::STRING && it->second.type() != Json::Type::NUMBER) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:maxRequestMessageBytes error:should be of type number"));
     } else {
-      max_request_message_bytes =
-          gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      max_request_message_bytes = gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (max_request_message_bytes == -1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxRequestMessageBytes error:should be non-negative"));
@@ -93,13 +87,11 @@ MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
   int max_response_message_bytes = -1;
   it = json.object_value().find("maxResponseMessageBytes");
   if (it != json.object_value().end()) {
-    if (it->second.type() != Json::Type::STRING &&
-        it->second.type() != Json::Type::NUMBER) {
+    if (it->second.type() != Json::Type::STRING && it->second.type() != Json::Type::NUMBER) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:maxResponseMessageBytes error:should be of type number"));
     } else {
-      max_response_message_bytes =
-          gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      max_response_message_bytes = gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (max_response_message_bytes == -1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:maxResponseMessageBytes error:should be non-negative"));
@@ -115,24 +107,22 @@ MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
 }
 
 void MessageSizeParser::Register() {
-  g_message_size_parser_index = ServiceConfigParser::RegisterParser(
-      absl::make_unique<MessageSizeParser>());
+  g_message_size_parser_index =
+      ServiceConfigParser::RegisterParser(absl::make_unique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
 
 int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args) {
   if (grpc_channel_args_want_minimal_stack(args)) return -1;
-  return grpc_channel_args_find_integer(
-      args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
-      {GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, -1, INT_MAX});
+  return grpc_channel_args_find_integer(args, GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+                                        {GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH, -1, INT_MAX});
 }
 
 int GetMaxSendSizeFromChannelArgs(const grpc_channel_args* args) {
   if (grpc_channel_args_want_minimal_stack(args)) return -1;
-  return grpc_channel_args_find_integer(
-      args, GRPC_ARG_MAX_SEND_MESSAGE_LENGTH,
-      {GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, -1, INT_MAX});
+  return grpc_channel_args_find_integer(args, GRPC_ARG_MAX_SEND_MESSAGE_LENGTH,
+                                        {GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH, -1, INT_MAX});
 }
 
 }  // namespace grpc_core
@@ -143,13 +133,10 @@ struct channel_data {
 };
 
 struct call_data {
-  call_data(grpc_call_element* elem, const channel_data& chand,
-            const grpc_call_element_args& args)
+  call_data(grpc_call_element* elem, const channel_data& chand, const grpc_call_element_args& args)
       : call_combiner(args.call_combiner), limits(chand.limits) {
-    GRPC_CLOSURE_INIT(&recv_message_ready, ::recv_message_ready, elem,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready,
-                      ::recv_trailing_metadata_ready, elem,
+    GRPC_CLOSURE_INIT(&recv_message_ready, ::recv_message_ready, elem, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready, ::recv_trailing_metadata_ready, elem,
                       grpc_schedule_on_exec_ctx);
     // Get max sizes from channel data, then merge in per-method config values.
     // Note: Per-method config is only available on the client, so we
@@ -200,13 +187,11 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (*calld->recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
-      (*calld->recv_message)->length() >
-          static_cast<size_t>(calld->limits.max_recv_size)) {
+      (*calld->recv_message)->length() > static_cast<size_t>(calld->limits.max_recv_size)) {
     grpc_error_handle new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrFormat("Received message larger than max (%u vs. %d)",
-                            (*calld->recv_message)->length(),
-                            calld->limits.max_recv_size)
+                            (*calld->recv_message)->length(), calld->limits.max_recv_size)
                 .c_str()),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
@@ -225,8 +210,7 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
      * invoked the recv_trailing_metadata_ready closure and all further
      * RECV_MESSAGE ops will get null payloads. */
     calld->seen_recv_trailing_metadata = false;
-    GRPC_CALL_COMBINER_START(calld->call_combiner,
-                             &calld->recv_trailing_metadata_ready,
+    GRPC_CALL_COMBINER_START(calld->call_combiner, &calld->recv_trailing_metadata_ready,
                              calld->recv_trailing_metadata_error,
                              "continue recv_trailing_metadata_ready");
   }
@@ -235,8 +219,7 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
 
 // Callback invoked on completion of recv_trailing_metadata
 // Notifies the recv_trailing_metadata batch of any message size failures
-static void recv_trailing_metadata_ready(void* user_data,
-                                         grpc_error_handle error) {
+static void recv_trailing_metadata_ready(void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->next_recv_message_ready != nullptr) {
@@ -247,16 +230,14 @@ static void recv_trailing_metadata_ready(void* user_data,
                             "after recv_message_ready");
     return;
   }
-  error =
-      grpc_error_add_child(GRPC_ERROR_REF(error), GRPC_ERROR_REF(calld->error));
+  error = grpc_error_add_child(GRPC_ERROR_REF(error), GRPC_ERROR_REF(calld->error));
   // Invoke the next callback.
-  grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_recv_trailing_metadata_ready, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready, error);
 }
 
 // Start transport stream op.
-static void message_size_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+static void message_size_start_transport_stream_op_batch(grpc_call_element* elem,
+                                                         grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Check max send message size.
   if (op->send_message && calld->limits.max_send_size >= 0 &&
@@ -264,21 +245,18 @@ static void message_size_start_transport_stream_op_batch(
           static_cast<size_t>(calld->limits.max_send_size)) {
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat(
-                    "Sent message larger than max (%u vs. %d)",
-                    op->payload->send_message.send_message->length(),
-                    calld->limits.max_send_size)
-                    .c_str()),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED),
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                               absl::StrFormat("Sent message larger than max (%u vs. %d)",
+                                               op->payload->send_message.send_message->length(),
+                                               calld->limits.max_send_size)
+                                   .c_str()),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     return;
   }
   // Inject callback for receiving a message.
   if (op->recv_message) {
-    calld->next_recv_message_ready =
-        op->payload->recv_message.recv_message_ready;
+    calld->next_recv_message_ready = op->payload->recv_message.recv_message_ready;
     calld->recv_message = op->payload->recv_message.recv_message;
     op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
   }
@@ -294,17 +272,17 @@ static void message_size_start_transport_stream_op_batch(
 }
 
 // Constructor for call_data.
-static grpc_error_handle message_size_init_call_elem(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+static grpc_error_handle message_size_init_call_elem(grpc_call_element* elem,
+                                                     const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (elem->call_data) call_data(elem, *chand, *args);
   return GRPC_ERROR_NONE;
 }
 
 // Destructor for call_data.
-static void message_size_destroy_call_elem(
-    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
-    grpc_closure* /*ignored*/) {
+static void message_size_destroy_call_elem(grpc_call_element* elem,
+                                           const grpc_call_final_info* /*final_info*/,
+                                           grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
@@ -318,8 +296,8 @@ grpc_core::MessageSizeParsedConfig::message_size_limits get_message_size_limits(
 }
 
 // Constructor for channel_data.
-static grpc_error_handle message_size_init_channel_elem(
-    grpc_channel_element* elem, grpc_channel_element_args* args) {
+static grpc_error_handle message_size_init_channel_elem(grpc_channel_element* elem,
+                                                        grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (chand) channel_data();
@@ -347,23 +325,20 @@ const grpc_channel_filter grpc_message_size_filter = {
     "message_size"};
 
 // Used for GRPC_CLIENT_SUBCHANNEL
-static bool maybe_add_message_size_filter_subchannel(
-    grpc_channel_stack_builder* builder, void* /*arg*/) {
-  const grpc_channel_args* channel_args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+static bool maybe_add_message_size_filter_subchannel(grpc_channel_stack_builder* builder,
+                                                     void* /*arg*/) {
+  const grpc_channel_args* channel_args = grpc_channel_stack_builder_get_channel_arguments(builder);
   if (grpc_channel_args_want_minimal_stack(channel_args)) {
     return true;
   }
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &grpc_message_size_filter, nullptr, nullptr);
+  return grpc_channel_stack_builder_prepend_filter(builder, &grpc_message_size_filter, nullptr,
+                                                   nullptr);
 }
 
 // Used for GRPC_CLIENT_DIRECT_CHANNEL and GRPC_SERVER_CHANNEL. Adds the filter
 // only if message size limits or service config is specified.
-static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
-                                          void* /*arg*/) {
-  const grpc_channel_args* channel_args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder, void* /*arg*/) {
+  const grpc_channel_args* channel_args = grpc_channel_stack_builder_get_channel_arguments(builder);
   if (grpc_channel_args_want_minimal_stack(channel_args)) {
     return true;
   }
@@ -373,29 +348,25 @@ static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
   if (lim.max_send_size != -1 || lim.max_recv_size != -1) {
     enable = true;
   }
-  const grpc_arg* a =
-      grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
+  const grpc_arg* a = grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   const char* svc_cfg_str = grpc_channel_arg_get_string(a);
   if (svc_cfg_str != nullptr) {
     enable = true;
   }
   if (enable) {
-    return grpc_channel_stack_builder_prepend_filter(
-        builder, &grpc_message_size_filter, nullptr, nullptr);
+    return grpc_channel_stack_builder_prepend_filter(builder, &grpc_message_size_filter, nullptr,
+                                                     nullptr);
   } else {
     return true;
   }
 }
 
 void grpc_message_size_filter_init(void) {
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_message_size_filter_subchannel, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   maybe_add_message_size_filter_subchannel, nullptr);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_message_size_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_message_size_filter, nullptr);
   grpc_core::MessageSizeParser::Register();
 }

@@ -29,15 +29,14 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 char* grpc_dump_slice(const grpc_slice& s, uint32_t flags) {
-  return gpr_dump(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s),
-                  GRPC_SLICE_LENGTH(s), flags);
+  return gpr_dump(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
+                  flags);
 }
 
 grpc_slice grpc_dump_slice_to_slice(const grpc_slice& s, uint32_t flags) {
   size_t len;
-  grpc_core::UniquePtr<char> ptr(
-      gpr_dump_return_len(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s),
-                          GRPC_SLICE_LENGTH(s), flags, &len));
+  grpc_core::UniquePtr<char> ptr(gpr_dump_return_len(
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s), flags, &len));
   return grpc_slice_from_moved_buffer(std::move(ptr), len);
 }
 
@@ -47,8 +46,7 @@ grpc_slice grpc_dump_slice_to_slice(const grpc_slice& s, uint32_t flags) {
  *
  * Returns 1 and updates \a begin and \a end. Returns 0 otherwise. */
 static int slice_find_separator_offset(const grpc_slice str, const char* sep,
-                                       const size_t read_offset, size_t* begin,
-                                       size_t* end) {
+                                       const size_t read_offset, size_t* begin, size_t* end) {
   size_t i;
   const uint8_t* str_ptr = GRPC_SLICE_START_PTR(str) + read_offset;
   const size_t str_len = GRPC_SLICE_LENGTH(str) - read_offset;
@@ -67,8 +65,7 @@ static int slice_find_separator_offset(const grpc_slice str, const char* sep,
   return 0;
 }
 
-static void skip_leading_trailing_spaces(const uint8_t* str_buffer,
-                                         size_t* begin, size_t* end) {
+static void skip_leading_trailing_spaces(const uint8_t* str_buffer, size_t* begin, size_t* end) {
   while (*begin < *end && str_buffer[*begin] == ' ') {
     (*begin)++;
   }
@@ -77,8 +74,8 @@ static void skip_leading_trailing_spaces(const uint8_t* str_buffer,
   }
 }
 
-static void grpc_slice_split_inner(grpc_slice str, const char* sep,
-                                   grpc_slice_buffer* dst, bool no_space) {
+static void grpc_slice_split_inner(grpc_slice str, const char* sep, grpc_slice_buffer* dst,
+                                   bool no_space) {
   const size_t sep_len = strlen(sep);
   size_t begin, end;
   const uint8_t* str_buffer = GRPC_SLICE_START_PTR(str);
@@ -93,8 +90,7 @@ static void grpc_slice_split_inner(grpc_slice str, const char* sep,
         skip_leading_trailing_spaces(str_buffer, &begin, &end);
       }
       grpc_slice_buffer_add_indexed(dst, grpc_slice_sub(str, begin, end));
-    } while (slice_find_separator_offset(str, sep, sep_pos + sep_len, &begin,
-                                         &end) != 0);
+    } while (slice_find_separator_offset(str, sep, sep_pos + sep_len, &begin, &end) != 0);
     begin = sep_pos + sep_len;
     end = GRPC_SLICE_LENGTH(str);
     if (no_space) {
@@ -115,13 +111,11 @@ void grpc_slice_split(grpc_slice str, const char* sep, grpc_slice_buffer* dst) {
   grpc_slice_split_inner(str, sep, dst, false);
 }
 
-void grpc_slice_split_without_space(grpc_slice str, const char* sep,
-                                    grpc_slice_buffer* dst) {
+void grpc_slice_split_without_space(grpc_slice str, const char* sep, grpc_slice_buffer* dst) {
   grpc_slice_split_inner(str, sep, dst, true);
 }
 
 bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t* result) {
-  return gpr_parse_bytes_to_uint32(
-             reinterpret_cast<const char*> GRPC_SLICE_START_PTR(str),
-             GRPC_SLICE_LENGTH(str), result) != 0;
+  return gpr_parse_bytes_to_uint32(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(str),
+                                   GRPC_SLICE_LENGTH(str), result) != 0;
 }

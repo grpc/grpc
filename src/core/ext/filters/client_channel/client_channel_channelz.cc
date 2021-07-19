@@ -30,8 +30,7 @@
 namespace grpc_core {
 namespace channelz {
 
-SubchannelNode::SubchannelNode(std::string target_address,
-                               size_t channel_tracer_max_nodes)
+SubchannelNode::SubchannelNode(std::string target_address, size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel, target_address),
       target_(std::move(target_address)),
       trace_(channel_tracer_max_nodes) {}
@@ -49,8 +48,7 @@ void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
 
 Json SubchannelNode::RenderJson() {
   // Create and fill the data child.
-  grpc_connectivity_state state =
-      connectivity_state_.Load(MemoryOrder::RELAXED);
+  grpc_connectivity_state state = connectivity_state_.Load(MemoryOrder::RELAXED);
   Json::Object data = {
       {"state",
        Json::Object{

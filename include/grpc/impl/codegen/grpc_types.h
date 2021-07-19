@@ -76,11 +76,7 @@ typedef struct grpc_socket_mutator grpc_socket_mutator;
 typedef struct grpc_socket_factory grpc_socket_factory;
 
 /** Type specifier for grpc_arg */
-typedef enum {
-  GRPC_ARG_STRING,
-  GRPC_ARG_INTEGER,
-  GRPC_ARG_POINTER
-} grpc_arg_type;
+typedef enum { GRPC_ARG_STRING, GRPC_ARG_INTEGER, GRPC_ARG_POINTER } grpc_arg_type;
 
 typedef struct grpc_arg_pointer_vtable {
   void* (*copy)(void* p);
@@ -177,25 +173,21 @@ typedef struct {
 /** Experimental Arg. Enable/disable support for per-message decompression.
    Defaults to 1. If disabled, decompression will not be performed and the
    application will see the compressed message in the byte buffer. */
-#define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION \
-  "grpc.per_message_decompression"
+#define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION "grpc.per_message_decompression"
 /** Enable/disable support for deadline checking. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
 #define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
 /** Initial stream ID for http2 transports. Int valued. */
-#define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
-  "grpc.http2.initial_sequence_number"
+#define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER "grpc.http2.initial_sequence_number"
 /** Amount to read ahead on individual streams. Defaults to 64kb, larger
     values can help throughput on high-latency connections.
     NOTE: at some point we'd like to auto-tune this, and this parameter
     will become a no-op. Int valued, bytes. */
 #define GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES "grpc.http2.lookahead_bytes"
 /** How much memory to use for hpack decoding. Int valued, bytes. */
-#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER \
-  "grpc.http2.hpack_table_size.decoder"
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER "grpc.http2.hpack_table_size.decoder"
 /** How much memory to use for hpack encoding. Int valued, bytes. */
-#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
-  "grpc.http2.hpack_table_size.encoder"
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER "grpc.http2.hpack_table_size.encoder"
 /** How big a frame are we willing to receive via HTTP2.
     Min 16384, max 16777215. Larger values give lower CPU usage for large
     messages, but more head of line blocking for small messages. */
@@ -211,8 +203,7 @@ typedef struct {
     source of pings in gRPC Core - BDP pings, but BDP pings are only sent when
     there is receive-side data activity, making this arg unuseful for BDP pings
     too.  */
-#define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
-  "grpc.http2.min_time_between_pings_ms"
+#define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS "grpc.http2.min_time_between_pings_ms"
 /** Minimum allowed time between a server receiving successive ping frames
    without sending any data/header frame. Int valued, milliseconds
  */
@@ -223,8 +214,7 @@ typedef struct {
 /** How many pings can we send before needing to send a
    data/header frame? (0 indicates that an infinite number of
    pings can be sent without sending a data frame or header frame) */
-#define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
-  "grpc.http2.max_pings_without_data"
+#define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
     closing the transport? (0 indicates that the server can bear an infinite
     number of misbehaving pings) */
@@ -244,8 +234,7 @@ typedef struct {
 #define GRPC_ARG_KEEPALIVE_TIMEOUT_MS "grpc.keepalive_timeout_ms"
 /** Is it permissible to send keepalive pings without any outstanding streams.
     Int valued, 0(false)/1(true). */
-#define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS \
-  "grpc.keepalive_permit_without_calls"
+#define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS "grpc.keepalive_permit_without_calls"
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
@@ -260,11 +249,9 @@ typedef struct {
 /** The maximum time between subsequent connection attempts, in ms */
 #define GRPC_ARG_MAX_RECONNECT_BACKOFF_MS "grpc.max_reconnect_backoff_ms"
 /** The time between the first and second connection attempts, in ms */
-#define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
-  "grpc.initial_reconnect_backoff_ms"
+#define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS "grpc.initial_reconnect_backoff_ms"
 /** Minimum amount of time between DNS resolutions, in ms */
-#define GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS \
-  "grpc.dns_min_time_between_resolutions_ms"
+#define GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS "grpc.dns_min_time_between_resolutions_ms"
 /** The timeout used on servers for finishing handshaking on an incoming
     connection.  Defaults to 120 seconds. */
 #define GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS "grpc.server_handshake_timeout_ms"
@@ -303,8 +290,7 @@ typedef struct {
     This value will be ignored if the name resolver returns a service config. */
 #define GRPC_ARG_SERVICE_CONFIG "grpc.service_config"
 /** Disable looking up the service config via the name resolver. */
-#define GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION \
-  "grpc.service_config_disable_resolution"
+#define GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION "grpc.service_config_disable_resolution"
 /** LB policy name. */
 #define GRPC_ARG_LB_POLICY_NAME "grpc.lb_policy_name"
 /** The grpc_socket_mutator instance that set the socket options. A pointer. */
@@ -323,8 +309,7 @@ typedef struct {
 #define GRPC_ARG_ENABLE_CHANNELZ "grpc.enable_channelz"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames
  * when possible. */
-#define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
-  "grpc.use_cronet_packet_coalescing"
+#define GRPC_ARG_USE_CRONET_PACKET_COALESCING "grpc.use_cronet_packet_coalescing"
 /** Channel arg (integer) setting how large a slice to try and read from the
    wire each time recvmsg (or equivalent) is called **/
 #define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"
@@ -332,14 +317,11 @@ typedef struct {
  * when trying to read from the wire if the GRPC_ARG_TCP_READ_CHUNK_SIZE
  * channel arg is unspecified. */
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
-#define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE \
-  "grpc.experimental.tcp_min_read_chunk_size"
-#define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
-  "grpc.experimental.tcp_max_read_chunk_size"
+#define GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE "grpc.experimental.tcp_min_read_chunk_size"
+#define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE "grpc.experimental.tcp_max_read_chunk_size"
 /* TCP TX Zerocopy enable state: zero is disabled, non-zero is enabled. By
    default, it is disabled. */
-#define GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED \
-  "grpc.experimental.tcp_tx_zerocopy_enabled"
+#define GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED "grpc.experimental.tcp_tx_zerocopy_enabled"
 /* TCP TX Zerocopy send threshold: only zerocopy if >= this many bytes sent. By
    default, this is set to 16KB. */
 #define GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD \
@@ -371,11 +353,9 @@ typedef struct {
 /* Timeout in milliseconds to wait for the child of a specific priority to
    complete its initial connection attempt before the priority LB policy fails
    over to the next priority. Default value is 10 seconds. */
-#define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS \
-  "grpc.priority_failover_timeout_ms"
+#define GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS "grpc.priority_failover_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
-#define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
-  "grpc.workaround.cronet_compression"
+#define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION "grpc.workaround.cronet_compression"
 /** String defining the optimization target for a channel.
     Can be: "latency"    - attempt to minimize latency at the cost of throughput
             "blend"      - try to balance latency and throughput
@@ -396,8 +376,7 @@ typedef struct {
  * logging filter. */
 #define GRPC_ARG_MOBILE_LOG_CONTEXT "grpc.mobile_log_context"
 /** If non-zero, client authority filter is disabled for the channel */
-#define GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER \
-  "grpc.disable_client_authority_filter"
+#define GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER "grpc.disable_client_authority_filter"
 /** If set to zero, disables use of http proxies. Enabled by default. */
 #define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
 /** Channel arg to set http proxy per channel. If set, the channel arg
@@ -430,8 +409,7 @@ typedef struct {
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
 /** Channel argument for grpc_authorization_policy_provider. If present, enables
     gRPC authorization check. */
-#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
-  "grpc.authorization_policy_provider"
+#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER "grpc.authorization_policy_provider"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -491,8 +469,7 @@ typedef enum grpc_call_error {
 /** Force this message to be written to the socket before completing it */
 #define GRPC_WRITE_THROUGH (0x00000004u)
 /** Mask of all valid flags. */
-#define GRPC_WRITE_USED_MASK \
-  (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_THROUGH)
+#define GRPC_WRITE_USED_MASK (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_THROUGH)
 
 /** Initial metadata flags */
 /** These flags are to be passed to the `grpc_op::flags` field */
@@ -509,11 +486,9 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK                  \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |            \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
+#define GRPC_INITIAL_METADATA_USED_MASK                                                            \
+  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST | GRPC_INITIAL_METADATA_WAIT_FOR_READY |               \
+   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST | GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
    GRPC_INITIAL_METADATA_CORKED | GRPC_WRITE_THROUGH)
 
 /** A single metadata element */

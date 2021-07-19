@@ -31,8 +31,7 @@ extern "C" {
 #endif
 
 /** Time constants. */
-GPRAPI gpr_timespec
-gpr_time_0(gpr_clock_type type); /** The zero time interval. */
+GPRAPI gpr_timespec gpr_time_0(gpr_clock_type type);     /** The zero time interval. */
 GPRAPI gpr_timespec gpr_inf_future(gpr_clock_type type); /** The far future */
 GPRAPI gpr_timespec gpr_inf_past(gpr_clock_type type);   /** The far past. */
 
@@ -50,8 +49,7 @@ GPRAPI void gpr_time_init(void);
 GPRAPI gpr_timespec gpr_now(gpr_clock_type clock);
 
 /** Convert a timespec from one clock to another */
-GPRAPI gpr_timespec gpr_convert_clock_type(gpr_timespec t,
-                                           gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type);
 
 /** Return -ve, 0, or +ve according to whether a < b, a == b, or a > b
    respectively.  */
@@ -77,8 +75,7 @@ GPRAPI int32_t gpr_time_to_millis(gpr_timespec timespec);
 
 /** Return 1 if two times are equal or within threshold of each other,
    0 otherwise */
-GPRAPI int gpr_time_similar(gpr_timespec a, gpr_timespec b,
-                            gpr_timespec threshold);
+GPRAPI int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold);
 
 /** Sleep until at least 'until' - an absolute timeout */
 GPRAPI void gpr_sleep_until(gpr_timespec until);

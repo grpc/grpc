@@ -67,9 +67,8 @@ bool SubchannelKey::operator<(const SubchannelKey& other) const {
   return grpc_channel_args_compare(args_, other.args_) < 0;
 }
 
-void SubchannelKey::Init(
-    const grpc_channel_args* args,
-    grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
+void SubchannelKey::Init(const grpc_channel_args* args,
+                         grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
   args_ = copy_channel_args(args);
 }
 
@@ -88,20 +87,16 @@ void arg_destroy(void* p) {
 
 int arg_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
 
-const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
-    arg_copy, arg_destroy, arg_cmp};
+const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {arg_copy, arg_destroy, arg_cmp};
 
 }  // namespace
 
-grpc_arg SubchannelPoolInterface::CreateChannelArg(
-    SubchannelPoolInterface* subchannel_pool) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SUBCHANNEL_POOL), subchannel_pool,
-      &subchannel_pool_arg_vtable);
+grpc_arg SubchannelPoolInterface::CreateChannelArg(SubchannelPoolInterface* subchannel_pool) {
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_SUBCHANNEL_POOL),
+                                         subchannel_pool, &subchannel_pool_arg_vtable);
 }
 
-SubchannelPoolInterface*
-SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
+SubchannelPoolInterface* SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
     const grpc_channel_args* args) {
   const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_POOL);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;

@@ -35,8 +35,7 @@ TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
 
 TEST(EndpointConfigTest, ReturnsMonostateForMissingKeys) {
   ChannelArgsEndpointConfig config(nullptr);
-  EXPECT_TRUE(
-      absl::holds_alternative<absl::monostate>(config.Get("nonexistent")));
+  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(config.Get("nonexistent")));
 }
 
 int main(int argc, char** argv) {

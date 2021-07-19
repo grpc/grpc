@@ -66,10 +66,7 @@ struct TestScenario {
 class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
  protected:
   FlakyNetworkTest()
-      : server_host_("grpctest"),
-        interface_("lo:1"),
-        ipv4_address_("10.0.0.1"),
-        netmask_("/32") {}
+      : server_host_("grpctest"), interface_("lo:1"), ipv4_address_("10.0.0.1"), netmask_("/32") {}
 
   void InterfaceUp() {
     std::ostringstream cmd;
@@ -88,8 +85,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   void DNSUp() {
     std::ostringstream cmd;
     // Add DNS entry for server_host_ in /etc/hosts
-    cmd << "echo '" << ipv4_address_ << "      " << server_host_
-        << "' >> /etc/hosts";
+    cmd << "echo '" << ipv4_address_ << "      " << server_host_ << "' >> /etc/hosts";
     std::system(cmd.str().c_str());
   }
 
@@ -191,22 +187,20 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     return grpc::testing::EchoTestService::NewStub(channel);
   }
 
-  std::shared_ptr<Channel> BuildChannel(
-      const std::string& lb_policy_name,
-      ChannelArguments args = ChannelArguments()) {
+  std::shared_ptr<Channel> BuildChannel(const std::string& lb_policy_name,
+                                        ChannelArguments args = ChannelArguments()) {
     if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(GetParam().credentials_type, &args);
     std::ostringstream server_address;
     server_address << server_host_ << ":" << port_;
     return CreateCustomChannel(server_address.str(), channel_creds, args);
   }
 
-  bool SendRpc(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      int timeout_ms = 0, bool wait_for_ready = false) {
+  bool SendRpc(const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+               int timeout_ms = 0, bool wait_for_ready = false) {
     auto response = absl::make_unique<EchoResponse>();
     EchoRequest request;
     auto& msg = GetParam().message_content;
@@ -241,8 +235,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     std::unique_ptr<std::thread> thread_;
     bool server_ready_ = false;
 
-    ServerData(int port, const std::string& creds)
-        : port_(port), creds_(creds) {}
+    ServerData(int port, const std::string& creds) : port_(port), creds_(creds) {}
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
@@ -256,13 +249,11 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const std::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+    void Serve(const std::string& server_host, std::mutex* mu, std::condition_variable* cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      auto server_creds =
-          GetCredentialsProvider()->GetServerCredentials(creds_);
+      auto server_creds = GetCredentialsProvider()->GetServerCredentials(creds_);
       builder.AddListeningPort(server_address.str(), server_creds);
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
@@ -278,22 +269,18 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   };
 
   bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
-    while ((state = channel->GetState(false /* try_to_connect */)) ==
-           GRPC_CHANNEL_READY) {
+    while ((state = channel->GetState(false /* try_to_connect */)) == GRPC_CHANNEL_READY) {
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
     return true;
   }
 
   bool WaitForChannelReady(Channel* channel, int timeout_seconds = 5) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
-    while ((state = channel->GetState(true /* try_to_connect */)) !=
-           GRPC_CHANNEL_READY) {
+    while ((state = channel->GetState(true /* try_to_connect */)) != GRPC_CHANNEL_READY) {
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
     return true;
@@ -330,8 +317,7 @@ std::vector<TestScenario> CreateTestScenarios() {
     }
     messages.push_back(big_msg);
   }
-  for (auto cred = credentials_types.begin(); cred != credentials_types.end();
-       ++cred) {
+  for (auto cred = credentials_types.begin(); cred != credentials_types.end(); ++cred) {
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
       scenarios.emplace_back(*cred, *msg);
     }

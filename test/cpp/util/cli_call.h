@@ -43,22 +43,19 @@ namespace testing {
 class CliCall final {
  public:
   typedef std::multimap<std::string, std::string> OutgoingMetadataContainer;
-  typedef std::multimap<grpc::string_ref, grpc::string_ref>
-      IncomingMetadataContainer;
+  typedef std::multimap<grpc::string_ref, grpc::string_ref> IncomingMetadataContainer;
 
-  CliCall(const std::shared_ptr<grpc::Channel>& channel,
-          const std::string& method, const OutgoingMetadataContainer& metadata,
-          CliArgs args);
-  CliCall(const std::shared_ptr<grpc::Channel>& channel,
-          const std::string& method, const OutgoingMetadataContainer& metadata)
+  CliCall(const std::shared_ptr<grpc::Channel>& channel, const std::string& method,
+          const OutgoingMetadataContainer& metadata, CliArgs args);
+  CliCall(const std::shared_ptr<grpc::Channel>& channel, const std::string& method,
+          const OutgoingMetadataContainer& metadata)
       : CliCall(channel, method, metadata, CliArgs{}) {}
 
   ~CliCall();
 
   // Perform an unary generic RPC.
-  static Status Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const std::string& method, const std::string& request,
-                     std::string* response,
+  static Status Call(const std::shared_ptr<grpc::Channel>& channel, const std::string& method,
+                     const std::string& request, std::string* response,
                      const OutgoingMetadataContainer& metadata,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata);
@@ -70,8 +67,7 @@ class CliCall final {
   void WritesDone();
 
   // Receive a generic response message in a synchronous manner.NOT thread-safe.
-  bool Read(std::string* response,
-            IncomingMetadataContainer* server_initial_metadata);
+  bool Read(std::string* response, IncomingMetadataContainer* server_initial_metadata);
 
   // Thread-safe write. Must be used with ReadAndMaybeNotifyWrite. Send out a
   // generic request message and wait for ReadAndMaybeNotifyWrite to finish it.
@@ -84,9 +80,8 @@ class CliCall final {
 
   // Thread-safe Read. Blockingly receive a generic response message. Notify
   // writes if they are finished when this read is waiting for a resposne.
-  bool ReadAndMaybeNotifyWrite(
-      std::string* response,
-      IncomingMetadataContainer* server_initial_metadata);
+  bool ReadAndMaybeNotifyWrite(std::string* response,
+                               IncomingMetadataContainer* server_initial_metadata);
 
   // Finish the RPC.
   Status Finish(IncomingMetadataContainer* server_trailing_metadata);

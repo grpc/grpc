@@ -24,14 +24,11 @@
 #include "src/core/lib/transport/transport.h"
 
 struct grpc_chttp2_incoming_metadata_buffer {
-  explicit grpc_chttp2_incoming_metadata_buffer(grpc_core::Arena* arena)
-      : arena(arena) {
+  explicit grpc_chttp2_incoming_metadata_buffer(grpc_core::Arena* arena) : arena(arena) {
     grpc_metadata_batch_init(&batch);
     batch.deadline = GRPC_MILLIS_INF_FUTURE;
   }
-  ~grpc_chttp2_incoming_metadata_buffer() {
-    grpc_metadata_batch_destroy(&batch);
-  }
+  ~grpc_chttp2_incoming_metadata_buffer() { grpc_metadata_batch_destroy(&batch); }
 
   static constexpr size_t kPreallocatedMDElem = 10;
 
@@ -43,16 +40,14 @@ struct grpc_chttp2_incoming_metadata_buffer {
   grpc_metadata_batch batch;
 };
 
-void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_metadata_batch* batch);
+void grpc_chttp2_incoming_metadata_buffer_publish(grpc_chttp2_incoming_metadata_buffer* buffer,
+                                                  grpc_metadata_batch* batch);
 
 grpc_error_handle grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_chttp2_incoming_metadata_buffer* buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
+    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) GRPC_MUST_USE_RESULT;
 grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_chttp2_incoming_metadata_buffer* buffer,
-    grpc_mdelem elem) GRPC_MUST_USE_RESULT;
-void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_millis deadline);
+    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) GRPC_MUST_USE_RESULT;
+void grpc_chttp2_incoming_metadata_buffer_set_deadline(grpc_chttp2_incoming_metadata_buffer* buffer,
+                                                       grpc_millis deadline);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H */

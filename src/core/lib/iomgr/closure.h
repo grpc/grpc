@@ -58,9 +58,7 @@ struct grpc_closure {
    *  space */
   union {
     grpc_closure* next;
-    grpc_core::ManualConstructor<
-        grpc_core::MultiProducerSingleConsumerQueue::Node>
-        mpscq_node;
+    grpc_core::ManualConstructor<grpc_core::MultiProducerSingleConsumerQueue::Node> mpscq_node;
     uintptr_t scratch;
   } next_data;
 
@@ -89,12 +87,10 @@ struct grpc_closure {
 };
 
 #ifndef NDEBUG
-inline grpc_closure* grpc_closure_init(const char* file, int line,
-                                       grpc_closure* closure,
+inline grpc_closure* grpc_closure_init(const char* file, int line, grpc_closure* closure,
                                        grpc_iomgr_cb_func cb, void* cb_arg) {
 #else
-inline grpc_closure* grpc_closure_init(grpc_closure* closure,
-                                       grpc_iomgr_cb_func cb, void* cb_arg) {
+inline grpc_closure* grpc_closure_init(grpc_closure* closure, grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
   closure->cb = cb;
   closure->cb_arg = cb_arg;
@@ -115,8 +111,7 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
 #define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
   grpc_closure_init(__FILE__, __LINE__, closure, cb, cb_arg)
 #else
-#define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
-  grpc_closure_init(closure, cb, cb_arg)
+#define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) grpc_closure_init(closure, cb, cb_arg)
 #endif
 
 namespace closure_impl {
@@ -137,8 +132,8 @@ inline void closure_wrapper(void* arg, grpc_error_handle error) {
 }  // namespace closure_impl
 
 #ifndef NDEBUG
-inline grpc_closure* grpc_closure_create(const char* file, int line,
-                                         grpc_iomgr_cb_func cb, void* cb_arg) {
+inline grpc_closure* grpc_closure_create(const char* file, int line, grpc_iomgr_cb_func cb,
+                                         void* cb_arg) {
 #else
 inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
@@ -147,8 +142,7 @@ inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg) {
   wc->cb = cb;
   wc->cb_arg = cb_arg;
 #ifndef NDEBUG
-  grpc_closure_init(file, line, &wc->wrapper, closure_impl::closure_wrapper,
-                    wc);
+  grpc_closure_init(file, line, &wc->wrapper, closure_impl::closure_wrapper, wc);
 #else
   grpc_closure_init(&wc->wrapper, closure_impl::closure_wrapper, wc);
 #endif
@@ -160,8 +154,7 @@ inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg) {
 #define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
   grpc_closure_create(__FILE__, __LINE__, cb, cb_arg)
 #else
-#define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
-  grpc_closure_create(cb, cb_arg)
+#define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) grpc_closure_create(cb, cb_arg)
 #endif
 
 #define GRPC_CLOSURE_LIST_INIT \
@@ -174,8 +167,7 @@ inline void grpc_closure_list_init(grpc_closure_list* closure_list) {
 /** add \a closure to the end of \a list
     and set \a closure's result to \a error
     Returns true if \a list becomes non-empty */
-inline bool grpc_closure_list_append(grpc_closure_list* closure_list,
-                                     grpc_closure* closure,
+inline bool grpc_closure_list_append(grpc_closure_list* closure_list, grpc_closure* closure,
                                      grpc_error_handle error) {
   if (closure == nullptr) {
     GRPC_ERROR_UNREF(error);
@@ -194,8 +186,7 @@ inline bool grpc_closure_list_append(grpc_closure_list* closure_list,
 }
 
 /** force all success bits in \a list to false */
-inline void grpc_closure_list_fail_all(grpc_closure_list* list,
-                                       grpc_error_handle forced_failure) {
+inline void grpc_closure_list_fail_all(grpc_closure_list* list, grpc_error_handle forced_failure) {
   for (grpc_closure* c = list->head; c != nullptr; c = c->next_data.next) {
     if (c->error_data.error == GRPC_ERROR_NONE) {
       c->error_data.error = GRPC_ERROR_REF(forced_failure);
@@ -205,8 +196,7 @@ inline void grpc_closure_list_fail_all(grpc_closure_list* list,
 }
 
 /** append all closures from \a src to \a dst and empty \a src. */
-inline void grpc_closure_list_move(grpc_closure_list* src,
-                                   grpc_closure_list* dst) {
+inline void grpc_closure_list_move(grpc_closure_list* src, grpc_closure_list* dst) {
   if (src->head == nullptr) {
     return;
   }
@@ -227,8 +217,7 @@ inline bool grpc_closure_list_empty(grpc_closure_list closure_list) {
 namespace grpc_core {
 class Closure {
  public:
-  static void Run(const DebugLocation& location, grpc_closure* closure,
-                  grpc_error_handle error) {
+  static void Run(const DebugLocation& location, grpc_closure* closure, grpc_error_handle error) {
     (void)location;
     if (closure == nullptr) {
       GRPC_ERROR_UNREF(error);
@@ -236,9 +225,8 @@ class Closure {
     }
 #ifndef NDEBUG
     if (grpc_trace_closure.enabled()) {
-      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
-              closure, closure->file_created, closure->line_created,
-              location.file(), location.line());
+      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]", closure,
+              closure->file_created, closure->line_created, location.file(), location.line());
     }
     GPR_ASSERT(closure->cb != nullptr);
 #endif

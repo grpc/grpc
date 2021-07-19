@@ -109,9 +109,8 @@ int main(int argc, char** argv) {
 
   // Wait for all three threads to be queuing.
   gpr_mu_lock(&params.mu);
-  while (
-      params.queuing != THREADS &&
-      !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)))
+  while (params.queuing != THREADS &&
+         !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)))
     ;
   gpr_mu_unlock(&params.mu);
 
@@ -130,9 +129,8 @@ int main(int argc, char** argv) {
 
   // Wait for the threads to complete.
   gpr_mu_lock(&params.mu);
-  while (
-      params.complete != THREADS &&
-      !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)))
+  while (params.complete != THREADS &&
+         !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)))
     ;
   gpr_mu_unlock(&params.mu);
 

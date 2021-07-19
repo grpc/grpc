@@ -40,8 +40,7 @@ static bool g_channel_filter_init_failure = false;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -52,13 +51,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -71,8 +66,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+                                         grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -99,12 +93,9 @@ static void end_test(grpc_end2end_test_fixture* f) {
 static void test_server_channel_filter(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_end2end_test_fixture f =
-      begin_test(config, "filter_init_fails", nullptr, nullptr);
+  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_end2end_test_fixture f = begin_test(config, "filter_init_fails", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -119,8 +110,7 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -157,13 +147,11 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -173,8 +161,7 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
     // Inproc channel returns invalid_argument and other clients return
     // unavailable.
     // Windows with sockpair returns unknown.
-    GPR_ASSERT(status == GRPC_STATUS_UNKNOWN ||
-               status == GRPC_STATUS_UNAVAILABLE ||
+    GPR_ASSERT(status == GRPC_STATUS_UNKNOWN || status == GRPC_STATUS_UNAVAILABLE ||
                status == GRPC_STATUS_INVALID_ARGUMENT);
   } else {
     GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
@@ -202,13 +189,10 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
 // that always fails to initialize the call.
 static void test_client_channel_filter(grpc_end2end_test_config config) {
   grpc_call* c;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_from_now();
-  grpc_end2end_test_fixture f =
-      begin_test(config, "filter_init_fails", nullptr, nullptr);
+  grpc_end2end_test_fixture f = begin_test(config, "filter_init_fails", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -222,8 +206,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   grpc_slice details;
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -260,8 +243,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -295,13 +277,10 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
 // initialize the call.
 static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   grpc_call* c;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   gpr_timespec deadline = five_seconds_from_now();
-  grpc_end2end_test_fixture f =
-      begin_test(config, "filter_init_fails", nullptr, nullptr);
+  grpc_end2end_test_fixture f = begin_test(config, "filter_init_fails", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -315,8 +294,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   grpc_slice details;
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -354,8 +332,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
 
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -377,12 +354,10 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   details = grpc_empty_slice();
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
@@ -416,19 +391,18 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
  * Test filter - always fails to initialize a call
  */
 
-static grpc_error_handle init_call_elem(
-    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
-  return grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("access denied"),
-      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED);
+static grpc_error_handle init_call_elem(grpc_call_element* /*elem*/,
+                                        const grpc_call_element_args* /*args*/) {
+  return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("access denied"),
+                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED);
 }
 
 static void destroy_call_elem(grpc_call_element* /*elem*/,
                               const grpc_call_final_info* /*final_info*/,
                               grpc_closure* /*ignored*/) {}
 
-static grpc_error_handle init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+static grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
+                                           grpc_channel_element_args* /*args*/) {
   if (g_channel_filter_init_failure) {
     return grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test channel filter init error"),
@@ -439,25 +413,23 @@ static grpc_error_handle init_channel_elem(
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
-static const grpc_channel_filter test_filter = {
-    grpc_call_next_op,
-    grpc_channel_next_op,
-    0,
-    init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
-    0,
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_channel_next_get_info,
-    "filter_init_fails"};
+static const grpc_channel_filter test_filter = {grpc_call_next_op,
+                                                grpc_channel_next_op,
+                                                0,
+                                                init_call_elem,
+                                                grpc_call_stack_ignore_set_pollset_or_pollset_set,
+                                                destroy_call_elem,
+                                                0,
+                                                init_channel_elem,
+                                                destroy_channel_elem,
+                                                grpc_channel_next_get_info,
+                                                "filter_init_fails"};
 
 /*******************************************************************************
  * Registration
  */
 
-static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
-                                            void* /*arg*/) {
+static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder, void* /*arg*/) {
   if (g_enable_server_channel_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
@@ -466,8 +438,8 @@ static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval = grpc_channel_stack_builder_add_filter_before(
-        it, &test_filter, nullptr, nullptr);
+    const bool retval =
+        grpc_channel_stack_builder_add_filter_before(it, &test_filter, nullptr, nullptr);
     grpc_channel_stack_builder_iterator_destroy(it);
     return retval;
   } else {
@@ -475,8 +447,7 @@ static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
   }
 }
 
-static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder,
-                                            void* /*arg*/) {
+static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder, void* /*arg*/) {
   if (g_enable_client_channel_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
@@ -485,8 +456,8 @@ static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder,
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval = grpc_channel_stack_builder_add_filter_before(
-        it, &test_filter, nullptr, nullptr);
+    const bool retval =
+        grpc_channel_stack_builder_add_filter_before(it, &test_filter, nullptr, nullptr);
     grpc_channel_stack_builder_iterator_destroy(it);
     return retval;
   } else {
@@ -494,8 +465,7 @@ static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder,
   }
 }
 
-static bool maybe_add_client_subchannel_filter(
-    grpc_channel_stack_builder* builder, void* /*arg*/) {
+static bool maybe_add_client_subchannel_filter(grpc_channel_stack_builder* builder, void* /*arg*/) {
   if (g_enable_client_subchannel_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
@@ -504,8 +474,8 @@ static bool maybe_add_client_subchannel_filter(
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval = grpc_channel_stack_builder_add_filter_before(
-        it, &test_filter, nullptr, nullptr);
+    const bool retval =
+        grpc_channel_stack_builder_add_filter_before(it, &test_filter, nullptr, nullptr);
     grpc_channel_stack_builder_iterator_destroy(it);
     return retval;
   } else {
@@ -514,10 +484,10 @@ static bool maybe_add_client_subchannel_filter(
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_server_channel_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_client_channel_filter, nullptr);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, maybe_add_server_channel_filter,
+                                   nullptr);
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX, maybe_add_client_channel_filter,
+                                   nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
                                    maybe_add_client_subchannel_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
@@ -542,8 +512,7 @@ static void filter_init_fails_internal(grpc_end2end_test_config config) {
   // handshake message will never arrive because it would have been sent with
   // the first application data message, which failed because of the filter.
   if ((config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL) &&
-      !(config.feature_mask &
-        FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST)) {
+      !(config.feature_mask & FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST)) {
     gpr_log(GPR_INFO, "Testing CLIENT_SUBCHANNEL filter.");
     g_enable_client_subchannel_filter = true;
     test_client_subchannel_filter(config);
@@ -559,6 +528,4 @@ void filter_init_fails(grpc_end2end_test_config config) {
   g_channel_filter_init_failure = false;
 }
 
-void filter_init_fails_pre_init(void) {
-  grpc_register_plugin(init_plugin, destroy_plugin);
-}
+void filter_init_fails_pre_init(void) { grpc_register_plugin(init_plugin, destroy_plugin); }

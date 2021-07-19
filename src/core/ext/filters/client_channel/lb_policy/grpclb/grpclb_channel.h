@@ -35,8 +35,7 @@ namespace grpc_core {
 /// Caller takes ownership of the returned args.
 grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args);
 
-grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
-                                          const grpc_channel_args& args);
+grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri, const grpc_channel_args& args);
 
 }  // namespace grpc_core
 

@@ -56,9 +56,8 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
 
   const char* name() const override { return "fake1"; }
 
-  RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+  RefCountedPtr<CertificateProviderFactory::Config> CreateCertificateProviderConfig(
+      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
@@ -79,9 +78,8 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
 
   const char* name() const override { return "fake2"; }
 
-  RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+  RefCountedPtr<CertificateProviderFactory::Config> CreateCertificateProviderConfig(
+      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
     return MakeRefCounted<Config>();
   }
 
@@ -100,14 +98,11 @@ TEST_F(CertificateProviderStoreTest, Basic) {
   // Set up store
   CertificateProviderStore::PluginDefinitionMap map = {
       {"fake_plugin_1",
-       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(),
-                                                                 nullptr)}},
+       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(), nullptr)}},
       {"fake_plugin_2",
-       {"fake2", fake_factory_2->CreateCertificateProviderConfig(Json::Object(),
-                                                                 nullptr)}},
+       {"fake2", fake_factory_2->CreateCertificateProviderConfig(Json::Object(), nullptr)}},
       {"fake_plugin_3",
-       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(),
-                                                                 nullptr)}},
+       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(), nullptr)}},
   };
   auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
   // Test for creating certificate providers with known plugin configuration.
@@ -121,10 +116,8 @@ TEST_F(CertificateProviderStoreTest, Basic) {
   // Test for creating certificate provider with unknown plugin configuration.
   ASSERT_EQ(store->CreateOrGetCertificateProvider("unknown"), nullptr);
   // Test for getting previously created certificate providers.
-  ASSERT_EQ(store->CreateOrGetCertificateProvider("fake_plugin_1"),
-            cert_provider_1);
-  ASSERT_EQ(store->CreateOrGetCertificateProvider("fake_plugin_3"),
-            cert_provider_3);
+  ASSERT_EQ(store->CreateOrGetCertificateProvider("fake_plugin_1"), cert_provider_1);
+  ASSERT_EQ(store->CreateOrGetCertificateProvider("fake_plugin_3"), cert_provider_3);
   // Release previously created certificate providers so that the store outlasts
   // the certificate providers.
   cert_provider_1.reset();
@@ -137,8 +130,7 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
       std::unique_ptr<CertificateProviderFactory>(fake_factory_1));
   CertificateProviderStore::PluginDefinitionMap map = {
       {"fake_plugin_1",
-       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(),
-                                                                 nullptr)}}};
+       {"fake1", fake_factory_1->CreateCertificateProviderConfig(Json::Object(), nullptr)}}};
   auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
   // Test concurrent `CreateOrGetCertificateProvider()` with the same key.
   std::vector<std::thread> threads;
@@ -146,8 +138,7 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
   for (auto i = 0; i < 1000; i++) {
     threads.emplace_back([&store]() {
       for (auto i = 0; i < 10; ++i) {
-        ASSERT_NE(store->CreateOrGetCertificateProvider("fake_plugin_1"),
-                  nullptr);
+        ASSERT_NE(store->CreateOrGetCertificateProvider("fake_plugin_1"), nullptr);
       }
     });
   }

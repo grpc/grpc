@@ -44,13 +44,11 @@ int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key);
 
 /* Creates a json_key object from string. Returns an invalid object if a parsing
    error has been encountered. */
-grpc_auth_json_key grpc_auth_json_key_create_from_string(
-    const char* json_string);
+grpc_auth_json_key grpc_auth_json_key_create_from_string(const char* json_string);
 
 /* Creates a json_key object from parsed json. Returns an invalid object if a
    parsing error has been encountered. */
-grpc_auth_json_key grpc_auth_json_key_create_from_json(
-    const grpc_core::Json& json);
+grpc_auth_json_key grpc_auth_json_key_create_from_json(const grpc_core::Json& json);
 
 /* Destructs the object. */
 void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key);
@@ -59,17 +57,15 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key);
 
 /* Caller is responsible for calling gpr_free on the returned value. May return
    NULL on invalid input. The scope parameter may be NULL. */
-char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key,
-                               const char* audience,
+char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key, const char* audience,
                                gpr_timespec token_lifetime, const char* scope);
 
 /* Override encode_and_sign function for testing. */
-typedef char* (*grpc_jwt_encode_and_sign_override)(
-    const grpc_auth_json_key* json_key, const char* audience,
-    gpr_timespec token_lifetime, const char* scope);
+typedef char* (*grpc_jwt_encode_and_sign_override)(const grpc_auth_json_key* json_key,
+                                                   const char* audience,
+                                                   gpr_timespec token_lifetime, const char* scope);
 
 /* Set a custom encode_and_sign override for testing. */
-void grpc_jwt_encode_and_sign_set_override(
-    grpc_jwt_encode_and_sign_override func);
+void grpc_jwt_encode_and_sign_set_override(grpc_jwt_encode_and_sign_override func);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H */

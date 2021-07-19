@@ -40,7 +40,7 @@ int ProviderArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 // Wrapper API declared in grpc.h
 
 const grpc_arg_pointer_vtable* grpc_authorization_policy_provider_arg_vtable() {
-  static const grpc_arg_pointer_vtable vtable = {
-      ProviderArgCopy, ProviderArgDestroy, ProviderArgCmp};
+  static const grpc_arg_pointer_vtable vtable = {ProviderArgCopy, ProviderArgDestroy,
+                                                 ProviderArgCmp};
   return &vtable;
 }

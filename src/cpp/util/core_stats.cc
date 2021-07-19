@@ -66,19 +66,16 @@ void ProtoToCoreStats(const grpc::core::Stats& proto, grpc_stats_data* core) {
             bool valid = true;
             if (grpc_stats_histo_buckets[i] != h.buckets_size()) valid = false;
             for (int j = 0; valid && j < h.buckets_size(); j++) {
-              if (grpc_stats_histo_bucket_boundaries[i][j] !=
-                  h.buckets(j).start()) {
+              if (grpc_stats_histo_bucket_boundaries[i][j] != h.buckets(j).start()) {
                 valid = false;
               }
             }
             if (!valid) {
-              gpr_log(GPR_ERROR,
-                      "Found histogram %s but shape is different from proto",
+              gpr_log(GPR_ERROR, "Found histogram %s but shape is different from proto",
                       m.name().c_str());
             }
             for (int j = 0; valid && j < h.buckets_size(); j++) {
-              core->histograms[grpc_stats_histo_start[i] + j] =
-                  h.buckets(j).count();
+              core->histograms[grpc_stats_histo_start[i] + j] = h.buckets(j).count();
             }
           }
         }

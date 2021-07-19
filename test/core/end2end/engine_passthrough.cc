@@ -43,8 +43,7 @@ static int e_passthrough_init(ENGINE* e) {
   return 1;
 }
 
-EVP_PKEY* e_passthrough_load_privkey(ENGINE* eng, const char* key_id,
-                                     UI_METHOD* ui_method,
+EVP_PKEY* e_passthrough_load_privkey(ENGINE* eng, const char* key_id, UI_METHOD* ui_method,
                                      void* callback_data) {
   EVP_PKEY* pkey = NULL;
   BIO* pem = BIO_new_mem_buf((void*)key_id, (int)(strlen(key_id)));

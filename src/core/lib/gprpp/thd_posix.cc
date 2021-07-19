@@ -71,8 +71,8 @@ size_t MinValidStackSize(size_t request_size) {
 
 class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
  public:
-  ThreadInternalsPosix(const char* thd_name, void (*thd_body)(void* arg),
-                       void* arg, bool* success, const Thread::Options& options)
+  ThreadInternalsPosix(const char* thd_name, void (*thd_body)(void* arg), void* arg, bool* success,
+                       const Thread::Options& options)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
@@ -93,11 +93,9 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 
     GPR_ASSERT(pthread_attr_init(&attr) == 0);
     if (options.joinable()) {
-      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
-                 0);
+      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) == 0);
     } else {
-      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
-                 0);
+      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0);
     }
 
     if (options.stack_size() != 0) {
@@ -179,8 +177,8 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 
 }  // namespace
 
-Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success, const Options& options)
+Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg, bool* success,
+               const Options& options)
     : options_(options) {
   bool outcome = false;
   impl_ = new ThreadInternalsPosix(thd_name, thd_body, arg, &outcome, options);

@@ -24,8 +24,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/error.h"
 
-#define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
-  "grpc.fake_resolver.response_generator"
+#define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR "grpc.fake_resolver.response_generator"
 
 namespace grpc_core {
 
@@ -39,8 +38,7 @@ class FakeResolver;
 // instead of RefCounted, but external refs are currently needed to
 // encode this in channel args.  Once channel_args are converted to C++,
 // see if we can find a way to fix this.
-class FakeResolverResponseGenerator
-    : public RefCounted<FakeResolverResponseGenerator> {
+class FakeResolverResponseGenerator : public RefCounted<FakeResolverResponseGenerator> {
  public:
   static const grpc_arg_pointer_vtable kChannelArgPointerVtable;
 
@@ -75,8 +73,7 @@ class FakeResolverResponseGenerator
   static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
 
   // Returns the response generator in \a args, or null if not found.
-  static RefCountedPtr<FakeResolverResponseGenerator> GetFromArgs(
-      const grpc_channel_args* args);
+  static RefCountedPtr<FakeResolverResponseGenerator> GetFromArgs(const grpc_channel_args* args);
 
  private:
   friend class FakeResolver;

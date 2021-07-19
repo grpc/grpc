@@ -492,8 +492,7 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
   return "UNAVAILABLE.";
 }
 
-grpc_status_code cronet_net_error_to_grpc_error(
-    cronet_net_error_code net_error) {
+grpc_status_code cronet_net_error_to_grpc_error(cronet_net_error_code net_error) {
   switch (net_error) {
     case OK:
       return GRPC_STATUS_OK;

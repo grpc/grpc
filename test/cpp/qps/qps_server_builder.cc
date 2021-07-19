@@ -34,9 +34,7 @@ std::function<std::unique_ptr<ServerBuilder>()> g_create_qps_server_builder =
     DefaultCreateQpsServerBuilder;
 }  // namespace
 
-std::unique_ptr<ServerBuilder> CreateQpsServerBuilder() {
-  return g_create_qps_server_builder();
-}
+std::unique_ptr<ServerBuilder> CreateQpsServerBuilder() { return g_create_qps_server_builder(); }
 
 void SetCreateQpsServerBuilderFunc(
     std::function<std::unique_ptr<ServerBuilder>()> create_qps_server_builder) {

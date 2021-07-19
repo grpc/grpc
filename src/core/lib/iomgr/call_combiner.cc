@@ -34,8 +34,7 @@ namespace {
 
 grpc_error_handle DecodeCancelStateError(gpr_atm cancel_state) {
   if (cancel_state & 1) {
-    return reinterpret_cast<grpc_error_handle>(cancel_state &
-                                               ~static_cast<gpr_atm>(1));
+    return reinterpret_cast<grpc_error_handle>(cancel_state & ~static_cast<gpr_atm>(1));
   }
   return GRPC_ERROR_NONE;
 }
@@ -50,14 +49,11 @@ CallCombiner::CallCombiner() {
   gpr_atm_no_barrier_store(&cancel_state_, 0);
   gpr_atm_no_barrier_store(&size_, 0);
 #ifdef GRPC_TSAN_ENABLED
-  GRPC_CLOSURE_INIT(&tsan_closure_, TsanClosure, this,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&tsan_closure_, TsanClosure, this, grpc_schedule_on_exec_ctx);
 #endif
 }
 
-CallCombiner::~CallCombiner() {
-  GRPC_ERROR_UNREF(DecodeCancelStateError(cancel_state_));
-}
+CallCombiner::~CallCombiner() { GRPC_ERROR_UNREF(DecodeCancelStateError(cancel_state_)); }
 
 #ifdef GRPC_TSAN_ENABLED
 void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
@@ -81,8 +77,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
   } else {
     lock.reset();
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, self->original_closure_,
-                          GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, self->original_closure_, GRPC_ERROR_REF(error));
   if (lock != nullptr) {
     TSAN_ANNOTATE_RWLOCK_RELEASED(&lock->taken, true);
     bool prev = true;
@@ -91,8 +86,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
 }
 #endif
 
-void CallCombiner::ScheduleClosure(grpc_closure* closure,
-                                   grpc_error_handle error) {
+void CallCombiner::ScheduleClosure(grpc_closure* closure, grpc_error_handle error) {
 #ifdef GRPC_TSAN_ENABLED
   original_closure_ = closure;
   ExecCtx::Run(DEBUG_LOCATION, &tsan_closure_, error);
@@ -115,17 +109,12 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
                          DEBUG_ARGS const char* reason) {
   GPR_TIMER_SCOPE("CallCombiner::Start", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-    gpr_log(GPR_INFO,
-            "==> CallCombiner::Start() [%p] closure=%p [" DEBUG_FMT_STR
-            "%s] error=%s",
-            this, closure DEBUG_FMT_ARGS, reason,
-            grpc_error_std_string(error).c_str());
+    gpr_log(GPR_INFO, "==> CallCombiner::Start() [%p] closure=%p [" DEBUG_FMT_STR "%s] error=%s",
+            this, closure DEBUG_FMT_ARGS, reason, grpc_error_std_string(error).c_str());
   }
-  size_t prev_size =
-      static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)1));
+  size_t prev_size = static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)1));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-    gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
-            prev_size + 1);
+    gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size, prev_size + 1);
   }
   GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS();
   if (prev_size == 0) {
@@ -142,22 +131,19 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
     }
     // Queue was not empty, so add closure to queue.
     closure->error_data.error = error;
-    queue_.Push(
-        reinterpret_cast<MultiProducerSingleConsumerQueue::Node*>(closure));
+    queue_.Push(reinterpret_cast<MultiProducerSingleConsumerQueue::Node*>(closure));
   }
 }
 
 void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
   GPR_TIMER_SCOPE("CallCombiner::Stop", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-    gpr_log(GPR_INFO, "==> CallCombiner::Stop() [%p] [" DEBUG_FMT_STR "%s]",
-            this DEBUG_FMT_ARGS, reason);
+    gpr_log(GPR_INFO, "==> CallCombiner::Stop() [%p] [" DEBUG_FMT_STR "%s]", this DEBUG_FMT_ARGS,
+            reason);
   }
-  size_t prev_size =
-      static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)-1));
+  size_t prev_size = static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)-1));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-    gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
-            prev_size - 1);
+    gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size, prev_size - 1);
   }
   GPR_ASSERT(prev_size >= 1);
   if (prev_size > 1) {
@@ -166,8 +152,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         gpr_log(GPR_INFO, "  checking queue");
       }
       bool empty;
-      grpc_closure* closure =
-          reinterpret_cast<grpc_closure*>(queue_.PopAndCheckEnd(&empty));
+      grpc_closure* closure = reinterpret_cast<grpc_closure*>(queue_.PopAndCheckEnd(&empty));
       if (closure == nullptr) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with Start().
@@ -177,8 +162,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         continue;
       }
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
-                closure,
+        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s", closure,
                 grpc_error_std_string(closure->error_data.error).c_str());
       }
       ScheduleClosure(closure, closure->error_data.error);
@@ -207,11 +191,9 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
       ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(original_error));
       break;
     } else {
-      if (gpr_atm_full_cas(&cancel_state_, original_state,
-                           reinterpret_cast<gpr_atm>(closure))) {
+      if (gpr_atm_full_cas(&cancel_state_, original_state, reinterpret_cast<gpr_atm>(closure))) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-          gpr_log(GPR_INFO, "call_combiner=%p: setting notify_on_cancel=%p",
-                  this, closure);
+          gpr_log(GPR_INFO, "call_combiner=%p: setting notify_on_cancel=%p", this, closure);
         }
         // If we replaced an earlier closure, invoke the original
         // closure with GRPC_ERROR_NONE.  This allows callers to clean
@@ -219,9 +201,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
         if (original_state != 0) {
           closure = reinterpret_cast<grpc_closure*>(original_state);
           if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-            gpr_log(GPR_INFO,
-                    "call_combiner=%p: scheduling old cancel callback=%p", this,
-                    closure);
+            gpr_log(GPR_INFO, "call_combiner=%p: scheduling old cancel callback=%p", this, closure);
           }
           ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
         }
@@ -241,15 +221,12 @@ void CallCombiner::Cancel(grpc_error_handle error) {
       GRPC_ERROR_UNREF(error);
       break;
     }
-    if (gpr_atm_full_cas(&cancel_state_, original_state,
-                         EncodeCancelStateError(error))) {
+    if (gpr_atm_full_cas(&cancel_state_, original_state, EncodeCancelStateError(error))) {
       if (original_state != 0) {
-        grpc_closure* notify_on_cancel =
-            reinterpret_cast<grpc_closure*>(original_state);
+        grpc_closure* notify_on_cancel = reinterpret_cast<grpc_closure*>(original_state);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-          gpr_log(GPR_INFO,
-                  "call_combiner=%p: scheduling notify_on_cancel callback=%p",
-                  this, notify_on_cancel);
+          gpr_log(GPR_INFO, "call_combiner=%p: scheduling notify_on_cancel callback=%p", this,
+                  notify_on_cancel);
         }
         ExecCtx::Run(DEBUG_LOCATION, notify_on_cancel, GRPC_ERROR_REF(error));
       }

@@ -43,8 +43,7 @@ class ExceptingServiceImpl : public ::grpc::testing::EchoTestService::Service {
               EchoResponse* /*response*/) override {
     throw -1;
   }
-  Status RequestStream(ServerContext* /*context*/,
-                       ServerReader<EchoRequest>* /*reader*/,
+  Status RequestStream(ServerContext* /*context*/, ServerReader<EchoRequest>* /*reader*/,
                        EchoResponse* /*response*/) override {
     throw ServiceException();
   }

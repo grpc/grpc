@@ -39,11 +39,10 @@ namespace internal {
 // ServerRetryThrottleData
 //
 
-ServerRetryThrottleData::ServerRetryThrottleData(
-    intptr_t max_milli_tokens, intptr_t milli_token_ratio,
-    ServerRetryThrottleData* old_throttle_data)
-    : max_milli_tokens_(max_milli_tokens),
-      milli_token_ratio_(milli_token_ratio) {
+ServerRetryThrottleData::ServerRetryThrottleData(intptr_t max_milli_tokens,
+                                                 intptr_t milli_token_ratio,
+                                                 ServerRetryThrottleData* old_throttle_data)
+    : max_milli_tokens_(max_milli_tokens), milli_token_ratio_(milli_token_ratio) {
   intptr_t initial_milli_tokens = max_milli_tokens;
   // If there was a pre-existing entry for this server name, initialize
   // the token count by scaling proportionately to the old data.  This
@@ -51,26 +50,22 @@ ServerRetryThrottleData::ServerRetryThrottleData(
   // we will start out doing the same thing on the new one.
   if (old_throttle_data != nullptr) {
     double token_fraction =
-        static_cast<intptr_t>(
-            gpr_atm_acq_load(&old_throttle_data->milli_tokens_)) /
+        static_cast<intptr_t>(gpr_atm_acq_load(&old_throttle_data->milli_tokens_)) /
         static_cast<double>(old_throttle_data->max_milli_tokens_);
-    initial_milli_tokens =
-        static_cast<intptr_t>(token_fraction * max_milli_tokens);
+    initial_milli_tokens = static_cast<intptr_t>(token_fraction * max_milli_tokens);
   }
   gpr_atm_rel_store(&milli_tokens_, static_cast<gpr_atm>(initial_milli_tokens));
   // If there was a pre-existing entry, mark it as stale and give it a
   // pointer to the new entry, which is its replacement.
   if (old_throttle_data != nullptr) {
     Ref().release();  // Ref held by pre-existing entry.
-    gpr_atm_rel_store(&old_throttle_data->replacement_,
-                      reinterpret_cast<gpr_atm>(this));
+    gpr_atm_rel_store(&old_throttle_data->replacement_, reinterpret_cast<gpr_atm>(this));
   }
 }
 
 ServerRetryThrottleData::~ServerRetryThrottleData() {
   ServerRetryThrottleData* replacement =
-      reinterpret_cast<ServerRetryThrottleData*>(
-          gpr_atm_acq_load(&replacement_));
+      reinterpret_cast<ServerRetryThrottleData*>(gpr_atm_acq_load(&replacement_));
   if (replacement != nullptr) {
     replacement->Unref();
   }
@@ -79,9 +74,8 @@ ServerRetryThrottleData::~ServerRetryThrottleData() {
 void ServerRetryThrottleData::GetReplacementThrottleDataIfNeeded(
     ServerRetryThrottleData** throttle_data) {
   while (true) {
-    ServerRetryThrottleData* new_throttle_data =
-        reinterpret_cast<ServerRetryThrottleData*>(
-            gpr_atm_acq_load(&(*throttle_data)->replacement_));
+    ServerRetryThrottleData* new_throttle_data = reinterpret_cast<ServerRetryThrottleData*>(
+        gpr_atm_acq_load(&(*throttle_data)->replacement_));
     if (new_throttle_data == nullptr) return;
     *throttle_data = new_throttle_data;
   }
@@ -92,11 +86,9 @@ bool ServerRetryThrottleData::RecordFailure() {
   ServerRetryThrottleData* throttle_data = this;
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
-  const intptr_t new_value =
-      static_cast<intptr_t>(gpr_atm_no_barrier_clamped_add(
-          &throttle_data->milli_tokens_, static_cast<gpr_atm>(-1000),
-          static_cast<gpr_atm>(0),
-          static_cast<gpr_atm>(throttle_data->max_milli_tokens_)));
+  const intptr_t new_value = static_cast<intptr_t>(gpr_atm_no_barrier_clamped_add(
+      &throttle_data->milli_tokens_, static_cast<gpr_atm>(-1000), static_cast<gpr_atm>(0),
+      static_cast<gpr_atm>(throttle_data->max_milli_tokens_)));
   // Retries are allowed as long as the new value is above the threshold
   // (max_milli_tokens / 2).
   return new_value > throttle_data->max_milli_tokens_ / 2;
@@ -108,10 +100,8 @@ void ServerRetryThrottleData::RecordSuccess() {
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We increment milli_tokens by milli_token_ratio for each success.
   gpr_atm_no_barrier_clamped_add(
-      &throttle_data->milli_tokens_,
-      static_cast<gpr_atm>(throttle_data->milli_token_ratio_),
-      static_cast<gpr_atm>(0),
-      static_cast<gpr_atm>(throttle_data->max_milli_tokens_));
+      &throttle_data->milli_tokens_, static_cast<gpr_atm>(throttle_data->milli_token_ratio_),
+      static_cast<gpr_atm>(0), static_cast<gpr_atm>(throttle_data->max_milli_tokens_));
 }
 
 //
@@ -129,22 +119,20 @@ long compare_server_name(void* key1, void* key2, void* /*unused*/) {
 }
 
 void destroy_server_retry_throttle_data(void* value, void* /*unused*/) {
-  ServerRetryThrottleData* throttle_data =
-      static_cast<ServerRetryThrottleData*>(value);
+  ServerRetryThrottleData* throttle_data = static_cast<ServerRetryThrottleData*>(value);
   throttle_data->Unref();
 }
 
 void* copy_server_retry_throttle_data(void* value, void* /*unused*/) {
-  ServerRetryThrottleData* throttle_data =
-      static_cast<ServerRetryThrottleData*>(value);
+  ServerRetryThrottleData* throttle_data = static_cast<ServerRetryThrottleData*>(value);
   return throttle_data->Ref().release();
 }
 
 void destroy_server_name(void* key, void* /*unused*/) { gpr_free(key); }
 
-const grpc_avl_vtable avl_vtable = {
-    destroy_server_name, copy_server_name, compare_server_name,
-    destroy_server_retry_throttle_data, copy_server_retry_throttle_data};
+const grpc_avl_vtable avl_vtable = {destroy_server_name, copy_server_name, compare_server_name,
+                                    destroy_server_retry_throttle_data,
+                                    copy_server_retry_throttle_data};
 
 }  // namespace
 
@@ -166,21 +154,17 @@ void ServerRetryThrottleMap::Shutdown() {
 }
 
 RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
-    const std::string& server_name, intptr_t max_milli_tokens,
-    intptr_t milli_token_ratio) {
+    const std::string& server_name, intptr_t max_milli_tokens, intptr_t milli_token_ratio) {
   RefCountedPtr<ServerRetryThrottleData> result;
   gpr_mu_lock(&g_mu);
-  ServerRetryThrottleData* throttle_data =
-      static_cast<ServerRetryThrottleData*>(
-          grpc_avl_get(g_avl, const_cast<char*>(server_name.c_str()), nullptr));
-  if (throttle_data == nullptr ||
-      throttle_data->max_milli_tokens() != max_milli_tokens ||
+  ServerRetryThrottleData* throttle_data = static_cast<ServerRetryThrottleData*>(
+      grpc_avl_get(g_avl, const_cast<char*>(server_name.c_str()), nullptr));
+  if (throttle_data == nullptr || throttle_data->max_milli_tokens() != max_milli_tokens ||
       throttle_data->milli_token_ratio() != milli_token_ratio) {
     // Entry not found, or found with old parameters.  Create a new one.
-    result = MakeRefCounted<ServerRetryThrottleData>(
-        max_milli_tokens, milli_token_ratio, throttle_data);
-    g_avl = grpc_avl_add(g_avl, gpr_strdup(server_name.c_str()),
-                         result->Ref().release(), nullptr);
+    result =
+        MakeRefCounted<ServerRetryThrottleData>(max_milli_tokens, milli_token_ratio, throttle_data);
+    g_avl = grpc_avl_add(g_avl, gpr_strdup(server_name.c_str()), result->Ref().release(), nullptr);
   } else {
     // Entry found.  Return a new ref to it.
     result = throttle_data->Ref();

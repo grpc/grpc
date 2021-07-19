@@ -46,18 +46,18 @@ class ServiceConfigParser {
    public:
     virtual ~Parser() = default;
 
-    virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(
-        const grpc_channel_args*, const Json& /* json */,
-        grpc_error_handle* error) {
+    virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(const grpc_channel_args*,
+                                                            const Json& /* json */,
+                                                            grpc_error_handle* error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
 
-    virtual std::unique_ptr<ParsedConfig> ParsePerMethodParams(
-        const grpc_channel_args*, const Json& /* json */,
-        grpc_error_handle* error) {
+    virtual std::unique_ptr<ParsedConfig> ParsePerMethodParams(const grpc_channel_args*,
+                                                               const Json& /* json */,
+                                                               grpc_error_handle* error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -66,8 +66,7 @@ class ServiceConfigParser {
   };
 
   static constexpr int kNumPreallocatedParsers = 4;
-  typedef absl::InlinedVector<std::unique_ptr<ParsedConfig>,
-                              kNumPreallocatedParsers>
+  typedef absl::InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>
       ParsedConfigVector;
 
   static void Init();
@@ -81,13 +80,11 @@ class ServiceConfigParser {
   /// retrieved using the same index that was returned at registration time.
   static size_t RegisterParser(std::unique_ptr<Parser> parser);
 
-  static ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args,
-                                                  const Json& json,
+  static ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args, const Json& json,
                                                   grpc_error_handle* error);
 
-  static ParsedConfigVector ParsePerMethodParameters(
-      const grpc_channel_args* args, const Json& json,
-      grpc_error_handle* error);
+  static ParsedConfigVector ParsePerMethodParameters(const grpc_channel_args* args,
+                                                     const Json& json, grpc_error_handle* error);
 };
 
 }  // namespace grpc_core

@@ -23,8 +23,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 
 // Channel arg key for enabling parsing fault injection via method config.
-#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
-  "grpc.parse_fault_injection_method_config"
+#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG "grpc.parse_fault_injection_method_config"
 
 namespace grpc_core {
 

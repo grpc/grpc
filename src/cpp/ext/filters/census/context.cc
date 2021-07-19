@@ -34,8 +34,7 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view method,
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
   context->~CensusContext();
-  SpanContext parent_ctx =
-      opencensus::trace::propagation::FromGrpcTraceBinHeader(tracing);
+  SpanContext parent_ctx = opencensus::trace::propagation::FromGrpcTraceBinHeader(tracing);
   if (parent_ctx.IsValid()) {
     new (context) CensusContext(method, parent_ctx);
     return;
@@ -67,14 +66,13 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
   new (ctxt) CensusContext(method, tags);
 }
 
-size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
-                             char* tracing_buf, size_t tracing_buf_size) {
-  if (tracing_buf_size <
-      opencensus::trace::propagation::kGrpcTraceBinHeaderLen) {
+size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context, char* tracing_buf,
+                             size_t tracing_buf_size) {
+  if (tracing_buf_size < opencensus::trace::propagation::kGrpcTraceBinHeaderLen) {
     return 0;
   }
-  opencensus::trace::propagation::ToGrpcTraceBinHeader(
-      context, reinterpret_cast<uint8_t*>(tracing_buf));
+  opencensus::trace::propagation::ToGrpcTraceBinHeader(context,
+                                                       reinterpret_cast<uint8_t*>(tracing_buf));
   return opencensus::trace::propagation::kGrpcTraceBinHeaderLen;
 }
 
@@ -83,15 +81,12 @@ size_t StatsContextSerialize(size_t /*max_tags_len*/, grpc_slice* /*tags*/) {
   return 0;
 }
 
-size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf,
-                            size_t buf_size) {
+size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf, size_t buf_size) {
   return RpcServerStatsEncoding::Encode(server_elapsed_time, buf, buf_size);
 }
 
-size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
-                              uint64_t* server_elapsed_time) {
-  return RpcServerStatsEncoding::Decode(absl::string_view(buf, buf_size),
-                                        server_elapsed_time);
+size_t ServerStatsDeserialize(const char* buf, size_t buf_size, uint64_t* server_elapsed_time) {
+  return RpcServerStatsEncoding::Decode(absl::string_view(buf, buf_size), server_elapsed_time);
 }
 
 uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info) {

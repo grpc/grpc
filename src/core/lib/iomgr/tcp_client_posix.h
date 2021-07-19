@@ -32,8 +32,8 @@
    addr_str: destination address in printable format
    Returns: a new endpoint
 */
-grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str);
+grpc_endpoint* grpc_tcp_client_create_from_fd(grpc_fd* fd, const grpc_channel_args* channel_args,
+                                              const char* addr_str);
 
 /* Return a configured, unbound, unconnected TCP client fd.
 
@@ -45,9 +45,9 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
    fd: out parameter. The new FD
    Returns: error, if any. Out parameters are not set on error
 */
-grpc_error_handle grpc_tcp_client_prepare_fd(
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_resolved_address* mapped_addr, int* fd);
+grpc_error_handle grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
+                                             const grpc_resolved_address* addr,
+                                             grpc_resolved_address* mapped_addr, int* fd);
 
 /* Connect a configured TCP client fd.
 
@@ -59,9 +59,10 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
    deadline: connection deadline
    ep: out parameter. Set before closure is called if successful
 */
-void grpc_tcp_client_create_from_prepared_fd(
-    grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_millis deadline, grpc_endpoint** ep);
+void grpc_tcp_client_create_from_prepared_fd(grpc_pollset_set* interested_parties,
+                                             grpc_closure* closure, const int fd,
+                                             const grpc_channel_args* channel_args,
+                                             const grpc_resolved_address* addr,
+                                             grpc_millis deadline, grpc_endpoint** ep);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H */

@@ -58,11 +58,10 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+static std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{protocol="
-             << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
-             << "," << scenario.credentials_type << "}";
+             << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP") << ","
+             << scenario.credentials_type << "}";
 }
 
 void TestScenario::Log() const {
@@ -71,8 +70,7 @@ void TestScenario::Log() const {
   gpr_log(GPR_INFO, "%s", out.str().c_str());
 }
 
-class ContextAllocatorEnd2endTestBase
-    : public ::testing::TestWithParam<TestScenario> {
+class ContextAllocatorEnd2endTestBase : public ::testing::TestWithParam<TestScenario> {
  protected:
   static void SetUpTestCase() { grpc_init(); }
   static void TearDownTestCase() { grpc_shutdown(); }
@@ -85,8 +83,7 @@ class ContextAllocatorEnd2endTestBase
   void CreateServer(std::unique_ptr<grpc::ContextAllocator> context_allocator) {
     ServerBuilder builder;
 
-    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
-        GetParam().credentials_type);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(GetParam().credentials_type);
     if (GetParam().protocol == Protocol::TCP) {
       picked_port_ = grpc_pick_unused_port_or_die();
       server_address_ << "localhost:" << picked_port_;
@@ -107,12 +104,11 @@ class ContextAllocatorEnd2endTestBase
 
   void ResetStub() {
     ChannelArguments args;
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(GetParam().credentials_type, &args);
     switch (GetParam().protocol) {
       case Protocol::TCP:
-        channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
-                                               channel_creds, args);
+        channel_ = ::grpc::CreateCustomChannel(server_address_.str(), channel_creds, args);
         break;
       case Protocol::INPROC:
         channel_ = server_->InProcessChannel(args);
@@ -145,16 +141,15 @@ class ContextAllocatorEnd2endTestBase
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->async()->Echo(
-          &cli_ctx, &request, &response,
-          [&request, &response, &done, &mu, &cv, val](Status s) {
-            GPR_ASSERT(s.ok());
+      stub_->async()->Echo(&cli_ctx, &request, &response,
+                           [&request, &response, &done, &mu, &cv, val](Status s) {
+                             GPR_ASSERT(s.ok());
 
-            EXPECT_EQ(request.message(), response.message());
-            std::lock_guard<std::mutex> l(mu);
-            done = true;
-            cv.notify_one();
-          });
+                             EXPECT_EQ(request.message(), response.message());
+                             std::lock_guard<std::mutex> l(mu);
+                             done = true;
+                             cv.notify_one();
+                           });
       std::unique_lock<std::mutex> l(mu);
       while (!done) {
         cv.wait(l);
@@ -183,10 +178,8 @@ class NullContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
  public:
   class NullAllocator : public grpc::ContextAllocator {
    public:
-    NullAllocator(std::atomic<int>* allocation_count,
-                  std::atomic<int>* deallocation_count)
-        : allocation_count_(allocation_count),
-          deallocation_count_(deallocation_count) {}
+    NullAllocator(std::atomic<int>* allocation_count, std::atomic<int>* deallocation_count)
+        : allocation_count_(allocation_count), deallocation_count_(deallocation_count) {}
     grpc::CallbackServerContext* NewCallbackServerContext() override {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return nullptr;
@@ -197,14 +190,11 @@ class NullContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
       return nullptr;
     }
 
-    void Release(
-        grpc::CallbackServerContext* /*callback_server_context*/) override {
+    void Release(grpc::CallbackServerContext* /*callback_server_context*/) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
     }
 
-    void Release(
-        GenericCallbackServerContext* /*generic_callback_server_context*/)
-        override {
+    void Release(GenericCallbackServerContext* /*generic_callback_server_context*/) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
     }
 
@@ -233,10 +223,8 @@ class SimpleContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
  public:
   class SimpleAllocator : public grpc::ContextAllocator {
    public:
-    SimpleAllocator(std::atomic<int>* allocation_count,
-                    std::atomic<int>* deallocation_count)
-        : allocation_count_(allocation_count),
-          deallocation_count_(deallocation_count) {}
+    SimpleAllocator(std::atomic<int>* allocation_count, std::atomic<int>* deallocation_count)
+        : allocation_count_(allocation_count), deallocation_count_(deallocation_count) {}
     grpc::CallbackServerContext* NewCallbackServerContext() override {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return new grpc::CallbackServerContext();
@@ -246,14 +234,12 @@ class SimpleContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
       return new GenericCallbackServerContext();
     }
 
-    void Release(
-        grpc::CallbackServerContext* callback_server_context) override {
+    void Release(grpc::CallbackServerContext* callback_server_context) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
       delete callback_server_context;
     }
 
-    void Release(GenericCallbackServerContext* generic_callback_server_context)
-        override {
+    void Release(GenericCallbackServerContext* generic_callback_server_context) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
       delete generic_callback_server_context;
     }
@@ -286,8 +272,8 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the
     // provider. User may create providers that do not have insecure.
-    return GetCredentialsProvider()->GetChannelCredentials(
-               kInsecureCredentialsType, nullptr) != nullptr;
+    return GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType, nullptr) !=
+           nullptr;
   };
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
@@ -297,8 +283,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {
     for (const auto& cred : credentials_types) {
-      if (p == Protocol::INPROC &&
-          (cred != kInsecureCredentialsType || !insec_ok())) {
+      if (p == Protocol::INPROC && (cred != kInsecureCredentialsType || !insec_ok())) {
         continue;
       }
       scenarios.emplace_back(p, cred);
@@ -310,8 +295,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
 // TODO(ddyihai): adding client streaming/server streaming/bidi streaming
 // test.
 
-INSTANTIATE_TEST_SUITE_P(DefaultContextAllocatorTest,
-                         DefaultContextAllocatorTest,
+INSTANTIATE_TEST_SUITE_P(DefaultContextAllocatorTest, DefaultContextAllocatorTest,
                          ::testing::ValuesIn(CreateTestScenarios(true)));
 INSTANTIATE_TEST_SUITE_P(NullContextAllocatorTest, NullContextAllocatorTest,
                          ::testing::ValuesIn(CreateTestScenarios(true)));

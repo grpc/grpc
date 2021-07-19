@@ -26,8 +26,7 @@ namespace grpc_core {
 
 namespace {
 
-EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
-    absl::string_view uri_text) {
+EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(absl::string_view uri_text) {
   EvaluateArgs::PerChannelArgs::Address address;
   absl::StatusOr<URI> uri = URI::Parse(uri_text);
   if (!uri.ok()) {
@@ -37,20 +36,18 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   absl::string_view host_view;
   absl::string_view port_view;
   if (!SplitHostPort(uri->path(), &host_view, &port_view)) {
-    gpr_log(GPR_DEBUG, "Failed to split %s into host and port.",
-            uri->path().c_str());
+    gpr_log(GPR_DEBUG, "Failed to split %s into host and port.", uri->path().c_str());
     return address;
   }
   if (!absl::SimpleAtoi(port_view, &address.port)) {
-    gpr_log(GPR_DEBUG, "Port %s is out of range or null.",
-            std::string(port_view).c_str());
+    gpr_log(GPR_DEBUG, "Port %s is out of range or null.", std::string(port_view).c_str());
   }
   address.address_str = std::string(host_view);
-  grpc_error_handle error = grpc_string_to_sockaddr(
-      &address.address, address.address_str.c_str(), address.port);
+  grpc_error_handle error =
+      grpc_string_to_sockaddr(&address.address, address.address_str.c_str(), address.port);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6. Error: %s",
-            address.address_str.c_str(), grpc_error_std_string(error).c_str());
+    gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6. Error: %s", address.address_str.c_str(),
+            grpc_error_std_string(error).c_str());
   }
   GRPC_ERROR_UNREF(error);
   return address;
@@ -61,14 +58,12 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
 EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
                                              grpc_endpoint* endpoint) {
   if (auth_context != nullptr) {
-    transport_security_type = GetAuthPropertyValue(
-        auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
-    spiffe_id =
-        GetAuthPropertyValue(auth_context, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
+    transport_security_type =
+        GetAuthPropertyValue(auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
+    spiffe_id = GetAuthPropertyValue(auth_context, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
     uri_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_URI_PROPERTY_NAME);
     dns_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_DNS_PROPERTY_NAME);
-    common_name =
-        GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
+    common_name = GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
   }
   if (endpoint != nullptr) {
     local_address = ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
@@ -106,14 +101,12 @@ absl::string_view EvaluateArgs::GetMethod() const {
   return method;
 }
 
-std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
-    const {
+std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders() const {
   std::multimap<absl::string_view, absl::string_view> headers;
   if (metadata_ == nullptr) {
     return headers;
   }
-  for (grpc_linked_mdelem* elem = metadata_->list.head; elem != nullptr;
-       elem = elem->next) {
+  for (grpc_linked_mdelem* elem = metadata_->list.head; elem != nullptr; elem = elem->next) {
     const grpc_slice& key = GRPC_MDKEY(elem->md);
     const grpc_slice& val = GRPC_MDVALUE(elem->md);
     headers.emplace(StringViewFromSlice(key), StringViewFromSlice(val));

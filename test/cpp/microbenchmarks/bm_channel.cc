@@ -50,8 +50,8 @@ class LameChannelFixture : public ChannelDestroyerFixture {
  public:
   LameChannelFixture() {}
   void Init() override {
-    channel_ = grpc_lame_client_channel_create(
-        "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah");
+    channel_ =
+        grpc_lame_client_channel_create("localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah");
   }
 };
 
@@ -68,11 +68,9 @@ static void BM_InsecureChannelCreateDestroy(benchmark::State& state) {
     channel.Init();
   }
 }
-BENCHMARK_TEMPLATE(BM_InsecureChannelCreateDestroy, InsecureChannelFixture)
-    ->Range(0, 512);
+BENCHMARK_TEMPLATE(BM_InsecureChannelCreateDestroy, InsecureChannelFixture)->Range(0, 512);
 ;
-BENCHMARK_TEMPLATE(BM_InsecureChannelCreateDestroy, LameChannelFixture)
-    ->Range(0, 512);
+BENCHMARK_TEMPLATE(BM_InsecureChannelCreateDestroy, LameChannelFixture)->Range(0, 512);
 ;
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,

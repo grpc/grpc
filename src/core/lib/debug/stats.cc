@@ -39,8 +39,8 @@ static size_t g_num_cores;
 
 void grpc_stats_init(void) {
   g_num_cores = GPR_MAX(1, gpr_cpu_num_cores());
-  grpc_stats_per_cpu_storage = static_cast<grpc_stats_data*>(
-      gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
+  grpc_stats_per_cpu_storage =
+      static_cast<grpc_stats_data*>(gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
 }
 
 void grpc_stats_shutdown(void) { gpr_free(grpc_stats_per_cpu_storage); }
@@ -49,18 +49,16 @@ void grpc_stats_collect(grpc_stats_data* output) {
   memset(output, 0, sizeof(*output));
   for (size_t core = 0; core < g_num_cores; core++) {
     for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-      output->counters[i] += gpr_atm_no_barrier_load(
-          &grpc_stats_per_cpu_storage[core].counters[i]);
+      output->counters[i] += gpr_atm_no_barrier_load(&grpc_stats_per_cpu_storage[core].counters[i]);
     }
     for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_BUCKETS; i++) {
-      output->histograms[i] += gpr_atm_no_barrier_load(
-          &grpc_stats_per_cpu_storage[core].histograms[i]);
+      output->histograms[i] +=
+          gpr_atm_no_barrier_load(&grpc_stats_per_cpu_storage[core].histograms[i]);
     }
   }
 }
 
-void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
-                     grpc_stats_data* c) {
+void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a, grpc_stats_data* c) {
   for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
     c->counters[i] = b->counters[i] - a->counters[i];
   }
@@ -69,8 +67,7 @@ void grpc_stats_diff(const grpc_stats_data* b, const grpc_stats_data* a,
   }
 }
 
-int grpc_stats_histo_find_bucket_slow(int value, const int* table,
-                                      int table_size) {
+int grpc_stats_histo_find_bucket_slow(int value, const int* table, int table_size) {
   GRPC_STATS_INC_HISTOGRAM_SLOW_LOOKUPS();
   const int* const start = table;
   while (table_size > 0) {
@@ -86,18 +83,15 @@ int grpc_stats_histo_find_bucket_slow(int value, const int* table,
   return static_cast<int>(table - start) - 1;
 }
 
-size_t grpc_stats_histo_count(const grpc_stats_data* stats,
-                              grpc_stats_histograms histogram) {
+size_t grpc_stats_histo_count(const grpc_stats_data* stats, grpc_stats_histograms histogram) {
   size_t sum = 0;
   for (int i = 0; i < grpc_stats_histo_buckets[histogram]; i++) {
-    sum += static_cast<size_t>(
-        stats->histograms[grpc_stats_histo_start[histogram] + i]);
+    sum += static_cast<size_t>(stats->histograms[grpc_stats_histo_start[histogram] + i]);
   }
   return sum;
 }
 
-static double threshold_for_count_below(const gpr_atm* bucket_counts,
-                                        const int* bucket_boundaries,
+static double threshold_for_count_below(const gpr_atm* bucket_counts, const int* bucket_boundaries,
                                         int num_buckets, double count_below) {
   double count_so_far;
   double lower_bound;
@@ -127,43 +121,38 @@ static double threshold_for_count_below(const gpr_atm* bucket_counts,
        should lie */
     lower_bound = bucket_boundaries[lower_idx];
     upper_bound = bucket_boundaries[lower_idx + 1];
-    return upper_bound - (upper_bound - lower_bound) *
-                             (count_so_far - count_below) /
+    return upper_bound - (upper_bound - lower_bound) * (count_so_far - count_below) /
                              static_cast<double>(bucket_counts[lower_idx]);
   }
 }
 
-double grpc_stats_histo_percentile(const grpc_stats_data* stats,
-                                   grpc_stats_histograms histogram,
+double grpc_stats_histo_percentile(const grpc_stats_data* stats, grpc_stats_histograms histogram,
                                    double percentile) {
   size_t count = grpc_stats_histo_count(stats, histogram);
   if (count == 0) return 0.0;
-  return threshold_for_count_below(
-      stats->histograms + grpc_stats_histo_start[histogram],
-      grpc_stats_histo_bucket_boundaries[histogram],
-      grpc_stats_histo_buckets[histogram],
-      static_cast<double>(count) * percentile / 100.0);
+  return threshold_for_count_below(stats->histograms + grpc_stats_histo_start[histogram],
+                                   grpc_stats_histo_bucket_boundaries[histogram],
+                                   grpc_stats_histo_buckets[histogram],
+                                   static_cast<double>(count) * percentile / 100.0);
 }
 
 std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
   std::vector<std::string> parts;
   parts.push_back("{");
   for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-    parts.push_back(absl::StrFormat(
-        "\"%s\": %" PRIdPTR, grpc_stats_counter_name[i], data->counters[i]));
+    parts.push_back(
+        absl::StrFormat("\"%s\": %" PRIdPTR, grpc_stats_counter_name[i], data->counters[i]));
   }
   for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
     parts.push_back(absl::StrFormat("\"%s\": [", grpc_stats_histogram_name[i]));
     for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      parts.push_back(
-          absl::StrFormat("%s%" PRIdPTR, j == 0 ? "" : ",",
-                          data->histograms[grpc_stats_histo_start[i] + j]));
+      parts.push_back(absl::StrFormat("%s%" PRIdPTR, j == 0 ? "" : ",",
+                                      data->histograms[grpc_stats_histo_start[i] + j]));
     }
-    parts.push_back(
-        absl::StrFormat("], \"%s_bkt\": [", grpc_stats_histogram_name[i]));
+    parts.push_back(absl::StrFormat("], \"%s_bkt\": [", grpc_stats_histogram_name[i]));
     for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      parts.push_back(absl::StrFormat(
-          "%s%d", j == 0 ? "" : ",", grpc_stats_histo_bucket_boundaries[i][j]));
+      parts.push_back(
+          absl::StrFormat("%s%d", j == 0 ? "" : ",", grpc_stats_histo_bucket_boundaries[i][j]));
     }
     parts.push_back("]");
   }

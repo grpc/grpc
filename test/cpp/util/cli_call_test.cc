@@ -40,14 +40,12 @@ namespace testing {
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext* context, const EchoRequest* request, EchoResponse* response) override {
     if (!context->client_metadata().empty()) {
-      for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
-               iter = context->client_metadata().begin();
+      for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
+               context->client_metadata().begin();
            iter != context->client_metadata().end(); ++iter) {
-        context->AddInitialMetadata(ToString(iter->first),
-                                    ToString(iter->second));
+        context->AddInitialMetadata(ToString(iter->first), ToString(iter->second));
       }
     }
     context->AddTrailingMetadata("trailing_key", "trailing_value");
@@ -65,8 +63,7 @@ class CliCallTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
-                             InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
@@ -74,8 +71,7 @@ class CliCallTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    channel_ = grpc::CreateChannel(server_address_.str(),
-                                   InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -108,9 +104,8 @@ TEST_F(CliCallTest, SimpleRpc) {
   std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
       server_trailing_metadata;
   client_metadata.insert(std::pair<std::string, std::string>("key1", "val1"));
-  Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin,
-                            client_metadata, &server_initial_metadata,
-                            &server_trailing_metadata);
+  Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin, client_metadata,
+                            &server_initial_metadata, &server_trailing_metadata);
   EXPECT_TRUE(s2.ok());
 
   EXPECT_EQ(expected_response_bin, response_bin);

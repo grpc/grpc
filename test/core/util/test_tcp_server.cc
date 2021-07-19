@@ -39,14 +39,12 @@ static void on_server_destroyed(void* data, grpc_error_handle /*error*/) {
   server->shutdown = true;
 }
 
-void test_tcp_server_init(test_tcp_server* server,
-                          grpc_tcp_server_cb on_connect, void* user_data) {
+void test_tcp_server_init(test_tcp_server* server, grpc_tcp_server_cb on_connect, void* user_data) {
   grpc_init();
   GRPC_CLOSURE_INIT(&server->shutdown_complete, on_server_destroyed, server,
                     grpc_schedule_on_exec_ctx);
 
-  grpc_pollset* pollset =
-      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  grpc_pollset* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &server->mu);
   server->pollset.push_back(pollset);
   server->on_connect = on_connect;
@@ -55,8 +53,7 @@ void test_tcp_server_init(test_tcp_server* server,
 
 void test_tcp_server_start(test_tcp_server* server, int port) {
   grpc_resolved_address resolved_addr;
-  grpc_sockaddr_in* addr =
-      reinterpret_cast<grpc_sockaddr_in*>(resolved_addr.addr);
+  grpc_sockaddr_in* addr = reinterpret_cast<grpc_sockaddr_in*>(resolved_addr.addr);
   int port_added;
   grpc_core::ExecCtx exec_ctx;
 
@@ -65,27 +62,24 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 
-  grpc_error_handle error = grpc_tcp_server_create(
-      &server->shutdown_complete, nullptr, &server->tcp_server);
+  grpc_error_handle error =
+      grpc_tcp_server_create(&server->shutdown_complete, nullptr, &server->tcp_server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  error =
-      grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
+  error = grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(port_added == port);
 
-  grpc_tcp_server_start(server->tcp_server, &server->pollset,
-                        server->on_connect, server->cb_data);
+  grpc_tcp_server_start(server->tcp_server, &server->pollset, server->on_connect, server->cb_data);
   gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
 }
 
 void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {
   grpc_pollset_worker* worker = nullptr;
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = grpc_timespec_to_millis_round_up(
-      grpc_timeout_milliseconds_to_deadline(milliseconds));
+  grpc_millis deadline =
+      grpc_timespec_to_millis_round_up(grpc_timeout_milliseconds_to_deadline(milliseconds));
   gpr_mu_lock(server->mu);
-  GRPC_LOG_IF_ERROR("pollset_work",
-                    grpc_pollset_work(server->pollset[0], &worker, deadline));
+  GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(server->pollset[0], &worker, deadline));
   gpr_mu_unlock(server->mu);
 }
 
@@ -99,18 +93,15 @@ void test_tcp_server_destroy(test_tcp_server* server) {
   gpr_timespec shutdown_deadline;
   grpc_closure do_nothing_cb;
   grpc_tcp_server_unref(server->tcp_server);
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
-  shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                   gpr_time_from_seconds(5, GPR_TIMESPAN));
+  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr, grpc_schedule_on_exec_ctx);
+  shutdown_deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(5, GPR_TIMESPAN));
   grpc_core::ExecCtx::Get()->Flush();
-  while (!server->shutdown &&
-         gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
+  while (!server->shutdown && gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
     test_tcp_server_poll(server, 1000);
   }
-  grpc_pollset_shutdown(server->pollset[0],
-                        GRPC_CLOSURE_CREATE(finish_pollset, server->pollset[0],
-                                            grpc_schedule_on_exec_ctx));
+  grpc_pollset_shutdown(server->pollset[0], GRPC_CLOSURE_CREATE(finish_pollset, server->pollset[0],
+                                                                grpc_schedule_on_exec_ctx));
   grpc_core::ExecCtx::Get()->Flush();
   gpr_free(server->pollset[0]);
   grpc_shutdown();

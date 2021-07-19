@@ -56,8 +56,7 @@ struct static_metadata_hash_ent {
   uint32_t hash;
   uint32_t idx;
 };
-static static_metadata_hash_ent
-    static_metadata_hash[4 * GRPC_STATIC_MDSTR_COUNT];
+static static_metadata_hash_ent static_metadata_hash[4 * GRPC_STATIC_MDSTR_COUNT];
 static uint32_t max_static_metadata_hash_probe;
 uint32_t grpc_static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
 
@@ -72,8 +71,7 @@ InternedSliceRefcount::~InternedSliceRefcount() {
   MutexLock lock(&shard->mu);
   InternedSliceRefcount** prev_next;
   InternedSliceRefcount* cur;
-  for (prev_next = &shard->strs[TABLE_IDX(this->hash, shard->capacity)],
-      cur = *prev_next;
+  for (prev_next = &shard->strs[TABLE_IDX(this->hash, shard->capacity)], cur = *prev_next;
        cur != this; prev_next = &cur->bucket_next, cur = cur->bucket_next) {
   }
   *prev_next = cur->bucket_next;
@@ -90,8 +88,8 @@ static void grow_shard(slice_shard* shard) {
   InternedSliceRefcount** strtab;
   InternedSliceRefcount *s, *next;
 
-  strtab = static_cast<InternedSliceRefcount**>(
-      gpr_zalloc(sizeof(InternedSliceRefcount*) * capacity));
+  strtab =
+      static_cast<InternedSliceRefcount**>(gpr_zalloc(sizeof(InternedSliceRefcount*) * capacity));
 
   for (i = 0; i < shard->capacity; i++) {
     for (s = shard->strs[i]; s; s = next) {
@@ -113,8 +111,7 @@ grpc_core::InternedSlice::InternedSlice(InternedSliceRefcount* s) {
 }
 
 uint32_t grpc_slice_default_hash_impl(grpc_slice s) {
-  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
-                          grpc_core::g_hash_seed);
+  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s), grpc_core::g_hash_seed);
 }
 
 uint32_t grpc_static_slice_hash(grpc_slice s) {
@@ -127,8 +124,7 @@ int grpc_static_slice_eq(grpc_slice a, grpc_slice b) {
 
 uint32_t grpc_slice_hash(grpc_slice s) { return grpc_slice_hash_internal(s); }
 
-grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
-                                          bool* returned_slice_is_different) {
+grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice, bool* returned_slice_is_different) {
   if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
     return slice;
   }
@@ -137,8 +133,7 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
   for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
-    const grpc_core::StaticMetadataSlice* static_slice_table =
-        grpc_static_slice_table();
+    const grpc_core::StaticMetadataSlice* static_slice_table = grpc_static_slice_table();
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
         grpc_slice_eq_static_interned(slice, static_slice_table[ent.idx])) {
       *returned_slice_is_different = true;
@@ -163,13 +158,12 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
 //
 // Returns: a matching static slice, or null.
 template <typename SliceArgs>
-static const grpc_core::StaticMetadataSlice* MatchStaticSlice(
-    uint32_t hash, const SliceArgs& args) {
+static const grpc_core::StaticMetadataSlice* MatchStaticSlice(uint32_t hash,
+                                                              const SliceArgs& args) {
   for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
-    const grpc_core::StaticMetadataSlice* static_slice_table =
-        grpc_static_slice_table();
+    const grpc_core::StaticMetadataSlice* static_slice_table = grpc_static_slice_table();
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
         static_slice_table[ent.idx] == args) {
       return &static_slice_table[ent.idx];
@@ -181,18 +175,10 @@ static const grpc_core::StaticMetadataSlice* MatchStaticSlice(
 // Helper methods to enable us to select appropriately overloaded slice methods
 // whether we're dealing with a slice, or a buffer with length, when interning
 // strings. Helpers for FindOrCreateInternedSlice().
-static const char* GetBuffer(const std::pair<const char*, size_t>& buflen) {
-  return buflen.first;
-}
-static size_t GetLength(const std::pair<const char*, size_t>& buflen) {
-  return buflen.second;
-}
-static const void* GetBuffer(const grpc_slice& slice) {
-  return GRPC_SLICE_START_PTR(slice);
-}
-static size_t GetLength(const grpc_slice& slice) {
-  return GRPC_SLICE_LENGTH(slice);
-}
+static const char* GetBuffer(const std::pair<const char*, size_t>& buflen) { return buflen.first; }
+static size_t GetLength(const std::pair<const char*, size_t>& buflen) { return buflen.second; }
+static const void* GetBuffer(const grpc_slice& slice) { return GRPC_SLICE_START_PTR(slice); }
+static size_t GetLength(const grpc_slice& slice) { return GRPC_SLICE_LENGTH(slice); }
 
 // Creates an interned slice for a string that does not currently exist in the
 // intern table. SliceArgs is either a const grpc_slice& or a const
@@ -201,15 +187,12 @@ static size_t GetLength(const grpc_slice& slice) {
 //
 // Returns: a newly interned slice.
 template <typename SliceArgs>
-static InternedSliceRefcount* InternNewStringLocked(slice_shard* shard,
-                                                    size_t shard_idx,
-                                                    uint32_t hash,
-                                                    const SliceArgs& args) {
+static InternedSliceRefcount* InternNewStringLocked(slice_shard* shard, size_t shard_idx,
+                                                    uint32_t hash, const SliceArgs& args) {
   /* string data goes after the internal_string header */
   size_t len = GetLength(args);
   const void* buffer = GetBuffer(args);
-  InternedSliceRefcount* s =
-      static_cast<InternedSliceRefcount*>(gpr_malloc(sizeof(*s) + len));
+  InternedSliceRefcount* s = static_cast<InternedSliceRefcount*>(gpr_malloc(sizeof(*s) + len));
   new (s) grpc_core::InternedSliceRefcount(len, hash, shard->strs[shard_idx]);
   // TODO(arjunroy): Investigate why hpack tried to intern the nullptr string.
   // https://github.com/grpc/grpc/pull/20110#issuecomment-526729282
@@ -231,8 +214,7 @@ static InternedSliceRefcount* InternNewStringLocked(slice_shard* shard,
 //
 // Returns: a pre-existing matching static slice, or null.
 template <typename SliceArgs>
-static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash,
-                                                       size_t idx,
+static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash, size_t idx,
                                                        const SliceArgs& args) {
   InternedSliceRefcount* s;
   slice_shard* shard = &g_shards[SHARD_IDX(hash)];
@@ -256,8 +238,7 @@ static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash,
 //
 // Returns: an interned slice, either pre-existing/matched or newly created.
 template <typename SliceArgs>
-static InternedSliceRefcount* FindOrCreateInternedSlice(uint32_t hash,
-                                                        const SliceArgs& args) {
+static InternedSliceRefcount* FindOrCreateInternedSlice(uint32_t hash, const SliceArgs& args) {
   slice_shard* shard = &g_shards[SHARD_IDX(hash)];
   grpc_core::MutexLock lock(&shard->mu);
   const size_t idx = TABLE_IDX(hash, shard->capacity);
@@ -269,8 +250,7 @@ static InternedSliceRefcount* FindOrCreateInternedSlice(uint32_t hash,
 }
 
 grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* string)
-    : grpc_core::ManagedMemorySlice::ManagedMemorySlice(string,
-                                                        strlen(string)) {}
+    : grpc_core::ManagedMemorySlice::ManagedMemorySlice(string, strlen(string)) {}
 
 grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* buf, size_t len) {
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
@@ -280,8 +260,8 @@ grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* buf, size_t len) {
   if (static_slice) {
     *this = *static_slice;
   } else {
-    *this = grpc_core::InternedSlice(FindOrCreateInternedSlice(
-        hash, std::pair<const char*, size_t>(buf, len)));
+    *this = grpc_core::InternedSlice(
+        FindOrCreateInternedSlice(hash, std::pair<const char*, size_t>(buf, len)));
   }
 }
 
@@ -308,30 +288,27 @@ void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
 
 void grpc_slice_intern_init(void) {
   if (!grpc_core::g_forced_hash_seed) {
-    grpc_core::g_hash_seed =
-        static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
+    grpc_core::g_hash_seed = static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
   }
   g_shards = new slice_shard[SHARD_COUNT];
   for (size_t i = 0; i < SHARD_COUNT; i++) {
     slice_shard* shard = &g_shards[i];
     shard->count = 0;
     shard->capacity = INITIAL_SHARD_CAPACITY;
-    shard->strs = static_cast<InternedSliceRefcount**>(
-        gpr_zalloc(sizeof(*shard->strs) * shard->capacity));
+    shard->strs =
+        static_cast<InternedSliceRefcount**>(gpr_zalloc(sizeof(*shard->strs) * shard->capacity));
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(static_metadata_hash); i++) {
     static_metadata_hash[i].hash = 0;
     static_metadata_hash[i].idx = GRPC_STATIC_MDSTR_COUNT;
   }
   max_static_metadata_hash_probe = 0;
-  const grpc_core::StaticMetadataSlice* static_slice_table =
-      grpc_static_slice_table();
+  const grpc_core::StaticMetadataSlice* static_slice_table = grpc_static_slice_table();
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    grpc_static_metadata_hash_values[i] =
-        grpc_slice_default_hash_internal(static_slice_table[i]);
+    grpc_static_metadata_hash_values[i] = grpc_slice_default_hash_internal(static_slice_table[i]);
     for (size_t j = 0; j < GPR_ARRAY_SIZE(static_metadata_hash); j++) {
-      size_t slot = (grpc_static_metadata_hash_values[i] + j) %
-                    GPR_ARRAY_SIZE(static_metadata_hash);
+      size_t slot =
+          (grpc_static_metadata_hash_values[i] + j) % GPR_ARRAY_SIZE(static_metadata_hash);
       if (static_metadata_hash[slot].idx == GRPC_STATIC_MDSTR_COUNT) {
         static_metadata_hash[slot].hash = grpc_static_metadata_hash_values[i];
         static_metadata_hash[slot].idx = static_cast<uint32_t>(i);
@@ -353,12 +330,10 @@ void grpc_slice_intern_shutdown(void) {
     slice_shard* shard = &g_shards[i];
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata strings were leaked",
-              shard->count);
+      gpr_log(GPR_DEBUG, "WARNING: %" PRIuPTR " metadata strings were leaked", shard->count);
       for (size_t j = 0; j < shard->capacity; j++) {
         for (InternedSliceRefcount* s = shard->strs[j]; s; s = s->bucket_next) {
-          char* text = grpc_dump_slice(grpc_core::InternedSlice(s),
-                                       GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          char* text = grpc_dump_slice(grpc_core::InternedSlice(s), GPR_DUMP_HEX | GPR_DUMP_ASCII);
           gpr_log(GPR_DEBUG, "LEAKED: %s", text);
           gpr_free(text);
         }

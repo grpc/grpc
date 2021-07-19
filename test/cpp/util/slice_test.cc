@@ -44,8 +44,7 @@ class SliceTest : public ::testing::Test {
   }
   void CheckSlice(const Slice& s, const std::string& content) {
     EXPECT_EQ(content.size(), s.size());
-    EXPECT_EQ(content,
-              std::string(reinterpret_cast<const char*>(s.begin()), s.size()));
+    EXPECT_EQ(content, std::string(reinterpret_cast<const char*>(s.begin()), s.size()));
   }
 };
 

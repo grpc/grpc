@@ -65,13 +65,9 @@ class CelValue {
 
   static CelValue CreateUint64(uint64_t /*value*/) { return CreateNull(); }
 
-  static CelValue CreateStringView(absl::string_view /*value*/) {
-    return CreateNull();
-  }
+  static CelValue CreateStringView(absl::string_view /*value*/) { return CreateNull(); }
 
-  static CelValue CreateString(const std::string* /*str*/) {
-    return CreateNull();
-  }
+  static CelValue CreateString(const std::string* /*str*/) { return CreateNull(); }
 
   static CelValue CreateMap(const CelMap* /*value*/) { return CreateNull(); }
 
@@ -87,8 +83,7 @@ class ContainerBackedMapImpl : public CelMap {
  public:
   ContainerBackedMapImpl() = default;
 
-  static std::unique_ptr<CelMap> Create(
-      absl::Span<std::pair<CelValue, CelValue>> /*key_values*/) {
+  static std::unique_ptr<CelMap> Create(absl::Span<std::pair<CelValue, CelValue>> /*key_values*/) {
     return absl::make_unique<ContainerBackedMapImpl>();
   }
 };

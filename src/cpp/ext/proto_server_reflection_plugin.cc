@@ -29,9 +29,7 @@ namespace reflection {
 ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
     : reflection_service_(new grpc::ProtoServerReflection()) {}
 
-std::string ProtoServerReflectionPlugin::name() {
-  return "proto_server_reflection";
-}
+std::string ProtoServerReflectionPlugin::name() { return "proto_server_reflection"; }
 
 void ProtoServerReflectionPlugin::InitServer(grpc::ServerInitializer* si) {
   si->RegisterService(reflection_service_);
@@ -41,8 +39,7 @@ void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
   reflection_service_->SetServiceList(si->GetServiceList());
 }
 
-void ProtoServerReflectionPlugin::ChangeArguments(const std::string& /*name*/,
-                                                  void* /*value*/) {}
+void ProtoServerReflectionPlugin::ChangeArguments(const std::string& /*name*/, void* /*value*/) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
   if (reflection_service_) {
@@ -59,24 +56,19 @@ bool ProtoServerReflectionPlugin::has_async_methods() const {
 }
 
 static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateProtoReflection() {
-  return std::unique_ptr< ::grpc::ServerBuilderPlugin>(
-      new ProtoServerReflectionPlugin());
+  return std::unique_ptr< ::grpc::ServerBuilderPlugin>(new ProtoServerReflectionPlugin());
 }
 
 void InitProtoReflectionServerBuilderPlugin() {
   static struct Initialize {
-    Initialize() {
-      ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
-    }
+    Initialize() { ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection); }
   } initializer;
 }
 
 // Force InitProtoReflectionServerBuilderPlugin() to be called at static
 // initialization time.
 struct StaticProtoReflectionPluginInitializer {
-  StaticProtoReflectionPluginInitializer() {
-    InitProtoReflectionServerBuilderPlugin();
-  }
+  StaticProtoReflectionPluginInitializer() { InitProtoReflectionServerBuilderPlugin(); }
 } static_proto_reflection_plugin_initializer;
 
 }  // namespace reflection

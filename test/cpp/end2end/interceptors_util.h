@@ -38,8 +38,7 @@ class PhonyInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       num_times_run_++;
     } else if (methods->QueryInterceptionHookPoint(
-                   experimental::InterceptionHookPoints::
-                       POST_RECV_INITIAL_METADATA)) {
+                   experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
       num_times_run_reverse_++;
     } else if (methods->QueryInterceptionHookPoint(
                    experimental::InterceptionHookPoints::PRE_SEND_CANCEL)) {
@@ -67,9 +66,8 @@ class PhonyInterceptor : public experimental::Interceptor {
   static std::atomic<int> num_times_cancel_;
 };
 
-class PhonyInterceptorFactory
-    : public experimental::ClientInterceptorFactoryInterface,
-      public experimental::ServerInterceptorFactoryInterface {
+class PhonyInterceptorFactory : public experimental::ClientInterceptorFactoryInterface,
+                                public experimental::ServerInterceptorFactoryInterface {
  public:
   experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* /*info*/) override {
@@ -96,20 +94,15 @@ class TestInterceptor : public experimental::Interceptor {
     }
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
-    methods->Proceed();
-  }
+  void Intercept(experimental::InterceptorBatchMethods* methods) override { methods->Proceed(); }
 };
 
-class TestInterceptorFactory
-    : public experimental::ClientInterceptorFactoryInterface {
+class TestInterceptorFactory : public experimental::ClientInterceptorFactoryInterface {
  public:
-  TestInterceptorFactory(const std::string& method,
-                         const char* suffix_for_stats)
+  TestInterceptorFactory(const std::string& method, const char* suffix_for_stats)
       : method_(method), suffix_for_stats_(suffix_for_stats) {}
 
-  experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+  experimental::Interceptor* CreateClientInterceptor(experimental::ClientRpcInfo* info) override {
     return new TestInterceptor(method_, suffix_for_stats_, info);
   }
 
@@ -119,9 +112,8 @@ class TestInterceptorFactory
 };
 
 /* This interceptor factory returns nullptr on interceptor creation */
-class NullInterceptorFactory
-    : public experimental::ClientInterceptorFactoryInterface,
-      public experimental::ServerInterceptorFactoryInterface {
+class NullInterceptorFactory : public experimental::ClientInterceptorFactoryInterface,
+                               public experimental::ServerInterceptorFactoryInterface {
  public:
   experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* /*info*/) override {
@@ -138,8 +130,7 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
  public:
   ~EchoTestServiceStreamingImpl() override {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext* context, const EchoRequest* request, EchoResponse* response) override {
     auto client_metadata = context->client_metadata();
     for (const auto& pair : client_metadata) {
       context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
@@ -148,9 +139,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(
-      ServerContext* context,
-      grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+  Status BidiStream(ServerContext* context,
+                    grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest req;
     EchoResponse resp;
     auto client_metadata = context->client_metadata();
@@ -165,8 +155,7 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
+  Status RequestStream(ServerContext* context, ServerReader<EchoRequest>* reader,
                        EchoResponse* resp) override {
     auto client_metadata = context->client_metadata();
     for (const auto& pair : client_metadata) {
@@ -200,8 +189,7 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
 
 constexpr int kNumStreamingMessages = 10;
 
-void MakeCall(const std::shared_ptr<Channel>& channel,
-              const StubOptions& options = StubOptions());
+void MakeCall(const std::shared_ptr<Channel>& channel, const StubOptions& options = StubOptions());
 
 void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel);
 
@@ -219,27 +207,23 @@ void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& channel);
 
 void MakeCallbackCall(const std::shared_ptr<Channel>& channel);
 
-bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
-                   const string& key, const string& value);
+bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map, const string& key,
+                   const string& value);
 
-bool CheckMetadata(const std::multimap<std::string, std::string>& map,
-                   const string& key, const string& value);
+bool CheckMetadata(const std::multimap<std::string, std::string>& map, const string& key,
+                   const string& value);
 
 std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreatePhonyClientInterceptors();
 
 inline void* tag(int i) { return reinterpret_cast<void*>(i); }
-inline int detag(void* p) {
-  return static_cast<int>(reinterpret_cast<intptr_t>(p));
-}
+inline int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 class Verifier {
  public:
   Verifier() : lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
-  Verifier& Expect(int i, bool expect_ok) {
-    return ExpectUnless(i, expect_ok, false);
-  }
+  Verifier& Expect(int i, bool expect_ok) { return ExpectUnless(i, expect_ok, false); }
   // ExpectUnless sets the expected ok value for a specific tag
   // unless the tag was already marked seen (as a result of ExpectMaybe)
   Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
@@ -269,9 +253,8 @@ class Verifier {
   }
 
   template <typename T>
-  CompletionQueue::NextStatus DoOnceThenAsyncNext(
-      CompletionQueue* cq, void** got_tag, bool* ok, T deadline,
-      std::function<void(void)> lambda) {
+  CompletionQueue::NextStatus DoOnceThenAsyncNext(CompletionQueue* cq, void** got_tag, bool* ok,
+                                                  T deadline, std::function<void(void)> lambda) {
     if (lambda_run_) {
       return cq->AsyncNext(got_tag, ok, deadline);
     } else {
@@ -296,14 +279,12 @@ class Verifier {
   // This version of Verify stops after a certain deadline, and uses the
   // DoThenAsyncNext API
   // to call the lambda
-  void Verify(CompletionQueue* cq,
-              std::chrono::system_clock::time_point deadline,
+  void Verify(CompletionQueue* cq, std::chrono::system_clock::time_point deadline,
               const std::function<void(void)>& lambda) {
     if (expectations_.empty()) {
       bool ok;
       void* got_tag;
-      EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
-                CompletionQueue::TIMEOUT);
+      EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda), CompletionQueue::TIMEOUT);
     } else {
       while (!expectations_.empty()) {
         bool ok;

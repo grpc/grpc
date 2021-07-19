@@ -56,8 +56,7 @@ class ReadAheadHandshaker : public Handshaker {
   ~ReadAheadHandshaker() override {}
   const char* name() const override { return "read_ahead"; }
   void Shutdown(grpc_error_handle /*why*/) override {}
-  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
-                   grpc_closure* on_handshake_done,
+  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/, grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
     grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
                        /*urgent=*/false);
@@ -66,8 +65,7 @@ class ReadAheadHandshaker : public Handshaker {
 
 class ReadAheadHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* /*args*/,
-                      grpc_pollset_set* /*interested_parties*/,
+  void AddHandshakers(const grpc_channel_args* /*args*/, grpc_pollset_set* /*interested_parties*/,
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<ReadAheadHandshaker>());
   }

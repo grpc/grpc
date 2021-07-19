@@ -34,8 +34,7 @@ namespace grpc_core {
 // SliceBufferByteStream
 //
 
-SliceBufferByteStream::SliceBufferByteStream(grpc_slice_buffer* slice_buffer,
-                                             uint32_t flags)
+SliceBufferByteStream::SliceBufferByteStream(grpc_slice_buffer* slice_buffer, uint32_t flags)
     : ByteStream(static_cast<uint32_t>(slice_buffer->length), flags) {
   GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
   grpc_slice_buffer_init(&backing_buffer_);
@@ -53,8 +52,7 @@ void SliceBufferByteStream::Orphan() {
   // filter stack.
 }
 
-bool SliceBufferByteStream::Next(size_t /*max_size_hint*/,
-                                 grpc_closure* /*on_complete*/) {
+bool SliceBufferByteStream::Next(size_t /*max_size_hint*/, grpc_closure* /*on_complete*/) {
   GPR_DEBUG_ASSERT(backing_buffer_.count > 0);
   return true;
 }
@@ -109,8 +107,7 @@ void ByteStreamCache::CachingByteStream::Orphan() {
   // filter stack.
 }
 
-bool ByteStreamCache::CachingByteStream::Next(size_t max_size_hint,
-                                              grpc_closure* on_complete) {
+bool ByteStreamCache::CachingByteStream::Next(size_t max_size_hint, grpc_closure* on_complete) {
   if (shutdown_error_ != GRPC_ERROR_NONE) return true;
   if (cursor_ < cache_->cache_buffer_.count) return true;
   GPR_ASSERT(cache_->underlying_stream_ != nullptr);
@@ -130,8 +127,7 @@ grpc_error_handle ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
   GPR_ASSERT(cache_->underlying_stream_ != nullptr);
   grpc_error_handle error = cache_->underlying_stream_->Pull(slice);
   if (error == GRPC_ERROR_NONE) {
-    grpc_slice_buffer_add(&cache_->cache_buffer_,
-                          grpc_slice_ref_internal(*slice));
+    grpc_slice_buffer_add(&cache_->cache_buffer_, grpc_slice_ref_internal(*slice));
     ++cursor_;
     offset_ += GRPC_SLICE_LENGTH(*slice);
     // Orphan the underlying stream if it's been drained.

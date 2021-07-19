@@ -50,9 +50,7 @@ using CondVar = absl::CondVar;
 // Returns the underlying gpr_mu from Mutex. This should be used only when
 // it has to like passing the C++ mutex to C-core API.
 // TODO(veblush): Remove this after C-core no longer uses gpr_mu.
-inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) {
-  return reinterpret_cast<gpr_mu*>(mutex);
-}
+inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) { return reinterpret_cast<gpr_mu*>(mutex); }
 
 #else
 
@@ -66,9 +64,7 @@ class ABSL_LOCKABLE Mutex {
 
   void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() { gpr_mu_lock(&mu_); }
   void Unlock() ABSL_UNLOCK_FUNCTION() { gpr_mu_unlock(&mu_); }
-  bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
-    return gpr_mu_trylock(&mu_) != 0;
-  }
+  bool TryLock() ABSL_EXCLUSIVE_TRYLOCK_FUNCTION(true) { return gpr_mu_trylock(&mu_) != 0; }
 
  private:
   gpr_mu mu_;
@@ -84,9 +80,7 @@ inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) { return &mutex->mu_; }
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
-    mu_->Lock();
-  }
+  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) { mu_->Lock(); }
   ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
 
   MutexLock(const MutexLock&) = delete;
@@ -98,8 +92,7 @@ class ABSL_SCOPED_LOCKABLE MutexLock {
 
 class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
  public:
-  explicit ReleasableMutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
-      : mu_(mu) {
+  explicit ReleasableMutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
     mu_->Lock();
   }
   ~ReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
@@ -154,8 +147,7 @@ static void WaitUntil(CondVar* cv, Mutex* mu, Predicate pred) {
 
 // Returns true iff we timed-out
 template <typename Predicate>
-static bool WaitUntilWithTimeout(CondVar* cv, Mutex* mu, Predicate pred,
-                                 absl::Duration timeout) {
+static bool WaitUntilWithTimeout(CondVar* cv, Mutex* mu, Predicate pred, absl::Duration timeout) {
   while (!pred()) {
     if (cv->WaitWithTimeout(mu, timeout)) return true;
   }
@@ -164,8 +156,7 @@ static bool WaitUntilWithTimeout(CondVar* cv, Mutex* mu, Predicate pred,
 
 // Returns true iff we timed-out
 template <typename Predicate>
-static bool WaitUntilWithDeadline(CondVar* cv, Mutex* mu, Predicate pred,
-                                  absl::Time deadline) {
+static bool WaitUntilWithDeadline(CondVar* cv, Mutex* mu, Predicate pred, absl::Time deadline) {
   while (!pred()) {
     if (cv->WaitWithDeadline(mu, deadline)) return true;
   }
@@ -188,19 +179,15 @@ class MutexLockForGprMu {
 // Deprecated. Prefer MutexLock or ReleasableMutexLock
 class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
  public:
-  explicit LockableAndReleasableMutexLock(Mutex* mu)
-      ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
-      : mu_(mu) {
+  explicit LockableAndReleasableMutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
     mu_->Lock();
   }
   ~LockableAndReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
     if (!released_) mu_->Unlock();
   }
 
-  LockableAndReleasableMutexLock(const LockableAndReleasableMutexLock&) =
-      delete;
-  LockableAndReleasableMutexLock& operator=(
-      const LockableAndReleasableMutexLock&) = delete;
+  LockableAndReleasableMutexLock(const LockableAndReleasableMutexLock&) = delete;
+  LockableAndReleasableMutexLock& operator=(const LockableAndReleasableMutexLock&) = delete;
 
   void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
     GPR_DEBUG_ASSERT(released_);

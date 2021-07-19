@@ -30,30 +30,30 @@ tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
   if (self->vtable->create_zero_copy_grpc_protector == nullptr) {
     return TSI_UNIMPLEMENTED;
   }
-  return self->vtable->create_zero_copy_grpc_protector(
-      self, max_output_protected_frame_size, protector);
+  return self->vtable->create_zero_copy_grpc_protector(self, max_output_protected_frame_size,
+                                                       protector);
 }
 
 /* --- tsi_zero_copy_grpc_protector common implementation. ---
 
    Calls specific implementation after state/input validation. */
 
-tsi_result tsi_zero_copy_grpc_protector_protect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
-    grpc_slice_buffer* protected_slices) {
-  if (self == nullptr || self->vtable == nullptr ||
-      unprotected_slices == nullptr || protected_slices == nullptr) {
+tsi_result tsi_zero_copy_grpc_protector_protect(tsi_zero_copy_grpc_protector* self,
+                                                grpc_slice_buffer* unprotected_slices,
+                                                grpc_slice_buffer* protected_slices) {
+  if (self == nullptr || self->vtable == nullptr || unprotected_slices == nullptr ||
+      protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->vtable->protect == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->protect(self, unprotected_slices, protected_slices);
 }
 
-tsi_result tsi_zero_copy_grpc_protector_unprotect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
-  if (self == nullptr || self->vtable == nullptr ||
-      protected_slices == nullptr || unprotected_slices == nullptr) {
+tsi_result tsi_zero_copy_grpc_protector_unprotect(tsi_zero_copy_grpc_protector* self,
+                                                  grpc_slice_buffer* protected_slices,
+                                                  grpc_slice_buffer* unprotected_slices) {
+  if (self == nullptr || self->vtable == nullptr || protected_slices == nullptr ||
+      unprotected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   if (self->vtable->unprotect == nullptr) return TSI_UNIMPLEMENTED;
@@ -65,8 +65,8 @@ void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self) {
   self->vtable->destroy(self);
 }
 
-tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
-    tsi_zero_copy_grpc_protector* self, size_t* max_frame_size) {
+tsi_result tsi_zero_copy_grpc_protector_max_frame_size(tsi_zero_copy_grpc_protector* self,
+                                                       size_t* max_frame_size) {
   if (self == nullptr || max_frame_size == nullptr) return TSI_INVALID_ARGUMENT;
   if (self->vtable->max_frame_size == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->max_frame_size(self, max_frame_size);

@@ -134,23 +134,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   class MetadataInterface {
    public:
     class iterator
-        : public std::iterator<
-              std::input_iterator_tag,
-              std::pair<absl::string_view, absl::string_view>,  // value_type
-              std::ptrdiff_t,  // difference_type
-              std::pair<absl::string_view, absl::string_view>*,  // pointer
-              std::pair<absl::string_view, absl::string_view>&   // reference
-              > {
+        : public std::iterator<std::input_iterator_tag,
+                               std::pair<absl::string_view, absl::string_view>,   // value_type
+                               std::ptrdiff_t,                                    // difference_type
+                               std::pair<absl::string_view, absl::string_view>*,  // pointer
+                               std::pair<absl::string_view, absl::string_view>&   // reference
+                               > {
      public:
-      iterator(const MetadataInterface* md, intptr_t handle)
-          : md_(md), handle_(handle) {}
+      iterator(const MetadataInterface* md, intptr_t handle) : md_(md), handle_(handle) {}
       iterator& operator++() {
         handle_ = md_->IteratorHandleNext(handle_);
         return *this;
       }
-      bool operator==(iterator other) const {
-        return md_ == other.md_ && handle_ == other.handle_;
-      }
+      bool operator==(iterator other) const { return md_ == other.md_ && handle_ == other.handle_; }
       bool operator!=(iterator other) const { return !(*this == other); }
       value_type operator*() const { return md_->IteratorHandleGet(handle_); }
 
@@ -184,8 +180,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     friend class iterator;
 
     virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
-    virtual std::pair<absl::string_view /*key*/, absl::string_view /*value */>
-    IteratorHandleGet(intptr_t handle) const = 0;
+    virtual std::pair<absl::string_view /*key*/, absl::string_view /*value */> IteratorHandleGet(
+        intptr_t handle) const = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -277,13 +273,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual ~ChannelControlHelper() = default;
 
     /// Creates a new subchannel with the specified channel args.
-    virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) = 0;
+    virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(ServerAddress address,
+                                                                const grpc_channel_args& args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
-    virtual void UpdateState(grpc_connectivity_state state,
-                             const absl::Status& status,
+    virtual void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                              std::unique_ptr<SubchannelPicker>) = 0;
 
     /// Requests that the resolver re-resolve.
@@ -291,8 +286,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
-    virtual void AddTraceEvent(TraceSeverity severity,
-                               absl::string_view message) = 0;
+    virtual void AddTraceEvent(TraceSeverity severity, absl::string_view message) = 0;
   };
 
   /// Interface for configuration data used by an LB policy implementation.
@@ -372,8 +366,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // first pick is seen.
   class QueuePicker : public SubchannelPicker {
    public:
-    explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
-        : parent_(std::move(parent)) {}
+    explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent) : parent_(std::move(parent)) {}
 
     ~QueuePicker() override { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
 
@@ -397,15 +390,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
  protected:
-  std::shared_ptr<WorkSerializer> work_serializer() const {
-    return work_serializer_;
-  }
+  std::shared_ptr<WorkSerializer> work_serializer() const { return work_serializer_; }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
-  ChannelControlHelper* channel_control_helper() const {
-    return channel_control_helper_.get();
-  }
+  ChannelControlHelper* channel_control_helper() const { return channel_control_helper_.get(); }
 
   /// Shuts down the policy.
   virtual void ShutdownLocked() = 0;

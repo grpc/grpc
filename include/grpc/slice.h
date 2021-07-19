@@ -52,14 +52,12 @@ GPRAPI grpc_slice grpc_slice_new(void* p, size_t len, void (*destroy)(void*));
    passed to the destroy function.  This function can be useful when
    the data is part of a larger structure that must be destroyed when
    the data is no longer needed. */
-GPRAPI grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
-                                                void (*destroy)(void*),
+GPRAPI grpc_slice grpc_slice_new_with_user_data(void* p, size_t len, void (*destroy)(void*),
                                                 void* user_data);
 
 /** Equivalent to grpc_slice_new, but with a two argument destroy function that
    also takes the slice length. */
-GPRAPI grpc_slice grpc_slice_new_with_len(void* p, size_t len,
-                                          void (*destroy)(void*, size_t));
+GPRAPI grpc_slice grpc_slice_new_with_len(void* p, size_t len, void (*destroy)(void*, size_t));
 
 /** Equivalent to grpc_slice_new(malloc(len), len, free), but saves one malloc()
    call.

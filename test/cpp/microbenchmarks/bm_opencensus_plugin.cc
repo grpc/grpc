@@ -34,15 +34,13 @@ absl::once_flag once;
 void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
 
 class EchoServer final : public grpc::testing::EchoTestService::Service {
-  grpc::Status Echo(grpc::ServerContext* /*context*/,
-                    const grpc::testing::EchoRequest* request,
+  grpc::Status Echo(grpc::ServerContext* /*context*/, const grpc::testing::EchoRequest* request,
                     grpc::testing::EchoResponse* response) override {
     if (request->param().expected_error().code() == 0) {
       response->set_message(request->message());
       return grpc::Status::OK;
     } else {
-      return grpc::Status(static_cast<grpc::StatusCode>(
-                              request->param().expected_error().code()),
+      return grpc::Status(static_cast<grpc::StatusCode>(request->param().expected_error().code()),
                           "");
     }
   }
@@ -55,8 +53,7 @@ class EchoServerThread final {
   EchoServerThread() {
     grpc::ServerBuilder builder;
     int port;
-    builder.AddListeningPort("[::]:0", grpc::InsecureServerCredentials(),
-                             &port);
+    builder.AddListeningPort("[::]:0", grpc::InsecureServerCredentials(), &port);
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
     if (server_ == nullptr || port == 0) {
@@ -86,8 +83,8 @@ static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
   grpc::testing::TestGrpcScope grpc_scope;
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
-      grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
-          server.address(), grpc::InsecureChannelCredentials()));
+      grpc::testing::EchoTestService::NewStub(
+          grpc::CreateChannel(server.address(), grpc::InsecureChannelCredentials()));
 
   grpc::testing::EchoResponse response;
   for (auto _ : state) {
@@ -108,8 +105,8 @@ static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
   grpc::testing::TestGrpcScope grpc_scope;
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
-      grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
-          server.address(), grpc::InsecureChannelCredentials()));
+      grpc::testing::EchoTestService::NewStub(
+          grpc::CreateChannel(server.address(), grpc::InsecureChannelCredentials()));
 
   grpc::testing::EchoResponse response;
   for (auto _ : state) {

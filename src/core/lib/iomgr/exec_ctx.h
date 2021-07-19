@@ -159,8 +159,7 @@ class ExecCtx {
 
   /** Checks if there is work to be done */
   bool HasWork() {
-    return combiner_data_.active_combiner != nullptr ||
-           !grpc_closure_list_empty(closure_list_);
+    return combiner_data_.active_combiner != nullptr || !grpc_closure_list_empty(closure_list_);
   }
 
   /** Flush any work that has been enqueued onto this grpc_exec_ctx.
@@ -219,16 +218,13 @@ class ExecCtx {
   static void GlobalShutdown(void) { gpr_tls_destroy(&exec_ctx_); }
 
   /** Gets pointer to current exec_ctx. */
-  static ExecCtx* Get() {
-    return reinterpret_cast<ExecCtx*>(gpr_tls_get(&exec_ctx_));
-  }
+  static ExecCtx* Get() { return reinterpret_cast<ExecCtx*>(gpr_tls_get(&exec_ctx_)); }
 
   static void Set(ExecCtx* exec_ctx) {
     gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
   }
 
-  static void Run(const DebugLocation& location, grpc_closure* closure,
-                  grpc_error_handle error);
+  static void Run(const DebugLocation& location, grpc_closure* closure, grpc_error_handle error);
 
   static void RunList(const DebugLocation& location, grpc_closure_list* list);
 
@@ -308,13 +304,10 @@ class ApplicationCallbackExecCtx {
   ApplicationCallbackExecCtx() { Set(this, flags_); }
 
   /** Parameterised Constructor */
-  explicit ApplicationCallbackExecCtx(uintptr_t fl) : flags_(fl) {
-    Set(this, flags_);
-  }
+  explicit ApplicationCallbackExecCtx(uintptr_t fl) : flags_(fl) { Set(this, flags_); }
 
   ~ApplicationCallbackExecCtx() {
-    if (reinterpret_cast<ApplicationCallbackExecCtx*>(
-            gpr_tls_get(&callback_exec_ctx_)) == this) {
+    if (reinterpret_cast<ApplicationCallbackExecCtx*>(gpr_tls_get(&callback_exec_ctx_)) == this) {
       while (head_ != nullptr) {
         auto* f = head_;
         head_ = f->internal_next;
@@ -336,8 +329,7 @@ class ApplicationCallbackExecCtx {
   uintptr_t Flags() { return flags_; }
 
   static ApplicationCallbackExecCtx* Get() {
-    return reinterpret_cast<ApplicationCallbackExecCtx*>(
-        gpr_tls_get(&callback_exec_ctx_));
+    return reinterpret_cast<ApplicationCallbackExecCtx*>(gpr_tls_get(&callback_exec_ctx_));
   }
 
   static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {

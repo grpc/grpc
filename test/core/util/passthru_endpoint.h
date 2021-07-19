@@ -31,8 +31,7 @@ typedef struct {
   gpr_atm num_writes;
 } grpc_passthru_endpoint_stats;
 
-void grpc_passthru_endpoint_create(grpc_endpoint** client,
-                                   grpc_endpoint** server,
+void grpc_passthru_endpoint_create(grpc_endpoint** client, grpc_endpoint** server,
                                    grpc_resource_quota* resource_quota,
                                    grpc_passthru_endpoint_stats* stats);
 

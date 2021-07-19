@@ -56,8 +56,7 @@ static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
 
 static void pollset_destroy(grpc_pollset* ps) { gpr_mu_destroy(&ps->mu); }
 
-static grpc_error_handle pollset_kick(grpc_pollset* /*p*/,
-                                      grpc_pollset_worker* /*worker*/) {
+static grpc_error_handle pollset_kick(grpc_pollset* /*p*/, grpc_pollset_worker* /*worker*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -68,8 +67,7 @@ static void cq_done_cb(void* /*done_arg*/, grpc_cq_completion* cq_completion) {
 
 /* Queues a completion tag if deadline is > 0.
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
-static grpc_error_handle pollset_work(grpc_pollset* ps,
-                                      grpc_pollset_worker** /*worker*/,
+static grpc_error_handle pollset_work(grpc_pollset* ps, grpc_pollset_worker** /*worker*/,
                                       grpc_millis deadline) {
   if (deadline == 0) {
     gpr_log(GPR_DEBUG, "no-op");
@@ -80,9 +78,8 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
 
   void* tag = reinterpret_cast<void*>(10);  // Some random number
   GPR_ASSERT(grpc_cq_begin_op(g_cq, tag));
-  grpc_cq_end_op(
-      g_cq, tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
-      static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
+  grpc_cq_end_op(g_cq, tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
+                 static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&ps->mu);
   return GRPC_ERROR_NONE;
@@ -99,9 +96,7 @@ static const grpc_event_engine_vtable* init_engine_vtable(bool) {
   g_vtable.pollset_kick = pollset_kick;
   g_vtable.is_any_background_poller_thread = [] { return false; };
   g_vtable.add_closure_to_background_poller = [](grpc_closure* /*closure*/,
-                                                 grpc_error_handle /*error*/) {
-    return false;
-  };
+                                                 grpc_error_handle /*error*/) { return false; };
   g_vtable.shutdown_background_closure = [] {};
   g_vtable.shutdown_engine = [] {};
 
@@ -113,13 +108,11 @@ static void setup() {
   // Override the polling engine for the non-polling engine
   // and add a custom polling engine
   grpc_register_event_engine_factory("none", init_engine_vtable, false);
-  grpc_register_event_engine_factory("bm_cq_multiple_threads",
-                                     init_engine_vtable, true);
+  grpc_register_event_engine_factory("bm_cq_multiple_threads", init_engine_vtable, true);
 
   grpc_init();
   GPR_ASSERT(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
-             strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") ==
-                 0);
+             strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") == 0);
 
   g_cq = grpc_completion_queue_create_for_next(nullptr);
 }
@@ -129,8 +122,7 @@ static void teardown() {
 
   /* Drain any events */
   gpr_timespec deadline = gpr_time_0(GPR_CLOCK_MONOTONIC);
-  while (grpc_completion_queue_next(g_cq, deadline, nullptr).type !=
-         GRPC_QUEUE_SHUTDOWN) {
+  while (grpc_completion_queue_next(g_cq, deadline, nullptr).type != GRPC_QUEUE_SHUTDOWN) {
     /* Do nothing */
   }
 
@@ -180,8 +172,7 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   TrackCounters track_counters;
 
   for (auto _ : state) {
-    GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
-               GRPC_OP_COMPLETE);
+    GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type == GRPC_OP_COMPLETE);
   }
 
   state.SetItemsProcessed(state.iterations());

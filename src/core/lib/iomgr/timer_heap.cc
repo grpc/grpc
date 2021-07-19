@@ -48,16 +48,15 @@ static void adjust_upwards(grpc_timer** first, uint32_t i, grpc_timer* t) {
 /* Adjusts a heap so as to move a hole at position i farther away from the root,
    until a suitable position is found for element t.  Then, copies t into that
    position. */
-static void adjust_downwards(grpc_timer** first, uint32_t i, uint32_t length,
-                             grpc_timer* t) {
+static void adjust_downwards(grpc_timer** first, uint32_t i, uint32_t length, grpc_timer* t) {
   for (;;) {
     uint32_t left_child = 1u + 2u * i;
     if (left_child >= length) break;
     uint32_t right_child = left_child + 1;
-    uint32_t next_i = right_child < length && first[left_child]->deadline >
-                                                  first[right_child]->deadline
-                          ? right_child
-                          : left_child;
+    uint32_t next_i =
+        right_child < length && first[left_child]->deadline > first[right_child]->deadline
+            ? right_child
+            : left_child;
     if (t->deadline <= first[next_i]->deadline) break;
     first[i] = first[next_i];
     first[i]->heap_index = i;
@@ -89,16 +88,13 @@ static void note_changed_priority(grpc_timer_heap* heap, grpc_timer* timer) {
   }
 }
 
-void grpc_timer_heap_init(grpc_timer_heap* heap) {
-  memset(heap, 0, sizeof(*heap));
-}
+void grpc_timer_heap_init(grpc_timer_heap* heap) { memset(heap, 0, sizeof(*heap)); }
 
 void grpc_timer_heap_destroy(grpc_timer_heap* heap) { gpr_free(heap->timers); }
 
 bool grpc_timer_heap_add(grpc_timer_heap* heap, grpc_timer* timer) {
   if (heap->timer_count == heap->timer_capacity) {
-    heap->timer_capacity =
-        GPR_MAX(heap->timer_capacity + 1, heap->timer_capacity * 3 / 2);
+    heap->timer_capacity = GPR_MAX(heap->timer_capacity + 1, heap->timer_capacity * 3 / 2);
     heap->timers = static_cast<grpc_timer**>(
         gpr_realloc(heap->timers, heap->timer_capacity * sizeof(grpc_timer*)));
   }
@@ -122,13 +118,9 @@ void grpc_timer_heap_remove(grpc_timer_heap* heap, grpc_timer* timer) {
   note_changed_priority(heap, heap->timers[i]);
 }
 
-bool grpc_timer_heap_is_empty(grpc_timer_heap* heap) {
-  return heap->timer_count == 0;
-}
+bool grpc_timer_heap_is_empty(grpc_timer_heap* heap) { return heap->timer_count == 0; }
 
-grpc_timer* grpc_timer_heap_top(grpc_timer_heap* heap) {
-  return heap->timers[0];
-}
+grpc_timer* grpc_timer_heap_top(grpc_timer_heap* heap) { return heap->timers[0]; }
 
 void grpc_timer_heap_pop(grpc_timer_heap* heap) {
   grpc_timer_heap_remove(heap, grpc_timer_heap_top(heap));

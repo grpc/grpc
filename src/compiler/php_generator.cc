@@ -39,8 +39,7 @@ std::string ConvertToPhpNamespace(const std::string& name) {
   std::vector<std::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   for (unsigned int i = 0; i < tokens.size(); i++) {
-    oss << (i == 0 ? "" : "\\")
-        << grpc_generator::CapitalizeFirstLetter(tokens[i]);
+    oss << (i == 0 ? "" : "\\") << grpc_generator::CapitalizeFirstLetter(tokens[i]);
   }
   return oss.str();
 }
@@ -53,8 +52,7 @@ std::string PackageName(const FileDescriptor* file) {
   }
 }
 
-std::string MessageIdentifierName(const std::string& name,
-                                  const FileDescriptor* file) {
+std::string MessageIdentifierName(const std::string& name, const FileDescriptor* file) {
   std::vector<std::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
   if (PackageName(file) != "") {
@@ -70,10 +68,9 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   map<std::string, std::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
-  vars["input_type_id"] =
-      MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
-  vars["output_type_id"] = MessageIdentifierName(
-      GeneratedClassName(output_type), output_type->file());
+  vars["input_type_id"] = MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
+  vars["output_type_id"] =
+      MessageIdentifierName(GeneratedClassName(output_type), output_type->file());
 
   out->Print("/**\n");
   out->Print(GetPHPComments(method, " *").c_str());
@@ -137,10 +134,9 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   const Descriptor* output_type = method->output_type();
   vars["service_name"] = method->service()->full_name();
   vars["method_name"] = method->name();
-  vars["input_type_id"] =
-      MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
-  vars["output_type_id"] = MessageIdentifierName(
-      GeneratedClassName(output_type), output_type->file());
+  vars["input_type_id"] = MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
+  vars["output_type_id"] =
+      MessageIdentifierName(GeneratedClassName(output_type), output_type->file());
 
   out->Print("/**\n");
   out->Print(GetPHPComments(method, " *").c_str());
@@ -216,8 +212,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   out->Print(vars, method_template);
 }
 
-void PrintServerMethodDescriptors(const ServiceDescriptor* service,
-                                  Printer* out) {
+void PrintServerMethodDescriptors(const ServiceDescriptor* service, Printer* out) {
   map<std::string, std::string> vars;
   vars["service_name"] = service->full_name();
 
@@ -237,8 +232,8 @@ void PrintServerMethodDescriptors(const ServiceDescriptor* service,
     auto method = service->method(i);
     auto input_type = method->input_type();
     vars["method_name"] = method->name();
-    vars["input_type_id"] = MessageIdentifierName(
-        GeneratedClassName(input_type), input_type->file());
+    vars["input_type_id"] =
+        MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
     if (method->client_streaming() && method->server_streaming()) {
       vars["call_type"] = "BIDI_STREAMING_CALL";
     } else if (method->client_streaming()) {
@@ -248,14 +243,13 @@ void PrintServerMethodDescriptors(const ServiceDescriptor* service,
     } else {
       vars["call_type"] = "UNARY_CALL";
     }
-    out->Print(
-        vars,
-        "'/$service_name$/$method_name$' => new \\Grpc\\MethodDescriptor(\n"
-        "    $$this,\n"
-        "    '$method_name$',\n"
-        "    '\\$input_type_id$',\n"
-        "    \\Grpc\\MethodDescriptor::$call_type$\n"
-        "),\n");
+    out->Print(vars,
+               "'/$service_name$/$method_name$' => new \\Grpc\\MethodDescriptor(\n"
+               "    $$this,\n"
+               "    '$method_name$',\n"
+               "    '\\$input_type_id$',\n"
+               "    \\Grpc\\MethodDescriptor::$call_type$\n"
+               "),\n");
   }
   out->Outdent();
   out->Outdent();
@@ -266,8 +260,7 @@ void PrintServerMethodDescriptors(const ServiceDescriptor* service,
 }
 
 // Prints out the service descriptor object
-void PrintService(const ServiceDescriptor* service,
-                  const std::string& class_suffix, bool is_server,
+void PrintService(const ServiceDescriptor* service, const std::string& class_suffix, bool is_server,
                   Printer* out) {
   map<std::string, std::string> vars;
   out->Print("/**\n");
@@ -309,8 +302,7 @@ void PrintService(const ServiceDescriptor* service,
 }
 }  // namespace
 
-std::string GenerateFile(const FileDescriptor* file,
-                         const ServiceDescriptor* service,
+std::string GenerateFile(const FileDescriptor* file, const ServiceDescriptor* service,
                          const std::string& class_suffix, bool is_server) {
   std::string output;
   {

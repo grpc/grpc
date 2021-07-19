@@ -72,10 +72,8 @@ constexpr char kViewEndCount[] = "grpc.io/lb_view/end_count";
 constexpr char kViewEndBytesSent[] = "grpc.io/lb_view/bytes_sent";
 constexpr char kViewEndBytesReceived[] = "grpc.io/lb_view/bytes_received";
 constexpr char kViewEndLatencyMs[] = "grpc.io/lb_view/latency_ms";
-constexpr char kViewOtherCallMetricCount[] =
-    "grpc.io/lb_view/other_call_metric_count";
-constexpr char kViewOtherCallMetricValue[] =
-    "grpc.io/lb_view/other_call_metric_value";
+constexpr char kViewOtherCallMetricCount[] = "grpc.io/lb_view/other_call_metric_count";
+constexpr char kViewOtherCallMetricValue[] = "grpc.io/lb_view/other_call_metric_value";
 
 }  // namespace load_reporter
 }  // namespace grpc

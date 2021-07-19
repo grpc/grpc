@@ -55,12 +55,11 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   return slice;
 }
 
-grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
-    grpc_chttp2_ping_parser* parser, uint32_t length, uint8_t flags) {
+grpc_error_handle grpc_chttp2_ping_parser_begin_frame(grpc_chttp2_ping_parser* parser,
+                                                      uint32_t length, uint8_t flags) {
   if (flags & 0xfe || length != 8) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("invalid ping: length=%d, flags=%02x", length, flags)
-            .c_str());
+        absl::StrFormat("invalid ping: length=%d, flags=%02x", length, flags).c_str());
   }
   parser->byte = 0;
   parser->is_ack = flags;
@@ -68,10 +67,8 @@ grpc_error_handle grpc_chttp2_ping_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
-                                                grpc_chttp2_transport* t,
-                                                grpc_chttp2_stream* /*s*/,
-                                                const grpc_slice& slice,
+grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser, grpc_chttp2_transport* t,
+                                                grpc_chttp2_stream* /*s*/, const grpc_slice& slice,
                                                 int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
@@ -91,17 +88,15 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
     } else {
       if (!t->is_client) {
         grpc_millis now = grpc_core::ExecCtx::Get()->Now();
-        grpc_millis next_allowed_ping =
-            t->ping_recv_state.last_ping_recv_time +
-            t->ping_policy.min_recv_ping_interval_without_data;
+        grpc_millis next_allowed_ping = t->ping_recv_state.last_ping_recv_time +
+                                        t->ping_policy.min_recv_ping_interval_without_data;
 
         if (t->keepalive_permit_without_calls == 0 &&
             grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
           /* According to RFC1122, the interval of TCP Keep-Alive is default to
              no less than two hours. When there is no outstanding streams, we
              restrict the number of PINGS equivalent to TCP Keep-Alive. */
-          next_allowed_ping =
-              t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
+          next_allowed_ping = t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
         }
 
         if (next_allowed_ping > now) {
@@ -113,8 +108,8 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);
-          t->ping_acks = static_cast<uint64_t*>(gpr_realloc(
-              t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
+          t->ping_acks = static_cast<uint64_t*>(
+              gpr_realloc(t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
         }
         t->num_pending_induced_frames++;
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
@@ -126,6 +121,4 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
   return GRPC_ERROR_NONE;
 }
 
-void grpc_set_disable_ping_ack(bool disable_ping_ack) {
-  g_disable_ping_ack = disable_ping_ack;
-}
+void grpc_set_disable_ping_ack(bool disable_ping_ack) { g_disable_ping_ack = disable_ping_ack; }

@@ -30,8 +30,7 @@
 namespace grpc {
 namespace testing {
 
-class BenchmarkCallbackServiceImpl final
-    : public BenchmarkService::CallbackService {
+class BenchmarkCallbackServiceImpl final : public BenchmarkService::CallbackService {
  public:
   ::grpc::ServerUnaryReactor* UnaryCall(::grpc::CallbackServerContext* context,
                                         const SimpleRequest* request,
@@ -41,12 +40,10 @@ class BenchmarkCallbackServiceImpl final
     return reactor;
   }
 
-  ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                            ::grpc::testing::SimpleResponse>*
+  ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest, ::grpc::testing::SimpleResponse>*
   StreamingCall(::grpc::CallbackServerContext*) override {
-    class Reactor
-        : public ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                                           ::grpc::testing::SimpleResponse> {
+    class Reactor : public ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
+                                                     ::grpc::testing::SimpleResponse> {
      public:
       Reactor() { StartRead(&request_); }
 
@@ -81,11 +78,9 @@ class BenchmarkCallbackServiceImpl final
   }
 
  private:
-  static Status SetResponse(const SimpleRequest* request,
-                            SimpleResponse* response) {
+  static Status SetResponse(const SimpleRequest* request, SimpleResponse* response) {
     if (request->response_size() > 0) {
-      if (!Server::SetPayload(request->response_type(),
-                              request->response_size(),
+      if (!Server::SetPayload(request->response_type(), request->response_size(),
                               response->mutable_payload())) {
         return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
       }
@@ -103,8 +98,7 @@ class CallbackServer final : public grpc::testing::Server {
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
       std::string server_address = grpc_core::JoinHostPort("::", port_num);
-      builder->AddListeningPort(server_address.c_str(),
-                                Server::CreateServerCredentials(config),
+      builder->AddListeningPort(server_address.c_str(), Server::CreateServerCredentials(config),
                                 &port_num);
     }
 
@@ -120,8 +114,7 @@ class CallbackServer final : public grpc::testing::Server {
     }
   }
 
-  std::shared_ptr<Channel> InProcessChannel(
-      const ChannelArguments& args) override {
+  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args) override {
     return impl_->InProcessChannel(args);
   }
 
@@ -130,8 +123,7 @@ class CallbackServer final : public grpc::testing::Server {
   std::unique_ptr<grpc::Server> impl_;
 };
 
-std::unique_ptr<grpc::testing::Server> CreateCallbackServer(
-    const ServerConfig& config) {
+std::unique_ptr<grpc::testing::Server> CreateCallbackServer(const ServerConfig& config) {
   return std::unique_ptr<Server>(new CallbackServer(config));
 }
 

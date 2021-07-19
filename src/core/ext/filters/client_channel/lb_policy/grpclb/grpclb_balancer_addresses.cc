@@ -54,21 +54,17 @@ int BalancerAddressesArgCmp(void* p, void* q) {
 }
 
 const grpc_arg_pointer_vtable kBalancerAddressesArgVtable = {
-    BalancerAddressesArgCopy, BalancerAddressesArgDestroy,
-    BalancerAddressesArgCmp};
+    BalancerAddressesArgCopy, BalancerAddressesArgDestroy, BalancerAddressesArgCmp};
 
 }  // namespace
 
-grpc_arg CreateGrpclbBalancerAddressesArg(
-    const ServerAddressList* address_list) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES),
-      const_cast<ServerAddressList*>(address_list),
-      &kBalancerAddressesArgVtable);
+grpc_arg CreateGrpclbBalancerAddressesArg(const ServerAddressList* address_list) {
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES),
+                                         const_cast<ServerAddressList*>(address_list),
+                                         &kBalancerAddressesArgVtable);
 }
 
-const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
-    const grpc_channel_args& args) {
+const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(const grpc_channel_args& args) {
   return grpc_channel_args_find_pointer<const ServerAddressList>(
       &args, const_cast<char*>(GRPC_ARG_GRPCLB_BALANCER_ADDRESSES));
 }

@@ -25,12 +25,9 @@ namespace grpc {
 AuthPropertyIterator::AuthPropertyIterator()
     : property_(nullptr), ctx_(nullptr), index_(0), name_(nullptr) {}
 
-AuthPropertyIterator::AuthPropertyIterator(
-    const grpc_auth_property* property, const grpc_auth_property_iterator* iter)
-    : property_(property),
-      ctx_(iter->ctx),
-      index_(iter->index),
-      name_(iter->name) {}
+AuthPropertyIterator::AuthPropertyIterator(const grpc_auth_property* property,
+                                           const grpc_auth_property_iterator* iter)
+    : property_(property), ctx_(iter->ctx), index_(iter->index), name_(iter->name) {}
 
 AuthPropertyIterator::~AuthPropertyIterator() {}
 
@@ -63,8 +60,7 @@ bool AuthPropertyIterator::operator!=(const AuthPropertyIterator& rhs) const {
 
 AuthProperty AuthPropertyIterator::operator*() {
   return std::pair<grpc::string_ref, grpc::string_ref>(
-      property_->name,
-      grpc::string_ref(property_->value, property_->value_length));
+      property_->name, grpc::string_ref(property_->value, property_->value_length));
 }
 
 }  // namespace grpc

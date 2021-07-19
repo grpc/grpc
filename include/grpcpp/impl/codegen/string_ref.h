@@ -49,8 +49,7 @@ class string_ref {
 
   /// construct/copy.
   string_ref() : data_(nullptr), length_(0) {}
-  string_ref(const string_ref& other)
-      : data_(other.data_), length_(other.length_) {}
+  string_ref(const string_ref& other) : data_(other.data_), length_(other.length_) {}
   // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   string_ref& operator=(const string_ref& rhs) {
     data_ = rhs.data_;
@@ -69,18 +68,10 @@ class string_ref {
   const_iterator end() const { return data_ + length_; }
   const_iterator cbegin() const { return data_; }
   const_iterator cend() const { return data_ + length_; }
-  const_reverse_iterator rbegin() const {
-    return const_reverse_iterator(end());
-  }
-  const_reverse_iterator rend() const {
-    return const_reverse_iterator(begin());
-  }
-  const_reverse_iterator crbegin() const {
-    return const_reverse_iterator(end());
-  }
-  const_reverse_iterator crend() const {
-    return const_reverse_iterator(begin());
-  }
+  const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+  const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+  const_reverse_iterator crbegin() const { return const_reverse_iterator(end()); }
+  const_reverse_iterator crend() const { return const_reverse_iterator(begin()); }
 
   /// capacity
   size_t size() const { return length_; }
@@ -107,8 +98,7 @@ class string_ref {
   }
 
   bool ends_with(string_ref x) const {
-    return length_ >= x.length_ &&
-           (memcmp(data_ + (length_ - x.length_), x.data_, x.length_) == 0);
+    return length_ >= x.length_ && (memcmp(data_ + (length_ - x.length_), x.data_, x.length_) == 0);
   }
 
   size_t find(string_ref s) const {

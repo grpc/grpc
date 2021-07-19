@@ -123,10 +123,9 @@ class ServerBuilder {
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound by BuildAndStart(), 0 otherwise. AddListeningPort
   /// does not modify this pointer.
-  ServerBuilder& AddListeningPort(
-      const std::string& addr_uri,
-      std::shared_ptr<grpc::ServerCredentials> creds,
-      int* selected_port = nullptr);
+  ServerBuilder& AddListeningPort(const std::string& addr_uri,
+                                  std::shared_ptr<grpc::ServerCredentials> creds,
+                                  int* selected_port = nullptr);
 
   /// Add a completion queue for handling asynchronous services.
   ///
@@ -158,8 +157,7 @@ class ServerBuilder {
   /// not polling the completion queue frequently) will have a significantly
   /// negative performance impact and hence should not be used in production
   /// use cases.
-  std::unique_ptr<grpc::ServerCompletionQueue> AddCompletionQueue(
-      bool is_frequently_polled = true);
+  std::unique_ptr<grpc::ServerCompletionQueue> AddCompletionQueue(bool is_frequently_polled = true);
 
   //////////////////////////////////////////////////////////////////////////////
   // Less commonly used RegisterService variants
@@ -168,15 +166,13 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance
   /// returned by \a BuildAndStart(). Only matches requests with :authority \a
   /// host
-  ServerBuilder& RegisterService(const std::string& host,
-                                 grpc::Service* service);
+  ServerBuilder& RegisterService(const std::string& host, grpc::Service* service);
 
   /// Register a generic service.
   /// Matches requests with any :authority
   /// This is mostly useful for writing generic gRPC Proxies where the exact
   /// serialization format is unknown
-  ServerBuilder& RegisterAsyncGenericService(
-      grpc::AsyncGenericService* service);
+  ServerBuilder& RegisterAsyncGenericService(grpc::AsyncGenericService* service);
 
   //////////////////////////////////////////////////////////////////////////////
   // Fine control knobs
@@ -205,8 +201,8 @@ class ServerBuilder {
   ///
   /// Incoming calls compressed with an unsupported algorithm will fail with
   /// \a GRPC_STATUS_UNIMPLEMENTED.
-  ServerBuilder& SetCompressionAlgorithmSupportStatus(
-      grpc_compression_algorithm algorithm, bool enabled);
+  ServerBuilder& SetCompressionAlgorithmSupportStatus(grpc_compression_algorithm algorithm,
+                                                      bool enabled);
 
   /// The default compression level to use for all channel calls in the
   /// absence of a call-specific level.
@@ -215,8 +211,7 @@ class ServerBuilder {
   /// The default compression algorithm to use for all channel calls in the
   /// absence of a call-specific level. Note that it overrides any compression
   /// level set by \a SetDefaultCompressionLevel.
-  ServerBuilder& SetDefaultCompressionAlgorithm(
-      grpc_compression_algorithm algorithm);
+  ServerBuilder& SetDefaultCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
   /// Set the attached buffer pool for this server
   ServerBuilder& SetResourceQuota(const grpc::ResourceQuota& resource_quota);
@@ -258,8 +253,7 @@ class ServerBuilder {
     explicit experimental_type(ServerBuilder* builder) : builder_(builder) {}
 
     void SetInterceptorCreators(
-        std::vector<std::unique_ptr<
-            grpc::experimental::ServerInterceptorFactoryInterface>>
+        std::vector<std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
             interceptor_creators) {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
@@ -272,15 +266,13 @@ class ServerBuilder {
     /// grpc server. The returned acceptor can be used to pass the connection
     /// to grpc server, where a channel will be created with the provided
     /// server credentials.
-    std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
-    AddExternalConnectionAcceptor(ExternalConnectionType type,
-                                  std::shared_ptr<ServerCredentials> creds);
+    std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor> AddExternalConnectionAcceptor(
+        ExternalConnectionType type, std::shared_ptr<ServerCredentials> creds);
 
     /// Sets server authorization policy provider in
     /// GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.
     void SetAuthorizationPolicyProvider(
-        std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
-            provider);
+        std::shared_ptr<experimental::AuthorizationPolicyProviderInterface> provider);
 
    private:
     ServerBuilder* builder_;
@@ -288,15 +280,13 @@ class ServerBuilder {
 
   /// Set the allocator for creating and releasing callback server context.
   /// Takes the owndership of the allocator.
-  ServerBuilder& SetContextAllocator(
-      std::unique_ptr<grpc::ContextAllocator> context_allocator);
+  ServerBuilder& SetContextAllocator(std::unique_ptr<grpc::ContextAllocator> context_allocator);
 
   /// Register a generic service that uses the callback API.
   /// Matches requests with any :authority
   /// This is mostly useful for writing generic gRPC Proxies where the exact
   /// serialization format is unknown
-  ServerBuilder& RegisterCallbackGenericService(
-      grpc::CallbackGenericService* service);
+  ServerBuilder& RegisterCallbackGenericService(grpc::CallbackGenericService* service);
 
   /// NOTE: The function experimental() is not stable public API. It is a view
   /// to the experimental components of this class. It may be changed or removed
@@ -315,8 +305,7 @@ class ServerBuilder {
   typedef std::unique_ptr<std::string> HostString;
   struct NamedService {
     explicit NamedService(grpc::Service* s) : service(s) {}
-    NamedService(const std::string& h, grpc::Service* s)
-        : host(new std::string(h)), service(s) {}
+    NamedService(const std::string& h, grpc::Service* s) : host(new std::string(h)), service(s) {}
     HostString host;
     grpc::Service* service;
   };
@@ -354,8 +343,7 @@ class ServerBuilder {
   friend class ::grpc::testing::ServerBuilderPluginTest;
 
   struct SyncServerSettings {
-    SyncServerSettings()
-        : num_cqs(1), min_pollers(1), max_pollers(2), cq_timeout_msec(10000) {}
+    SyncServerSettings() : num_cqs(1), min_pollers(1), max_pollers(2), cq_timeout_msec(10000) {}
 
     /// Number of server completion queues to create to listen to incoming RPCs.
     int num_cqs;
@@ -399,14 +387,11 @@ class ServerBuilder {
     grpc_compression_algorithm algorithm;
   } maybe_default_compression_algorithm_;
   uint32_t enabled_compression_algorithms_bitset_;
-  std::vector<
-      std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
+  std::vector<std::unique_ptr<grpc::experimental::ServerInterceptorFactoryInterface>>
       interceptor_creators_;
-  std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
-      acceptors_;
+  std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>> acceptors_;
   grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
-  std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
-      authorization_provider_;
+  std::shared_ptr<experimental::AuthorizationPolicyProviderInterface> authorization_provider_;
 };
 
 }  // namespace grpc

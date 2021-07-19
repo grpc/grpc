@@ -52,14 +52,12 @@ class RefCount {
   //
   // `trace` is a string to be logged with trace events; if null, no
   // trace logging will be done.  Tracing is a no-op in non-debug builds.
-  explicit RefCount(
-      Value init = 1,
-      const char*
+  explicit RefCount(Value init = 1, const char*
 #ifndef NDEBUG
-          // Leave unnamed if NDEBUG to avoid unused parameter warning
-          trace
+                                        // Leave unnamed if NDEBUG to avoid unused parameter warning
+                                        trace
 #endif
-      = nullptr)
+                                    = nullptr)
       :
 #ifndef NDEBUG
         trace_(trace),
@@ -72,8 +70,7 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this,
-              prior, prior + n);
+      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this, prior, prior + n);
     }
 #else
     value_.FetchAdd(n, MemoryOrder::RELAXED);
@@ -83,9 +80,8 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_, this, location.file(), location.line(), prior, prior + n,
-              reason);
+      gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s", trace_, this,
+              location.file(), location.line(), prior, prior + n, reason);
     }
 #else
     // Use conditionally-important parameters
@@ -100,8 +96,7 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this,
-              prior, prior + 1);
+      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this, prior, prior + 1);
     }
     assert(prior > 0);
 #else
@@ -112,9 +107,8 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_, this, location.file(), location.line(), prior, prior + 1,
-              reason);
+      gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s", trace_, this,
+              location.file(), location.line(), prior, prior + 1, reason);
     }
     assert(prior > 0);
 #else
@@ -129,8 +123,8 @@ class RefCount {
 #ifndef NDEBUG
     if (trace_ != nullptr) {
       const Value prior = get();
-      gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR,
-              trace_, this, prior, prior + 1);
+      gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR, trace_, this, prior,
+              prior + 1);
     }
 #endif
     return value_.IncrementIfNonzero();
@@ -139,10 +133,8 @@ class RefCount {
 #ifndef NDEBUG
     if (trace_ != nullptr) {
       const Value prior = get();
-      gpr_log(GPR_INFO,
-              "%s:%p %s:%d ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_, this, location.file(), location.line(), prior, prior + 1,
-              reason);
+      gpr_log(GPR_INFO, "%s:%p %s:%d ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR " %s", trace_, this,
+              location.file(), location.line(), prior, prior + 1, reason);
     }
 #endif
     // Avoid unused-parameter warnings for debug-only parameters
@@ -162,8 +154,7 @@ class RefCount {
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
     if (trace != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR, trace, this,
-              prior, prior - 1);
+      gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR, trace, this, prior, prior - 1);
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #endif
@@ -179,9 +170,8 @@ class RefCount {
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
     if (trace != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace, this, location.file(), location.line(), prior, prior - 1,
-              reason);
+      gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s", trace, this,
+              location.file(), location.line(), prior, prior - 1, reason);
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #else
@@ -289,8 +279,7 @@ class RefCounted : public Impl {
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
-  RefCountedPtr<Child> Ref(const DebugLocation& location,
-                           const char* reason) GRPC_MUST_USE_RESULT {
+  RefCountedPtr<Child> Ref(const DebugLocation& location, const char* reason) GRPC_MUST_USE_RESULT {
     IncrementRefCount(location, reason);
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
@@ -311,14 +300,12 @@ class RefCounted : public Impl {
   }
 
   RefCountedPtr<Child> RefIfNonZero() GRPC_MUST_USE_RESULT {
-    return RefCountedPtr<Child>(refs_.RefIfNonZero() ? static_cast<Child*>(this)
-                                                     : nullptr);
+    return RefCountedPtr<Child>(refs_.RefIfNonZero() ? static_cast<Child*>(this) : nullptr);
   }
   RefCountedPtr<Child> RefIfNonZero(const DebugLocation& location,
                                     const char* reason) GRPC_MUST_USE_RESULT {
-    return RefCountedPtr<Child>(refs_.RefIfNonZero(location, reason)
-                                    ? static_cast<Child*>(this)
-                                    : nullptr);
+    return RefCountedPtr<Child>(refs_.RefIfNonZero(location, reason) ? static_cast<Child*>(this)
+                                                                     : nullptr);
   }
 
   // Not copyable nor movable.
@@ -327,8 +314,7 @@ class RefCounted : public Impl {
 
  protected:
   // Note: Tracing is a no-op on non-debug builds.
-  explicit RefCounted(const char* trace = nullptr,
-                      intptr_t initial_refcount = 1)
+  explicit RefCounted(const char* trace = nullptr, intptr_t initial_refcount = 1)
       : refs_(initial_refcount, trace) {}
 
  private:

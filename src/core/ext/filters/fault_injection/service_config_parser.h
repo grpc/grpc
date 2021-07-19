@@ -26,8 +26,7 @@
 
 namespace grpc_core {
 
-class FaultInjectionMethodParsedConfig
-    : public ServiceConfigParser::ParsedConfig {
+class FaultInjectionMethodParsedConfig : public ServiceConfigParser::ParsedConfig {
  public:
   struct FaultInjectionPolicy {
     grpc_status_code abort_code = GRPC_STATUS_OK;
@@ -72,8 +71,7 @@ class FaultInjectionServiceConfigParser : public ServiceConfigParser::Parser {
  public:
   // Parses the per-method service config for fault injection filter.
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* args, const Json& json,
-      grpc_error_handle* error) override;
+      const grpc_channel_args* args, const Json& json, grpc_error_handle* error) override;
   // Returns the parser index for FaultInjectionServiceConfigParser.
   static size_t ParserIndex();
   // Registers FaultInjectionServiceConfigParser to ServiceConfigParser.

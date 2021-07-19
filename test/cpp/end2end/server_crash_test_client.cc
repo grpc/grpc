@@ -38,8 +38,8 @@ using grpc::testing::EchoResponse;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  auto stub = grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
-      absl::GetFlag(FLAGS_address), grpc::InsecureChannelCredentials()));
+  auto stub = grpc::testing::EchoTestService::NewStub(
+      grpc::CreateChannel(absl::GetFlag(FLAGS_address), grpc::InsecureChannelCredentials()));
 
   EchoRequest request;
   EchoResponse response;
@@ -64,8 +64,7 @@ int main(int argc, char** argv) {
       GPR_ASSERT(stream->Read(&response));
     }
   } else {
-    gpr_log(GPR_ERROR, "invalid test mode '%s'",
-            absl::GetFlag(FLAGS_mode).c_str());
+    gpr_log(GPR_ERROR, "invalid test mode '%s'", absl::GetFlag(FLAGS_mode).c_str());
     return 1;
   }
 

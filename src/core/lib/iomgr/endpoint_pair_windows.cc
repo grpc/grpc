@@ -40,25 +40,22 @@ static void create_sockets(SOCKET sv[2]) {
   SOCKADDR_IN addr;
   int addr_len = sizeof(addr);
 
-  lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                       grpc_get_default_wsa_socket_flags());
+  lst_sock =
+      WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, grpc_get_default_wsa_socket_flags());
   GPR_ASSERT(lst_sock != INVALID_SOCKET);
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_family = AF_INET;
-  GPR_ASSERT(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) !=
-             SOCKET_ERROR);
+  GPR_ASSERT(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
   GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  GPR_ASSERT(getsockname(lst_sock, (grpc_sockaddr*)&addr, &addr_len) !=
-             SOCKET_ERROR);
+  GPR_ASSERT(getsockname(lst_sock, (grpc_sockaddr*)&addr, &addr_len) != SOCKET_ERROR);
 
-  cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                       grpc_get_default_wsa_socket_flags());
+  cli_sock =
+      WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, grpc_get_default_wsa_socket_flags());
   GPR_ASSERT(cli_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL,
-                        NULL, NULL) == 0);
+  GPR_ASSERT(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL) == 0);
   svr_sock = accept(lst_sock, (grpc_sockaddr*)&addr, &addr_len);
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
@@ -70,16 +67,16 @@ static void create_sockets(SOCKET sv[2]) {
   sv[0] = svr_sock;
 }
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char* name, grpc_channel_args* channel_args) {
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
+                                                   grpc_channel_args* channel_args) {
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
-  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
-                             channel_args, "endpoint:server");
-  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
-                             channel_args, "endpoint:client");
+  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"), channel_args,
+                             "endpoint:server");
+  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"), channel_args,
+                             "endpoint:client");
 
   return p;
 }

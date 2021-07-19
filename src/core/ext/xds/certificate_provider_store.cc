@@ -30,8 +30,7 @@ namespace grpc_core {
 // in returning a ref to this created certificate provider. This entry is
 // deleted when the refcount to this provider reaches zero.
 RefCountedPtr<grpc_tls_certificate_provider>
-CertificateProviderStore::CreateOrGetCertificateProvider(
-    absl::string_view key) {
+CertificateProviderStore::CreateOrGetCertificateProvider(absl::string_view key) {
   RefCountedPtr<CertificateProviderWrapper> result;
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
@@ -51,8 +50,7 @@ CertificateProviderStore::CreateOrGetCertificateProvider(
 }
 
 RefCountedPtr<CertificateProviderStore::CertificateProviderWrapper>
-CertificateProviderStore::CreateCertificateProviderLocked(
-    absl::string_view key) {
+CertificateProviderStore::CreateCertificateProviderLocked(absl::string_view key) {
   auto plugin_config_it = plugin_config_map_.find(std::string(key));
   if (plugin_config_it == plugin_config_map_.end()) {
     return nullptr;
@@ -69,12 +67,12 @@ CertificateProviderStore::CreateCertificateProviderLocked(
     return nullptr;
   }
   return MakeRefCounted<CertificateProviderWrapper>(
-      factory->CreateCertificateProvider(plugin_config_it->second.config),
-      Ref(), plugin_config_it->first);
+      factory->CreateCertificateProvider(plugin_config_it->second.config), Ref(),
+      plugin_config_it->first);
 }
 
-void CertificateProviderStore::ReleaseCertificateProvider(
-    absl::string_view key, CertificateProviderWrapper* wrapper) {
+void CertificateProviderStore::ReleaseCertificateProvider(absl::string_view key,
+                                                          CertificateProviderWrapper* wrapper) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(key);
   if (it != certificate_providers_map_.end()) {

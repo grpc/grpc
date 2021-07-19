@@ -67,8 +67,7 @@ class ABSL_LOCKABLE WorkSerializer {
   //
   // TODO(yashkt): Replace grpc_core::DebugLocation with absl::SourceLocation
   // once we can start using it directly.
-  void Run(std::function<void()> callback,
-           const grpc_core::DebugLocation& location);
+  void Run(std::function<void()> callback, const grpc_core::DebugLocation& location);
 
  private:
   class WorkSerializerImpl;

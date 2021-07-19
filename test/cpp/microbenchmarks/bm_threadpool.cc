@@ -64,8 +64,7 @@ class BlockingCounter {
 // the end, therefore, no need for caller to do clean-ups.
 class AddAnotherFunctor : public grpc_completion_queue_functor {
  public:
-  AddAnotherFunctor(grpc_core::ThreadPool* pool, BlockingCounter* counter,
-                    int num_add)
+  AddAnotherFunctor(grpc_core::ThreadPool* pool, BlockingCounter* counter, int num_add)
       : pool_(pool), counter_(counter), num_add_(num_add) {
     functor_run = &AddAnotherFunctor::Run;
     inlineable = false;
@@ -77,8 +76,8 @@ class AddAnotherFunctor : public grpc_completion_queue_functor {
   static void Run(grpc_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<AddAnotherFunctor*>(cb);
     if (--callback->num_add_ > 0) {
-      callback->pool_->Add(new AddAnotherFunctor(
-          callback->pool_, callback->counter_, callback->num_add_));
+      callback->pool_->Add(
+          new AddAnotherFunctor(callback->pool_, callback->counter_, callback->num_add_));
     } else {
       callback->counter_->DecrementCount();
     }
@@ -114,18 +113,12 @@ static void ThreadPoolAddAnother(benchmark::State& state) {
 BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 1)->RangePair(524288, 524288, 1, 1024);
 BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 4)->RangePair(524288, 524288, 1, 1024);
 BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 8)->RangePair(524288, 524288, 1, 1024);
-BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 16)
-    ->RangePair(524288, 524288, 1, 1024);
-BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 32)
-    ->RangePair(524288, 524288, 1, 1024);
-BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 64)
-    ->RangePair(524288, 524288, 1, 1024);
-BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 128)
-    ->RangePair(524288, 524288, 1, 1024);
-BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 512)
-    ->RangePair(524288, 524288, 1, 1024);
-BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 2048)
-    ->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 16)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 32)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 64)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 128)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 512)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 2048)->RangePair(524288, 524288, 1, 1024);
 
 // A functor class that will delete self on end of running.
 class SuicideFunctorForAdd : public grpc_completion_queue_functor {
@@ -181,8 +174,7 @@ BENCHMARK(BM_ThreadPoolExternalAdd)
 // overhead would be low and can measure the time of add more accurately.
 class AddSelfFunctor : public grpc_completion_queue_functor {
  public:
-  AddSelfFunctor(grpc_core::ThreadPool* pool, BlockingCounter* counter,
-                 int num_add)
+  AddSelfFunctor(grpc_core::ThreadPool* pool, BlockingCounter* counter, int num_add)
       : pool_(pool), counter_(counter), num_add_(num_add) {
     functor_run = &AddSelfFunctor::Run;
     inlineable = false;

@@ -33,11 +33,9 @@ class grpc_alts_credentials final : public grpc_channel_credentials {
                         const char* handshaker_service_url);
   ~grpc_alts_credentials() override;
 
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(
-      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target_name, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
+      const grpc_channel_args* args, grpc_channel_args** new_args) override;
 
   const grpc_alts_credentials_options* options() const { return options_; }
   grpc_alts_credentials_options* mutable_options() { return options_; }
@@ -55,8 +53,8 @@ class grpc_alts_server_credentials final : public grpc_server_credentials {
                                const char* handshaker_service_url);
   ~grpc_alts_server_credentials() override;
 
-  grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* /* args */) override;
+  grpc_core::RefCountedPtr<grpc_server_security_connector> create_security_connector(
+      const grpc_channel_args* /* args */) override;
 
   const grpc_alts_credentials_options* options() const { return options_; }
   grpc_alts_credentials_options* mutable_options() { return options_; }
@@ -84,8 +82,8 @@ class grpc_alts_server_credentials final : public grpc_server_credentials {
  */
 
 grpc_channel_credentials* grpc_alts_credentials_create_customized(
-    const grpc_alts_credentials_options* options,
-    const char* handshaker_service_url, bool enable_untrusted_alts);
+    const grpc_alts_credentials_options* options, const char* handshaker_service_url,
+    bool enable_untrusted_alts);
 
 /**
  * This method creates an ALTS server credential object with customized
@@ -103,7 +101,7 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
  * Otherwise, it returns the created credential object.
  */
 grpc_server_credentials* grpc_alts_server_credentials_create_customized(
-    const grpc_alts_credentials_options* options,
-    const char* handshaker_service_url, bool enable_untrusted_alts);
+    const grpc_alts_credentials_options* options, const char* handshaker_service_url,
+    bool enable_untrusted_alts);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_ALTS_CREDENTIALS_H */

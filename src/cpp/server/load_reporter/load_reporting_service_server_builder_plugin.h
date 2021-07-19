@@ -53,8 +53,7 @@ class LoadReportingServiceServerBuilderPlugin : public ServerBuilderPlugin {
   std::shared_ptr<LoadReporterAsyncServiceImpl> service_;
 };
 
-std::unique_ptr<grpc::ServerBuilderPlugin>
-CreateLoadReportingServiceServerBuilderPlugin();
+std::unique_ptr<grpc::ServerBuilderPlugin> CreateLoadReportingServiceServerBuilderPlugin();
 
 }  // namespace load_reporter
 }  // namespace grpc

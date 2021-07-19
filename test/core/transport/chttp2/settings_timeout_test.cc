@@ -62,17 +62,14 @@ class ServerThread {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_start(server_);
-    thread_ =
-        absl::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
+    thread_ = absl::make_unique<std::thread>(std::bind(&ServerThread::Serve, this));
   }
 
   void Shutdown() {
-    grpc_completion_queue* shutdown_cq =
-        grpc_completion_queue_create_for_pluck(nullptr);
+    grpc_completion_queue* shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
     GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
-                                           grpc_timeout_seconds_to_deadline(1),
-                                           nullptr)
+                                           grpc_timeout_seconds_to_deadline(1), nullptr)
                    .type == GRPC_OP_COMPLETE);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
@@ -83,8 +80,7 @@ class ServerThread {
  private:
   void Serve() {
     // The completion queue should not return anything other than shutdown.
-    grpc_event ev = grpc_completion_queue_next(
-        cq_, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+    grpc_event ev = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
     ASSERT_EQ(GRPC_QUEUE_SHUTDOWN, ev.type);
   }
 
@@ -98,8 +94,7 @@ class ServerThread {
 // closes, and then terminates.
 class Client {
  public:
-  explicit Client(const char* server_address)
-      : server_address_(server_address) {}
+  explicit Client(const char* server_address) : server_address_(server_address) {}
 
   void Connect() {
     grpc_core::ExecCtx exec_ctx;
@@ -113,12 +108,10 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set,
-                            nullptr /* channel_args */, server_addresses->addrs,
-                            grpc_core::ExecCtx::Get()->Now() + 1000);
+    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, nullptr /* channel_args */,
+                            server_addresses->addrs, grpc_core::ExecCtx::Get()->Now() + 1000);
     ASSERT_TRUE(PollUntilDone(
-        &state,
-        grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+        &state, grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());
     grpc_pollset_set_destroy(pollset_set);
     grpc_endpoint_add_to_pollset(endpoint_, pollset_);
@@ -147,8 +140,7 @@ class Client {
       gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
       grpc_slice_buffer_reset_and_unref_internal(&read_buffer);
     }
-    grpc_endpoint_shutdown(endpoint_,
-                           GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown"));
+    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown"));
     grpc_slice_buffer_destroy_internal(&read_buffer);
     return retval;
   }
@@ -156,9 +148,8 @@ class Client {
   void Shutdown() {
     grpc_core::ExecCtx exec_ctx;
     grpc_endpoint_destroy(endpoint_);
-    grpc_pollset_shutdown(pollset_,
-                          GRPC_CLOSURE_CREATE(&Client::PollsetDestroy, pollset_,
-                                              grpc_schedule_on_exec_ctx));
+    grpc_pollset_shutdown(pollset_, GRPC_CLOSURE_CREATE(&Client::PollsetDestroy, pollset_,
+                                                        grpc_schedule_on_exec_ctx));
   }
 
  private:
@@ -166,8 +157,7 @@ class Client {
   class EventState {
    public:
     EventState() {
-      GRPC_CLOSURE_INIT(&closure_, &EventState::OnEventDone, this,
-                        grpc_schedule_on_exec_ctx);
+      GRPC_CLOSURE_INIT(&closure_, &EventState::OnEventDone, this, grpc_schedule_on_exec_ctx);
     }
 
     ~EventState() { GRPC_ERROR_UNREF(error_); }
@@ -181,8 +171,7 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s",
-              grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "OnEventDone(): %s", grpc_error_std_string(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = GRPC_ERROR_REF(error);
       gpr_atm_rel_store(&state->done_atm_, 1);
@@ -200,8 +189,7 @@ class Client {
       gpr_mu_lock(mu_);
       GRPC_LOG_IF_ERROR(
           "grpc_pollset_work",
-          grpc_pollset_work(pollset_, &worker,
-                            grpc_core::ExecCtx::Get()->Now() + 100));
+          grpc_pollset_work(pollset_, &worker, grpc_core::ExecCtx::Get()->Now() + 100));
       // Flushes any work scheduled before or during polling.
       grpc_core::ExecCtx::Get()->Flush();
       gpr_mu_unlock(mu_);

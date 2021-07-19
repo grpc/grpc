@@ -38,8 +38,7 @@ bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
 // Returns value for the specified property_name from auth context. Here the
 // property is expected to have a single value. Returns empty if multiple values
 // are found.
-absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
-                                       const char* property_name);
+absl::string_view GetAuthPropertyValue(grpc_auth_context* context, const char* property_name);
 
 // Returns values for the specified property_name from auth context. Here the
 // property can have any number of values.

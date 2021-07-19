@@ -24,23 +24,18 @@
 #include "src/core/lib/compression/stream_compression_gzip.h"
 #include "src/core/lib/slice/slice_utils.h"
 
-extern const grpc_stream_compression_vtable
-    grpc_stream_compression_identity_vtable;
+extern const grpc_stream_compression_vtable grpc_stream_compression_identity_vtable;
 
-bool grpc_stream_compress(grpc_stream_compression_context* ctx,
-                          grpc_slice_buffer* in, grpc_slice_buffer* out,
-                          size_t* output_size, size_t max_output_size,
+bool grpc_stream_compress(grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
+                          grpc_slice_buffer* out, size_t* output_size, size_t max_output_size,
                           grpc_stream_compression_flush flush) {
-  return ctx->vtable->compress(ctx, in, out, output_size, max_output_size,
-                               flush);
+  return ctx->vtable->compress(ctx, in, out, output_size, max_output_size, flush);
 }
 
-bool grpc_stream_decompress(grpc_stream_compression_context* ctx,
-                            grpc_slice_buffer* in, grpc_slice_buffer* out,
-                            size_t* output_size, size_t max_output_size,
+bool grpc_stream_decompress(grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
+                            grpc_slice_buffer* out, size_t* output_size, size_t max_output_size,
                             bool* end_of_context) {
-  return ctx->vtable->decompress(ctx, in, out, output_size, max_output_size,
-                                 end_of_context);
+  return ctx->vtable->decompress(ctx, in, out, output_size, max_output_size, end_of_context);
 }
 
 grpc_stream_compression_context* grpc_stream_compression_context_create(
@@ -58,14 +53,12 @@ grpc_stream_compression_context* grpc_stream_compression_context_create(
   }
 }
 
-void grpc_stream_compression_context_destroy(
-    grpc_stream_compression_context* ctx) {
+void grpc_stream_compression_context_destroy(grpc_stream_compression_context* ctx) {
   ctx->vtable->context_destroy(ctx);
 }
 
-int grpc_stream_compression_method_parse(
-    grpc_slice value, bool is_compress,
-    grpc_stream_compression_method* method) {
+int grpc_stream_compression_method_parse(grpc_slice value, bool is_compress,
+                                         grpc_stream_compression_method* method) {
   if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
     *method = is_compress ? GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
                           : GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;

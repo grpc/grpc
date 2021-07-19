@@ -34,11 +34,7 @@ typedef struct grpc_http_header {
   char* value;
 } grpc_http_header;
 
-typedef enum {
-  GRPC_HTTP_FIRST_LINE,
-  GRPC_HTTP_HEADERS,
-  GRPC_HTTP_BODY
-} grpc_http_parser_state;
+typedef enum { GRPC_HTTP_FIRST_LINE, GRPC_HTTP_HEADERS, GRPC_HTTP_BODY } grpc_http_parser_state;
 
 typedef enum {
   GRPC_HTTP_HTTP10,
@@ -100,8 +96,7 @@ void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
 void grpc_http_parser_destroy(grpc_http_parser* parser);
 
 /* Sets \a start_of_body to the offset in \a slice of the start of the body. */
-grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
-                                         const grpc_slice& slice,
+grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser, const grpc_slice& slice,
                                          size_t* start_of_body);
 grpc_error_handle grpc_http_parser_eof(grpc_http_parser* parser);
 

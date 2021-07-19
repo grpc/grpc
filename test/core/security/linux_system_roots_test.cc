@@ -66,12 +66,10 @@ TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   // Test that CreateRootCertsBundle returns a correct slice.
   grpc_slice roots_bundle = grpc_empty_slice();
-  GRPC_LOG_IF_ERROR(
-      "load_file",
-      grpc_load_file("test/core/security/etc/bundle.pem", 1, &roots_bundle));
+  GRPC_LOG_IF_ERROR("load_file",
+                    grpc_load_file("test/core/security/etc/bundle.pem", 1, &roots_bundle));
   // result_slice should have the same content as roots_bundle.
-  grpc_slice result_slice =
-      grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
+  grpc_slice result_slice = grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
   char* result_str = grpc_slice_to_c_string(result_slice);
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);
   EXPECT_STREQ(result_str, bundle_str);

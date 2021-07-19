@@ -134,16 +134,14 @@ struct grpc_slice_refcount {
   //  5. grpc_slice_refcount* sub
   //  Argument used for interned slices.
   grpc_slice_refcount(grpc_slice_refcount::Type type, grpc_core::RefCount* ref,
-                      DestroyerFn destroyer_fn, void* destroyer_arg,
-                      grpc_slice_refcount* sub)
+                      DestroyerFn destroyer_fn, void* destroyer_arg, grpc_slice_refcount* sub)
       : ref_(ref),
         ref_type_(type),
         sub_refcount_(sub),
         dest_fn_(destroyer_fn),
         destroy_fn_arg_(destroyer_arg) {}
   // Initializer for static refcounts.
-  grpc_slice_refcount(grpc_slice_refcount* sub, Type type)
-      : ref_type_(type), sub_refcount_(sub) {}
+  grpc_slice_refcount(grpc_slice_refcount* sub, Type type) : ref_type_(type), sub_refcount_(sub) {}
 
   Type GetType() const { return ref_type_; }
 
@@ -177,8 +175,7 @@ struct StaticSliceRefcount {
   static grpc_slice_refcount kStaticSubRefcount;
 
   explicit StaticSliceRefcount(uint32_t index)
-      : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC),
-        index(index) {}
+      : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC), index(index) {}
 
   grpc_slice_refcount base;
   const uint32_t index;
@@ -193,8 +190,7 @@ struct InternedSliceRefcount {
     gpr_free(rc);
   }
 
-  InternedSliceRefcount(size_t length, uint32_t hash,
-                        InternedSliceRefcount* bucket_next)
+  InternedSliceRefcount(size_t length, uint32_t hash, InternedSliceRefcount* bucket_next)
       : base(grpc_slice_refcount::Type::INTERNED, &refcnt, Destroy, this, &sub),
         sub(grpc_slice_refcount::Type::REGULAR, &refcnt, Destroy, this, &sub),
         length(length),
@@ -228,9 +224,8 @@ inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
   GPR_DEBUG_ASSERT(a.refcount == this);
   switch (ref_type_) {
     case Type::STATIC:
-      GPR_DEBUG_ASSERT(
-          (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b)) ==
-          (a.refcount == b.refcount));
+      GPR_DEBUG_ASSERT((GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b)) ==
+                       (a.refcount == b.refcount));
     case Type::INTERNED:
       return a.refcount == b.refcount;
     case Type::NOP:
@@ -248,17 +243,14 @@ inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
   GPR_DEBUG_ASSERT(slice.refcount == this);
   switch (ref_type_) {
     case Type::STATIC:
-      return ::grpc_static_metadata_hash_values[GRPC_STATIC_METADATA_INDEX(
-          slice)];
+      return ::grpc_static_metadata_hash_values[GRPC_STATIC_METADATA_INDEX(slice)];
     case Type::INTERNED:
-      return reinterpret_cast<grpc_core::InternedSliceRefcount*>(slice.refcount)
-          ->hash;
+      return reinterpret_cast<grpc_core::InternedSliceRefcount*>(slice.refcount)->hash;
     case Type::NOP:
     case Type::REGULAR:
       break;
   }
-  return gpr_murmur_hash3(grpc_refcounted_slice_data(slice),
-                          grpc_refcounted_slice_length(slice),
+  return gpr_murmur_hash3(grpc_refcounted_slice_data(slice), grpc_refcounted_slice_length(slice),
                           grpc_core::g_hash_seed);
 }
 
@@ -276,8 +268,7 @@ inline void grpc_slice_unref_internal(const grpc_slice& slice) {
 }
 
 void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
-void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
-                                              size_t idx);
+void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb, size_t idx);
 void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
 
 // Returns a pointer to the first slice in the slice buffer without giving
@@ -291,19 +282,16 @@ inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
 void grpc_slice_buffer_remove_first(grpc_slice_buffer* sb);
 
 // Calls grpc_slice_sub with the given parameters on the first slice.
-void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
-                                 size_t end);
+void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin, size_t end);
 
 /* Check if a slice is interned */
 bool grpc_slice_is_interned(const grpc_slice& slice);
 inline bool grpc_slice_is_interned(const grpc_slice& slice) {
-  return (slice.refcount &&
-          (slice.refcount->GetType() == grpc_slice_refcount::Type::INTERNED ||
-           slice.refcount->GetType() == grpc_slice_refcount::Type::STATIC));
+  return (slice.refcount && (slice.refcount->GetType() == grpc_slice_refcount::Type::INTERNED ||
+                             slice.refcount->GetType() == grpc_slice_refcount::Type::STATIC));
 }
 
-inline bool grpc_slice_static_interned_equal(const grpc_slice& a,
-                                             const grpc_slice& b) {
+inline bool grpc_slice_static_interned_equal(const grpc_slice& a, const grpc_slice& b) {
   GPR_DEBUG_ASSERT(grpc_slice_is_interned(a) && grpc_slice_is_interned(b));
   return a.refcount == b.refcount;
 }
@@ -315,8 +303,7 @@ void grpc_test_only_set_slice_hash_seed(uint32_t seed);
 // otherwise returns the passed in slice (without reffing it)
 // used for surface boundaries where we might receive an un-interned static
 // string
-grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
-                                          bool* returned_slice_is_different);
+grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice, bool* returned_slice_is_different);
 uint32_t grpc_static_slice_hash(grpc_slice s);
 int grpc_static_slice_eq(grpc_slice a, grpc_slice b);
 
@@ -326,8 +313,7 @@ inline uint32_t grpc_slice_hash_refcounted(const grpc_slice& s) {
 }
 
 inline uint32_t grpc_slice_default_hash_internal(const grpc_slice& s) {
-  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
-                          grpc_core::g_hash_seed);
+  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s), grpc_core::g_hash_seed);
 }
 
 inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
@@ -335,8 +321,7 @@ inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
                                : grpc_slice_hash_refcounted(s);
 }
 
-grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
-                                        size_t len);
+grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p, size_t len);
 grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
 grpc_slice grpc_slice_from_cpp_string(std::string str);
 
@@ -345,21 +330,17 @@ grpc_slice grpc_slice_from_cpp_string(std::string str);
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
 
-grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
-    const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end);
+grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(const grpc_core::UnmanagedMemorySlice& source,
+                                                      size_t begin, size_t end);
 
 namespace grpc_core {
 
 struct SliceHash {
-  std::size_t operator()(const grpc_slice& slice) const {
-    return grpc_slice_hash_internal(slice);
-  }
+  std::size_t operator()(const grpc_slice& slice) const { return grpc_slice_hash_internal(slice); }
 };
 
 }  // namespace grpc_core
 
-inline bool operator==(const grpc_slice& s1, const grpc_slice& s2) {
-  return grpc_slice_eq(s1, s2);
-}
+inline bool operator==(const grpc_slice& s1, const grpc_slice& s2) { return grpc_slice_eq(s1, s2); }
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

@@ -53,8 +53,7 @@ void CheckServerAuthContext(const ServerContextBase* context,
                             const std::string& expected_transport_security_type,
                             const std::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
-  std::vector<grpc::string_ref> tst =
-      auth_ctx->FindPropertyValues("transport_security_type");
+  std::vector<grpc::string_ref> tst = auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, tst.size());
   EXPECT_EQ(expected_transport_security_type, ToString(tst[0]));
   if (expected_client_identity.empty()) {
@@ -71,23 +70,20 @@ void CheckServerAuthContext(const ServerContextBase* context,
 
 // Returns the number of pairs in metadata that exactly match the given
 // key-value pair. Returns -1 if the pair wasn't found.
-int MetadataMatchCount(
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const std::string& key, const std::string& value) {
+int MetadataMatchCount(const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+                       const std::string& key, const std::string& value) {
   int count = 0;
   for (const auto& metadatum : metadata) {
-    if (ToString(metadatum.first) == key &&
-        ToString(metadatum.second) == value) {
+    if (ToString(metadatum.first) == key && ToString(metadatum.second) == value) {
       count++;
     }
   }
   return count;
 }
 
-int GetIntValueFromMetadataHelper(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    int default_value) {
+int GetIntValueFromMetadataHelper(const char* key,
+                                  const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+                                  int default_value) {
   if (metadata.find(key) != metadata.end()) {
     std::istringstream iss(ToString(metadata.find(key)->second));
     iss >> default_value;
@@ -97,10 +93,9 @@ int GetIntValueFromMetadataHelper(
   return default_value;
 }
 
-int GetIntValueFromMetadata(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    int default_value) {
+int GetIntValueFromMetadata(const char* key,
+                            const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+                            int default_value) {
   return GetIntValueFromMetadataHelper(key, metadata, default_value);
 }
 
@@ -110,23 +105,22 @@ void ServerTryCancel(ServerContext* context) {
   gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
   // Now wait until it's really canceled
   while (!context->IsCancelled()) {
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_micros(1000, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000, GPR_TIMESPAN)));
   }
 }
 
 void ServerTryCancelNonblocking(CallbackServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
-  gpr_log(GPR_INFO,
-          "Server called TryCancelNonblocking() to cancel the request");
+  gpr_log(GPR_INFO, "Server called TryCancelNonblocking() to cancel the request");
 }
 
 }  // namespace internal
 
-ServerUnaryReactor* CallbackTestServiceImpl::Echo(
-    CallbackServerContext* context, const EchoRequest* request,
-    EchoResponse* response) {
+ServerUnaryReactor* CallbackTestServiceImpl::Echo(CallbackServerContext* context,
+                                                  const EchoRequest* request,
+                                                  EchoResponse* response) {
   class Reactor : public ::grpc::ServerUnaryReactor {
    public:
     Reactor(CallbackTestServiceImpl* service, CallbackServerContext* ctx,
@@ -140,8 +134,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
 
       started_ = true;
 
-      if (request->has_param() &&
-          request->param().server_notify_client_when_started()) {
+      if (request->has_param() && request->param().server_notify_client_when_started()) {
         service->signaller_.SignalClientThatRpcStarted();
         // Block on the "wait to continue" decision in a different thread since
         // we can't tie up an EM thread with blocking events. We can join it in
@@ -160,8 +153,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         // Set an alarm for that much time
         alarm_.Set(
             gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_micros(req_->param().server_sleep_us(),
-                                              GPR_TIMESPAN)),
+                         gpr_time_from_micros(req_->param().server_sleep_us(), GPR_TIMESPAN)),
             [this](bool ok) { NonDelayed(ok); });
         return;
       }
@@ -210,8 +202,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().has_expected_error()) {
         const auto& error = req_->param().expected_error();
-        Finish(Status(static_cast<StatusCode>(error.code()),
-                      error.error_message(), error.binary_error_details()));
+        Finish(Status(static_cast<StatusCode>(error.code()), error.error_message(),
+                      error.binary_error_details()));
         return;
       }
       int server_try_cancel = internal::GetIntValueFromMetadata(
@@ -240,10 +232,9 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         FinishWhenCancelledAsync();
         return;
       } else if (req_->has_param() && req_->param().server_cancel_after_us()) {
-        alarm_.Set(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                gpr_time_from_micros(
-                                    req_->param().server_cancel_after_us(),
-                                    GPR_TIMESPAN)),
+        alarm_.Set(gpr_time_add(
+                       gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_micros(req_->param().server_cancel_after_us(), GPR_TIMESPAN)),
                    [this](bool) { Finish(Status::CANCELLED); });
         return;
       } else if (!req_->has_param() || !req_->param().skip_cancelled_check()) {
@@ -251,43 +242,36 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
 
       if (req_->has_param() && req_->param().echo_metadata_initially()) {
-        const std::multimap<grpc::string_ref, grpc::string_ref>&
-            client_metadata = ctx_->client_metadata();
+        const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
+            ctx_->client_metadata();
         for (const auto& metadatum : client_metadata) {
-          ctx_->AddInitialMetadata(ToString(metadatum.first),
-                                   ToString(metadatum.second));
+          ctx_->AddInitialMetadata(ToString(metadatum.first), ToString(metadatum.second));
         }
         StartSendInitialMetadata();
       }
 
       if (req_->has_param() && req_->param().echo_metadata()) {
-        const std::multimap<grpc::string_ref, grpc::string_ref>&
-            client_metadata = ctx_->client_metadata();
+        const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
+            ctx_->client_metadata();
         for (const auto& metadatum : client_metadata) {
-          ctx_->AddTrailingMetadata(ToString(metadatum.first),
-                                    ToString(metadatum.second));
+          ctx_->AddTrailingMetadata(ToString(metadatum.first), ToString(metadatum.second));
         }
         // Terminate rpc with error and debug info in trailer.
         if (req_->param().debug_info().stack_entries_size() ||
             !req_->param().debug_info().detail().empty()) {
-          std::string serialized_debug_info =
-              req_->param().debug_info().SerializeAsString();
-          ctx_->AddTrailingMetadata(kDebugInfoTrailerKey,
-                                    serialized_debug_info);
+          std::string serialized_debug_info = req_->param().debug_info().SerializeAsString();
+          ctx_->AddTrailingMetadata(kDebugInfoTrailerKey, serialized_debug_info);
           Finish(Status::CANCELLED);
           return;
         }
       }
-      if (req_->has_param() &&
-          (req_->param().expected_client_identity().length() > 0 ||
-           req_->param().check_auth_context())) {
-        internal::CheckServerAuthContext(
-            ctx_, req_->param().expected_transport_security_type(),
-            req_->param().expected_client_identity());
+      if (req_->has_param() && (req_->param().expected_client_identity().length() > 0 ||
+                                req_->param().check_auth_context())) {
+        internal::CheckServerAuthContext(ctx_, req_->param().expected_transport_security_type(),
+                                         req_->param().expected_client_identity());
       }
       if (req_->has_param() && req_->param().response_message_length() > 0) {
-        resp_->set_message(
-            std::string(req_->param().response_message_length(), '\0'));
+        resp_->set_message(std::string(req_->param().response_message_length(), '\0'));
       }
       if (req_->has_param() && req_->param().echo_peer()) {
         resp_->mutable_param()->set_peer(ctx_->peer());
@@ -325,12 +309,10 @@ ServerUnaryReactor* CallbackTestServiceImpl::CheckClientInitialMetadata(
   class Reactor : public ::grpc::ServerUnaryReactor {
    public:
     explicit Reactor(CallbackServerContext* ctx) {
-      EXPECT_EQ(internal::MetadataMatchCount(ctx->client_metadata(),
-                                             kCheckClientInitialMetadataKey,
+      EXPECT_EQ(internal::MetadataMatchCount(ctx->client_metadata(), kCheckClientInitialMetadataKey,
                                              kCheckClientInitialMetadataVal),
                 1);
-      EXPECT_EQ(ctx->client_metadata().count(kCheckClientInitialMetadataKey),
-                1u);
+      EXPECT_EQ(ctx->client_metadata().count(kCheckClientInitialMetadataKey), 1u);
       Finish(Status::OK);
     }
     void OnDone() override { delete this; }
@@ -359,11 +341,8 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
 
   class Reactor : public ::grpc::ServerReadReactor<EchoRequest> {
    public:
-    Reactor(CallbackServerContext* ctx, EchoResponse* response,
-            int server_try_cancel)
-        : ctx_(ctx),
-          response_(response),
-          server_try_cancel_(server_try_cancel) {
+    Reactor(CallbackServerContext* ctx, EchoResponse* response, int server_try_cancel)
+        : ctx_(ctx), response_(response), server_try_cancel_(server_try_cancel) {
       EXPECT_NE(server_try_cancel, CANCEL_BEFORE_PROCESSING);
       response->set_message("");
 
@@ -442,14 +421,13 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
 
   class Reactor : public ::grpc::ServerWriteReactor<EchoResponse> {
    public:
-    Reactor(CallbackServerContext* ctx, const EchoRequest* request,
-            int server_try_cancel)
+    Reactor(CallbackServerContext* ctx, const EchoRequest* request, int server_try_cancel)
         : ctx_(ctx), request_(request), server_try_cancel_(server_try_cancel) {
-      server_coalescing_api_ = internal::GetIntValueFromMetadata(
-          kServerUseCoalescingApi, ctx->client_metadata(), 0);
-      server_responses_to_send_ = internal::GetIntValueFromMetadata(
-          kServerResponseStreamsToSend, ctx->client_metadata(),
-          kServerDefaultResponseStreamsToSend);
+      server_coalescing_api_ =
+          internal::GetIntValueFromMetadata(kServerUseCoalescingApi, ctx->client_metadata(), 0);
+      server_responses_to_send_ =
+          internal::GetIntValueFromMetadata(kServerResponseStreamsToSend, ctx->client_metadata(),
+                                            kServerDefaultResponseStreamsToSend);
       if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
         ctx->TryCancel();
       }
@@ -490,10 +468,8 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
     }
 
     void NextWrite() {
-      response_.set_message(request_->message() +
-                            std::to_string(num_msgs_sent_));
-      if (num_msgs_sent_ == server_responses_to_send_ - 1 &&
-          server_coalescing_api_ != 0) {
+      response_.set_message(request_->message() + std::to_string(num_msgs_sent_));
+      if (num_msgs_sent_ == server_responses_to_send_ - 1 && server_coalescing_api_ != 0) {
         {
           std::lock_guard<std::mutex> l(finish_mu_);
           if (!finished_) {
@@ -525,8 +501,8 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
   return new Reactor(context, request, server_try_cancel);
 }
 
-ServerBidiReactor<EchoRequest, EchoResponse>*
-CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
+ServerBidiReactor<EchoRequest, EchoResponse>* CallbackTestServiceImpl::BidiStream(
+    CallbackServerContext* context) {
   class Reactor : public ::grpc::ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
     explicit Reactor(CallbackServerContext* ctx) : ctx_(ctx) {
@@ -538,12 +514,12 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
       //   is cancelled while the server is reading messages from the client
       //   CANCEL_AFTER_PROCESSING: The RPC is cancelled after the server reads
       //   all the messages from the client
-      server_try_cancel_ = internal::GetIntValueFromMetadata(
-          kServerTryCancelRequest, ctx->client_metadata(), DO_NOT_CANCEL);
-      server_write_last_ = internal::GetIntValueFromMetadata(
-          kServerFinishAfterNReads, ctx->client_metadata(), 0);
-      client_try_cancel_ = static_cast<bool>(internal::GetIntValueFromMetadata(
-          kClientTryCancelRequest, ctx->client_metadata(), 0));
+      server_try_cancel_ = internal::GetIntValueFromMetadata(kServerTryCancelRequest,
+                                                             ctx->client_metadata(), DO_NOT_CANCEL);
+      server_write_last_ =
+          internal::GetIntValueFromMetadata(kServerFinishAfterNReads, ctx->client_metadata(), 0);
+      client_try_cancel_ = static_cast<bool>(
+          internal::GetIntValueFromMetadata(kClientTryCancelRequest, ctx->client_metadata(), 0));
       if (server_try_cancel_ == CANCEL_BEFORE_PROCESSING) {
         internal::ServerTryCancelNonblocking(ctx);
       } else {

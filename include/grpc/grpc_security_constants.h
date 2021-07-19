@@ -52,8 +52,7 @@ extern "C" {
 /** Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
    downloaded from https://pki.google.com/roots.pem.  */
-#define GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR \
-  "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"
+#define GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"
 
 /** Environment variable that points to the google default application
    credentials json key or refresh token. Used in the

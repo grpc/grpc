@@ -58,9 +58,8 @@ class FakeHandshakerService : public HandshakerService::Service {
   explicit FakeHandshakerService(int expected_max_concurrent_rpcs)
       : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
 
-  Status DoHandshake(
-      ServerContext* /*server_context*/,
-      ServerReaderWriter<HandshakerResp, HandshakerReq>* stream) override {
+  Status DoHandshake(ServerContext* /*server_context*/,
+                     ServerReaderWriter<HandshakerResp, HandshakerReq>* stream) override {
     ConcurrentRpcsCheck concurrent_rpcs_check(this);
     Status status;
     HandshakerContext context;
@@ -91,8 +90,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     HandshakeState state = INITIAL;
   };
 
-  Status ProcessRequest(HandshakerContext* context,
-                        const HandshakerReq& request,
+  Status ProcessRequest(HandshakerContext* context, const HandshakerReq& request,
                         HandshakerResp* response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
     response->Clear();
@@ -109,8 +107,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     return Status(StatusCode::INVALID_ARGUMENT, "Request is empty.");
   }
 
-  Status ProcessClientStart(HandshakerContext* context,
-                            const StartClientHandshakeReq& request,
+  Status ProcessClientStart(HandshakerContext* context, const StartClientHandshakeReq& request,
                             HandshakerResp* response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
     // Checks request.
@@ -118,12 +115,10 @@ class FakeHandshakerService : public HandshakerService::Service {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
     }
     if (request.application_protocols_size() == 0) {
-      return Status(StatusCode::INVALID_ARGUMENT,
-                    "At least one application protocol needed.");
+      return Status(StatusCode::INVALID_ARGUMENT, "At least one application protocol needed.");
     }
     if (request.record_protocols_size() == 0) {
-      return Status(StatusCode::INVALID_ARGUMENT,
-                    "At least one record protocol needed.");
+      return Status(StatusCode::INVALID_ARGUMENT, "At least one record protocol needed.");
     }
     // Sets response.
     response->set_out_frames(kClientInitFrame);
@@ -135,8 +130,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     return Status::OK;
   }
 
-  Status ProcessServerStart(HandshakerContext* context,
-                            const StartServerHandshakeReq& request,
+  Status ProcessServerStart(HandshakerContext* context, const StartServerHandshakeReq& request,
                             HandshakerResp* response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
     // Checks request.
@@ -144,8 +138,7 @@ class FakeHandshakerService : public HandshakerService::Service {
       return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
     }
     if (request.application_protocols_size() == 0) {
-      return Status(StatusCode::INVALID_ARGUMENT,
-                    "At least one application protocol needed.");
+      return Status(StatusCode::INVALID_ARGUMENT, "At least one application protocol needed.");
     }
     if (request.handshake_parameters().empty()) {
       return Status(StatusCode::INVALID_ARGUMENT,
@@ -171,8 +164,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     return Status::OK;
   }
 
-  Status ProcessNext(HandshakerContext* context,
-                     const NextHandshakeMessageReq& request,
+  Status ProcessNext(HandshakerContext* context, const NextHandshakeMessageReq& request,
                      HandshakerResp* response) {
     GPR_ASSERT(context != nullptr && response != nullptr);
     if (context->is_client) {
@@ -199,8 +191,7 @@ class FakeHandshakerService : public HandshakerService::Service {
       } else if (current_state == SENT) {
         // Client finish frame may be sent along with the first payload from the
         // client, handshaker only consumes the client finish frame.
-        if (request.in_bytes().substr(0, strlen(kClientFinishFrame)) !=
-            kClientFinishFrame) {
+        if (request.in_bytes().substr(0, strlen(kClientFinishFrame)) != kClientFinishFrame) {
           return Status(StatusCode::UNKNOWN, kInvalidFrameError);
         }
         response->set_bytes_consumed(strlen(kClientFinishFrame));
@@ -217,9 +208,8 @@ class FakeHandshakerService : public HandshakerService::Service {
     return Status::OK;
   }
 
-  Status WriteErrorResponse(
-      ServerReaderWriter<HandshakerResp, HandshakerReq>* stream,
-      const Status& status) {
+  Status WriteErrorResponse(ServerReaderWriter<HandshakerResp, HandshakerReq>* stream,
+                            const Status& status) {
     GPR_ASSERT(!status.ok());
     HandshakerResp response;
     response.mutable_status()->set_code(status.error_code());
@@ -246,18 +236,14 @@ class FakeHandshakerService : public HandshakerService::Service {
 
   class ConcurrentRpcsCheck {
    public:
-    explicit ConcurrentRpcsCheck(FakeHandshakerService* parent)
-        : parent_(parent) {
+    explicit ConcurrentRpcsCheck(FakeHandshakerService* parent) : parent_(parent) {
       if (parent->expected_max_concurrent_rpcs_ > 0) {
-        grpc::internal::MutexLock lock(
-            &parent->expected_max_concurrent_rpcs_mu_);
-        if (++parent->concurrent_rpcs_ >
-            parent->expected_max_concurrent_rpcs_) {
+        grpc::internal::MutexLock lock(&parent->expected_max_concurrent_rpcs_mu_);
+        if (++parent->concurrent_rpcs_ > parent->expected_max_concurrent_rpcs_) {
           gpr_log(GPR_ERROR,
                   "FakeHandshakerService:%p concurrent_rpcs_:%d "
                   "expected_max_concurrent_rpcs:%d",
-                  parent, parent->concurrent_rpcs_,
-                  parent->expected_max_concurrent_rpcs_);
+                  parent, parent->concurrent_rpcs_, parent->expected_max_concurrent_rpcs_);
           abort();
         }
       }
@@ -265,8 +251,7 @@ class FakeHandshakerService : public HandshakerService::Service {
 
     ~ConcurrentRpcsCheck() {
       if (parent_->expected_max_concurrent_rpcs_ > 0) {
-        grpc::internal::MutexLock lock(
-            &parent_->expected_max_concurrent_rpcs_mu_);
+        grpc::internal::MutexLock lock(&parent_->expected_max_concurrent_rpcs_mu_);
         parent_->concurrent_rpcs_--;
       }
     }
@@ -280,8 +265,7 @@ class FakeHandshakerService : public HandshakerService::Service {
   const int expected_max_concurrent_rpcs_;
 };
 
-std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
-    int expected_max_concurrent_rpcs) {
+std::unique_ptr<grpc::Service> CreateFakeHandshakerService(int expected_max_concurrent_rpcs) {
   return std::unique_ptr<grpc::Service>{
       new grpc::gcp::FakeHandshakerService(expected_max_concurrent_rpcs)};
 }

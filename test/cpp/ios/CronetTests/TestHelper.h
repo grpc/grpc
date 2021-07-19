@@ -50,8 +50,7 @@ class PhonyInterceptor : public grpc::experimental::Interceptor {
   static std::atomic<int> num_times_run_reverse_;
 };
 
-class PhonyInterceptorFactory
-    : public grpc::experimental::ClientInterceptorFactoryInterface {
+class PhonyInterceptorFactory : public grpc::experimental::ClientInterceptorFactoryInterface {
  public:
   virtual grpc::experimental::Interceptor* CreateClientInterceptor(
       grpc::experimental::ClientRpcInfo* info) override {
@@ -61,21 +60,18 @@ class PhonyInterceptorFactory
 
 class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
-  grpc::Status Echo(grpc::ServerContext* context,
-                    const grpc::testing::EchoRequest* request,
+  grpc::Status Echo(grpc::ServerContext* context, const grpc::testing::EchoRequest* request,
                     grpc::testing::EchoResponse* response);
-  grpc::Status RequestStream(
-      grpc::ServerContext* context,
-      grpc::ServerReader<grpc::testing::EchoRequest>* reader,
-      grpc::testing::EchoResponse* response);
-  grpc::Status ResponseStream(
-      grpc::ServerContext* context, const grpc::testing::EchoRequest* request,
-      grpc::ServerWriter<grpc::testing::EchoResponse>* writer);
+  grpc::Status RequestStream(grpc::ServerContext* context,
+                             grpc::ServerReader<grpc::testing::EchoRequest>* reader,
+                             grpc::testing::EchoResponse* response);
+  grpc::Status ResponseStream(grpc::ServerContext* context,
+                              const grpc::testing::EchoRequest* request,
+                              grpc::ServerWriter<grpc::testing::EchoResponse>* writer);
 
   grpc::Status BidiStream(
       grpc::ServerContext* context,
-      grpc::ServerReaderWriter<grpc::testing::EchoResponse,
-                               grpc::testing::EchoRequest>* stream);
+      grpc::ServerReaderWriter<grpc::testing::EchoResponse, grpc::testing::EchoRequest>* stream);
 };
 
 #endif /* TESTHELPER_H */

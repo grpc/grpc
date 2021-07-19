@@ -41,11 +41,10 @@ class AwsRequestSigner {
   // request. `region` is the region of the AWS environment. `request_payload`
   // is the payload of the HTTP request. `additional_headers` are additional
   // headers to be inject into the request.
-  AwsRequestSigner(std::string access_key_id, std::string secret_access_key,
-                   std::string token, std::string method, std::string url,
-                   std::string region, std::string request_payload,
-                   std::map<std::string, std::string> additional_headers,
-                   grpc_error_handle* error);
+  AwsRequestSigner(std::string access_key_id, std::string secret_access_key, std::string token,
+                   std::string method, std::string url, std::string region,
+                   std::string request_payload,
+                   std::map<std::string, std::string> additional_headers, grpc_error_handle* error);
 
   // This method triggers the signing process then returns the headers of the
   // signed request as a map. In case there is an error, the input `error`

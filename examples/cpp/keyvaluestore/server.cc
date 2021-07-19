@@ -59,8 +59,7 @@ const char* get_value_from_map(const char* key) {
 
 // Logic and data behind the server's behavior.
 class KeyValueStoreServiceImpl final : public KeyValueStore::Service {
-  Status GetValues(ServerContext* context,
-                   ServerReaderWriter<Response, Request>* stream) override {
+  Status GetValues(ServerContext* context, ServerReaderWriter<Response, Request>* stream) override {
     Request request;
     while (stream->Read(&request)) {
       Response response;

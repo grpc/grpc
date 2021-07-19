@@ -50,10 +50,8 @@ typedef struct alts_counter {
  * it returns an error status code along with its details specified in
  * error_details (if error_details is not nullptr).
  */
-grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
-                                     size_t overflow_size,
-                                     alts_counter** crypter_counter,
-                                     char** error_details);
+grpc_status_code alts_counter_create(bool is_client, size_t counter_size, size_t overflow_size,
+                                     alts_counter** crypter_counter, char** error_details);
 
 /**
  * This method increments the internal counter.
@@ -71,8 +69,7 @@ grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
  * it returns an error status code along with its details specified in
  * error_details (if error_details is not nullptr).
  */
-grpc_status_code alts_counter_increment(alts_counter* crypter_counter,
-                                        bool* is_overflow,
+grpc_status_code alts_counter_increment(alts_counter* crypter_counter, bool* is_overflow,
                                         char** error_details);
 
 /**

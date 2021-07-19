@@ -54,8 +54,7 @@ struct alts_zero_copy_grpc_protector_test_var {
 
 /* --- Test utility functions. --- */
 
-static void create_random_slice_buffer(grpc_slice_buffer* sb,
-                                       grpc_slice_buffer* dup_sb,
+static void create_random_slice_buffer(grpc_slice_buffer* sb, grpc_slice_buffer* dup_sb,
                                        size_t length) {
   GPR_ASSERT(sb != nullptr);
   GPR_ASSERT(dup_sb != nullptr);
@@ -81,8 +80,7 @@ static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb, size_t index) {
 
 /* Checks if two slice buffer contents are the same. It is not super efficient,
  * but OK for testing.  */
-static bool are_slice_buffers_equal(grpc_slice_buffer* first,
-                                    grpc_slice_buffer* second) {
+static bool are_slice_buffers_equal(grpc_slice_buffer* first, grpc_slice_buffer* second) {
   GPR_ASSERT(first != nullptr);
   GPR_ASSERT(second != nullptr);
   if (first->length != second->length) {
@@ -100,8 +98,7 @@ static bool are_slice_buffers_equal(grpc_slice_buffer* first,
 }
 
 static alts_zero_copy_grpc_protector_test_fixture*
-alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
-                                                  bool integrity_only,
+alts_zero_copy_grpc_protector_test_fixture_create(bool rekey, bool integrity_only,
                                                   bool enable_extra_copy) {
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       static_cast<alts_zero_copy_grpc_protector_test_fixture*>(
@@ -113,16 +110,14 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
   size_t actual_max_protected_frame_size;
   gsec_test_random_array(&key, key_length);
   GPR_ASSERT(alts_zero_copy_grpc_protector_create(
-                 key, key_length, rekey, /*is_client=*/true, integrity_only,
-                 enable_extra_copy, &max_protected_frame_size,
-                 &fixture->client) == TSI_OK);
+                 key, key_length, rekey, /*is_client=*/true, integrity_only, enable_extra_copy,
+                 &max_protected_frame_size, &fixture->client) == TSI_OK);
   GPR_ASSERT(tsi_zero_copy_grpc_protector_max_frame_size(
                  fixture->client, &actual_max_protected_frame_size) == TSI_OK);
   GPR_ASSERT(actual_max_protected_frame_size == max_protected_frame_size);
   GPR_ASSERT(alts_zero_copy_grpc_protector_create(
-                 key, key_length, rekey, /*is_client=*/false, integrity_only,
-                 enable_extra_copy, &max_protected_frame_size,
-                 &fixture->server) == TSI_OK);
+                 key, key_length, rekey, /*is_client=*/false, integrity_only, enable_extra_copy,
+                 &max_protected_frame_size, &fixture->server) == TSI_OK);
   GPR_ASSERT(tsi_zero_copy_grpc_protector_max_frame_size(
                  fixture->server, &actual_max_protected_frame_size) == TSI_OK);
   GPR_ASSERT(actual_max_protected_frame_size == max_protected_frame_size);
@@ -143,8 +138,7 @@ static void alts_zero_copy_grpc_protector_test_fixture_destroy(
   gpr_free(fixture);
 }
 
-static alts_zero_copy_grpc_protector_test_var*
-alts_zero_copy_grpc_protector_test_var_create() {
+static alts_zero_copy_grpc_protector_test_var* alts_zero_copy_grpc_protector_test_var_create() {
   alts_zero_copy_grpc_protector_test_var* var =
       static_cast<alts_zero_copy_grpc_protector_test_var*>(
           gpr_zalloc(sizeof(alts_zero_copy_grpc_protector_test_var)));
@@ -175,30 +169,23 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
                                      tsi_zero_copy_grpc_protector* receiver) {
   grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
-    alts_zero_copy_grpc_protector_test_var* var =
-        alts_zero_copy_grpc_protector_test_var_create();
+    alts_zero_copy_grpc_protector_test_var* var = alts_zero_copy_grpc_protector_test_var_create();
     /* Creates a random small slice buffer and calls protect().  */
-    create_random_slice_buffer(&var->original_sb, &var->duplicate_sb,
-                               kSmallBufferSize);
-    GPR_ASSERT(tsi_zero_copy_grpc_protector_protect(
-                   sender, &var->original_sb, &var->protected_sb) == TSI_OK);
+    create_random_slice_buffer(&var->original_sb, &var->duplicate_sb, kSmallBufferSize);
+    GPR_ASSERT(tsi_zero_copy_grpc_protector_protect(sender, &var->original_sb,
+                                                    &var->protected_sb) == TSI_OK);
     /* Splits protected slice buffer into two: first one is staging_sb, and
      * second one is protected_sb.  */
     uint32_t staging_sb_size =
-        gsec_test_bias_random_uint32(
-            static_cast<uint32_t>(var->protected_sb.length - 1)) +
-        1;
-    grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
-                                 &var->staging_sb);
+        gsec_test_bias_random_uint32(static_cast<uint32_t>(var->protected_sb.length - 1)) + 1;
+    grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size, &var->staging_sb);
     /* Unprotects one by one.  */
-    GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(
-                   receiver, &var->staging_sb, &var->unprotected_sb) == TSI_OK);
+    GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->staging_sb,
+                                                      &var->unprotected_sb) == TSI_OK);
     GPR_ASSERT(var->unprotected_sb.length == 0);
-    GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(
-                   receiver, &var->protected_sb, &var->unprotected_sb) ==
-               TSI_OK);
-    GPR_ASSERT(
-        are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
+    GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->protected_sb,
+                                                      &var->unprotected_sb) == TSI_OK);
+    GPR_ASSERT(are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_zero_copy_grpc_protector_test_var_destroy(var);
   }
   grpc_core::ExecCtx::Get()->Flush();
@@ -208,31 +195,25 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
                                      tsi_zero_copy_grpc_protector* receiver) {
   grpc_core::ExecCtx exec_ctx;
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
-    alts_zero_copy_grpc_protector_test_var* var =
-        alts_zero_copy_grpc_protector_test_var_create();
+    alts_zero_copy_grpc_protector_test_var* var = alts_zero_copy_grpc_protector_test_var_create();
     /* Creates a random large slice buffer and calls protect().  */
-    create_random_slice_buffer(&var->original_sb, &var->duplicate_sb,
-                               kLargeBufferSize);
-    GPR_ASSERT(tsi_zero_copy_grpc_protector_protect(
-                   sender, &var->original_sb, &var->protected_sb) == TSI_OK);
+    create_random_slice_buffer(&var->original_sb, &var->duplicate_sb, kLargeBufferSize);
+    GPR_ASSERT(tsi_zero_copy_grpc_protector_protect(sender, &var->original_sb,
+                                                    &var->protected_sb) == TSI_OK);
     /* Splits protected slice buffer into multiple pieces. Receiver unprotects
      * each slice buffer one by one.  */
-    uint32_t channel_size = gsec_test_bias_random_uint32(static_cast<uint32_t>(
-                                kChannelMaxSize + 1 - kChannelMinSize)) +
-                            static_cast<uint32_t>(kChannelMinSize);
+    uint32_t channel_size =
+        gsec_test_bias_random_uint32(static_cast<uint32_t>(kChannelMaxSize + 1 - kChannelMinSize)) +
+        static_cast<uint32_t>(kChannelMinSize);
     while (var->protected_sb.length > channel_size) {
       grpc_slice_buffer_reset_and_unref_internal(&var->staging_sb);
-      grpc_slice_buffer_move_first(&var->protected_sb, channel_size,
-                                   &var->staging_sb);
-      GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(
-                     receiver, &var->staging_sb, &var->unprotected_sb) ==
-                 TSI_OK);
+      grpc_slice_buffer_move_first(&var->protected_sb, channel_size, &var->staging_sb);
+      GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->staging_sb,
+                                                        &var->unprotected_sb) == TSI_OK);
     }
-    GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(
-                   receiver, &var->protected_sb, &var->unprotected_sb) ==
-               TSI_OK);
-    GPR_ASSERT(
-        are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
+    GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->protected_sb,
+                                                      &var->unprotected_sb) == TSI_OK);
+    GPR_ASSERT(are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_zero_copy_grpc_protector_test_var_destroy(var);
   }
   grpc_core::ExecCtx::Get()->Flush();
@@ -240,8 +221,7 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
 
 /* --- Test cases. --- */
 
-static void alts_zero_copy_protector_seal_unseal_small_buffer_tests(
-    bool enable_extra_copy) {
+static void alts_zero_copy_protector_seal_unseal_small_buffer_tests(bool enable_extra_copy) {
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       alts_zero_copy_grpc_protector_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/true, enable_extra_copy);
@@ -268,8 +248,7 @@ static void alts_zero_copy_protector_seal_unseal_small_buffer_tests(
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
-static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(
-    bool enable_extra_copy) {
+static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(bool enable_extra_copy) {
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       alts_zero_copy_grpc_protector_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/true, enable_extra_copy);

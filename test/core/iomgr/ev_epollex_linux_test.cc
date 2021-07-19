@@ -84,8 +84,7 @@ static void test_pollable_owner_fd() {
 
   // == Destroy pollset
   grpc_closure ps_destroy_closure;
-  GRPC_CLOSURE_INIT(&ps_destroy_closure, pollset_destroy, ps,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ps_destroy_closure, pollset_destroy, ps, grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(ps, &ps_destroy_closure);
   grpc_core::ExecCtx::Get()->Flush();
 }

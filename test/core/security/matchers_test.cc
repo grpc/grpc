@@ -19,9 +19,8 @@
 namespace grpc_core {
 
 TEST(StringMatcherTest, ExactMatchCaseSensitive) {
-  auto string_matcher =
-      StringMatcher::Create(StringMatcher::Type::kExact,
-                            /*matcher=*/"exact", /*case_sensitive=*/true);
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kExact,
+                                              /*matcher=*/"exact", /*case_sensitive=*/true);
   ASSERT_TRUE(string_matcher.ok());
   EXPECT_TRUE(string_matcher->Match("exact"));
   EXPECT_FALSE(string_matcher->Match("Exact"));
@@ -29,9 +28,8 @@ TEST(StringMatcherTest, ExactMatchCaseSensitive) {
 }
 
 TEST(StringMatcherTest, ExactMatchCaseInsensitive) {
-  auto string_matcher =
-      StringMatcher::Create(StringMatcher::Type::kExact,
-                            /*matcher=*/"exact", /*case_sensitive=*/false);
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kExact,
+                                              /*matcher=*/"exact", /*case_sensitive=*/false);
   ASSERT_TRUE(string_matcher.ok());
   EXPECT_TRUE(string_matcher->Match("Exact"));
   EXPECT_FALSE(string_matcher->Match("Exacz"));
@@ -85,8 +83,7 @@ TEST(StringMatcherTest, InvalidRegex) {
                                               /*case_sensitive=*/true);
   EXPECT_FALSE(string_matcher.ok());
   EXPECT_EQ(string_matcher.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(string_matcher.status().message(),
-            "Invalid regex string specified in matcher.");
+  EXPECT_EQ(string_matcher.status().message(), "Invalid regex string specified in matcher.");
 }
 
 TEST(StringMatcherTest, SafeRegexMatchCaseSensitive) {
@@ -121,9 +118,8 @@ TEST(StringMatcherTest, ContainsMatchCaseInSensitive) {
 }
 
 TEST(HeaderMatcherTest, StringMatcher) {
-  auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kExact,
-                            /*matcher=*/"exact");
+  auto header_matcher = HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kExact,
+                                              /*matcher=*/"exact");
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_TRUE(header_matcher->Match("exact"));
   EXPECT_FALSE(header_matcher->Match("Exact"));
@@ -131,11 +127,10 @@ TEST(HeaderMatcherTest, StringMatcher) {
 }
 
 TEST(HeaderMatcherTest, StringMatcherWithInvertMatch) {
-  auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kExact,
-                            /*matcher=*/"exact",
-                            /*range_start=*/0, /*range_end=*/0,
-                            /*present_match=*/false, /*invert_match=*/true);
+  auto header_matcher = HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kExact,
+                                              /*matcher=*/"exact",
+                                              /*range_start=*/0, /*range_end=*/0,
+                                              /*present_match=*/false, /*invert_match=*/true);
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_FALSE(header_matcher->Match("exact"));
   EXPECT_TRUE(header_matcher->Match("Exact"));
@@ -143,22 +138,19 @@ TEST(HeaderMatcherTest, StringMatcherWithInvertMatch) {
 }
 
 TEST(HeaderMatcherTest, InvalidRegex) {
-  auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kSafeRegex,
-                            /*matcher=*/"a[b-a]",
-                            /*range_start=*/0, /*range_end=*/0,
-                            /*present_match=*/false, /*invert_match=*/true);
+  auto header_matcher = HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kSafeRegex,
+                                              /*matcher=*/"a[b-a]",
+                                              /*range_start=*/0, /*range_end=*/0,
+                                              /*present_match=*/false, /*invert_match=*/true);
   EXPECT_FALSE(header_matcher.ok());
   EXPECT_EQ(header_matcher.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(header_matcher.status().message(),
-            "Invalid regex string specified in matcher.");
+  EXPECT_EQ(header_matcher.status().message(), "Invalid regex string specified in matcher.");
 }
 
 TEST(HeaderMatcherTest, RangeMatcherValidRange) {
-  auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kRange,
-                            /*matcher=*/"", /*range_start=*/10,
-                            /*range_end*/ 20);
+  auto header_matcher = HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kRange,
+                                              /*matcher=*/"", /*range_start=*/10,
+                                              /*range_end*/ 20);
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_TRUE(header_matcher->Match("16"));
   EXPECT_TRUE(header_matcher->Match("10"));
@@ -167,32 +159,28 @@ TEST(HeaderMatcherTest, RangeMatcherValidRange) {
 }
 
 TEST(HeaderMatcherTest, RangeMatcherInvalidRange) {
-  auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kRange,
-                            /*matcher=*/"", /*range_start=*/20,
-                            /*range_end*/ 10);
+  auto header_matcher = HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kRange,
+                                              /*matcher=*/"", /*range_start=*/20,
+                                              /*range_end*/ 10);
   EXPECT_FALSE(header_matcher.ok());
   EXPECT_EQ(header_matcher.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(
-      header_matcher.status().message(),
-      "Invalid range specifier specified: end cannot be smaller than start.");
+  EXPECT_EQ(header_matcher.status().message(),
+            "Invalid range specifier specified: end cannot be smaller than start.");
 }
 
 TEST(HeaderMatcherTest, PresentMatcherTrue) {
-  auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kPresent,
-                            /*matcher=*/"", /*range_start=*/0,
-                            /*range_end=*/0, /*present_match=*/true);
+  auto header_matcher = HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kPresent,
+                                              /*matcher=*/"", /*range_start=*/0,
+                                              /*range_end=*/0, /*present_match=*/true);
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_TRUE(header_matcher->Match("any_value"));
   EXPECT_FALSE(header_matcher->Match(absl::nullopt));
 }
 
 TEST(HeaderMatcherTest, PresentMatcherFalse) {
-  auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kPresent,
-                            /*matcher=*/"", /*range_start=*/0,
-                            /*range_end=*/0, /*present_match=*/false);
+  auto header_matcher = HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kPresent,
+                                              /*matcher=*/"", /*range_start=*/0,
+                                              /*range_end=*/0, /*present_match=*/false);
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_FALSE(header_matcher->Match("any_value"));
   EXPECT_TRUE(header_matcher->Match(absl::nullopt));

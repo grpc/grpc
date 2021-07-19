@@ -108,39 +108,36 @@ enum class StatusTimeProperty {
 };
 
 /// Creates a status with given additional information
-absl::Status StatusCreate(
-    absl::StatusCode code, absl::string_view msg, const DebugLocation& location,
-    std::initializer_list<absl::Status> children) GRPC_MUST_USE_RESULT;
+absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
+                          const DebugLocation& location,
+                          std::initializer_list<absl::Status> children) GRPC_MUST_USE_RESULT;
 
 /// Sets the int property to the status
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value);
 
 /// Gets the int property from the status
-absl::optional<intptr_t> StatusGetInt(
-    const absl::Status& status, StatusIntProperty key) GRPC_MUST_USE_RESULT;
+absl::optional<intptr_t> StatusGetInt(const absl::Status& status,
+                                      StatusIntProperty key) GRPC_MUST_USE_RESULT;
 
 /// Sets the str property to the status
-void StatusSetStr(absl::Status* status, StatusStrProperty key,
-                  absl::string_view value);
+void StatusSetStr(absl::Status* status, StatusStrProperty key, absl::string_view value);
 
 /// Gets the str property from the status
-absl::optional<std::string> StatusGetStr(
-    const absl::Status& status, StatusStrProperty key) GRPC_MUST_USE_RESULT;
+absl::optional<std::string> StatusGetStr(const absl::Status& status,
+                                         StatusStrProperty key) GRPC_MUST_USE_RESULT;
 
 /// Sets the time property to the status
-void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   absl::Time time);
+void StatusSetTime(absl::Status* status, StatusTimeProperty key, absl::Time time);
 
 /// Gets the time property from the status
-absl::optional<absl::Time> StatusGetTime(
-    const absl::Status& status, StatusTimeProperty key) GRPC_MUST_USE_RESULT;
+absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
+                                         StatusTimeProperty key) GRPC_MUST_USE_RESULT;
 
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
 
 /// Returns all children status from a status
-std::vector<absl::Status> StatusGetChildren(absl::Status status)
-    GRPC_MUST_USE_RESULT;
+std::vector<absl::Status> StatusGetChildren(absl::Status status) GRPC_MUST_USE_RESULT;
 
 /// Returns a string representation from status
 /// Error status will be like
@@ -153,8 +150,7 @@ namespace internal {
 
 /// Builds a upb message, google_rpc_Status from a status
 /// This is for internal implementation & test only
-google_rpc_Status* StatusToProto(absl::Status status,
-                                 upb_arena* arena) GRPC_MUST_USE_RESULT;
+google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena) GRPC_MUST_USE_RESULT;
 
 /// Builds a status from a upb message, google_rpc_Status
 /// This is for internal implementation & test only

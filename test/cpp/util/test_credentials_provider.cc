@@ -32,10 +32,8 @@
 #include "absl/flags/flag.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
-ABSL_FLAG(std::string, tls_cert_file, "",
-          "The TLS cert file used when --use_tls=true");
-ABSL_FLAG(std::string, tls_key_file, "",
-          "The TLS key file used when --use_tls=true");
+ABSL_FLAG(std::string, tls_cert_file, "", "The TLS cert file used when --use_tls=true");
+ABSL_FLAG(std::string, tls_key_file, "", "The TLS key file used when --use_tls=true");
 
 namespace grpc {
 namespace testing {
@@ -49,8 +47,7 @@ std::string ReadFile(const std::string& src_path) {
   src.seekg(0, std::ios::end);
   contents.reserve(src.tellg());
   src.seekg(0, std::ios::beg);
-  contents.assign((std::istreambuf_iterator<char>(src)),
-                  (std::istreambuf_iterator<char>()));
+  contents.assign((std::istreambuf_iterator<char>(src)), (std::istreambuf_iterator<char>()));
   return contents;
 }
 
@@ -66,14 +63,12 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
   ~DefaultCredentialsProvider() override {}
 
-  void AddSecureType(
-      const std::string& type,
-      std::unique_ptr<CredentialTypeProvider> type_provider) override {
+  void AddSecureType(const std::string& type,
+                     std::unique_ptr<CredentialTypeProvider> type_provider) override {
     // This clobbers any existing entry for type, except the defaults, which
     // can't be clobbered.
     std::unique_lock<std::mutex> lock(mu_);
-    auto it = std::find(added_secure_type_names_.begin(),
-                        added_secure_type_names_.end(), type);
+    auto it = std::find(added_secure_type_names_.begin(), added_secure_type_names_.end(), type);
     if (it == added_secure_type_names_.end()) {
       added_secure_type_names_.push_back(type);
       added_secure_type_providers_.push_back(std::move(type_provider));
@@ -83,8 +78,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     }
   }
 
-  std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const std::string& type, ChannelArguments* args) override {
+  std::shared_ptr<ChannelCredentials> GetChannelCredentials(const std::string& type,
+                                                            ChannelArguments* args) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureChannelCredentials();
     } else if (type == grpc::testing::kAltsCredentialsType) {
@@ -98,8 +93,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       return grpc::GoogleDefaultCredentials();
     } else {
       std::unique_lock<std::mutex> lock(mu_);
-      auto it(std::find(added_secure_type_names_.begin(),
-                        added_secure_type_names_.end(), type));
+      auto it(std::find(added_secure_type_names_.begin(), added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
         return nullptr;
@@ -109,8 +103,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     }
   }
 
-  std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const std::string& type) override {
+  std::shared_ptr<ServerCredentials> GetServerCredentials(const std::string& type) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureServerCredentials();
     } else if (type == grpc::testing::kAltsCredentialsType) {
@@ -120,19 +113,17 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       SslServerCredentialsOptions ssl_opts;
       ssl_opts.pem_root_certs = "";
       if (!custom_server_key_.empty() && !custom_server_cert_.empty()) {
-        SslServerCredentialsOptions::PemKeyCertPair pkcp = {
-            custom_server_key_, custom_server_cert_};
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {custom_server_key_,
+                                                            custom_server_cert_};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       } else {
-        SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                            test_server1_cert};
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key, test_server1_cert};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       }
       return SslServerCredentials(ssl_opts);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
-      auto it(std::find(added_secure_type_names_.begin(),
-                        added_secure_type_names_.end(), type));
+      auto it(std::find(added_secure_type_names_.begin(), added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
         gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
         return nullptr;
@@ -145,8 +136,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
     std::vector<std::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
     std::unique_lock<std::mutex> lock(mu_);
-    for (auto it = added_secure_type_names_.begin();
-         it != added_secure_type_names_.end(); it++) {
+    for (auto it = added_secure_type_names_.begin(); it != added_secure_type_names_.end(); it++) {
       types.push_back(*it);
     }
     return types;
@@ -155,8 +145,7 @@ class DefaultCredentialsProvider : public CredentialsProvider {
  private:
   std::mutex mu_;
   std::vector<std::string> added_secure_type_names_;
-  std::vector<std::unique_ptr<CredentialTypeProvider>>
-      added_secure_type_providers_;
+  std::vector<std::unique_ptr<CredentialTypeProvider>> added_secure_type_providers_;
   std::string custom_server_key_;
   std::string custom_server_cert_;
 };

@@ -46,9 +46,8 @@ GlobalConfigEnvErrorFunctionType g_global_config_env_error_func =
     DefaultGlobalConfigEnvErrorFunction;
 
 void LogParsingError(const char* name, const char* value) {
-  std::string error_message = absl::StrFormat(
-      "Illegal value '%s' specified for environment variable '%s'", value,
-      name);
+  std::string error_message =
+      absl::StrFormat("Illegal value '%s' specified for environment variable '%s'", value, name);
   (*g_global_config_env_error_func)(error_message.c_str());
 }
 
@@ -62,9 +61,7 @@ grpc_core::UniquePtr<char> GlobalConfigEnv::GetValue() {
   return grpc_core::UniquePtr<char>(gpr_getenv(GetName()));
 }
 
-void GlobalConfigEnv::SetValue(const char* value) {
-  gpr_setenv(GetName(), value);
-}
+void GlobalConfigEnv::SetValue(const char* value) { gpr_setenv(GetName(), value); }
 
 void GlobalConfigEnv::Unset() { gpr_unsetenv(GetName()); }
 
@@ -93,9 +90,7 @@ bool GlobalConfigEnvBool::Get() {
   return result;
 }
 
-void GlobalConfigEnvBool::Set(bool value) {
-  SetValue(value ? "true" : "false");
-}
+void GlobalConfigEnvBool::Set(bool value) { SetValue(value ? "true" : "false"); }
 
 static_assert(std::is_trivially_destructible<GlobalConfigEnvInt32>::value,
               "GlobalConfigEnvInt32 needs to be trivially destructible.");

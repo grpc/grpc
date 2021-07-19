@@ -70,9 +70,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
 
 gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
 
-gpr_timespec gpr_now(gpr_clock_type clock_type) {
-  return gpr_now_impl(clock_type);
-}
+gpr_timespec gpr_now(gpr_clock_type clock_type) { return gpr_now_impl(clock_type); }
 
 void gpr_sleep_until(gpr_timespec until) {
   gpr_timespec now;
@@ -88,8 +86,7 @@ void gpr_sleep_until(gpr_timespec until) {
     }
 
     delta = gpr_time_sub(until, now);
-    sleep_millis =
-        delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
+    sleep_millis = delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
     GPR_ASSERT((sleep_millis >= 0) && (sleep_millis <= INT_MAX));
     Sleep((DWORD)sleep_millis);
   }

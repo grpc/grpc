@@ -31,8 +31,7 @@ namespace grpc_core {
 // exchanging external account credentials for GCP access token to authorize
 // requests to GCP APIs. The specific logic of retrieving subject token is
 // implemented in subclasses.
-class ExternalAccountCredentials
-    : public grpc_oauth2_token_fetcher_credentials {
+class ExternalAccountCredentials : public grpc_oauth2_token_fetcher_credentials {
  public:
   // External account credentials json interface.
   struct Options {
@@ -48,9 +47,9 @@ class ExternalAccountCredentials
     std::string client_secret;
   };
 
-  static RefCountedPtr<ExternalAccountCredentials> Create(
-      const Json& json, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+  static RefCountedPtr<ExternalAccountCredentials> Create(const Json& json,
+                                                          std::vector<std::string> scopes,
+                                                          grpc_error_handle* error);
 
   ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
   ~ExternalAccountCredentials() override;
@@ -60,11 +59,9 @@ class ExternalAccountCredentials
   // This is a helper struct to pass information between multiple callback based
   // asynchronous calls.
   struct HTTPRequestContext {
-    HTTPRequestContext(grpc_httpcli_context* httpcli_context,
-                       grpc_polling_entity* pollent, grpc_millis deadline)
-        : httpcli_context(httpcli_context),
-          pollent(pollent),
-          deadline(deadline) {}
+    HTTPRequestContext(grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
+                       grpc_millis deadline)
+        : httpcli_context(httpcli_context), pollent(pollent), deadline(deadline) {}
     ~HTTPRequestContext() { grpc_http_response_destroy(&response); }
 
     // Contextual parameters passed from
@@ -83,20 +80,17 @@ class ExternalAccountCredentials
   // Once the subject token is ready, subclasses need to invoke
   // the callback function (cb) to pass the subject token (or error)
   // back.
-  virtual void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) = 0;
+  virtual void RetrieveSubjectToken(HTTPRequestContext* ctx, const Options& options,
+                                    std::function<void(std::string, grpc_error_handle)> cb) = 0;
 
  private:
   // This method implements the common token fetch logic and it will be called
   // when grpc_oauth2_token_fetcher_credentials request a new access token.
-  void fetch_oauth2(grpc_credentials_metadata_request* req,
-                    grpc_httpcli_context* httpcli_context,
+  void fetch_oauth2(grpc_credentials_metadata_request* req, grpc_httpcli_context* httpcli_context,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                     grpc_millis deadline) override;
 
-  void OnRetrieveSubjectTokenInternal(absl::string_view subject_token,
-                                      grpc_error_handle error);
+  void OnRetrieveSubjectTokenInternal(absl::string_view subject_token, grpc_error_handle error);
 
   void ExchangeToken(absl::string_view subject_token);
   static void OnExchangeToken(void* arg, grpc_error_handle error);

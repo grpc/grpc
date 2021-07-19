@@ -30,8 +30,7 @@ GPR_GLOBAL_CONFIG_DEFINE_BOOL(
     "bookkeeping, error checking, and decision making");
 
 void grpc_chttp2_plugin_init(void) {
-  g_flow_control_enabled =
-      !GPR_GLOBAL_CONFIG_GET(grpc_experimental_disable_flow_control);
+  g_flow_control_enabled = !GPR_GLOBAL_CONFIG_GET(grpc_experimental_disable_flow_control);
 }
 
 void grpc_chttp2_plugin_shutdown(void) {}

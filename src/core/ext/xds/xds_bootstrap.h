@@ -43,8 +43,8 @@ class XdsChannelCredsRegistry {
  public:
   static bool IsSupported(const std::string& creds_type);
   static bool IsValidConfig(const std::string& creds_type, const Json& config);
-  static RefCountedPtr<grpc_channel_credentials> MakeChannelCreds(
-      const std::string& creds_type, const Json& config);
+  static RefCountedPtr<grpc_channel_credentials> MakeChannelCreds(const std::string& creds_type,
+                                                                  const Json& config);
 };
 
 class XdsBootstrap {
@@ -86,8 +86,7 @@ class XdsBootstrap {
     return server_listener_resource_name_template_;
   }
 
-  const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
-      const {
+  const CertificateProviderStore::PluginDefinitionMap& certificate_providers() const {
     return certificate_providers_;
   }
 
@@ -95,8 +94,7 @@ class XdsBootstrap {
   grpc_error_handle ParseXdsServerList(Json* json);
   grpc_error_handle ParseXdsServer(Json* json, size_t idx);
   grpc_error_handle ParseChannelCredsArray(Json* json, XdsServer* server);
-  grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
-                                      XdsServer* server);
+  grpc_error_handle ParseChannelCreds(Json* json, size_t idx, XdsServer* server);
   grpc_error_handle ParseServerFeaturesArray(Json* json, XdsServer* server);
   grpc_error_handle ParseNode(Json* json);
   grpc_error_handle ParseLocality(Json* json);

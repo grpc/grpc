@@ -44,8 +44,7 @@ static void print_usage_and_exit(gpr_cmdline* cl, const char* argv0) {
   exit(1);
 }
 
-static void on_jwt_verification_done(void* user_data,
-                                     grpc_jwt_verifier_status status,
+static void on_jwt_verification_done(void* user_data, grpc_jwt_verifier_status status,
                                      grpc_jwt_claims* claims) {
   synchronizer* sync = static_cast<synchronizer*>(user_data);
 
@@ -93,15 +92,13 @@ int main(int argc, char** argv) {
   grpc_pollset_init(sync.pollset, &sync.mu);
   sync.is_done = 0;
 
-  grpc_jwt_verifier_verify(verifier, sync.pollset, jwt, aud,
-                           on_jwt_verification_done, &sync);
+  grpc_jwt_verifier_verify(verifier, sync.pollset, jwt, aud, on_jwt_verification_done, &sync);
 
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker* worker = nullptr;
-    if (!GRPC_LOG_IF_ERROR(
-            "pollset_work",
-            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE))) {
+    if (!GRPC_LOG_IF_ERROR("pollset_work",
+                           grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE))) {
       sync.is_done = true;
     }
     gpr_mu_unlock(sync.mu);

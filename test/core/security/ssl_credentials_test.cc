@@ -34,8 +34,7 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
   const size_t num_pairs = 3;
 
   {
-    tsi_ssl_pem_key_cert_pair* tsi_pairs =
-        grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
+    tsi_ssl_pem_key_cert_pair* tsi_pairs = grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
     GPR_ASSERT(tsi_pairs == nullptr);
   }
 

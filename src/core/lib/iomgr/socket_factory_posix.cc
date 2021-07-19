@@ -35,8 +35,7 @@ void grpc_socket_factory_init(grpc_socket_factory* factory,
   gpr_ref_init(&factory->refcount, 1);
 }
 
-int grpc_socket_factory_socket(grpc_socket_factory* factory, int domain,
-                               int type, int protocol) {
+int grpc_socket_factory_socket(grpc_socket_factory* factory, int domain, int type, int protocol) {
   return factory->vtable->socket(factory, domain, type, protocol);
 }
 
@@ -45,8 +44,7 @@ int grpc_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
   return factory->vtable->bind(factory, sockfd, addr);
 }
 
-int grpc_socket_factory_compare(grpc_socket_factory* a,
-                                grpc_socket_factory* b) {
+int grpc_socket_factory_compare(grpc_socket_factory* a, grpc_socket_factory* b) {
   int c = GPR_ICMP(a, b);
   if (c != 0) {
     grpc_socket_factory* sma = a;
@@ -87,9 +85,8 @@ static const grpc_arg_pointer_vtable socket_factory_arg_vtable = {
     socket_factory_arg_copy, socket_factory_arg_destroy, socket_factory_cmp};
 
 grpc_arg grpc_socket_factory_to_arg(grpc_socket_factory* factory) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SOCKET_FACTORY), factory,
-      &socket_factory_arg_vtable);
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_SOCKET_FACTORY), factory,
+                                         &socket_factory_arg_vtable);
 }
 
 #endif

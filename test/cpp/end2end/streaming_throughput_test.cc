@@ -86,9 +86,8 @@ namespace testing {
 
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
-  static void BidiStream_Sender(
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream,
-      gpr_atm* should_exit) {
+  static void BidiStream_Sender(ServerReaderWriter<EchoResponse, EchoRequest>* stream,
+                                gpr_atm* should_exit) {
     EchoResponse response;
     response.set_message(kLargeString);
     while (gpr_atm_acq_load(should_exit) == static_cast<gpr_atm>(0)) {
@@ -104,15 +103,13 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
   // Only implement the one method we will be calling for brevity.
-  Status BidiStream(
-      ServerContext* /*context*/,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+  Status BidiStream(ServerContext* /*context*/,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     gpr_atm should_exit;
     gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
 
-    std::thread sender(
-        std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
+    std::thread sender(std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
 
     while (stream->Read(&request)) {
       struct timespec tv = {0, 3000000};  // 3 ms
@@ -135,8 +132,7 @@ class End2endTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
-                             InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
@@ -144,8 +140,8 @@ class End2endTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel =
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 

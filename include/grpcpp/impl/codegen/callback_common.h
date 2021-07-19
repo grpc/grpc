@@ -80,8 +80,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
-  CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
-                        CompletionQueueTag* ops)
+  CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f, CompletionQueueTag* ops)
       : call_(call), func_(std::move(f)), ops_(ops) {
     g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithStatusTag::StaticRun;
@@ -159,8 +158,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   // can_inline indicates that this particular callback can be executed inline
   // (without needing a thread hop) and is only used for library-provided server
   // callbacks.
-  void Set(grpc_call* call, std::function<void(bool)> f,
-           CompletionQueueTag* ops, bool can_inline) {
+  void Set(grpc_call* call, std::function<void(bool)> f, CompletionQueueTag* ops, bool can_inline) {
     GPR_CODEGEN_ASSERT(call_ == nullptr);
     g_core_codegen_interface->grpc_call_ref(call);
     call_ = call;

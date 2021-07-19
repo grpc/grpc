@@ -57,9 +57,7 @@ static void timer_start(grpc_custom_timer* t) {
   uv_unref((uv_handle_t*)uv_timer);
 }
 
-static void timer_stop(grpc_custom_timer* t) {
-  stop_uv_timer((uv_timer_t*)t->timer);
-}
+static void timer_stop(grpc_custom_timer* t) { stop_uv_timer((uv_timer_t*)t->timer); }
 
 grpc_custom_timer_vtable uv_timer_vtable = {timer_start, timer_stop};
 

@@ -30,36 +30,31 @@
 
 namespace grpc_core {
 
-RefCountedPtr<ServiceConfig> ServiceConfig::Create(
-    const grpc_channel_args* args, absl::string_view json_string,
-    grpc_error_handle* error) {
+RefCountedPtr<ServiceConfig> ServiceConfig::Create(const grpc_channel_args* args,
+                                                   absl::string_view json_string,
+                                                   grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr);
   Json json = Json::Parse(json_string, error);
   if (*error != GRPC_ERROR_NONE) return nullptr;
-  return MakeRefCounted<ServiceConfig>(args, std::string(json_string),
-                                       std::move(json), error);
+  return MakeRefCounted<ServiceConfig>(args, std::string(json_string), std::move(json), error);
 }
 
-ServiceConfig::ServiceConfig(const grpc_channel_args* args,
-                             std::string json_string, Json json,
+ServiceConfig::ServiceConfig(const grpc_channel_args* args, std::string json_string, Json json,
                              grpc_error_handle* error)
     : json_string_(std::move(json_string)), json_(std::move(json)) {
   GPR_DEBUG_ASSERT(error != nullptr);
   if (json_.type() != Json::Type::OBJECT) {
-    *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON value is not an object");
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON value is not an object");
     return;
   }
   std::vector<grpc_error_handle> error_list;
   grpc_error_handle global_error = GRPC_ERROR_NONE;
-  parsed_global_configs_ =
-      ServiceConfigParser::ParseGlobalParameters(args, json_, &global_error);
+  parsed_global_configs_ = ServiceConfigParser::ParseGlobalParameters(args, json_, &global_error);
   if (global_error != GRPC_ERROR_NONE) error_list.push_back(global_error);
   grpc_error_handle local_error = ParsePerMethodParams(args);
   if (local_error != GRPC_ERROR_NONE) error_list.push_back(local_error);
   if (!error_list.empty()) {
-    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service config parsing error",
-                                           &error_list);
+    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service config parsing error", &error_list);
   }
 }
 
@@ -69,15 +64,13 @@ ServiceConfig::~ServiceConfig() {
   }
 }
 
-grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
-    const grpc_channel_args* args, const Json& json) {
+grpc_error_handle ServiceConfig::ParseJsonMethodConfig(const grpc_channel_args* args,
+                                                       const Json& json) {
   std::vector<grpc_error_handle> error_list;
   // Parse method config with each registered parser.
-  auto parsed_configs =
-      absl::make_unique<ServiceConfigParser::ParsedConfigVector>();
+  auto parsed_configs = absl::make_unique<ServiceConfigParser::ParsedConfigVector>();
   grpc_error_handle parser_error = GRPC_ERROR_NONE;
-  *parsed_configs =
-      ServiceConfigParser::ParsePerMethodParameters(args, json, &parser_error);
+  *parsed_configs = ServiceConfigParser::ParsePerMethodParameters(args, json, &parser_error);
   if (parser_error != GRPC_ERROR_NONE) {
     error_list.push_back(parser_error);
   }
@@ -88,8 +81,8 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
   auto it = json.object_value().find("name");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:name error:not of type Array"));
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("field:name error:not of type Array"));
       return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
     }
     const Json::Array& name_array = it->second.array_value();
@@ -130,19 +123,18 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
   return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
 }
 
-grpc_error_handle ServiceConfig::ParsePerMethodParams(
-    const grpc_channel_args* args) {
+grpc_error_handle ServiceConfig::ParsePerMethodParams(const grpc_channel_args* args) {
   std::vector<grpc_error_handle> error_list;
   auto it = json_.object_value().find("methodConfig");
   if (it != json_.object_value().end()) {
     if (it->second.type() != Json::Type::ARRAY) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:methodConfig error:not of type Array"));
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("field:methodConfig error:not of type Array"));
     }
     for (const Json& method_config : it->second.array_value()) {
       if (method_config.type() != Json::Type::OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:methodConfig error:not of type Object"));
+        error_list.push_back(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("field:methodConfig error:not of type Object"));
         continue;
       }
       grpc_error_handle error = ParseJsonMethodConfig(args, method_config);
@@ -154,18 +146,15 @@ grpc_error_handle ServiceConfig::ParsePerMethodParams(
   return GRPC_ERROR_CREATE_FROM_VECTOR("Method Params", &error_list);
 }
 
-std::string ServiceConfig::ParseJsonMethodName(const Json& json,
-                                               grpc_error_handle* error) {
+std::string ServiceConfig::ParseJsonMethodName(const Json& json, grpc_error_handle* error) {
   if (json.type() != Json::Type::OBJECT) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "field:name error:type is not object");
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("field:name error:type is not object");
     return "";
   }
   // Find service name.
   const std::string* service_name = nullptr;
   auto it = json.object_value().find("service");
-  if (it != json.object_value().end() &&
-      it->second.type() != Json::Type::JSON_NULL) {
+  if (it != json.object_value().end() && it->second.type() != Json::Type::JSON_NULL) {
     if (it->second.type() != Json::Type::STRING) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:name error: field:service error:not of type string");
@@ -178,8 +167,7 @@ std::string ServiceConfig::ParseJsonMethodName(const Json& json,
   const std::string* method_name = nullptr;
   // Find method name.
   it = json.object_value().find("method");
-  if (it != json.object_value().end() &&
-      it->second.type() != Json::Type::JSON_NULL) {
+  if (it != json.object_value().end() && it->second.type() != Json::Type::JSON_NULL) {
     if (it->second.type() != Json::Type::STRING) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:name error: field:method error:not of type string");
@@ -199,12 +187,11 @@ std::string ServiceConfig::ParseJsonMethodName(const Json& json,
     return "";
   }
   // Construct path.
-  return absl::StrCat("/", *service_name, "/",
-                      method_name == nullptr ? "" : *method_name);
+  return absl::StrCat("/", *service_name, "/", method_name == nullptr ? "" : *method_name);
 }
 
-const ServiceConfigParser::ParsedConfigVector*
-ServiceConfig::GetMethodParsedConfigVector(const grpc_slice& path) const {
+const ServiceConfigParser::ParsedConfigVector* ServiceConfig::GetMethodParsedConfigVector(
+    const grpc_slice& path) const {
   if (parsed_method_configs_map_.empty()) {
     return default_method_config_vector_;
   }

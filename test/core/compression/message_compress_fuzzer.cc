@@ -34,16 +34,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   // Instead of rolling something complicated to convert a uint8_t to the enum,
   // just bail out if it isn't trivially convertible.
   if (data[0] >= GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT) return 0;
-  const auto compression_algorithm =
-      static_cast<grpc_message_compression_algorithm>(data[0]);
+  const auto compression_algorithm = static_cast<grpc_message_compression_algorithm>(data[0]);
 
   grpc_core::testing::LeakDetector leak_detector(true);
   grpc_init();
   grpc_slice_buffer input_buffer;
   grpc_slice_buffer_init(&input_buffer);
-  grpc_slice_buffer_add(&input_buffer,
-                        grpc_slice_from_copied_buffer(
-                            reinterpret_cast<const char*>(data + 1), size - 1));
+  grpc_slice_buffer_add(&input_buffer, grpc_slice_from_copied_buffer(
+                                           reinterpret_cast<const char*>(data + 1), size - 1));
   grpc_slice_buffer output_buffer;
   grpc_slice_buffer_init(&output_buffer);
 

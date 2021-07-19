@@ -49,21 +49,17 @@ void ProxyMapperRegistry::Shutdown() {
   g_proxy_mapper_list = nullptr;
 }
 
-void ProxyMapperRegistry::Register(
-    bool at_start, std::unique_ptr<ProxyMapperInterface> mapper) {
+void ProxyMapperRegistry::Register(bool at_start, std::unique_ptr<ProxyMapperInterface> mapper) {
   Init();
   if (at_start) {
-    g_proxy_mapper_list->insert(g_proxy_mapper_list->begin(),
-                                std::move(mapper));
+    g_proxy_mapper_list->insert(g_proxy_mapper_list->begin(), std::move(mapper));
   } else {
     g_proxy_mapper_list->emplace_back(std::move(mapper));
   }
 }
 
-bool ProxyMapperRegistry::MapName(const char* server_uri,
-                                  const grpc_channel_args* args,
-                                  char** name_to_resolve,
-                                  grpc_channel_args** new_args) {
+bool ProxyMapperRegistry::MapName(const char* server_uri, const grpc_channel_args* args,
+                                  char** name_to_resolve, grpc_channel_args** new_args) {
   Init();
   for (const auto& mapper : *g_proxy_mapper_list) {
     if (mapper->MapName(server_uri, args, name_to_resolve, new_args)) {

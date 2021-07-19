@@ -24,8 +24,7 @@ HealthCheckServiceServerBuilderOption::HealthCheckServiceServerBuilderOption(
     std::unique_ptr<HealthCheckServiceInterface> hc)
     : hc_(std::move(hc)) {}
 // Hand over hc_ to the server.
-void HealthCheckServiceServerBuilderOption::UpdateArguments(
-    ChannelArguments* args) {
+void HealthCheckServiceServerBuilderOption::UpdateArguments(ChannelArguments* args) {
   args->SetPointer(kHealthCheckServiceInterfaceArg, hc_.release());
 }
 

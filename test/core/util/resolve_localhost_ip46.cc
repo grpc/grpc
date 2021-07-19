@@ -33,12 +33,10 @@ gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
   grpc_resolved_addresses* addresses;
-  grpc_error_handle err =
-      grpc_blocking_resolve_address("localhost", "https", &addresses);
+  grpc_error_handle err = grpc_blocking_resolve_address("localhost", "https", &addresses);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   for (size_t i = 0; i < addresses->naddrs; i++) {
-    grpc_sockaddr* addr =
-        reinterpret_cast<grpc_sockaddr*>(addresses->addrs[i].addr);
+    grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(addresses->addrs[i].addr);
     if (addr->sa_family == GRPC_AF_INET) {
       localhost_to_ipv4 = true;
     } else if (addr->sa_family == GRPC_AF_INET6) {

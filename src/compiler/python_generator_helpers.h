@@ -49,13 +49,11 @@ namespace {
 typedef vector<const Descriptor*> DescriptorVector;
 typedef vector<std::string> StringVector;
 
-static std::string StripModulePrefixes(
-    const std::string& raw_module_name,
-    const std::vector<std::string>& prefixes_to_filter) {
+static std::string StripModulePrefixes(const std::string& raw_module_name,
+                                       const std::vector<std::string>& prefixes_to_filter) {
   for (const auto& prefix : prefixes_to_filter) {
     if (raw_module_name.rfind(prefix, 0) == 0) {
-      return raw_module_name.substr(prefix.size(),
-                                    raw_module_name.size() - prefix.size());
+      return raw_module_name.substr(prefix.size(), raw_module_name.size() - prefix.size());
     }
   }
   return raw_module_name;
@@ -64,24 +62,20 @@ static std::string StripModulePrefixes(
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleName` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-std::string ModuleName(const std::string& filename,
-                       const std::string& import_prefix,
+std::string ModuleName(const std::string& filename, const std::string& import_prefix,
                        const std::vector<std::string>& prefixes_to_filter) {
   std::string basename = StripProto(filename);
   basename = StringReplace(basename, "-", "_");
   basename = StringReplace(basename, "/", ".");
-  return StripModulePrefixes(import_prefix + basename + "_pb2",
-                             prefixes_to_filter);
+  return StripModulePrefixes(import_prefix + basename + "_pb2", prefixes_to_filter);
 }
 
 // TODO(https://github.com/google/protobuf/issues/888):
 // Export `ModuleAlias` from protobuf's
 // `src/google/protobuf/compiler/python/python_generator.cc` file.
-std::string ModuleAlias(const std::string& filename,
-                        const std::string& import_prefix,
+std::string ModuleAlias(const std::string& filename, const std::string& import_prefix,
                         const std::vector<std::string>& prefixes_to_filter) {
-  std::string module_name =
-      ModuleName(filename, import_prefix, prefixes_to_filter);
+  std::string module_name = ModuleName(filename, import_prefix, prefixes_to_filter);
   // We can't have dots in the module name, so we replace each with _dot_.
   // But that could lead to a collision between a.b and a_dot_b, so we also
   // duplicate each underscore.
@@ -90,10 +84,10 @@ std::string ModuleAlias(const std::string& filename,
   return module_name;
 }
 
-bool GetModuleAndMessagePath(
-    const Descriptor* type, std::string* out, std::string generator_file_name,
-    bool generate_in_pb2_grpc, std::string& import_prefix,
-    const std::vector<std::string>& prefixes_to_filter) {
+bool GetModuleAndMessagePath(const Descriptor* type, std::string* out,
+                             std::string generator_file_name, bool generate_in_pb2_grpc,
+                             std::string& import_prefix,
+                             const std::vector<std::string>& prefixes_to_filter) {
   const Descriptor* path_elem_type = type;
   DescriptorVector message_path;
   do {
@@ -127,17 +121,13 @@ bool GetModuleAndMessagePath(
 template <typename DescriptorType>
 StringVector get_all_comments(const DescriptorType* descriptor) {
   StringVector comments;
-  grpc_generator::GetComment(
-      descriptor, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &comments);
-  grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_LEADING,
-                             &comments);
-  grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_TRAILING,
-                             &comments);
+  grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &comments);
+  grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_LEADING, &comments);
+  grpc_generator::GetComment(descriptor, grpc_generator::COMMENTTYPE_TRAILING, &comments);
   return comments;
 }
 
-inline void Split(const std::string& s, char delim,
-                  std::vector<std::string>* append_to) {
+inline void Split(const std::string& s, char delim, std::vector<std::string>* append_to) {
   if (s.empty()) {
     // splitting an empty string logically produces a single-element list
     append_to->emplace_back();

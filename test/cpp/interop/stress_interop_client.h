@@ -77,8 +77,7 @@ const vector<pair<TestCaseType, std::string>> kTestCaseList = {
 class WeightedRandomTestSelector {
  public:
   // Takes a vector of <test_case, weight> pairs as the input
-  explicit WeightedRandomTestSelector(
-      const vector<pair<TestCaseType, int>>& tests);
+  explicit WeightedRandomTestSelector(const vector<pair<TestCaseType, int>>& tests);
 
   // Returns a weighted-randomly chosen test case based on the test cases and
   // weights passed in the constructor
@@ -93,9 +92,8 @@ class StressTestInteropClient {
  public:
   StressTestInteropClient(int test_id, const std::string& server_address,
                           ChannelCreationFunc channel_creation_func,
-                          const WeightedRandomTestSelector& test_selector,
-                          long test_duration_secs, long sleep_duration_ms,
-                          bool do_not_abort_on_transient_failures);
+                          const WeightedRandomTestSelector& test_selector, long test_duration_secs,
+                          long sleep_duration_ms, bool do_not_abort_on_transient_failures);
 
   // The main function. Use this as the thread entry point.
   // qps_gauge is the QpsGauge to record the requests per second metric

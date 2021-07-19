@@ -35,9 +35,8 @@ namespace {
 void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 }  // namespace
 
-Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const std::string& method, const std::string& request,
-                     std::string* response,
+Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel, const std::string& method,
+                     const std::string& request, std::string* response,
                      const OutgoingMetadataContainer& metadata,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata) {
@@ -50,15 +49,14 @@ Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
   return call.Finish(server_trailing_metadata);
 }
 
-CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
-                 const std::string& method,
+CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel, const std::string& method,
                  const OutgoingMetadataContainer& metadata, CliArgs args)
     : stub_(new grpc::GenericStub(channel)) {
   gpr_mu_init(&write_mu_);
   gpr_cv_init(&write_cv_);
   if (!metadata.empty()) {
-    for (OutgoingMetadataContainer::const_iterator iter = metadata.begin();
-         iter != metadata.end(); ++iter) {
+    for (OutgoingMetadataContainer::const_iterator iter = metadata.begin(); iter != metadata.end();
+         ++iter) {
       ctx_.AddMetadata(iter->first, iter->second);
     }
   }
@@ -68,14 +66,11 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
     int64_t timeout_in_ns = ceil(args.timeout * 1e9);
 
     // Convert timeout (in nanoseconds) to a deadline
-    auto deadline =
-        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                     gpr_time_from_nanos(timeout_in_ns, GPR_TIMESPAN));
+    auto deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_nanos(timeout_in_ns, GPR_TIMESPAN));
     ctx_.set_deadline(deadline);
   } else if (args.timeout != -1) {
-    fprintf(
-        stderr,
-        "WARNING: Non-positive timeout value, skipping setting deadline.\n");
+    fprintf(stderr, "WARNING: Non-positive timeout value, skipping setting deadline.\n");
   }
 
   call_ = stub_->PrepareCall(&ctx_, method, &cq_);
@@ -103,8 +98,7 @@ void CliCall::Write(const std::string& request) {
   GPR_ASSERT(ok);
 }
 
-bool CliCall::Read(std::string* response,
-                   IncomingMetadataContainer* server_initial_metadata) {
+bool CliCall::Read(std::string* response, IncomingMetadataContainer* server_initial_metadata) {
   void* got_tag;
   bool ok;
 
@@ -119,8 +113,7 @@ bool CliCall::Read(std::string* response,
 
   response->clear();
   for (size_t i = 0; i < slices.size(); i++) {
-    response->append(reinterpret_cast<const char*>(slices[i].begin()),
-                     slices[i].size());
+    response->append(reinterpret_cast<const char*>(slices[i].begin()), slices[i].size());
   }
   if (server_initial_metadata) {
     *server_initial_metadata = ctx_.GetServerInitialMetadata();
@@ -160,8 +153,8 @@ void CliCall::WritesDoneAndWait() {
   gpr_mu_unlock(&write_mu_);
 }
 
-bool CliCall::ReadAndMaybeNotifyWrite(
-    std::string* response, IncomingMetadataContainer* server_initial_metadata) {
+bool CliCall::ReadAndMaybeNotifyWrite(std::string* response,
+                                      IncomingMetadataContainer* server_initial_metadata) {
   void* got_tag;
   bool ok;
   grpc::ByteBuffer recv_buffer;
@@ -201,8 +194,7 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   GPR_ASSERT(recv_buffer.Dump(&slices).ok());
   response->clear();
   for (size_t i = 0; i < slices.size(); i++) {
-    response->append(reinterpret_cast<const char*>(slices[i].begin()),
-                     slices[i].size());
+    response->append(reinterpret_cast<const char*>(slices[i].begin()), slices[i].size());
   }
   if (server_initial_metadata) {
     *server_initial_metadata = ctx_.GetServerInitialMetadata();

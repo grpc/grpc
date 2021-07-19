@@ -32,9 +32,8 @@ namespace {
 
 static constexpr int kPrintfPointerFieldWidth = 2 + 2 * sizeof(void*);
 
-static void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char*, void*),
-                                        void* writerfn_arg, void* pc,
-                                        void* symbolize_pc, int framesize,
+static void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char*, void*), void* writerfn_arg,
+                                        void* pc, void* symbolize_pc, int framesize,
                                         const char* const prefix) {
   char tmp[1024];
   const char* symbol = "(unknown)";
@@ -43,41 +42,35 @@ static void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char*, void*),
   }
   char buf[1024];
   if (framesize <= 0) {
-    snprintf(buf, sizeof(buf), "%s@ %*p  (unknown)  %s\n", prefix,
-             kPrintfPointerFieldWidth, pc, symbol);
+    snprintf(buf, sizeof(buf), "%s@ %*p  (unknown)  %s\n", prefix, kPrintfPointerFieldWidth, pc,
+             symbol);
   } else {
-    snprintf(buf, sizeof(buf), "%s@ %*p  %9d  %s\n", prefix,
-             kPrintfPointerFieldWidth, pc, framesize, symbol);
+    snprintf(buf, sizeof(buf), "%s@ %*p  %9d  %s\n", prefix, kPrintfPointerFieldWidth, pc,
+             framesize, symbol);
   }
   writerfn(buf, writerfn_arg);
 }
 
-static void DumpPCAndFrameSize(void (*writerfn)(const char*, void*),
-                               void* writerfn_arg, void* pc, int framesize,
-                               const char* const prefix) {
+static void DumpPCAndFrameSize(void (*writerfn)(const char*, void*), void* writerfn_arg, void* pc,
+                               int framesize, const char* const prefix) {
   char buf[100];
   if (framesize <= 0) {
-    snprintf(buf, sizeof(buf), "%s@ %*p  (unknown)\n", prefix,
-             kPrintfPointerFieldWidth, pc);
+    snprintf(buf, sizeof(buf), "%s@ %*p  (unknown)\n", prefix, kPrintfPointerFieldWidth, pc);
   } else {
-    snprintf(buf, sizeof(buf), "%s@ %*p  %9d\n", prefix,
-             kPrintfPointerFieldWidth, pc, framesize);
+    snprintf(buf, sizeof(buf), "%s@ %*p  %9d\n", prefix, kPrintfPointerFieldWidth, pc, framesize);
   }
   writerfn(buf, writerfn_arg);
 }
 
 static void DumpStackTrace(void* const stack[], int frame_sizes[], int depth,
-                           bool symbolize_stacktrace,
-                           void (*writerfn)(const char*, void*),
+                           bool symbolize_stacktrace, void (*writerfn)(const char*, void*),
                            void* writerfn_arg) {
   for (int i = 0; i < depth; i++) {
     if (symbolize_stacktrace) {
       DumpPCAndFrameSizeAndSymbol(writerfn, writerfn_arg, stack[i],
-                                  reinterpret_cast<char*>(stack[i]) - 1,
-                                  frame_sizes[i], "    ");
+                                  reinterpret_cast<char*>(stack[i]) - 1, frame_sizes[i], "    ");
     } else {
-      DumpPCAndFrameSize(writerfn, writerfn_arg, stack[i], frame_sizes[i],
-                         "    ");
+      DumpPCAndFrameSize(writerfn, writerfn_arg, stack[i], frame_sizes[i], "    ");
     }
   }
 }

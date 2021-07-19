@@ -44,8 +44,7 @@ extern uint32_t g_hash_seed;
 // branching based on the output) then we're just performing the extra
 // operations to invert the result pointlessly. Concretely, we save 6 ops on
 // x86-64/clang with differs().
-int grpc_slice_differs_refcounted(const grpc_slice& a,
-                                  const grpc_slice& b_not_inline);
+int grpc_slice_differs_refcounted(const grpc_slice& a, const grpc_slice& b_not_inline);
 
 // When we compare two slices, and we *know* that one of them is static or
 // interned, we can short circuit our slice equality function. The second slice
@@ -134,9 +133,7 @@ struct UnmanagedMemorySlice : public grpc_slice {
   // inlined in the slice structure if length is small enough
   // (< GRPC_SLICE_INLINED_SIZE). The second constructor forces heap alloc.
   explicit UnmanagedMemorySlice(size_t length);
-  explicit UnmanagedMemorySlice(size_t length, const ForceHeapAllocation&) {
-    HeapInit(length);
-  }
+  explicit UnmanagedMemorySlice(size_t length, const ForceHeapAllocation&) { HeapInit(length); }
 
  private:
   void HeapInit(size_t length);
@@ -145,35 +142,28 @@ struct UnmanagedMemorySlice : public grpc_slice {
 extern grpc_slice_refcount kNoopRefcount;
 
 struct ExternallyManagedSlice : public UnmanagedMemorySlice {
-  ExternallyManagedSlice()
-      : ExternallyManagedSlice(&kNoopRefcount, 0, nullptr) {}
-  explicit ExternallyManagedSlice(const char* s)
-      : ExternallyManagedSlice(s, strlen(s)) {}
+  ExternallyManagedSlice() : ExternallyManagedSlice(&kNoopRefcount, 0, nullptr) {}
+  explicit ExternallyManagedSlice(const char* s) : ExternallyManagedSlice(s, strlen(s)) {}
   ExternallyManagedSlice(const void* s, size_t len)
-      : ExternallyManagedSlice(
-            &kNoopRefcount, len,
-            reinterpret_cast<uint8_t*>(const_cast<void*>(s))) {}
-  ExternallyManagedSlice(grpc_slice_refcount* ref, size_t length,
-                         uint8_t* bytes) {
+      : ExternallyManagedSlice(&kNoopRefcount, len,
+                               reinterpret_cast<uint8_t*>(const_cast<void*>(s))) {}
+  ExternallyManagedSlice(grpc_slice_refcount* ref, size_t length, uint8_t* bytes) {
     refcount = ref;
     data.refcounted.length = length;
     data.refcounted.bytes = bytes;
   }
   bool operator==(const grpc_slice& other) const {
     return data.refcounted.length == GRPC_SLICE_LENGTH(other) &&
-           memcmp(data.refcounted.bytes, GRPC_SLICE_START_PTR(other),
-                  data.refcounted.length) == 0;
+           memcmp(data.refcounted.bytes, GRPC_SLICE_START_PTR(other), data.refcounted.length) == 0;
   }
   bool operator!=(const grpc_slice& other) const { return !(*this == other); }
   uint32_t Hash() {
-    return gpr_murmur_hash3(data.refcounted.bytes, data.refcounted.length,
-                            g_hash_seed);
+    return gpr_murmur_hash3(data.refcounted.bytes, data.refcounted.length, g_hash_seed);
   }
 };
 
 struct StaticMetadataSlice : public ManagedMemorySlice {
-  StaticMetadataSlice(grpc_slice_refcount* ref, size_t length,
-                      const uint8_t* bytes) {
+  StaticMetadataSlice(grpc_slice_refcount* ref, size_t length, const uint8_t* bytes) {
     refcount = ref;
     data.refcounted.length = length;
     // NB: grpc_slice may or may not point to a static slice, but we are
@@ -190,9 +180,8 @@ struct InternedSlice : public ManagedMemorySlice {
 
 // Converts grpc_slice to absl::string_view.
 inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
-  return absl::string_view(
-      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
-      GRPC_SLICE_LENGTH(slice));
+  return absl::string_view(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+                           GRPC_SLICE_LENGTH(slice));
 }
 
 }  // namespace grpc_core

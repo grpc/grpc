@@ -41,8 +41,7 @@
 #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support,
-                              GRPC_ENABLE_FORK_SUPPORT_DEFAULT,
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_enable_fork_support, GRPC_ENABLE_FORK_SUPPORT_DEFAULT,
                               "Enable fork support");
 
 namespace grpc_core {
@@ -168,8 +167,7 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-    support_enabled_.Store(GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support),
-                           MemoryOrder::RELAXED);
+    support_enabled_.Store(GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support), MemoryOrder::RELAXED);
   }
   if (support_enabled_.Load(MemoryOrder::RELAXED)) {
     exec_ctx_state_ = new internal::ExecCtxState();
@@ -196,8 +194,7 @@ void Fork::DoIncExecCtxCount() { exec_ctx_state_->IncExecCtxCount(); }
 
 void Fork::DoDecExecCtxCount() { exec_ctx_state_->DecExecCtxCount(); }
 
-void Fork::SetResetChildPollingEngineFunc(
-    Fork::child_postfork_func reset_child_polling_engine) {
+void Fork::SetResetChildPollingEngineFunc(Fork::child_postfork_func reset_child_polling_engine) {
   reset_child_polling_engine_ = reset_child_polling_engine;
 }
 Fork::child_postfork_func Fork::GetResetChildPollingEngineFunc() {

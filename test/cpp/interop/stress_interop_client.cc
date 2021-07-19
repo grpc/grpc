@@ -34,8 +34,7 @@ namespace testing {
 using std::pair;
 using std::vector;
 
-WeightedRandomTestSelector::WeightedRandomTestSelector(
-    const vector<pair<TestCaseType, int>>& tests)
+WeightedRandomTestSelector::WeightedRandomTestSelector(const vector<pair<TestCaseType, int>>& tests)
     : tests_(tests) {
   total_weight_ = 0;
   for (auto it = tests.begin(); it != tests.end(); it++) {
@@ -66,32 +65,29 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
   return selected_test;
 }
 
-StressTestInteropClient::StressTestInteropClient(
-    int test_id, const std::string& server_address,
-    ChannelCreationFunc channel_creation_func,
-    const WeightedRandomTestSelector& test_selector, long test_duration_secs,
-    long sleep_duration_ms, bool do_not_abort_on_transient_failures)
+StressTestInteropClient::StressTestInteropClient(int test_id, const std::string& server_address,
+                                                 ChannelCreationFunc channel_creation_func,
+                                                 const WeightedRandomTestSelector& test_selector,
+                                                 long test_duration_secs, long sleep_duration_ms,
+                                                 bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
       server_address_(server_address),
       channel_creation_func_(std::move(channel_creation_func)),
-      interop_client_(new InteropClient(channel_creation_func_, false,
-                                        do_not_abort_on_transient_failures)),
+      interop_client_(
+          new InteropClient(channel_creation_func_, false, do_not_abort_on_transient_failures)),
       test_selector_(test_selector),
       test_duration_secs_(test_duration_secs),
       sleep_duration_ms_(sleep_duration_ms) {}
 
-void StressTestInteropClient::MainLoop(
-    const std::shared_ptr<QpsGauge>& qps_gauge) {
-  gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_,
-          server_address_.c_str());
+void StressTestInteropClient::MainLoop(const std::shared_ptr<QpsGauge>& qps_gauge) {
+  gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_, server_address_.c_str());
 
   gpr_timespec test_end_time;
   if (test_duration_secs_ < 0) {
     test_end_time = gpr_inf_future(GPR_CLOCK_REALTIME);
   } else {
-    test_end_time =
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                     gpr_time_from_seconds(test_duration_secs_, GPR_TIMESPAN));
+    test_end_time = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_seconds(test_duration_secs_, GPR_TIMESPAN));
   }
 
   qps_gauge->Reset();
@@ -106,9 +102,8 @@ void StressTestInteropClient::MainLoop(
 
     // Sleep between successive calls if needed
     if (sleep_duration_ms_ > 0) {
-      gpr_timespec sleep_time =
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_millis(sleep_duration_ms_, GPR_TIMESPAN));
+      gpr_timespec sleep_time = gpr_time_add(
+          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(sleep_duration_ms_, GPR_TIMESPAN));
       gpr_sleep_until(sleep_time);
     }
   }

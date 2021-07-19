@@ -145,32 +145,29 @@ typedef struct gsec_aead_crypter gsec_aead_crypter;
 
 /* V-table for gsec AEAD operations */
 typedef struct gsec_aead_crypter_vtable {
-  grpc_status_code (*encrypt_iovec)(
-      gsec_aead_crypter* crypter, const uint8_t* nonce, size_t nonce_length,
-      const struct iovec* aad_vec, size_t aad_vec_length,
-      const struct iovec* plaintext_vec, size_t plaintext_vec_length,
-      struct iovec ciphertext_vec, size_t* ciphertext_bytes_written,
-      char** error_details);
-  grpc_status_code (*decrypt_iovec)(
-      gsec_aead_crypter* crypter, const uint8_t* nonce, size_t nonce_length,
-      const struct iovec* aad_vec, size_t aad_vec_length,
-      const struct iovec* ciphertext_vec, size_t ciphertext_vec_length,
-      struct iovec plaintext_vec, size_t* plaintext_bytes_written,
-      char** error_details);
-  grpc_status_code (*max_ciphertext_and_tag_length)(
-      const gsec_aead_crypter* crypter, size_t plaintext_length,
-      size_t* max_ciphertext_and_tag_length_to_return, char** error_details);
-  grpc_status_code (*max_plaintext_length)(
-      const gsec_aead_crypter* crypter, size_t ciphertext_and_tag_length,
-      size_t* max_plaintext_length_to_return, char** error_details);
-  grpc_status_code (*nonce_length)(const gsec_aead_crypter* crypter,
-                                   size_t* nonce_length_to_return,
+  grpc_status_code (*encrypt_iovec)(gsec_aead_crypter* crypter, const uint8_t* nonce,
+                                    size_t nonce_length, const struct iovec* aad_vec,
+                                    size_t aad_vec_length, const struct iovec* plaintext_vec,
+                                    size_t plaintext_vec_length, struct iovec ciphertext_vec,
+                                    size_t* ciphertext_bytes_written, char** error_details);
+  grpc_status_code (*decrypt_iovec)(gsec_aead_crypter* crypter, const uint8_t* nonce,
+                                    size_t nonce_length, const struct iovec* aad_vec,
+                                    size_t aad_vec_length, const struct iovec* ciphertext_vec,
+                                    size_t ciphertext_vec_length, struct iovec plaintext_vec,
+                                    size_t* plaintext_bytes_written, char** error_details);
+  grpc_status_code (*max_ciphertext_and_tag_length)(const gsec_aead_crypter* crypter,
+                                                    size_t plaintext_length,
+                                                    size_t* max_ciphertext_and_tag_length_to_return,
+                                                    char** error_details);
+  grpc_status_code (*max_plaintext_length)(const gsec_aead_crypter* crypter,
+                                           size_t ciphertext_and_tag_length,
+                                           size_t* max_plaintext_length_to_return,
+                                           char** error_details);
+  grpc_status_code (*nonce_length)(const gsec_aead_crypter* crypter, size_t* nonce_length_to_return,
                                    char** error_details);
-  grpc_status_code (*key_length)(const gsec_aead_crypter* crypter,
-                                 size_t* key_length_to_return,
+  grpc_status_code (*key_length)(const gsec_aead_crypter* crypter, size_t* key_length_to_return,
                                  char** error_details);
-  grpc_status_code (*tag_length)(const gsec_aead_crypter* crypter,
-                                 size_t* tag_length_to_return,
+  grpc_status_code (*tag_length)(const gsec_aead_crypter* crypter, size_t* tag_length_to_return,
                                  char** error_details);
   void (*destruct)(gsec_aead_crypter* crypter);
 } gsec_aead_crypter_vtable;
@@ -213,12 +210,12 @@ struct gsec_aead_crypter {
  * error_details (if error_details is not nullptr).
  *
  */
-grpc_status_code gsec_aead_crypter_encrypt(
-    gsec_aead_crypter* crypter, const uint8_t* nonce, size_t nonce_length,
-    const uint8_t* aad, size_t aad_length, const uint8_t* plaintext,
-    size_t plaintext_length, uint8_t* ciphertext_and_tag,
-    size_t ciphertext_and_tag_length, size_t* bytes_written,
-    char** error_details);
+grpc_status_code gsec_aead_crypter_encrypt(gsec_aead_crypter* crypter, const uint8_t* nonce,
+                                           size_t nonce_length, const uint8_t* aad,
+                                           size_t aad_length, const uint8_t* plaintext,
+                                           size_t plaintext_length, uint8_t* ciphertext_and_tag,
+                                           size_t ciphertext_and_tag_length, size_t* bytes_written,
+                                           char** error_details);
 
 /**
  * This method performs an AEAD encrypt operation.
@@ -248,9 +245,8 @@ grpc_status_code gsec_aead_crypter_encrypt(
  */
 grpc_status_code gsec_aead_crypter_encrypt_iovec(
     gsec_aead_crypter* crypter, const uint8_t* nonce, size_t nonce_length,
-    const struct iovec* aad_vec, size_t aad_vec_length,
-    const struct iovec* plaintext_vec, size_t plaintext_vec_length,
-    struct iovec ciphertext_vec, size_t* ciphertext_bytes_written,
+    const struct iovec* aad_vec, size_t aad_vec_length, const struct iovec* plaintext_vec,
+    size_t plaintext_vec_length, struct iovec ciphertext_vec, size_t* ciphertext_bytes_written,
     char** error_details);
 
 /**
@@ -284,11 +280,12 @@ grpc_status_code gsec_aead_crypter_encrypt_iovec(
  * it returns an error status code along with its details specified in
  * error_details (if error_details is not nullptr).
  */
-grpc_status_code gsec_aead_crypter_decrypt(
-    gsec_aead_crypter* crypter, const uint8_t* nonce, size_t nonce_length,
-    const uint8_t* aad, size_t aad_length, const uint8_t* ciphertext_and_tag,
-    size_t ciphertext_and_tag_length, uint8_t* plaintext,
-    size_t plaintext_length, size_t* bytes_written, char** error_details);
+grpc_status_code gsec_aead_crypter_decrypt(gsec_aead_crypter* crypter, const uint8_t* nonce,
+                                           size_t nonce_length, const uint8_t* aad,
+                                           size_t aad_length, const uint8_t* ciphertext_and_tag,
+                                           size_t ciphertext_and_tag_length, uint8_t* plaintext,
+                                           size_t plaintext_length, size_t* bytes_written,
+                                           char** error_details);
 
 /**
  * This method performs an AEAD decrypt operation.
@@ -316,9 +313,8 @@ grpc_status_code gsec_aead_crypter_decrypt(
  */
 grpc_status_code gsec_aead_crypter_decrypt_iovec(
     gsec_aead_crypter* crypter, const uint8_t* nonce, size_t nonce_length,
-    const struct iovec* aad_vec, size_t aad_vec_length,
-    const struct iovec* ciphertext_vec, size_t ciphertext_vec_length,
-    struct iovec plaintext_vec, size_t* plaintext_bytes_written,
+    const struct iovec* aad_vec, size_t aad_vec_length, const struct iovec* ciphertext_vec,
+    size_t ciphertext_vec_length, struct iovec plaintext_vec, size_t* plaintext_bytes_written,
     char** error_details);
 
 /**
@@ -361,9 +357,10 @@ grpc_status_code gsec_aead_crypter_max_ciphertext_and_tag_length(
  * it returns an error status code along with its details specified in
  * error_details (if error_details is not nullptr).
  */
-grpc_status_code gsec_aead_crypter_max_plaintext_length(
-    const gsec_aead_crypter* crypter, size_t ciphertext_and_tag_length,
-    size_t* max_plaintext_length_to_return, char** error_details);
+grpc_status_code gsec_aead_crypter_max_plaintext_length(const gsec_aead_crypter* crypter,
+                                                        size_t ciphertext_and_tag_length,
+                                                        size_t* max_plaintext_length_to_return,
+                                                        char** error_details);
 
 /**
  * This method returns a valid size of nonce array used at the construction of
@@ -380,9 +377,9 @@ grpc_status_code gsec_aead_crypter_max_plaintext_length(
  * it returns an error status code along with its details specified in
  * error_details (if error_details is not nullptr).
  */
-grpc_status_code gsec_aead_crypter_nonce_length(
-    const gsec_aead_crypter* crypter, size_t* nonce_length_to_return,
-    char** error_details);
+grpc_status_code gsec_aead_crypter_nonce_length(const gsec_aead_crypter* crypter,
+                                                size_t* nonce_length_to_return,
+                                                char** error_details);
 
 /**
  * This method returns a valid size of key array used at the construction of
@@ -400,8 +397,7 @@ grpc_status_code gsec_aead_crypter_nonce_length(
  * error_details (if error_details is not nullptr).
  */
 grpc_status_code gsec_aead_crypter_key_length(const gsec_aead_crypter* crypter,
-                                              size_t* key_length_to_return,
-                                              char** error_details);
+                                              size_t* key_length_to_return, char** error_details);
 /**
  * This method returns a valid size of tag array used at the construction of
  * AEAD crypter instance. It is also the size that should be passed to encrypt
@@ -418,8 +414,7 @@ grpc_status_code gsec_aead_crypter_key_length(const gsec_aead_crypter* crypter,
  * error_details (if error_details is not nullptr).
  */
 grpc_status_code gsec_aead_crypter_tag_length(const gsec_aead_crypter* crypter,
-                                              size_t* tag_length_to_return,
-                                              char** error_details);
+                                              size_t* tag_length_to_return, char** error_details);
 
 /**
  * This method destroys an AEAD crypter instance by de-allocating all of its
@@ -450,11 +445,9 @@ void gsec_aead_crypter_destroy(gsec_aead_crypter* crypter);
  * crypter. Otherwise, it returns an error status code together with its details
  * specified in error_details.
  */
-grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
-                                                  size_t key_length,
-                                                  size_t nonce_length,
-                                                  size_t tag_length, bool rekey,
-                                                  gsec_aead_crypter** crypter,
+grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key, size_t key_length,
+                                                  size_t nonce_length, size_t tag_length,
+                                                  bool rekey, gsec_aead_crypter** crypter,
                                                   char** error_details);
 
 #endif /* GRPC_CORE_TSI_ALTS_CRYPT_GSEC_H */

@@ -55,8 +55,7 @@ static void verification_test(hash_func hash, uint32_t expected) {
      verification value */
 
   if (expected != final) {
-    gpr_log(GPR_INFO, "Verification value 0x%08X : Failed! (Expected 0x%08x)",
-            final, expected);
+    gpr_log(GPR_INFO, "Verification value 0x%08X : Failed! (Expected 0x%08x)", final, expected);
     abort();
   } else {
     gpr_log(GPR_INFO, "Verification value 0x%08X : Passed!", final);

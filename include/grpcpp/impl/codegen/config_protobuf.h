@@ -49,17 +49,14 @@
 #ifndef GRPC_CUSTOM_DESCRIPTORDATABASE
 #include <google/protobuf/descriptor_database.h>
 #define GRPC_CUSTOM_DESCRIPTORDATABASE ::google::protobuf::DescriptorDatabase
-#define GRPC_CUSTOM_SIMPLEDESCRIPTORDATABASE \
-  ::google::protobuf::SimpleDescriptorDatabase
+#define GRPC_CUSTOM_SIMPLEDESCRIPTORDATABASE ::google::protobuf::SimpleDescriptorDatabase
 #endif
 
 #ifndef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream.h>
-#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM \
-  ::google::protobuf::io::ZeroCopyOutputStream
-#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM \
-  ::google::protobuf::io::ZeroCopyInputStream
+#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ::google::protobuf::io::ZeroCopyOutputStream
+#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ::google::protobuf::io::ZeroCopyInputStream
 #define GRPC_CUSTOM_CODEDINPUTSTREAM ::google::protobuf::io::CodedInputStream
 #endif
 

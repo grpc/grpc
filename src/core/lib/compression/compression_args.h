@@ -25,8 +25,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 /** Returns the compression algorithm set in \a a. */
-grpc_compression_algorithm
-grpc_channel_args_get_channel_default_compression_algorithm(
+grpc_compression_algorithm grpc_channel_args_get_channel_default_compression_algorithm(
     const grpc_channel_args* a);
 
 /** Returns a channel arg instance with compression enabled. If \a a is
@@ -50,7 +49,6 @@ grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
  *
  * The i-th bit of the returned bitset corresponds to the i-th entry in the
  * grpc_compression_algorithm enum. */
-uint32_t grpc_channel_args_compression_algorithm_get_states(
-    const grpc_channel_args* a);
+uint32_t grpc_channel_args_compression_algorithm_get_states(const grpc_channel_args* a);
 
 #endif /* GRPC_CORE_LIB_COMPRESSION_COMPRESSION_ARGS_H */

@@ -34,12 +34,10 @@ const char key2[] = "metadata-key2";
 const char val1[] = "metadata-val1";
 const char val2[] = "metadata-val2";
 
-bool ServerInitialMetadataContains(const ClientContext& context,
-                                   const grpc::string_ref& key,
+bool ServerInitialMetadataContains(const ClientContext& context, const grpc::string_ref& key,
                                    const grpc::string_ref& value) {
   const auto& server_metadata = context.GetServerInitialMetadata();
-  for (auto iter = server_metadata.begin(); iter != server_metadata.end();
-       ++iter) {
+  for (auto iter = server_metadata.begin(); iter != server_metadata.end(); ++iter) {
     if (iter->first == key && iter->second == value) {
       return true;
     }

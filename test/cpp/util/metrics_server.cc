@@ -28,8 +28,7 @@
 namespace grpc {
 namespace testing {
 
-QpsGauge::QpsGauge()
-    : start_time_(gpr_now(GPR_CLOCK_REALTIME)), num_queries_(0) {}
+QpsGauge::QpsGauge() : start_time_(gpr_now(GPR_CLOCK_REALTIME)), num_queries_(0) {}
 
 void QpsGauge::Reset() {
   std::lock_guard<std::mutex> lock(num_queries_mu_);
@@ -44,15 +43,14 @@ void QpsGauge::Incr() {
 
 long QpsGauge::Get() {
   std::lock_guard<std::mutex> lock(num_queries_mu_);
-  gpr_timespec time_diff =
-      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start_time_);
+  gpr_timespec time_diff = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start_time_);
   long duration_secs = time_diff.tv_sec > 0 ? time_diff.tv_sec : 1;
   return num_queries_ / duration_secs;
 }
 
-grpc::Status MetricsServiceImpl::GetAllGauges(
-    ServerContext* /*context*/, const EmptyMessage* /*request*/,
-    ServerWriter<GaugeResponse>* writer) {
+grpc::Status MetricsServiceImpl::GetAllGauges(ServerContext* /*context*/,
+                                              const EmptyMessage* /*request*/,
+                                              ServerWriter<GaugeResponse>* writer) {
   gpr_log(GPR_DEBUG, "GetAllGauges called");
 
   std::lock_guard<std::mutex> lock(mu_);
@@ -66,8 +64,7 @@ grpc::Status MetricsServiceImpl::GetAllGauges(
   return Status::OK;
 }
 
-grpc::Status MetricsServiceImpl::GetGauge(ServerContext* /*context*/,
-                                          const GaugeRequest* request,
+grpc::Status MetricsServiceImpl::GetGauge(ServerContext* /*context*/, const GaugeRequest* request,
                                           GaugeResponse* response) {
   std::lock_guard<std::mutex> lock(mu_);
 
@@ -80,8 +77,8 @@ grpc::Status MetricsServiceImpl::GetGauge(ServerContext* /*context*/,
   return Status::OK;
 }
 
-std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
-    const std::string& name, bool* already_present) {
+std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(const std::string& name,
+                                                             bool* already_present) {
   std::lock_guard<std::mutex> lock(mu_);
 
   std::shared_ptr<QpsGauge> qps_gauge(new QpsGauge());
@@ -107,8 +104,7 @@ std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
   builder.RegisterService(this);
 
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Metrics server %s started. Ready to receive requests..",
-          address.c_str());
+  gpr_log(GPR_INFO, "Metrics server %s started. Ready to receive requests..", address.c_str());
 
   return server;
 }

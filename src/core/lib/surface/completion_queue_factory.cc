@@ -27,17 +27,16 @@
  * == Default completion queue factory implementation ==
  */
 
-static grpc_completion_queue* default_create(
-    const grpc_completion_queue_factory* /*factory*/,
-    const grpc_completion_queue_attributes* attr) {
-  return grpc_completion_queue_create_internal(
-      attr->cq_completion_type, attr->cq_polling_type, attr->cq_shutdown_cb);
+static grpc_completion_queue* default_create(const grpc_completion_queue_factory* /*factory*/,
+                                             const grpc_completion_queue_attributes* attr) {
+  return grpc_completion_queue_create_internal(attr->cq_completion_type, attr->cq_polling_type,
+                                               attr->cq_shutdown_cb);
 }
 
 static grpc_completion_queue_factory_vtable default_vtable = {default_create};
 
-static const grpc_completion_queue_factory g_default_cq_factory = {
-    "Default Factory", nullptr, &default_vtable};
+static const grpc_completion_queue_factory g_default_cq_factory = {"Default Factory", nullptr,
+                                                                   &default_vtable};
 
 /*
  * == Completion queue factory APIs
@@ -45,8 +44,7 @@ static const grpc_completion_queue_factory g_default_cq_factory = {
 
 const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
     const grpc_completion_queue_attributes* attributes) {
-  GPR_ASSERT(attributes->version >= 1 &&
-             attributes->version <= GRPC_CQ_CURRENT_VERSION);
+  GPR_ASSERT(attributes->version >= 1 && attributes->version <= GRPC_CQ_CURRENT_VERSION);
 
   /* The default factory can handle version 1 of the attributes structure. We
      may have to change this as more fields are added to the structure */
@@ -59,29 +57,27 @@ const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
 
 grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved) {
   GPR_ASSERT(!reserved);
-  grpc_completion_queue_attributes attr = {1, GRPC_CQ_NEXT,
-                                           GRPC_CQ_DEFAULT_POLLING, nullptr};
+  grpc_completion_queue_attributes attr = {1, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, nullptr};
   return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
 }
 
 grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) {
   GPR_ASSERT(!reserved);
-  grpc_completion_queue_attributes attr = {1, GRPC_CQ_PLUCK,
-                                           GRPC_CQ_DEFAULT_POLLING, nullptr};
+  grpc_completion_queue_attributes attr = {1, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING, nullptr};
   return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
 }
 
 grpc_completion_queue* grpc_completion_queue_create_for_callback(
     grpc_completion_queue_functor* shutdown_callback, void* reserved) {
   GPR_ASSERT(!reserved);
-  grpc_completion_queue_attributes attr = {
-      2, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING, shutdown_callback};
+  grpc_completion_queue_attributes attr = {2, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
+                                           shutdown_callback};
   return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
 }
 
-grpc_completion_queue* grpc_completion_queue_create(
-    const grpc_completion_queue_factory* factory,
-    const grpc_completion_queue_attributes* attr, void* reserved) {
+grpc_completion_queue* grpc_completion_queue_create(const grpc_completion_queue_factory* factory,
+                                                    const grpc_completion_queue_attributes* attr,
+                                                    void* reserved) {
   GPR_ASSERT(!reserved);
   return factory->vtable->create(factory, attr);
 }

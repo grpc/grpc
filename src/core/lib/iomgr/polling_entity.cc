@@ -23,16 +23,14 @@
 
 #include "src/core/lib/iomgr/polling_entity.h"
 
-grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
-    grpc_pollset_set* pollset_set) {
+grpc_polling_entity grpc_polling_entity_create_from_pollset_set(grpc_pollset_set* pollset_set) {
   grpc_polling_entity pollent;
   pollent.pollent.pollset_set = pollset_set;
   pollent.tag = GRPC_POLLS_POLLSET_SET;
   return pollent;
 }
 
-grpc_polling_entity grpc_polling_entity_create_from_pollset(
-    grpc_pollset* pollset) {
+grpc_polling_entity grpc_polling_entity_create_from_pollset(grpc_pollset* pollset) {
   grpc_polling_entity pollent;
   pollent.pollent.pollset = pollset;
   pollent.tag = GRPC_POLLS_POLLSET;
@@ -46,8 +44,7 @@ grpc_pollset* grpc_polling_entity_pollset(grpc_polling_entity* pollent) {
   return nullptr;
 }
 
-grpc_pollset_set* grpc_polling_entity_pollset_set(
-    grpc_polling_entity* pollent) {
+grpc_pollset_set* grpc_polling_entity_pollset_set(grpc_polling_entity* pollent) {
   if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     return pollent->pollent.pollset_set;
   }

@@ -37,8 +37,7 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount;
 
 typedef struct grpc_cq_completion {
-  grpc_core::ManualConstructor<grpc_core::MultiProducerSingleConsumerQueue>
-      node;
+  grpc_core::ManualConstructor<grpc_core::MultiProducerSingleConsumerQueue> node;
 
   /** user supplied tag */
   void* tag;
@@ -51,14 +50,12 @@ typedef struct grpc_cq_completion {
 } grpc_cq_completion;
 
 #ifndef NDEBUG
-void grpc_cq_internal_ref(grpc_completion_queue* cq, const char* reason,
-                          const char* file, int line);
-void grpc_cq_internal_unref(grpc_completion_queue* cq, const char* reason,
-                            const char* file, int line);
-#define GRPC_CQ_INTERNAL_REF(cq, reason) \
-  grpc_cq_internal_ref(cq, reason, __FILE__, __LINE__)
-#define GRPC_CQ_INTERNAL_UNREF(cq, reason) \
-  grpc_cq_internal_unref(cq, reason, __FILE__, __LINE__)
+void grpc_cq_internal_ref(grpc_completion_queue* cq, const char* reason, const char* file,
+                          int line);
+void grpc_cq_internal_unref(grpc_completion_queue* cq, const char* reason, const char* file,
+                            int line);
+#define GRPC_CQ_INTERNAL_REF(cq, reason) grpc_cq_internal_ref(cq, reason, __FILE__, __LINE__)
+#define GRPC_CQ_INTERNAL_UNREF(cq, reason) grpc_cq_internal_unref(cq, reason, __FILE__, __LINE__)
 #else
 void grpc_cq_internal_ref(grpc_completion_queue* cq);
 void grpc_cq_internal_unref(grpc_completion_queue* cq);
@@ -77,11 +74,9 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag);
 
 /* Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
    grpc_cq_begin_op */
-void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
-                    grpc_error_handle error,
-                    void (*done)(void* done_arg, grpc_cq_completion* storage),
-                    void* done_arg, grpc_cq_completion* storage,
-                    bool internal = false);
+void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+                    void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
+                    grpc_cq_completion* storage, bool internal = false);
 
 grpc_pollset* grpc_cq_pollset(grpc_completion_queue* cq);
 

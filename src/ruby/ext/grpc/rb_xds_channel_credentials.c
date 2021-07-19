@@ -90,25 +90,21 @@ static rb_data_type_t grpc_rb_xds_channel_credentials_data_type = {
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_xds_channel_credentials_alloc(VALUE cls) {
   grpc_ruby_init();
-  grpc_rb_xds_channel_credentials* wrapper =
-      ALLOC(grpc_rb_xds_channel_credentials);
+  grpc_rb_xds_channel_credentials* wrapper = ALLOC(grpc_rb_xds_channel_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return TypedData_Wrap_Struct(cls, &grpc_rb_xds_channel_credentials_data_type,
-                               wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_xds_channel_credentials_data_type, wrapper);
 }
 
 /* Creates a wrapping object for a given channel credentials. This should only
  * be called with grpc_channel_credentials objects that are not already
  * associated with any Ruby object. */
-VALUE grpc_rb_xds_wrap_channel_credentials(grpc_channel_credentials* c,
-                                           VALUE mark) {
+VALUE grpc_rb_xds_wrap_channel_credentials(grpc_channel_credentials* c, VALUE mark) {
   grpc_rb_xds_channel_credentials* wrapper;
   if (c == NULL) {
     return Qnil;
   }
-  VALUE rb_wrapper =
-      grpc_rb_xds_channel_credentials_alloc(grpc_rb_cXdsChannelCredentials);
+  VALUE rb_wrapper = grpc_rb_xds_channel_credentials_alloc(grpc_rb_cXdsChannelCredentials);
   TypedData_Get_Struct(rb_wrapper, grpc_rb_xds_channel_credentials,
                        &grpc_rb_xds_channel_credentials_data_type, wrapper);
   wrapper->wrapped = c;
@@ -124,13 +120,11 @@ static ID id_fallback_creds;
     fallback_creds: (ChannelCredentials) fallback credentials to create
     XDS credentials
     Initializes Credential instances. */
-static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
-                                                  VALUE fallback_creds) {
+static VALUE grpc_rb_xds_channel_credentials_init(VALUE self, VALUE fallback_creds) {
   grpc_rb_xds_channel_credentials* wrapper = NULL;
   grpc_channel_credentials* grpc_fallback_creds =
       grpc_rb_get_wrapped_channel_credentials(fallback_creds);
-  grpc_channel_credentials* creds =
-      grpc_xds_credentials_create(grpc_fallback_creds);
+  grpc_channel_credentials* creds = grpc_xds_credentials_create(grpc_fallback_creds);
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError,
              "the call to grpc_xds_credentials_create() failed, could not "
@@ -153,8 +147,7 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
 // TODO: de-duplicate this code with the similar method in
 // rb_channel_credentials.c, after putting ChannelCredentials and
 // XdsChannelCredentials under a common parent class
-static VALUE grpc_rb_xds_channel_credentials_compose(int argc, VALUE* argv,
-                                                     VALUE self) {
+static VALUE grpc_rb_xds_channel_credentials_compose(int argc, VALUE* argv, VALUE self) {
   grpc_channel_credentials* creds;
   grpc_call_credentials* other;
   grpc_channel_credentials* prev = NULL;
@@ -175,26 +168,23 @@ static VALUE grpc_rb_xds_channel_credentials_compose(int argc, VALUE* argv,
     prev = creds;
 
     if (creds == NULL) {
-      rb_raise(rb_eRuntimeError,
-               "Failed to compose channel and call credentials");
+      rb_raise(rb_eRuntimeError, "Failed to compose channel and call credentials");
     }
   }
   return grpc_rb_xds_wrap_channel_credentials(creds, mark);
 }
 
 void Init_grpc_xds_channel_credentials() {
-  grpc_rb_cXdsChannelCredentials = rb_define_class_under(
-      grpc_rb_mGrpcCore, "XdsChannelCredentials", rb_cObject);
+  grpc_rb_cXdsChannelCredentials =
+      rb_define_class_under(grpc_rb_mGrpcCore, "XdsChannelCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(grpc_rb_cXdsChannelCredentials,
-                       grpc_rb_xds_channel_credentials_alloc);
+  rb_define_alloc_func(grpc_rb_cXdsChannelCredentials, grpc_rb_xds_channel_credentials_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
   rb_define_method(grpc_rb_cXdsChannelCredentials, "initialize",
                    grpc_rb_xds_channel_credentials_init, 1);
-  rb_define_method(grpc_rb_cXdsChannelCredentials, "initialize_copy",
-                   grpc_rb_cannot_init_copy, 1);
+  rb_define_method(grpc_rb_cXdsChannelCredentials, "initialize_copy", grpc_rb_cannot_init_copy, 1);
   rb_define_method(grpc_rb_cXdsChannelCredentials, "compose",
                    grpc_rb_xds_channel_credentials_compose, -1);
 

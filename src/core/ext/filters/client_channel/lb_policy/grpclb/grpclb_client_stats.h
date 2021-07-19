@@ -44,8 +44,7 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
   typedef absl::InlinedVector<DropTokenCount, 10> DroppedCallCounts;
 
   void AddCallStarted();
-  void AddCallFinished(bool finished_with_client_failed_to_send,
-                       bool finished_known_received);
+  void AddCallFinished(bool finished_with_client_failed_to_send, bool finished_known_received);
 
   void AddCallDropped(const char* token);
 
@@ -56,9 +55,7 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
 
   // A destruction function to use as the user_data key when attaching
   // client stats to a grpc_mdelem.
-  static void Destroy(void* arg) {
-    static_cast<GrpcLbClientStats*>(arg)->Unref();
-  }
+  static void Destroy(void* arg) { static_cast<GrpcLbClientStats*>(arg)->Unref(); }
 
  private:
   gpr_atm num_calls_started_ = 0;
@@ -66,8 +63,7 @@ class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
   gpr_atm num_calls_finished_with_client_failed_to_send_ = 0;
   gpr_atm num_calls_finished_known_received_ = 0;
   Mutex drop_count_mu_;  // Guards drop_token_counts_.
-  std::unique_ptr<DroppedCallCounts> drop_token_counts_
-      ABSL_GUARDED_BY(drop_count_mu_);
+  std::unique_ptr<DroppedCallCounts> drop_token_counts_ ABSL_GUARDED_BY(drop_count_mu_);
 };
 
 }  // namespace grpc_core

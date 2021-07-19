@@ -35,11 +35,9 @@ int has_real_wakeup_fd = 1;
 int cv_wakeup_fds_enabled = 0;
 
 void grpc_wakeup_fd_global_init(void) {
-  if (grpc_allow_specialized_wakeup_fd &&
-      grpc_specialized_wakeup_fd_vtable.check_availability()) {
+  if (grpc_allow_specialized_wakeup_fd && grpc_specialized_wakeup_fd_vtable.check_availability()) {
     wakeup_fd_vtable = &grpc_specialized_wakeup_fd_vtable;
-  } else if (grpc_allow_pipe_wakeup_fd &&
-             grpc_pipe_wakeup_fd_vtable.check_availability()) {
+  } else if (grpc_allow_pipe_wakeup_fd && grpc_pipe_wakeup_fd_vtable.check_availability()) {
     wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
   } else {
     has_real_wakeup_fd = 0;
@@ -62,8 +60,6 @@ grpc_error_handle grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info) {
   return wakeup_fd_vtable->wakeup(fd_info);
 }
 
-void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info) {
-  wakeup_fd_vtable->destroy(fd_info);
-}
+void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info) { wakeup_fd_vtable->destroy(fd_info); }
 
 #endif /* GRPC_POSIX_WAKEUP_FD */

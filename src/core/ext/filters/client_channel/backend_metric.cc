@@ -30,10 +30,9 @@ namespace {
 template <typename EntryType>
 std::map<absl::string_view, double> ParseMap(
     udpa_data_orca_v1_OrcaLoadReport* msg,
-    const EntryType* (*entry_func)(const udpa_data_orca_v1_OrcaLoadReport*,
-                                   size_t*),
-    upb_strview (*key_func)(const EntryType*),
-    double (*value_func)(const EntryType*), Arena* arena) {
+    const EntryType* (*entry_func)(const udpa_data_orca_v1_OrcaLoadReport*, size_t*),
+    upb_strview (*key_func)(const EntryType*), double (*value_func)(const EntryType*),
+    Arena* arena) {
   std::map<absl::string_view, double> result;
   size_t i = UPB_MAP_BEGIN;
   while (true) {
@@ -52,30 +51,23 @@ std::map<absl::string_view, double> ParseMap(
 const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
     const grpc_slice& serialized_load_report, Arena* arena) {
   upb::Arena upb_arena;
-  udpa_data_orca_v1_OrcaLoadReport* msg =
-      udpa_data_orca_v1_OrcaLoadReport_parse(
-          reinterpret_cast<const char*>(
-              GRPC_SLICE_START_PTR(serialized_load_report)),
-          GRPC_SLICE_LENGTH(serialized_load_report), upb_arena.ptr());
+  udpa_data_orca_v1_OrcaLoadReport* msg = udpa_data_orca_v1_OrcaLoadReport_parse(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(serialized_load_report)),
+      GRPC_SLICE_LENGTH(serialized_load_report), upb_arena.ptr());
   if (msg == nullptr) return nullptr;
   LoadBalancingPolicy::BackendMetricData* backend_metric_data =
       arena->New<LoadBalancingPolicy::BackendMetricData>();
-  backend_metric_data->cpu_utilization =
-      udpa_data_orca_v1_OrcaLoadReport_cpu_utilization(msg);
-  backend_metric_data->mem_utilization =
-      udpa_data_orca_v1_OrcaLoadReport_mem_utilization(msg);
-  backend_metric_data->requests_per_second =
-      udpa_data_orca_v1_OrcaLoadReport_rps(msg);
-  backend_metric_data->request_cost =
-      ParseMap<udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry>(
-          msg, udpa_data_orca_v1_OrcaLoadReport_request_cost_next,
-          udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_key,
-          udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_value, arena);
-  backend_metric_data->utilization =
-      ParseMap<udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry>(
-          msg, udpa_data_orca_v1_OrcaLoadReport_utilization_next,
-          udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_key,
-          udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_value, arena);
+  backend_metric_data->cpu_utilization = udpa_data_orca_v1_OrcaLoadReport_cpu_utilization(msg);
+  backend_metric_data->mem_utilization = udpa_data_orca_v1_OrcaLoadReport_mem_utilization(msg);
+  backend_metric_data->requests_per_second = udpa_data_orca_v1_OrcaLoadReport_rps(msg);
+  backend_metric_data->request_cost = ParseMap<udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry>(
+      msg, udpa_data_orca_v1_OrcaLoadReport_request_cost_next,
+      udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_key,
+      udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_value, arena);
+  backend_metric_data->utilization = ParseMap<udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry>(
+      msg, udpa_data_orca_v1_OrcaLoadReport_utilization_next,
+      udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_key,
+      udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_value, arena);
   return backend_metric_data;
 }
 

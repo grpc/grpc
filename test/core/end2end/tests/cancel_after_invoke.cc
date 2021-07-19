@@ -33,28 +33,22 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            cancellation_mode mode,
-                                            size_t test_ops,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
+                                            cancellation_mode mode, size_t test_ops,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s/%s [%" PRIdPTR " ops]", test_name,
-          config.name, mode.name, test_ops);
+  gpr_log(GPR_INFO, "Running test: %s/%s/%s [%" PRIdPTR " ops]", test_name, config.name, mode.name,
+          test_ops);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -66,8 +60,7 @@ static void drain_cq(grpc_completion_queue* cq) {
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev = grpc_completion_queue_next(
-      f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+  grpc_event ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == tag(1000));
   grpc_server_destroy(f->server);
@@ -91,13 +84,13 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 /* Cancel after invoke, no payload */
-static void test_cancel_after_invoke(grpc_end2end_test_config config,
-                                     cancellation_mode mode, size_t test_ops) {
+static void test_cancel_after_invoke(grpc_end2end_test_config config, cancellation_mode mode,
+                                     size_t test_ops) {
   grpc_op ops[6];
   grpc_op* op;
   grpc_call* c;
-  grpc_end2end_test_fixture f = begin_test(config, "test_cancel_after_invoke",
-                                           mode, test_ops, nullptr, nullptr);
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_cancel_after_invoke", mode, test_ops, nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -107,15 +100,12 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
   grpc_call_error error;
   grpc_slice details;
   grpc_byte_buffer* response_payload_recv = nullptr;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

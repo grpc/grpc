@@ -37,8 +37,7 @@ static void test_constructor_option(void) {
   // Tests options
   grpc_core::Thread::Options options;
   options.set_stack_size(192 * 1024);  // Random non-default value
-  grpc_core::ThreadPool* pool =
-      new grpc_core::ThreadPool(0, "test_constructor_option", options);
+  grpc_core::ThreadPool* pool = new grpc_core::ThreadPool(0, "test_constructor_option", options);
   GPR_ASSERT(pool->thread_options().stack_size() == options.stack_size());
   delete pool;
 }
@@ -67,8 +66,7 @@ class SimpleFunctorForAdd : public grpc_completion_queue_functor {
 
 static void test_add(void) {
   gpr_log(GPR_INFO, "test_add");
-  grpc_core::ThreadPool* pool =
-      new grpc_core::ThreadPool(kSmallThreadPoolSize, "test_add");
+  grpc_core::ThreadPool* pool = new grpc_core::ThreadPool(kSmallThreadPoolSize, "test_add");
 
   SimpleFunctorForAdd* functor = new SimpleFunctorForAdd();
   for (int i = 0; i < kThreadSmallIter; ++i) {
@@ -86,8 +84,7 @@ class WorkThread {
   WorkThread(grpc_core::ThreadPool* pool, SimpleFunctorForAdd* cb, int num_add)
       : num_add_(num_add), cb_(cb), pool_(pool) {
     thd_ = grpc_core::Thread(
-        "thread_pool_test_add_thd",
-        [](void* th) { static_cast<WorkThread*>(th)->Run(); }, this);
+        "thread_pool_test_add_thd", [](void* th) { static_cast<WorkThread*>(th)->Run(); }, this);
   }
   ~WorkThread() {}
 
@@ -110,11 +107,10 @@ class WorkThread {
 static void test_multi_add(void) {
   gpr_log(GPR_INFO, "test_multi_add");
   const int num_work_thds = 10;
-  grpc_core::ThreadPool* pool =
-      new grpc_core::ThreadPool(kLargeThreadPoolSize, "test_multi_add");
+  grpc_core::ThreadPool* pool = new grpc_core::ThreadPool(kLargeThreadPoolSize, "test_multi_add");
   SimpleFunctorForAdd* functor = new SimpleFunctorForAdd();
-  WorkThread** work_thds = static_cast<WorkThread**>(
-      gpr_zalloc(sizeof(WorkThread*) * num_work_thds));
+  WorkThread** work_thds =
+      static_cast<WorkThread**>(gpr_zalloc(sizeof(WorkThread*) * num_work_thds));
   gpr_log(GPR_DEBUG, "Fork threads for adding...");
   for (int i = 0; i < num_work_thds; ++i) {
     work_thds[i] = new WorkThread(pool, functor, kThreadLargeIter);
@@ -158,11 +154,9 @@ class SimpleFunctorCheckForAdd : public grpc_completion_queue_functor {
 static void test_one_thread_FIFO(void) {
   gpr_log(GPR_INFO, "test_one_thread_FIFO");
   int counter = 0;
-  grpc_core::ThreadPool* pool =
-      new grpc_core::ThreadPool(1, "test_one_thread_FIFO");
-  SimpleFunctorCheckForAdd** check_functors =
-      static_cast<SimpleFunctorCheckForAdd**>(
-          gpr_zalloc(sizeof(SimpleFunctorCheckForAdd*) * kThreadSmallIter));
+  grpc_core::ThreadPool* pool = new grpc_core::ThreadPool(1, "test_one_thread_FIFO");
+  SimpleFunctorCheckForAdd** check_functors = static_cast<SimpleFunctorCheckForAdd**>(
+      gpr_zalloc(sizeof(SimpleFunctorCheckForAdd*) * kThreadSmallIter));
   for (int i = 0; i < kThreadSmallIter; ++i) {
     check_functors[i] = new SimpleFunctorCheckForAdd(i + 1, &counter);
     pool->Add(check_functors[i]);

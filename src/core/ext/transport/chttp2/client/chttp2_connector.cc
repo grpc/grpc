@@ -48,8 +48,7 @@ Chttp2Connector::~Chttp2Connector() {
   if (endpoint_ != nullptr) grpc_endpoint_destroy(endpoint_);
 }
 
-void Chttp2Connector::Connect(const Args& args, Result* result,
-                              grpc_closure* notify) {
+void Chttp2Connector::Connect(const Args& args, Result* result, grpc_closure* notify) {
   grpc_resolved_address addr;
   Subchannel::GetAddressFromSubchannelAddressArg(args.channel_args, &addr);
   grpc_endpoint** ep;
@@ -71,8 +70,8 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
   // make sure that we still exist at that point by taking a ref.
   Ref().release();  // Ref held by callback.
-  grpc_tcp_client_connect(&connected_, ep, args.interested_parties,
-                          args.channel_args, &addr, args.deadline);
+  grpc_tcp_client_connect(&connected_, ep, args.interested_parties, args.channel_args, &addr,
+                          args.deadline);
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
@@ -121,11 +120,10 @@ void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
 void Chttp2Connector::StartHandshakeLocked() {
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   HandshakerRegistry::AddHandshakers(HANDSHAKER_CLIENT, args_.channel_args,
-                                     args_.interested_parties,
-                                     handshake_mgr_.get());
+                                     args_.interested_parties, handshake_mgr_.get());
   grpc_endpoint_add_to_pollset_set(endpoint_, args_.interested_parties);
-  handshake_mgr_->DoHandshake(endpoint_, args_.channel_args, args_.deadline,
-                              nullptr /* acceptor */, OnHandshakeDone, this);
+  handshake_mgr_->DoHandshake(endpoint_, args_.channel_args, args_.deadline, nullptr /* acceptor */,
+                              OnHandshakeDone, this);
   endpoint_ = nullptr;  // Endpoint handed off to handshake manager.
 }
 
@@ -165,10 +163,8 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      self->result_->transport =
-          grpc_create_chttp2_transport(args->args, args->endpoint, true);
-      self->result_->socket_node =
-          grpc_chttp2_transport_get_socket_node(self->result_->transport);
+      self->result_->transport = grpc_create_chttp2_transport(args->args, args->endpoint, true);
+      self->result_->socket_node = grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
       GPR_ASSERT(self->result_->transport != nullptr);
       self->endpoint_ = args->endpoint;
@@ -176,11 +172,9 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
                         grpc_schedule_on_exec_ctx);
       self->Ref().release();  // Ref held by OnTimeout()
-      grpc_chttp2_transport_start_reading(self->result_->transport,
-                                          args->read_buffer,
+      grpc_chttp2_transport_start_reading(self->result_->transport, args->read_buffer,
                                           &self->on_receive_settings_, nullptr);
-      GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
-                        grpc_schedule_on_exec_ctx);
+      GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self, grpc_schedule_on_exec_ctx);
       grpc_timer_init(&self->timer_, self->args_.deadline, &self->on_timeout_);
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
@@ -199,8 +193,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
   {
     MutexLock lock(&self->mu_);
     if (!self->notify_error_.has_value()) {
-      grpc_endpoint_delete_from_pollset_set(self->endpoint_,
-                                            self->args_.interested_parties);
+      grpc_endpoint_delete_from_pollset_set(self->endpoint_, self->args_.interested_parties);
       if (error != GRPC_ERROR_NONE) {
         // Transport got an error while waiting on SETTINGS frame.
         // TODO(yashykt): The following two lines should be moved to
@@ -227,8 +220,7 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
     if (!self->notify_error_.has_value()) {
       // The transport did not receive the settings frame in time. Destroy the
       // transport.
-      grpc_endpoint_delete_from_pollset_set(self->endpoint_,
-                                            self->args_.interested_parties);
+      grpc_endpoint_delete_from_pollset_set(self->endpoint_, self->args_.interested_parties);
       // TODO(yashykt): The following two lines should be moved to
       // SubchannelConnector::Result::Reset()
       grpc_transport_destroy(self->result_->transport);

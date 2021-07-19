@@ -80,8 +80,7 @@ GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_latency_trace, "latency_trace.txt",
 
 static const char* output_filename() {
   if (output_filename_or_null == NULL) {
-    grpc_core::UniquePtr<char> value =
-        GPR_GLOBAL_CONFIG_GET(grpc_latency_trace);
+    grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_latency_trace);
     if (strlen(value.get()) > 0) {
       output_filename_or_null = value.release();
     } else {
@@ -151,8 +150,8 @@ static void write_log(gpr_timer_log* log) {
             "{\"t\": %" PRId64
             ".%09d, \"thd\": \"%d\", \"type\": \"%c\", \"tag\": "
             "\"%s\", \"file\": \"%s\", \"line\": %d, \"imp\": %d}\n",
-            entry->tm.tv_sec, entry->tm.tv_nsec, entry->thd, entry->type,
-            entry->tagstr, entry->file, entry->line, entry->important);
+            entry->tm.tv_sec, entry->tm.tv_nsec, entry->thd, entry->type, entry->tagstr,
+            entry->file, entry->line, entry->important);
   }
 }
 
@@ -203,9 +202,7 @@ static void finish_writing(void) {
   }
 }
 
-void gpr_timers_set_log_filename(const char* filename) {
-  output_filename_or_null = filename;
-}
+void gpr_timers_set_log_filename(const char* filename) { output_filename_or_null = filename; }
 
 static void init_output() {
   pthread_attr_t attr;
@@ -236,8 +233,8 @@ static void rotate_log() {
   g_thread_log = log;
 }
 
-static void gpr_timers_log_add(const char* tagstr, marker_type type,
-                               int important, const char* file, int line) {
+static void gpr_timers_log_add(const char* tagstr, marker_type type, int important,
+                               const char* file, int line) {
   gpr_timer_entry* entry;
 
   if (!g_writing_enabled) {
@@ -260,18 +257,15 @@ static void gpr_timers_log_add(const char* tagstr, marker_type type,
 }
 
 /* Latency profiler API implementation. */
-void gpr_timer_add_mark(const char* tagstr, int important, const char* file,
-                        int line) {
+void gpr_timer_add_mark(const char* tagstr, int important, const char* file, int line) {
   gpr_timers_log_add(tagstr, MARK, important, file, line);
 }
 
-void gpr_timer_begin(const char* tagstr, int important, const char* file,
-                     int line) {
+void gpr_timer_begin(const char* tagstr, int important, const char* file, int line) {
   gpr_timers_log_add(tagstr, BEGIN, important, file, line);
 }
 
-void gpr_timer_end(const char* tagstr, int important, const char* file,
-                   int line) {
+void gpr_timer_end(const char* tagstr, int important, const char* file, int line) {
   gpr_timers_log_add(tagstr, END, important, file, line);
 }
 

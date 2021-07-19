@@ -54,8 +54,7 @@ class ClientInterceptorFactoryInterface {
 }  // namespace experimental
 
 namespace internal {
-extern experimental::ClientInterceptorFactoryInterface*
-    g_global_client_interceptor_factory;
+extern experimental::ClientInterceptorFactoryInterface* g_global_client_interceptor_factory;
 }
 
 /// ClientRpcInfo represents the state of a particular RPC as it
@@ -102,26 +101,21 @@ class ClientRpcInfo {
   Type type() const { return type_; }
 
  private:
-  static_assert(Type::UNARY ==
-                    static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
+  static_assert(Type::UNARY == static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
                 "violated expectation about Type enum");
-  static_assert(Type::CLIENT_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
+  static_assert(Type::CLIENT_STREAMING == static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
                 "violated expectation about Type enum");
-  static_assert(Type::SERVER_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
+  static_assert(Type::SERVER_STREAMING == static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
                 "violated expectation about Type enum");
-  static_assert(Type::BIDI_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
+  static_assert(Type::BIDI_STREAMING == static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
                 "violated expectation about Type enum");
 
   // Default constructor should only be used by ClientContext
   ClientRpcInfo() = default;
 
   // Constructor will only be called from ClientContext
-  ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type,
-                const char* method, const char* suffix_for_stats,
-                grpc::ChannelInterface* channel)
+  ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type, const char* method,
+                const char* suffix_for_stats, grpc::ChannelInterface* channel)
       : ctx_(ctx),
         type_(static_cast<Type>(type)),
         method_(method),
@@ -133,15 +127,13 @@ class ClientRpcInfo {
   ClientRpcInfo& operator=(ClientRpcInfo&&) = default;
 
   // Runs interceptor at pos \a pos.
-  void RunInterceptor(
-      experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
+  void RunInterceptor(experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
     GPR_CODEGEN_ASSERT(pos < interceptors_.size());
     interceptors_[pos]->Intercept(interceptor_methods);
   }
 
   void RegisterInterceptors(
-      const std::vector<std::unique_ptr<
-          experimental::ClientInterceptorFactoryInterface>>& creators,
+      const std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>& creators,
       size_t interceptor_pos) {
     if (interceptor_pos > creators.size()) {
       // No interceptors to register
@@ -149,18 +141,15 @@ class ClientRpcInfo {
     }
     // NOTE: The following is not a range-based for loop because it will only
     //       iterate over a portion of the creators vector.
-    for (auto it = creators.begin() + interceptor_pos; it != creators.end();
-         ++it) {
+    for (auto it = creators.begin() + interceptor_pos; it != creators.end(); ++it) {
       auto* interceptor = (*it)->CreateClientInterceptor(this);
       if (interceptor != nullptr) {
-        interceptors_.push_back(
-            std::unique_ptr<experimental::Interceptor>(interceptor));
+        interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(interceptor));
       }
     }
     if (internal::g_global_client_interceptor_factory != nullptr) {
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          internal::g_global_client_interceptor_factory
-              ->CreateClientInterceptor(this)));
+          internal::g_global_client_interceptor_factory->CreateClientInterceptor(this)));
     }
   }
 
@@ -185,8 +174,7 @@ class ClientRpcInfo {
 // life of the object while gRPC operations are in progress. The global
 // interceptor factory should only be registered once at the start of the
 // process before any gRPC operations have begun.
-void RegisterGlobalClientInterceptorFactory(
-    ClientInterceptorFactoryInterface* factory);
+void RegisterGlobalClientInterceptorFactory(ClientInterceptorFactoryInterface* factory);
 
 // For testing purposes only
 void TestOnlyResetGlobalClientInterceptorFactory();

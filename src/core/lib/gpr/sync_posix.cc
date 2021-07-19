@@ -18,8 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#if defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && \
-    !defined(GPR_CUSTOM_SYNC)
+#if defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) && !defined(GPR_CUSTOM_SYNC)
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -118,8 +117,7 @@ void gpr_cv_destroy(gpr_cv* cv) {
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   int err = 0;
-  if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
-      0) {
+  if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) == 0) {
 #ifdef GRPC_ASAN_ENABLED
     err = pthread_cond_wait(&cv->cond_var, &mu->mutex);
 #else

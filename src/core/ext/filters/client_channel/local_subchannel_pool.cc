@@ -35,8 +35,7 @@ RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
   return constructed;
 }
 
-void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
-                                               Subchannel* subchannel) {
+void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key, Subchannel* subchannel) {
   auto it = subchannel_map_.find(key);
   // Because this subchannel pool is accessed only under the client
   // channel's work serializer, any subchannel created by RegisterSubchannel
@@ -46,8 +45,7 @@ void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
   subchannel_map_.erase(it);
 }
 
-RefCountedPtr<Subchannel> LocalSubchannelPool::FindSubchannel(
-    const SubchannelKey& key) {
+RefCountedPtr<Subchannel> LocalSubchannelPool::FindSubchannel(const SubchannelKey& key) {
   auto it = subchannel_map_.find(key);
   if (it == subchannel_map_.end()) return nullptr;
   return it->second->Ref();

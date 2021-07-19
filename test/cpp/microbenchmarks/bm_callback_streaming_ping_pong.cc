@@ -50,19 +50,15 @@ static void StreamingPingPongMsgsNumberArgs(benchmark::internal::Benchmark* b) {
 }
 
 // Streaming with different message size
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
-                   NoOpMutator)
+BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongMsgSizeArgs);
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
-                   NoOpMutator)
+BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongMsgSizeArgs);
 
 // Streaming with different message number
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator,
-                   NoOpMutator)
+BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess, NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongMsgsNumberArgs);
-BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator,
-                   NoOpMutator)
+BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, MinInProcess, NoOpMutator, NoOpMutator)
     ->Apply(StreamingPingPongMsgsNumberArgs);
 
 // Client context with different metadata
@@ -73,8 +69,7 @@ BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<31>, 1>, NoOpMutator)
     ->Args({0, 1});
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
-                   NoOpMutator)
+                   Client_AddMetadata<RandomBinaryMetadata<100>, 1>, NoOpMutator)
     ->Args({0, 1});
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<10>, 2>, NoOpMutator)
@@ -83,8 +78,7 @@ BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<31>, 2>, NoOpMutator)
     ->Args({0, 1});
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
-                   NoOpMutator)
+                   Client_AddMetadata<RandomBinaryMetadata<100>, 2>, NoOpMutator)
     ->Args({0, 1});
 BENCHMARK_TEMPLATE(BM_CallbackBidiStreaming, InProcess,
                    Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator)

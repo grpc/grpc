@@ -31,11 +31,9 @@ GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_client_channel_backup_poll_interval_ms);
 void grpc_client_channel_global_init_backup_polling();
 
 /* Starts polling \a interested_parties periodically in the timer thread. */
-void grpc_client_channel_start_backup_polling(
-    grpc_pollset_set* interested_parties);
+void grpc_client_channel_start_backup_polling(grpc_pollset_set* interested_parties);
 
 /* Stops polling \a interested_parties. */
-void grpc_client_channel_stop_backup_polling(
-    grpc_pollset_set* interested_parties);
+void grpc_client_channel_stop_backup_polling(grpc_pollset_set* interested_parties);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H */

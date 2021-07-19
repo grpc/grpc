@@ -34,8 +34,7 @@ ChannelArguments::ChannelArguments() {
   SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + grpc::Version());
 }
 
-ChannelArguments::ChannelArguments(const ChannelArguments& other)
-    : strings_(other.strings_) {
+ChannelArguments::ChannelArguments(const ChannelArguments& other) : strings_(other.strings_) {
   args_.reserve(other.args_.size());
   auto list_it_dst = strings_.begin();
   auto list_it_src = other.strings_.begin();
@@ -79,8 +78,7 @@ void ChannelArguments::Swap(ChannelArguments& other) {
   strings_.swap(other.strings_);
 }
 
-void ChannelArguments::SetCompressionAlgorithm(
-    grpc_compression_algorithm algorithm) {
+void ChannelArguments::SetCompressionAlgorithm(grpc_compression_algorithm algorithm) {
   SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
 }
 
@@ -96,8 +94,7 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   bool replaced = false;
   grpc_core::ExecCtx exec_ctx;
   for (auto& arg : args_) {
-    if (arg.type == mutator_arg.type &&
-        std::string(arg.key) == std::string(mutator_arg.key)) {
+    if (arg.type == mutator_arg.type && std::string(arg.key) == std::string(mutator_arg.key)) {
       GPR_ASSERT(!replaced);
       arg.value.pointer.vtable->destroy(arg.value.pointer.p);
       arg.value.pointer = mutator_arg.value.pointer;
@@ -116,8 +113,7 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
 // An example is calling this on a copy of ChannelArguments which already has a
 // prefix. The user can build up a prefix string by calling this multiple times,
 // each with more significant identifier.
-void ChannelArguments::SetUserAgentPrefix(
-    const std::string& user_agent_prefix) {
+void ChannelArguments::SetUserAgentPrefix(const std::string& user_agent_prefix) {
   if (user_agent_prefix.empty()) {
     return;
   }
@@ -141,10 +137,8 @@ void ChannelArguments::SetUserAgentPrefix(
   }
 }
 
-void ChannelArguments::SetResourceQuota(
-    const grpc::ResourceQuota& resource_quota) {
-  SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA,
-                       resource_quota.c_resource_quota(),
+void ChannelArguments::SetResourceQuota(const grpc::ResourceQuota& resource_quota) {
+  SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota.c_resource_quota(),
                        grpc_resource_quota_arg_vtable());
 }
 
@@ -156,13 +150,11 @@ void ChannelArguments::SetMaxSendMessageSize(int size) {
   SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, size);
 }
 
-void ChannelArguments::SetLoadBalancingPolicyName(
-    const std::string& lb_policy_name) {
+void ChannelArguments::SetLoadBalancingPolicyName(const std::string& lb_policy_name) {
   SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
 }
 
-void ChannelArguments::SetServiceConfigJSON(
-    const std::string& service_config_json) {
+void ChannelArguments::SetServiceConfigJSON(const std::string& service_config_json) {
   SetString(GRPC_ARG_SERVICE_CONFIG, service_config_json);
 }
 
@@ -178,14 +170,12 @@ void ChannelArguments::SetInt(const std::string& key, int value) {
 
 void ChannelArguments::SetPointer(const std::string& key, void* value) {
   static const grpc_arg_pointer_vtable vtable = {
-      &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
-      &PointerVtableMembers::Compare};
+      &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy, &PointerVtableMembers::Compare};
   SetPointerWithVtable(key, value, &vtable);
 }
 
-void ChannelArguments::SetPointerWithVtable(
-    const std::string& key, void* value,
-    const grpc_arg_pointer_vtable* vtable) {
+void ChannelArguments::SetPointerWithVtable(const std::string& key, void* value,
+                                            const grpc_arg_pointer_vtable* vtable) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
@@ -195,8 +185,7 @@ void ChannelArguments::SetPointerWithVtable(
   args_.push_back(arg);
 }
 
-void ChannelArguments::SetString(const std::string& key,
-                                 const std::string& value) {
+void ChannelArguments::SetString(const std::string& key, const std::string& value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   strings_.push_back(key);

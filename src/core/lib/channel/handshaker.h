@@ -79,8 +79,7 @@ class Handshaker : public RefCounted<Handshaker> {
  public:
   ~Handshaker() override = default;
   virtual void Shutdown(grpc_error_handle why) = 0;
-  virtual void DoHandshake(grpc_tcp_server_acceptor* acceptor,
-                           grpc_closure* on_handshake_done,
+  virtual void DoHandshake(grpc_tcp_server_acceptor* acceptor, grpc_closure* on_handshake_done,
                            HandshakerArgs* args) = 0;
   virtual const char* name() const = 0;
 };
@@ -114,9 +113,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
-  void DoHandshake(grpc_endpoint* endpoint,
-                   const grpc_channel_args* channel_args, grpc_millis deadline,
-                   grpc_tcp_server_acceptor* acceptor,
+  void DoHandshake(grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
+                   grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
                    grpc_iomgr_cb_func on_handshake_done, void* user_data);
 
  private:
@@ -134,8 +132,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   Mutex mu_;
   bool is_shutdown_ = false;
   // An array of handshakers added via grpc_handshake_manager_add().
-  absl::InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE>
-      handshakers_;
+  absl::InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE> handshakers_;
   // The index of the handshaker to invoke next and closure to invoke it.
   size_t index_ = 0;
   grpc_closure call_next_handshaker_;
@@ -156,7 +153,6 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 // and will eventually be removed entirely.
 typedef grpc_core::HandshakeManager grpc_handshake_manager;
 typedef grpc_core::Handshaker grpc_handshaker;
-void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
-                                grpc_handshaker* handshaker);
+void grpc_handshake_manager_add(grpc_handshake_manager* mgr, grpc_handshaker* handshaker);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */

@@ -41,8 +41,7 @@ using helloworld::HelloRequest;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::CallbackService {
-  ServerUnaryReactor* SayHello(CallbackServerContext* context,
-                               const HelloRequest* request,
+  ServerUnaryReactor* SayHello(CallbackServerContext* context, const HelloRequest* request,
                                HelloReply* reply) override {
     std::string prefix("Hello ");
     reply->set_message(prefix + request->name());

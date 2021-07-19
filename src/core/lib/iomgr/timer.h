@@ -72,8 +72,7 @@ typedef struct grpc_timer_vtable {
    application callback is also responsible for maintaining information about
    when to free up any user-level state. Behavior is undefined for a deadline of
    GRPC_MILLIS_INF_FUTURE. */
-void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
-                     grpc_closure* closure);
+void grpc_timer_init(grpc_timer* timer, grpc_millis deadline, grpc_closure* closure);
 
 /* Initialize *timer without setting it. This can later be passed through
    the regular init or cancel */

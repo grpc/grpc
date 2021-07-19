@@ -29,9 +29,8 @@ namespace grpc_core {
 namespace {
 
 TEST(StatusUtilTest, CreateStatus) {
-  absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, "Test", DEBUG_LOCATION,
-                   {absl::OkStatus(), absl::CancelledError()});
+  absl::Status s = StatusCreate(absl::StatusCode::kUnknown, "Test", DEBUG_LOCATION,
+                                {absl::OkStatus(), absl::CancelledError()});
   EXPECT_EQ(absl::StatusCode::kUnknown, s.code());
   EXPECT_EQ("Test", s.message());
 #ifndef NDEBUG
@@ -39,8 +38,7 @@ TEST(StatusUtilTest, CreateStatus) {
   EXPECT_EQ(true, StatusGetInt(s, StatusIntProperty::kFileLine).has_value());
 #endif
   EXPECT_EQ(true, StatusGetTime(s, StatusTimeProperty::kCreated).has_value());
-  EXPECT_THAT(StatusGetChildren(s),
-              ::testing::ElementsAre(absl::CancelledError()));
+  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre(absl::CancelledError()));
 }
 
 TEST(StatusUtilTest, SetAndGetInt) {
@@ -51,8 +49,7 @@ TEST(StatusUtilTest, SetAndGetInt) {
 
 TEST(StatusUtilTest, GetIntNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<intptr_t>(),
-            StatusGetInt(s, StatusIntProperty::kErrorNo));
+  EXPECT_EQ(absl::optional<intptr_t>(), StatusGetInt(s, StatusIntProperty::kErrorNo));
 }
 
 TEST(StatusUtilTest, SetAndGetStr) {
@@ -63,8 +60,7 @@ TEST(StatusUtilTest, SetAndGetStr) {
 
 TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<std::string>(),
-            StatusGetStr(s, StatusStrProperty::kOsError));
+  EXPECT_EQ(absl::optional<std::string>(), StatusGetStr(s, StatusStrProperty::kOsError));
 }
 
 TEST(StatusUtilTest, SetAndGetTime) {
@@ -76,8 +72,7 @@ TEST(StatusUtilTest, SetAndGetTime) {
 
 TEST(StatusUtilTest, GetTimeNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<absl::Time>(),
-            StatusGetTime(s, StatusTimeProperty::kCreated));
+  EXPECT_EQ(absl::optional<absl::Time>(), StatusGetTime(s, StatusTimeProperty::kCreated));
 }
 
 TEST(StatusUtilTest, AddAndGetChildren) {
@@ -127,12 +122,10 @@ TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
 
 TEST(StatusUtilTest, ErrorWithTimePropertyToString) {
   absl::Status s = absl::CancelledError("Message");
-  absl::Time t = absl::FromCivil(absl::CivilSecond(2021, 4, 29, 8, 56, 30),
-                                 absl::LocalTimeZone());
+  absl::Time t = absl::FromCivil(absl::CivilSecond(2021, 4, 29, 8, 56, 30), absl::LocalTimeZone());
   StatusSetTime(&s, StatusTimeProperty::kCreated, t);
   EXPECT_EQ(StatusToString(s),
-            absl::StrCat("CANCELLED:Message {created_time:\"",
-                         absl::FormatTime(t), "\"}"));
+            absl::StrCat("CANCELLED:Message {created_time:\"", absl::FormatTime(t), "\"}"));
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {

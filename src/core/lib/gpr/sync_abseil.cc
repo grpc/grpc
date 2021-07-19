@@ -41,14 +41,11 @@ gpr_atm gpr_counter_atm_add = 0;
 #endif
 
 void gpr_mu_init(gpr_mu* mu) {
-  static_assert(sizeof(gpr_mu) == sizeof(absl::Mutex),
-                "gpr_mu and Mutex must be the same size");
+  static_assert(sizeof(gpr_mu) == sizeof(absl::Mutex), "gpr_mu and Mutex must be the same size");
   new (mu) absl::Mutex;
 }
 
-void gpr_mu_destroy(gpr_mu* mu) {
-  reinterpret_cast<absl::Mutex*>(mu)->~Mutex();
-}
+void gpr_mu_destroy(gpr_mu* mu) { reinterpret_cast<absl::Mutex*>(mu)->~Mutex(); }
 
 void gpr_mu_lock(gpr_mu* mu) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   GPR_TIMER_SCOPE("gpr_mu_lock", 0);
@@ -73,23 +70,19 @@ void gpr_cv_init(gpr_cv* cv) {
   new (cv) absl::CondVar;
 }
 
-void gpr_cv_destroy(gpr_cv* cv) {
-  reinterpret_cast<absl::CondVar*>(cv)->~CondVar();
-}
+void gpr_cv_destroy(gpr_cv* cv) { reinterpret_cast<absl::CondVar*>(cv)->~CondVar(); }
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   GPR_TIMER_SCOPE("gpr_cv_wait", 0);
-  if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
-      0) {
-    reinterpret_cast<absl::CondVar*>(cv)->Wait(
-        reinterpret_cast<absl::Mutex*>(mu));
+  if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) == 0) {
+    reinterpret_cast<absl::CondVar*>(cv)->Wait(reinterpret_cast<absl::Mutex*>(mu));
     return 0;
   }
   abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
   timespec ts = {static_cast<decltype(ts.tv_sec)>(abs_deadline.tv_sec),
                  static_cast<decltype(ts.tv_nsec)>(abs_deadline.tv_nsec)};
-  return reinterpret_cast<absl::CondVar*>(cv)->WaitWithDeadline(
-      reinterpret_cast<absl::Mutex*>(mu), absl::TimeFromTimespec(ts));
+  return reinterpret_cast<absl::CondVar*>(cv)->WaitWithDeadline(reinterpret_cast<absl::Mutex*>(mu),
+                                                                absl::TimeFromTimespec(ts));
 }
 
 void gpr_cv_signal(gpr_cv* cv) {

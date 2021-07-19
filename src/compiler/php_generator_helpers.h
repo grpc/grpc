@@ -26,11 +26,9 @@
 
 namespace grpc_php_generator {
 
-inline std::string GetPHPServiceClassname(
-    const grpc::protobuf::ServiceDescriptor* service,
-    const std::string& class_suffix, bool is_server) {
-  return service->name() +
-         (class_suffix == "" ? (is_server ? "" : "Client") : class_suffix) +
+inline std::string GetPHPServiceClassname(const grpc::protobuf::ServiceDescriptor* service,
+                                          const std::string& class_suffix, bool is_server) {
+  return service->name() + (class_suffix == "" ? (is_server ? "" : "Client") : class_suffix) +
          (is_server ? "Stub" : "");
 }
 
@@ -45,32 +43,26 @@ inline std::string ReplaceAll(std::string s, const std::string& search,
   return s;
 }
 
-inline std::string GetPHPServiceFilename(
-    const grpc::protobuf::FileDescriptor* file,
-    const grpc::protobuf::ServiceDescriptor* service,
-    const std::string& class_suffix, bool is_server) {
+inline std::string GetPHPServiceFilename(const grpc::protobuf::FileDescriptor* file,
+                                         const grpc::protobuf::ServiceDescriptor* service,
+                                         const std::string& class_suffix, bool is_server) {
   std::ostringstream oss;
   if (file->options().has_php_namespace()) {
     oss << ReplaceAll(file->options().php_namespace(), "\\", "/");
   } else {
-    std::vector<std::string> tokens =
-        grpc_generator::tokenize(file->package(), ".");
+    std::vector<std::string> tokens = grpc_generator::tokenize(file->package(), ".");
     for (unsigned int i = 0; i < tokens.size(); i++) {
-      oss << (i == 0 ? "" : "/")
-          << grpc_generator::CapitalizeFirstLetter(tokens[i]);
+      oss << (i == 0 ? "" : "/") << grpc_generator::CapitalizeFirstLetter(tokens[i]);
     }
   }
-  return oss.str() + "/" +
-         GetPHPServiceClassname(service, class_suffix, is_server) + ".php";
+  return oss.str() + "/" + GetPHPServiceClassname(service, class_suffix, is_server) + ".php";
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "// ".
 // Leading detached comments are put in front of leading comments.
 template <typename DescriptorType>
-inline std::string GetPHPComments(const DescriptorType* desc,
-                                  std::string prefix) {
-  return ReplaceAll(grpc_generator::GetPrefixedComments(desc, true, prefix),
-                    "*/", "&#42;/");
+inline std::string GetPHPComments(const DescriptorType* desc, std::string prefix) {
+  return ReplaceAll(grpc_generator::GetPrefixedComments(desc, true, prefix), "*/", "&#42;/");
 }
 
 }  // namespace grpc_php_generator

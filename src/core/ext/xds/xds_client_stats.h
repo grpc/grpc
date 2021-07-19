@@ -44,8 +44,7 @@ class XdsClient;
 class XdsLocalityName : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
-    bool operator()(const XdsLocalityName* lhs,
-                    const XdsLocalityName* rhs) const {
+    bool operator()(const XdsLocalityName* lhs, const XdsLocalityName* rhs) const {
       if (lhs == nullptr || rhs == nullptr) return GPR_ICMP(lhs, rhs);
       return lhs->Compare(*rhs) < 0;
     }
@@ -57,18 +56,13 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   };
 
   XdsLocalityName(std::string region, std::string zone, std::string sub_zone)
-      : region_(std::move(region)),
-        zone_(std::move(zone)),
-        sub_zone_(std::move(sub_zone)) {}
+      : region_(std::move(region)), zone_(std::move(zone)), sub_zone_(std::move(sub_zone)) {}
 
   bool operator==(const XdsLocalityName& other) const {
-    return region_ == other.region_ && zone_ == other.zone_ &&
-           sub_zone_ == other.sub_zone_;
+    return region_ == other.region_ && zone_ == other.zone_ && sub_zone_ == other.sub_zone_;
   }
 
-  bool operator!=(const XdsLocalityName& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const XdsLocalityName& other) const { return !(*this == other); }
 
   int Compare(const XdsLocalityName& other) const {
     int cmp_result = region_.compare(other.region_);
@@ -84,9 +78,8 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 
   const std::string& AsHumanReadableString() {
     if (human_readable_string_.empty()) {
-      human_readable_string_ =
-          absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                          region_, zone_, sub_zone_);
+      human_readable_string_ = absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                                               region_, zone_, sub_zone_);
     }
     return human_readable_string_;
   }
@@ -127,10 +120,8 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
     }
   };
 
-  XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
-                      absl::string_view lrs_server_name,
-                      absl::string_view cluster_name,
-                      absl::string_view eds_service_name);
+  XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client, absl::string_view lrs_server_name,
+                      absl::string_view cluster_name, absl::string_view eds_service_name);
   ~XdsClusterDropStats() override;
 
   // Returns a snapshot of this instance and resets all the counters.
@@ -160,8 +151,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
     double total_metric_value;
 
     BackendMetric& operator+=(const BackendMetric& other) {
-      num_requests_finished_with_metric +=
-          other.num_requests_finished_with_metric;
+      num_requests_finished_with_metric += other.num_requests_finished_with_metric;
       total_metric_value += other.total_metric_value;
       return *this;
     }
@@ -201,10 +191,8 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
     }
   };
 
-  XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client,
-                          absl::string_view lrs_server_name,
-                          absl::string_view cluster_name,
-                          absl::string_view eds_service_name,
+  XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client, absl::string_view lrs_server_name,
+                          absl::string_view cluster_name, absl::string_view eds_service_name,
                           RefCountedPtr<XdsLocalityName> name);
   ~XdsClusterLocalityStats() override;
 
@@ -231,8 +219,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   // call's recv_trailing_metadata (not from the control plane work serializer)
   // and the load reporting thread (from the control plane work serializer).
   Mutex backend_metrics_mu_;
-  std::map<std::string, BackendMetric> backend_metrics_
-      ABSL_GUARDED_BY(backend_metrics_mu_);
+  std::map<std::string, BackendMetric> backend_metrics_ ABSL_GUARDED_BY(backend_metrics_mu_);
 };
 
 }  // namespace grpc_core

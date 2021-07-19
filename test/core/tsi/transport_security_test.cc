@@ -62,8 +62,7 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {1, "f", "f", nullptr, nullptr},
     {0, "h", "i", nullptr, nullptr},
     {1, "bar.foo.com", "*.foo.com", nullptr, nullptr},
-    {1, "www.test.fr", "common.name",
-     "*.test.com,*.test.co.uk,*.test.de,*.test.fr", nullptr},
+    {1, "www.test.fr", "common.name", "*.test.com,*.test.co.uk,*.test.de,*.test.fr", nullptr},
     /*
        {1, "wwW.tESt.fr", "common.name", ",*.*,*.test.de,*.test.FR,www"},
      */
@@ -87,15 +86,13 @@ const cert_name_test_entry cert_name_test_entries[] = {
      */
 
     /* Common name must not be used if subject alternative name was provided. */
-    {0, "www.test.co.jp", "www.test.co.jp",
-     "*.test.de,*.jp,www.test.co.uk,www.*.co.jp", nullptr},
+    {0, "www.test.co.jp", "www.test.co.jp", "*.test.de,*.jp,www.test.co.uk,www.*.co.jp", nullptr},
     {0, "www.bar.foo.com", "www.bar.foo.com",
      "*.foo.com,*.*.foo.com,*.*.bar.foo.com,*..bar.foo.com,", nullptr},
 
     /* IDN tests */
     {1, "xn--poema-9qae5a.com.br", "xn--poema-9qae5a.com.br", nullptr, nullptr},
-    {1, "www.xn--poema-9qae5a.com.br", "*.xn--poema-9qae5a.com.br", nullptr,
-     nullptr},
+    {1, "www.xn--poema-9qae5a.com.br", "*.xn--poema-9qae5a.com.br", nullptr, nullptr},
     {0, "xn--poema-9qae5a.com.br", "",
      "*.xn--poema-9qae5a.com.br,"
      "xn--poema-*.com.br,"
@@ -134,10 +131,8 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {0, "foo", "*", nullptr, nullptr},
 
     /* IDN variants of wildcards and registry controlled domains. */
-    {1, "www.xn--poema-9qae5a.com.br", "*.xn--poema-9qae5a.com.br", nullptr,
-     nullptr},
-    {1, "test.example.xn--mgbaam7a8h", "*.example.xn--mgbaam7a8h", nullptr,
-     nullptr},
+    {1, "www.xn--poema-9qae5a.com.br", "*.xn--poema-9qae5a.com.br", nullptr, nullptr},
+    {1, "test.example.xn--mgbaam7a8h", "*.example.xn--mgbaam7a8h", nullptr, nullptr},
     /*
        {0, "xn--poema-9qae5a.com.br", "*.com.br", NULL},
      */
@@ -184,14 +179,11 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {1, "173.194.195.139", "foo.example.com", nullptr, "173.194.195.139"},
     {0, "173.194.195.139", "foo.example.com", nullptr, "8.8.8.8"},
     {0, "173.194.195.139", "foo.example.com", nullptr, "8.8.8.8,8.8.4.4"},
-    {1, "173.194.195.139", "foo.example.com", nullptr,
-     "8.8.8.8,173.194.195.139"},
+    {1, "173.194.195.139", "foo.example.com", nullptr, "8.8.8.8,173.194.195.139"},
     {0, "173.194.195.139", "foo.example.com", nullptr, "173.194.195.13"},
     {0, "2001:db8:a0b:12f0::1", "foo.example.com", nullptr, "173.194.195.13"},
-    {1, "2001:db8:a0b:12f0::1", "foo.example.com", nullptr,
-     "2001:db8:a0b:12f0::1"},
-    {0, "2001:db8:a0b:12f0::1", "foo.example.com", nullptr,
-     "2001:db8:a0b:12f0::2"},
+    {1, "2001:db8:a0b:12f0::1", "foo.example.com", nullptr, "2001:db8:a0b:12f0::1"},
+    {0, "2001:db8:a0b:12f0::1", "foo.example.com", nullptr, "2001:db8:a0b:12f0::2"},
     {1, "2001:db8:a0b:12f0::1", "foo.example.com", nullptr,
      "2001:db8:a0b:12f0::2,2001:db8:a0b:12f0::1,8.8.8.8"},
 };
@@ -257,16 +249,14 @@ static char* processed_name(const char* name) {
   return result;
 }
 
-static tsi_peer peer_from_cert_name_test_entry(
-    const cert_name_test_entry* entry) {
+static tsi_peer peer_from_cert_name_test_entry(const cert_name_test_entry* entry) {
   size_t i;
   tsi_peer peer;
   name_list* nl;
   parsed_names dns_entries = parse_names(entry->dns_names);
   parsed_names ip_entries = parse_names(entry->ip_names);
   nl = dns_entries.names;
-  GPR_ASSERT(tsi_construct_peer(
-                 1 + dns_entries.name_count + ip_entries.name_count, &peer) ==
+  GPR_ASSERT(tsi_construct_peer(1 + dns_entries.name_count + ip_entries.name_count, &peer) ==
              TSI_OK);
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, entry->common_name,
@@ -274,9 +264,9 @@ static tsi_peer peer_from_cert_name_test_entry(
   i = 1;
   while (nl != nullptr) {
     char* processed = processed_name(nl->name);
-    GPR_ASSERT(tsi_construct_string_peer_property(
-                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
-                   strlen(nl->name), &peer.properties[i++]) == TSI_OK);
+    GPR_ASSERT(tsi_construct_string_peer_property(TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                                                  processed, strlen(nl->name),
+                                                  &peer.properties[i++]) == TSI_OK);
     nl = nl->next;
     gpr_free(processed);
   }
@@ -284,9 +274,9 @@ static tsi_peer peer_from_cert_name_test_entry(
   nl = ip_entries.names;
   while (nl != nullptr) {
     char* processed = processed_name(nl->name);
-    GPR_ASSERT(tsi_construct_string_peer_property(
-                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
-                   strlen(nl->name), &peer.properties[i++]) == TSI_OK);
+    GPR_ASSERT(tsi_construct_string_peer_property(TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                                                  processed, strlen(nl->name),
+                                                  &peer.properties[i++]) == TSI_OK);
     nl = nl->next;
     gpr_free(processed);
   }
@@ -340,33 +330,31 @@ static void test_result_strings(void) {
       {TSI_OUT_OF_RESOURCES, "TSI_OUT_OF_RESOURCES"}};
   size_t i;
   for (i = 0; i < GPR_ARRAY_SIZE(results); i++) {
-    GPR_ASSERT(strcmp(results[i].str, tsi_result_to_string(results[i].res)) ==
-               0);
+    GPR_ASSERT(strcmp(results[i].str, tsi_result_to_string(results[i].res)) == 0);
   }
   GPR_ASSERT(strcmp("UNKNOWN", tsi_result_to_string((tsi_result)42)) == 0);
 }
 
 static void test_protector_invalid_args(void) {
-  GPR_ASSERT(tsi_frame_protector_protect(nullptr, nullptr, nullptr, nullptr,
-                                         nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_frame_protector_protect_flush(
-                 nullptr, nullptr, nullptr, nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_frame_protector_unprotect(nullptr, nullptr, nullptr, nullptr,
-                                           nullptr) == TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_frame_protector_protect(nullptr, nullptr, nullptr, nullptr, nullptr) ==
+             TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_frame_protector_protect_flush(nullptr, nullptr, nullptr, nullptr) ==
+             TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_frame_protector_unprotect(nullptr, nullptr, nullptr, nullptr, nullptr) ==
+             TSI_INVALID_ARGUMENT);
 }
 
 static void test_handshaker_invalid_args(void) {
   GPR_ASSERT(tsi_handshaker_get_result(nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_extract_peer(nullptr, nullptr) ==
-             TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_handshaker_extract_peer(nullptr, nullptr) == TSI_INVALID_ARGUMENT);
   GPR_ASSERT(tsi_handshaker_create_frame_protector(nullptr, nullptr, nullptr) ==
              TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_process_bytes_from_peer(
-                 nullptr, nullptr, nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_get_bytes_to_send_to_peer(
-                 nullptr, nullptr, nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_next(nullptr, nullptr, 0, nullptr, nullptr, nullptr,
-                                 nullptr, nullptr) == TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_handshaker_process_bytes_from_peer(nullptr, nullptr, nullptr) ==
+             TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_handshaker_get_bytes_to_send_to_peer(nullptr, nullptr, nullptr) ==
+             TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(tsi_handshaker_next(nullptr, nullptr, 0, nullptr, nullptr, nullptr, nullptr,
+                                 nullptr) == TSI_INVALID_ARGUMENT);
 }
 
 static void test_handshaker_invalid_state(void) {
@@ -374,8 +362,7 @@ static void test_handshaker_invalid_state(void) {
   tsi_peer peer;
   tsi_frame_protector* p;
   GPR_ASSERT(tsi_handshaker_extract_peer(h, &peer) == TSI_FAILED_PRECONDITION);
-  GPR_ASSERT(tsi_handshaker_create_frame_protector(h, nullptr, &p) ==
-             TSI_FAILED_PRECONDITION);
+  GPR_ASSERT(tsi_handshaker_create_frame_protector(h, nullptr, &p) == TSI_FAILED_PRECONDITION);
   tsi_handshaker_destroy(h);
 }
 

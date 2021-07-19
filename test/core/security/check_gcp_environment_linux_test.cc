@@ -38,8 +38,7 @@ static bool check_bios_data_linux_test(const char* data) {
   GPR_ASSERT(fp != nullptr);
   GPR_ASSERT(fwrite(data, 1, strlen(data), fp) == strlen(data));
   fclose(fp);
-  bool result = grpc_core::internal::check_bios_data(
-      reinterpret_cast<const char*>(filename));
+  bool result = grpc_core::internal::check_bios_data(reinterpret_cast<const char*>(filename));
   /* Cleanup. */
   remove(filename);
   gpr_free(filename);

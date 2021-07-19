@@ -25,24 +25,21 @@ namespace grpc_core {
 
 class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  static RefCountedPtr<UrlExternalAccountCredentials> Create(
-      Options options, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+  static RefCountedPtr<UrlExternalAccountCredentials> Create(Options options,
+                                                             std::vector<std::string> scopes,
+                                                             grpc_error_handle* error);
 
-  UrlExternalAccountCredentials(Options options,
-                                std::vector<std::string> scopes,
+  UrlExternalAccountCredentials(Options options, std::vector<std::string> scopes,
                                 grpc_error_handle* error);
 
  private:
-  void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) override;
+  void RetrieveSubjectToken(HTTPRequestContext* ctx, const Options& options,
+                            std::function<void(std::string, grpc_error_handle)> cb) override;
 
   static void OnRetrieveSubjectToken(void* arg, grpc_error_handle error);
   void OnRetrieveSubjectTokenInternal(grpc_error_handle error);
 
-  void FinishRetrieveSubjectToken(std::string subject_token,
-                                  grpc_error_handle error);
+  void FinishRetrieveSubjectToken(std::string subject_token, grpc_error_handle error);
 
   // Fields of credential source
   URI url_;

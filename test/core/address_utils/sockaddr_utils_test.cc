@@ -36,8 +36,7 @@ namespace {
 
 grpc_resolved_address MakeAddr4(const uint8_t* data, size_t data_len) {
   grpc_resolved_address resolved_addr4;
-  grpc_sockaddr_in* addr4 =
-      reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4.addr);
+  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4.addr);
   memset(&resolved_addr4, 0, sizeof(resolved_addr4));
   addr4->sin_family = GRPC_AF_INET;
   GPR_ASSERT(data_len == sizeof(addr4->sin_addr.s_addr));
@@ -49,8 +48,7 @@ grpc_resolved_address MakeAddr4(const uint8_t* data, size_t data_len) {
 
 grpc_resolved_address MakeAddr6(const uint8_t* data, size_t data_len) {
   grpc_resolved_address resolved_addr6;
-  grpc_sockaddr_in6* addr6 =
-      reinterpret_cast<grpc_sockaddr_in6*>(resolved_addr6.addr);
+  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(resolved_addr6.addr);
   memset(&resolved_addr6, 0, sizeof(resolved_addr6));
   addr6->sin6_family = GRPC_AF_INET6;
   GPR_ASSERT(data_len == sizeof(addr6->sin6_addr.s6_addr));
@@ -66,15 +64,12 @@ void SetIPv6ScopeId(grpc_resolved_address* addr, uint32_t scope_id) {
   addr6->sin6_scope_id = scope_id;
 }
 
-const uint8_t kMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
-                           0, 0, 0xff, 0xff, 192, 0, 2, 1};
+const uint8_t kMapped[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 192, 0, 2, 1};
 
-const uint8_t kNotQuiteMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
-                                   0, 0, 0xff, 0xfe, 192, 0, 2, 99};
+const uint8_t kNotQuiteMapped[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xfe, 192, 0, 2, 99};
 const uint8_t kIPv4[] = {192, 0, 2, 1};
 
-const uint8_t kIPv6[] = {0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
-                         0,    0,    0,    0,    0, 0, 0, 1};
+const uint8_t kIPv6[] = {0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
 
 TEST(SockAddrUtilsTest, SockAddrIsV4Mapped) {
   // v4mapped input should succeed.
@@ -128,8 +123,7 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
   int port = -1;
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild4, &port));
   ASSERT_TRUE(port == 555);
-  grpc_sockaddr_in* wild4_addr =
-      reinterpret_cast<grpc_sockaddr_in*>(&wild4.addr);
+  grpc_sockaddr_in* wild4_addr = reinterpret_cast<grpc_sockaddr_in*>(&wild4.addr);
   memset(&wild4_addr->sin_addr.s_addr, 0xbd, 1);
   ASSERT_FALSE(grpc_sockaddr_is_wildcard(&wild4, &port));
 
@@ -137,8 +131,7 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
   port = -1;
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild6, &port));
   ASSERT_EQ(port, 555);
-  grpc_sockaddr_in6* wild6_addr =
-      reinterpret_cast<grpc_sockaddr_in6*>(&wild6.addr);
+  grpc_sockaddr_in6* wild6_addr = reinterpret_cast<grpc_sockaddr_in6*>(&wild6.addr);
   memset(&wild6_addr->sin6_addr.s6_addr, 0xbd, 1);
   ASSERT_FALSE(grpc_sockaddr_is_wildcard(&wild6, &port));
 
@@ -146,8 +139,7 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
   port = -1;
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
   ASSERT_EQ(port, 555);
-  grpc_sockaddr_in6* wild_mapped_addr =
-      reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
+  grpc_sockaddr_in6* wild_mapped_addr = reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
   memset(&wild_mapped_addr->sin6_addr.s6_addr, 0xbd, 1);
   ASSERT_FALSE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
 
@@ -178,15 +170,12 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1%252]:12345");
 
   SetIPv6ScopeId(&input6, 101);
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false),
-            "[2001:db8::1%25101]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true),
-            "[2001:db8::1%25101]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false), "[2001:db8::1%25101]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, true), "[2001:db8::1%25101]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1%25101]:12345");
 
   input6 = MakeAddr6(kMapped, sizeof(kMapped));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false),
-            "[::ffff:192.0.2.1]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false), "[::ffff:192.0.2.1]:12345");
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true), "192.0.2.1:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv4:192.0.2.1:12345");
 
@@ -223,24 +212,20 @@ TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
   ASSERT_EQ(grpc_sockaddr_set_port(&phony, 1234), false);
 }
 
-void VerifySocketAddressMatch(const std::string& ip_address,
-                              const std::string& subnet, uint32_t mask_bits,
-                              bool success) {
+void VerifySocketAddressMatch(const std::string& ip_address, const std::string& subnet,
+                              uint32_t mask_bits, bool success) {
   grpc_resolved_address addr;
-  ASSERT_EQ(grpc_string_to_sockaddr(&addr, ip_address.c_str(), false),
-            GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_string_to_sockaddr(&addr, ip_address.c_str(), false), GRPC_ERROR_NONE);
   // Setting the port has no effect on the match.
   grpc_sockaddr_set_port(&addr, 12345);
   grpc_resolved_address subnet_addr;
-  ASSERT_EQ(grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), false),
-            GRPC_ERROR_NONE);
+  ASSERT_EQ(grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), false), GRPC_ERROR_NONE);
   grpc_sockaddr_mask_bits(&subnet_addr, mask_bits);
   EXPECT_EQ(grpc_sockaddr_match_subnet(&addr, &subnet_addr, mask_bits), success)
       << "IP=" << ip_address << " Subnet=" << subnet << " Mask=" << mask_bits;
 }
 
-void VerifySocketAddressMatchSuccess(const std::string& ip_address,
-                                     const std::string& subnet,
+void VerifySocketAddressMatchSuccess(const std::string& ip_address, const std::string& subnet,
                                      uint32_t mask_bits) {
   // If the IP address matches the subnet for a particular length, then it would
   // match for all lengths [0, mask_bits]
@@ -249,8 +234,7 @@ void VerifySocketAddressMatchSuccess(const std::string& ip_address,
   }
 }
 
-void VerifySocketAddressMatchFailure(const std::string& ip_address,
-                                     const std::string& subnet,
+void VerifySocketAddressMatchFailure(const std::string& ip_address, const std::string& subnet,
                                      uint32_t mask_bits) {
   // If the IP address fails matching the subnet for a particular length, then
   // it would also fail for all lengths [mask_bits, 128]
@@ -271,12 +255,9 @@ TEST(SockAddrUtilsTest, SockAddrMatchSubnet) {
   VerifySocketAddressMatchSuccess("2001:db8:cfe:134:3ab:3456:78:9",
                                   "2001:db8:cfe:134:3ab:3456:78:9", 128);
   VerifySocketAddressMatchSuccess("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF",
-                                  "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF",
-                                  128);
-  VerifySocketAddressMatchFailure("2001:db8:cfe:134:3ab:3456:78:9",
-                                  "3001:2:3:4:5:6:7:8", 4);
-  VerifySocketAddressMatchFailure("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF",
-                                  "::", 1);
+                                  "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF", 128);
+  VerifySocketAddressMatchFailure("2001:db8:cfe:134:3ab:3456:78:9", "3001:2:3:4:5:6:7:8", 4);
+  VerifySocketAddressMatchFailure("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF", "::", 1);
 }
 
 }  // namespace

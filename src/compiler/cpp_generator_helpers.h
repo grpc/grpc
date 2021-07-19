@@ -34,8 +34,7 @@ inline std::string DotsToUnderscores(const std::string& name) {
   return grpc_generator::StringReplace(name, ".", "_");
 }
 
-inline std::string ClassName(const grpc::protobuf::Descriptor* descriptor,
-                             bool qualified) {
+inline std::string ClassName(const grpc::protobuf::Descriptor* descriptor, bool qualified) {
   // Find "outer", the descriptor of the top-level message in which
   // "descriptor" is embedded.
   const grpc::protobuf::Descriptor* outer = descriptor;

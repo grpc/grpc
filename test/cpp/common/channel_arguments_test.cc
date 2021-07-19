@@ -52,26 +52,21 @@ bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
   return tsm->MutateFd(fd);
 }
 
-int test_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
-  return GPR_ICMP(a, b);
-}
+int test_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) { return GPR_ICMP(a, b); }
 
 void test_mutator_destroy(grpc_socket_mutator* mutator) {
   TestSocketMutator* tsm = reinterpret_cast<TestSocketMutator*>(mutator);
   delete tsm;
 }
 
-grpc_socket_mutator_vtable test_mutator_vtable = {
-    test_mutator_mutate_fd, test_mutator_compare, test_mutator_destroy,
-    nullptr};
+grpc_socket_mutator_vtable test_mutator_vtable = {test_mutator_mutate_fd, test_mutator_compare,
+                                                  test_mutator_destroy, nullptr};
 
 //
 // TestSocketMutator implementation
 //
 
-TestSocketMutator::TestSocketMutator() {
-  grpc_socket_mutator_init(this, &test_mutator_vtable);
-}
+TestSocketMutator::TestSocketMutator() { grpc_socket_mutator_init(this, &test_mutator_vtable); }
 }  // namespace
 
 class ChannelArgumentsTest : public ::testing::Test {
@@ -81,8 +76,7 @@ class ChannelArgumentsTest : public ::testing::Test {
                          &ChannelArguments::PointerVtableMembers::Destroy,
                          &ChannelArguments::PointerVtableMembers::Compare}) {}
 
-  void SetChannelArgs(const ChannelArguments& channel_args,
-                      grpc_channel_args* args) {
+  void SetChannelArgs(const ChannelArguments& channel_args, grpc_channel_args* args) {
     channel_args.SetChannelArgs(args);
   }
 
@@ -101,8 +95,7 @@ class ChannelArgumentsTest : public ::testing::Test {
     SetChannelArgs(channel_args_, &args);
     EXPECT_EQ(static_cast<size_t>(1), args.num_args);
     EXPECT_STREQ(GRPC_ARG_PRIMARY_USER_AGENT_STRING, args.args[0].key);
-    EXPECT_EQ(GetDefaultUserAgentPrefix(),
-              std::string(args.args[0].value.string));
+    EXPECT_EQ(GetDefaultUserAgentPrefix(), std::string(args.args[0].value.string));
   }
 
   bool HasArg(grpc_arg expected_arg) {
@@ -110,18 +103,15 @@ class ChannelArgumentsTest : public ::testing::Test {
     SetChannelArgs(channel_args_, &args);
     for (size_t i = 0; i < args.num_args; i++) {
       const grpc_arg& arg = args.args[i];
-      if (arg.type == expected_arg.type &&
-          std::string(arg.key) == expected_arg.key) {
+      if (arg.type == expected_arg.type && std::string(arg.key) == expected_arg.key) {
         if (arg.type == GRPC_ARG_INTEGER) {
           return arg.value.integer == expected_arg.value.integer;
         } else if (arg.type == GRPC_ARG_STRING) {
           return std::string(arg.value.string) == expected_arg.value.string;
         } else if (arg.type == GRPC_ARG_POINTER) {
           return arg.value.pointer.p == expected_arg.value.pointer.p &&
-                 arg.value.pointer.vtable->copy ==
-                     expected_arg.value.pointer.vtable->copy &&
-                 arg.value.pointer.vtable->destroy ==
-                     expected_arg.value.pointer.vtable->destroy;
+                 arg.value.pointer.vtable->copy == expected_arg.value.pointer.vtable->copy &&
+                 arg.value.pointer.vtable->destroy == expected_arg.value.pointer.vtable->destroy;
         }
       }
     }
@@ -243,8 +233,7 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
   bool found = false;
   for (size_t i = 0; i < args.num_args; i++) {
     const grpc_arg& arg = args.args[i];
-    if (arg.type == GRPC_ARG_STRING &&
-        std::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+    if (arg.type == GRPC_ARG_STRING && std::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
       EXPECT_FALSE(found);
       EXPECT_EQ(0, strcmp(arg.value.string, arg0.value.string));
       found = true;

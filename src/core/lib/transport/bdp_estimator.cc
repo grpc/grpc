@@ -42,24 +42,20 @@ BdpEstimator::BdpEstimator(const char* name)
 grpc_millis BdpEstimator::CompletePing() {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec dt_ts = gpr_time_sub(now, ping_start_time_);
-  double dt = static_cast<double>(dt_ts.tv_sec) +
-              1e-9 * static_cast<double>(dt_ts.tv_nsec);
+  double dt = static_cast<double>(dt_ts.tv_sec) + 1e-9 * static_cast<double>(dt_ts.tv_nsec);
   double bw = dt > 0 ? (static_cast<double>(accumulator_) / dt) : 0;
   int start_inter_ping_delay = inter_ping_delay_;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
     gpr_log(GPR_INFO,
-            "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
-            " dt=%lf bw=%lfMbs bw_est=%lfMbs",
-            name_, accumulator_, estimate_, dt, bw / 125000.0,
-            bw_est_ / 125000.0);
+            "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64 " dt=%lf bw=%lfMbs bw_est=%lfMbs",
+            name_, accumulator_, estimate_, dt, bw / 125000.0, bw_est_ / 125000.0);
   }
   GPR_ASSERT(ping_state_ == PingState::STARTED);
   if (accumulator_ > 2 * estimate_ / 3 && bw > bw_est_) {
     estimate_ = GPR_MAX(accumulator_, estimate_ * 2);
     bw_est_ = bw;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]: estimate increased to %" PRId64, name_,
-              estimate_);
+      gpr_log(GPR_INFO, "bdp[%s]: estimate increased to %" PRId64, name_, estimate_);
     }
     inter_ping_delay_ /= 2;  // if the ping estimate changes,
                              // exponentially get faster at probing
@@ -67,16 +63,14 @@ grpc_millis BdpEstimator::CompletePing() {
     stable_estimate_count_++;
     if (stable_estimate_count_ >= 2) {
       inter_ping_delay_ +=
-          100 + static_cast<int>(rand() * 100.0 /
-                                 RAND_MAX);  // if the ping estimate is steady,
-                                             // slowly ramp down the probe time
+          100 + static_cast<int>(rand() * 100.0 / RAND_MAX);  // if the ping estimate is steady,
+                                                              // slowly ramp down the probe time
     }
   }
   if (start_inter_ping_delay != inter_ping_delay_) {
     stable_estimate_count_ = 0;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %dms", name_,
-              inter_ping_delay_);
+      gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %dms", name_, inter_ping_delay_);
     }
   }
   ping_state_ = PingState::UNSCHEDULED;

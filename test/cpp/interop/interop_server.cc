@@ -37,11 +37,9 @@
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(bool, use_alts, false,
-          "Whether to use alts. Enable alts will disable tls.");
+ABSL_FLAG(bool, use_alts, false, "Whether to use alts. Enable alts will disable tls.");
 ABSL_FLAG(bool, use_tls, false, "Whether to use tls.");
-ABSL_FLAG(std::string, custom_credentials_type, "",
-          "User provided credentials type.");
+ABSL_FLAG(std::string, custom_credentials_type, "", "User provided credentials type.");
 ABSL_FLAG(int32_t, port, 0, "Server port.");
 ABSL_FLAG(int32_t, max_send_message_size, -1, "The maximum send message size.");
 
@@ -75,15 +73,13 @@ void MaybeEchoMetadata(ServerContext* context) {
 
   auto iter = client_metadata.find(kEchoInitialMetadataKey);
   if (iter != client_metadata.end()) {
-    context->AddInitialMetadata(
-        kEchoInitialMetadataKey,
-        std::string(iter->second.begin(), iter->second.end()));
+    context->AddInitialMetadata(kEchoInitialMetadataKey,
+                                std::string(iter->second.begin(), iter->second.end()));
   }
   iter = client_metadata.find(kEchoTrailingBinMetadataKey);
   if (iter != client_metadata.end()) {
-    context->AddTrailingMetadata(
-        kEchoTrailingBinMetadataKey,
-        std::string(iter->second.begin(), iter->second.end()));
+    context->AddTrailingMetadata(kEchoTrailingBinMetadataKey,
+                                 std::string(iter->second.begin(), iter->second.end()));
   }
   // Check if client sent a magic key in the header that makes us echo
   // back the user-agent (for testing purpose)
@@ -91,9 +87,8 @@ void MaybeEchoMetadata(ServerContext* context) {
   if (iter != client_metadata.end()) {
     iter = client_metadata.find("user-agent");
     if (iter != client_metadata.end()) {
-      context->AddInitialMetadata(
-          kEchoUserAgentKey,
-          std::string(iter->second.begin(), iter->second.end()));
+      context->AddInitialMetadata(kEchoUserAgentKey,
+                                  std::string(iter->second.begin(), iter->second.end()));
     }
   }
 }
@@ -104,17 +99,14 @@ bool SetPayload(int size, Payload* payload) {
   return true;
 }
 
-bool CheckExpectedCompression(const ServerContext& context,
-                              const bool compression_expected) {
+bool CheckExpectedCompression(const ServerContext& context, const bool compression_expected) {
   const InteropServerContextInspector inspector(context);
-  const grpc_compression_algorithm received_compression =
-      inspector.GetCallCompressionAlgorithm();
+  const grpc_compression_algorithm received_compression = inspector.GetCallCompressionAlgorithm();
 
   if (compression_expected) {
     if (received_compression == GRPC_COMPRESS_NONE) {
       // Expected some compression, got NONE. This is an error.
-      gpr_log(GPR_ERROR,
-              "Expected compression but got uncompressed request from client.");
+      gpr_log(GPR_ERROR, "Expected compression but got uncompressed request from client.");
       return false;
     }
     if (!(inspector.WasCompressed())) {
@@ -137,16 +129,14 @@ bool CheckExpectedCompression(const ServerContext& context,
 
 class TestServiceImpl : public TestService::Service {
  public:
-  Status EmptyCall(ServerContext* context,
-                   const grpc::testing::Empty* /*request*/,
+  Status EmptyCall(ServerContext* context, const grpc::testing::Empty* /*request*/,
                    grpc::testing::Empty* /*response*/) override {
     MaybeEchoMetadata(context);
     return Status::OK;
   }
 
   // Response contains current timestamp. We ignore everything in the request.
-  Status CacheableUnaryCall(ServerContext* context,
-                            const SimpleRequest* /*request*/,
+  Status CacheableUnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
                             SimpleResponse* response) override {
     gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
     std::string timestamp = std::to_string(ts.tv_nsec);
@@ -169,45 +159,36 @@ class TestServiceImpl : public TestService::Service {
         context->set_compression_level(GRPC_COMPRESS_LEVEL_NONE);
       }
     }
-    if (!CheckExpectedCompression(*context,
-                                  request->expect_compressed().value())) {
-      return Status(grpc::StatusCode::INVALID_ARGUMENT,
-                    "Compressed request expectation not met.");
+    if (!CheckExpectedCompression(*context, request->expect_compressed().value())) {
+      return Status(grpc::StatusCode::INVALID_ARGUMENT, "Compressed request expectation not met.");
     }
     if (request->response_size() > 0) {
       if (!SetPayload(request->response_size(), response->mutable_payload())) {
-        return Status(grpc::StatusCode::INVALID_ARGUMENT,
-                      "Error creating payload.");
+        return Status(grpc::StatusCode::INVALID_ARGUMENT, "Error creating payload.");
       }
     }
 
     if (request->has_response_status()) {
-      return Status(
-          static_cast<grpc::StatusCode>(request->response_status().code()),
-          request->response_status().message());
+      return Status(static_cast<grpc::StatusCode>(request->response_status().code()),
+                    request->response_status().message());
     }
 
     return Status::OK;
   }
 
-  Status StreamingOutputCall(
-      ServerContext* context, const StreamingOutputCallRequest* request,
-      ServerWriter<StreamingOutputCallResponse>* writer) override {
+  Status StreamingOutputCall(ServerContext* context, const StreamingOutputCallRequest* request,
+                             ServerWriter<StreamingOutputCallResponse>* writer) override {
     StreamingOutputCallResponse response;
     bool write_success = true;
-    for (int i = 0; write_success && i < request->response_parameters_size();
-         i++) {
-      if (!SetPayload(request->response_parameters(i).size(),
-                      response.mutable_payload())) {
-        return Status(grpc::StatusCode::INVALID_ARGUMENT,
-                      "Error creating payload.");
+    for (int i = 0; write_success && i < request->response_parameters_size(); i++) {
+      if (!SetPayload(request->response_parameters(i).size(), response.mutable_payload())) {
+        return Status(grpc::StatusCode::INVALID_ARGUMENT, "Error creating payload.");
       }
       WriteOptions wopts;
       if (request->response_parameters(i).has_compressed()) {
         // Compress by default. Disabled on a per-message basis.
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
-        const bool compression_requested =
-            request->response_parameters(i).compressed().value();
+        const bool compression_requested = request->response_parameters(i).compressed().value();
         gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
                 compression_requested ? "enabled" : "disabled", __func__);
         if (!compression_requested) {
@@ -218,8 +199,7 @@ class TestServiceImpl : public TestService::Service {
       if ((time_us = request->response_parameters(i).interval_us()) > 0) {
         // Sleep before response if needed
         gpr_timespec sleep_time =
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(time_us, GPR_TIMESPAN));
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(time_us, GPR_TIMESPAN));
         gpr_sleep_until(sleep_time);
       }
       write_success = writer->Write(response, wopts);
@@ -231,14 +211,12 @@ class TestServiceImpl : public TestService::Service {
     }
   }
 
-  Status StreamingInputCall(ServerContext* context,
-                            ServerReader<StreamingInputCallRequest>* reader,
+  Status StreamingInputCall(ServerContext* context, ServerReader<StreamingInputCallRequest>* reader,
                             StreamingInputCallResponse* response) override {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
-      if (!CheckExpectedCompression(*context,
-                                    request.expect_compressed().value())) {
+      if (!CheckExpectedCompression(*context, request.expect_compressed().value())) {
         return Status(grpc::StatusCode::INVALID_ARGUMENT,
                       "Compressed request expectation not met.");
       }
@@ -250,19 +228,17 @@ class TestServiceImpl : public TestService::Service {
     return Status::OK;
   }
 
-  Status FullDuplexCall(
-      ServerContext* context,
-      ServerReaderWriter<StreamingOutputCallResponse,
-                         StreamingOutputCallRequest>* stream) override {
+  Status FullDuplexCall(ServerContext* context,
+                        ServerReaderWriter<StreamingOutputCallResponse, StreamingOutputCallRequest>*
+                            stream) override {
     MaybeEchoMetadata(context);
     StreamingOutputCallRequest request;
     StreamingOutputCallResponse response;
     bool write_success = true;
     while (write_success && stream->Read(&request)) {
       if (request.has_response_status()) {
-        return Status(
-            static_cast<grpc::StatusCode>(request.response_status().code()),
-            request.response_status().message());
+        return Status(static_cast<grpc::StatusCode>(request.response_status().code()),
+                      request.response_status().message());
       }
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
@@ -271,9 +247,8 @@ class TestServiceImpl : public TestService::Service {
         int time_us;
         if ((time_us = request.response_parameters(0).interval_us()) > 0) {
           // Sleep before response if needed
-          gpr_timespec sleep_time =
-              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                           gpr_time_from_micros(time_us, GPR_TIMESPAN));
+          gpr_timespec sleep_time = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                                 gpr_time_from_micros(time_us, GPR_TIMESPAN));
           gpr_sleep_until(sleep_time);
         }
         write_success = stream->Write(response);
@@ -286,10 +261,9 @@ class TestServiceImpl : public TestService::Service {
     }
   }
 
-  Status HalfDuplexCall(
-      ServerContext* /*context*/,
-      ServerReaderWriter<StreamingOutputCallResponse,
-                         StreamingOutputCallRequest>* stream) override {
+  Status HalfDuplexCall(ServerContext* /*context*/,
+                        ServerReaderWriter<StreamingOutputCallResponse, StreamingOutputCallRequest>*
+                            stream) override {
     std::vector<StreamingOutputCallRequest> requests;
     StreamingOutputCallRequest request;
     while (stream->Read(&request)) {
@@ -301,8 +275,7 @@ class TestServiceImpl : public TestService::Service {
     for (unsigned int i = 0; write_success && i < requests.size(); i++) {
       response.mutable_payload()->set_type(requests[i].payload().type());
       if (requests[i].response_parameters_size() == 0) {
-        return Status(grpc::StatusCode::INTERNAL,
-                      "Request does not have response parameters.");
+        return Status(grpc::StatusCode::INTERNAL, "Request does not have response parameters.");
       }
       response.mutable_payload()->set_body(
           std::string(requests[i].response_parameters(0).size(), '\0'));
@@ -316,30 +289,26 @@ class TestServiceImpl : public TestService::Service {
   }
 };
 
-void grpc::testing::interop::RunServer(
-    const std::shared_ptr<ServerCredentials>& creds) {
+void grpc::testing::interop::RunServer(const std::shared_ptr<ServerCredentials>& creds) {
   RunServer(creds, absl::GetFlag(FLAGS_port), nullptr, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
     const std::shared_ptr<ServerCredentials>& creds,
-    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
-        server_options) {
-  RunServer(creds, absl::GetFlag(FLAGS_port), nullptr,
-            std::move(server_options));
+    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>> server_options) {
+  RunServer(creds, absl::GetFlag(FLAGS_port), nullptr, std::move(server_options));
 }
 
-void grpc::testing::interop::RunServer(
-    const std::shared_ptr<ServerCredentials>& creds, const int port,
-    ServerStartedCondition* server_started_condition) {
+void grpc::testing::interop::RunServer(const std::shared_ptr<ServerCredentials>& creds,
+                                       const int port,
+                                       ServerStartedCondition* server_started_condition) {
   RunServer(creds, port, server_started_condition, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
     const std::shared_ptr<ServerCredentials>& creds, const int port,
     ServerStartedCondition* server_started_condition,
-    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
-        server_options) {
+    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>> server_options) {
   GPR_ASSERT(port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
@@ -370,7 +339,7 @@ void grpc::testing::interop::RunServer(
   }
 
   while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
 }

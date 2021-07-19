@@ -29,9 +29,7 @@ DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
     : pool_(pool),
       thd_(
           "grpcpp_dynamic_pool",
-          [](void* th) {
-            static_cast<DynamicThreadPool::DynamicThread*>(th)->ThreadFunc();
-          },
+          [](void* th) { static_cast<DynamicThreadPool::DynamicThread*>(th)->ThreadFunc(); },
           this) {
   thd_.Start();
 }
@@ -77,10 +75,7 @@ void DynamicThreadPool::ThreadFunc() {
 }
 
 DynamicThreadPool::DynamicThreadPool(int reserve_threads)
-    : shutdown_(false),
-      reserve_threads_(reserve_threads),
-      nthreads_(0),
-      threads_waiting_(0) {
+    : shutdown_(false), reserve_threads_(reserve_threads), nthreads_(0), threads_waiting_(0) {
   for (int i = 0; i < reserve_threads_; i++) {
     grpc_core::MutexLock lock(&mu_);
     nthreads_++;

@@ -35,12 +35,10 @@ static void mdelem_list_ensure_capacity(grpc_credentials_mdelem_array* list,
   while (new_size < target_size) {
     new_size *= 2;
   }
-  list->md = static_cast<grpc_mdelem*>(
-      gpr_realloc(list->md, sizeof(grpc_mdelem) * new_size));
+  list->md = static_cast<grpc_mdelem*>(gpr_realloc(list->md, sizeof(grpc_mdelem) * new_size));
 }
 
-void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array* list,
-                                       grpc_mdelem md) {
+void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array* list, grpc_mdelem md) {
   mdelem_list_ensure_capacity(list, 1);
   list->md[list->size++] = GRPC_MDELEM_REF(md);
 }
@@ -53,8 +51,7 @@ void grpc_credentials_mdelem_array_append(grpc_credentials_mdelem_array* dst,
   }
 }
 
-void grpc_credentials_mdelem_array_destroy(
-    grpc_credentials_mdelem_array* list) {
+void grpc_credentials_mdelem_array_destroy(grpc_credentials_mdelem_array* list) {
   for (size_t i = 0; i < list->size; ++i) {
     GRPC_MDELEM_UNREF(list->md[i]);
   }

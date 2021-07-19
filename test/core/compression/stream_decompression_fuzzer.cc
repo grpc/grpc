@@ -31,19 +31,17 @@ bool leak_check = true;
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_core::testing::LeakDetector leak_detector(true);
   grpc_init();
-  auto* context = grpc_stream_compression_context_create(
-      GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
+  auto* context = grpc_stream_compression_context_create(GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_slice_buffer input_buffer;
   grpc_slice_buffer_init(&input_buffer);
-  grpc_slice_buffer_add(
-      &input_buffer,
-      grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size));
+  grpc_slice_buffer_add(&input_buffer,
+                        grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size));
   grpc_slice_buffer output_buffer;
   grpc_slice_buffer_init(&output_buffer);
   bool end_of_context;
 
-  grpc_stream_decompress(context, &input_buffer, &output_buffer, nullptr,
-                         SIZE_MAX, &end_of_context);
+  grpc_stream_decompress(context, &input_buffer, &output_buffer, nullptr, SIZE_MAX,
+                         &end_of_context);
 
   grpc_stream_compression_context_destroy(context);
   grpc_slice_buffer_destroy(&input_buffer);

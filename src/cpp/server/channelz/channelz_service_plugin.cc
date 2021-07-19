@@ -35,9 +35,7 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
 
   std::string name() override { return "channelz_service"; }
 
-  void InitServer(grpc::ServerInitializer* si) override {
-    si->RegisterService(channelz_service_);
-  }
+  void InitServer(grpc::ServerInitializer* si) override { si->RegisterService(channelz_service_); }
 
   void Finish(grpc::ServerInitializer* /*si*/) override {}
 
@@ -61,10 +59,8 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
   std::shared_ptr<grpc::ChannelzService> channelz_service_;
 };
 
-static std::unique_ptr< ::grpc::ServerBuilderPlugin>
-CreateChannelzServicePlugin() {
-  return std::unique_ptr< ::grpc::ServerBuilderPlugin>(
-      new ChannelzServicePlugin());
+static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateChannelzServicePlugin() {
+  return std::unique_ptr< ::grpc::ServerBuilderPlugin>(new ChannelzServicePlugin());
 }
 
 void InitChannelzService() {

@@ -29,12 +29,9 @@ class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   RubyGrpcGenerator() {}
   ~RubyGrpcGenerator() {}
 
-  uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
-  }
+  uint64_t GetSupportedFeatures() const override { return FEATURE_PROTO3_OPTIONAL; }
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
-                const std::string& /*parameter*/,
+  bool Generate(const grpc::protobuf::FileDescriptor* file, const std::string& /*parameter*/,
                 grpc::protobuf::compiler::GeneratorContext* context,
                 std::string* /*error*/) const override {
     std::string code = grpc_ruby_generator::GetServices(file);
@@ -47,8 +44,7 @@ class RubyGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     if (!grpc_ruby_generator::ServicesFilename(file, &file_name)) {
       return false;
     }
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
-        context->Open(file_name));
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(context->Open(file_name));
     grpc::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
     return true;

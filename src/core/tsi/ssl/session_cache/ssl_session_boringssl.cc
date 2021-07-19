@@ -32,8 +32,7 @@ namespace {
 
 class BoringSslCachedSession : public SslCachedSession {
  public:
-  explicit BoringSslCachedSession(SslSessionPtr session)
-      : session_(std::move(session)) {}
+  explicit BoringSslCachedSession(SslSessionPtr session) : session_(std::move(session)) {}
 
   SslSessionPtr CopySession() const override {
     // SslSessionPtr will dereference on destruction.
@@ -47,8 +46,7 @@ class BoringSslCachedSession : public SslCachedSession {
 
 }  // namespace
 
-std::unique_ptr<SslCachedSession> SslCachedSession::Create(
-    SslSessionPtr session) {
+std::unique_ptr<SslCachedSession> SslCachedSession::Create(SslSessionPtr session) {
   return absl::make_unique<BoringSslCachedSession>(std::move(session));
 }
 

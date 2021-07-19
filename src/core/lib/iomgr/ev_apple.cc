@@ -101,24 +101,24 @@ static grpc_core::Thread* gGlobalRunLoopThread = nullptr;
 /// Register the stream with the dispatch queue. Callbacks of the stream will be
 /// issued to the dispatch queue when a network event happens and will be
 /// managed by Grand Central Dispatch.
-static void grpc_apple_register_read_stream_queue(
-    CFReadStreamRef read_stream, dispatch_queue_t dispatch_queue) {
+static void grpc_apple_register_read_stream_queue(CFReadStreamRef read_stream,
+                                                  dispatch_queue_t dispatch_queue) {
   CFReadStreamSetDispatchQueue(read_stream, dispatch_queue);
 }
 
 /// Register the stream with the dispatch queue. Callbacks of the stream will be
 /// issued to the dispatch queue when a network event happens and will be
 /// managed by Grand Central Dispatch.
-static void grpc_apple_register_write_stream_queue(
-    CFWriteStreamRef write_stream, dispatch_queue_t dispatch_queue) {
+static void grpc_apple_register_write_stream_queue(CFWriteStreamRef write_stream,
+                                                   dispatch_queue_t dispatch_queue) {
   CFWriteStreamSetDispatchQueue(write_stream, dispatch_queue);
 }
 
 /// Register the stream with the global run loop. Callbacks of the stream will
 /// be issued to the run loop when a network event happens and will be driven by
 /// the global run loop thread gGlobalRunLoopThread.
-static void grpc_apple_register_read_stream_run_loop(
-    CFReadStreamRef read_stream, dispatch_queue_t dispatch_queue) {
+static void grpc_apple_register_read_stream_run_loop(CFReadStreamRef read_stream,
+                                                     dispatch_queue_t dispatch_queue) {
   GRPC_POLLING_TRACE("Register read stream: %p", read_stream);
   grpc_core::MutexLock lock(&gGlobalRunLoopContext->mu);
   CFReadStreamScheduleWithRunLoop(read_stream, gGlobalRunLoopContext->run_loop,
@@ -130,12 +130,12 @@ static void grpc_apple_register_read_stream_run_loop(
 /// Register the stream with the global run loop. Callbacks of the stream will
 /// be issued to the run loop when a network event happens, and will be driven
 /// by the global run loop thread gGlobalRunLoopThread.
-static void grpc_apple_register_write_stream_run_loop(
-    CFWriteStreamRef write_stream, dispatch_queue_t dispatch_queue) {
+static void grpc_apple_register_write_stream_run_loop(CFWriteStreamRef write_stream,
+                                                      dispatch_queue_t dispatch_queue) {
   GRPC_POLLING_TRACE("Register write stream: %p", write_stream);
   grpc_core::MutexLock lock(&gGlobalRunLoopContext->mu);
-  CFWriteStreamScheduleWithRunLoop(
-      write_stream, gGlobalRunLoopContext->run_loop, kCFRunLoopDefaultMode);
+  CFWriteStreamScheduleWithRunLoop(write_stream, gGlobalRunLoopContext->run_loop,
+                                   kCFRunLoopDefaultMode);
   gGlobalRunLoopContext->input_source_registered = true;
   gGlobalRunLoopContext->input_source_cv.Signal();
 }
@@ -145,14 +145,12 @@ static void grpc_apple_register_write_stream_run_loop(
 /// macro and environment variable, see docs in iomgr_posix_cfstream.cc), the
 /// CFStream streams are registered with the global run loop instead (see
 /// pollset_global_init below).
-static void (*grpc_apple_register_read_stream_impl)(
-    CFReadStreamRef, dispatch_queue_t) = grpc_apple_register_read_stream_queue;
-static void (*grpc_apple_register_write_stream_impl)(CFWriteStreamRef,
-                                                     dispatch_queue_t) =
+static void (*grpc_apple_register_read_stream_impl)(CFReadStreamRef, dispatch_queue_t) =
+    grpc_apple_register_read_stream_queue;
+static void (*grpc_apple_register_write_stream_impl)(CFWriteStreamRef, dispatch_queue_t) =
     grpc_apple_register_write_stream_queue;
 
-void grpc_apple_register_read_stream(CFReadStreamRef read_stream,
-                                     dispatch_queue_t dispatch_queue) {
+void grpc_apple_register_read_stream(CFReadStreamRef read_stream, dispatch_queue_t dispatch_queue) {
   grpc_apple_register_read_stream_impl(read_stream, dispatch_queue);
 }
 
@@ -188,14 +186,11 @@ static void GlobalRunLoopFunc(void* arg) {
 static void pollset_global_init(void) {
   gGlobalRunLoopContext = new GlobalRunLoopContext;
 
-  grpc_apple_register_read_stream_impl =
-      grpc_apple_register_read_stream_run_loop;
-  grpc_apple_register_write_stream_impl =
-      grpc_apple_register_write_stream_run_loop;
+  grpc_apple_register_read_stream_impl = grpc_apple_register_read_stream_run_loop;
+  grpc_apple_register_write_stream_impl = grpc_apple_register_write_stream_run_loop;
 
   grpc_core::MutexLock lock(&gGlobalRunLoopContext->mu);
-  gGlobalRunLoopThread =
-      new grpc_core::Thread("apple_ev", GlobalRunLoopFunc, nullptr);
+  gGlobalRunLoopThread = new grpc_core::Thread("apple_ev", GlobalRunLoopFunc, nullptr);
   gGlobalRunLoopThread->Start();
   while (gGlobalRunLoopContext->run_loop == NULL)
     gGlobalRunLoopContext->init_cv.Wait(&gGlobalRunLoopContext->mu);
@@ -219,13 +214,10 @@ static void pollset_global_shutdown(void) {
 /// The Apple pollset simply waits on a condition variable until it is kicked.
 /// The network events are handled in the global run loop thread. Processing of
 /// these events will eventually trigger the kick.
-static grpc_error_handle pollset_work(grpc_pollset* pollset,
-                                      grpc_pollset_worker** worker,
+static grpc_error_handle pollset_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
                                       grpc_millis deadline) {
-  GRPC_POLLING_TRACE("pollset work: %p, worker: %p, deadline: %" PRIu64,
-                     pollset, worker, deadline);
-  GrpcApplePollset* apple_pollset =
-      reinterpret_cast<GrpcApplePollset*>(pollset);
+  GRPC_POLLING_TRACE("pollset work: %p, worker: %p, deadline: %" PRIu64, pollset, worker, deadline);
+  GrpcApplePollset* apple_pollset = reinterpret_cast<GrpcApplePollset*>(pollset);
   GrpcAppleWorker actual_worker;
   if (worker) {
     *worker = reinterpret_cast<grpc_pollset_worker*>(&actual_worker);
@@ -241,8 +233,8 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
 
     while (!actual_worker.kicked && !apple_pollset->is_shutdown) {
       if (actual_worker.cv.WaitWithDeadline(
-              &apple_pollset->mu, grpc_core::ToAbslTime(grpc_millis_to_timespec(
-                                      deadline, GPR_CLOCK_REALTIME)))) {
+              &apple_pollset->mu,
+              grpc_core::ToAbslTime(grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)))) {
         // timed out
         break;
       }
@@ -254,8 +246,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     // worker, the shutdown process is complete at this moment and the shutdown
     // callback will be called.
     if (apple_pollset->is_shutdown && apple_pollset->workers.empty()) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, apple_pollset->shutdown_closure,
-                              GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, apple_pollset->shutdown_closure, GRPC_ERROR_NONE);
     }
   }
 
@@ -272,10 +263,8 @@ static void kick_worker(GrpcAppleWorker* worker) {
 /// The caller must acquire the lock GrpcApplePollset.mu before calling this
 /// function. The kick action simply signals the condition variable of the
 /// worker.
-static grpc_error_handle pollset_kick(grpc_pollset* pollset,
-                                      grpc_pollset_worker* specific_worker) {
-  GrpcApplePollset* apple_pollset =
-      reinterpret_cast<GrpcApplePollset*>(pollset);
+static grpc_error_handle pollset_kick(grpc_pollset* pollset, grpc_pollset_worker* specific_worker) {
+  GrpcApplePollset* apple_pollset = reinterpret_cast<GrpcApplePollset*>(pollset);
 
   GRPC_POLLING_TRACE("pollset kick: %p, worker:%p", pollset, specific_worker);
 
@@ -291,8 +280,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
       kick_worker(actual_worker);
     }
   } else {
-    GrpcAppleWorker* actual_worker =
-        reinterpret_cast<GrpcAppleWorker*>(specific_worker);
+    GrpcAppleWorker* actual_worker = reinterpret_cast<GrpcAppleWorker*>(specific_worker);
     kick_worker(actual_worker);
   }
 
@@ -310,8 +298,7 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   GRPC_POLLING_TRACE("pollset shutdown: %p", pollset);
 
-  GrpcApplePollset* apple_pollset =
-      reinterpret_cast<GrpcApplePollset*>(pollset);
+  GrpcApplePollset* apple_pollset = reinterpret_cast<GrpcApplePollset*>(pollset);
   apple_pollset->is_shutdown = true;
   pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
 
@@ -325,35 +312,28 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 
 static void pollset_destroy(grpc_pollset* pollset) {
   GRPC_POLLING_TRACE("pollset destroy: %p", pollset);
-  GrpcApplePollset* apple_pollset =
-      reinterpret_cast<GrpcApplePollset*>(pollset);
+  GrpcApplePollset* apple_pollset = reinterpret_cast<GrpcApplePollset*>(pollset);
   apple_pollset->~GrpcApplePollset();
 }
 
 size_t pollset_size(void) { return sizeof(GrpcApplePollset); }
 
-grpc_pollset_vtable grpc_apple_pollset_vtable = {
-    pollset_global_init, pollset_global_shutdown,
-    pollset_init,        pollset_shutdown,
-    pollset_destroy,     pollset_work,
-    pollset_kick,        pollset_size};
+grpc_pollset_vtable grpc_apple_pollset_vtable = {pollset_global_init, pollset_global_shutdown,
+                                                 pollset_init,        pollset_shutdown,
+                                                 pollset_destroy,     pollset_work,
+                                                 pollset_kick,        pollset_size};
 
 // pollset_set implementation
 
 grpc_pollset_set* pollset_set_create(void) { return nullptr; }
 void pollset_set_destroy(grpc_pollset_set* pollset_set) {}
-void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
-                             grpc_pollset* pollset) {}
-void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
-                             grpc_pollset* pollset) {}
-void pollset_set_add_pollset_set(grpc_pollset_set* bag,
-                                 grpc_pollset_set* item) {}
-void pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                 grpc_pollset_set* item) {}
+void pollset_set_add_pollset(grpc_pollset_set* pollset_set, grpc_pollset* pollset) {}
+void pollset_set_del_pollset(grpc_pollset_set* pollset_set, grpc_pollset* pollset) {}
+void pollset_set_add_pollset_set(grpc_pollset_set* bag, grpc_pollset_set* item) {}
+void pollset_set_del_pollset_set(grpc_pollset_set* bag, grpc_pollset_set* item) {}
 
 grpc_pollset_set_vtable grpc_apple_pollset_set_vtable = {
-    pollset_set_create,          pollset_set_destroy,
-    pollset_set_add_pollset,     pollset_set_del_pollset,
-    pollset_set_add_pollset_set, pollset_set_del_pollset_set};
+    pollset_set_create,      pollset_set_destroy,         pollset_set_add_pollset,
+    pollset_set_del_pollset, pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
 #endif

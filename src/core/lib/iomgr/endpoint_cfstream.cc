@@ -73,25 +73,21 @@ static void CFStreamFree(CFStreamEndpoint* ep) {
 #ifndef NDEBUG
 #define EP_REF(ep, reason) CFStreamRef((ep), (reason), __FILE__, __LINE__)
 #define EP_UNREF(ep, reason) CFStreamUnref((ep), (reason), __FILE__, __LINE__)
-static void CFStreamUnref(CFStreamEndpoint* ep, const char* reason,
-                          const char* file, int line) {
+static void CFStreamUnref(CFStreamEndpoint* ep, const char* reason, const char* file, int line) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "CFStream endpoint unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep,
-            reason, val, val - 1);
+            "CFStream endpoint unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val, val - 1);
   }
   if (gpr_unref(&ep->refcount)) {
     CFStreamFree(ep);
   }
 }
-static void CFStreamRef(CFStreamEndpoint* ep, const char* reason,
-                        const char* file, int line) {
+static void CFStreamRef(CFStreamEndpoint* ep, const char* reason, const char* file, int line) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "CFStream endpoint ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep,
-            reason, val, val + 1);
+            "CFStream endpoint ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val, val + 1);
   }
   gpr_ref(&ep->refcount);
 }
@@ -106,27 +102,22 @@ static void CFStreamUnref(CFStreamEndpoint* ep) {
 static void CFStreamRef(CFStreamEndpoint* ep) { gpr_ref(&ep->refcount); }
 #endif
 
-static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error,
-                                               CFStreamEndpoint* ep) {
+static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error, CFStreamEndpoint* ep) {
   return grpc_error_set_str(
-      grpc_error_set_int(src_error, GRPC_ERROR_INT_GRPC_STATUS,
-                         GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(ep->peer_string.c_str()));
+      grpc_error_set_int(src_error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+      GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(ep->peer_string.c_str()));
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p call_read_cb %p %p:%p", ep,
-            ep->read_cb, ep->read_cb->cb, ep->read_cb->cb_arg);
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p call_read_cb %p %p:%p", ep, ep->read_cb,
+            ep->read_cb->cb, ep->read_cb->cb_arg);
     size_t i;
     gpr_log(GPR_DEBUG, "read: error=%s", grpc_error_std_string(error).c_str());
 
     for (i = 0; i < ep->read_slices->count; i++) {
-      char* dump = grpc_dump_slice(ep->read_slices->slices[i],
-                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", ep, ep->peer_string.c_str(),
-              dump);
+      char* dump = grpc_dump_slice(ep->read_slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", ep, ep->peer_string.c_str(), dump);
       gpr_free(dump);
     }
   }
@@ -138,8 +129,8 @@ static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
 
 static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p call_write_cb %p %p:%p", ep,
-            ep->write_cb, ep->write_cb->cb, ep->write_cb->cb_arg);
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p call_write_cb %p %p:%p", ep, ep->write_cb,
+            ep->write_cb->cb, ep->write_cb->cb_arg);
     gpr_log(GPR_DEBUG, "write: error=%s", grpc_error_std_string(error).c_str());
   }
   grpc_closure* cb = ep->write_cb;
@@ -161,14 +152,12 @@ static void ReadAction(void* arg, grpc_error_handle error) {
   GPR_ASSERT(ep->read_slices->count == 1);
   grpc_slice slice = ep->read_slices->slices[0];
   size_t len = GRPC_SLICE_LENGTH(slice);
-  CFIndex read_size =
-      CFReadStreamRead(ep->read_stream, GRPC_SLICE_START_PTR(slice), len);
+  CFIndex read_size = CFReadStreamRead(ep->read_stream, GRPC_SLICE_START_PTR(slice), len);
   if (read_size == -1) {
     grpc_slice_buffer_reset_and_unref_internal(ep->read_slices);
     CFErrorRef stream_error = CFReadStreamCopyError(ep->read_stream);
     if (stream_error != nullptr) {
-      error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"), ep);
+      error = CFStreamAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"), ep);
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Read error");
@@ -178,8 +167,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
   } else if (read_size == 0) {
     grpc_slice_buffer_reset_and_unref_internal(ep->read_slices);
     CallReadCb(ep,
-               CFStreamAnnotateError(
-                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), ep));
+               CFStreamAnnotateError(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), ep));
     EP_UNREF(ep, "read");
   } else {
     if (read_size < static_cast<CFIndex>(len)) {
@@ -202,14 +190,13 @@ static void WriteAction(void* arg, grpc_error_handle error) {
 
   grpc_slice slice = grpc_slice_buffer_take_first(ep->write_slices);
   size_t slice_len = GRPC_SLICE_LENGTH(slice);
-  CFIndex write_size = CFWriteStreamWrite(
-      ep->write_stream, GRPC_SLICE_START_PTR(slice), slice_len);
+  CFIndex write_size = CFWriteStreamWrite(ep->write_stream, GRPC_SLICE_START_PTR(slice), slice_len);
   if (write_size == -1) {
     grpc_slice_buffer_reset_and_unref_internal(ep->write_slices);
     CFErrorRef stream_error = CFWriteStreamCopyError(ep->write_stream);
     if (stream_error != nullptr) {
-      error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write failed."), ep);
+      error =
+          CFStreamAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write failed."), ep);
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("write failed.");
@@ -218,8 +205,8 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     EP_UNREF(ep, "write");
   } else {
     if (write_size < static_cast<CFIndex>(GRPC_SLICE_LENGTH(slice))) {
-      grpc_slice_buffer_undo_take_first(
-          ep->write_slices, grpc_slice_sub(slice, write_size, slice_len));
+      grpc_slice_buffer_undo_take_first(ep->write_slices,
+                                        grpc_slice_sub(slice, write_size, slice_len));
     }
     if (ep->write_slices->length > 0) {
       ep->stream_sync->NotifyOnWrite(&ep->write_action);
@@ -231,8 +218,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     if (grpc_tcp_trace.enabled()) {
       grpc_slice trace_slice = grpc_slice_sub(slice, 0, write_size);
       char* dump = grpc_dump_slice(trace_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string.c_str(),
-              dump);
+      gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string.c_str(), dump);
       gpr_free(dump);
       grpc_slice_unref_internal(trace_slice);
     }
@@ -251,31 +237,30 @@ static void CFStreamReadAllocationDone(void* arg, grpc_error_handle error) {
   }
 }
 
-static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb, bool urgent) {
+static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+                         bool urgent) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p read (%p, %p) length:%zu", ep_impl,
-            slices, cb, slices->length);
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p read (%p, %p) length:%zu", ep_impl, slices, cb,
+            slices->length);
   }
   GPR_ASSERT(ep_impl->read_cb == nullptr);
   ep_impl->read_cb = cb;
   ep_impl->read_slices = slices;
   grpc_slice_buffer_reset_and_unref_internal(slices);
   EP_REF(ep_impl, "read");
-  if (grpc_resource_user_alloc_slices(&ep_impl->slice_allocator,
-                                      GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
-                                      ep_impl->read_slices)) {
+  if (grpc_resource_user_alloc_slices(&ep_impl->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE,
+                                      1, ep_impl->read_slices)) {
     ep_impl->stream_sync->NotifyOnRead(&ep_impl->read_action);
   }
 }
 
-static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb, void* arg) {
+static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+                          void* arg) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p write (%p, %p) length:%zu",
-            ep_impl, slices, cb, slices->length);
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p write (%p, %p) length:%zu", ep_impl, slices, cb,
+            slices->length);
   }
   GPR_ASSERT(ep_impl->write_cb == nullptr);
   ep_impl->write_cb = cb;
@@ -327,8 +312,7 @@ bool CFStreamCanTrackErr(grpc_endpoint* ep) { return false; }
 
 void CFStreamAddToPollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
 void CFStreamAddToPollsetSet(grpc_endpoint* ep, grpc_pollset_set* pollset) {}
-void CFStreamDeleteFromPollsetSet(grpc_endpoint* ep,
-                                  grpc_pollset_set* pollset) {}
+void CFStreamDeleteFromPollsetSet(grpc_endpoint* ep, grpc_pollset_set* pollset) {}
 
 static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamWrite,
@@ -343,15 +327,14 @@ static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamGetFD,
                                             CFStreamCanTrackErr};
 
-grpc_endpoint* grpc_cfstream_endpoint_create(
-    CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
-    const char* peer_string, grpc_resource_quota* resource_quota,
-    CFStreamHandle* stream_sync) {
+grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
+                                             CFWriteStreamRef write_stream, const char* peer_string,
+                                             grpc_resource_quota* resource_quota,
+                                             CFStreamHandle* stream_sync) {
   CFStreamEndpoint* ep_impl = new CFStreamEndpoint;
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
-            "CFStream endpoint:%p create readStream:%p writeStream: %p",
-            ep_impl, read_stream, write_stream);
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p create readStream:%p writeStream: %p", ep_impl,
+            read_stream, write_stream);
   }
   ep_impl->base.vtable = &vtable;
   gpr_ref_init(&ep_impl->refcount, 1);
@@ -365,11 +348,10 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   ep_impl->peer_string = peer_string;
   grpc_resolved_address resolved_local_addr;
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
-  CFDataRef native_handle = static_cast<CFDataRef>(CFReadStreamCopyProperty(
-      ep_impl->read_stream, kCFStreamPropertySocketNativeHandle));
+  CFDataRef native_handle = static_cast<CFDataRef>(
+      CFReadStreamCopyProperty(ep_impl->read_stream, kCFStreamPropertySocketNativeHandle));
   CFSocketNativeHandle sockfd;
-  CFDataGetBytes(native_handle, CFRangeMake(0, sizeof(CFSocketNativeHandle)),
-                 (UInt8*)&sockfd);
+  CFDataGetBytes(native_handle, CFRangeMake(0, sizeof(CFSocketNativeHandle)), (UInt8*)&sockfd);
   if (native_handle) {
     CFRelease(native_handle);
   }
@@ -383,14 +365,12 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   ep_impl->write_cb = nil;
   ep_impl->read_slices = nil;
   ep_impl->write_slices = nil;
-  GRPC_CLOSURE_INIT(&ep_impl->read_action, ReadAction,
-                    static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&ep_impl->write_action, WriteAction,
-                    static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
-  ep_impl->resource_user =
-      grpc_resource_user_create(resource_quota, peer_string);
-  grpc_resource_user_slice_allocator_init(&ep_impl->slice_allocator,
-                                          ep_impl->resource_user,
+  GRPC_CLOSURE_INIT(&ep_impl->read_action, ReadAction, static_cast<void*>(ep_impl),
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ep_impl->write_action, WriteAction, static_cast<void*>(ep_impl),
+                    grpc_schedule_on_exec_ctx);
+  ep_impl->resource_user = grpc_resource_user_create(resource_quota, peer_string);
+  grpc_resource_user_slice_allocator_init(&ep_impl->slice_allocator, ep_impl->resource_user,
                                           CFStreamReadAllocationDone, ep_impl);
 
   return &ep_impl->base;

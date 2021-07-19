@@ -65,8 +65,7 @@ static __inline void gpr_atm_no_barrier_store(gpr_atm* p, gpr_atm value) {
 #undef GPR_ATM_LS_BARRIER_
 #undef GPR_ATM_COMPILE_BARRIER_
 
-#define gpr_atm_no_barrier_fetch_add(p, delta) \
-  gpr_atm_full_fetch_add((p), (delta))
+#define gpr_atm_no_barrier_fetch_add(p, delta) gpr_atm_full_fetch_add((p), (delta))
 #define gpr_atm_full_fetch_add(p, delta) (__sync_fetch_and_add((p), (delta)))
 
 #define gpr_atm_no_barrier_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))

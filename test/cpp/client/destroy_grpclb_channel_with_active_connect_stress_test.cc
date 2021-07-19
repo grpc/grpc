@@ -51,8 +51,7 @@
 namespace {
 
 void TryConnectAndDestroy() {
-  auto response_generator =
-      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+  auto response_generator = grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   // Return a grpclb address with an IP address on the IPv6 discard prefix
   // (https://tools.ietf.org/html/rfc6666). This is important because
   // the behavior we want in this test is for a TCP connect attempt to "freeze",
@@ -60,8 +59,7 @@ void TryConnectAndDestroy() {
   // The precise behavior is dependant on the test runtime environment though,
   // since connect() attempts on this address may unfortunately result in
   // "network unreachable" errors in some test runtime environments.
-  absl::StatusOr<grpc_core::URI> lb_uri =
-      grpc_core::URI::Parse("ipv6:[0100::1234]:443");
+  absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse("ipv6:[0100::1234]:443");
   ASSERT_TRUE(lb_uri.ok());
   grpc_resolved_address address;
   ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
@@ -76,30 +74,25 @@ void TryConnectAndDestroy() {
   lb_address_result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   response_generator->SetResponse(lb_address_result);
   grpc::ChannelArguments args;
-  args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                  response_generator.get());
+  args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR, response_generator.get());
   // Explicitly set the connect deadline to the same amount of
   // time as the WaitForConnected time. The goal is to get the
   // connect timeout code to run at about the same time as when
   // the channel gets destroyed, to try to reproduce a race.
-  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms",
-              grpc_test_slowdown_factor() * 100);
+  args.SetInt("grpc.testing.fixed_reconnect_backoff_ms", grpc_test_slowdown_factor() * 100);
   std::ostringstream uri;
   uri << "fake:///servername_not_used";
-  auto channel = ::grpc::CreateCustomChannel(
-      uri.str(), grpc::InsecureChannelCredentials(), args);
+  auto channel = ::grpc::CreateCustomChannel(uri.str(), grpc::InsecureChannelCredentials(), args);
   // Start connecting, and give some time for the TCP connection attempt to the
   // unreachable balancer to begin. The connection should never become ready
   // because the LB we're trying to connect to is unreachable.
   channel->GetState(true /* try_to_connect */);
-  ASSERT_FALSE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_FALSE(channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   ASSERT_EQ("grpclb", channel->GetLoadBalancingPolicyName());
   channel.reset();
 };
 
-TEST(DestroyGrpclbChannelWithActiveConnectStressTest,
-     LoopTryConnectAndDestroy) {
+TEST(DestroyGrpclbChannelWithActiveConnectStressTest, LoopTryConnectAndDestroy) {
   grpc_init();
   std::vector<std::unique_ptr<std::thread>> threads;
   // 100 is picked for number of threads just

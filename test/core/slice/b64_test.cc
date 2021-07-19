@@ -28,8 +28,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
-static int buffers_are_equal(const unsigned char* buf1,
-                             const unsigned char* buf2, size_t size) {
+static int buffers_are_equal(const unsigned char* buf1, const unsigned char* buf2, size_t size) {
   size_t i;
   for (i = 0; i < size; i++) {
     if (buf1[i] != buf2[i]) {
@@ -43,8 +42,7 @@ static int buffers_are_equal(const unsigned char* buf1,
 
 static void test_simple_encode_decode_b64(int url_safe, int multiline) {
   const char* hello = "hello";
-  char* hello_b64 =
-      grpc_base64_encode(hello, strlen(hello), url_safe, multiline);
+  char* hello_b64 = grpc_base64_encode(hello, strlen(hello), url_safe, multiline);
   grpc_core::ExecCtx exec_ctx;
   grpc_slice hello_slice = grpc_base64_decode(hello_b64, url_safe);
   GPR_ASSERT(GRPC_SLICE_LENGTH(hello_slice) == strlen(hello));
@@ -69,8 +67,7 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
     b64 = grpc_base64_encode(orig, sizeof(orig) - i, url_safe, multiline);
     orig_decoded = grpc_base64_decode(b64, url_safe);
     GPR_ASSERT(GRPC_SLICE_LENGTH(orig_decoded) == (sizeof(orig) - i));
-    GPR_ASSERT(buffers_are_equal(orig, GRPC_SLICE_START_PTR(orig_decoded),
-                                 sizeof(orig) - i));
+    GPR_ASSERT(buffers_are_equal(orig, GRPC_SLICE_START_PTR(orig_decoded), sizeof(orig) - i));
     grpc_slice_unref_internal(orig_decoded);
     gpr_free(b64);
   }
@@ -80,9 +77,7 @@ static void test_simple_encode_decode_b64_no_multiline(void) {
   test_simple_encode_decode_b64(0, 0);
 }
 
-static void test_simple_encode_decode_b64_multiline(void) {
-  test_simple_encode_decode_b64(0, 1);
-}
+static void test_simple_encode_decode_b64_multiline(void) { test_simple_encode_decode_b64(0, 1); }
 
 static void test_simple_encode_decode_b64_urlsafe_no_multiline(void) {
   test_simple_encode_decode_b64(1, 0);

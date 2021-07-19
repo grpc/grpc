@@ -31,16 +31,14 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class XdsCredentialsEnd2EndFallbackTest
-    : public ::testing::TestWithParam<const char*> {
+class XdsCredentialsEnd2EndFallbackTest : public ::testing::TestWithParam<const char*> {
  protected:
   XdsCredentialsEnd2EndFallbackTest() {
     int port = grpc_pick_unused_port_or_die();
     ServerBuilder builder;
     server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(
-        server_address_,
-        GetCredentialsProvider()->GetServerCredentials(GetParam()));
+    builder.AddListeningPort(server_address_,
+                             GetCredentialsProvider()->GetServerCredentials(GetParam()));
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
@@ -69,18 +67,16 @@ TEST_P(XdsCredentialsEnd2EndFallbackTest, NoXdsSchemeInTarget) {
   EXPECT_EQ(resp.message(), "Hello");
 }
 
-class XdsServerCredentialsEnd2EndFallbackTest
-    : public ::testing::TestWithParam<const char*> {
+class XdsServerCredentialsEnd2EndFallbackTest : public ::testing::TestWithParam<const char*> {
  protected:
   XdsServerCredentialsEnd2EndFallbackTest() {
     int port = grpc_pick_unused_port_or_die();
     // Build a server that is not xDS enabled but uses XdsServerCredentials.
     ServerBuilder builder;
     server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(
-        server_address_,
-        grpc::experimental::XdsServerCredentials(
-            GetCredentialsProvider()->GetServerCredentials(GetParam())));
+    builder.AddListeningPort(server_address_,
+                             grpc::experimental::XdsServerCredentials(
+                                 GetCredentialsProvider()->GetServerCredentials(GetParam())));
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
@@ -93,8 +89,7 @@ class XdsServerCredentialsEnd2EndFallbackTest
 TEST_P(XdsServerCredentialsEnd2EndFallbackTest, Basic) {
   ChannelArguments args;
   auto channel = grpc::CreateCustomChannel(
-      server_address_,
-      GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args), args);
+      server_address_, GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args), args);
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -105,15 +100,13 @@ TEST_P(XdsServerCredentialsEnd2EndFallbackTest, Basic) {
   EXPECT_EQ(resp.message(), "Hello");
 }
 
-INSTANTIATE_TEST_SUITE_P(XdsCredentialsEnd2EndFallback,
-                         XdsCredentialsEnd2EndFallbackTest,
-                         ::testing::ValuesIn(std::vector<const char*>(
-                             {kInsecureCredentialsType, kTlsCredentialsType})));
+INSTANTIATE_TEST_SUITE_P(XdsCredentialsEnd2EndFallback, XdsCredentialsEnd2EndFallbackTest,
+                         ::testing::ValuesIn(std::vector<const char*>({kInsecureCredentialsType,
+                                                                       kTlsCredentialsType})));
 
-INSTANTIATE_TEST_SUITE_P(XdsServerCredentialsEnd2EndFallback,
-                         XdsServerCredentialsEnd2EndFallbackTest,
-                         ::testing::ValuesIn(std::vector<const char*>(
-                             {kInsecureCredentialsType, kTlsCredentialsType})));
+INSTANTIATE_TEST_SUITE_P(
+    XdsServerCredentialsEnd2EndFallback, XdsServerCredentialsEnd2EndFallbackTest,
+    ::testing::ValuesIn(std::vector<const char*>({kInsecureCredentialsType, kTlsCredentialsType})));
 
 }  // namespace
 }  // namespace testing

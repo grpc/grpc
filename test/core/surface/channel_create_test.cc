@@ -36,8 +36,7 @@ void test_unknown_scheme_target(void) {
   GPR_ASSERT(chan != nullptr);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel_element* elem =
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
+  grpc_channel_element* elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
 
   grpc_channel_destroy(chan);

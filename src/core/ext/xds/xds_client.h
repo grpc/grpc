@@ -86,8 +86,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
                                               grpc_error_handle* error);
 
   // Most callers should not instantiate directly.  Use GetOrCreate() instead.
-  XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-            const grpc_channel_args* args);
+  XdsClient(std::unique_ptr<XdsBootstrap> bootstrap, const grpc_channel_args* args);
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
@@ -96,9 +95,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     return *bootstrap_;
   }
 
-  CertificateProviderStore& certificate_provider_store() {
-    return *certificate_provider_store_;
-  }
+  CertificateProviderStore& certificate_provider_store() { return *certificate_provider_store_; }
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
@@ -125,8 +122,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // old one, it should set delay_unsubscription to true.
   void WatchListenerData(absl::string_view listener_name,
                          std::unique_ptr<ListenerWatcherInterface> watcher);
-  void CancelListenerDataWatch(absl::string_view listener_name,
-                               ListenerWatcherInterface* watcher,
+  void CancelListenerDataWatch(absl::string_view listener_name, ListenerWatcherInterface* watcher,
                                bool delay_unsubscription = false);
 
   // Start and cancel route config data watch for a listener.
@@ -136,9 +132,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // pointer must not be used for any other purpose.)
   // If the caller is going to start a new watch after cancelling the
   // old one, it should set delay_unsubscription to true.
-  void WatchRouteConfigData(
-      absl::string_view route_config_name,
-      std::unique_ptr<RouteConfigWatcherInterface> watcher);
+  void WatchRouteConfigData(absl::string_view route_config_name,
+                            std::unique_ptr<RouteConfigWatcherInterface> watcher);
   void CancelRouteConfigDataWatch(absl::string_view route_config_name,
                                   RouteConfigWatcherInterface* watcher,
                                   bool delay_unsubscription = false);
@@ -152,8 +147,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // old one, it should set delay_unsubscription to true.
   void WatchClusterData(absl::string_view cluster_name,
                         std::unique_ptr<ClusterWatcherInterface> watcher);
-  void CancelClusterDataWatch(absl::string_view cluster_name,
-                              ClusterWatcherInterface* watcher,
+  void CancelClusterDataWatch(absl::string_view cluster_name, ClusterWatcherInterface* watcher,
                               bool delay_unsubscription = false);
 
   // Start and cancel endpoint data watch for a cluster.
@@ -170,11 +164,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
                                bool delay_unsubscription = false);
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
-  RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
-      absl::string_view lrs_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name);
-  void RemoveClusterDropStats(absl::string_view /*lrs_server*/,
-                              absl::string_view cluster_name,
+  RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(absl::string_view lrs_server,
+                                                         absl::string_view cluster_name,
+                                                         absl::string_view eds_service_name);
+  void RemoveClusterDropStats(absl::string_view /*lrs_server*/, absl::string_view cluster_name,
                               absl::string_view eds_service_name,
                               XdsClusterDropStats* cluster_drop_stats);
 
@@ -182,13 +175,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // for the specified locality.
   RefCountedPtr<XdsClusterLocalityStats> AddClusterLocalityStats(
       absl::string_view lrs_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name,
-      RefCountedPtr<XdsLocalityName> locality);
-  void RemoveClusterLocalityStats(
-      absl::string_view /*lrs_server*/, absl::string_view cluster_name,
-      absl::string_view eds_service_name,
-      const RefCountedPtr<XdsLocalityName>& locality,
-      XdsClusterLocalityStats* cluster_locality_stats);
+      absl::string_view eds_service_name, RefCountedPtr<XdsLocalityName> locality);
+  void RemoveClusterLocalityStats(absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+                                  absl::string_view eds_service_name,
+                                  const RefCountedPtr<XdsLocalityName>& locality,
+                                  XdsClusterLocalityStats* cluster_locality_stats);
 
   // Resets connection backoff state.
   void ResetBackoff();
@@ -204,8 +195,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Helpers for encoding the XdsClient object in channel args.
   grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<XdsClient> GetFromChannelArgs(
-      const grpc_channel_args& args);
+  static RefCountedPtr<XdsClient> GetFromChannelArgs(const grpc_channel_args& args);
 
  private:
   // Contains a channel to the xds server and all the data related to the
@@ -223,8 +213,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     class AdsCallState;
     class LrsCallState;
 
-    ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
-                 const XdsBootstrap::XdsServer& server);
+    ChannelState(WeakRefCountedPtr<XdsClient> xds_client, const XdsBootstrap::XdsServer& server);
     ~ChannelState() override;
 
     void Orphan() override;
@@ -268,35 +257,28 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   struct ListenerState {
-    std::map<ListenerWatcherInterface*,
-             std::unique_ptr<ListenerWatcherInterface>>
-        watchers;
+    std::map<ListenerWatcherInterface*, std::unique_ptr<ListenerWatcherInterface>> watchers;
     // The latest data seen from LDS.
     absl::optional<XdsApi::LdsUpdate> update;
     XdsApi::ResourceMetadata meta;
   };
 
   struct RouteConfigState {
-    std::map<RouteConfigWatcherInterface*,
-             std::unique_ptr<RouteConfigWatcherInterface>>
-        watchers;
+    std::map<RouteConfigWatcherInterface*, std::unique_ptr<RouteConfigWatcherInterface>> watchers;
     // The latest data seen from RDS.
     absl::optional<XdsApi::RdsUpdate> update;
     XdsApi::ResourceMetadata meta;
   };
 
   struct ClusterState {
-    std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
-        watchers;
+    std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>> watchers;
     // The latest data seen from CDS.
     absl::optional<XdsApi::CdsUpdate> update;
     XdsApi::ResourceMetadata meta;
   };
 
   struct EndpointState {
-    std::map<EndpointWatcherInterface*,
-             std::unique_ptr<EndpointWatcherInterface>>
-        watchers;
+    std::map<EndpointWatcherInterface*, std::unique_ptr<EndpointWatcherInterface>> watchers;
     // The latest data seen from EDS.
     absl::optional<XdsApi::EdsUpdate> update;
     XdsApi::ResourceMetadata meta;
@@ -310,22 +292,19 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     XdsClusterDropStats* drop_stats = nullptr;
     XdsClusterDropStats::Snapshot deleted_drop_stats;
-    std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
-             XdsLocalityName::Less>
-        locality_stats;
+    std::map<RefCountedPtr<XdsLocalityName>, LocalityState, XdsLocalityName::Less> locality_stats;
     grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error_handle error)
+  void NotifyOnErrorLocked(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(bool send_all_clusters,
+                                                             const std::set<std::string>& clusters)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      bool send_all_clusters, const std::set<std::string>& clusters)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
-  void UpdateResourceMetadataWithFailedParseResultLocked(
-      grpc_millis update_time, const XdsApi::AdsParseResult& result)
+  void UpdateResourceMetadataWithFailedParseResultLocked(grpc_millis update_time,
+                                                         const XdsApi::AdsParseResult& result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
@@ -341,22 +320,18 @@ class XdsClient : public DualRefCounted<XdsClient> {
   OrphanablePtr<ChannelState> chand_ ABSL_GUARDED_BY(mu_);
 
   // One entry for each watched LDS resource.
-  std::map<std::string /*listener_name*/, ListenerState> listener_map_
-      ABSL_GUARDED_BY(mu_);
+  std::map<std::string /*listener_name*/, ListenerState> listener_map_ ABSL_GUARDED_BY(mu_);
   // One entry for each watched RDS resource.
-  std::map<std::string /*route_config_name*/, RouteConfigState>
-      route_config_map_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string /*route_config_name*/, RouteConfigState> route_config_map_
+      ABSL_GUARDED_BY(mu_);
   // One entry for each watched CDS resource.
-  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_
-      ABSL_GUARDED_BY(mu_);
+  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_ ABSL_GUARDED_BY(mu_);
   // One entry for each watched EDS resource.
-  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_
-      ABSL_GUARDED_BY(mu_);
+  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_ ABSL_GUARDED_BY(mu_);
 
   // Load report data.
-  std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      LoadReportState>
+  std::map<std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
+           LoadReportState>
       load_report_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores the most recent accepted resource version for each resource type.

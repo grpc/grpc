@@ -42,15 +42,7 @@ class Json {
   // consider whether there's a better alternative (e.g., maybe storing
   // each numeric type as the native C++ type and automatically converting
   // to string as needed).
-  enum class Type {
-    JSON_NULL,
-    JSON_TRUE,
-    JSON_FALSE,
-    NUMBER,
-    STRING,
-    OBJECT,
-    ARRAY
-  };
+  enum class Type { JSON_NULL, JSON_TRUE, JSON_FALSE, NUMBER, STRING, OBJECT, ARRAY };
 
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
@@ -87,15 +79,13 @@ class Json {
 
   // Same thing for C-style strings, both const and mutable.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(const char* string, bool is_number = false)
-      : Json(std::string(string), is_number) {}
+  Json(const char* string, bool is_number = false) : Json(std::string(string), is_number) {}
   Json& operator=(const char* string) {
     *this = std::string(string);
     return *this;
   }
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(char* string, bool is_number = false)
-      : Json(std::string(string), is_number) {}
+  Json(char* string, bool is_number = false) : Json(std::string(string), is_number) {}
   Json& operator=(char* string) {
     *this = std::string(string);
     return *this;
@@ -103,8 +93,7 @@ class Json {
 
   // Construct by moving a string.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(std::string&& string)
-      : type_(Type::STRING), string_value_(std::move(string)) {}
+  Json(std::string&& string) : type_(Type::STRING), string_value_(std::move(string)) {}
   Json& operator=(std::string&& string) {
     type_ = Type::STRING;
     string_value_ = std::move(string);
@@ -122,8 +111,7 @@ class Json {
   // Construct from any numeric type.
   template <typename NumericType>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(NumericType number)
-      : type_(Type::NUMBER), string_value_(std::to_string(number)) {}
+  Json(NumericType number) : type_(Type::NUMBER), string_value_(std::to_string(number)) {}
   template <typename NumericType>
   Json& operator=(NumericType number) {
     type_ = Type::NUMBER;
@@ -142,8 +130,7 @@ class Json {
 
   // Construct by moving object.
   // NOLINTNEXTLINE(google-explicit-constructor)
-  Json(Object&& object)
-      : type_(Type::OBJECT), object_value_(std::move(object)) {}
+  Json(Object&& object) : type_(Type::OBJECT), object_value_(std::move(object)) {}
   Json& operator=(Object&& object) {
     type_ = Type::OBJECT;
     object_value_ = std::move(object);

@@ -123,8 +123,7 @@ class Parser {
 
   void ReadLong(long* l) {
     size_t start = current_;
-    while (current_ != db_.size() && db_[current_] != ',' &&
-           db_[current_] != '}') {
+    while (current_ != db_.size() && db_[current_] != ',' && db_[current_] != '}') {
       current_++;
     }
     // It will throw an exception if fails.
@@ -143,9 +142,7 @@ class Parser {
 void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
   feature_list->clear();
   std::string db_content(db);
-  db_content.erase(
-      std::remove_if(db_content.begin(), db_content.end(), isspace),
-      db_content.end());
+  db_content.erase(std::remove_if(db_content.begin(), db_content.end(), isspace), db_content.end());
 
   Parser parser(db_content);
   Feature feature;
@@ -157,8 +154,7 @@ void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
       break;
     }
   }
-  std::cout << "DB parsed, loaded " << feature_list->size() << " features."
-            << std::endl;
+  std::cout << "DB parsed, loaded " << feature_list->size() << " features." << std::endl;
 }
 
 }  // namespace routeguide

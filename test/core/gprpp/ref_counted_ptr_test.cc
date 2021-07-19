@@ -49,9 +49,7 @@ class Foo : public RefCounted<Foo> {
 
 TEST(RefCountedPtr, DefaultConstructor) { RefCountedPtr<Foo> foo; }
 
-TEST(RefCountedPtr, ExplicitConstructorEmpty) {
-  RefCountedPtr<Foo> foo(nullptr);
-}
+TEST(RefCountedPtr, ExplicitConstructorEmpty) { RefCountedPtr<Foo> foo(nullptr); }
 
 TEST(RefCountedPtr, ExplicitConstructor) { RefCountedPtr<Foo> foo(new Foo()); }
 
@@ -205,9 +203,7 @@ class Subclass : public BaseClass {
   Subclass() {}
 };
 
-TEST(RefCountedPtr, ConstructFromSubclass) {
-  RefCountedPtr<BaseClass> p(new Subclass());
-}
+TEST(RefCountedPtr, ConstructFromSubclass) { RefCountedPtr<BaseClass> p(new Subclass()); }
 
 TEST(RefCountedPtr, CopyAssignFromSubclass) {
   RefCountedPtr<BaseClass> b;
@@ -279,9 +275,7 @@ class Bar : public DualRefCounted<Bar> {
 
 TEST(WeakRefCountedPtr, DefaultConstructor) { WeakRefCountedPtr<Bar> bar; }
 
-TEST(WeakRefCountedPtr, ExplicitConstructorEmpty) {
-  WeakRefCountedPtr<Bar> bar(nullptr);
-}
+TEST(WeakRefCountedPtr, ExplicitConstructorEmpty) { WeakRefCountedPtr<Bar> bar(nullptr); }
 
 TEST(WeakRefCountedPtr, ExplicitConstructor) {
   RefCountedPtr<Bar> bar_strong(new Bar());

@@ -89,38 +89,33 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
 
 class MockSourceAddrFactory : public address_sorting_source_addr_factory {
  public:
-  MockSourceAddrFactory(
-      bool ipv4_supported, bool ipv6_supported,
-      const std::map<std::string, TestAddress>& dest_addr_to_src_addr)
+  MockSourceAddrFactory(bool ipv4_supported, bool ipv6_supported,
+                        const std::map<std::string, TestAddress>& dest_addr_to_src_addr)
       : ipv4_supported_(ipv4_supported),
         ipv6_supported_(ipv6_supported),
         dest_addr_to_src_addr_(dest_addr_to_src_addr) {}
 
   bool GetSourceAddr(const address_sorting_address* dest_addr,
                      address_sorting_address* source_addr) {
-    if ((address_sorting_abstract_get_family(dest_addr) ==
-             ADDRESS_SORTING_AF_INET &&
+    if ((address_sorting_abstract_get_family(dest_addr) == ADDRESS_SORTING_AF_INET &&
          !ipv4_supported_) ||
-        (address_sorting_abstract_get_family(dest_addr) ==
-             ADDRESS_SORTING_AF_INET6 &&
+        (address_sorting_abstract_get_family(dest_addr) == ADDRESS_SORTING_AF_INET6 &&
          !ipv6_supported_)) {
       return false;
     }
     grpc_resolved_address dest_addr_as_resolved_addr;
     memcpy(&dest_addr_as_resolved_addr.addr, dest_addr, dest_addr->len);
     dest_addr_as_resolved_addr.len = dest_addr->len;
-    std::string ip_addr_str = grpc_sockaddr_to_string(
-        &dest_addr_as_resolved_addr, false /* normalize */);
+    std::string ip_addr_str =
+        grpc_sockaddr_to_string(&dest_addr_as_resolved_addr, false /* normalize */);
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
-      gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map",
-              ip_addr_str.c_str());
+      gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map", ip_addr_str.c_str());
       return false;
     }
     grpc_resolved_address source_addr_as_resolved_addr =
         TestAddressToGrpcResolvedAddress(it->second);
-    memcpy(source_addr->addr, &source_addr_as_resolved_addr.addr,
-           source_addr_as_resolved_addr.len);
+    memcpy(source_addr->addr, &source_addr_as_resolved_addr.addr, source_addr_as_resolved_addr.len);
     source_addr->len = source_addr_as_resolved_addr.len;
     return true;
   }
@@ -133,38 +128,32 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
 };
 
 static bool mock_source_addr_factory_wrapper_get_source_addr(
-    address_sorting_source_addr_factory* factory,
-    const address_sorting_address* dest_addr,
+    address_sorting_source_addr_factory* factory, const address_sorting_address* dest_addr,
     address_sorting_address* source_addr) {
-  MockSourceAddrFactory* mock =
-      reinterpret_cast<MockSourceAddrFactory*>(factory);
+  MockSourceAddrFactory* mock = reinterpret_cast<MockSourceAddrFactory*>(factory);
   return mock->GetSourceAddr(dest_addr, source_addr);
 }
 
-void mock_source_addr_factory_wrapper_destroy(
-    address_sorting_source_addr_factory* factory) {
-  MockSourceAddrFactory* mock =
-      reinterpret_cast<MockSourceAddrFactory*>(factory);
+void mock_source_addr_factory_wrapper_destroy(address_sorting_source_addr_factory* factory) {
+  MockSourceAddrFactory* mock = reinterpret_cast<MockSourceAddrFactory*>(factory);
   delete mock;
 }
 
-const address_sorting_source_addr_factory_vtable kMockSourceAddrFactoryVtable =
-    {
-        mock_source_addr_factory_wrapper_get_source_addr,
-        mock_source_addr_factory_wrapper_destroy,
+const address_sorting_source_addr_factory_vtable kMockSourceAddrFactoryVtable = {
+    mock_source_addr_factory_wrapper_get_source_addr,
+    mock_source_addr_factory_wrapper_destroy,
 };
 
 void OverrideAddressSortingSourceAddrFactory(
     bool ipv4_supported, bool ipv6_supported,
     const std::map<std::string, TestAddress>& dest_addr_to_src_addr) {
-  address_sorting_source_addr_factory* factory = new MockSourceAddrFactory(
-      ipv4_supported, ipv6_supported, dest_addr_to_src_addr);
+  address_sorting_source_addr_factory* factory =
+      new MockSourceAddrFactory(ipv4_supported, ipv6_supported, dest_addr_to_src_addr);
   factory->vtable = &kMockSourceAddrFactoryVtable;
   address_sorting_override_source_addr_factory_for_testing(factory);
 }
 
-grpc_core::ServerAddressList BuildLbAddrInputs(
-    const std::vector<TestAddress>& test_addrs) {
+grpc_core::ServerAddressList BuildLbAddrInputs(const std::vector<TestAddress>& test_addrs) {
   grpc_core::ServerAddressList addresses;
   for (const auto& addr : test_addrs) {
     addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr), nullptr);
@@ -196,11 +185,10 @@ class AddressSortingTest : public ::testing::Test {
 TEST_F(AddressSortingTest, TestDepriotizesUnreachableAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"1.2.3.4:443", {"4.3.2.1:443", AF_INET}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"1.2.3.4:443", {"4.3.2.1:443", AF_INET}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"1.2.3.4:443", AF_INET},
       {"5.6.7.8:443", AF_INET},
@@ -215,11 +203,10 @@ TEST_F(AddressSortingTest, TestDepriotizesUnreachableAddresses) {
 TEST_F(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv6) {
   bool ipv4_supported = true;
   bool ipv6_supported = false;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"1.2.3.4:443", {"4.3.2.1:0", AF_INET}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"1.2.3.4:443", {"4.3.2.1:0", AF_INET}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[2607:f8b0:400a:801::1002]:443", AF_INET6},
       {"1.2.3.4:443", AF_INET},
@@ -260,9 +247,8 @@ TEST_F(AddressSortingTest, TestDepriotizesNonMatchingScope) {
       ipv4_supported, ipv6_supported,
       {
           {"[2000:f8b0:400a:801::1002]:443",
-           {"[fec0::1000]:0", AF_INET6}},  // global and site-local scope
-          {"[fec0::5000]:443",
-           {"[fec0::5001]:0", AF_INET6}},  // site-local and site-local scope
+           {"[fec0::1000]:0", AF_INET6}},                      // global and site-local scope
+          {"[fec0::5000]:443", {"[fec0::5001]:0", AF_INET6}},  // site-local and site-local scope
       });
   auto lb_addrs = BuildLbAddrInputs({
       {"[2000:f8b0:400a:801::1002]:443", AF_INET6},
@@ -284,8 +270,7 @@ TEST_F(AddressSortingTest, TestUsesLabelFromDefaultTable) {
       ipv4_supported, ipv6_supported,
       {
           {"[2002::5001]:443", {"[2001::5002]:0", AF_INET6}},
-          {"[2001::5001]:443",
-           {"[2001::5002]:0", AF_INET6}},  // matching labels
+          {"[2001::5001]:443", {"[2001::5002]:0", AF_INET6}},  // matching labels
       });
   auto lb_addrs = BuildLbAddrInputs({
       {"[2002::5001]:443", AF_INET6},
@@ -307,8 +292,7 @@ TEST_F(AddressSortingTest, TestUsesLabelFromDefaultTableInputFlipped) {
       ipv4_supported, ipv6_supported,
       {
           {"[2002::5001]:443", {"[2001::5002]:0", AF_INET6}},
-          {"[2001::5001]:443",
-           {"[2001::5002]:0", AF_INET6}},  // matching labels
+          {"[2001::5001]:443", {"[2001::5002]:0", AF_INET6}},  // matching labels
       });
   auto lb_addrs = BuildLbAddrInputs({
       {"[2001::5001]:443", AF_INET6},
@@ -323,33 +307,29 @@ TEST_F(AddressSortingTest, TestUsesLabelFromDefaultTableInputFlipped) {
 
 /* Tests for rule 6 */
 
-TEST_F(AddressSortingTest,
-       TestUsesDestinationWithHigherPrecedenceWithAnIpv4Address) {
+TEST_F(AddressSortingTest, TestUsesDestinationWithHigherPrecedenceWithAnIpv4Address) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[3ffe::5001]:443", {"[3ffe::5002]:0", AF_INET6}},
-          {"1.2.3.4:443", {"5.6.7.8:0", AF_INET}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[3ffe::5001]:443", {"[3ffe::5002]:0", AF_INET6}},
+                                              {"1.2.3.4:443", {"5.6.7.8:0", AF_INET}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe::5001]:443", AF_INET6},
       {"1.2.3.4:443", AF_INET},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(
-      lb_addrs, {
-                    // The AF_INET address should be IPv4-mapped by the sort,
-                    // and IPv4-mapped
-                    // addresses have higher precedence than 3ffe::/16 by spec.
-                    "1.2.3.4:443",
-                    "[3ffe::5001]:443",
-                });
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    // The AF_INET address should be IPv4-mapped by the sort,
+                                    // and IPv4-mapped
+                                    // addresses have higher precedence than 3ffe::/16 by spec.
+                                    "1.2.3.4:443",
+                                    "[3ffe::5001]:443",
+                                });
 }
 
-TEST_F(AddressSortingTest,
-       TestUsesDestinationWithHigherPrecedenceWithV4CompatAndLocalhostAddress) {
+TEST_F(AddressSortingTest, TestUsesDestinationWithHigherPrecedenceWithV4CompatAndLocalhostAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
 // Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
@@ -360,12 +340,11 @@ TEST_F(AddressSortingTest,
   const char* v4_compat_dest = "[::2]:443";
   const char* v4_compat_src = "[::2]:0";
 #endif
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[::1]:443", {"[::1]:0", AF_INET6}},
-          {v4_compat_dest, {v4_compat_src, AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[::1]:443", {"[::1]:0", AF_INET6}},
+                                              {v4_compat_dest, {v4_compat_src, AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {v4_compat_dest, AF_INET6},
       {"[::1]:443", AF_INET6},
@@ -377,66 +356,58 @@ TEST_F(AddressSortingTest,
                                 });
 }
 
-TEST_F(AddressSortingTest,
-       TestUsesDestinationWithHigherPrecedenceWithCatchAllAndLocalhostAddress) {
+TEST_F(AddressSortingTest, TestUsesDestinationWithHigherPrecedenceWithCatchAllAndLocalhostAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          // 1234::2 for src and dest to make sure that prefix matching has no
-          // influence on this test.
-          {"[1234::2]:443", {"[1234::2]:0", AF_INET6}},
-          {"[::1]:443", {"[::1]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              // 1234::2 for src and dest to make sure that prefix
+                                              // matching has no influence on this test.
+                                              {"[1234::2]:443", {"[1234::2]:0", AF_INET6}},
+                                              {"[::1]:443", {"[::1]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[1234::2]:443", AF_INET6},
       {"[::1]:443", AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(
-      lb_addrs,
-      {
-          // ::1 should match the localhost precedence entry and be prioritized
-          "[::1]:443",
-          "[1234::2]:443",
-      });
+  VerifyLbAddrOutputs(lb_addrs,
+                      {
+                          // ::1 should match the localhost precedence entry and be prioritized
+                          "[::1]:443",
+                          "[1234::2]:443",
+                      });
 }
 
-TEST_F(AddressSortingTest,
-       TestUsesDestinationWithHigherPrecedenceWith2000PrefixedAddress) {
+TEST_F(AddressSortingTest, TestUsesDestinationWithHigherPrecedenceWith2000PrefixedAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[2001::1234]:443", {"[2001::5678]:0", AF_INET6}},
-          {"[2000::5001]:443", {"[2000::5002]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[2001::1234]:443", {"[2001::5678]:0", AF_INET6}},
+                                              {"[2000::5001]:443", {"[2000::5002]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[2001::1234]:443", AF_INET6},
       {"[2000::5001]:443", AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(
-      lb_addrs, {
-                    // The 2000::/16 address should match the ::/0 prefix rule
-                    "[2000::5001]:443",
-                    "[2001::1234]:443",
-                });
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    // The 2000::/16 address should match the ::/0 prefix rule
+                                    "[2000::5001]:443",
+                                    "[2001::1234]:443",
+                                });
 }
 
-TEST_F(
-    AddressSortingTest,
-    TestUsesDestinationWithHigherPrecedenceWith2000PrefixedAddressEnsurePrefixMatchHasNoEffect) {
+TEST_F(AddressSortingTest,
+       TestUsesDestinationWithHigherPrecedenceWith2000PrefixedAddressEnsurePrefixMatchHasNoEffect) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[2001::1231]:443", {"[2001::1232]:0", AF_INET6}},
-          {"[2000::5001]:443", {"[2000::5002]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[2001::1231]:443", {"[2001::1232]:0", AF_INET6}},
+                                              {"[2000::5001]:443", {"[2000::5002]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[2001::1231]:443", AF_INET6},
       {"[2000::5001]:443", AF_INET6},
@@ -448,16 +419,14 @@ TEST_F(
                                 });
 }
 
-TEST_F(AddressSortingTest,
-       TestUsesDestinationWithHigherPrecedenceWithLinkAndSiteLocalAddresses) {
+TEST_F(AddressSortingTest, TestUsesDestinationWithHigherPrecedenceWithLinkAndSiteLocalAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[fec0::1234]:443", {"[fec0::5678]:0", AF_INET6}},
-          {"[fc00::5001]:443", {"[fc00::5002]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[fec0::1234]:443", {"[fec0::5678]:0", AF_INET6}},
+                                              {"[fc00::5001]:443", {"[fc00::5002]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[fec0::1234]:443", AF_INET6},
       {"[fc00::5001]:443", AF_INET6},
@@ -469,9 +438,8 @@ TEST_F(AddressSortingTest,
                                 });
 }
 
-TEST_F(
-    AddressSortingTest,
-    TestUsesDestinationWithHigherPrecedenceWithCatchAllAndAndV4MappedAddresses) {
+TEST_F(AddressSortingTest,
+       TestUsesDestinationWithHigherPrecedenceWithCatchAllAndAndV4MappedAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
   // Use embedded ipv4 addresses with leading 1's instead of zero's to be
@@ -501,15 +469,13 @@ TEST_F(
 TEST_F(AddressSortingTest, TestPrefersSmallerScope) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          // Both of these destinations have the same precedence in default
-          // policy
-          // table.
-          {"[fec0::1234]:443", {"[fec0::5678]:0", AF_INET6}},
-          {"[3ffe::5001]:443", {"[3ffe::5002]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              // Both of these destinations have the same precedence
+                                              // in default policy table.
+                                              {"[fec0::1234]:443", {"[fec0::5678]:0", AF_INET6}},
+                                              {"[3ffe::5001]:443", {"[3ffe::5002]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe::5001]:443", AF_INET6},
       {"[fec0::1234]:443", AF_INET6},
@@ -526,15 +492,13 @@ TEST_F(AddressSortingTest, TestPrefersSmallerScope) {
 TEST_F(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          // Both of these destinations have the same precedence in default
-          // policy
-          // table.
-          {"[3ffe:1234::]:443", {"[3ffe:1235::]:0", AF_INET6}},
-          {"[3ffe:5001::]:443", {"[3ffe:4321::]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              // Both of these destinations have the same precedence
+                                              // in default policy table.
+                                              {"[3ffe:1234::]:443", {"[3ffe:1235::]:0", AF_INET6}},
+                                              {"[3ffe:5001::]:443", {"[3ffe:4321::]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe:5001::]:443", AF_INET6},
       {"[3ffe:1234::]:443", AF_INET6},
@@ -546,16 +510,14 @@ TEST_F(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
                                 });
 }
 
-TEST_F(AddressSortingTest,
-       TestPrefersLongestMatchingSrcDstPrefixMatchesWholeAddress) {
+TEST_F(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefixMatchesWholeAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[3ffe::1234]:443", {"[3ffe::1235]:0", AF_INET6}},
-          {"[3ffe::5001]:443", {"[3ffe::4321]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[3ffe::1234]:443", {"[3ffe::1235]:0", AF_INET6}},
+                                              {"[3ffe::5001]:443", {"[3ffe::4321]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe::5001]:443", AF_INET6},
       {"[3ffe::1234]:443", AF_INET6},
@@ -570,12 +532,11 @@ TEST_F(AddressSortingTest,
 TEST_F(AddressSortingTest, TestPrefersLongestPrefixStressInnerBytePrefix) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[3ffe:8000::]:443", {"[3ffe:C000::]:0", AF_INET6}},
-          {"[3ffe:2000::]:443", {"[3ffe:3000::]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[3ffe:8000::]:443", {"[3ffe:C000::]:0", AF_INET6}},
+                                              {"[3ffe:2000::]:443", {"[3ffe:3000::]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe:8000::]:443", AF_INET6},
       {"[3ffe:2000::]:443", AF_INET6},
@@ -590,12 +551,11 @@ TEST_F(AddressSortingTest, TestPrefersLongestPrefixStressInnerBytePrefix) {
 TEST_F(AddressSortingTest, TestPrefersLongestPrefixDiffersOnHighestBitOfByte) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[3ffe:6::]:443", {"[3ffe:8::]:0", AF_INET6}},
-          {"[3ffe:c::]:443", {"[3ffe:8::]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[3ffe:6::]:443", {"[3ffe:8::]:0", AF_INET6}},
+                                              {"[3ffe:c::]:443", {"[3ffe:8::]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe:6::]:443", AF_INET6},
       {"[3ffe:c::]:443", AF_INET6},
@@ -613,10 +573,8 @@ TEST_F(AddressSortingTest, TestPrefersLongestPrefixDiffersByLastBit) {
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
-          {"[3ffe:1111:1111:1111::]:443",
-           {"[3ffe:1111:1111:1111::]:0", AF_INET6}},
-          {"[3ffe:1111:1111:1110::]:443",
-           {"[3ffe:1111:1111:1111::]:0", AF_INET6}},
+          {"[3ffe:1111:1111:1111::]:443", {"[3ffe:1111:1111:1111::]:0", AF_INET6}},
+          {"[3ffe:1111:1111:1110::]:443", {"[3ffe:1111:1111:1111::]:0", AF_INET6}},
       });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe:1111:1111:1110::]:443", AF_INET6},
@@ -634,12 +592,11 @@ TEST_F(AddressSortingTest, TestPrefersLongestPrefixDiffersByLastBit) {
 TEST_F(AddressSortingTest, TestStableSort) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[3ffe::1234]:443", {"[3ffe::1236]:0", AF_INET6}},
-          {"[3ffe::1235]:443", {"[3ffe::1237]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[3ffe::1234]:443", {"[3ffe::1236]:0", AF_INET6}},
+                                              {"[3ffe::1235]:443", {"[3ffe::1237]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe::1234]:443", AF_INET6},
       {"[3ffe::1235]:443", AF_INET6},
@@ -654,15 +611,14 @@ TEST_F(AddressSortingTest, TestStableSort) {
 TEST_F(AddressSortingTest, TestStableSortFiveElements) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[3ffe::1231]:443", {"[3ffe::1201]:0", AF_INET6}},
-          {"[3ffe::1232]:443", {"[3ffe::1202]:0", AF_INET6}},
-          {"[3ffe::1233]:443", {"[3ffe::1203]:0", AF_INET6}},
-          {"[3ffe::1234]:443", {"[3ffe::1204]:0", AF_INET6}},
-          {"[3ffe::1235]:443", {"[3ffe::1205]:0", AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[3ffe::1231]:443", {"[3ffe::1201]:0", AF_INET6}},
+                                              {"[3ffe::1232]:443", {"[3ffe::1202]:0", AF_INET6}},
+                                              {"[3ffe::1233]:443", {"[3ffe::1203]:0", AF_INET6}},
+                                              {"[3ffe::1234]:443", {"[3ffe::1204]:0", AF_INET6}},
+                                              {"[3ffe::1235]:443", {"[3ffe::1205]:0", AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe::1231]:443", AF_INET6},
       {"[3ffe::1232]:443", AF_INET6},
@@ -727,24 +683,22 @@ TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
   const char* v4_compat_dest = "[::2]:443";
   const char* v4_compat_src = "[::3]:0";
 #endif
-  OverrideAddressSortingSourceAddrFactory(
-      ipv4_supported, ipv6_supported,
-      {
-          {"[fec0::2000]:443", {"[fec0::2001]:0", AF_INET6}},
-          {v4_compat_dest, {v4_compat_src, AF_INET6}},
-      });
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                          {
+                                              {"[fec0::2000]:443", {"[fec0::2001]:0", AF_INET6}},
+                                              {v4_compat_dest, {v4_compat_src, AF_INET6}},
+                                          });
   auto lb_addrs = BuildLbAddrInputs({
       {"[fec0::2000]:443", AF_INET6},
       {v4_compat_dest, AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs,
-                      {
-                          // The sort should be stable since
-                          // v4-compatible has same precedence as site-local.
-                          "[fec0::2000]:443",
-                          v4_compat_dest,
-                      });
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    // The sort should be stable since
+                                    // v4-compatible has same precedence as site-local.
+                                    "[fec0::2000]:443",
+                                    v4_compat_dest,
+                                });
 }
 
 /* TestPrefersIpv6Loopback tests the actual "address probing" code
@@ -798,16 +752,15 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   memset(&source_for_sort_input_dest, 0, sizeof(source_for_sort_input_dest));
   // address_sorting_get_source_addr returns true if a source address was found
   // for the destination address, otherwise false.
-  EXPECT_TRUE(address_sorting_get_source_addr_for_testing(
-      &sort_input_dest, &source_for_sort_input_dest));
+  EXPECT_TRUE(
+      address_sorting_get_source_addr_for_testing(&sort_input_dest, &source_for_sort_input_dest));
   // Now also check that the source address was filled in correctly.
   EXPECT_GT(source_for_sort_input_dest.len, 0u);
   sockaddr_in6* source_addr_output =
       reinterpret_cast<sockaddr_in6*>(source_for_sort_input_dest.addr);
   EXPECT_EQ(source_addr_output->sin6_family, AF_INET6);
   char* buf = static_cast<char*>(gpr_zalloc(100));
-  EXPECT_NE(inet_ntop(AF_INET6, &source_addr_output->sin6_addr, buf, 100),
-            nullptr)
+  EXPECT_NE(inet_ntop(AF_INET6, &source_addr_output->sin6_addr, buf, 100), nullptr)
       << "inet_ntop failed. Errno: " + std::to_string(errno);
   std::string source_addr_str(buf);
   gpr_free(buf);
@@ -820,8 +773,7 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  grpc_core::UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else if (strcmp("ares", resolver.get()) != 0) {

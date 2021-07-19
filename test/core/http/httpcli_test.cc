@@ -37,8 +37,7 @@ static gpr_mu* g_mu;
 static grpc_polling_entity g_pops;
 
 static grpc_millis n_seconds_time(int seconds) {
-  return grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void on_finish(void* arg, grpc_error_handle error) {
@@ -54,9 +53,8 @@ static void on_finish(void* arg, grpc_error_handle error) {
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
   gpr_mu_lock(g_mu);
   g_done = 1;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), nullptr)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -79,17 +77,15 @@ static void test_get(int port) {
   grpc_http_response response;
   response = {};
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_get");
-  grpc_httpcli_get(
-      &g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
-      GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
-      &response);
+  grpc_httpcli_get(&g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
+                   GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx), &response);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
-                                          &worker, n_seconds_time(1))));
+        "pollset_work",
+        grpc_pollset_work(grpc_polling_entity_pollset(&g_pops), &worker, n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
 
     gpr_mu_lock(g_mu);
@@ -118,17 +114,16 @@ static void test_post(int port) {
   grpc_http_response response;
   response = {};
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_post");
-  grpc_httpcli_post(
-      &g_context, &g_pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
-      GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
-      &response);
+  grpc_httpcli_post(&g_context, &g_pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
+                    GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
+                    &response);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
-                                          &worker, n_seconds_time(1))));
+        "pollset_work",
+        grpc_pollset_work(grpc_polling_entity_pollset(&g_pops), &worker, n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
 
     gpr_mu_lock(g_mu);
@@ -139,8 +134,7 @@ static void test_post(int port) {
 }
 
 static void destroy_pops(void* p, grpc_error_handle /*error*/) {
-  grpc_pollset_destroy(
-      grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p)));
+  grpc_pollset_destroy(grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p)));
 }
 
 int main(int argc, char** argv) {
@@ -160,12 +154,10 @@ int main(int argc, char** argv) {
     if (lslash != nullptr) {
       /* Hack for bazel target */
       if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
-          strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
-                  sizeof("http") - 1) == 0) {
+          strncmp(me + (lslash - me) - sizeof("http") + 1, "http", sizeof("http") - 1) == 0) {
         lslash = me + (lslash - me) - sizeof("http");
       }
-      root = static_cast<char*>(
-          gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
+      root = static_cast<char*>(gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
       memcpy(root, me, static_cast<size_t>(lslash - me));
       memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
     } else {
@@ -184,20 +176,18 @@ int main(int argc, char** argv) {
     /* start the server */
     args[1 + arg_shift] = const_cast<char*>("--port");
     gpr_asprintf(&args[2 + arg_shift], "%d", port);
-    server =
-        gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
+    server = gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
     GPR_ASSERT(server);
     gpr_free(args[0]);
     if (arg_shift) gpr_free(args[1]);
     gpr_free(args[2 + arg_shift]);
     gpr_free(root);
 
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(5, GPR_TIMESPAN)));
 
     grpc_httpcli_context_init(&g_context);
-    grpc_pollset* pollset =
-        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &g_mu);
     g_pops = grpc_polling_entity_create_from_pollset(pollset);
 
@@ -205,8 +195,7 @@ int main(int argc, char** argv) {
     test_post(port);
 
     grpc_httpcli_context_destroy(&g_context);
-    GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops, grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(grpc_polling_entity_pollset(&g_pops), &destroyed);
   }
   grpc_shutdown();

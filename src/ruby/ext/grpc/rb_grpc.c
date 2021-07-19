@@ -47,10 +47,7 @@ static VALUE grpc_rb_cTimeVal = Qnil;
 
 static rb_data_type_t grpc_rb_timespec_data_type = {
     "gpr_timespec",
-    {GRPC_RB_GC_NOT_MARKED,
-     GRPC_RB_GC_DONT_FREE,
-     GRPC_RB_MEMSIZE_UNAVAILABLE,
-     {NULL, NULL}},
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL,
     NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
@@ -61,16 +58,14 @@ static rb_data_type_t grpc_rb_timespec_data_type = {
 /* Alloc func that blocks allocation of a given object by raising an
  * exception. */
 VALUE grpc_rb_cannot_alloc(VALUE cls) {
-  rb_raise(rb_eTypeError,
-           "allocation of %s only allowed from the gRPC native layer",
+  rb_raise(rb_eTypeError, "allocation of %s only allowed from the gRPC native layer",
            rb_class2name(cls));
   return Qnil;
 }
 
 /* Init func that fails by raising an exception. */
 VALUE grpc_rb_cannot_init(VALUE self) {
-  rb_raise(rb_eTypeError,
-           "initialization of %s only allowed from the gRPC native layer",
+  rb_raise(rb_eTypeError, "initialization of %s only allowed from the gRPC native layer",
            rb_obj_classname(self));
   return Qnil;
 }
@@ -78,8 +73,7 @@ VALUE grpc_rb_cannot_init(VALUE self) {
 /* Init/Clone func that fails by raising an exception. */
 VALUE grpc_rb_cannot_init_copy(VALUE copy, VALUE self) {
   (void)self;
-  rb_raise(rb_eTypeError, "Copy initialization of %s is not supported",
-           rb_obj_classname(copy));
+  rb_raise(rb_eTypeError, "Copy initialization of %s is not supported", rb_obj_classname(copy));
   return Qnil;
 }
 
@@ -104,8 +98,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   switch (TYPE(time)) {
     case T_DATA:
       if (CLASS_OF(time) == grpc_rb_cTimeVal) {
-        TypedData_Get_Struct(time, gpr_timespec, &grpc_rb_timespec_data_type,
-                             time_const);
+        TypedData_Get_Struct(time, gpr_timespec, &grpc_rb_timespec_data_type, time_const);
         t = *time_const;
       } else if (CLASS_OF(time) == rb_cTime) {
         t.tv_sec = NUM2INT(rb_funcall(time, id_tv_sec, 0));
@@ -118,8 +111,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
 
     case T_FIXNUM:
       t.tv_sec = FIX2LONG(time);
-      if (interval && t.tv_sec < 0)
-        rb_raise(rb_eArgError, "%s must be positive", tstr);
+      if (interval && t.tv_sec < 0) rb_raise(rb_eArgError, "%s must be positive", tstr);
       t.tv_nsec = 0;
       break;
 
@@ -144,8 +136,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
 
     case T_BIGNUM:
       t.tv_sec = NUM2LONG(time);
-      if (interval && t.tv_sec < 0)
-        rb_raise(rb_eArgError, "%s must be positive", tstr);
+      if (interval && t.tv_sec < 0) rb_raise(rb_eArgError, "%s must be positive", tstr);
       t.tv_nsec = 0;
       break;
 
@@ -170,8 +161,7 @@ static ID id_to_s;
 static VALUE grpc_rb_time_val_to_time(VALUE self) {
   gpr_timespec* time_const = NULL;
   gpr_timespec real_time;
-  TypedData_Get_Struct(self, gpr_timespec, &grpc_rb_timespec_data_type,
-                       time_const);
+  TypedData_Get_Struct(self, gpr_timespec, &grpc_rb_timespec_data_type, time_const);
   real_time = gpr_convert_clock_type(*time_const, GPR_CLOCK_REALTIME);
   return rb_funcall(rb_cTime, id_at, 2, INT2NUM(real_time.tv_sec),
                     INT2NUM(real_time.tv_nsec / 1000));
@@ -193,25 +183,20 @@ static gpr_timespec inf_past_realtime;
 
 /* Adds a module with constants that map to gpr's static timeval structs. */
 static void Init_grpc_time_consts() {
-  VALUE grpc_rb_mTimeConsts =
-      rb_define_module_under(grpc_rb_mGrpcCore, "TimeConsts");
-  grpc_rb_cTimeVal =
-      rb_define_class_under(grpc_rb_mGrpcCore, "TimeSpec", rb_cObject);
+  VALUE grpc_rb_mTimeConsts = rb_define_module_under(grpc_rb_mGrpcCore, "TimeConsts");
+  grpc_rb_cTimeVal = rb_define_class_under(grpc_rb_mGrpcCore, "TimeSpec", rb_cObject);
   zero_realtime = gpr_time_0(GPR_CLOCK_REALTIME);
   inf_future_realtime = gpr_inf_future(GPR_CLOCK_REALTIME);
   inf_past_realtime = gpr_inf_past(GPR_CLOCK_REALTIME);
   rb_define_const(
       grpc_rb_mTimeConsts, "ZERO",
-      TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void*)&zero_realtime));
-  rb_define_const(
-      grpc_rb_mTimeConsts, "INFINITE_FUTURE",
-      TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void*)&inf_future_realtime));
-  rb_define_const(
-      grpc_rb_mTimeConsts, "INFINITE_PAST",
-      TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void*)&inf_past_realtime));
+      TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type, (void*)&zero_realtime));
+  rb_define_const(grpc_rb_mTimeConsts, "INFINITE_FUTURE",
+                  TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
+                                        (void*)&inf_future_realtime));
+  rb_define_const(grpc_rb_mTimeConsts, "INFINITE_PAST",
+                  TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
+                                        (void*)&inf_past_realtime));
   rb_define_method(grpc_rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
   rb_define_method(grpc_rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
   rb_define_method(grpc_rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);
@@ -287,18 +272,15 @@ void grpc_ruby_init() {
   grpc_init();
   grpc_ruby_init_threads();
   // (only gpr_log after logging has been initialized)
-  gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: grpc_ruby_init - prev g_grpc_ruby_init_count:%" PRId64,
+  gpr_log(GPR_DEBUG, "GRPC_RUBY: grpc_ruby_init - prev g_grpc_ruby_init_count:%" PRId64,
           g_grpc_ruby_init_count++);
 }
 
 void grpc_ruby_shutdown() {
   GPR_ASSERT(g_grpc_ruby_init_count > 0);
   if (!grpc_ruby_forked_after_init()) grpc_shutdown();
-  gpr_log(
-      GPR_DEBUG,
-      "GRPC_RUBY: grpc_ruby_shutdown - prev g_grpc_ruby_init_count:%" PRId64,
-      g_grpc_ruby_init_count--);
+  gpr_log(GPR_DEBUG, "GRPC_RUBY: grpc_ruby_shutdown - prev g_grpc_ruby_init_count:%" PRId64,
+          g_grpc_ruby_init_count--);
 }
 
 void Init_grpc_c() {
@@ -312,8 +294,8 @@ void Init_grpc_c() {
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
-  grpc_rb_sNewServerRpc = rb_struct_define(
-      "NewServerRpc", "method", "host", "deadline", "metadata", "call", NULL);
+  grpc_rb_sNewServerRpc =
+      rb_struct_define("NewServerRpc", "method", "host", "deadline", "metadata", "call", NULL);
   grpc_rb_sStatus = rb_const_get(rb_cStruct, rb_intern("Status"));
   sym_code = ID2SYM(rb_intern("code"));
   sym_details = ID2SYM(rb_intern("details"));

@@ -93,12 +93,10 @@ static const rb_data_type_t grpc_rb_xds_server_credentials_data_type = {
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_xds_server_credentials_alloc(VALUE cls) {
   grpc_ruby_init();
-  grpc_rb_xds_server_credentials* wrapper =
-      ALLOC(grpc_rb_xds_server_credentials);
+  grpc_rb_xds_server_credentials* wrapper = ALLOC(grpc_rb_xds_server_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return TypedData_Wrap_Struct(cls, &grpc_rb_xds_server_credentials_data_type,
-                               wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_xds_server_credentials_data_type, wrapper);
 }
 
 /* The attribute used on the mark object to preserve the fallback_creds. */
@@ -110,8 +108,7 @@ static ID id_fallback_creds;
     fallback_creds: (ServerCredentials) fallback credentials to create
                     XDS credentials.
     Initializes ServerCredential instances. */
-static VALUE grpc_rb_xds_server_credentials_init(VALUE self,
-                                                 VALUE fallback_creds) {
+static VALUE grpc_rb_xds_server_credentials_init(VALUE self, VALUE fallback_creds) {
   grpc_rb_xds_server_credentials* wrapper = NULL;
   grpc_server_credentials* creds = NULL;
 
@@ -138,18 +135,16 @@ static VALUE grpc_rb_xds_server_credentials_init(VALUE self,
 }
 
 void Init_grpc_xds_server_credentials() {
-  grpc_rb_cXdsServerCredentials = rb_define_class_under(
-      grpc_rb_mGrpcCore, "XdsServerCredentials", rb_cObject);
+  grpc_rb_cXdsServerCredentials =
+      rb_define_class_under(grpc_rb_mGrpcCore, "XdsServerCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(grpc_rb_cXdsServerCredentials,
-                       grpc_rb_xds_server_credentials_alloc);
+  rb_define_alloc_func(grpc_rb_cXdsServerCredentials, grpc_rb_xds_server_credentials_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(grpc_rb_cXdsServerCredentials, "initialize",
-                   grpc_rb_xds_server_credentials_init, 1);
-  rb_define_method(grpc_rb_cXdsServerCredentials, "initialize_copy",
-                   grpc_rb_cannot_init_copy, 1);
+  rb_define_method(grpc_rb_cXdsServerCredentials, "initialize", grpc_rb_xds_server_credentials_init,
+                   1);
+  rb_define_method(grpc_rb_cXdsServerCredentials, "initialize_copy", grpc_rb_cannot_init_copy, 1);
 
   id_fallback_creds = rb_intern("__fallback_creds");
 }
@@ -158,8 +153,8 @@ void Init_grpc_xds_server_credentials() {
 grpc_server_credentials* grpc_rb_get_wrapped_xds_server_credentials(VALUE v) {
   grpc_rb_xds_server_credentials* wrapper = NULL;
   Check_TypedStruct(v, &grpc_rb_xds_server_credentials_data_type);
-  TypedData_Get_Struct(v, grpc_rb_xds_server_credentials,
-                       &grpc_rb_xds_server_credentials_data_type, wrapper);
+  TypedData_Get_Struct(v, grpc_rb_xds_server_credentials, &grpc_rb_xds_server_credentials_data_type,
+                       wrapper);
   return wrapper->wrapped;
 }
 

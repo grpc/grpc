@@ -27,14 +27,12 @@
 static void test_varint(uint32_t value, uint32_t prefix_bits, uint8_t prefix_or,
                         const char* expect_bytes, size_t expect_length) {
   uint32_t nbytes = GRPC_CHTTP2_VARINT_LENGTH(value, prefix_bits);
-  grpc_slice expect =
-      grpc_slice_from_copied_buffer(expect_bytes, expect_length);
+  grpc_slice expect = grpc_slice_from_copied_buffer(expect_bytes, expect_length);
   grpc_slice slice;
   gpr_log(GPR_DEBUG, "Test: 0x%08x", value);
   GPR_ASSERT(nbytes == expect_length);
   slice = grpc_slice_malloc(nbytes);
-  GRPC_CHTTP2_WRITE_VARINT(value, prefix_bits, prefix_or,
-                           GRPC_SLICE_START_PTR(slice), nbytes);
+  GRPC_CHTTP2_WRITE_VARINT(value, prefix_bits, prefix_or, GRPC_SLICE_START_PTR(slice), nbytes);
   GPR_ASSERT(grpc_slice_eq(expect, slice));
   grpc_slice_unref(expect);
   grpc_slice_unref(slice);

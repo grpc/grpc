@@ -24,8 +24,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
-                                            grpc_error_handle error);
+EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure, grpc_error_handle error);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

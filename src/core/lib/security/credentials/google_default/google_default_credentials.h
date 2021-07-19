@@ -25,8 +25,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 
 #define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
-#define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE \
-  "application_default_credentials.json"
+#define GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE "application_default_credentials.json"
 
 #ifdef GPR_WINDOWS
 #define GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR "APPDATA"
@@ -35,13 +34,11 @@
   "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 #else
 #define GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR "HOME"
-#define GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX         \
-  ".config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY \
-  "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
+#define GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX \
+  ".config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 #endif
 
-class grpc_google_default_channel_credentials
-    : public grpc_channel_credentials {
+class grpc_google_default_channel_credentials : public grpc_channel_credentials {
  public:
   grpc_google_default_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> alts_creds,
@@ -52,17 +49,13 @@ class grpc_google_default_channel_credentials
 
   ~grpc_google_default_channel_credentials() override = default;
 
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(
-      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds, const char* target,
+      const grpc_channel_args* args, grpc_channel_args** new_args) override;
 
   grpc_channel_args* update_arguments(grpc_channel_args* args) override;
 
-  const grpc_channel_credentials* alts_creds() const {
-    return alts_creds_.get();
-  }
+  const grpc_channel_credentials* alts_creds() const { return alts_creds_.get(); }
   const grpc_channel_credentials* ssl_creds() const { return ssl_creds_.get(); }
 
  private:

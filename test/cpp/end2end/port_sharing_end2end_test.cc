@@ -57,8 +57,7 @@ namespace {
 
 class TestScenario {
  public:
-  TestScenario(bool server_port, bool pending_data,
-               const std::string& creds_type)
+  TestScenario(bool server_port, bool pending_data, const std::string& creds_type)
       : server_has_port(server_port),
         queue_pending_data(pending_data),
         credentials_type(creds_type) {}
@@ -70,12 +69,9 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
-  return out << "TestScenario{server_has_port="
-             << (scenario.server_has_port ? "true" : "false")
-             << ", queue_pending_data="
-             << (scenario.queue_pending_data ? "true" : "false")
+static std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
+  return out << "TestScenario{server_has_port=" << (scenario.server_has_port ? "true" : "false")
+             << ", queue_pending_data=" << (scenario.queue_pending_data ? "true" : "false")
              << ", credentials='" << scenario.credentials_type << "'}";
 }
 
@@ -89,10 +85,7 @@ void TestScenario::Log() const {
 // handing off the connections as fds.
 class TestTcpServer {
  public:
-  TestTcpServer()
-      : shutdown_(false),
-        queue_data_(false),
-        port_(grpc_pick_unused_port_or_die()) {
+  TestTcpServer() : shutdown_(false), queue_data_(false), port_(grpc_pick_unused_port_or_die()) {
     std::ostringstream server_address;
     server_address << "localhost:" << port_;
     address_ = server_address.str();
@@ -117,8 +110,7 @@ class TestTcpServer {
 
   const std::string& address() { return address_; }
 
-  void SetAcceptor(
-      std::unique_ptr<experimental::ExternalConnectionAcceptor> acceptor) {
+  void SetAcceptor(std::unique_ptr<experimental::ExternalConnectionAcceptor> acceptor) {
     connection_acceptor_ = std::move(acceptor);
   }
 
@@ -141,8 +133,7 @@ class TestTcpServer {
     shutdown_ = true;
   }
 
-  static void OnConnect(void* arg, grpc_endpoint* tcp,
-                        grpc_pollset* accepting_pollset,
+  static void OnConnect(void* arg, grpc_endpoint* tcp, grpc_pollset* accepting_pollset,
                         grpc_tcp_server_acceptor* acceptor) {
     auto* self = static_cast<TestTcpServer*>(arg);
     self->OnConnect(tcp, accepting_pollset, acceptor);
@@ -159,8 +150,8 @@ class TestTcpServer {
     std::string peer(grpc_endpoint_get_peer(tcp));
     gpr_log(GPR_INFO, "Got incoming connection! from %s", peer.c_str());
     EXPECT_FALSE(acceptor->external_connection);
-    listener_fd_ = grpc_tcp_server_port_fd(
-        acceptor->from_server, acceptor->port_index, acceptor->fd_index);
+    listener_fd_ =
+        grpc_tcp_server_port_fd(acceptor->from_server, acceptor->port_index, acceptor->fd_index);
     gpr_free(acceptor);
     grpc_tcp_destroy_and_release_fd(tcp, &fd_, &on_fd_released_);
   }
@@ -179,8 +170,8 @@ class TestTcpServer {
       Slice data(buf, read_bytes);
       p.read_buffer = ByteBuffer(&data, 1);
     }
-    gpr_log(GPR_INFO, "Handing off fd %d with data size %d from listener fd %d",
-            fd_, static_cast<int>(p.read_buffer.Length()), listener_fd_);
+    gpr_log(GPR_INFO, "Handing off fd %d with data size %d from listener fd %d", fd_,
+            static_cast<int>(p.read_buffer.Length()), listener_fd_);
     connection_acceptor_->HandleNewConnection(&p);
   }
 
@@ -195,16 +186,13 @@ class TestTcpServer {
   std::thread running_thread_;
   int port_ = -1;
   std::string address_;
-  std::unique_ptr<experimental::ExternalConnectionAcceptor>
-      connection_acceptor_;
+  std::unique_ptr<experimental::ExternalConnectionAcceptor> connection_acceptor_;
   test_tcp_server tcp_server_;
 };
 
 class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  PortSharingEnd2endTest() : is_server_started_(false), first_picked_port_(0) {
-    GetParam().Log();
-  }
+  PortSharingEnd2endTest() : is_server_started_(false), first_picked_port_(0) { GetParam().Log(); }
 
   void SetUp() override {
     if (GetParam().queue_pending_data) {
@@ -218,21 +206,16 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       int port = grpc_pick_unused_port_or_die();
       first_picked_port_ = port;
       server_address_ << "localhost:" << port;
-      auto creds = GetCredentialsProvider()->GetServerCredentials(
-          GetParam().credentials_type);
+      auto creds = GetCredentialsProvider()->GetServerCredentials(GetParam().credentials_type);
       builder.AddListeningPort(server_address_.str(), creds);
-      gpr_log(GPR_INFO, "gRPC server listening on %s",
-              server_address_.str().c_str());
+      gpr_log(GPR_INFO, "gRPC server listening on %s", server_address_.str().c_str());
     }
-    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
-        GetParam().credentials_type);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(GetParam().credentials_type);
     auto acceptor1 = builder.experimental().AddExternalConnectionAcceptor(
-        ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD,
-        server_creds);
+        ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD, server_creds);
     tcp_server1_.SetAcceptor(std::move(acceptor1));
     auto acceptor2 = builder.experimental().AddExternalConnectionAcceptor(
-        ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD,
-        server_creds);
+        ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD, server_creds);
     tcp_server2_.SetAcceptor(std::move(acceptor2));
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
@@ -257,21 +240,18 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
-    channel_handoff1_ =
-        CreateCustomChannel(tcp_server1_.address(), channel_creds, args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(GetParam().credentials_type, &args);
+    channel_handoff1_ = CreateCustomChannel(tcp_server1_.address(), channel_creds, args);
     stub_handoff1_ = EchoTestService::NewStub(channel_handoff1_);
-    channel_handoff2_ =
-        CreateCustomChannel(tcp_server2_.address(), channel_creds, args);
+    channel_handoff2_ = CreateCustomChannel(tcp_server2_.address(), channel_creds, args);
     stub_handoff2_ = EchoTestService::NewStub(channel_handoff2_);
     if (GetParam().server_has_port) {
       ChannelArguments direct_args;
       direct_args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
       auto direct_creds = GetCredentialsProvider()->GetChannelCredentials(
           GetParam().credentials_type, &direct_args);
-      channel_direct_ =
-          CreateCustomChannel(server_address_.str(), direct_creds, direct_args);
+      channel_direct_ = CreateCustomChannel(server_address_.str(), direct_creds, direct_args);
       stub_direct_ = EchoTestService::NewStub(channel_direct_);
     }
   }
@@ -319,8 +299,8 @@ std::vector<TestScenario> CreateTestScenarios() {
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   // Only allow insecure credentials type when it is registered with the
   // provider. User may create providers that do not have insecure.
-  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
-                                                      nullptr) != nullptr) {
+  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType, nullptr) !=
+      nullptr) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
 

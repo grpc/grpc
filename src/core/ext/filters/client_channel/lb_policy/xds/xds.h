@@ -33,23 +33,18 @@ class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
   explicit XdsLocalityAttribute(RefCountedPtr<XdsLocalityName> locality_name)
       : locality_name_(std::move(locality_name)) {}
 
-  RefCountedPtr<XdsLocalityName> locality_name() const {
-    return locality_name_;
-  }
+  RefCountedPtr<XdsLocalityName> locality_name() const { return locality_name_; }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<XdsLocalityAttribute>(locality_name_->Ref());
   }
 
   int Cmp(const AttributeInterface* other) const override {
-    const auto* other_locality_attr =
-        static_cast<const XdsLocalityAttribute*>(other);
+    const auto* other_locality_attr = static_cast<const XdsLocalityAttribute*>(other);
     return locality_name_->Compare(*other_locality_attr->locality_name_);
   }
 
-  std::string ToString() const override {
-    return locality_name_->AsHumanReadableString();
-  }
+  std::string ToString() const override { return locality_name_->AsHumanReadableString(); }
 
  private:
   RefCountedPtr<XdsLocalityName> locality_name_;

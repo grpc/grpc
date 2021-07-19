@@ -30,8 +30,8 @@ namespace grpc {
 namespace testing {
 
 // Function pointer for custom checks.
-typedef std::function<void(const InteropClientContextInspector&,
-                           const SimpleRequest*, const SimpleResponse*)>
+typedef std::function<void(const InteropClientContextInspector&, const SimpleRequest*,
+                           const SimpleResponse*)>
     CheckerFn;
 
 typedef std::function<std::shared_ptr<Channel>(void)> ChannelCreationFunc;
@@ -42,8 +42,7 @@ class InteropClient {
   /// created for every test case
   /// If do_not_abort_on_transient_failures is true, abort() is not called in
   /// case of transient failures (like connection failures)
-  explicit InteropClient(ChannelCreationFunc channel_creation_func,
-                         bool new_stub_every_test_case,
+  explicit InteropClient(ChannelCreationFunc channel_creation_func, bool new_stub_every_test_case,
                          bool do_not_abort_on_transient_failures);
   ~InteropClient() {}
 
@@ -84,8 +83,7 @@ class InteropClient {
   bool DoRpcSoakTest(int32_t soak_iterations, int32_t max_failures,
                      int64_t max_acceptable_per_iteration_latency_ms,
                      int32_t overall_timeout_seconds);
-  bool DoLongLivedChannelTest(int32_t soak_iterations,
-                              int32_t iteration_interval);
+  bool DoLongLivedChannelTest(int32_t soak_iterations, int32_t iteration_interval);
 
   // Auth tests.
   // username is a string containing the user email
@@ -93,8 +91,7 @@ class InteropClient {
   bool DoComputeEngineCreds(const std::string& default_service_account,
                             const std::string& oauth_scope);
   // username the GCE default service account email
-  bool DoOauth2AuthToken(const std::string& username,
-                         const std::string& oauth_scope);
+  bool DoOauth2AuthToken(const std::string& username, const std::string& oauth_scope);
   // username is a string containing the user email
   bool DoPerRpcCreds(const std::string& json_key);
   // default_service_account is the GCE default service account email
@@ -105,8 +102,7 @@ class InteropClient {
    public:
     // If new_stub_every_call = true, pointer to a new instance of
     // TestServce::Stub is returned by Get() everytime it is called
-    ServiceStub(ChannelCreationFunc channel_creation_func,
-                bool new_stub_every_call);
+    ServiceStub(ChannelCreationFunc channel_creation_func, bool new_stub_every_call);
 
     TestService::Stub* Get();
     UnimplementedService::Stub* GetUnimplementedServiceStub();
@@ -128,18 +124,15 @@ class InteropClient {
   /// Run \a custom_check_fn as an additional check.
   bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
                          const CheckerFn& custom_checks_fn);
-  bool AssertStatusOk(const Status& s,
-                      const std::string& optional_debug_string);
+  bool AssertStatusOk(const Status& s, const std::string& optional_debug_string);
   bool AssertStatusCode(const Status& s, StatusCode expected_code,
                         const std::string& optional_debug_string);
   bool TransientFailureOrAbort();
 
   std::tuple<bool, int32_t, std::string> PerformOneSoakTestIteration(
-      const bool reset_channel,
-      const int32_t max_acceptable_per_iteration_latency_ms);
+      const bool reset_channel, const int32_t max_acceptable_per_iteration_latency_ms);
 
-  void PerformSoakTest(const bool reset_channel_per_iteration,
-                       const int32_t soak_iterations,
+  void PerformSoakTest(const bool reset_channel_per_iteration, const int32_t soak_iterations,
                        const int32_t max_failures,
                        const int32_t max_acceptable_per_iteration_latency_ms,
                        const int32_t overall_timeout_seconds);

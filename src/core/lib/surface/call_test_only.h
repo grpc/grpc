@@ -26,8 +26,7 @@
 /** Return the message compression algorithm from \a call.
  *
  * \warning This function should \b only be used in test code. */
-grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
-    grpc_call* call);
+grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(grpc_call* call);
 
 /** Return the message flags from \a call.
  *

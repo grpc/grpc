@@ -44,9 +44,8 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
 
   // Returns true if transitioning from the old config to the new config
   // requires instantiating a new policy object.
-  virtual bool ConfigChangeRequiresNewPolicyInstance(
-      LoadBalancingPolicy::Config* old_config,
-      LoadBalancingPolicy::Config* new_config) const;
+  virtual bool ConfigChangeRequiresNewPolicyInstance(LoadBalancingPolicy::Config* old_config,
+                                                     LoadBalancingPolicy::Config* new_config) const;
 
   // Instantiates a new policy of the specified name.
   // May be overridden by subclasses to avoid recursion when an LB
@@ -59,8 +58,8 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicy(
-      const char* child_policy_name, const grpc_channel_args& args);
+  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicy(const char* child_policy_name,
+                                                       const grpc_channel_args& args);
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;

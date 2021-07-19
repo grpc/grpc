@@ -87,8 +87,7 @@ static void start_timer_thread_and_unlock(void) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
     gpr_log(GPR_INFO, "Spawn timer thread");
   }
-  completed_thread* ct =
-      static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
+  completed_thread* ct = static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
   ct->thd = grpc_core::Thread("grpc_global_timer", timer_thread, ct);
   ct->thd.Start();
 }
@@ -192,18 +191,15 @@ static bool wait_until(grpc_millis next) {
       }
     }
 
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace) &&
-        next == GRPC_MILLIS_INF_FUTURE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace) && next == GRPC_MILLIS_INF_FUTURE) {
       gpr_log(GPR_INFO, "sleep until kicked");
     }
 
-    gpr_cv_wait(&g_cv_wait, &g_mu,
-                grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
+    gpr_cv_wait(&g_cv_wait, &g_mu, grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
 
     if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
       gpr_log(GPR_INFO, "wait ended: was_timed:%d kicked:%d",
-              my_timed_waiter_generation == g_timed_waiter_generation,
-              g_kicked);
+              my_timed_waiter_generation == g_timed_waiter_generation, g_kicked);
     }
     // if this was the timed waiter, then we need to check timers, and flag
     // that there's now no timed waiter... we'll look for a replacement if

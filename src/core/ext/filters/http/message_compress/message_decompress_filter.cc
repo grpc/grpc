@@ -58,21 +58,17 @@ class ChannelData {
 class CallData {
  public:
   CallData(const grpc_call_element_args& args, const ChannelData* chand)
-      : call_combiner_(args.call_combiner),
-        max_recv_message_length_(chand->max_recv_size()) {
+      : call_combiner_(args.call_combiner), max_recv_message_length_(chand->max_recv_size()) {
     // Initialize state for recv_initial_metadata_ready callback
-    GRPC_CLOSURE_INIT(&on_recv_initial_metadata_ready_,
-                      OnRecvInitialMetadataReady, this,
+    GRPC_CLOSURE_INIT(&on_recv_initial_metadata_ready_, OnRecvInitialMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
     // Initialize state for recv_message_ready callback
     grpc_slice_buffer_init(&recv_slices_);
     GRPC_CLOSURE_INIT(&on_recv_message_next_done_, OnRecvMessageNextDone, this,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&on_recv_message_ready_, OnRecvMessageReady, this,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&on_recv_message_ready_, OnRecvMessageReady, this, grpc_schedule_on_exec_ctx);
     // Initialize state for recv_trailing_metadata_ready callback
-    GRPC_CLOSURE_INIT(&on_recv_trailing_metadata_ready_,
-                      OnRecvTrailingMetadataReady, this,
+    GRPC_CLOSURE_INIT(&on_recv_trailing_metadata_ready_, OnRecvTrailingMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
     const MessageSizeParsedConfig* limits =
         MessageSizeParsedConfig::GetFromCallContext(args.context);
@@ -85,8 +81,8 @@ class CallData {
 
   ~CallData() { grpc_slice_buffer_destroy_internal(&recv_slices_); }
 
-  void DecompressStartTransportStreamOpBatch(
-      grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
+  void DecompressStartTransportStreamOpBatch(grpc_call_element* elem,
+                                             grpc_transport_stream_op_batch* batch);
 
  private:
   static void OnRecvInitialMetadataReady(void* arg, grpc_error_handle error);
@@ -123,8 +119,7 @@ class CallData {
   // It is initialized during construction and reset when a new stream is
   // created using it.
   grpc_slice_buffer recv_slices_;
-  std::aligned_storage<sizeof(SliceBufferByteStream),
-                       alignof(SliceBufferByteStream)>::type
+  std::aligned_storage<sizeof(SliceBufferByteStream), alignof(SliceBufferByteStream)>::type
       recv_replacement_stream_;
   // Fields for handling recv_trailing_metadata_ready callback
   bool seen_recv_trailing_metadata_ready_ = false;
@@ -133,8 +128,7 @@ class CallData {
   grpc_error_handle on_recv_trailing_metadata_ready_error_ = GRPC_ERROR_NONE;
 };
 
-grpc_message_compression_algorithm DecodeMessageCompressionAlgorithm(
-    grpc_mdelem md) {
+grpc_message_compression_algorithm DecodeMessageCompressionAlgorithm(grpc_mdelem md) {
   grpc_message_compression_algorithm algorithm =
       grpc_message_compression_algorithm_from_slice(GRPC_MDVALUE(md));
   if (algorithm == GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT) {
@@ -152,8 +146,7 @@ grpc_message_compression_algorithm DecodeMessageCompressionAlgorithm(
 void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
   if (error == GRPC_ERROR_NONE) {
-    grpc_linked_mdelem* grpc_encoding =
-        calld->recv_initial_metadata_->idx.named.grpc_encoding;
+    grpc_linked_mdelem* grpc_encoding = calld->recv_initial_metadata_->idx.named.grpc_encoding;
     if (grpc_encoding != nullptr) {
       calld->algorithm_ = DecodeMessageCompressionAlgorithm(grpc_encoding->md);
     }
@@ -168,8 +161,7 @@ void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error_handle error) {
 void CallData::MaybeResumeOnRecvMessageReady() {
   if (seen_recv_message_ready_) {
     seen_recv_message_ready_ = false;
-    GRPC_CALL_COMBINER_START(call_combiner_, &on_recv_message_ready_,
-                             GRPC_ERROR_NONE,
+    GRPC_CALL_COMBINER_START(call_combiner_, &on_recv_message_ready_, GRPC_ERROR_NONE,
                              "continue recv_message_ready callback");
   }
 }
@@ -187,24 +179,21 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
     if (calld->algorithm_ != GRPC_MESSAGE_COMPRESS_NONE) {
       // recv_message can be NULL if trailing metadata is received instead of
       // message, or it's possible that the message was not compressed.
-      if (*calld->recv_message_ == nullptr ||
-          (*calld->recv_message_)->length() == 0 ||
-          ((*calld->recv_message_)->flags() & GRPC_WRITE_INTERNAL_COMPRESS) ==
-              0) {
+      if (*calld->recv_message_ == nullptr || (*calld->recv_message_)->length() == 0 ||
+          ((*calld->recv_message_)->flags() & GRPC_WRITE_INTERNAL_COMPRESS) == 0) {
         return calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_NONE);
       }
       if (calld->max_recv_message_length_ >= 0 &&
           (*calld->recv_message_)->length() >
               static_cast<uint32_t>(calld->max_recv_message_length_)) {
-        std::string message_string = absl::StrFormat(
-            "Received message larger than max (%u vs. %d)",
-            (*calld->recv_message_)->length(), calld->max_recv_message_length_);
+        std::string message_string =
+            absl::StrFormat("Received message larger than max (%u vs. %d)",
+                            (*calld->recv_message_)->length(), calld->max_recv_message_length_);
         GPR_DEBUG_ASSERT(calld->error_ == GRPC_ERROR_NONE);
-        calld->error_ = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string.c_str()),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
-        return calld->ContinueRecvMessageReadyCallback(
-            GRPC_ERROR_REF(calld->error_));
+        calld->error_ =
+            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string.c_str()),
+                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+        return calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(calld->error_));
       }
       grpc_slice_buffer_destroy_internal(&calld->recv_slices_);
       grpc_slice_buffer_init(&calld->recv_slices_);
@@ -215,9 +204,9 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
 }
 
 void CallData::ContinueReadingRecvMessage() {
-  while ((*recv_message_)
-             ->Next((*recv_message_)->length() - recv_slices_.length,
-                    &on_recv_message_next_done_)) {
+  while (
+      (*recv_message_)
+          ->Next((*recv_message_)->length() - recv_slices_.length, &on_recv_message_next_done_)) {
     grpc_error_handle error = PullSliceFromRecvMessage();
     if (error != GRPC_ERROR_NONE) {
       return ContinueRecvMessageReadyCallback(error);
@@ -257,8 +246,7 @@ void CallData::OnRecvMessageNextDone(void* arg, grpc_error_handle error) {
 void CallData::FinishRecvMessage() {
   grpc_slice_buffer decompressed_slices;
   grpc_slice_buffer_init(&decompressed_slices);
-  if (grpc_msg_decompress(algorithm_, &recv_slices_, &decompressed_slices) ==
-      0) {
+  if (grpc_msg_decompress(algorithm_, &recv_slices_, &decompressed_slices) == 0) {
     GPR_DEBUG_ASSERT(error_ == GRPC_ERROR_NONE);
     error_ = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Unexpected error decompressing data for algorithm with "
@@ -267,17 +255,14 @@ void CallData::FinishRecvMessage() {
             .c_str());
     grpc_slice_buffer_destroy_internal(&decompressed_slices);
   } else {
-    uint32_t recv_flags =
-        ((*recv_message_)->flags() & (~GRPC_WRITE_INTERNAL_COMPRESS)) |
-        GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
+    uint32_t recv_flags = ((*recv_message_)->flags() & (~GRPC_WRITE_INTERNAL_COMPRESS)) |
+                          GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
     // Swap out the original receive byte stream with our new one and send the
     // batch down.
     // Initializing recv_replacement_stream_ with decompressed_slices removes
     // all the slices from decompressed_slices leaving it empty.
-    new (&recv_replacement_stream_)
-        SliceBufferByteStream(&decompressed_slices, recv_flags);
-    recv_message_->reset(
-        reinterpret_cast<SliceBufferByteStream*>(&recv_replacement_stream_));
+    new (&recv_replacement_stream_) SliceBufferByteStream(&decompressed_slices, recv_flags);
+    recv_message_->reset(reinterpret_cast<SliceBufferByteStream*>(&recv_replacement_stream_));
     recv_message_ = nullptr;
   }
   ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
@@ -296,8 +281,8 @@ void CallData::MaybeResumeOnRecvTrailingMetadataReady() {
     seen_recv_trailing_metadata_ready_ = false;
     grpc_error_handle error = on_recv_trailing_metadata_ready_error_;
     on_recv_trailing_metadata_ready_error_ = GRPC_ERROR_NONE;
-    GRPC_CALL_COMBINER_START(call_combiner_, &on_recv_trailing_metadata_ready_,
-                             error, "Continuing OnRecvTrailingMetadataReady");
+    GRPC_CALL_COMBINER_START(call_combiner_, &on_recv_trailing_metadata_ready_, error,
+                             "Continuing OnRecvTrailingMetadataReady");
   }
 }
 
@@ -307,10 +292,9 @@ void CallData::OnRecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
       calld->original_recv_message_ready_ != nullptr) {
     calld->seen_recv_trailing_metadata_ready_ = true;
     calld->on_recv_trailing_metadata_ready_error_ = GRPC_ERROR_REF(error);
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner_,
-        "Deferring OnRecvTrailingMetadataReady until after "
-        "OnRecvInitialMetadataReady and OnRecvMessageReady");
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
+                            "Deferring OnRecvTrailingMetadataReady until after "
+                            "OnRecvInitialMetadataReady and OnRecvMessageReady");
     return;
   }
   error = grpc_error_add_child(GRPC_ERROR_REF(error), calld->error_);
@@ -320,12 +304,11 @@ void CallData::OnRecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
   Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
-void CallData::DecompressStartTransportStreamOpBatch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+void CallData::DecompressStartTransportStreamOpBatch(grpc_call_element* elem,
+                                                     grpc_transport_stream_op_batch* batch) {
   // Handle recv_initial_metadata.
   if (batch->recv_initial_metadata) {
-    recv_initial_metadata_ =
-        batch->payload->recv_initial_metadata.recv_initial_metadata;
+    recv_initial_metadata_ = batch->payload->recv_initial_metadata.recv_initial_metadata;
     original_recv_initial_metadata_ready_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
@@ -334,8 +317,7 @@ void CallData::DecompressStartTransportStreamOpBatch(
   // Handle recv_message
   if (batch->recv_message) {
     recv_message_ = batch->payload->recv_message.recv_message;
-    original_recv_message_ready_ =
-        batch->payload->recv_message.recv_message_ready;
+    original_recv_message_ready_ = batch->payload->recv_message.recv_message_ready;
     batch->payload->recv_message.recv_message_ready = &on_recv_message_ready_;
   }
   // Handle recv_trailing_metadata
@@ -349,8 +331,8 @@ void CallData::DecompressStartTransportStreamOpBatch(
   grpc_call_next_op(elem, batch);
 }
 
-void DecompressStartTransportStreamOpBatch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+void DecompressStartTransportStreamOpBatch(grpc_call_element* elem,
+                                           grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("decompress_start_transport_stream_op_batch", 0);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->DecompressStartTransportStreamOpBatch(elem, batch);
@@ -363,8 +345,7 @@ grpc_error_handle DecompressInitCallElem(grpc_call_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-void DecompressDestroyCallElem(grpc_call_element* elem,
-                               const grpc_call_final_info* /*final_info*/,
+void DecompressDestroyCallElem(grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
                                grpc_closure* /*ignored*/) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->~CallData();

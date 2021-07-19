@@ -67,8 +67,7 @@ TEST(ExamineStackTest, SimpleStackProvider) {
 TEST(ExamineStackTest, AbseilStackProvider) {
   grpc_core::SetCurrentStackTraceProvider(&AbseilCurrentStackTraceProvider);
   EXPECT_NE(grpc_core::GetCurrentStackTraceProvider(), nullptr);
-  const absl::optional<std::string> stack_trace =
-      grpc_core::GetCurrentStackTrace();
+  const absl::optional<std::string> stack_trace = grpc_core::GetCurrentStackTrace();
   EXPECT_NE(stack_trace, absl::nullopt);
   gpr_log(GPR_INFO, "stack_trace=%s", stack_trace->c_str());
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)

@@ -37,13 +37,11 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void simple_request_body(grpc_end2end_test_config /*config*/,
-                                grpc_end2end_test_fixture* f) {
+static void simple_request_body(grpc_end2end_test_config /*config*/, grpc_end2end_test_fixture* f) {
   grpc_call* c;
   grpc_call* s;
   cq_verifier* cqv = cq_verifier_create(f->cq);
@@ -60,9 +58,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   char* peer;
 
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq, grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
+  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq,
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -98,13 +95,11 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
+  error = grpc_server_request_call(f->server, &s, &call_details, &request_metadata_recv, f->cq,
+                                   f->cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -138,8 +133,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -171,8 +165,7 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
 
   grpc_arg client_a[1];
   client_a[0].type = GRPC_ARG_INTEGER;
-  client_a[0].key =
-      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
+  client_a[0].key = const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
   client_a[0].value.integer = 1000;
   grpc_arg server_a[2];
   server_a[0].type = GRPC_ARG_INTEGER;
@@ -188,18 +181,16 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   config.init_server(&f, &server_args);
 
   /* check that we're still in idle, and start connecting */
-  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
-             GRPC_CHANNEL_IDLE);
+  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) == GRPC_CHANNEL_IDLE);
   /* we'll go through some set of transitions (some might be missed), until
      READY is reached */
   while (state != GRPC_CHANNEL_READY) {
-    grpc_channel_watch_connectivity_state(
-        f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(99));
+    grpc_channel_watch_connectivity_state(f.client, state, grpc_timeout_seconds_to_deadline(3),
+                                          f.cq, tag(99));
     CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
     state = grpc_channel_check_connectivity_state(f.client, 0);
-    GPR_ASSERT(state == GRPC_CHANNEL_READY ||
-               state == GRPC_CHANNEL_CONNECTING ||
+    GPR_ASSERT(state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_CONNECTING ||
                state == GRPC_CHANNEL_TRANSIENT_FAILURE);
   }
 
@@ -209,13 +200,12 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   /* wait for the channel to reach its maximum idle time */
   grpc_channel_watch_connectivity_state(
       f.client, GRPC_CHANNEL_READY,
-      grpc_timeout_milliseconds_to_deadline(MAX_CONNECTION_IDLE_MS + 3000),
-      f.cq, tag(99));
+      grpc_timeout_milliseconds_to_deadline(MAX_CONNECTION_IDLE_MS + 3000), f.cq, tag(99));
   CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
   cq_verify(cqv);
   state = grpc_channel_check_connectivity_state(f.client, 0);
-  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-             state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
+  GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE || state == GRPC_CHANNEL_CONNECTING ||
+             state == GRPC_CHANNEL_IDLE);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
@@ -232,8 +222,6 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   cq_verifier_destroy(cqv);
 }
 
-void max_connection_idle(grpc_end2end_test_config config) {
-  test_max_connection_idle(config);
-}
+void max_connection_idle(grpc_end2end_test_config config) { test_max_connection_idle(config); }
 
 void max_connection_idle_pre_init(void) {}

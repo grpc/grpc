@@ -61,17 +61,15 @@ TEST_F(EvaluateArgsTest, GetHeadersSuccess) {
   util_.AddPairToMetadata(":path", "/expected/path");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_THAT(args.GetHeaders(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair("host", "host123"),
-                  ::testing::Pair(":path", "/expected/path")));
+              ::testing::UnorderedElementsAre(::testing::Pair("host", "host123"),
+                                              ::testing::Pair(":path", "/expected/path")));
 }
 
 TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
   util_.AddPairToMetadata("key123", "value123");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   std::string concatenated_value;
-  absl::optional<absl::string_view> value =
-      args.GetHeaderValue("key123", &concatenated_value);
+  absl::optional<absl::string_view> value = args.GetHeaderValue("key123", &concatenated_value);
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(value.value(), "value123");
 }
@@ -80,10 +78,8 @@ TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {
   util_.SetLocalEndpoint("ipv6:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:456");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   grpc_resolved_address local_address = args.GetLocalAddress();
-  EXPECT_EQ(grpc_sockaddr_to_uri(&local_address),
-            "ipv6:[2001:db8:85a3::8a2e:370:7334]:456");
-  EXPECT_EQ(args.GetLocalAddressString(),
-            "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&local_address), "ipv6:[2001:db8:85a3::8a2e:370:7334]:456");
+  EXPECT_EQ(args.GetLocalAddressString(), "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
   EXPECT_EQ(args.GetLocalPort(), 456);
 }
 
@@ -106,17 +102,14 @@ TEST_F(EvaluateArgsTest, EmptyAuthContext) {
 }
 
 TEST_F(EvaluateArgsTest, GetTransportSecurityTypeSuccessOneProperty) {
-  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                 "ssl");
+  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME, "ssl");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetTransportSecurityType(), "ssl");
 }
 
 TEST_F(EvaluateArgsTest, GetTransportSecurityTypeFailDuplicateProperty) {
-  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                 "type1");
-  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                 "type2");
+  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME, "type1");
+  util_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME, "type2");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetTransportSecurityType().empty());
 }

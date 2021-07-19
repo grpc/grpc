@@ -58,22 +58,20 @@ class DualRefCounted : public Orphanable {
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
-  RefCountedPtr<Child> Ref(const DebugLocation& location,
-                           const char* reason) GRPC_MUST_USE_RESULT {
+  RefCountedPtr<Child> Ref(const DebugLocation& location, const char* reason) GRPC_MUST_USE_RESULT {
     IncrementRefCount(location, reason);
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
   void Unref() {
     // Convert strong ref to weak ref.
-    const uint64_t prev_ref_pair =
-        refs_.FetchAdd(MakeRefPair(-1, 1), MemoryOrder::ACQ_REL);
+    const uint64_t prev_ref_pair = refs_.FetchAdd(MakeRefPair(-1, 1), MemoryOrder::ACQ_REL);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p unref %d -> %d, weak_ref %d -> %d", trace_, this,
-              strong_refs, strong_refs - 1, weak_refs, weak_refs + 1);
+      gpr_log(GPR_INFO, "%s:%p unref %d -> %d, weak_ref %d -> %d", trace_, this, strong_refs,
+              strong_refs - 1, weak_refs, weak_refs + 1);
     }
     GPR_ASSERT(strong_refs > 0);
 #endif
@@ -84,15 +82,14 @@ class DualRefCounted : public Orphanable {
     WeakUnref();
   }
   void Unref(const DebugLocation& location, const char* reason) {
-    const uint64_t prev_ref_pair =
-        refs_.FetchAdd(MakeRefPair(-1, 1), MemoryOrder::ACQ_REL);
+    const uint64_t prev_ref_pair = refs_.FetchAdd(MakeRefPair(-1, 1), MemoryOrder::ACQ_REL);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d unref %d -> %d, weak_ref %d -> %d) %s",
-              trace_, this, location.file(), location.line(), strong_refs,
-              strong_refs - 1, weak_refs, weak_refs + 1, reason);
+      gpr_log(GPR_INFO, "%s:%p %s:%d unref %d -> %d, weak_ref %d -> %d) %s", trace_, this,
+              location.file(), location.line(), strong_refs, strong_refs - 1, weak_refs,
+              weak_refs + 1, reason);
     }
     GPR_ASSERT(strong_refs > 0);
 #else
@@ -114,14 +111,13 @@ class DualRefCounted : public Orphanable {
 #ifndef NDEBUG
       const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
       if (trace_ != nullptr) {
-        gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %d -> %d (weak_refs=%d)",
-                trace_, this, strong_refs, strong_refs + 1, weak_refs);
+        gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %d -> %d (weak_refs=%d)", trace_, this,
+                strong_refs, strong_refs + 1, weak_refs);
       }
 #endif
       if (strong_refs == 0) return nullptr;
-    } while (!refs_.CompareExchangeWeak(
-        &prev_ref_pair, prev_ref_pair + MakeRefPair(1, 0), MemoryOrder::ACQ_REL,
-        MemoryOrder::ACQUIRE));
+    } while (!refs_.CompareExchangeWeak(&prev_ref_pair, prev_ref_pair + MakeRefPair(1, 0),
+                                        MemoryOrder::ACQ_REL, MemoryOrder::ACQUIRE));
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
@@ -133,10 +129,8 @@ class DualRefCounted : public Orphanable {
 #ifndef NDEBUG
       const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
       if (trace_ != nullptr) {
-        gpr_log(GPR_INFO,
-                "%s:%p %s:%d ref_if_non_zero %d -> %d (weak_refs=%d) %s",
-                trace_, this, location.file(), location.line(), strong_refs,
-                strong_refs + 1, weak_refs, reason);
+        gpr_log(GPR_INFO, "%s:%p %s:%d ref_if_non_zero %d -> %d (weak_refs=%d) %s", trace_, this,
+                location.file(), location.line(), strong_refs, strong_refs + 1, weak_refs, reason);
       }
 #else
       // Avoid unused-parameter warnings for debug-only parameters
@@ -144,9 +138,8 @@ class DualRefCounted : public Orphanable {
       (void)reason;
 #endif
       if (strong_refs == 0) return nullptr;
-    } while (!refs_.CompareExchangeWeak(
-        &prev_ref_pair, prev_ref_pair + MakeRefPair(1, 0), MemoryOrder::ACQ_REL,
-        MemoryOrder::ACQUIRE));
+    } while (!refs_.CompareExchangeWeak(&prev_ref_pair, prev_ref_pair + MakeRefPair(1, 0),
+                                        MemoryOrder::ACQ_REL, MemoryOrder::ACQUIRE));
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
@@ -168,14 +161,13 @@ class DualRefCounted : public Orphanable {
     // safely access it, since another thread might free us in the interim.
     const char* trace = trace_;
 #endif
-    const uint64_t prev_ref_pair =
-        refs_.FetchSub(MakeRefPair(0, 1), MemoryOrder::ACQ_REL);
+    const uint64_t prev_ref_pair = refs_.FetchSub(MakeRefPair(0, 1), MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p weak_unref %d -> %d (refs=%d)", trace, this,
-              weak_refs, weak_refs - 1, strong_refs);
+      gpr_log(GPR_INFO, "%s:%p weak_unref %d -> %d (refs=%d)", trace, this, weak_refs,
+              weak_refs - 1, strong_refs);
     }
     GPR_ASSERT(weak_refs > 0);
 #endif
@@ -190,15 +182,13 @@ class DualRefCounted : public Orphanable {
     // safely access it, since another thread might free us in the interim.
     const char* trace = trace_;
 #endif
-    const uint64_t prev_ref_pair =
-        refs_.FetchSub(MakeRefPair(0, 1), MemoryOrder::ACQ_REL);
+    const uint64_t prev_ref_pair = refs_.FetchSub(MakeRefPair(0, 1), MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d weak_unref %d -> %d (refs=%d) %s", trace,
-              this, location.file(), location.line(), weak_refs, weak_refs - 1,
-              strong_refs, reason);
+      gpr_log(GPR_INFO, "%s:%p %s:%d weak_unref %d -> %d (refs=%d) %s", trace, this,
+              location.file(), location.line(), weak_refs, weak_refs - 1, strong_refs, reason);
     }
     GPR_ASSERT(weak_refs > 0);
 #else
@@ -217,14 +207,13 @@ class DualRefCounted : public Orphanable {
 
  protected:
   // Note: Tracing is a no-op in non-debug builds.
-  explicit DualRefCounted(
-      const char*
+  explicit DualRefCounted(const char*
 #ifndef NDEBUG
-          // Leave unnamed if NDEBUG to avoid unused parameter warning
-          trace
+                              // Leave unnamed if NDEBUG to avoid unused parameter warning
+                              trace
 #endif
-      = nullptr,
-      int32_t initial_refcount = 1)
+                          = nullptr,
+                          int32_t initial_refcount = 1)
       :
 #ifndef NDEBUG
         trace_(trace),
@@ -244,23 +233,20 @@ class DualRefCounted : public Orphanable {
   static uint64_t MakeRefPair(uint32_t strong, uint32_t weak) {
     return (static_cast<uint64_t>(strong) << 32) + static_cast<int64_t>(weak);
   }
-  static uint32_t GetStrongRefs(uint64_t ref_pair) {
-    return static_cast<uint32_t>(ref_pair >> 32);
-  }
+  static uint32_t GetStrongRefs(uint64_t ref_pair) { return static_cast<uint32_t>(ref_pair >> 32); }
   static uint32_t GetWeakRefs(uint64_t ref_pair) {
     return static_cast<uint32_t>(ref_pair & 0xffffffffu);
   }
 
   void IncrementRefCount() {
 #ifndef NDEBUG
-    const uint64_t prev_ref_pair =
-        refs_.FetchAdd(MakeRefPair(1, 0), MemoryOrder::RELAXED);
+    const uint64_t prev_ref_pair = refs_.FetchAdd(MakeRefPair(1, 0), MemoryOrder::RELAXED);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     GPR_ASSERT(strong_refs != 0);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p ref %d -> %d; (weak_refs=%d)", trace_, this,
-              strong_refs, strong_refs + 1, weak_refs);
+      gpr_log(GPR_INFO, "%s:%p ref %d -> %d; (weak_refs=%d)", trace_, this, strong_refs,
+              strong_refs + 1, weak_refs);
     }
 #else
     refs_.FetchAdd(MakeRefPair(1, 0), MemoryOrder::RELAXED);
@@ -268,15 +254,13 @@ class DualRefCounted : public Orphanable {
   }
   void IncrementRefCount(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
-    const uint64_t prev_ref_pair =
-        refs_.FetchAdd(MakeRefPair(1, 0), MemoryOrder::RELAXED);
+    const uint64_t prev_ref_pair = refs_.FetchAdd(MakeRefPair(1, 0), MemoryOrder::RELAXED);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     GPR_ASSERT(strong_refs != 0);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d ref %d -> %d (weak_refs=%d) %s", trace_,
-              this, location.file(), location.line(), strong_refs,
-              strong_refs + 1, weak_refs, reason);
+      gpr_log(GPR_INFO, "%s:%p %s:%d ref %d -> %d (weak_refs=%d) %s", trace_, this, location.file(),
+              location.line(), strong_refs, strong_refs + 1, weak_refs, reason);
     }
 #else
     // Use conditionally-important parameters
@@ -288,29 +272,25 @@ class DualRefCounted : public Orphanable {
 
   void IncrementWeakRefCount() {
 #ifndef NDEBUG
-    const uint64_t prev_ref_pair =
-        refs_.FetchAdd(MakeRefPair(0, 1), MemoryOrder::RELAXED);
+    const uint64_t prev_ref_pair = refs_.FetchAdd(MakeRefPair(0, 1), MemoryOrder::RELAXED);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p weak_ref %d -> %d; (refs=%d)", trace_, this,
-              weak_refs, weak_refs + 1, strong_refs);
+      gpr_log(GPR_INFO, "%s:%p weak_ref %d -> %d; (refs=%d)", trace_, this, weak_refs,
+              weak_refs + 1, strong_refs);
     }
 #else
     refs_.FetchAdd(MakeRefPair(0, 1), MemoryOrder::RELAXED);
 #endif
   }
-  void IncrementWeakRefCount(const DebugLocation& location,
-                             const char* reason) {
+  void IncrementWeakRefCount(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
-    const uint64_t prev_ref_pair =
-        refs_.FetchAdd(MakeRefPair(0, 1), MemoryOrder::RELAXED);
+    const uint64_t prev_ref_pair = refs_.FetchAdd(MakeRefPair(0, 1), MemoryOrder::RELAXED);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d weak_ref %d -> %d (refs=%d) %s", trace_,
-              this, location.file(), location.line(), weak_refs, weak_refs + 1,
-              strong_refs, reason);
+      gpr_log(GPR_INFO, "%s:%p %s:%d weak_ref %d -> %d (refs=%d) %s", trace_, this, location.file(),
+              location.line(), weak_refs, weak_refs + 1, strong_refs, reason);
     }
 #else
     // Use conditionally-important parameters

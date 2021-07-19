@@ -41,8 +41,7 @@ TEST(AltsUtilTest, NullAuthContext) {
 TEST(AltsUtilTest, EmptyAuthContext) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  const std::shared_ptr<AuthContext> auth_context(
-      new SecureAuthContext(ctx.get()));
+  const std::shared_ptr<AuthContext> auth_context(new SecureAuthContext(ctx.get()));
   std::unique_ptr<experimental::AltsContext> alts_context =
       experimental::GetAltsContextFromAuthContext(auth_context);
   EXPECT_EQ(alts_context, nullptr);
@@ -51,8 +50,7 @@ TEST(AltsUtilTest, EmptyAuthContext) {
 TEST(AltsUtilTest, AuthContextWithMoreThanOneAltsContext) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  const std::shared_ptr<AuthContext> auth_context(
-      new SecureAuthContext(ctx.get()));
+  const std::shared_ptr<AuthContext> auth_context(new SecureAuthContext(ctx.get()));
   ctx.reset();
   auth_context->AddProperty(TSI_ALTS_CONTEXT, "context1");
   auth_context->AddProperty(TSI_ALTS_CONTEXT, "context2");
@@ -64,11 +62,9 @@ TEST(AltsUtilTest, AuthContextWithMoreThanOneAltsContext) {
 TEST(AltsUtilTest, AuthContextWithBadAltsContext) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  const std::shared_ptr<AuthContext> auth_context(
-      new SecureAuthContext(ctx.get()));
+  const std::shared_ptr<AuthContext> auth_context(new SecureAuthContext(ctx.get()));
   ctx.reset();
-  auth_context->AddProperty(TSI_ALTS_CONTEXT,
-                            "bad context string serialization");
+  auth_context->AddProperty(TSI_ALTS_CONTEXT, "bad context string serialization");
   std::unique_ptr<experimental::AltsContext> alts_context =
       experimental::GetAltsContextFromAuthContext(auth_context);
   EXPECT_EQ(alts_context, nullptr);
@@ -77,8 +73,7 @@ TEST(AltsUtilTest, AuthContextWithBadAltsContext) {
 TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  const std::shared_ptr<AuthContext> auth_context(
-      new SecureAuthContext(ctx.get()));
+  const std::shared_ptr<AuthContext> auth_context(new SecureAuthContext(ctx.get()));
   ctx.reset();
   std::string expected_ap("application protocol");
   std::string expected_rp("record protocol");
@@ -97,21 +92,18 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   grpc_gcp_AltsContext_set_peer_service_account(
       context, upb_strview_make(expected_peer.data(), expected_peer.length()));
   grpc_gcp_AltsContext_set_local_service_account(
-      context,
-      upb_strview_make(expected_local.data(), expected_local.length()));
+      context, upb_strview_make(expected_local.data(), expected_local.length()));
   grpc_gcp_AltsContext_peer_attributes_set(
       context,
-      upb_strview_make(expected_peer_atrributes_key.data(),
-                       expected_peer_atrributes_key.length()),
+      upb_strview_make(expected_peer_atrributes_key.data(), expected_peer_atrributes_key.length()),
       upb_strview_make(expected_peer_atrributes_value.data(),
                        expected_peer_atrributes_value.length()),
       context_arena.ptr());
   size_t serialized_ctx_length;
-  char* serialized_ctx = grpc_gcp_AltsContext_serialize(
-      context, context_arena.ptr(), &serialized_ctx_length);
+  char* serialized_ctx =
+      grpc_gcp_AltsContext_serialize(context, context_arena.ptr(), &serialized_ctx_length);
   EXPECT_NE(serialized_ctx, nullptr);
-  auth_context->AddProperty(TSI_ALTS_CONTEXT,
-                            string(serialized_ctx, serialized_ctx_length));
+  auth_context->AddProperty(TSI_ALTS_CONTEXT, string(serialized_ctx, serialized_ctx_length));
   std::unique_ptr<experimental::AltsContext> alts_context =
       experimental::GetAltsContextFromAuthContext(auth_context);
   EXPECT_NE(alts_context, nullptr);
@@ -134,14 +126,12 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
 TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  const std::shared_ptr<AuthContext> auth_context(
-      new SecureAuthContext(ctx.get()));
+  const std::shared_ptr<AuthContext> auth_context(new SecureAuthContext(ctx.get()));
   ctx.reset();
   upb::Arena context_arena;
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
   upb::Arena versions_arena;
-  grpc_gcp_RpcProtocolVersions* versions =
-      grpc_gcp_RpcProtocolVersions_new(versions_arena.ptr());
+  grpc_gcp_RpcProtocolVersions* versions = grpc_gcp_RpcProtocolVersions_new(versions_arena.ptr());
   upb::Arena max_major_version_arena;
   grpc_gcp_RpcProtocolVersions_Version* version =
       grpc_gcp_RpcProtocolVersions_Version_new(max_major_version_arena.ptr());
@@ -149,11 +139,10 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {
   grpc_gcp_RpcProtocolVersions_set_max_rpc_version(versions, version);
   grpc_gcp_AltsContext_set_peer_rpc_versions(context, versions);
   size_t serialized_ctx_length;
-  char* serialized_ctx = grpc_gcp_AltsContext_serialize(
-      context, context_arena.ptr(), &serialized_ctx_length);
+  char* serialized_ctx =
+      grpc_gcp_AltsContext_serialize(context, context_arena.ptr(), &serialized_ctx_length);
   EXPECT_NE(serialized_ctx, nullptr);
-  auth_context->AddProperty(TSI_ALTS_CONTEXT,
-                            string(serialized_ctx, serialized_ctx_length));
+  auth_context->AddProperty(TSI_ALTS_CONTEXT, string(serialized_ctx, serialized_ctx_length));
   std::unique_ptr<experimental::AltsContext> alts_context =
       experimental::GetAltsContextFromAuthContext(auth_context);
   EXPECT_NE(alts_context, nullptr);
@@ -173,38 +162,32 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {
 TEST(AltsUtilTest, AltsClientAuthzCheck) {
   // AltsClientAuthzCheck function should return a permission denied error on
   // the bad_auth_context, whose internal ALTS context does not exist
-  const std::shared_ptr<AuthContext> bad_auth_context(
-      new SecureAuthContext(nullptr));
+  const std::shared_ptr<AuthContext> bad_auth_context(new SecureAuthContext(nullptr));
   std::vector<std::string> service_accounts{"client"};
-  grpc::Status status =
-      experimental::AltsClientAuthzCheck(bad_auth_context, service_accounts);
+  grpc::Status status = experimental::AltsClientAuthzCheck(bad_auth_context, service_accounts);
   EXPECT_EQ(grpc::StatusCode::PERMISSION_DENIED, status.error_code());
   // AltsClientAuthzCheck function should function normally when the peer name
   // in ALTS context is listed in service_accounts
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  const std::shared_ptr<AuthContext> auth_context(
-      new SecureAuthContext(ctx.get()));
+  const std::shared_ptr<AuthContext> auth_context(new SecureAuthContext(ctx.get()));
   ctx.reset();
   std::string peer("good_client");
-  std::vector<std::string> good_service_accounts{"good_client",
-                                                 "good_client_1"};
+  std::vector<std::string> good_service_accounts{"good_client", "good_client_1"};
   std::vector<std::string> bad_service_accounts{"bad_client", "bad_client_1"};
   upb::Arena context_arena;
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
-  grpc_gcp_AltsContext_set_peer_service_account(
-      context, upb_strview_make(peer.data(), peer.length()));
+  grpc_gcp_AltsContext_set_peer_service_account(context,
+                                                upb_strview_make(peer.data(), peer.length()));
   size_t serialized_ctx_length;
-  char* serialized_ctx = grpc_gcp_AltsContext_serialize(
-      context, context_arena.ptr(), &serialized_ctx_length);
+  char* serialized_ctx =
+      grpc_gcp_AltsContext_serialize(context, context_arena.ptr(), &serialized_ctx_length);
   EXPECT_NE(serialized_ctx, nullptr);
-  auth_context->AddProperty(TSI_ALTS_CONTEXT,
-                            string(serialized_ctx, serialized_ctx_length));
+  auth_context->AddProperty(TSI_ALTS_CONTEXT, string(serialized_ctx, serialized_ctx_length));
   grpc::Status good_status =
       experimental::AltsClientAuthzCheck(auth_context, good_service_accounts);
   EXPECT_TRUE(good_status.ok());
-  grpc::Status bad_status =
-      experimental::AltsClientAuthzCheck(auth_context, bad_service_accounts);
+  grpc::Status bad_status = experimental::AltsClientAuthzCheck(auth_context, bad_service_accounts);
   EXPECT_EQ(grpc::StatusCode::PERMISSION_DENIED, bad_status.error_code());
 }
 

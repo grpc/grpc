@@ -36,8 +36,7 @@ static void to_fp(void* arg, const char* buf, size_t len) {
 /* Convert gpr_intmax x to ascii base b (2..16), and write with
    (*writer)(arg, ...), zero padding to "chars" digits).  */
 static void i_to_s(intmax_t x, int base, int chars,
-                   void (*writer)(void* arg, const char* buf, size_t len),
-                   void* arg) {
+                   void (*writer)(void* arg, const char* buf, size_t len), void* arg) {
   char buf[64];
   char fmt[32];
   GPR_ASSERT(base == 16 || base == 10);
@@ -47,8 +46,7 @@ static void i_to_s(intmax_t x, int base, int chars,
 }
 
 /* Convert ts to ascii, and write with (*writer)(arg, ...).  */
-static void ts_to_s(gpr_timespec t,
-                    void (*writer)(void* arg, const char* buf, size_t len),
+static void ts_to_s(gpr_timespec t, void (*writer)(void* arg, const char* buf, size_t len),
                     void* arg) {
   if (t.tv_sec < 0 && t.tv_nsec != 0) {
     t.tv_sec++;
@@ -92,14 +90,11 @@ static void test_values(void) {
 
   for (i = 1; i != 1000 * 1000 * 1000; i *= 10) {
     x = gpr_time_from_micros(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec == i / GPR_US_PER_SEC &&
-               x.tv_nsec == (i % GPR_US_PER_SEC) * GPR_NS_PER_US);
+    GPR_ASSERT(x.tv_sec == i / GPR_US_PER_SEC && x.tv_nsec == (i % GPR_US_PER_SEC) * GPR_NS_PER_US);
     x = gpr_time_from_nanos(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec == i / GPR_NS_PER_SEC &&
-               x.tv_nsec == (i % GPR_NS_PER_SEC));
+    GPR_ASSERT(x.tv_sec == i / GPR_NS_PER_SEC && x.tv_nsec == (i % GPR_NS_PER_SEC));
     x = gpr_time_from_millis(i, GPR_TIMESPAN);
-    GPR_ASSERT(x.tv_sec == i / GPR_MS_PER_SEC &&
-               x.tv_nsec == (i % GPR_MS_PER_SEC) * GPR_NS_PER_MS);
+    GPR_ASSERT(x.tv_sec == i / GPR_MS_PER_SEC && x.tv_nsec == (i % GPR_MS_PER_SEC) * GPR_NS_PER_MS);
   }
 
   /* Test possible overflow in conversion of -ve values. */
@@ -140,8 +135,7 @@ static void test_add_sub(void) {
         gpr_timespec jt = gpr_time_from_micros(j * k, GPR_TIMESPAN);
         gpr_timespec sumt = gpr_time_add(it, jt);
         gpr_timespec difft = gpr_time_sub(it, jt);
-        if (gpr_time_cmp(gpr_time_from_micros(sum * k, GPR_TIMESPAN), sumt) !=
-            0) {
+        if (gpr_time_cmp(gpr_time_from_micros(sum * k, GPR_TIMESPAN), sumt) != 0) {
           fprintf(stderr, "i %d  j %d  sum %d    sumt ", i, j, sum);
           fflush(stderr);
           ts_to_s(sumt, &to_fp, stderr);
@@ -149,8 +143,7 @@ static void test_add_sub(void) {
           fflush(stderr);
           GPR_ASSERT(0);
         }
-        if (gpr_time_cmp(gpr_time_from_micros(diff * k, GPR_TIMESPAN), difft) !=
-            0) {
+        if (gpr_time_cmp(gpr_time_from_micros(diff * k, GPR_TIMESPAN), difft) != 0) {
           fprintf(stderr, "i %d  j %d  diff %d    diff ", i, j, diff);
           fflush(stderr);
           ts_to_s(sumt, &to_fp, stderr);
@@ -208,17 +201,13 @@ static void test_sticky_infinities(void) {
 }
 
 static void test_similar(void) {
-  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_future(GPR_TIMESPAN),
-                                   gpr_inf_future(GPR_TIMESPAN),
+  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_future(GPR_TIMESPAN), gpr_inf_future(GPR_TIMESPAN),
                                    gpr_time_0(GPR_TIMESPAN)));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_past(GPR_TIMESPAN),
-                                   gpr_inf_past(GPR_TIMESPAN),
+  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_past(GPR_TIMESPAN), gpr_inf_past(GPR_TIMESPAN),
                                    gpr_time_0(GPR_TIMESPAN)));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_past(GPR_TIMESPAN),
-                                   gpr_inf_future(GPR_TIMESPAN),
+  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_past(GPR_TIMESPAN), gpr_inf_future(GPR_TIMESPAN),
                                    gpr_time_0(GPR_TIMESPAN)));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_future(GPR_TIMESPAN),
-                                   gpr_inf_past(GPR_TIMESPAN),
+  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_future(GPR_TIMESPAN), gpr_inf_past(GPR_TIMESPAN),
                                    gpr_time_0(GPR_TIMESPAN)));
   GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
                                    gpr_time_from_micros(10, GPR_TIMESPAN),

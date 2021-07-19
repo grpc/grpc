@@ -28,21 +28,16 @@ static grpc_pollset_set* pollset_set_create(void) {
 
 static void pollset_set_destroy(grpc_pollset_set* /*pollset_set*/) {}
 
-static void pollset_set_add_pollset(grpc_pollset_set* /*pollset_set*/,
-                                    grpc_pollset* /*pollset*/) {}
+static void pollset_set_add_pollset(grpc_pollset_set* /*pollset_set*/, grpc_pollset* /*pollset*/) {}
 
-static void pollset_set_del_pollset(grpc_pollset_set* /*pollset_set*/,
-                                    grpc_pollset* /*pollset*/) {}
+static void pollset_set_del_pollset(grpc_pollset_set* /*pollset_set*/, grpc_pollset* /*pollset*/) {}
 
-static void pollset_set_add_pollset_set(grpc_pollset_set* /*bag*/,
-                                        grpc_pollset_set* /*item*/) {}
+static void pollset_set_add_pollset_set(grpc_pollset_set* /*bag*/, grpc_pollset_set* /*item*/) {}
 
-static void pollset_set_del_pollset_set(grpc_pollset_set* /*bag*/,
-                                        grpc_pollset_set* /*item*/) {}
+static void pollset_set_del_pollset_set(grpc_pollset_set* /*bag*/, grpc_pollset_set* /*item*/) {}
 
-static grpc_pollset_set_vtable vtable = {
-    pollset_set_create,          pollset_set_destroy,
-    pollset_set_add_pollset,     pollset_set_del_pollset,
-    pollset_set_add_pollset_set, pollset_set_del_pollset_set};
+static grpc_pollset_set_vtable vtable = {pollset_set_create,          pollset_set_destroy,
+                                         pollset_set_add_pollset,     pollset_set_del_pollset,
+                                         pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
 void grpc_custom_pollset_set_init() { grpc_set_pollset_set_vtable(&vtable); }

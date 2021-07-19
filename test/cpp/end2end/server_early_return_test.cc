@@ -48,15 +48,12 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   // Unused methods are not implemented.
 
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
+  Status RequestStream(ServerContext* context, ServerReader<EchoRequest>* reader,
                        EchoResponse* response) override {
-    int server_return_status_code =
-        GetIntValueFromMetadata(context, kServerReturnStatusCode, 0);
+    int server_return_status_code = GetIntValueFromMetadata(context, kServerReturnStatusCode, 0);
     int server_delay_before_return_us =
         GetIntValueFromMetadata(context, kServerDelayBeforeReturnUs, 0);
-    int server_return_after_n_reads =
-        GetIntValueFromMetadata(context, kServerReturnAfterNReads, 0);
+    int server_return_after_n_reads = GetIntValueFromMetadata(context, kServerReturnAfterNReads, 0);
 
     EchoRequest request;
     while (server_return_after_n_reads--) {
@@ -65,22 +62,19 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
     response->set_message("response msg");
 
-    gpr_sleep_until(gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC),
-        gpr_time_from_micros(server_delay_before_return_us, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_micros(server_delay_before_return_us, GPR_TIMESPAN)));
 
     return Status(static_cast<StatusCode>(server_return_status_code), "");
   }
 
-  Status BidiStream(
-      ServerContext* context,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
-    int server_return_status_code =
-        GetIntValueFromMetadata(context, kServerReturnStatusCode, 0);
+  Status BidiStream(ServerContext* context,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+    int server_return_status_code = GetIntValueFromMetadata(context, kServerReturnStatusCode, 0);
     int server_delay_before_return_us =
         GetIntValueFromMetadata(context, kServerDelayBeforeReturnUs, 0);
-    int server_return_after_n_reads =
-        GetIntValueFromMetadata(context, kServerReturnAfterNReads, 0);
+    int server_return_after_n_reads = GetIntValueFromMetadata(context, kServerReturnAfterNReads, 0);
 
     EchoRequest request;
     EchoResponse response;
@@ -90,15 +84,14 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
       EXPECT_TRUE(stream->Write(response));
     }
 
-    gpr_sleep_until(gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC),
-        gpr_time_from_micros(server_delay_before_return_us, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_micros(server_delay_before_return_us, GPR_TIMESPAN)));
 
     return Status(static_cast<StatusCode>(server_return_status_code), "");
   }
 
-  int GetIntValueFromMetadata(ServerContext* context, const char* key,
-                              int default_value) {
+  int GetIntValueFromMetadata(ServerContext* context, const char* key, int default_value) {
     auto metadata = context->client_metadata();
     if (metadata.find(key) != metadata.end()) {
       std::istringstream iss(ToString(metadata.find(key)->second));
@@ -117,13 +110,11 @@ class ServerEarlyReturnTest : public ::testing::Test {
     picked_port_ = port;
     server_address_ << "localhost:" << port;
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
-                             InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
-    channel_ = grpc::CreateChannel(server_address_.str(),
-                                   InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -217,9 +208,7 @@ TEST_F(ServerEarlyReturnTest, BidiStreamEarlyOk) { DoBidiStream(false); }
 TEST_F(ServerEarlyReturnTest, BidiStreamEarlyCancel) { DoBidiStream(true); }
 
 TEST_F(ServerEarlyReturnTest, RequestStreamEarlyOK) { DoRequestStream(false); }
-TEST_F(ServerEarlyReturnTest, RequestStreamEarlyCancel) {
-  DoRequestStream(true);
-}
+TEST_F(ServerEarlyReturnTest, RequestStreamEarlyCancel) { DoRequestStream(true); }
 
 }  // namespace
 }  // namespace testing

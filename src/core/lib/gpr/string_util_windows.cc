@@ -69,10 +69,9 @@ char* gpr_format_message(int messageid) {
   LPTSTR tmessage;
   char* message;
   DWORD status = FormatMessage(
-      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-          FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL, (DWORD)messageid, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
-      (LPTSTR)(&tmessage), 0, NULL);
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+      NULL, (DWORD)messageid, MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT), (LPTSTR)(&tmessage), 0,
+      NULL);
   if (status == 0) return gpr_strdup("Unable to retrieve error string");
   message = gpr_tchar_to_char(tmessage);
   LocalFree(tmessage);

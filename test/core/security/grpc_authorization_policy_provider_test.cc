@@ -36,18 +36,15 @@ TEST(AuthorizationPolicyProviderTest, StaticDataInitializationSuccessful) {
       "}";
   auto provider = StaticDataAuthorizationPolicyProvider::Create(authz_policy);
   ASSERT_TRUE(provider.ok());
-  auto* allow_engine =
-      dynamic_cast<GrpcAuthorizationEngine*>((*provider)->allow_engine().get());
+  auto* allow_engine = dynamic_cast<GrpcAuthorizationEngine*>((*provider)->allow_engine().get());
   ASSERT_NE(allow_engine, nullptr);
   EXPECT_EQ(allow_engine->action(), Rbac::Action::kAllow);
-  auto* deny_engine =
-      dynamic_cast<GrpcAuthorizationEngine*>((*provider)->deny_engine().get());
+  auto* deny_engine = dynamic_cast<GrpcAuthorizationEngine*>((*provider)->deny_engine().get());
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
 }
 
-TEST(AuthorizationPolicyProviderTest,
-     StaticDataInitializationFailedInvalidPolicy) {
+TEST(AuthorizationPolicyProviderTest, StaticDataInitializationFailedInvalidPolicy) {
   const char* authz_policy = "{}";
   auto provider = StaticDataAuthorizationPolicyProvider::Create(authz_policy);
   EXPECT_EQ(provider.status().code(), absl::StatusCode::kInvalidArgument);

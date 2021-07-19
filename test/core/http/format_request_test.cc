@@ -40,8 +40,7 @@ static void test_format_get_request(void) {
                                      "GET /index.html HTTP/1.0\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
-                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                     "\r\n"
+                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
                                      "x-yz: abc\r\n"
                                      "\r\n"));
 
@@ -67,8 +66,7 @@ static void test_format_post_request(void) {
                                      "POST /index.html HTTP/1.0\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
-                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                     "\r\n"
+                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
                                      "x-yz: abc\r\n"
                                      "Content-Type: text/plain\r\n"
                                      "Content-Length: 9\r\n"
@@ -95,8 +93,7 @@ static void test_format_post_request_no_body(void) {
                                      "POST /index.html HTTP/1.0\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
-                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                     "\r\n"
+                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
                                      "x-yz: abc\r\n"
                                      "\r\n"));
 
@@ -122,17 +119,16 @@ static void test_format_post_request_content_type_override(void) {
 
   slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(
-                      slice,
-                      "POST /index.html HTTP/1.0\r\n"
-                      "Host: example.com\r\n"
-                      "Connection: close\r\n"
-                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
-                      "x-yz: abc\r\n"
-                      "Content-Type: application/x-www-form-urlencoded\r\n"
-                      "Content-Length: 11\r\n"
-                      "\r\n"
-                      "fake%20body"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
+                                     "POST /index.html HTTP/1.0\r\n"
+                                     "Host: example.com\r\n"
+                                     "Connection: close\r\n"
+                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
+                                     "x-yz: abc\r\n"
+                                     "Content-Type: application/x-www-form-urlencoded\r\n"
+                                     "Content-Length: 11\r\n"
+                                     "\r\n"
+                                     "fake%20body"));
 
   grpc_slice_unref(slice);
 }

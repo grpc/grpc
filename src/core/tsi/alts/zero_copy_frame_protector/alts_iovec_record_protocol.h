@@ -54,8 +54,7 @@ size_t alts_iovec_record_protocol_get_header_length();
  * On success, the method returns the length of record protocol frame tag.
  * Otherwise, it returns zero.
  */
-size_t alts_iovec_record_protocol_get_tag_length(
-    const alts_iovec_record_protocol* rp);
+size_t alts_iovec_record_protocol_get_tag_length(const alts_iovec_record_protocol* rp);
 
 /**
  * This method returns maximum allowed unprotected data size, given maximum
@@ -67,8 +66,8 @@ size_t alts_iovec_record_protocol_get_tag_length(
  * On success, the method returns the maximum allowed unprotected data size.
  * Otherwise, it returns zero.
  */
-size_t alts_iovec_record_protocol_max_unprotected_data_size(
-    const alts_iovec_record_protocol* rp, size_t max_protected_frame_size);
+size_t alts_iovec_record_protocol_max_unprotected_data_size(const alts_iovec_record_protocol* rp,
+                                                            size_t max_protected_frame_size);
 
 /**
  * This method performs integrity-only protect operation on a
@@ -88,10 +87,11 @@ size_t alts_iovec_record_protocol_max_unprotected_data_size(
  * error status code along with its details specified in error_details (if
  * error_details is not nullptr).
  */
-grpc_status_code alts_iovec_record_protocol_integrity_only_protect(
-    alts_iovec_record_protocol* rp, const iovec_t* unprotected_vec,
-    size_t unprotected_vec_length, iovec_t header, iovec_t tag,
-    char** error_details);
+grpc_status_code alts_iovec_record_protocol_integrity_only_protect(alts_iovec_record_protocol* rp,
+                                                                   const iovec_t* unprotected_vec,
+                                                                   size_t unprotected_vec_length,
+                                                                   iovec_t header, iovec_t tag,
+                                                                   char** error_details);
 
 /**
  * This method performs integrity-only unprotect operation on a
@@ -109,10 +109,11 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_protect(
  * error status code along with its details specified in error_details (if
  * error_details is not nullptr).
  */
-grpc_status_code alts_iovec_record_protocol_integrity_only_unprotect(
-    alts_iovec_record_protocol* rp, const iovec_t* protected_vec,
-    size_t protected_vec_length, iovec_t header, iovec_t tag,
-    char** error_details);
+grpc_status_code alts_iovec_record_protocol_integrity_only_unprotect(alts_iovec_record_protocol* rp,
+                                                                     const iovec_t* protected_vec,
+                                                                     size_t protected_vec_length,
+                                                                     iovec_t header, iovec_t tag,
+                                                                     char** error_details);
 
 /**
  * This method performs privacy-integrity protect operation on a
@@ -132,9 +133,8 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_unprotect(
  * error_details is not nullptr).
  */
 grpc_status_code alts_iovec_record_protocol_privacy_integrity_protect(
-    alts_iovec_record_protocol* rp, const iovec_t* unprotected_vec,
-    size_t unprotected_vec_length, iovec_t protected_frame,
-    char** error_details);
+    alts_iovec_record_protocol* rp, const iovec_t* unprotected_vec, size_t unprotected_vec_length,
+    iovec_t protected_frame, char** error_details);
 
 /**
  * This method performs privacy-integrity unprotect operation on a
@@ -155,9 +155,8 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_protect(
  * error_details is not nullptr).
  */
 grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
-    alts_iovec_record_protocol* rp, iovec_t header,
-    const iovec_t* protected_vec, size_t protected_vec_length,
-    iovec_t unprotected_data, char** error_details);
+    alts_iovec_record_protocol* rp, iovec_t header, const iovec_t* protected_vec,
+    size_t protected_vec_length, iovec_t unprotected_data, char** error_details);
 
 /**
  * This method creates an alts_iovec_record_protocol instance, given a
@@ -183,10 +182,10 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
  * error status code along with its details specified in error_details (if
  * error_details is not nullptr).
  */
-grpc_status_code alts_iovec_record_protocol_create(
-    gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
-    bool is_integrity_only, bool is_protect, alts_iovec_record_protocol** rp,
-    char** error_details);
+grpc_status_code alts_iovec_record_protocol_create(gsec_aead_crypter* crypter, size_t overflow_size,
+                                                   bool is_client, bool is_integrity_only,
+                                                   bool is_protect, alts_iovec_record_protocol** rp,
+                                                   char** error_details);
 
 /**
  * This method destroys an alts_iovec_record_protocol instance by de-allocating

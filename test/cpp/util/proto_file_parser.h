@@ -42,8 +42,8 @@ class ProtoFileParser {
   // The parser will search proto files using the server reflection service
   // provided on the given channel. The given protofiles in a source tree rooted
   // from proto_path will also be searched.
-  ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
-                  const std::string& proto_path, const std::string& protofiles);
+  ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel, const std::string& proto_path,
+                  const std::string& protofiles);
 
   ~ProtoFileParser();
 
@@ -70,17 +70,16 @@ class ProtoFileParser {
   ///        proto
   /// \return the serialised binary proto representation of \c formatted_proto
   std::string GetSerializedProtoFromMethod(const std::string& method,
-                                           const std::string& formatted_proto,
-                                           bool is_request,
+                                           const std::string& formatted_proto, bool is_request,
                                            bool is_json_format);
 
   /// Converts a text or json string to its proto representation for the given
   /// message type.
   /// \param formatted_proto the text- or json-formatted proto string
   /// \return the serialised binary proto representation of \c formatted_proto
-  std::string GetSerializedProtoFromMessageType(
-      const std::string& message_type_name, const std::string& formatted_proto,
-      bool is_json_format);
+  std::string GetSerializedProtoFromMessageType(const std::string& message_type_name,
+                                                const std::string& formatted_proto,
+                                                bool is_json_format);
 
   /// Converts a binary proto string to its text or json string representation
   /// for the given method's input or return type.
@@ -90,8 +89,7 @@ class ProtoFileParser {
   ///        \c message_type_name
   /// \return the text- or json-formatted proto string of \c serialized_proto
   std::string GetFormattedStringFromMethod(const std::string& method,
-                                           const std::string& serialized_proto,
-                                           bool is_request,
+                                           const std::string& serialized_proto, bool is_request,
                                            bool is_json_format);
 
   /// Converts a binary proto string to its text or json string representation
@@ -99,9 +97,9 @@ class ProtoFileParser {
   /// \param the serialised binary proto representation of type
   ///        \c message_type_name
   /// \return the text- or json-formatted proto string of \c serialized_proto
-  std::string GetFormattedStringFromMessageType(
-      const std::string& message_type_name, const std::string& serialized_proto,
-      bool is_json_format);
+  std::string GetFormattedStringFromMessageType(const std::string& message_type_name,
+                                                const std::string& serialized_proto,
+                                                bool is_json_format);
 
   bool IsStreaming(const std::string& method, bool is_request);
 
@@ -110,8 +108,7 @@ class ProtoFileParser {
   void LogError(const std::string& error_msg);
 
  private:
-  std::string GetMessageTypeFromMethod(const std::string& method,
-                                       bool is_request);
+  std::string GetMessageTypeFromMethod(const std::string& method, bool is_request);
 
   bool has_error_;
   std::string request_text_;

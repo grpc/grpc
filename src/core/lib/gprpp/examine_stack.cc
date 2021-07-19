@@ -28,8 +28,7 @@ gpr_current_stack_trace_func GetCurrentStackTraceProvider() {
   return g_current_stack_trace_provider;
 }
 
-void SetCurrentStackTraceProvider(
-    gpr_current_stack_trace_func current_stack_trace_provider) {
+void SetCurrentStackTraceProvider(gpr_current_stack_trace_func current_stack_trace_provider) {
   g_current_stack_trace_provider = current_stack_trace_provider;
 }
 

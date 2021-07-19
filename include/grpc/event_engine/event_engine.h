@@ -129,8 +129,7 @@ class EventEngine {
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED on
     /// endpoint shutdown.
-    virtual void Read(Callback on_read, SliceBuffer* buffer,
-                      absl::Time deadline) = 0;
+    virtual void Read(Callback on_read, SliceBuffer* buffer, absl::Time deadline) = 0;
     /// Write data out on the connection.
     ///
     /// \a on_writable is called when the connection is ready for more data. The
@@ -142,8 +141,7 @@ class EventEngine {
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED
     /// on endpoint shutdown.
-    virtual void Write(Callback on_writable, SliceBuffer* data,
-                       absl::Time deadline) = 0;
+    virtual void Write(Callback on_writable, SliceBuffer* data, absl::Time deadline) = 0;
     /// These methods return an address in the format described in DNSResolver.
     /// The returned values are owned by the Endpoint and are expected to remain
     /// valid for the life of the Endpoint.
@@ -157,8 +155,7 @@ class EventEngine {
   /// the appropriate statuses to this callback. For example, callbacks might
   /// expect to receive DEADLINE_EXCEEDED statuses when appropriate, or
   /// CANCELLED statuses on EventEngine shutdown.
-  using OnConnectCallback =
-      std::function<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
+  using OnConnectCallback = std::function<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
 
   /// An EventEngine Listener listens for incoming connection requests from gRPC
   /// clients and initiates request processing once connections are established.
@@ -195,8 +192,7 @@ class EventEngine {
   /// The provided \a SliceAllocatorFactory is used to create \a SliceAllocators
   /// for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
-      Listener::AcceptCallback on_accept, Callback on_shutdown,
-      const EndpointConfig& args,
+      Listener::AcceptCallback on_accept, Callback on_shutdown, const EndpointConfig& args,
       SliceAllocatorFactory slice_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
@@ -211,10 +207,8 @@ class EventEngine {
   /// This allows gRPC's \a ResourceQuota system to monitor and control memory
   /// usage with graceful degradation mechanisms. Please see the \a
   /// SliceAllocator API for more information.
-  virtual absl::Status Connect(OnConnectCallback on_connect,
-                               const ResolvedAddress& addr,
-                               const EndpointConfig& args,
-                               SliceAllocator slice_allocator,
+  virtual absl::Status Connect(OnConnectCallback on_connect, const ResolvedAddress& addr,
+                               const EndpointConfig& args, SliceAllocator slice_allocator,
                                absl::Time deadline) = 0;
 
   /// The DNSResolver that provides asynchronous resolution.
@@ -236,8 +230,7 @@ class EventEngine {
     using LookupHostnameCallback =
         std::function<void(absl::StatusOr<std::vector<ResolvedAddress>>)>;
     /// Called with a collection of SRV records.
-    using LookupSRVCallback =
-        std::function<void(absl::StatusOr<std::vector<SRVRecord>>)>;
+    using LookupSRVCallback = std::function<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
     using LookupTXTCallback = std::function<void(absl::StatusOr<std::string>)>;
 
@@ -261,15 +254,13 @@ class EventEngine {
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
-    virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                                       absl::string_view name,
+    virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve, absl::string_view name,
                                        absl::Time deadline) = 0;
     /// Asynchronously perform a TXT record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
-    virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                                       absl::string_view name,
+    virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve, absl::string_view name,
                                        absl::Time deadline) = 0;
     /// Cancel an asynchronous lookup operation.
     virtual void TryCancelLookup(LookupTaskHandle handle) = 0;

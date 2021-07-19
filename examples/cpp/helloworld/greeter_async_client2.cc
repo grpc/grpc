@@ -41,8 +41,7 @@ using helloworld::HelloRequest;
 
 class GreeterClient {
  public:
-  explicit GreeterClient(std::shared_ptr<Channel> channel)
-      : stub_(Greeter::NewStub(channel)) {}
+  explicit GreeterClient(std::shared_ptr<Channel> channel) : stub_(Greeter::NewStub(channel)) {}
 
   // Assembles the client's payload and sends it to the server.
   void SayHello(const std::string& user) {
@@ -57,8 +56,7 @@ class GreeterClient {
     // an instance to store in "call" but does not actually start the RPC
     // Because we are using the asynchronous API, we need to hold on to
     // the "call" instance in order to get updates on the ongoing RPC.
-    call->response_reader =
-        stub_->PrepareAsyncSayHello(&call->context, request, &cq_);
+    call->response_reader = stub_->PrepareAsyncSayHello(&call->context, request, &cq_);
 
     // StartCall initiates the RPC call
     call->response_reader->StartCall();
@@ -125,8 +123,7 @@ int main(int argc, char** argv) {
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureChannelCredentials()).
-  GreeterClient greeter(grpc::CreateChannel(
-      "localhost:50051", grpc::InsecureChannelCredentials()));
+  GreeterClient greeter(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
 
   // Spawn reader thread that loops indefinitely
   std::thread thread_ = std::thread(&GreeterClient::AsyncCompleteRpc, &greeter);

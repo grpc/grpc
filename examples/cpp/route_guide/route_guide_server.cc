@@ -72,8 +72,7 @@ float GetDistance(const Point& start, const Point& end) {
   return R * c;
 }
 
-std::string GetFeatureName(const Point& point,
-                           const std::vector<Feature>& feature_list) {
+std::string GetFeatureName(const Point& point, const std::vector<Feature>& feature_list) {
   for (const Feature& f : feature_list) {
     if (f.location().latitude() == point.latitude() &&
         f.location().longitude() == point.longitude()) {
@@ -85,19 +84,15 @@ std::string GetFeatureName(const Point& point,
 
 class RouteGuideImpl final : public RouteGuide::Service {
  public:
-  explicit RouteGuideImpl(const std::string& db) {
-    routeguide::ParseDb(db, &feature_list_);
-  }
+  explicit RouteGuideImpl(const std::string& db) { routeguide::ParseDb(db, &feature_list_); }
 
-  Status GetFeature(ServerContext* context, const Point* point,
-                    Feature* feature) override {
+  Status GetFeature(ServerContext* context, const Point* point, Feature* feature) override {
     feature->set_name(GetFeatureName(*point, feature_list_));
     feature->mutable_location()->CopyFrom(*point);
     return Status::OK;
   }
 
-  Status ListFeatures(ServerContext* context,
-                      const routeguide::Rectangle* rectangle,
+  Status ListFeatures(ServerContext* context, const routeguide::Rectangle* rectangle,
                       ServerWriter<Feature>* writer) override {
     auto lo = rectangle->lo();
     auto hi = rectangle->hi();
@@ -106,8 +101,7 @@ class RouteGuideImpl final : public RouteGuide::Service {
     long top = (std::max)(lo.latitude(), hi.latitude());
     long bottom = (std::min)(lo.latitude(), hi.latitude());
     for (const Feature& f : feature_list_) {
-      if (f.location().longitude() >= left &&
-          f.location().longitude() <= right &&
+      if (f.location().longitude() >= left && f.location().longitude() <= right &&
           f.location().latitude() >= bottom && f.location().latitude() <= top) {
         writer->Write(f);
       }
@@ -138,8 +132,7 @@ class RouteGuideImpl final : public RouteGuide::Service {
     summary->set_point_count(point_count);
     summary->set_feature_count(feature_count);
     summary->set_distance(static_cast<long>(distance));
-    auto secs =
-        std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
     summary->set_elapsed_time(secs.count());
 
     return Status::OK;

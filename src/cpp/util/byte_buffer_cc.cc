@@ -29,8 +29,7 @@ Status ByteBuffer::TrySingleSlice(Slice* slice) const {
   if (!buffer_) {
     return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");
   }
-  if ((buffer_->type == GRPC_BB_RAW) &&
-      (buffer_->data.raw.compression == GRPC_COMPRESS_NONE) &&
+  if ((buffer_->type == GRPC_BB_RAW) && (buffer_->data.raw.compression == GRPC_COMPRESS_NONE) &&
       (buffer_->data.raw.slice_buffer.count == 1)) {
     grpc_slice internal_slice = buffer_->data.raw.slice_buffer.slices[0];
     *slice = Slice(internal_slice, Slice::ADD_REF);
@@ -47,8 +46,7 @@ Status ByteBuffer::DumpToSingleSlice(Slice* slice) const {
   }
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer_)) {
-    return Status(StatusCode::INTERNAL,
-                  "Couldn't initialize byte buffer reader");
+    return Status(StatusCode::INTERNAL, "Couldn't initialize byte buffer reader");
   }
   grpc_slice s = grpc_byte_buffer_reader_readall(&reader);
   *slice = Slice(s, Slice::STEAL_REF);
@@ -63,8 +61,7 @@ Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
   }
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer_)) {
-    return Status(StatusCode::INTERNAL,
-                  "Couldn't initialize byte buffer reader");
+    return Status(StatusCode::INTERNAL, "Couldn't initialize byte buffer reader");
   }
   grpc_slice s;
   while (grpc_byte_buffer_reader_next(&reader, &s)) {

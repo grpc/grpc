@@ -67,8 +67,7 @@ class XdsApi {
     }
   };
 
-  using TypedPerFilterConfig =
-      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+  using TypedPerFilterConfig = std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
 
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
   // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
@@ -80,8 +79,7 @@ class XdsApi {
       absl::optional<uint32_t> fraction_per_million;
 
       bool operator==(const Matchers& other) const {
-        return path_matcher == other.path_matcher &&
-               header_matchers == other.header_matchers &&
+        return path_matcher == other.path_matcher && header_matchers == other.header_matchers &&
                fraction_per_million == other.fraction_per_million;
       }
       std::string ToString() const;
@@ -160,9 +158,7 @@ class XdsApi {
 
     std::vector<VirtualHost> virtual_hosts;
 
-    bool operator==(const RdsUpdate& other) const {
-      return virtual_hosts == other.virtual_hosts;
-    }
+    bool operator==(const RdsUpdate& other) const { return virtual_hosts == other.virtual_hosts; }
     std::string ToString() const;
     VirtualHost* FindVirtualHostForDomain(const std::string& domain);
   };
@@ -184,8 +180,7 @@ class XdsApi {
       std::string certificate_name;
 
       bool operator==(const CertificateProviderInstance& other) const {
-        return instance_name == other.instance_name &&
-               certificate_name == other.certificate_name;
+        return instance_name == other.instance_name && certificate_name == other.certificate_name;
       }
 
       std::string ToString() const;
@@ -194,8 +189,7 @@ class XdsApi {
 
     struct CombinedCertificateValidationContext {
       CertificateValidationContext default_validation_context;
-      CertificateProviderInstance
-          validation_context_certificate_provider_instance;
+      CertificateProviderInstance validation_context_certificate_provider_instance;
 
       bool operator==(const CombinedCertificateValidationContext& other) const {
         return default_validation_context == other.default_validation_context &&
@@ -266,8 +260,7 @@ class XdsApi {
       bool operator==(const HttpConnectionManager& other) const {
         return route_config_name == other.route_config_name &&
                http_max_stream_duration == other.http_max_stream_duration &&
-               rds_update == other.rds_update &&
-               http_filters == other.http_filters;
+               rds_update == other.rds_update && http_filters == other.http_filters;
       }
 
       std::string ToString() const;
@@ -332,16 +325,11 @@ class XdsApi {
         SourcePortsMap ports_map;
 
         bool operator==(const SourceIp& other) const {
-          return prefix_range == other.prefix_range &&
-                 ports_map == other.ports_map;
+          return prefix_range == other.prefix_range && ports_map == other.ports_map;
         }
       };
       using SourceIpVector = std::vector<SourceIp>;
-      enum class ConnectionSourceType {
-        kAny = 0,
-        kSameIpOrLoopback,
-        kExternal
-      };
+      enum class ConnectionSourceType { kAny = 0, kSameIpOrLoopback, kExternal };
       using ConnectionSourceTypesArray = std::array<SourceIpVector, 3>;
       struct DestinationIp {
         absl::optional<CidrRange> prefix_range;
@@ -368,8 +356,7 @@ class XdsApi {
     absl::optional<FilterChainData> default_filter_chain;
 
     bool operator==(const LdsUpdate& other) const {
-      return http_connection_manager == other.http_connection_manager &&
-             address == other.address &&
+      return http_connection_manager == other.http_connection_manager && address == other.address &&
              filter_chain_map == other.filter_chain_map &&
              default_filter_chain == other.default_filter_chain;
     }
@@ -389,8 +376,7 @@ class XdsApi {
     std::string serialized_proto;
   };
 
-  using RdsUpdateMap =
-      std::map<std::string /*route_config_name*/, RdsResourceData>;
+  using RdsUpdateMap = std::map<std::string /*route_config_name*/, RdsResourceData>;
 
   struct CdsUpdate {
     enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
@@ -425,15 +411,12 @@ class XdsApi {
     uint32_t max_concurrent_requests = 1024;
 
     bool operator==(const CdsUpdate& other) const {
-      return cluster_type == other.cluster_type &&
-             eds_service_name == other.eds_service_name &&
+      return cluster_type == other.cluster_type && eds_service_name == other.eds_service_name &&
              dns_hostname == other.dns_hostname &&
              prioritized_cluster_names == other.prioritized_cluster_names &&
              common_tls_context == other.common_tls_context &&
-             lrs_load_reporting_server_name ==
-                 other.lrs_load_reporting_server_name &&
-             lb_policy == other.lb_policy &&
-             min_ring_size == other.min_ring_size &&
+             lrs_load_reporting_server_name == other.lrs_load_reporting_server_name &&
+             lb_policy == other.lb_policy && min_ring_size == other.min_ring_size &&
              max_ring_size == other.max_ring_size &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
@@ -459,9 +442,7 @@ class XdsApi {
           return *name == *other.name && lb_weight == other.lb_weight &&
                  endpoints == other.endpoints;
         }
-        bool operator!=(const Locality& other) const {
-          return !(*this == other);
-        }
+        bool operator!=(const Locality& other) const { return !(*this == other); }
         std::string ToString() const;
       };
 
@@ -480,8 +461,7 @@ class XdsApi {
      public:
       struct DropCategory {
         bool operator==(const DropCategory& other) const {
-          return name == other.name &&
-                 parts_per_million == other.parts_per_million;
+          return name == other.name && parts_per_million == other.parts_per_million;
         }
 
         std::string name;
@@ -491,8 +471,7 @@ class XdsApi {
       using DropCategoryList = absl::InlinedVector<DropCategory, 2>;
 
       void AddCategory(std::string name, uint32_t parts_per_million) {
-        drop_category_list_.emplace_back(
-            DropCategory{std::move(name), parts_per_million});
+        drop_category_list_.emplace_back(DropCategory{std::move(name), parts_per_million});
         if (parts_per_million == 1000000) drop_all_ = true;
       }
 
@@ -500,18 +479,14 @@ class XdsApi {
       // the data plane).
       bool ShouldDrop(const std::string** category_name) const;
 
-      const DropCategoryList& drop_category_list() const {
-        return drop_category_list_;
-      }
+      const DropCategoryList& drop_category_list() const { return drop_category_list_; }
 
       bool drop_all() const { return drop_all_; }
 
       bool operator==(const DropConfig& other) const {
         return drop_category_list_ == other.drop_category_list_;
       }
-      bool operator!=(const DropConfig& other) const {
-        return !(*this == other);
-      }
+      bool operator!=(const DropConfig& other) const { return !(*this == other); }
 
       std::string ToString() const;
 
@@ -524,8 +499,7 @@ class XdsApi {
     RefCountedPtr<DropConfig> drop_config;
 
     bool operator==(const EdsUpdate& other) const {
-      return priorities == other.priorities &&
-             *drop_config == *other.drop_config;
+      return priorities == other.priorities && *drop_config == *other.drop_config;
     }
     std::string ToString() const;
   };
@@ -535,8 +509,7 @@ class XdsApi {
     std::string serialized_proto;
   };
 
-  using EdsUpdateMap =
-      std::map<std::string /*eds_service_name*/, EdsResourceData>;
+  using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsResourceData>;
 
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
@@ -545,9 +518,9 @@ class XdsApi {
         locality_stats;
     grpc_millis load_report_interval;
   };
-  using ClusterLoadReportMap = std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      ClusterLoadReport>;
+  using ClusterLoadReportMap =
+      std::map<std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
+               ClusterLoadReport>;
 
   // The metadata of the xDS resource; used by the xDS config dump.
   struct ResourceMetadata {
@@ -590,22 +563,18 @@ class XdsApi {
     absl::string_view version;
     ResourceMetadataMap resource_metadata_map;
   };
-  using ResourceTypeMetadataMap =
-      std::map<absl::string_view /*type_url*/, ResourceTypeMetadata>;
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_REQUESTED) ==
+  using ResourceTypeMetadataMap = std::map<absl::string_view /*type_url*/, ResourceTypeMetadata>;
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
                     ResourceMetadata::ClientResourceStatus::REQUESTED,
                 "");
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_DOES_NOT_EXIST) ==
-                    ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST,
-                "");
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_ACKED) ==
+  static_assert(
+      static_cast<ResourceMetadata::ClientResourceStatus>(envoy_admin_v3_DOES_NOT_EXIST) ==
+          ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST,
+      "");
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(envoy_admin_v3_ACKED) ==
                     ResourceMetadata::ClientResourceStatus::ACKED,
                 "");
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_NACKED) ==
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(envoy_admin_v3_NACKED) ==
                     ResourceMetadata::ClientResourceStatus::NACKED,
                 "");
 
@@ -633,12 +602,10 @@ class XdsApi {
 
   // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
-                              const std::string& type_url,
+  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server, const std::string& type_url,
                               const std::set<absl::string_view>& resource_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error_handle error,
-                              bool populate_node);
+                              const std::string& version, const std::string& nonce,
+                              grpc_error_handle error, bool populate_node);
 
   // Parses an ADS response.
   AdsParseResult ParseAdsResponse(
@@ -657,14 +624,12 @@ class XdsApi {
   // Parses the LRS response and returns \a
   // load_reporting_interval for client-side load reporting. If there is any
   // error, the output config is invalid.
-  grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response,
-                                     bool* send_all_clusters,
+  grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response, bool* send_all_clusters,
                                      std::set<std::string>* cluster_names,
                                      grpc_millis* load_reporting_interval);
 
   // Assemble the client config proto message and return the serialized result.
-  std::string AssembleClientConfig(
-      const ResourceTypeMetadataMap& resource_type_metadata_map);
+  std::string AssembleClientConfig(const ResourceTypeMetadataMap& resource_type_metadata_map);
 
  private:
   XdsClient* client_;

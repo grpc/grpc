@@ -44,8 +44,7 @@ static char* trim(const char* src) {
     start++;
   }
   if (start <= end) {
-    des = static_cast<char*>(
-        gpr_zalloc(sizeof(char) * (end - start + 2 /* '\0' */)));
+    des = static_cast<char*>(gpr_zalloc(sizeof(char) * (end - start + 2 /* '\0' */)));
     memcpy(des, src + start, end - start + 1);
   }
   return des;

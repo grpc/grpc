@@ -68,8 +68,7 @@ TEST_F(GrpclbTest, CreateRequest) {
   const std::string service_name = "AServiceName";
   LoadBalanceRequest request;
   upb::Arena arena;
-  grpc_slice slice =
-      grpc_core::GrpcLbRequestCreate(service_name.c_str(), arena.ptr());
+  grpc_slice slice = grpc_core::GrpcLbRequestCreate(service_name.c_str(), arena.ptr());
   const int num_bytes_written = GRPC_SLICE_LENGTH(slice);
   EXPECT_GT(num_bytes_written, 0);
   request.ParseFromArray(GRPC_SLICE_START_PTR(slice), num_bytes_written);
@@ -81,18 +80,15 @@ TEST_F(GrpclbTest, ParseInitialResponse) {
   // Construct response to parse.
   LoadBalanceResponse response;
   auto* initial_response = response.mutable_initial_response();
-  auto* client_stats_report_interval =
-      initial_response->mutable_client_stats_report_interval();
+  auto* client_stats_report_interval = initial_response->mutable_client_stats_report_interval();
   client_stats_report_interval->set_seconds(123);
   client_stats_report_interval->set_nanos(456000000);
   const std::string encoded_response = response.SerializeAsString();
-  grpc_slice encoded_slice =
-      grpc_slice_from_copied_string(encoded_response.c_str());
+  grpc_slice encoded_slice = grpc_slice_from_copied_string(encoded_response.c_str());
   // Test parsing.
   grpc_core::GrpcLbResponse resp;
   upb::Arena arena;
-  ASSERT_TRUE(
-      grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
+  ASSERT_TRUE(grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
   grpc_slice_unref(encoded_slice);
   EXPECT_EQ(resp.type, resp.INITIAL);
   EXPECT_EQ(resp.client_stats_report_interval, 123456);
@@ -114,13 +110,12 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   server->set_load_balance_token("load_balancing");
   server->set_drop(true);
   const std::string encoded_response = response.SerializeAsString();
-  const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
-      encoded_response.data(), encoded_response.size());
+  const grpc_slice encoded_slice =
+      grpc_slice_from_copied_buffer(encoded_response.data(), encoded_response.size());
   // Test parsing.
   grpc_core::GrpcLbResponse resp;
   upb::Arena arena;
-  ASSERT_TRUE(
-      grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
+  ASSERT_TRUE(grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
   grpc_slice_unref(encoded_slice);
   EXPECT_EQ(resp.type, resp.SERVERLIST);
   EXPECT_EQ(resp.serverlist.size(), 2);

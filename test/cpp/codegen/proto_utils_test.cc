@@ -180,9 +180,7 @@ TEST_F(WriterTest, LargeBlockNoBackup) { BufferWriterTest(4096, 8192, 0); }
 
 TEST_F(WriterTest, LargeBlockFullBackup) { BufferWriterTest(4096, 8192, 4096); }
 
-TEST_F(WriterTest, LargeBlockLargeBackup) {
-  BufferWriterTest(4096, 8192, 4095);
-}
+TEST_F(WriterTest, LargeBlockLargeBackup) { BufferWriterTest(4096, 8192, 4095); }
 
 }  // namespace
 }  // namespace internal

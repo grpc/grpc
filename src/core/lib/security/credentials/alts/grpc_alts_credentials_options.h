@@ -27,8 +27,7 @@
 
 /* V-table for grpc_alts_credentials_options */
 typedef struct grpc_alts_credentials_options_vtable {
-  grpc_alts_credentials_options* (*copy)(
-      const grpc_alts_credentials_options* options);
+  grpc_alts_credentials_options* (*copy)(const grpc_alts_credentials_options* options);
   void (*destruct)(grpc_alts_credentials_options* options);
 } grpc_alts_credentials_options_vtable;
 

@@ -23,16 +23,13 @@
 
 #ifndef GRPC_CUSTOM_DYNAMICMESSAGEFACTORY
 #include <google/protobuf/dynamic_message.h>
-#define GRPC_CUSTOM_DYNAMICMESSAGEFACTORY \
-  ::google::protobuf::DynamicMessageFactory
+#define GRPC_CUSTOM_DYNAMICMESSAGEFACTORY ::google::protobuf::DynamicMessageFactory
 #endif
 
 #ifndef GRPC_CUSTOM_DESCRIPTORPOOLDATABASE
 #include <google/protobuf/descriptor.h>
-#define GRPC_CUSTOM_DESCRIPTORPOOLDATABASE \
-  ::google::protobuf::DescriptorPoolDatabase
-#define GRPC_CUSTOM_MERGEDDESCRIPTORDATABASE \
-  ::google::protobuf::MergedDescriptorDatabase
+#define GRPC_CUSTOM_DESCRIPTORPOOLDATABASE ::google::protobuf::DescriptorPoolDatabase
+#define GRPC_CUSTOM_MERGEDDESCRIPTORDATABASE ::google::protobuf::MergedDescriptorDatabase
 #endif
 
 #ifndef GRPC_CUSTOM_TEXTFORMAT
@@ -44,8 +41,7 @@
 #include <google/protobuf/compiler/importer.h>
 #define GRPC_CUSTOM_DISKSOURCETREE ::google::protobuf::compiler::DiskSourceTree
 #define GRPC_CUSTOM_IMPORTER ::google::protobuf::compiler::Importer
-#define GRPC_CUSTOM_MULTIFILEERRORCOLLECTOR \
-  ::google::protobuf::compiler::MultiFileErrorCollector
+#define GRPC_CUSTOM_MULTIFILEERRORCOLLECTOR ::google::protobuf::compiler::MultiFileErrorCollector
 #endif
 
 namespace grpc {

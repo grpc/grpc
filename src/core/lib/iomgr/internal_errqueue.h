@@ -73,26 +73,25 @@ constexpr uint32_t SOF_TIMESTAMPING_OPT_TSONLY = 1u << 11;
 constexpr uint32_t SOF_TIMESTAMPING_OPT_STATS = 1u << 12;
 
 constexpr uint32_t kTimestampingSocketOptions =
-    SOF_TIMESTAMPING_SOFTWARE | SOF_TIMESTAMPING_OPT_ID |
-    SOF_TIMESTAMPING_OPT_TSONLY | SOF_TIMESTAMPING_OPT_STATS;
+    SOF_TIMESTAMPING_SOFTWARE | SOF_TIMESTAMPING_OPT_ID | SOF_TIMESTAMPING_OPT_TSONLY |
+    SOF_TIMESTAMPING_OPT_STATS;
 constexpr uint32_t kTimestampingRecordingOptions =
-    SOF_TIMESTAMPING_TX_SCHED | SOF_TIMESTAMPING_TX_SOFTWARE |
-    SOF_TIMESTAMPING_TX_ACK;
+    SOF_TIMESTAMPING_TX_SCHED | SOF_TIMESTAMPING_TX_SOFTWARE | SOF_TIMESTAMPING_TX_ACK;
 
 /* Netlink attribute types used for TCP opt stats. */
 enum TCPOptStats {
   TCP_NLA_PAD,
-  TCP_NLA_BUSY,           /* Time (usec) busy sending data. */
-  TCP_NLA_RWND_LIMITED,   /* Time (usec) limited by receive window. */
-  TCP_NLA_SNDBUF_LIMITED, /* Time (usec) limited by send buffer. */
-  TCP_NLA_DATA_SEGS_OUT,  /* Data pkts sent including retransmission. */
-  TCP_NLA_TOTAL_RETRANS,  /* Data pkts retransmitted. */
-  TCP_NLA_PACING_RATE,    /* Pacing rate in Bps. */
-  TCP_NLA_DELIVERY_RATE,  /* Delivery rate in Bps. */
-  TCP_NLA_SND_CWND,       /* Sending congestion window. */
-  TCP_NLA_REORDERING,     /* Reordering metric. */
-  TCP_NLA_MIN_RTT,        /* minimum RTT. */
-  TCP_NLA_RECUR_RETRANS,  /* Recurring retransmits for the current pkt. */
+  TCP_NLA_BUSY,                  /* Time (usec) busy sending data. */
+  TCP_NLA_RWND_LIMITED,          /* Time (usec) limited by receive window. */
+  TCP_NLA_SNDBUF_LIMITED,        /* Time (usec) limited by send buffer. */
+  TCP_NLA_DATA_SEGS_OUT,         /* Data pkts sent including retransmission. */
+  TCP_NLA_TOTAL_RETRANS,         /* Data pkts retransmitted. */
+  TCP_NLA_PACING_RATE,           /* Pacing rate in Bps. */
+  TCP_NLA_DELIVERY_RATE,         /* Delivery rate in Bps. */
+  TCP_NLA_SND_CWND,              /* Sending congestion window. */
+  TCP_NLA_REORDERING,            /* Reordering metric. */
+  TCP_NLA_MIN_RTT,               /* minimum RTT. */
+  TCP_NLA_RECUR_RETRANS,         /* Recurring retransmits for the current pkt. */
   TCP_NLA_DELIVERY_RATE_APP_LMT, /* Delivery rate application limited? */
   TCP_NLA_SNDQ_SIZE,             /* Data (bytes) pending in send queue */
   TCP_NLA_CA_STATE,              /* ca_state of socket */

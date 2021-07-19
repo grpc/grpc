@@ -25,12 +25,10 @@
 
 namespace grpc_core {
 
-RefCountedPtr<FileExternalAccountCredentials>
-FileExternalAccountCredentials::Create(Options options,
-                                       std::vector<std::string> scopes,
-                                       grpc_error_handle* error) {
-  auto creds = MakeRefCounted<FileExternalAccountCredentials>(
-      std::move(options), std::move(scopes), error);
+RefCountedPtr<FileExternalAccountCredentials> FileExternalAccountCredentials::Create(
+    Options options, std::vector<std::string> scopes, grpc_error_handle* error) {
+  auto creds =
+      MakeRefCounted<FileExternalAccountCredentials>(std::move(options), std::move(scopes), error);
   if (*error == GRPC_ERROR_NONE) {
     return creds;
   } else {
@@ -38,8 +36,9 @@ FileExternalAccountCredentials::Create(Options options,
   }
 }
 
-FileExternalAccountCredentials::FileExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
+FileExternalAccountCredentials::FileExternalAccountCredentials(Options options,
+                                                               std::vector<std::string> scopes,
+                                                               grpc_error_handle* error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
   auto it = options.credential_source.object_value().find("file");
   if (it == options.credential_source.object_value().end()) {
@@ -47,8 +46,7 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
     return;
   }
   if (it->second.type() != Json::Type::STRING) {
-    *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("file field must be a string.");
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("file field must be a string.");
     return;
   }
   file_ = it->second.string_value();
@@ -62,13 +60,11 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
     }
     auto format_it = format_json.object_value().find("type");
     if (format_it == format_json.object_value().end()) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "format.type field not present.");
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("format.type field not present.");
       return;
     }
     if (format_it->second.type() != Json::Type::STRING) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "format.type field must be a string.");
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("format.type field must be a string.");
       return;
     }
     format_type_ = format_it->second.string_value();
@@ -100,8 +96,7 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
   SliceWrapper content_slice;
   // To retrieve the subject token, we read the file every time we make a
   // request because it may have changed since the last request.
-  grpc_error_handle error =
-      grpc_load_file(file_.c_str(), 0, &content_slice.slice);
+  grpc_error_handle error = grpc_load_file(file_.c_str(), 0, &content_slice.slice);
   if (error != GRPC_ERROR_NONE) {
     cb("", error);
     return;
@@ -115,16 +110,13 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
       GRPC_ERROR_UNREF(error);
       return;
     }
-    auto content_it =
-        content_json.object_value().find(format_subject_token_field_name_);
+    auto content_it = content_json.object_value().find(format_subject_token_field_name_);
     if (content_it == content_json.object_value().end()) {
-      cb("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                 "Subject token field not present."));
+      cb("", GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subject token field not present."));
       return;
     }
     if (content_it->second.type() != Json::Type::STRING) {
-      cb("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                 "Subject token field must be a string."));
+      cb("", GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subject token field must be a string."));
       return;
     }
     cb(content_it->second.string_value(), GRPC_ERROR_NONE);

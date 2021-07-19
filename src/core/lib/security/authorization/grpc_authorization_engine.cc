@@ -18,19 +18,16 @@
 
 namespace grpc_core {
 
-GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
-    : action_(policy.action) {
+GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy) : action_(policy.action) {
   for (auto& sub_policy : policy.policies) {
     Policy policy;
     policy.name = sub_policy.first;
-    policy.matcher = absl::make_unique<PolicyAuthorizationMatcher>(
-        std::move(sub_policy.second));
+    policy.matcher = absl::make_unique<PolicyAuthorizationMatcher>(std::move(sub_policy.second));
     policies_.push_back(std::move(policy));
   }
 }
 
-AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
-    const EvaluateArgs& args) const {
+AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(const EvaluateArgs& args) const {
   Decision decision;
   bool matches = false;
   for (const auto& policy : policies_) {
@@ -40,9 +37,8 @@ AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
       break;
     }
   }
-  decision.type = (matches == (action_ == Rbac::Action::kAllow))
-                      ? Decision::Type::kAllow
-                      : Decision::Type::kDeny;
+  decision.type = (matches == (action_ == Rbac::Action::kAllow)) ? Decision::Type::kAllow
+                                                                 : Decision::Type::kDeny;
   return decision;
 }
 

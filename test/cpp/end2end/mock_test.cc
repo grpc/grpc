@@ -129,8 +129,8 @@ class FakeClient {
     ClientContext context;
     std::string msg("hello");
 
-    std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
-        stream = stub_->BidiStream(&context);
+    std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>> stream =
+        stub_->BidiStream(&context);
 
     request.set_message(msg + "0");
     EXPECT_TRUE(stream->Write(request));
@@ -162,8 +162,7 @@ class FakeClient {
 
 class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
-  ServerUnaryReactor* Echo(CallbackServerContext* context,
-                           const EchoRequest* request,
+  ServerUnaryReactor* Echo(CallbackServerContext* context, const EchoRequest* request,
                            EchoResponse* response) override {
     // Make the mock service explicitly treat empty input messages as invalid
     // arguments so that we can test various results of status. In general, a
@@ -249,8 +248,7 @@ class TestServiceImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status RequestStream(ServerContext* /*context*/,
-                       ServerReader<EchoRequest>* reader,
+  Status RequestStream(ServerContext* /*context*/, ServerReader<EchoRequest>* reader,
                        EchoResponse* response) override {
     EchoRequest request;
     std::string resp("");
@@ -273,9 +271,8 @@ class TestServiceImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status BidiStream(
-      ServerContext* /*context*/,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+  Status BidiStream(ServerContext* /*context*/,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -315,8 +312,7 @@ class MockTest : public ::testing::Test {
     server_address_ << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
-                             InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
@@ -324,8 +320,8 @@ class MockTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel =
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -364,8 +360,7 @@ TEST_F(MockTest, ClientStream) {
   EXPECT_CALL(*w, WritesDone());
   EXPECT_CALL(*w, Finish()).WillOnce(Return(Status::OK));
 
-  EXPECT_CALL(stub, RequestStreamRaw(_, _))
-      .WillOnce(DoAll(SetArgPointee<1>(resp), Return(w)));
+  EXPECT_CALL(stub, RequestStreamRaw(_, _)).WillOnce(DoAll(SetArgPointee<1>(resp), Return(w)));
   client.ResetStub(&stub);
   client.DoRequestStream();
 }
@@ -404,9 +399,7 @@ TEST_F(MockTest, BidiStream) {
   auto rw = new MockClientReaderWriter<EchoRequest, EchoResponse>();
   EchoRequest msg;
 
-  EXPECT_CALL(*rw, Write(_, _))
-      .Times(3)
-      .WillRepeatedly(DoAll(SaveArg<0>(&msg), Return(true)));
+  EXPECT_CALL(*rw, Write(_, _)).Times(3).WillRepeatedly(DoAll(SaveArg<0>(&msg), Return(true)));
   EXPECT_CALL(*rw, Read(_))
       .WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true)))
       .WillOnce(DoAll(WithArg<0>(copy(&msg)), Return(true)))

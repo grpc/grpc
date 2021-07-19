@@ -53,15 +53,13 @@ class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
   explicit CallbackTestServiceImpl() {}
 
-  void SetAllocatorMutator(
-      std::function<void(RpcAllocatorState* allocator_state,
-                         const EchoRequest* req, EchoResponse* resp)>
-          mutator) {
+  void SetAllocatorMutator(std::function<void(RpcAllocatorState* allocator_state,
+                                              const EchoRequest* req, EchoResponse* resp)>
+                               mutator) {
     allocator_mutator_ = std::move(mutator);
   }
 
-  ServerUnaryReactor* Echo(CallbackServerContext* context,
-                           const EchoRequest* request,
+  ServerUnaryReactor* Echo(CallbackServerContext* context, const EchoRequest* request,
                            EchoResponse* response) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
@@ -89,11 +87,10 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+static std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{protocol="
-             << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
-             << "," << scenario.credentials_type << "}";
+             << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP") << ","
+             << scenario.credentials_type << "}";
 }
 
 void TestScenario::Log() const {
@@ -102,8 +99,7 @@ void TestScenario::Log() const {
   gpr_log(GPR_INFO, "%s", out.str().c_str());
 }
 
-class MessageAllocatorEnd2endTestBase
-    : public ::testing::TestWithParam<TestScenario> {
+class MessageAllocatorEnd2endTestBase : public ::testing::TestWithParam<TestScenario> {
  protected:
   MessageAllocatorEnd2endTestBase() { GetParam().Log(); }
 
@@ -112,8 +108,7 @@ class MessageAllocatorEnd2endTestBase
   void CreateServer(MessageAllocator<EchoRequest, EchoResponse>* allocator) {
     ServerBuilder builder;
 
-    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
-        GetParam().credentials_type);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(GetParam().credentials_type);
     if (GetParam().protocol == Protocol::TCP) {
       picked_port_ = grpc_pick_unused_port_or_die();
       server_address_ << "localhost:" << picked_port_;
@@ -134,12 +129,11 @@ class MessageAllocatorEnd2endTestBase
 
   void ResetStub() {
     ChannelArguments args;
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(GetParam().credentials_type, &args);
     switch (GetParam().protocol) {
       case Protocol::TCP:
-        channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
-                                               channel_creds, args);
+        channel_ = ::grpc::CreateCustomChannel(server_address_.str(), channel_creds, args);
         break;
       case Protocol::INPROC:
         channel_ = server_->InProcessChannel(args);
@@ -172,16 +166,15 @@ class MessageAllocatorEnd2endTestBase
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->async()->Echo(
-          &cli_ctx, &request, &response,
-          [&request, &response, &done, &mu, &cv, val](Status s) {
-            GPR_ASSERT(s.ok());
+      stub_->async()->Echo(&cli_ctx, &request, &response,
+                           [&request, &response, &done, &mu, &cv, val](Status s) {
+                             GPR_ASSERT(s.ok());
 
-            EXPECT_EQ(request.message(), response.message());
-            std::lock_guard<std::mutex> l(mu);
-            done = true;
-            cv.notify_one();
-          });
+                             EXPECT_EQ(request.message(), response.message());
+                             std::lock_guard<std::mutex> l(mu);
+                             done = true;
+                             cv.notify_one();
+                           });
       std::unique_lock<std::mutex> l(mu);
       while (!done) {
         cv.wait(l);
@@ -242,8 +235,7 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
     };
     MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
       allocation_count++;
-      return new MessageHolderImpl(&request_deallocation_count,
-                                   &messages_deallocation_count);
+      return new MessageHolderImpl(&request_deallocation_count, &messages_deallocation_count);
     }
     int allocation_count = 0;
     std::atomic_int request_deallocation_count{0};
@@ -270,8 +262,7 @@ TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   auto mutator = [](RpcAllocatorState* allocator_state, const EchoRequest* req,
                     EchoResponse* resp) {
-    auto* info =
-        static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
+    auto* info = static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
     EXPECT_EQ(req, info->request());
     EXPECT_EQ(resp, info->response());
     allocator_state->FreeRequest();
@@ -293,11 +284,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   std::vector<EchoRequest*> released_requests;
-  auto mutator = [&released_requests](RpcAllocatorState* allocator_state,
-                                      const EchoRequest* req,
+  auto mutator = [&released_requests](RpcAllocatorState* allocator_state, const EchoRequest* req,
                                       EchoResponse* resp) {
-    auto* info =
-        static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
+    auto* info = static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
     EXPECT_EQ(req, info->request());
     EXPECT_EQ(resp, info->response());
     released_requests.push_back(info->ReleaseRequest());
@@ -326,10 +315,8 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
     class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl() {
-        set_request(
-            google::protobuf::Arena::CreateMessage<EchoRequest>(&arena_));
-        set_response(
-            google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_));
+        set_request(google::protobuf::Arena::CreateMessage<EchoRequest>(&arena_));
+        set_response(google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_));
       }
       void Release() override { delete this; }
       void FreeRequest() override { GPR_ASSERT(0); }
@@ -361,8 +348,8 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the
     // provider. User may create providers that do not have insecure.
-    return GetCredentialsProvider()->GetChannelCredentials(
-               kInsecureCredentialsType, nullptr) != nullptr;
+    return GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType, nullptr) !=
+           nullptr;
   };
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
@@ -373,8 +360,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   for (Protocol p : parr) {
     for (const auto& cred : credentials_types) {
       // TODO(vjpai): Test inproc with secure credentials when feasible
-      if (p == Protocol::INPROC &&
-          (cred != kInsecureCredentialsType || !insec_ok())) {
+      if (p == Protocol::INPROC && (cred != kInsecureCredentialsType || !insec_ok())) {
         continue;
       }
       scenarios.emplace_back(p, cred);

@@ -27,10 +27,7 @@
 
 static rb_data_type_t grpc_rb_channel_args_data_type = {
     "grpc_channel_args",
-    {GRPC_RB_GC_NOT_MARKED,
-     GRPC_RB_GC_DONT_FREE,
-     GRPC_RB_MEMSIZE_UNAVAILABLE,
-     {NULL, NULL}},
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL,
     NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
@@ -39,8 +36,7 @@ static rb_data_type_t grpc_rb_channel_args_data_type = {
 };
 
 /* A callback the processes the hash key values in channel_args hash */
-static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
-                                                              VALUE val,
+static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key, VALUE val,
                                                               VALUE args_obj) {
   const char* the_key;
   grpc_channel_args* args;
@@ -60,11 +56,10 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
       return ST_STOP;
   }
 
-  TypedData_Get_Struct(args_obj, grpc_channel_args,
-                       &grpc_rb_channel_args_data_type, args);
+  TypedData_Get_Struct(args_obj, grpc_channel_args, &grpc_rb_channel_args_data_type, args);
   if (args->num_args <= 0) {
-    rb_raise(rb_eRuntimeError, "hash_cb bug: num_args is %lu for key:%s",
-             args->num_args, StringValueCStr(key));
+    rb_raise(rb_eRuntimeError, "hash_cb bug: num_args is %lu for key:%s", args->num_args,
+             StringValueCStr(key));
     return ST_STOP;
   }
 
@@ -72,8 +67,7 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
   switch (TYPE(val)) {
     case T_SYMBOL:
       args->args[args->num_args - 1].type = GRPC_ARG_STRING;
-      args->args[args->num_args - 1].value.string =
-          (char*)rb_id2name(SYM2ID(val));
+      args->args[args->num_args - 1].value.string = (char*)rb_id2name(SYM2ID(val));
       --args->num_args;
       return ST_CONTINUE;
 
@@ -90,8 +84,8 @@ static int grpc_rb_channel_create_in_process_add_args_hash_cb(VALUE key,
       return ST_CONTINUE;
 
     default:
-      rb_raise(rb_eTypeError, "%s: bad value: got <%s>, want <String|Fixnum>",
-               StringValueCStr(key), rb_obj_classname(val));
+      rb_raise(rb_eTypeError, "%s: bad value: got <%s>, want <String|Fixnum>", StringValueCStr(key),
+               rb_obj_classname(val));
       return ST_STOP;
   }
   rb_raise(rb_eRuntimeError, "impl bug: hash_cb reached to far while on key:%s",
@@ -127,8 +121,7 @@ static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
     MEMZERO(params->dst->args, grpc_arg, num_args);
     rb_hash_foreach(
         params->src_hash, grpc_rb_channel_create_in_process_add_args_hash_cb,
-        TypedData_Wrap_Struct(grpc_rb_cChannelArgs,
-                              &grpc_rb_channel_args_data_type, params->dst));
+        TypedData_Wrap_Struct(grpc_rb_cChannelArgs, &grpc_rb_channel_args_data_type, params->dst));
     /* reset num_args as grpc_rb_channel_create_in_process_add_args_hash_cb
      * decrements it during has processing */
     params->dst->num_args = num_args;
@@ -136,8 +129,7 @@ static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
   return Qnil;
 }
 
-void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
-                                          grpc_channel_args* dst) {
+void grpc_rb_hash_convert_to_channel_args(VALUE src_hash, grpc_channel_args* dst) {
   channel_convert_params params;
   int status = 0;
 

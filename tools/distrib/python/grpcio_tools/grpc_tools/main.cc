@@ -47,14 +47,12 @@ int protoc_main(int argc, char* argv[]) {
 
   // Proto2 Python
   google::protobuf::compiler::python::Generator py_generator;
-  cli.RegisterGenerator("--python_out", &py_generator,
-                        "Generate Python source file.");
+  cli.RegisterGenerator("--python_out", &py_generator, "Generate Python source file.");
 
   // gRPC Python
   grpc_python_generator::GeneratorConfiguration grpc_py_config;
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
-  cli.RegisterGenerator("--grpc_python_out", &grpc_py_generator,
-                        "Generate Python source file.");
+  cli.RegisterGenerator("--grpc_python_out", &grpc_py_generator, "Generate Python source file.");
 
   return cli.Run(argc, argv);
 }
@@ -63,9 +61,8 @@ namespace internal {
 
 class GeneratorContextImpl : public GeneratorContext {
  public:
-  GeneratorContextImpl(
-      const std::vector<const FileDescriptor*>& parsed_files,
-      std::vector<std::pair<std::string, std::string>>* files_out)
+  GeneratorContextImpl(const std::vector<const FileDescriptor*>& parsed_files,
+                       std::vector<std::pair<std::string, std::string>>* files_out)
       : files_(files_out), parsed_files_(parsed_files) {}
 
   ZeroCopyOutputStream* Open(const std::string& filename) {
@@ -74,9 +71,7 @@ class GeneratorContextImpl : public GeneratorContext {
   }
 
   // NOTE(rbellevi): Equivalent to Open, since all files start out empty.
-  ZeroCopyOutputStream* OpenForAppend(const std::string& filename) {
-    return Open(filename);
-  }
+  ZeroCopyOutputStream* OpenForAppend(const std::string& filename) { return Open(filename); }
 
   // NOTE(rbellevi): Equivalent to Open, since all files start out empty.
   ZeroCopyOutputStream* OpenForInsert(const std::string& filename,
@@ -84,8 +79,7 @@ class GeneratorContextImpl : public GeneratorContext {
     return Open(filename);
   }
 
-  void ListParsedFiles(
-      std::vector<const ::google::protobuf::FileDescriptor*>* output) {
+  void ListParsedFiles(std::vector<const ::google::protobuf::FileDescriptor*>* output) {
     *output = parsed_files_;
   }
 
@@ -100,13 +94,11 @@ class ErrorCollectorImpl : public MultiFileErrorCollector {
                      std::vector<::grpc_tools::ProtocWarning>* warnings)
       : errors_(errors), warnings_(warnings) {}
 
-  void AddError(const std::string& filename, int line, int column,
-                const std::string& message) {
+  void AddError(const std::string& filename, int line, int column, const std::string& message) {
     errors_->emplace_back(filename, line, column, message);
   }
 
-  void AddWarning(const std::string& filename, int line, int column,
-                  const std::string& message) {
+  void AddWarning(const std::string& filename, int line, int column, const std::string& message) {
     warnings_->emplace_back(filename, line, column, message);
   }
 
@@ -116,8 +108,7 @@ class ErrorCollectorImpl : public MultiFileErrorCollector {
 };
 
 static void calculate_transitive_closure(
-    const FileDescriptor* descriptor,
-    std::vector<const FileDescriptor*>* transitive_closure,
+    const FileDescriptor* descriptor, std::vector<const FileDescriptor*>* transitive_closure,
     std::unordered_set<const ::google::protobuf::FileDescriptor*>* visited) {
   for (int i = 0; i < descriptor->dependency_count(); ++i) {
     const FileDescriptor* dependency = descriptor->dependency(i);
@@ -131,12 +122,11 @@ static void calculate_transitive_closure(
 
 }  // end namespace internal
 
-static int generate_code(
-    CodeGenerator* code_generator, char* protobuf_path,
-    const std::vector<std::string>* include_paths,
-    std::vector<std::pair<std::string, std::string>>* files_out,
-    std::vector<::grpc_tools::ProtocError>* errors,
-    std::vector<::grpc_tools::ProtocWarning>* warnings) {
+static int generate_code(CodeGenerator* code_generator, char* protobuf_path,
+                         const std::vector<std::string>* include_paths,
+                         std::vector<std::pair<std::string, std::string>>* files_out,
+                         std::vector<::grpc_tools::ProtocError>* errors,
+                         std::vector<::grpc_tools::ProtocWarning>* warnings) {
   std::unique_ptr<internal::ErrorCollectorImpl> error_collector(
       new internal::ErrorCollectorImpl(errors, warnings));
   std::unique_ptr<DiskSourceTree> source_tree(new DiskSourceTree());
@@ -150,10 +140,8 @@ static int generate_code(
   }
   std::vector<const FileDescriptor*> transitive_closure;
   std::unordered_set<const FileDescriptor*> visited;
-  internal::calculate_transitive_closure(parsed_file, &transitive_closure,
-                                         &visited);
-  internal::GeneratorContextImpl generator_context(transitive_closure,
-                                                   files_out);
+  internal::calculate_transitive_closure(parsed_file, &transitive_closure, &visited);
+  internal::GeneratorContextImpl generator_context(transitive_closure, files_out);
   std::string error;
   for (const auto descriptor : transitive_closure) {
     code_generator->Generate(descriptor, "", &generator_context, &error);
@@ -161,24 +149,22 @@ static int generate_code(
   return 0;
 }
 
-int protoc_get_protos(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
-    std::vector<std::pair<std::string, std::string>>* files_out,
-    std::vector<::grpc_tools::ProtocError>* errors,
-    std::vector<::grpc_tools::ProtocWarning>* warnings) {
+int protoc_get_protos(char* protobuf_path, const std::vector<std::string>* include_paths,
+                      std::vector<std::pair<std::string, std::string>>* files_out,
+                      std::vector<::grpc_tools::ProtocError>* errors,
+                      std::vector<::grpc_tools::ProtocWarning>* warnings) {
   ::google::protobuf::compiler::python::Generator python_generator;
-  return generate_code(&python_generator, protobuf_path, include_paths,
-                       files_out, errors, warnings);
+  return generate_code(&python_generator, protobuf_path, include_paths, files_out, errors,
+                       warnings);
 }
 
-int protoc_get_services(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
-    std::vector<std::pair<std::string, std::string>>* files_out,
-    std::vector<::grpc_tools::ProtocError>* errors,
-    std::vector<::grpc_tools::ProtocWarning>* warnings) {
+int protoc_get_services(char* protobuf_path, const std::vector<std::string>* include_paths,
+                        std::vector<std::pair<std::string, std::string>>* files_out,
+                        std::vector<::grpc_tools::ProtocError>* errors,
+                        std::vector<::grpc_tools::ProtocWarning>* warnings) {
   grpc_python_generator::GeneratorConfiguration grpc_py_config;
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
-  return generate_code(&grpc_py_generator, protobuf_path, include_paths,
-                       files_out, errors, warnings);
+  return generate_code(&grpc_py_generator, protobuf_path, include_paths, files_out, errors,
+                       warnings);
 }
 }  // end namespace grpc_tools

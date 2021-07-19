@@ -48,11 +48,10 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static RefCountedPtr<GlobalSubchannelPool> instance();
 
   // Implements interface methods.
-  RefCountedPtr<Subchannel> RegisterSubchannel(
-      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override
+  RefCountedPtr<Subchannel> RegisterSubchannel(const SubchannelKey& key,
+                                               RefCountedPtr<Subchannel> constructed) override
       ABSL_LOCKS_EXCLUDED(mu_);
-  void UnregisterSubchannel(const SubchannelKey& key,
-                            Subchannel* subchannel) override
+  void UnregisterSubchannel(const SubchannelKey& key, Subchannel* subchannel) override
       ABSL_LOCKS_EXCLUDED(mu_);
   RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override
       ABSL_LOCKS_EXCLUDED(mu_);

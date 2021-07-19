@@ -29,8 +29,7 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -41,13 +40,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -72,10 +67,9 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void test_early_server_shutdown_finishes_tags(
-    grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = begin_test(
-      config, "test_early_server_shutdown_finishes_tags", nullptr, nullptr);
+static void test_early_server_shutdown_finishes_tags(grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_early_server_shutdown_finishes_tags", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_call* s = reinterpret_cast<grpc_call*>(1);
   grpc_call_details call_details;
@@ -86,9 +80,9 @@ static void test_early_server_shutdown_finishes_tags(
 
   /* upon shutdown, the server should finish all requested calls indicating
      no new call */
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(f.server, &s, &call_details,
+                                                      &request_metadata_recv, f.cq, f.cq,
+                                                      tag(101)));
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
   CQ_EXPECT_COMPLETION(cqv, tag(101), 0);
   CQ_EXPECT_COMPLETION(cqv, tag(1000), 1);

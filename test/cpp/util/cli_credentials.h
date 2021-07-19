@@ -41,8 +41,7 @@ class CliCredentials {
   virtual std::string GetDefaultCallCreds() const;
   // Returns the base transport channel credentials. Child classes can override
   // to support additional channel_creds_types unknown to this base class.
-  virtual std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials()
-      const;
+  virtual std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials() const;
   // Returns call credentials to composite onto the base transport channel
   // credentials. Child classes can override to support additional
   // authentication flags unknown to this base class.

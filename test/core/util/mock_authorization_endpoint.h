@@ -23,30 +23,25 @@ namespace grpc_core {
 
 class MockAuthorizationEndpoint : public grpc_endpoint {
  public:
-  MockAuthorizationEndpoint(absl::string_view local_uri,
-                            absl::string_view peer_uri)
+  MockAuthorizationEndpoint(absl::string_view local_uri, absl::string_view peer_uri)
       : local_address_(local_uri), peer_address_(peer_uri) {
-    static constexpr grpc_endpoint_vtable vtable = {
-        nullptr, nullptr, nullptr, nullptr,         nullptr, nullptr,
-        nullptr, nullptr, GetPeer, GetLocalAddress, nullptr, nullptr};
+    static constexpr grpc_endpoint_vtable vtable = {nullptr, nullptr,         nullptr, nullptr,
+                                                    nullptr, nullptr,         nullptr, nullptr,
+                                                    GetPeer, GetLocalAddress, nullptr, nullptr};
     grpc_endpoint::vtable = &vtable;
   }
 
   static absl::string_view GetPeer(grpc_endpoint* ep) {
-    MockAuthorizationEndpoint* m =
-        reinterpret_cast<MockAuthorizationEndpoint*>(ep);
+    MockAuthorizationEndpoint* m = reinterpret_cast<MockAuthorizationEndpoint*>(ep);
     return m->peer_address_;
   }
 
   static absl::string_view GetLocalAddress(grpc_endpoint* ep) {
-    MockAuthorizationEndpoint* m =
-        reinterpret_cast<MockAuthorizationEndpoint*>(ep);
+    MockAuthorizationEndpoint* m = reinterpret_cast<MockAuthorizationEndpoint*>(ep);
     return m->local_address_;
   }
 
-  void SetPeer(absl::string_view peer_address) {
-    peer_address_ = std::string(peer_address);
-  }
+  void SetPeer(absl::string_view peer_address) { peer_address_ = std::string(peer_address); }
 
   void SetLocalAddress(absl::string_view local_address) {
     local_address_ = std::string(local_address);

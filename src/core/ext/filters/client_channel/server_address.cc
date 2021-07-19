@@ -41,14 +41,12 @@ const char* ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
 // ServerAddress
 //
 
-ServerAddress::ServerAddress(
-    const grpc_resolved_address& address, grpc_channel_args* args,
-    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
+ServerAddress::ServerAddress(const grpc_resolved_address& address, grpc_channel_args* args,
+                             std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
     : address_(address), args_(args), attributes_(std::move(attributes)) {}
 
-ServerAddress::ServerAddress(
-    const void* address, size_t address_len, grpc_channel_args* args,
-    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
+ServerAddress::ServerAddress(const void* address, size_t address_len, grpc_channel_args* args,
+                             std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
     : args_(args), attributes_(std::move(attributes)) {
   memcpy(address_.addr, address, address_len);
   address_.len = static_cast<socklen_t>(address_len);
@@ -75,9 +73,7 @@ ServerAddress& ServerAddress::operator=(const ServerAddress& other) {
 }
 
 ServerAddress::ServerAddress(ServerAddress&& other) noexcept
-    : address_(other.address_),
-      args_(other.args_),
-      attributes_(std::move(other.attributes_)) {
+    : address_(other.address_), args_(other.args_), attributes_(std::move(other.attributes_)) {
   other.args_ = nullptr;
 }
 ServerAddress& ServerAddress::operator=(ServerAddress&& other) noexcept {
@@ -92,12 +88,8 @@ ServerAddress& ServerAddress::operator=(ServerAddress&& other) noexcept {
 namespace {
 
 int CompareAttributes(
-    const std::map<const char*,
-                   std::unique_ptr<ServerAddress::AttributeInterface>>&
-        attributes1,
-    const std::map<const char*,
-                   std::unique_ptr<ServerAddress::AttributeInterface>>&
-        attributes2) {
+    const std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>& attributes1,
+    const std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>& attributes2) {
   auto it2 = attributes2.begin();
   for (auto it1 = attributes1.begin(); it1 != attributes1.end(); ++it1) {
     // attributes2 has fewer elements than attributes1
@@ -128,8 +120,7 @@ int ServerAddress::Cmp(const ServerAddress& other) const {
   return CompareAttributes(attributes_, other.attributes_);
 }
 
-const ServerAddress::AttributeInterface* ServerAddress::GetAttribute(
-    const char* key) const {
+const ServerAddress::AttributeInterface* ServerAddress::GetAttribute(const char* key) const {
   auto it = attributes_.find(key);
   if (it == attributes_.end()) return nullptr;
   return it->second.get();
@@ -137,8 +128,8 @@ const ServerAddress::AttributeInterface* ServerAddress::GetAttribute(
 
 // Returns a copy of the address with a modified attribute.
 // If the new value is null, the attribute is removed.
-ServerAddress ServerAddress::WithAttribute(
-    const char* key, std::unique_ptr<AttributeInterface> value) const {
+ServerAddress ServerAddress::WithAttribute(const char* key,
+                                           std::unique_ptr<AttributeInterface> value) const {
   ServerAddress address = *this;
   if (value == nullptr) {
     address.attributes_.erase(key);
@@ -153,16 +144,14 @@ std::string ServerAddress::ToString() const {
       grpc_sockaddr_to_string(&address_, false),
   };
   if (args_ != nullptr) {
-    parts.emplace_back(
-        absl::StrCat("args={", grpc_channel_args_string(args_), "}"));
+    parts.emplace_back(absl::StrCat("args={", grpc_channel_args_string(args_), "}"));
   }
   if (!attributes_.empty()) {
     std::vector<std::string> attrs;
     for (const auto& p : attributes_) {
       attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
     }
-    parts.emplace_back(
-        absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
+    parts.emplace_back(absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
   }
   return absl::StrJoin(parts, " ");
 }

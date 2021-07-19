@@ -112,8 +112,7 @@ static int create_socket(int* out_port) {
   }
 
   addr_len = sizeof(addr);
-  if (getsockname(s, reinterpret_cast<struct sockaddr*>(&addr), &addr_len) !=
-          0 ||
+  if (getsockname(s, reinterpret_cast<struct sockaddr*>(&addr), &addr_len) != 0 ||
       addr_len > sizeof(addr)) {
     perror("getsockname");
     gpr_log(GPR_ERROR, "%s", "Unable to get socket local address");
@@ -127,13 +126,12 @@ static int create_socket(int* out_port) {
 
 // Server callback during ALPN negotiation. See man page for
 // SSL_CTX_set_alpn_select_cb.
-static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
-                          const uint8_t* in, unsigned in_len, void* arg) {
+static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len, const uint8_t* in,
+                          unsigned in_len, void* arg) {
   const uint8_t* alpn_preferred = static_cast<const uint8_t*>(arg);
 
   *out = alpn_preferred;
-  *out_len = static_cast<uint8_t>(
-      strlen(reinterpret_cast<const char*>(alpn_preferred)));
+  *out_len = static_cast<uint8_t>(strlen(reinterpret_cast<const char*>(alpn_preferred)));
 
   // Validate that the ALPN list includes "h2" and "grpc-exp", that "grpc-exp"
   // precedes "h2".
@@ -161,12 +159,10 @@ static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
   return SSL_TLSEXT_ERR_OK;
 }
 
-static void ssl_log_where_info(const SSL* ssl, int where, int flag,
-                               const char* msg) {
-  if ((where & flag) &&
-      GRPC_TRACE_FLAG_ENABLED(client_ssl_tsi_tracing_enabled)) {
-    gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
-            SSL_state_string_long(ssl), SSL_state_string(ssl));
+static void ssl_log_where_info(const SSL* ssl, int where, int flag, const char* msg) {
+  if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(client_ssl_tsi_tracing_enabled)) {
+    gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg, SSL_state_string_long(ssl),
+            SSL_state_string(ssl));
   }
 }
 
@@ -177,10 +173,8 @@ static void ssl_server_info_callback(const SSL* ssl, int where, int ret) {
   }
 
   ssl_log_where_info(ssl, where, SSL_CB_LOOP, "Server: LOOP");
-  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_START,
-                     "Server: HANDSHAKE START");
-  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_DONE,
-                     "Server: HANDSHAKE DONE");
+  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_START, "Server: HANDSHAKE START");
+  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_DONE, "Server: HANDSHAKE DONE");
 }
 
 // Minimal TLS server. This is largely based on the example at
@@ -245,8 +239,7 @@ static void server_thread(void* arg) {
   gpr_log(GPR_INFO, "Server listening");
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
-  const int client =
-      accept(sock, reinterpret_cast<struct sockaddr*>(&addr), &len);
+  const int client = accept(sock, reinterpret_cast<struct sockaddr*>(&addr), &len);
   if (client < 0) {
     perror("Unable to accept");
     abort();
@@ -313,39 +306,32 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   // Load key pair and establish client SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  grpc_channel_credentials* ssl_creds = grpc_ssl_credentials_create(
-      ca_cert, &pem_key_cert_pair, nullptr, nullptr);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  pem_key_cert_pair.private_key = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  grpc_channel_credentials* ssl_creds =
+      grpc_ssl_credentials_create(ca_cert, &pem_key_cert_pair, nullptr, nullptr);
 
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
   std::string target = absl::StrCat("127.0.0.1:", port);
-  grpc_arg ssl_name_override = {
-      GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr")}};
+  grpc_arg ssl_name_override = {GRPC_ARG_STRING,
+                                const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+                                {const_cast<char*>("foo.test.google.fr")}};
   grpc_channel_args grpc_args;
   grpc_args.num_args = 1;
   grpc_args.args = &ssl_name_override;
-  grpc_channel* channel = grpc_secure_channel_create(ssl_creds, target.c_str(),
-                                                     &grpc_args, nullptr);
+  grpc_channel* channel =
+      grpc_secure_channel_create(ssl_creds, target.c_str(), &grpc_args, nullptr);
   GPR_ASSERT(channel);
 
   // Initially the channel will be idle, the
   // grpc_channel_check_connectivity_state triggers an attempt to connect.
-  GPR_ASSERT(grpc_channel_check_connectivity_state(
-                 channel, 1 /* try_to_connect */) == GRPC_CHANNEL_IDLE);
+  GPR_ASSERT(grpc_channel_check_connectivity_state(channel, 1 /* try_to_connect */) ==
+             GRPC_CHANNEL_IDLE);
 
   // Wait a bounded number of times for the channel to be ready. When the
   // channel is ready, the initial TLS handshake will have successfully
@@ -355,13 +341,12 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   while (state != GRPC_CHANNEL_READY && retries-- > 0) {
-    grpc_channel_watch_connectivity_state(
-        channel, state, grpc_timeout_seconds_to_deadline(3), cq, nullptr);
+    grpc_channel_watch_connectivity_state(channel, state, grpc_timeout_seconds_to_deadline(3), cq,
+                                          nullptr);
     gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    state =
-        grpc_channel_check_connectivity_state(channel, 0 /* try_to_connect */);
+    state = grpc_channel_check_connectivity_state(channel, 0 /* try_to_connect */);
   }
   grpc_completion_queue_destroy(cq);
   if (retries < 0) {

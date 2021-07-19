@@ -39,8 +39,8 @@ bool MethodNameMatch(const std::string& full_name, const std::string& input) {
   if (clean_input.size() > full_name.size()) {
     return false;
   }
-  return full_name.compare(full_name.size() - clean_input.size(),
-                           clean_input.size(), clean_input) == 0;
+  return full_name.compare(full_name.size() - clean_input.size(), clean_input.size(),
+                           clean_input) == 0;
 }
 }  // namespace
 
@@ -51,15 +51,14 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
   void AddError(const std::string& filename, int line, int column,
                 const std::string& message) override {
     std::ostringstream oss;
-    oss << "error " << filename << " " << line << " " << column << " "
-        << message << "\n";
+    oss << "error " << filename << " " << line << " " << column << " " << message << "\n";
     parser_->LogError(oss.str());
   }
 
   void AddWarning(const std::string& filename, int line, int column,
                   const std::string& message) override {
-    std::cerr << "warning " << filename << " " << line << " " << column << " "
-              << message << std::endl;
+    std::cerr << "warning " << filename << " " << line << " " << column << " " << message
+              << std::endl;
   }
 
  private:
@@ -67,26 +66,23 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
 };
 
 ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
-                                 const std::string& proto_path,
-                                 const std::string& protofiles)
-    : has_error_(false),
-      dynamic_factory_(new protobuf::DynamicMessageFactory()) {
+                                 const std::string& proto_path, const std::string& protofiles)
+    : has_error_(false), dynamic_factory_(new protobuf::DynamicMessageFactory()) {
   std::vector<std::string> service_list;
   if (channel) {
-    reflection_db_ =
-        absl::make_unique<grpc::ProtoReflectionDescriptorDatabase>(channel);
+    reflection_db_ = absl::make_unique<grpc::ProtoReflectionDescriptorDatabase>(channel);
     reflection_db_->GetServices(&service_list);
   }
 
   std::unordered_set<std::string> known_services;
   if (!protofiles.empty()) {
-    for (const absl::string_view single_path : absl::StrSplit(
-             proto_path, GRPC_CLI_PATH_SEPARATOR, absl::AllowEmpty())) {
+    for (const absl::string_view single_path :
+         absl::StrSplit(proto_path, GRPC_CLI_PATH_SEPARATOR, absl::AllowEmpty())) {
       source_tree_.MapPath("", std::string(single_path));
     }
     error_printer_ = absl::make_unique<ErrorPrinter>(this);
-    importer_ = absl::make_unique<protobuf::compiler::Importer>(
-        &source_tree_, error_printer_.get());
+    importer_ =
+        absl::make_unique<protobuf::compiler::Importer>(&source_tree_, error_printer_.get());
 
     std::string file_name;
     std::stringstream ss(protofiles);
@@ -102,8 +98,7 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
       }
     }
 
-    file_db_ =
-        absl::make_unique<protobuf::DescriptorPoolDatabase>(*importer_->pool());
+    file_db_ = absl::make_unique<protobuf::DescriptorPoolDatabase>(*importer_->pool());
   }
 
   if (!reflection_db_ && !file_db_) {
@@ -116,16 +111,15 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
   } else if (!file_db_) {
     desc_db_ = std::move(reflection_db_);
   } else {
-    desc_db_ = absl::make_unique<protobuf::MergedDescriptorDatabase>(
-        reflection_db_.get(), file_db_.get());
+    desc_db_ =
+        absl::make_unique<protobuf::MergedDescriptorDatabase>(reflection_db_.get(), file_db_.get());
   }
 
   desc_pool_ = absl::make_unique<protobuf::DescriptorPool>(desc_db_.get());
 
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     if (known_services.find(*it) == known_services.end()) {
-      if (const protobuf::ServiceDescriptor* service_desc =
-              desc_pool_->FindServiceByName(*it)) {
+      if (const protobuf::ServiceDescriptor* service_desc = desc_pool_->FindServiceByName(*it)) {
         service_desc_list_.push_back(service_desc);
         known_services.insert(*it);
       }
@@ -143,8 +137,7 @@ std::string ProtoFileParser::GetFullMethodName(const std::string& method) {
   }
 
   const protobuf::MethodDescriptor* method_descriptor = nullptr;
-  for (auto it = service_desc_list_.begin(); it != service_desc_list_.end();
-       it++) {
+  for (auto it = service_desc_list_.begin(); it != service_desc_list_.end(); it++) {
     const auto* service_desc = *it;
     for (int j = 0; j < service_desc->method_count(); j++) {
       const auto* method_desc = service_desc->method(j);
@@ -186,15 +179,13 @@ std::string ProtoFileParser::GetFormattedMethodName(const std::string& method) {
   return formatted_method_name;
 }
 
-std::string ProtoFileParser::GetMessageTypeFromMethod(const std::string& method,
-                                                      bool is_request) {
+std::string ProtoFileParser::GetMessageTypeFromMethod(const std::string& method, bool is_request) {
   has_error_ = false;
   std::string full_method_name = GetFullMethodName(method);
   if (has_error_) {
     return "";
   }
-  const protobuf::MethodDescriptor* method_desc =
-      desc_pool_->FindMethodByName(full_method_name);
+  const protobuf::MethodDescriptor* method_desc = desc_pool_->FindMethodByName(full_method_name);
   if (!method_desc) {
     LogError("Method not found");
     return "";
@@ -212,59 +203,52 @@ bool ProtoFileParser::IsStreaming(const std::string& method, bool is_request) {
     return false;
   }
 
-  const protobuf::MethodDescriptor* method_desc =
-      desc_pool_->FindMethodByName(full_method_name);
+  const protobuf::MethodDescriptor* method_desc = desc_pool_->FindMethodByName(full_method_name);
   if (!method_desc) {
     LogError("Method not found");
     return false;
   }
 
-  return is_request ? method_desc->client_streaming()
-                    : method_desc->server_streaming();
+  return is_request ? method_desc->client_streaming() : method_desc->server_streaming();
 }
 
-std::string ProtoFileParser::GetSerializedProtoFromMethod(
-    const std::string& method, const std::string& formatted_proto,
-    bool is_request, bool is_json_format) {
+std::string ProtoFileParser::GetSerializedProtoFromMethod(const std::string& method,
+                                                          const std::string& formatted_proto,
+                                                          bool is_request, bool is_json_format) {
   has_error_ = false;
   std::string message_type_name = GetMessageTypeFromMethod(method, is_request);
   if (has_error_) {
     return "";
   }
-  return GetSerializedProtoFromMessageType(message_type_name, formatted_proto,
-                                           is_json_format);
+  return GetSerializedProtoFromMessageType(message_type_name, formatted_proto, is_json_format);
 }
 
-std::string ProtoFileParser::GetFormattedStringFromMethod(
-    const std::string& method, const std::string& serialized_proto,
-    bool is_request, bool is_json_format) {
+std::string ProtoFileParser::GetFormattedStringFromMethod(const std::string& method,
+                                                          const std::string& serialized_proto,
+                                                          bool is_request, bool is_json_format) {
   has_error_ = false;
   std::string message_type_name = GetMessageTypeFromMethod(method, is_request);
   if (has_error_) {
     return "";
   }
-  return GetFormattedStringFromMessageType(message_type_name, serialized_proto,
-                                           is_json_format);
+  return GetFormattedStringFromMessageType(message_type_name, serialized_proto, is_json_format);
 }
 
-std::string ProtoFileParser::GetSerializedProtoFromMessageType(
-    const std::string& message_type_name, const std::string& formatted_proto,
-    bool is_json_format) {
+std::string ProtoFileParser::GetSerializedProtoFromMessageType(const std::string& message_type_name,
+                                                               const std::string& formatted_proto,
+                                                               bool is_json_format) {
   has_error_ = false;
   std::string serialized;
-  const protobuf::Descriptor* desc =
-      desc_pool_->FindMessageTypeByName(message_type_name);
+  const protobuf::Descriptor* desc = desc_pool_->FindMessageTypeByName(message_type_name);
   if (!desc) {
     LogError("Message type not found");
     return "";
   }
-  std::unique_ptr<grpc::protobuf::Message> msg(
-      dynamic_factory_->GetPrototype(desc)->New());
+  std::unique_ptr<grpc::protobuf::Message> msg(dynamic_factory_->GetPrototype(desc)->New());
 
   bool ok;
   if (is_json_format) {
-    ok = grpc::protobuf::json::JsonStringToMessage(formatted_proto, msg.get())
-             .ok();
+    ok = grpc::protobuf::json::JsonStringToMessage(formatted_proto, msg.get()).ok();
     if (!ok) {
       LogError("Failed to convert json format to proto.");
       return "";
@@ -285,18 +269,16 @@ std::string ProtoFileParser::GetSerializedProtoFromMessageType(
   return serialized;
 }
 
-std::string ProtoFileParser::GetFormattedStringFromMessageType(
-    const std::string& message_type_name, const std::string& serialized_proto,
-    bool is_json_format) {
+std::string ProtoFileParser::GetFormattedStringFromMessageType(const std::string& message_type_name,
+                                                               const std::string& serialized_proto,
+                                                               bool is_json_format) {
   has_error_ = false;
-  const protobuf::Descriptor* desc =
-      desc_pool_->FindMessageTypeByName(message_type_name);
+  const protobuf::Descriptor* desc = desc_pool_->FindMessageTypeByName(message_type_name);
   if (!desc) {
     LogError("Message type not found");
     return "";
   }
-  std::unique_ptr<grpc::protobuf::Message> msg(
-      dynamic_factory_->GetPrototype(desc)->New());
+  std::unique_ptr<grpc::protobuf::Message> msg(dynamic_factory_->GetPrototype(desc)->New());
   if (!msg->ParseFromString(serialized_proto)) {
     LogError("Failed to deserialize proto.");
     return "";
@@ -306,8 +288,7 @@ std::string ProtoFileParser::GetFormattedStringFromMessageType(
   if (is_json_format) {
     grpc::protobuf::json::JsonPrintOptions jsonPrintOptions;
     jsonPrintOptions.add_whitespace = true;
-    if (!grpc::protobuf::json::MessageToJsonString(*msg, &formatted_string,
-                                                   jsonPrintOptions)
+    if (!grpc::protobuf::json::MessageToJsonString(*msg, &formatted_string, jsonPrintOptions)
              .ok()) {
       LogError("Failed to print proto message to json format");
       return "";

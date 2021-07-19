@@ -43,27 +43,22 @@
 #include "src/core/tsi/fake_transport_security.h"
 
 namespace {
-class grpc_fake_channel_security_connector final
-    : public grpc_channel_security_connector {
+class grpc_fake_channel_security_connector final : public grpc_channel_security_connector {
  public:
   grpc_fake_channel_security_connector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target, const grpc_channel_args* args)
-      : grpc_channel_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME,
-                                        std::move(channel_creds),
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds, const char* target,
+      const grpc_channel_args* args)
+      : grpc_channel_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME, std::move(channel_creds),
                                         std::move(request_metadata_creds)),
         target_(gpr_strdup(target)),
-        expected_targets_(
-            gpr_strdup(grpc_fake_transport_get_expected_targets(args))),
-        is_lb_channel_(grpc_channel_args_find(
-                           args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) !=
+        expected_targets_(gpr_strdup(grpc_fake_transport_get_expected_targets(args))),
+        is_lb_channel_(grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) !=
                        nullptr) {
     const grpc_arg* target_name_override_arg =
         grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (target_name_override_arg != nullptr) {
-      target_name_override_ =
-          gpr_strdup(grpc_channel_arg_get_string(target_name_override_arg));
+      target_name_override_ = gpr_strdup(grpc_channel_arg_get_string(target_name_override_arg));
     } else {
       target_name_override_ = nullptr;
     }
@@ -79,14 +74,12 @@ class grpc_fake_channel_security_connector final
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
-  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/, grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other_sc) const override {
-    auto* other =
-        reinterpret_cast<const grpc_fake_channel_security_connector*>(other_sc);
+    auto* other = reinterpret_cast<const grpc_fake_channel_security_connector*>(other_sc);
     int c = channel_security_connector_cmp(other);
     if (c != 0) return c;
     c = strcmp(target_, other->target_);
@@ -100,40 +93,33 @@ class grpc_fake_channel_security_connector final
     return GPR_ICMP(is_lb_channel_, other->is_lb_channel_);
   }
 
-  void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* /*interested_parties*/,
+  void add_handshakers(const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(
         tsi_create_fake_handshaker(/*is_client=*/true), this, args));
   }
 
-  bool check_call_host(absl::string_view host,
-                       grpc_auth_context* /*auth_context*/,
+  bool check_call_host(absl::string_view host, grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
                        grpc_error_handle* /*error*/) override {
     absl::string_view authority_hostname;
     absl::string_view authority_ignored_port;
     absl::string_view target_hostname;
     absl::string_view target_ignored_port;
-    grpc_core::SplitHostPort(host, &authority_hostname,
-                             &authority_ignored_port);
+    grpc_core::SplitHostPort(host, &authority_hostname, &authority_ignored_port);
     grpc_core::SplitHostPort(target_, &target_hostname, &target_ignored_port);
     if (target_name_override_ != nullptr) {
       absl::string_view fake_security_target_name_override_hostname;
       absl::string_view fake_security_target_name_override_ignored_port;
-      grpc_core::SplitHostPort(
-          target_name_override_, &fake_security_target_name_override_hostname,
-          &fake_security_target_name_override_ignored_port);
+      grpc_core::SplitHostPort(target_name_override_, &fake_security_target_name_override_hostname,
+                               &fake_security_target_name_override_ignored_port);
       if (authority_hostname != fake_security_target_name_override_hostname) {
-        gpr_log(GPR_ERROR,
-                "Authority (host) '%s' != Fake Security Target override '%s'",
-                host.data(),
-                fake_security_target_name_override_hostname.data());
+        gpr_log(GPR_ERROR, "Authority (host) '%s' != Fake Security Target override '%s'",
+                host.data(), fake_security_target_name_override_hostname.data());
         abort();
       }
     } else if (authority_hostname != target_hostname) {
-      gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'", host.data(),
-              target_);
+      gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'", host.data(), target_);
       abort();
     }
     return true;
@@ -171,11 +157,9 @@ class grpc_fake_channel_security_connector final
     char** lbs_and_backends = nullptr;
     size_t lbs_and_backends_size = 0;
     bool success = false;
-    gpr_string_split(expected_targets_, ";", &lbs_and_backends,
-                     &lbs_and_backends_size);
+    gpr_string_split(expected_targets_, ";", &lbs_and_backends, &lbs_and_backends_size);
     if (lbs_and_backends_size > 2 || lbs_and_backends_size == 0) {
-      gpr_log(GPR_ERROR, "Invalid expected targets arg value: '%s'",
-              expected_targets_);
+      gpr_log(GPR_ERROR, "Invalid expected targets arg value: '%s'", expected_targets_);
       goto done;
     }
     if (is_lb_channel_) {
@@ -187,15 +171,15 @@ class grpc_fake_channel_security_connector final
         goto done;
       }
       if (!fake_check_target(target_, lbs_and_backends[1])) {
-        gpr_log(GPR_ERROR, "LB target '%s' not found in expected set '%s'",
-                target_, lbs_and_backends[1]);
+        gpr_log(GPR_ERROR, "LB target '%s' not found in expected set '%s'", target_,
+                lbs_and_backends[1]);
         goto done;
       }
       success = true;
     } else {
       if (!fake_check_target(target_, lbs_and_backends[0])) {
-        gpr_log(GPR_ERROR, "Backend target '%s' not found in expected set '%s'",
-                target_, lbs_and_backends[0]);
+        gpr_log(GPR_ERROR, "Backend target '%s' not found in expected set '%s'", target_,
+                lbs_and_backends[0]);
         goto done;
       }
       success = true;
@@ -214,21 +198,18 @@ class grpc_fake_channel_security_connector final
   char* target_name_override_;
 };
 
-static void fake_check_peer(
-    grpc_security_connector* /*sc*/, tsi_peer peer,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-    grpc_closure* on_peer_checked) {
+static void fake_check_peer(grpc_security_connector* /*sc*/, tsi_peer peer,
+                            grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                            grpc_closure* on_peer_checked) {
   const char* prop_name;
   grpc_error_handle error = GRPC_ERROR_NONE;
   *auth_context = nullptr;
   if (peer.property_count != 2) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Fake peers should only have 2 properties.");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Fake peers should only have 2 properties.");
     goto end;
   }
   prop_name = peer.properties[0].name;
-  if (prop_name == nullptr ||
-      strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY) != 0) {
+  if (prop_name == nullptr || strcmp(prop_name, TSI_CERTIFICATE_TYPE_PEER_PROPERTY) != 0) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Unexpected property in fake peer: ",
                      prop_name == nullptr ? "<EMPTY>" : prop_name)
@@ -237,13 +218,11 @@ static void fake_check_peer(
   }
   if (strncmp(peer.properties[0].value.data, TSI_FAKE_CERTIFICATE_TYPE,
               peer.properties[0].value.length) != 0) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid value for cert type property.");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid value for cert type property.");
     goto end;
   }
   prop_name = peer.properties[1].name;
-  if (prop_name == nullptr ||
-      strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
+  if (prop_name == nullptr || strcmp(prop_name, TSI_SECURITY_LEVEL_PEER_PROPERTY) != 0) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Unexpected property in fake peer: ",
                      prop_name == nullptr ? "<EMPTY>" : prop_name)
@@ -252,38 +231,33 @@ static void fake_check_peer(
   }
   if (strncmp(peer.properties[1].value.data, TSI_FAKE_SECURITY_LEVEL,
               peer.properties[1].value.length) != 0) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid value for security level property.");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid value for security level property.");
     goto end;
   }
 
   *auth_context = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context_add_cstring_property(auth_context->get(),
+                                         GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                         GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
   grpc_auth_context_add_cstring_property(
-      auth_context->get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-      GRPC_FAKE_TRANSPORT_SECURITY_TYPE);
-  grpc_auth_context_add_cstring_property(
-      auth_context->get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
-      TSI_FAKE_SECURITY_LEVEL);
+      auth_context->get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME, TSI_FAKE_SECURITY_LEVEL);
 end:
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
 void grpc_fake_channel_security_connector::check_peer(
-    tsi_peer peer, grpc_endpoint* /*ep*/,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+    tsi_peer peer, grpc_endpoint* /*ep*/, grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   fake_check_peer(this, peer, auth_context, on_peer_checked);
   fake_secure_name_check();
 }
 
-class grpc_fake_server_security_connector
-    : public grpc_server_security_connector {
+class grpc_fake_server_security_connector : public grpc_server_security_connector {
  public:
   explicit grpc_fake_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME,
-                                       std::move(server_creds)) {}
+      : grpc_server_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME, std::move(server_creds)) {}
   ~grpc_fake_server_security_connector() override = default;
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
@@ -292,21 +266,18 @@ class grpc_fake_server_security_connector
     fake_check_peer(this, peer, auth_context, on_peer_checked);
   }
 
-  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/, grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
-  void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* /*interested_parties*/,
+  void add_handshakers(const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(
         tsi_create_fake_handshaker(/*=is_client*/ false), this, args));
   }
 
   int cmp(const grpc_security_connector* other) const override {
-    return server_security_connector_cmp(
-        static_cast<const grpc_server_security_connector*>(other));
+    return server_security_connector_cmp(static_cast<const grpc_server_security_connector*>(other));
   }
 };
 }  // namespace
@@ -314,16 +285,13 @@ class grpc_fake_server_security_connector
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_fake_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target, const grpc_channel_args* args) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds, const char* target,
+    const grpc_channel_args* args) {
   return grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
-      std::move(channel_creds), std::move(request_metadata_creds), target,
-      args);
+      std::move(channel_creds), std::move(request_metadata_creds), target, args);
 }
 
-grpc_core::RefCountedPtr<grpc_server_security_connector>
-grpc_fake_server_security_connector_create(
+grpc_core::RefCountedPtr<grpc_server_security_connector> grpc_fake_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
-  return grpc_core::MakeRefCounted<grpc_fake_server_security_connector>(
-      std::move(server_creds));
+  return grpc_core::MakeRefCounted<grpc_fake_server_security_connector>(std::move(server_creds));
 }

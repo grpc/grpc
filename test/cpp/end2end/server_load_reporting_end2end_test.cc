@@ -52,8 +52,7 @@ class EchoTestServiceImpl : public EchoTestService::Service {
  public:
   ~EchoTestServiceImpl() override {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext* context, const EchoRequest* request, EchoResponse* response) override {
     if (request->message() == kServerErrorMessage) {
       return Status(StatusCode::UNKNOWN, "Server error requested");
     }
@@ -61,8 +60,7 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       return Status(StatusCode::FAILED_PRECONDITION, "Client error requested");
     }
     response->set_message(request->message());
-    ::grpc::load_reporter::experimental::AddLoadReportingCost(
-        context, kMetricName, kMetricValue);
+    ::grpc::load_reporter::experimental::AddLoadReportingCost(context, kMetricName, kMetricValue);
     return Status::OK;
   }
 };
@@ -70,18 +68,15 @@ class EchoTestServiceImpl : public EchoTestService::Service {
 class ServerLoadReportingEnd2endTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    server_address_ =
-        "localhost:" + std::to_string(grpc_pick_unused_port_or_die());
+    server_address_ = "localhost:" + std::to_string(grpc_pick_unused_port_or_die());
     server_ =
         ServerBuilder()
             .AddListeningPort(server_address_, InsecureServerCredentials())
             .RegisterService(&echo_service_)
             .SetOption(std::unique_ptr<::grpc::ServerBuilderOption>(
-                new ::grpc::load_reporter::experimental::
-                    LoadReportingServiceServerBuilderOption()))
+                new ::grpc::load_reporter::experimental::LoadReportingServiceServerBuilderOption()))
             .BuildAndStart();
-    server_thread_ =
-        std::thread(&ServerLoadReportingEnd2endTest::RunServerLoop, this);
+    server_thread_ = std::thread(&ServerLoadReportingEnd2endTest::RunServerLoop, this);
   }
 
   void RunServerLoop() { server_->Wait(); }
@@ -123,18 +118,14 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
 TEST_F(ServerLoadReportingEnd2endTest, NoCall) {}
 
 TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
-  auto channel =
-      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel = grpc::CreateChannel(server_address_, InsecureChannelCredentials());
   auto stub = ::grpc::lb::v1::LoadReporter::NewStub(channel);
   ClientContext ctx;
   auto stream = stub->ReportLoad(&ctx);
   ::grpc::lb::v1::LoadReportRequest request;
-  request.mutable_initial_request()->set_load_balanced_hostname(
-      server_address_);
+  request.mutable_initial_request()->set_load_balanced_hostname(server_address_);
   request.mutable_initial_request()->set_load_key("LOAD_KEY");
-  request.mutable_initial_request()
-      ->mutable_load_report_interval()
-      ->set_seconds(5);
+  request.mutable_initial_request()->mutable_load_report_interval()->set_seconds(5);
   stream->Write(request);
   gpr_log(GPR_INFO, "Initial request sent.");
   ::grpc::lb::v1::LoadReportResponse response;
@@ -166,10 +157,8 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
           ASSERT_GE(load.total_bytes_sent(), sizeof(kOkMessage));
           ASSERT_EQ(load.metric_data().size(), 1);
           ASSERT_EQ(load.metric_data().Get(0).metric_name(), kMetricName);
-          ASSERT_EQ(load.metric_data().Get(0).num_calls_finished_with_metric(),
-                    1);
-          ASSERT_EQ(load.metric_data().Get(0).total_metric_value(),
-                    kMetricValue);
+          ASSERT_EQ(load.metric_data().Get(0).num_calls_finished_with_metric(), 1);
+          ASSERT_EQ(load.metric_data().Get(0).total_metric_value(), kMetricValue);
         }
       }
       break;

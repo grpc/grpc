@@ -78,10 +78,9 @@ typedef struct {
 
 static void request_call(void) {
   grpc_metadata_array_init(&request_metadata_recv);
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(server, &call, &call_details,
-                                      &request_metadata_recv, cq, cq,
-                                      tag(FLING_SERVER_NEW_REQUEST)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(server, &call, &call_details,
+                                                      &request_metadata_recv, cq, cq,
+                                                      tag(FLING_SERVER_NEW_REQUEST)));
 }
 
 static void handle_unary_method(void) {
@@ -112,8 +111,7 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  error = grpc_call_start_batch(call, unary_ops,
-                                static_cast<size_t>(op - unary_ops),
+  error = grpc_call_start_batch(call, unary_ops, static_cast<size_t>(op - unary_ops),
                                 tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -206,10 +204,9 @@ int main(int argc, char** argv) {
 
   cq = grpc_completion_queue_create_for_next(nullptr);
   if (secure) {
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
-                                                    test_server1_cert};
-    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-        nullptr, &pem_key_cert_pair, 1, 0, nullptr);
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key, test_server1_cert};
+    grpc_server_credentials* ssl_creds =
+        grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair, 1, 0, nullptr);
     server = grpc_server_create(nullptr, nullptr);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
@@ -236,9 +233,8 @@ int main(int argc, char** argv) {
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
 
-      GPR_ASSERT(grpc_completion_queue_pluck(
-                     shutdown_cq, tag(1000),
-                     grpc_timeout_seconds_to_deadline(5), nullptr)
+      GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
+                                             grpc_timeout_seconds_to_deadline(5), nullptr)
                      .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
 
@@ -246,9 +242,7 @@ int main(int argc, char** argv) {
       shutdown_started = 1;
     }
     ev = grpc_completion_queue_next(
-        cq,
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                     gpr_time_from_micros(1000000, GPR_TIMESPAN)),
+        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000000, GPR_TIMESPAN)),
         nullptr);
     s = static_cast<call_state*>(ev.tag);
     switch (ev.type) {
@@ -256,8 +250,7 @@ int main(int argc, char** argv) {
         switch (reinterpret_cast<intptr_t>(s)) {
           case FLING_SERVER_NEW_REQUEST:
             if (call != nullptr) {
-              if (0 == grpc_slice_str_cmp(call_details.method,
-                                          "/Reflector/reflectStream")) {
+              if (0 == grpc_slice_str_cmp(call_details.method, "/Reflector/reflectStream")) {
                 /* Received streaming call. Send metadata here. */
                 start_read_op(FLING_SERVER_READ_FOR_STREAMING);
                 send_initial_metadata();

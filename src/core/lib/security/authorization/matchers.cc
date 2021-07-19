@@ -21,8 +21,7 @@
 
 namespace grpc_core {
 
-std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
-    Rbac::Permission permission) {
+std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(Rbac::Permission permission) {
   switch (permission.type) {
     case Rbac::Permission::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
@@ -44,14 +43,12 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     case Rbac::Permission::RuleType::kAny:
       return absl::make_unique<AlwaysAuthorizationMatcher>();
     case Rbac::Permission::RuleType::kHeader:
-      return absl::make_unique<HeaderAuthorizationMatcher>(
-          std::move(permission.header_matcher));
+      return absl::make_unique<HeaderAuthorizationMatcher>(std::move(permission.header_matcher));
     case Rbac::Permission::RuleType::kPath:
-      return absl::make_unique<PathAuthorizationMatcher>(
-          std::move(permission.string_matcher));
+      return absl::make_unique<PathAuthorizationMatcher>(std::move(permission.string_matcher));
     case Rbac::Permission::RuleType::kDestIp:
-      return absl::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kDestIp, std::move(permission.ip));
+      return absl::make_unique<IpAuthorizationMatcher>(IpAuthorizationMatcher::Type::kDestIp,
+                                                       std::move(permission.ip));
     case Rbac::Permission::RuleType::kDestPort:
       return absl::make_unique<PortAuthorizationMatcher>(permission.port);
     case Rbac::Permission::RuleType::kReqServerName:
@@ -61,8 +58,7 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
   return nullptr;
 }
 
-std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
-    Rbac::Principal principal) {
+std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(Rbac::Principal principal) {
   switch (principal.type) {
     case Rbac::Principal::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
@@ -87,21 +83,18 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
       return absl::make_unique<AuthenticatedAuthorizationMatcher>(
           std::move(principal.string_matcher));
     case Rbac::Principal::RuleType::kSourceIp:
-      return absl::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kSourceIp, std::move(principal.ip));
+      return absl::make_unique<IpAuthorizationMatcher>(IpAuthorizationMatcher::Type::kSourceIp,
+                                                       std::move(principal.ip));
     case Rbac::Principal::RuleType::kDirectRemoteIp:
       return absl::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kDirectRemoteIp,
-          std::move(principal.ip));
+          IpAuthorizationMatcher::Type::kDirectRemoteIp, std::move(principal.ip));
     case Rbac::Principal::RuleType::kRemoteIp:
-      return absl::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kRemoteIp, std::move(principal.ip));
+      return absl::make_unique<IpAuthorizationMatcher>(IpAuthorizationMatcher::Type::kRemoteIp,
+                                                       std::move(principal.ip));
     case Rbac::Principal::RuleType::kHeader:
-      return absl::make_unique<HeaderAuthorizationMatcher>(
-          std::move(principal.header_matcher));
+      return absl::make_unique<HeaderAuthorizationMatcher>(std::move(principal.header_matcher));
     case Rbac::Principal::RuleType::kPath:
-      return absl::make_unique<PathAuthorizationMatcher>(
-          std::move(principal.string_matcher));
+      return absl::make_unique<PathAuthorizationMatcher>(std::move(principal.string_matcher));
   }
   return nullptr;
 }
@@ -130,15 +123,13 @@ bool NotAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
 
 bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   std::string concatenated_value;
-  return matcher_.Match(
-      args.GetHeaderValue(matcher_.name(), &concatenated_value));
+  return matcher_.Match(args.GetHeaderValue(matcher_.name(), &concatenated_value));
 }
 
 IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
     : type_(type), prefix_len_(range.prefix_len) {
-  grpc_error_handle error =
-      grpc_string_to_sockaddr(&subnet_address_, range.address_prefix.c_str(),
-                              /*port does not matter here*/ 0);
+  grpc_error_handle error = grpc_string_to_sockaddr(&subnet_address_, range.address_prefix.c_str(),
+                                                    /*port does not matter here*/ 0);
   if (error == GRPC_ERROR_NONE) {
     grpc_sockaddr_mask_bits(&subnet_address_, prefix_len_);
   } else {
@@ -172,8 +163,7 @@ bool PortAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   return port_ == args.GetLocalPort();
 }
 
-bool AuthenticatedAuthorizationMatcher::Matches(
-    const EvaluateArgs& args) const {
+bool AuthenticatedAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   if (args.GetTransportSecurityType() != GRPC_SSL_TRANSPORT_SECURITY_TYPE) {
     // Connection is not authenticated.
     return false;

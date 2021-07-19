@@ -30,8 +30,7 @@
 static void test_simple_int(void) {
   int x = 1;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo"),
-                  const_cast<char*>("3")};
+  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo"), const_cast<char*>("3")};
 
   LOG_TEST();
 
@@ -61,8 +60,7 @@ static void test_eq_int(void) {
 static void test_2dash_int(void) {
   int x = 1;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo"),
-                  const_cast<char*>("3")};
+  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo"), const_cast<char*>("3")};
 
   LOG_TEST();
 
@@ -92,8 +90,7 @@ static void test_2dash_eq_int(void) {
 static void test_simple_string(void) {
   const char* x = nullptr;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo"),
-                  const_cast<char*>("3")};
+  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo"), const_cast<char*>("3")};
 
   LOG_TEST();
 
@@ -123,8 +120,7 @@ static void test_eq_string(void) {
 static void test_2dash_string(void) {
   const char* x = nullptr;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo"),
-                  const_cast<char*>("3")};
+  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo"), const_cast<char*>("3")};
 
   LOG_TEST();
 
@@ -229,8 +225,7 @@ static void test_flag_val_true(void) {
 static void test_flag_val_false(void) {
   int x = 2;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__),
-                  const_cast<char*>("--foo=false")};
+  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=false")};
 
   LOG_TEST();
 
@@ -276,14 +271,13 @@ static void extra_arg_cb(void* user_data, const char* arg) {
 static void test_extra(void) {
   gpr_cmdline* cl;
   int count = 0;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("a"),
-                  const_cast<char*>("b"), const_cast<char*>("c")};
+  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("a"), const_cast<char*>("b"),
+                  const_cast<char*>("c")};
 
   LOG_TEST();
 
   cl = gpr_cmdline_create(nullptr);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           &count);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb, &count);
   gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(args), args);
   GPR_ASSERT(count == 3);
   gpr_cmdline_destroy(cl);
@@ -292,15 +286,13 @@ static void test_extra(void) {
 static void test_extra_dashdash(void) {
   gpr_cmdline* cl;
   int count = 0;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--"),
-                  const_cast<char*>("a"), const_cast<char*>("b"),
-                  const_cast<char*>("c")};
+  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--"), const_cast<char*>("a"),
+                  const_cast<char*>("b"), const_cast<char*>("c")};
 
   LOG_TEST();
 
   cl = gpr_cmdline_create(nullptr);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           &count);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb, &count);
   gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(args), args);
   GPR_ASSERT(count == 3);
   gpr_cmdline_destroy(cl);
@@ -319,8 +311,7 @@ static void test_usage(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb, nullptr);
 
   std::string usage = gpr_cmdline_usage_string(cl, "test");
   GPR_ASSERT(usage ==
@@ -351,8 +342,7 @@ static void test_help(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb, nullptr);
 
   GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(help), help));
 
@@ -366,8 +356,7 @@ static void test_badargs1(void) {
   int x = 0;
   int flag = 2;
 
-  char* bad_arg_name[] = {const_cast<char*>(__FILE__),
-                          const_cast<char*>("--y")};
+  char* bad_arg_name[] = {const_cast<char*>(__FILE__), const_cast<char*>("--y")};
 
   LOG_TEST();
 
@@ -376,11 +365,9 @@ static void test_badargs1(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb, nullptr);
 
-  GPR_ASSERT(0 ==
-             gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_arg_name), bad_arg_name));
+  GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_arg_name), bad_arg_name));
 
   gpr_cmdline_destroy(cl);
 }
@@ -392,8 +379,7 @@ static void test_badargs2(void) {
   int x = 0;
   int flag = 2;
 
-  char* bad_int_value[] = {const_cast<char*>(__FILE__),
-                           const_cast<char*>("--x"),
+  char* bad_int_value[] = {const_cast<char*>(__FILE__), const_cast<char*>("--x"),
                            const_cast<char*>("henry")};
 
   LOG_TEST();
@@ -403,11 +389,9 @@ static void test_badargs2(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb, nullptr);
 
-  GPR_ASSERT(
-      0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_int_value), bad_int_value));
+  GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_int_value), bad_int_value));
 
   gpr_cmdline_destroy(cl);
 }
@@ -419,8 +403,7 @@ static void test_badargs3(void) {
   int x = 0;
   int flag = 2;
 
-  char* bad_bool_value[] = {const_cast<char*>(__FILE__),
-                            const_cast<char*>("--flag=henry")};
+  char* bad_bool_value[] = {const_cast<char*>(__FILE__), const_cast<char*>("--flag=henry")};
 
   LOG_TEST();
 
@@ -429,11 +412,9 @@ static void test_badargs3(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb, nullptr);
 
-  GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value),
-                                    bad_bool_value));
+  GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value), bad_bool_value));
 
   gpr_cmdline_destroy(cl);
 }
@@ -445,8 +426,7 @@ static void test_badargs4(void) {
   int x = 0;
   int flag = 2;
 
-  char* bad_bool_value[] = {const_cast<char*>(__FILE__),
-                            const_cast<char*>("--no-str")};
+  char* bad_bool_value[] = {const_cast<char*>(__FILE__), const_cast<char*>("--no-str")};
 
   LOG_TEST();
 
@@ -455,11 +435,9 @@ static void test_badargs4(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb, nullptr);
 
-  GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value),
-                                    bad_bool_value));
+  GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value), bad_bool_value));
 
   gpr_cmdline_destroy(cl);
 }

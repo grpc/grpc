@@ -36,8 +36,7 @@ TEST(ExtractTest, Success) {
 
   google::rpc::Status to;
   std::string error_details = expected.SerializeAsString();
-  Status from(static_cast<StatusCode>(expected.code()), expected.message(),
-              error_details);
+  Status from(static_cast<StatusCode>(expected.code()), expected.message(), error_details);
   EXPECT_TRUE(ExtractErrorDetails(from, &to).ok());
   EXPECT_EQ(expected.code(), to.code());
   EXPECT_EQ(expected.message(), to.message());
@@ -48,16 +47,14 @@ TEST(ExtractTest, Success) {
 }
 
 TEST(ExtractTest, NullInput) {
-  EXPECT_EQ(StatusCode::FAILED_PRECONDITION,
-            ExtractErrorDetails(Status(), nullptr).error_code());
+  EXPECT_EQ(StatusCode::FAILED_PRECONDITION, ExtractErrorDetails(Status(), nullptr).error_code());
 }
 
 TEST(ExtractTest, Unparsable) {
   std::string error_details("I am not a status object");
   Status from(StatusCode::INTERNAL, "", error_details);
   google::rpc::Status to;
-  EXPECT_EQ(StatusCode::INVALID_ARGUMENT,
-            ExtractErrorDetails(from, &to).error_code());
+  EXPECT_EQ(StatusCode::INVALID_ARGUMENT, ExtractErrorDetails(from, &to).error_code());
 }
 
 TEST(SetTest, Success) {

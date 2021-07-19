@@ -65,12 +65,9 @@ class ServerAddress {
 
   // Takes ownership of args.
   ServerAddress(const grpc_resolved_address& address, grpc_channel_args* args,
-                std::map<const char*, std::unique_ptr<AttributeInterface>>
-                    attributes = {});
-  ServerAddress(const void* address, size_t address_len,
-                grpc_channel_args* args,
-                std::map<const char*, std::unique_ptr<AttributeInterface>>
-                    attributes = {});
+                std::map<const char*, std::unique_ptr<AttributeInterface>> attributes = {});
+  ServerAddress(const void* address, size_t address_len, grpc_channel_args* args,
+                std::map<const char*, std::unique_ptr<AttributeInterface>> attributes = {});
 
   ~ServerAddress() { grpc_channel_args_destroy(args_); }
 
@@ -93,8 +90,7 @@ class ServerAddress {
 
   // Returns a copy of the address with a modified attribute.
   // If the new value is null, the attribute is removed.
-  ServerAddress WithAttribute(const char* key,
-                              std::unique_ptr<AttributeInterface> value) const;
+  ServerAddress WithAttribute(const char* key, std::unique_ptr<AttributeInterface> value) const;
 
   std::string ToString() const;
 
@@ -126,14 +122,11 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
   }
 
   int Cmp(const AttributeInterface* other) const override {
-    const auto* other_locality_attr =
-        static_cast<const ServerAddressWeightAttribute*>(other);
+    const auto* other_locality_attr = static_cast<const ServerAddressWeightAttribute*>(other);
     return GPR_ICMP(weight_, other_locality_attr->weight_);
   }
 
-  std::string ToString() const override {
-    return absl::StrFormat("%d", weight_);
-  }
+  std::string ToString() const override { return absl::StrFormat("%d", weight_); }
 
  private:
   uint32_t weight_;

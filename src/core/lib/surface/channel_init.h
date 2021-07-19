@@ -34,8 +34,7 @@
 
 /// One stage of mutation: call functions against \a builder to influence the
 /// finally constructed channel stack
-typedef bool (*grpc_channel_init_stage)(grpc_channel_stack_builder* builder,
-                                        void* arg);
+typedef bool (*grpc_channel_init_stage)(grpc_channel_stack_builder* builder, void* arg);
 
 /// Global initialization of the system
 void grpc_channel_init_init(void);
@@ -50,10 +49,8 @@ void grpc_channel_init_init(void);
 /// different channel args. This requires setting a channel arg in case the
 /// registration function relies on some condition other than channel args to
 /// decide whether to add a filter or not.
-void grpc_channel_init_register_stage(grpc_channel_stack_type type,
-                                      int priority,
-                                      grpc_channel_init_stage stage_fn,
-                                      void* stage_arg);
+void grpc_channel_init_register_stage(grpc_channel_stack_type type, int priority,
+                                      grpc_channel_init_stage stage_fn, void* stage_arg);
 
 /// Finalize registration. No more calls to grpc_channel_init_register_stage are
 /// allowed.

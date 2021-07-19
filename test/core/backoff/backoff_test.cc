@@ -46,12 +46,10 @@ TEST(BackOffTest, ConstantBackOff) {
   BackOff backoff(options);
 
   grpc_millis next_attempt_start_time = backoff.NextAttemptTime();
-  EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
-            initial_backoff);
+  EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
   for (int i = 0; i < 10000; i++) {
     next_attempt_start_time = backoff.NextAttemptTime();
-    EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
-              initial_backoff);
+    EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
   }
 }
 
@@ -144,10 +142,10 @@ TEST(BackOffTest, JitterBackOff) {
   grpc_millis next = backoff.NextAttemptTime();
   EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
 
-  grpc_millis expected_next_lower_bound = static_cast<grpc_millis>(
-      static_cast<double>(current_backoff) * (1 - jitter));
-  grpc_millis expected_next_upper_bound = static_cast<grpc_millis>(
-      static_cast<double>(current_backoff) * (1 + jitter));
+  grpc_millis expected_next_lower_bound =
+      static_cast<grpc_millis>(static_cast<double>(current_backoff) * (1 - jitter));
+  grpc_millis expected_next_upper_bound =
+      static_cast<grpc_millis>(static_cast<double>(current_backoff) * (1 + jitter));
 
   for (int i = 0; i < 10000; i++) {
     next = backoff.NextAttemptTime();
@@ -156,14 +154,12 @@ TEST(BackOffTest, JitterBackOff) {
     const grpc_millis timeout_millis = next - grpc_core::ExecCtx::Get()->Now();
     EXPECT_GE(timeout_millis, expected_next_lower_bound);
     EXPECT_LE(timeout_millis, expected_next_upper_bound);
-    current_backoff =
-        std::min(static_cast<grpc_millis>(static_cast<double>(current_backoff) *
-                                          multiplier),
-                 max_backoff);
-    expected_next_lower_bound = static_cast<grpc_millis>(
-        static_cast<double>(current_backoff) * (1 - jitter));
-    expected_next_upper_bound = static_cast<grpc_millis>(
-        static_cast<double>(current_backoff) * (1 + jitter));
+    current_backoff = std::min(
+        static_cast<grpc_millis>(static_cast<double>(current_backoff) * multiplier), max_backoff);
+    expected_next_lower_bound =
+        static_cast<grpc_millis>(static_cast<double>(current_backoff) * (1 - jitter));
+    expected_next_upper_bound =
+        static_cast<grpc_millis>(static_cast<double>(current_backoff) * (1 + jitter));
   }
 }
 

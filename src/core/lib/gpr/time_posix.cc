@@ -44,8 +44,7 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
 }
 
 #if _POSIX_TIMERS > 0 || defined(__OpenBSD__)
-static gpr_timespec gpr_from_timespec(struct timespec ts,
-                                      gpr_clock_type clock_type) {
+static gpr_timespec gpr_from_timespec(struct timespec ts, gpr_clock_type clock_type) {
   /*
    * timespec.tv_sec can have smaller size than gpr_timespec.tv_sec,
    * but we are only using this function to implement gpr_now
@@ -59,8 +58,7 @@ static gpr_timespec gpr_from_timespec(struct timespec ts,
 }
 
 /** maps gpr_clock_type --> clockid_t for clock_gettime */
-static const clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC,
-                                                  CLOCK_REALTIME};
+static const clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC, CLOCK_REALTIME};
 
 void gpr_time_init(void) { gpr_precise_clock_init(); }
 
@@ -151,8 +149,7 @@ gpr_timespec gpr_now(gpr_clock_type clock_type) {
   __atomic_fetch_add(&gpr_now_call_count, 1, __ATOMIC_RELAXED);
 #endif
   // validate clock type
-  GPR_ASSERT(clock_type == GPR_CLOCK_MONOTONIC ||
-             clock_type == GPR_CLOCK_REALTIME ||
+  GPR_ASSERT(clock_type == GPR_CLOCK_MONOTONIC || clock_type == GPR_CLOCK_REALTIME ||
              clock_type == GPR_CLOCK_PRECISE);
   gpr_timespec ts = gpr_now_impl(clock_type);
   // tv_nsecs must be in the range [0, 1e9).

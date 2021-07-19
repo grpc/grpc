@@ -42,10 +42,8 @@ struct grpc_polling_entity {
   grpc_pollset_tag tag = GRPC_POLLS_NONE;
 };
 
-grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
-    grpc_pollset_set* pollset_set);
-grpc_polling_entity grpc_polling_entity_create_from_pollset(
-    grpc_pollset* pollset);
+grpc_polling_entity grpc_polling_entity_create_from_pollset_set(grpc_pollset_set* pollset_set);
+grpc_polling_entity grpc_polling_entity_create_from_pollset(grpc_pollset* pollset);
 
 /** If \a pollent contains a pollset, return it. Otherwise, return NULL */
 grpc_pollset* grpc_polling_entity_pollset(grpc_polling_entity* pollent);

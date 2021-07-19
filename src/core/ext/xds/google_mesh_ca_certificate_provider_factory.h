@@ -27,8 +27,7 @@
 
 namespace grpc_core {
 
-class GoogleMeshCaCertificateProviderFactory
-    : public CertificateProviderFactory {
+class GoogleMeshCaCertificateProviderFactory : public CertificateProviderFactory {
  public:
   class Config : public CertificateProviderFactory::Config {
    public:
@@ -62,21 +61,16 @@ class GoogleMeshCaCertificateProviderFactory
 
     const std::string& location() const { return location_; }
 
-    static RefCountedPtr<Config> Parse(const Json& config_json,
-                                       grpc_error_handle* error);
+    static RefCountedPtr<Config> Parse(const Json& config_json, grpc_error_handle* error);
 
    private:
     // Helpers for parsing the config
-    std::vector<grpc_error_handle> ParseJsonObjectStsService(
-        const Json::Object& sts_service);
+    std::vector<grpc_error_handle> ParseJsonObjectStsService(const Json::Object& sts_service);
     std::vector<grpc_error_handle> ParseJsonObjectCallCredentials(
         const Json::Object& call_credentials);
-    std::vector<grpc_error_handle> ParseJsonObjectGoogleGrpc(
-        const Json::Object& google_grpc);
-    std::vector<grpc_error_handle> ParseJsonObjectGrpcServices(
-        const Json::Object& grpc_service);
-    std::vector<grpc_error_handle> ParseJsonObjectServer(
-        const Json::Object& server);
+    std::vector<grpc_error_handle> ParseJsonObjectGoogleGrpc(const Json::Object& google_grpc);
+    std::vector<grpc_error_handle> ParseJsonObjectGrpcServices(const Json::Object& grpc_service);
+    std::vector<grpc_error_handle> ParseJsonObjectServer(const Json::Object& server);
 
     std::string endpoint_;
     StsConfig sts_config_;
@@ -89,9 +83,8 @@ class GoogleMeshCaCertificateProviderFactory
 
   const char* name() const override;
 
-  RefCountedPtr<CertificateProviderFactory::Config>
-  CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error_handle* error) override;
+  RefCountedPtr<CertificateProviderFactory::Config> CreateCertificateProviderConfig(
+      const Json& config_json, grpc_error_handle* error) override;
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
       RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {

@@ -42,9 +42,8 @@ static void pretty_print_backoffs(reconnect_server* server) {
   for (head = server->head; head && head->next; head = head->next, i++) {
     diff = gpr_time_sub(head->next->timestamp, head->timestamp);
     backoff = gpr_time_to_millis(diff);
-    gpr_log(GPR_INFO,
-            "retry %2d:backoff %6.2fs,expected backoff %6.2fs, jitter %4.2f%%",
-            i, backoff / 1000.0, expected_backoff / 1000.0,
+    gpr_log(GPR_INFO, "retry %2d:backoff %6.2fs,expected backoff %6.2fs, jitter %4.2f%%", i,
+            backoff / 1000.0, expected_backoff / 1000.0,
             (backoff - expected_backoff) * 100.0 / expected_backoff);
     expected_backoff *= 1.6;
     int max_reconnect_backoff_ms = 120 * 1000;
@@ -57,8 +56,7 @@ static void pretty_print_backoffs(reconnect_server* server) {
   }
 }
 
-static void on_connect(void* arg, grpc_endpoint* tcp,
-                       grpc_pollset* /*accepting_pollset*/,
+static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   absl::string_view peer;
@@ -67,8 +65,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list* new_tail;
   peer = grpc_endpoint_get_peer(tcp);
-  grpc_endpoint_shutdown(tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);
   last_colon = peer.rfind(':');
   if (server->peer == nullptr) {
@@ -76,8 +73,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   } else {
     if (last_colon == std::string::npos) {
       gpr_log(GPR_ERROR, "peer does not contain a ':'");
-    } else if (peer.compare(0, static_cast<size_t>(last_colon),
-                            *server->peer) != 0) {
+    } else if (peer.compare(0, static_cast<size_t>(last_colon), *server->peer) != 0) {
       gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer->c_str(),
               std::string(peer).c_str());
     }

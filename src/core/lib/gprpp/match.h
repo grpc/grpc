@@ -62,8 +62,7 @@ auto Match(const absl::variant<T0, Ts...>& value, Fs... fs)
 template <typename... Fs, typename T0, typename... Ts>
 auto MatchMutable(absl::variant<T0, Ts...>* value, Fs... fs)
     -> decltype(std::declval<OverloadType<Fs...>>()(std::declval<T0*>())) {
-  return absl::visit(detail::MatchPointerExtractor<Fs...>{OverloadType<Fs...>(
-                         std::move(fs)...)},
+  return absl::visit(detail::MatchPointerExtractor<Fs...>{OverloadType<Fs...>(std::move(fs)...)},
                      *value);
 }
 

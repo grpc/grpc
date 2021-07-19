@@ -68,19 +68,16 @@ void CheckServerAuthContext(const ServerContextBase* context,
 
 // Returns the number of pairs in metadata that exactly match the given
 // key-value pair. Returns -1 if the pair wasn't found.
-int MetadataMatchCount(
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const std::string& key, const std::string& value);
+int MetadataMatchCount(const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+                       const std::string& key, const std::string& value);
 
-int GetIntValueFromMetadataHelper(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    int default_value);
+int GetIntValueFromMetadataHelper(const char* key,
+                                  const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+                                  int default_value);
 
-int GetIntValueFromMetadata(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    int default_value);
+int GetIntValueFromMetadata(const char* key,
+                            const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+                            int default_value);
 
 void ServerTryCancel(ServerContext* context);
 }  // namespace internal
@@ -121,10 +118,8 @@ class TestMultipleServiceImpl : public RpcService {
   explicit TestMultipleServiceImpl(const std::string& host)
       : signal_client_(false), host_(new std::string(host)) {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) {
-    if (request->has_param() &&
-        request->param().server_notify_client_when_started()) {
+  Status Echo(ServerContext* context, const EchoRequest* request, EchoResponse* response) {
+    if (request->has_param() && request->param().server_notify_client_when_started()) {
       signaller_.SignalClientThatRpcStarted();
       signaller_.ServerWaitToContinue();
     }
@@ -133,8 +128,7 @@ class TestMultipleServiceImpl : public RpcService {
     if (request->has_param() && request->param().server_sleep_us() > 0) {
       gpr_sleep_until(
           gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                       gpr_time_from_micros(request->param().server_sleep_us(),
-                                            GPR_TIMESPAN)));
+                       gpr_time_from_micros(request->param().server_sleep_us(), GPR_TIMESPAN)));
     }
 
     if (request->has_param() && request->param().server_die()) {
@@ -143,8 +137,8 @@ class TestMultipleServiceImpl : public RpcService {
     }
     if (request->has_param() && request->param().has_expected_error()) {
       const auto& error = request->param().expected_error();
-      return Status(static_cast<StatusCode>(error.code()),
-                    error.error_message(), error.binary_error_details());
+      return Status(static_cast<StatusCode>(error.code()), error.error_message(),
+                    error.binary_error_details());
     }
     int server_try_cancel = internal::GetIntValueFromMetadata(
         kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
@@ -171,23 +165,19 @@ class TestMultipleServiceImpl : public RpcService {
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
             gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us(),
-                                 GPR_TIMESPAN)));
+            gpr_time_from_micros(request->param().client_cancel_after_us(), GPR_TIMESPAN)));
       }
       {
         std::unique_lock<std::mutex> lock(mu_);
         --rpcs_waiting_for_client_cancel_;
       }
       return Status::CANCELLED;
-    } else if (request->has_param() &&
-               request->param().server_cancel_after_us()) {
+    } else if (request->has_param() && request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us(),
-                               GPR_TIMESPAN)));
+          gpr_time_from_micros(request->param().server_cancel_after_us(), GPR_TIMESPAN)));
       return Status::CANCELLED;
-    } else if (!request->has_param() ||
-               !request->param().skip_cancelled_check()) {
+    } else if (!request->has_param() || !request->param().skip_cancelled_check()) {
       EXPECT_FALSE(context->IsCancelled());
     }
 
@@ -195,8 +185,7 @@ class TestMultipleServiceImpl : public RpcService {
       const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
           context->client_metadata();
       for (const auto& metadatum : client_metadata) {
-        context->AddInitialMetadata(ToString(metadatum.first),
-                                    ToString(metadatum.second));
+        context->AddInitialMetadata(ToString(metadatum.first), ToString(metadatum.second));
       }
     }
 
@@ -204,30 +193,23 @@ class TestMultipleServiceImpl : public RpcService {
       const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
           context->client_metadata();
       for (const auto& metadatum : client_metadata) {
-        context->AddTrailingMetadata(ToString(metadatum.first),
-                                     ToString(metadatum.second));
+        context->AddTrailingMetadata(ToString(metadatum.first), ToString(metadatum.second));
       }
       // Terminate rpc with error and debug info in trailer.
       if (request->param().debug_info().stack_entries_size() ||
           !request->param().debug_info().detail().empty()) {
-        std::string serialized_debug_info =
-            request->param().debug_info().SerializeAsString();
-        context->AddTrailingMetadata(kDebugInfoTrailerKey,
-                                     serialized_debug_info);
+        std::string serialized_debug_info = request->param().debug_info().SerializeAsString();
+        context->AddTrailingMetadata(kDebugInfoTrailerKey, serialized_debug_info);
         return Status::CANCELLED;
       }
     }
-    if (request->has_param() &&
-        (request->param().expected_client_identity().length() > 0 ||
-         request->param().check_auth_context())) {
-      internal::CheckServerAuthContext(
-          context, request->param().expected_transport_security_type(),
-          request->param().expected_client_identity());
+    if (request->has_param() && (request->param().expected_client_identity().length() > 0 ||
+                                 request->param().check_auth_context())) {
+      internal::CheckServerAuthContext(context, request->param().expected_transport_security_type(),
+                                       request->param().expected_client_identity());
     }
-    if (request->has_param() &&
-        request->param().response_message_length() > 0) {
-      response->set_message(
-          std::string(request->param().response_message_length(), '\0'));
+    if (request->has_param() && request->param().response_message_length() > 0) {
+      response->set_message(std::string(request->param().response_message_length(), '\0'));
     }
     if (request->has_param() && request->param().echo_peer()) {
       response->mutable_param()->set_peer(context->peer());
@@ -235,32 +217,27 @@ class TestMultipleServiceImpl : public RpcService {
     return Status::OK;
   }
 
-  Status Echo1(ServerContext* context, const EchoRequest* request,
-               EchoResponse* response) {
+  Status Echo1(ServerContext* context, const EchoRequest* request, EchoResponse* response) {
     return Echo(context, request, response);
   }
 
-  Status Echo2(ServerContext* context, const EchoRequest* request,
-               EchoResponse* response) {
+  Status Echo2(ServerContext* context, const EchoRequest* request, EchoResponse* response) {
     return Echo(context, request, response);
   }
 
-  Status CheckClientInitialMetadata(ServerContext* context,
-                                    const SimpleRequest* /*request*/,
+  Status CheckClientInitialMetadata(ServerContext* context, const SimpleRequest* /*request*/,
                                     SimpleResponse* /*response*/) {
-    EXPECT_EQ(internal::MetadataMatchCount(context->client_metadata(),
-                                           kCheckClientInitialMetadataKey,
-                                           kCheckClientInitialMetadataVal),
-              1);
-    EXPECT_EQ(1u,
-              context->client_metadata().count(kCheckClientInitialMetadataKey));
+    EXPECT_EQ(
+        internal::MetadataMatchCount(context->client_metadata(), kCheckClientInitialMetadataKey,
+                                     kCheckClientInitialMetadataVal),
+        1);
+    EXPECT_EQ(1u, context->client_metadata().count(kCheckClientInitialMetadataKey));
     return Status::OK;
   }
 
   // Unimplemented is left unimplemented to test the returned error.
 
-  Status RequestStream(ServerContext* context,
-                       ServerReader<EchoRequest>* reader,
+  Status RequestStream(ServerContext* context, ServerReader<EchoRequest>* reader,
                        EchoResponse* response) {
     // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
     // the server by calling ServerContext::TryCancel() depending on the value:
@@ -283,8 +260,7 @@ class TestMultipleServiceImpl : public RpcService {
 
     std::thread* server_try_cancel_thd = nullptr;
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd =
-          new std::thread([context] { internal::ServerTryCancel(context); });
+      server_try_cancel_thd = new std::thread([context] { internal::ServerTryCancel(context); });
     }
 
     int num_msgs_read = 0;
@@ -322,12 +298,12 @@ class TestMultipleServiceImpl : public RpcService {
     int server_try_cancel = internal::GetIntValueFromMetadata(
         kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
 
-    int server_coalescing_api = internal::GetIntValueFromMetadata(
-        kServerUseCoalescingApi, context->client_metadata(), 0);
+    int server_coalescing_api =
+        internal::GetIntValueFromMetadata(kServerUseCoalescingApi, context->client_metadata(), 0);
 
-    int server_responses_to_send = internal::GetIntValueFromMetadata(
-        kServerResponseStreamsToSend, context->client_metadata(),
-        kServerDefaultResponseStreamsToSend);
+    int server_responses_to_send =
+        internal::GetIntValueFromMetadata(kServerResponseStreamsToSend, context->client_metadata(),
+                                          kServerDefaultResponseStreamsToSend);
 
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
       internal::ServerTryCancel(context);
@@ -337,8 +313,7 @@ class TestMultipleServiceImpl : public RpcService {
     EchoResponse response;
     std::thread* server_try_cancel_thd = nullptr;
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd =
-          new std::thread([context] { internal::ServerTryCancel(context); });
+      server_try_cancel_thd = new std::thread([context] { internal::ServerTryCancel(context); });
     }
 
     for (int i = 0; i < server_responses_to_send; i++) {
@@ -364,8 +339,7 @@ class TestMultipleServiceImpl : public RpcService {
     return Status::OK;
   }
 
-  Status BidiStream(ServerContext* context,
-                    ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
+  Status BidiStream(ServerContext* context, ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
     // If server_try_cancel is set in the metadata, the RPC is cancelled by the
     // server by calling ServerContext::TryCancel() depending on the value:
     //   CANCEL_BEFORE_PROCESSING: The RPC is cancelled before the server reads/
@@ -387,14 +361,13 @@ class TestMultipleServiceImpl : public RpcService {
 
     std::thread* server_try_cancel_thd = nullptr;
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd =
-          new std::thread([context] { internal::ServerTryCancel(context); });
+      server_try_cancel_thd = new std::thread([context] { internal::ServerTryCancel(context); });
     }
 
     // kServerFinishAfterNReads suggests after how many reads, the server should
     // write the last message and send status (coalesced using WriteLast)
-    int server_write_last = internal::GetIntValueFromMetadata(
-        kServerFinishAfterNReads, context->client_metadata(), 0);
+    int server_write_last =
+        internal::GetIntValueFromMetadata(kServerFinishAfterNReads, context->client_metadata(), 0);
 
     int read_counts = 0;
     while (stream->Read(&request)) {
@@ -442,29 +415,25 @@ class TestMultipleServiceImpl : public RpcService {
   uint64_t rpcs_waiting_for_client_cancel_ = 0;
 };
 
-class CallbackTestServiceImpl
-    : public ::grpc::testing::EchoTestService::CallbackService {
+class CallbackTestServiceImpl : public ::grpc::testing::EchoTestService::CallbackService {
  public:
   CallbackTestServiceImpl() : signal_client_(false), host_() {}
   explicit CallbackTestServiceImpl(const std::string& host)
       : signal_client_(false), host_(new std::string(host)) {}
 
-  ServerUnaryReactor* Echo(CallbackServerContext* context,
-                           const EchoRequest* request,
+  ServerUnaryReactor* Echo(CallbackServerContext* context, const EchoRequest* request,
                            EchoResponse* response) override;
 
   ServerUnaryReactor* CheckClientInitialMetadata(CallbackServerContext* context,
-                                                 const SimpleRequest*,
-                                                 SimpleResponse*) override;
+                                                 const SimpleRequest*, SimpleResponse*) override;
 
-  ServerReadReactor<EchoRequest>* RequestStream(
-      CallbackServerContext* context, EchoResponse* response) override;
+  ServerReadReactor<EchoRequest>* RequestStream(CallbackServerContext* context,
+                                                EchoResponse* response) override;
 
-  ServerWriteReactor<EchoResponse>* ResponseStream(
-      CallbackServerContext* context, const EchoRequest* request) override;
+  ServerWriteReactor<EchoResponse>* ResponseStream(CallbackServerContext* context,
+                                                   const EchoRequest* request) override;
 
-  ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
-      CallbackServerContext* context) override;
+  ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(CallbackServerContext* context) override;
 
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {
@@ -481,8 +450,7 @@ class CallbackTestServiceImpl
   std::unique_ptr<std::string> host_;
 };
 
-using TestServiceImpl =
-    TestMultipleServiceImpl<::grpc::testing::EchoTestService::Service>;
+using TestServiceImpl = TestMultipleServiceImpl<::grpc::testing::EchoTestService::Service>;
 
 }  // namespace testing
 }  // namespace grpc

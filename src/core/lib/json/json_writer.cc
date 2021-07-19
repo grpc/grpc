@@ -114,8 +114,7 @@ void JsonWriter::OutputIndent() {
     spaces -= static_cast<unsigned>(sizeof(spacesstr) - 1);
   }
   if (spaces == 0) return;
-  OutputString(
-      absl::string_view(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
+  OutputString(absl::string_view(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
 }
 
 void JsonWriter::ValueEnd() {
@@ -331,8 +330,6 @@ std::string JsonWriter::Dump(const Json& value, int indent) {
 
 }  // namespace
 
-std::string Json::Dump(int indent) const {
-  return JsonWriter::Dump(*this, indent);
-}
+std::string Json::Dump(int indent) const { return JsonWriter::Dump(*this, indent); }
 
 }  // namespace grpc_core

@@ -62,8 +62,7 @@ class Fork {
 
   // Provide a function that will be invoked in the child's postfork handler to
   // reset the polling engine's internal state.
-  static void SetResetChildPollingEngineFunc(
-      child_postfork_func reset_child_polling_engine);
+  static void SetResetChildPollingEngineFunc(child_postfork_func reset_child_polling_engine);
   static child_postfork_func GetResetChildPollingEngineFunc();
 
   // Check if there is a single active ExecCtx

@@ -104,26 +104,19 @@ void server_thread(void* arg) {
   // Load key pair and establish server SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-      ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
+  const char* ca_cert = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  pem_key_cert_pair.private_key = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  grpc_server_credentials* ssl_creds =
+      grpc_ssl_server_credentials_create(ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
   // Start server listening on local port.
   std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(
-      grpc_server_add_secure_http2_port(server, addr.c_str(), ssl_creds));
+  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr.c_str(), ssl_creds));
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
@@ -219,8 +212,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   for (unsigned int i = 0; i < alpn_list_len; ++i) {
     alpn_protos_len += static_cast<unsigned int>(strlen(alpn_list[i]));
   }
-  unsigned char* alpn_protos =
-      static_cast<unsigned char*>(gpr_malloc(alpn_protos_len));
+  unsigned char* alpn_protos = static_cast<unsigned char*>(gpr_malloc(alpn_protos_len));
   unsigned char* p = alpn_protos;
   for (unsigned int i = 0; i < alpn_list_len; ++i) {
     const uint8_t len = static_cast<uint8_t>(strlen(alpn_list[i]));
@@ -258,8 +250,8 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     unsigned int alpn_selected_len;
     SSL_get0_alpn_selected(ssl, &alpn_selected, &alpn_selected_len);
     if (strlen(alpn_expected) != alpn_selected_len ||
-        strncmp(reinterpret_cast<const char*>(alpn_selected), alpn_expected,
-                alpn_selected_len) != 0) {
+        strncmp(reinterpret_cast<const char*>(alpn_selected), alpn_expected, alpn_selected_len) !=
+            0) {
       gpr_log(GPR_ERROR, "Unexpected ALPN protocol preference");
       success = false;
     }

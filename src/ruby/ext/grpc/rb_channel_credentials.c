@@ -79,16 +79,15 @@ static void grpc_rb_channel_credentials_mark(void* p) {
   }
 }
 
-static rb_data_type_t grpc_rb_channel_credentials_data_type = {
-    "grpc_channel_credentials",
-    {grpc_rb_channel_credentials_mark,
-     grpc_rb_channel_credentials_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE,
-     {NULL, NULL}},
-    NULL,
-    NULL,
+static rb_data_type_t grpc_rb_channel_credentials_data_type = {"grpc_channel_credentials",
+                                                               {grpc_rb_channel_credentials_mark,
+                                                                grpc_rb_channel_credentials_free,
+                                                                GRPC_RB_MEMSIZE_UNAVAILABLE,
+                                                                {NULL, NULL}},
+                                                               NULL,
+                                                               NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    RUBY_TYPED_FREE_IMMEDIATELY
+                                                               RUBY_TYPED_FREE_IMMEDIATELY
 #endif
 };
 
@@ -99,15 +98,13 @@ static VALUE grpc_rb_channel_credentials_alloc(VALUE cls) {
   grpc_rb_channel_credentials* wrapper = ALLOC(grpc_rb_channel_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return TypedData_Wrap_Struct(cls, &grpc_rb_channel_credentials_data_type,
-                               wrapper);
+  return TypedData_Wrap_Struct(cls, &grpc_rb_channel_credentials_data_type, wrapper);
 }
 
 /* Creates a wrapping object for a given channel credentials. This should only
  * be called with grpc_channel_credentials objects that are not already
  * associated with any Ruby object. */
-VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials* c,
-                                       VALUE mark) {
+VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials* c, VALUE mark) {
   VALUE rb_wrapper;
   grpc_rb_channel_credentials* wrapper;
   if (c == NULL) {
@@ -142,8 +139,7 @@ static ID id_pem_cert_chain;
     pem_private_key: (optional) PEM encoding of the client's private key
     pem_cert_chain: (optional) PEM encoding of the client's cert chain
     Initializes Credential instances. */
-static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
-                                              VALUE self) {
+static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv, VALUE self) {
   VALUE pem_root_certs = Qnil;
   VALUE pem_private_key = Qnil;
   VALUE pem_cert_chain = Qnil;
@@ -154,11 +150,10 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
   MEMZERO(&key_cert_pair, grpc_ssl_pem_key_cert_pair, 1);
 
   /* "03" == no mandatory arg, 3 optional */
-  rb_scan_args(argc, argv, "03", &pem_root_certs, &pem_private_key,
-               &pem_cert_chain);
+  rb_scan_args(argc, argv, "03", &pem_root_certs, &pem_private_key, &pem_cert_chain);
 
-  TypedData_Get_Struct(self, grpc_rb_channel_credentials,
-                       &grpc_rb_channel_credentials_data_type, wrapper);
+  TypedData_Get_Struct(self, grpc_rb_channel_credentials, &grpc_rb_channel_credentials_data_type,
+                       wrapper);
   if (pem_root_certs != Qnil) {
     pem_root_certs_cstr = RSTRING_PTR(pem_root_certs);
   }
@@ -166,18 +161,14 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
     creds = grpc_ssl_credentials_create(pem_root_certs_cstr, NULL, NULL, NULL);
   } else {
     if (pem_private_key == Qnil) {
-      rb_raise(
-          rb_eRuntimeError,
-          "could not create a credentials because pem_private_key is NULL");
+      rb_raise(rb_eRuntimeError, "could not create a credentials because pem_private_key is NULL");
     }
     if (pem_cert_chain == Qnil) {
-      rb_raise(rb_eRuntimeError,
-               "could not create a credentials because pem_cert_chain is NULL");
+      rb_raise(rb_eRuntimeError, "could not create a credentials because pem_cert_chain is NULL");
     }
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
-    creds = grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair,
-                                        NULL, NULL);
+    creds = grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair, NULL, NULL);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError,
@@ -197,8 +188,7 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
   return self;
 }
 
-static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE* argv,
-                                                 VALUE self) {
+static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE* argv, VALUE self) {
   grpc_channel_credentials* creds;
   grpc_call_credentials* other;
   grpc_channel_credentials* prev = NULL;
@@ -219,15 +209,13 @@ static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE* argv,
     prev = creds;
 
     if (creds == NULL) {
-      rb_raise(rb_eRuntimeError,
-               "Failed to compose channel and call credentials");
+      rb_raise(rb_eRuntimeError, "Failed to compose channel and call credentials");
     }
   }
   return grpc_rb_wrap_channel_credentials(creds, mark);
 }
 
-static grpc_ssl_roots_override_result get_ssl_roots_override(
-    char** pem_root_certs_ptr) {
+static grpc_ssl_roots_override_result get_ssl_roots_override(char** pem_root_certs_ptr) {
   *pem_root_certs_ptr = pem_root_certs;
   if (pem_root_certs == NULL) {
     return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
@@ -246,22 +234,17 @@ static VALUE grpc_rb_set_default_roots_pem(VALUE self, VALUE roots) {
 }
 
 void Init_grpc_channel_credentials() {
-  grpc_rb_cChannelCredentials = rb_define_class_under(
-      grpc_rb_mGrpcCore, "ChannelCredentials", rb_cObject);
+  grpc_rb_cChannelCredentials =
+      rb_define_class_under(grpc_rb_mGrpcCore, "ChannelCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
-  rb_define_alloc_func(grpc_rb_cChannelCredentials,
-                       grpc_rb_channel_credentials_alloc);
+  rb_define_alloc_func(grpc_rb_cChannelCredentials, grpc_rb_channel_credentials_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
-  rb_define_method(grpc_rb_cChannelCredentials, "initialize",
-                   grpc_rb_channel_credentials_init, -1);
-  rb_define_method(grpc_rb_cChannelCredentials, "initialize_copy",
-                   grpc_rb_cannot_init_copy, 1);
-  rb_define_method(grpc_rb_cChannelCredentials, "compose",
-                   grpc_rb_channel_credentials_compose, -1);
-  rb_define_module_function(grpc_rb_cChannelCredentials,
-                            "set_default_roots_pem",
+  rb_define_method(grpc_rb_cChannelCredentials, "initialize", grpc_rb_channel_credentials_init, -1);
+  rb_define_method(grpc_rb_cChannelCredentials, "initialize_copy", grpc_rb_cannot_init_copy, 1);
+  rb_define_method(grpc_rb_cChannelCredentials, "compose", grpc_rb_channel_credentials_compose, -1);
+  rb_define_module_function(grpc_rb_cChannelCredentials, "set_default_roots_pem",
                             grpc_rb_set_default_roots_pem, 1);
 
   grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
@@ -275,8 +258,8 @@ void Init_grpc_channel_credentials() {
 grpc_channel_credentials* grpc_rb_get_wrapped_channel_credentials(VALUE v) {
   grpc_rb_channel_credentials* wrapper = NULL;
   Check_TypedStruct(v, &grpc_rb_channel_credentials_data_type);
-  TypedData_Get_Struct(v, grpc_rb_channel_credentials,
-                       &grpc_rb_channel_credentials_data_type, wrapper);
+  TypedData_Get_Struct(v, grpc_rb_channel_credentials, &grpc_rb_channel_credentials_data_type,
+                       wrapper);
   return wrapper->wrapped;
 }
 

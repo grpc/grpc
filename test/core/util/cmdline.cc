@@ -70,9 +70,7 @@ gpr_cmdline* gpr_cmdline_create(const char* description) {
   return cl;
 }
 
-void gpr_cmdline_set_survive_failure(gpr_cmdline* cl) {
-  cl->survive_failure = 1;
-}
+void gpr_cmdline_set_survive_failure(gpr_cmdline* cl) { cl->survive_failure = 1; }
 
 void gpr_cmdline_destroy(gpr_cmdline* cl) {
   while (cl->args) {
@@ -83,8 +81,8 @@ void gpr_cmdline_destroy(gpr_cmdline* cl) {
   gpr_free(cl);
 }
 
-static void add_arg(gpr_cmdline* cl, const char* name, const char* help,
-                    argtype type, void* value) {
+static void add_arg(gpr_cmdline* cl, const char* name, const char* help, argtype type,
+                    void* value) {
   arg* a;
 
   for (a = cl->args; a; a = a->next) {
@@ -100,13 +98,11 @@ static void add_arg(gpr_cmdline* cl, const char* name, const char* help,
   cl->args = a;
 }
 
-void gpr_cmdline_add_int(gpr_cmdline* cl, const char* name, const char* help,
-                         int* value) {
+void gpr_cmdline_add_int(gpr_cmdline* cl, const char* name, const char* help, int* value) {
   add_arg(cl, name, help, ARGTYPE_INT, value);
 }
 
-void gpr_cmdline_add_flag(gpr_cmdline* cl, const char* name, const char* help,
-                          int* value) {
+void gpr_cmdline_add_flag(gpr_cmdline* cl, const char* name, const char* help, int* value) {
   add_arg(cl, name, help, ARGTYPE_BOOL, value);
 }
 
@@ -115,9 +111,9 @@ void gpr_cmdline_add_string(gpr_cmdline* cl, const char* name, const char* help,
   add_arg(cl, name, help, ARGTYPE_STRING, value);
 }
 
-void gpr_cmdline_on_extra_arg(
-    gpr_cmdline* cl, const char* name, const char* help,
-    void (*on_extra_arg)(void* user_data, const char* arg), void* user_data) {
+void gpr_cmdline_on_extra_arg(gpr_cmdline* cl, const char* name, const char* help,
+                              void (*on_extra_arg)(void* user_data, const char* arg),
+                              void* user_data) {
   GPR_ASSERT(!cl->extra_arg);
   GPR_ASSERT(on_extra_arg);
 
@@ -207,8 +203,7 @@ static int value_state(gpr_cmdline* cl, char* str) {
     case ARGTYPE_INT:
       intval = strtol(str, &end, 0);
       if (*end || intval < INT_MIN || intval > INT_MAX) {
-        fprintf(stderr, "expected integer, got '%s' for %s\n", str,
-                cl->cur_arg->name);
+        fprintf(stderr, "expected integer, got '%s' for %s\n", str, cl->cur_arg->name);
         return print_usage_and_die(cl);
       }
       *static_cast<int*>(cl->cur_arg->value) = static_cast<int>(intval);
@@ -219,8 +214,7 @@ static int value_state(gpr_cmdline* cl, char* str) {
       } else if (0 == strcmp(str, "0") || 0 == strcmp(str, "false")) {
         *static_cast<int*>(cl->cur_arg->value) = 0;
       } else {
-        fprintf(stderr, "expected boolean, got '%s' for %s\n", str,
-                cl->cur_arg->name);
+        fprintf(stderr, "expected boolean, got '%s' for %s\n", str, cl->cur_arg->name);
         return print_usage_and_die(cl);
       }
       break;
@@ -239,8 +233,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
   char* arg_name = nullptr;
   int r = 1;
 
-  if (0 == strcmp(str, "-help") || 0 == strcmp(str, "--help") ||
-      0 == strcmp(str, "-h")) {
+  if (0 == strcmp(str, "-help") || 0 == strcmp(str, "--help") || 0 == strcmp(str, "-h")) {
     return print_usage_and_die(cl);
   }
 
@@ -275,8 +268,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
     eq = strchr(str, '=');
     if (eq != nullptr) {
       /* copy the string into a temp buffer and extract the name */
-      tmp = arg_name =
-          static_cast<char*>(gpr_malloc(static_cast<size_t>(eq - str + 1)));
+      tmp = arg_name = static_cast<char*>(gpr_malloc(static_cast<size_t>(eq - str + 1)));
       memcpy(arg_name, str, static_cast<size_t>(eq - str));
       arg_name[eq - str] = 0;
     } else {

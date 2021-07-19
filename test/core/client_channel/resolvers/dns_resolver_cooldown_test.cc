@@ -41,9 +41,8 @@ static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses, char** service_config_json,
+    int query_timeout_ms, std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 // Counter incremented by test_resolve_address_impl indicating the number of
 // times a system-level resolution has happened.
@@ -59,21 +58,17 @@ static struct iomgr_args {
 
 // Wrapper around default resolve_address in order to count the number of
 // times we incur in a system-level name resolution.
-static void test_resolve_address_impl(const char* name,
-                                      const char* default_port,
+static void test_resolve_address_impl(const char* name, const char* default_port,
                                       grpc_pollset_set* /*interested_parties*/,
-                                      grpc_closure* on_done,
-                                      grpc_resolved_addresses** addrs) {
-  default_resolve_address->resolve_address(
-      name, default_port, g_iomgr_args.pollset_set, on_done, addrs);
+                                      grpc_closure* on_done, grpc_resolved_addresses** addrs) {
+  default_resolve_address->resolve_address(name, default_port, g_iomgr_args.pollset_set, on_done,
+                                           addrs);
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
   if (last_resolution_time == 0) {
-    last_resolution_time =
-        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+    last_resolution_time = grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
   } else {
-    grpc_millis now =
-        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+    grpc_millis now = grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
     GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
     last_resolution_time = now;
   }
@@ -86,38 +81,31 @@ static void test_resolve_address_impl(const char* name,
   grpc_core::ExecCtx::Get()->InvalidateNow();
 }
 
-static grpc_error_handle test_blocking_resolve_address_impl(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
-  return default_resolve_address->blocking_resolve_address(name, default_port,
-                                                           addresses);
+static grpc_error_handle test_blocking_resolve_address_impl(const char* name,
+                                                            const char* default_port,
+                                                            grpc_resolved_addresses** addresses) {
+  return default_resolve_address->blocking_resolve_address(name, default_port, addresses);
 }
 
-static grpc_address_resolver_vtable test_resolver = {
-    test_resolve_address_impl, test_blocking_resolve_address_impl};
+static grpc_address_resolver_vtable test_resolver = {test_resolve_address_impl,
+                                                     test_blocking_resolve_address_impl};
 
 static grpc_ares_request* test_dns_lookup_ares_locked(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses, char** service_config_json,
+    int query_timeout_ms, std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
-      dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
-      addresses, balancer_addresses, service_config_json, query_timeout_ms,
-      std::move(work_serializer));
+      dns_server, name, default_port, g_iomgr_args.pollset_set, on_done, addresses,
+      balancer_addresses, service_config_json, query_timeout_ms, std::move(work_serializer));
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
-  grpc_millis now =
-      grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
-  gpr_log(GPR_DEBUG,
-          "last_resolution_time:%" PRId64 " now:%" PRId64
-          " min_time_between:%d",
+  grpc_millis now = grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+  gpr_log(GPR_DEBUG, "last_resolution_time:%" PRId64 " now:%" PRId64 " min_time_between:%d",
           last_resolution_time, now, kMinResolutionPeriodMs);
   if (last_resolution_time == 0) {
-    last_resolution_time =
-        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+    last_resolution_time = grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
   } else {
     GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
     last_resolution_time = now;
@@ -132,9 +120,7 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
   return result;
 }
 
-static gpr_timespec test_deadline(void) {
-  return grpc_timeout_seconds_to_deadline(100);
-}
+static gpr_timespec test_deadline(void) { return grpc_timeout_seconds_to_deadline(100); }
 
 static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
@@ -152,8 +138,7 @@ static void iomgr_args_finish(iomgr_args* args) {
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure do_nothing_cb;
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr, grpc_schedule_on_exec_ctx);
   gpr_mu_lock(args->mu);
   grpc_pollset_shutdown(args->pollset, &do_nothing_cb);
   gpr_mu_unlock(args->mu);
@@ -164,8 +149,7 @@ static void iomgr_args_finish(iomgr_args* args) {
 }
 
 static grpc_millis n_sec_deadline(int seconds) {
-  return grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void poll_pollset_until_request_done(iomgr_args* args) {
@@ -181,8 +165,7 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
     GPR_ASSERT(time_left >= 0);
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
-                                                        n_sec_deadline(1)));
+    GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
     gpr_mu_unlock(args->mu);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -213,8 +196,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
   }
 
   void ReturnError(grpc_error_handle error) override {
-    gpr_log(GPR_ERROR, "resolver returned error: %s",
-            grpc_error_std_string(error).c_str());
+    gpr_log(GPR_ERROR, "resolver returned error: %s", grpc_error_std_string(error).c_str());
     GPR_ASSERT(false);
   }
 
@@ -243,8 +225,7 @@ static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
   cb_arg->resolver.reset();
   gpr_atm_rel_store(&g_iomgr_args.done_atm, 1);
   gpr_mu_lock(g_iomgr_args.mu);
-  GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
   gpr_mu_unlock(g_iomgr_args.mu);
   delete cb_arg;
   g_all_callbacks_invoked = true;
@@ -256,8 +237,7 @@ static void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
   cb_arg->result_handler->SetCallback(on_fourth_resolution, cb_arg);
   cb_arg->resolver->RequestReresolutionLocked();
   gpr_mu_lock(g_iomgr_args.mu);
-  GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
@@ -269,8 +249,7 @@ static void on_second_resolution(OnResolutionCallbackArg* cb_arg) {
   cb_arg->result_handler->SetCallback(on_third_resolution, cb_arg);
   cb_arg->resolver->RequestReresolutionLocked();
   gpr_mu_lock(g_iomgr_args.mu);
-  GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
@@ -282,21 +261,16 @@ static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
   cb_arg->result_handler->SetCallback(on_second_resolution, cb_arg);
   cb_arg->resolver->RequestReresolutionLocked();
   gpr_mu_lock(g_iomgr_args.mu);
-  GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
 static void start_test_under_work_serializer(void* arg) {
-  OnResolutionCallbackArg* res_cb_arg =
-      static_cast<OnResolutionCallbackArg*>(arg);
+  OnResolutionCallbackArg* res_cb_arg = static_cast<OnResolutionCallbackArg*>(arg);
   res_cb_arg->result_handler = new ResultHandler();
-  grpc_core::ResolverFactory* factory =
-      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Parse(res_cb_arg->uri_str);
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
-          factory->scheme());
+  grpc_core::ResolverFactory* factory = grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(res_cb_arg->uri_str);
+  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str, factory->scheme());
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
@@ -304,13 +278,12 @@ static void start_test_under_work_serializer(void* arg) {
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
-  args.result_handler = std::unique_ptr<grpc_core::Resolver::ResultHandler>(
-      res_cb_arg->result_handler);
+  args.result_handler =
+      std::unique_ptr<grpc_core::Resolver::ResultHandler>(res_cb_arg->result_handler);
   g_resolution_count = 0;
 
   grpc_arg cooldown_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS),
-      kMinResolutionPeriodMs);
+      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS), kMinResolutionPeriodMs);
   grpc_channel_args cooldown_args = {1, &cooldown_arg};
   args.args = &cooldown_args;
   res_cb_arg->resolver = factory->CreateResolver(std::move(args));
@@ -327,8 +300,7 @@ static void test_cooldown() {
   res_cb_arg->uri_str = "dns:127.0.0.1";
 
   (*g_work_serializer)
-      ->Run([res_cb_arg]() { start_test_under_work_serializer(res_cb_arg); },
-            DEBUG_LOCATION);
+      ->Run([res_cb_arg]() { start_test_under_work_serializer(res_cb_arg); }, DEBUG_LOCATION);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&g_iomgr_args);
   iomgr_args_finish(&g_iomgr_args);

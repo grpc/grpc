@@ -27,18 +27,16 @@ namespace grpc_core {
 
 class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
-  static RefCountedPtr<AwsExternalAccountCredentials> Create(
-      Options options, std::vector<std::string> scopes,
-      grpc_error_handle* error);
+  static RefCountedPtr<AwsExternalAccountCredentials> Create(Options options,
+                                                             std::vector<std::string> scopes,
+                                                             grpc_error_handle* error);
 
-  AwsExternalAccountCredentials(Options options,
-                                std::vector<std::string> scopes,
+  AwsExternalAccountCredentials(Options options, std::vector<std::string> scopes,
                                 grpc_error_handle* error);
 
  private:
-  void RetrieveSubjectToken(
-      HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error_handle)> cb) override;
+  void RetrieveSubjectToken(HTTPRequestContext* ctx, const Options& options,
+                            std::function<void(std::string, grpc_error_handle)> cb) override;
 
   void RetrieveRegion();
   static void OnRetrieveRegion(void* arg, grpc_error_handle error);
@@ -53,8 +51,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   void OnRetrieveSigningKeysInternal(grpc_error_handle error);
 
   void BuildSubjectToken();
-  void FinishRetrieveSubjectToken(std::string subject_token,
-                                  grpc_error_handle error);
+  void FinishRetrieveSubjectToken(std::string subject_token, grpc_error_handle error);
 
   std::string audience_;
 

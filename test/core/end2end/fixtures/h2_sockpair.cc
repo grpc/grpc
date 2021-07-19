@@ -65,14 +65,11 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
   sp_client_setup* cs = static_cast<sp_client_setup*>(ts);
 
   grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>("test-authority"));
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>("test-authority"));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  cs->f->client =
-      grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          transport, nullptr, &error);
+  cs->f->client = grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                                      transport, nullptr, &error);
   grpc_channel_args_destroy(args);
   if (cs->f->client != nullptr) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -83,8 +80,7 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
       status = static_cast<grpc_status_code>(integer);
     }
     GRPC_ERROR_UNREF(error);
-    cs->f->client =
-        grpc_lame_client_channel_create(nullptr, status, "lame channel");
+    cs->f->client = grpc_lame_client_channel_create(nullptr, status, "lame channel");
     grpc_transport_destroy(transport);
   }
 }
@@ -131,15 +127,13 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   server_setup_transport(f, transport);
 }
 
-static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
-  gpr_free(f->fixture_data);
-}
+static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) { gpr_free(f->fixture_data); }
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
     {"chttp2/socketpair", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
-     chttp2_create_fixture_socketpair, chttp2_init_client_socketpair,
-     chttp2_init_server_socketpair, chttp2_tear_down_socketpair},
+     chttp2_create_fixture_socketpair, chttp2_init_client_socketpair, chttp2_init_server_socketpair,
+     chttp2_tear_down_socketpair},
 };
 
 int main(int argc, char** argv) {

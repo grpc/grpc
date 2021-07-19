@@ -31,8 +31,7 @@ static grpc_pollset* g_pollset;
 
 static void clean_up(void) {}
 
-static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
-    size_t slice_size) {
+static grpc_endpoint_test_fixture create_fixture_endpoint_pair(size_t slice_size) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_test_fixture f;
   grpc_arg a[1];
@@ -67,8 +66,7 @@ int main(int argc, char** argv) {
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
     grpc_endpoint_tests(configs[0], g_pollset, g_mu);
-    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset, grpc_schedule_on_exec_ctx);
     grpc_pollset_shutdown(g_pollset, &destroyed);
   }
   grpc_shutdown();

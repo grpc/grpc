@@ -32,8 +32,7 @@
 static gpr_atm random_deadline(void) { return rand(); }
 
 static grpc_timer* create_test_elements(size_t num_elements) {
-  grpc_timer* elems =
-      static_cast<grpc_timer*>(gpr_malloc(num_elements * sizeof(grpc_timer)));
+  grpc_timer* elems = static_cast<grpc_timer*>(gpr_malloc(num_elements * sizeof(grpc_timer)));
   size_t i;
   for (i = 0; i < num_elements; i++) {
     elems[i].deadline = random_deadline();
@@ -131,10 +130,8 @@ typedef struct {
   bool inserted;
 } elem_struct;
 
-static elem_struct* search_elems(elem_struct* elems, size_t count,
-                                 bool inserted) {
-  size_t* search_order =
-      static_cast<size_t*>(gpr_malloc(count * sizeof(*search_order)));
+static elem_struct* search_elems(elem_struct* elems, size_t count, bool inserted) {
+  size_t* search_order = static_cast<size_t*>(gpr_malloc(count * sizeof(*search_order)));
   for (size_t i = 0; i < count; i++) {
     search_order[i] = i;
   }
@@ -159,8 +156,7 @@ static void test2(void) {
   grpc_timer_heap pq;
 
   static const size_t elems_size = 1000;
-  elem_struct* elems =
-      static_cast<elem_struct*>(gpr_malloc(elems_size * sizeof(elem_struct)));
+  elem_struct* elems = static_cast<elem_struct*>(gpr_malloc(elems_size * sizeof(elem_struct)));
   size_t num_inserted = 0;
 
   grpc_timer_heap_init(&pq);

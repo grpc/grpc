@@ -36,11 +36,9 @@ namespace load_reporter {
 // procedure of incoming requests. The real business logic is handed off to the
 // LoadReporter. There should be at most one instance of this service on a
 // server to avoid spreading the load data into multiple places.
-class LoadReporterAsyncServiceImpl
-    : public grpc::lb::v1::LoadReporter::AsyncService {
+class LoadReporterAsyncServiceImpl : public grpc::lb::v1::LoadReporter::AsyncService {
  public:
-  explicit LoadReporterAsyncServiceImpl(
-      std::unique_ptr<ServerCompletionQueue> cq);
+  explicit LoadReporterAsyncServiceImpl(std::unique_ptr<ServerCompletionQueue> cq);
   ~LoadReporterAsyncServiceImpl() override;
 
   // Starts the working thread.
@@ -48,8 +46,7 @@ class LoadReporterAsyncServiceImpl
 
   // Not copyable nor movable.
   LoadReporterAsyncServiceImpl(const LoadReporterAsyncServiceImpl&) = delete;
-  LoadReporterAsyncServiceImpl& operator=(const LoadReporterAsyncServiceImpl&) =
-      delete;
+  LoadReporterAsyncServiceImpl& operator=(const LoadReporterAsyncServiceImpl&) = delete;
 
  private:
   class ReportLoadHandler;
@@ -63,13 +60,11 @@ class LoadReporterAsyncServiceImpl
   // once the invoked function returns (if not used any more).
   class CallableTag {
    public:
-    using HandlerFunction =
-        std::function<void(std::shared_ptr<ReportLoadHandler>, bool)>;
+    using HandlerFunction = std::function<void(std::shared_ptr<ReportLoadHandler>, bool)>;
 
     CallableTag() {}
 
-    CallableTag(HandlerFunction func,
-                std::shared_ptr<ReportLoadHandler> handler)
+    CallableTag(HandlerFunction func, std::shared_ptr<ReportLoadHandler> handler)
         : handler_function_(std::move(func)), handler_(std::move(handler)) {
       GPR_ASSERT(handler_function_ != nullptr);
       GPR_ASSERT(handler_ != nullptr);
@@ -80,9 +75,7 @@ class LoadReporterAsyncServiceImpl
     void Run(bool ok);
 
     // Releases and returns the shared pointer to the handler.
-    std::shared_ptr<ReportLoadHandler> ReleaseHandler() {
-      return std::move(handler_);
-    }
+    std::shared_ptr<ReportLoadHandler> ReleaseHandler() { return std::move(handler_); }
 
    private:
     HandlerFunction handler_function_ = nullptr;
@@ -97,14 +90,12 @@ class LoadReporterAsyncServiceImpl
     // Instantiates a ReportLoadHandler and requests the next load reporting
     // call. The handler object will manage its own lifetime, so no action is
     // needed from the caller any more regarding that object.
-    static void CreateAndStart(ServerCompletionQueue* cq,
-                               LoadReporterAsyncServiceImpl* service,
+    static void CreateAndStart(ServerCompletionQueue* cq, LoadReporterAsyncServiceImpl* service,
                                LoadReporter* load_reporter);
 
     // This ctor is public because we want to use std::make_shared<> in
     // CreateAndStart(). This ctor shouldn't be used elsewhere.
-    ReportLoadHandler(ServerCompletionQueue* cq,
-                      LoadReporterAsyncServiceImpl* service,
+    ReportLoadHandler(ServerCompletionQueue* cq, LoadReporterAsyncServiceImpl* service,
                       LoadReporter* load_reporter);
 
    private:
@@ -148,8 +139,7 @@ class LoadReporterAsyncServiceImpl
     ServerCompletionQueue* cq_;
     LoadReporterAsyncServiceImpl* service_;
     LoadReporter* load_reporter_;
-    ServerAsyncReaderWriter<::grpc::lb::v1::LoadReportResponse,
-                            ::grpc::lb::v1::LoadReportRequest>
+    ServerAsyncReaderWriter<::grpc::lb::v1::LoadReportResponse, ::grpc::lb::v1::LoadReportRequest>
         stream_;
 
     // The status of the RPC progress.

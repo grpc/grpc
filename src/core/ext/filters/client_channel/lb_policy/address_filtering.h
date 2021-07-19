@@ -84,16 +84,15 @@ extern const char* kHierarchicalPathAttributeKey;
 
 // Constructs an address attribute containing the hierarchical path
 // to be associated with the address.
-std::unique_ptr<ServerAddress::AttributeInterface>
-MakeHierarchicalPathAttribute(std::vector<std::string> path);
+std::unique_ptr<ServerAddress::AttributeInterface> MakeHierarchicalPathAttribute(
+    std::vector<std::string> path);
 
 // A map from the next path element to the addresses that fall under
 // that path element.
 using HierarchicalAddressMap = std::map<std::string, ServerAddressList>;
 
 // Splits up the addresses into a separate list for each child.
-HierarchicalAddressMap MakeHierarchicalAddressMap(
-    const ServerAddressList& addresses);
+HierarchicalAddressMap MakeHierarchicalAddressMap(const ServerAddressList& addresses);
 
 }  // namespace grpc_core
 

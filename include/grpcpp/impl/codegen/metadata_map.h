@@ -50,13 +50,11 @@ class MetadataMap {
     // like code and message.
     else {
       for (size_t i = 0; i < arr_.count; i++) {
-        if (strncmp(reinterpret_cast<const char*>(
-                        GRPC_SLICE_START_PTR(arr_.metadata[i].key)),
-                    kBinaryErrorDetailsKey,
-                    GRPC_SLICE_LENGTH(arr_.metadata[i].key)) == 0) {
-          return std::string(reinterpret_cast<const char*>(
-                                 GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
-                             GRPC_SLICE_LENGTH(arr_.metadata[i].value));
+        if (strncmp(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(arr_.metadata[i].key)),
+                    kBinaryErrorDetailsKey, GRPC_SLICE_LENGTH(arr_.metadata[i].key)) == 0) {
+          return std::string(
+              reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
+              GRPC_SLICE_LENGTH(arr_.metadata[i].value));
         }
       }
     }
@@ -81,9 +79,7 @@ class MetadataMap {
   grpc_metadata_array arr_;
   std::multimap<grpc::string_ref, grpc::string_ref> map_;
 
-  void Destroy() {
-    g_core_codegen_interface->grpc_metadata_array_destroy(&arr_);
-  }
+  void Destroy() { g_core_codegen_interface->grpc_metadata_array_destroy(&arr_); }
 
   void Setup() { memset(&arr_, 0, sizeof(arr_)); }
 
@@ -93,8 +89,7 @@ class MetadataMap {
     for (size_t i = 0; i < arr_.count; i++) {
       // TODO(yangg) handle duplicates?
       map_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
-          StringRefFromSlice(&arr_.metadata[i].key),
-          StringRefFromSlice(&arr_.metadata[i].value)));
+          StringRefFromSlice(&arr_.metadata[i].key), StringRefFromSlice(&arr_.metadata[i].value)));
     }
   }
 };

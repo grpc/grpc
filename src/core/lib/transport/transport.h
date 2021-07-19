@@ -63,14 +63,13 @@ typedef struct grpc_stream_refcount {
 } grpc_stream_refcount;
 
 #ifndef NDEBUG
-void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
-                          grpc_iomgr_cb_func cb, void* cb_arg,
-                          const char* object_type);
+void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs, grpc_iomgr_cb_func cb,
+                          void* cb_arg, const char* object_type);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   grpc_stream_ref_init(rc, ir, cb, cb_arg, objtype)
 #else
-void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
-                          grpc_iomgr_cb_func cb, void* cb_arg);
+void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs, grpc_iomgr_cb_func cb,
+                          void* cb_arg);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
   do {                                                    \
     grpc_stream_ref_init(rc, ir, cb, cb_arg);             \
@@ -79,25 +78,21 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 #endif
 
 #ifndef NDEBUG
-inline void grpc_stream_ref(grpc_stream_refcount* refcount,
-                            const char* reason) {
+inline void grpc_stream_ref(grpc_stream_refcount* refcount, const char* reason) {
   if (grpc_trace_stream_refcount.enabled()) {
-    gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
-            refcount->destroy.cb_arg, reason);
+    gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount, refcount->destroy.cb_arg,
+            reason);
   }
   refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
 }
 #else
-inline void grpc_stream_ref(grpc_stream_refcount* refcount) {
-  refcount->refs.RefNonZero();
-}
+inline void grpc_stream_ref(grpc_stream_refcount* refcount) { refcount->refs.RefNonZero(); }
 #endif
 
 void grpc_stream_destroy(grpc_stream_refcount* refcount);
 
 #ifndef NDEBUG
-inline void grpc_stream_unref(grpc_stream_refcount* refcount,
-                              const char* reason) {
+inline void grpc_stream_unref(grpc_stream_refcount* refcount, const char* reason) {
   if (grpc_trace_stream_refcount.enabled()) {
     gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
             refcount->destroy.cb_arg, reason);
@@ -116,8 +111,8 @@ inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
 
 /* Wrap a buffer that is owned by some stream object into a slice that shares
    the same refcount */
-grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
-                                               void* buffer, size_t length);
+grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount, void* buffer,
+                                               size_t length);
 
 struct grpc_transport_one_way_stats {
   uint64_t framing_bytes = 0;
@@ -133,8 +128,7 @@ struct grpc_transport_stream_stats {
 void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,
                                        grpc_transport_one_way_stats* to);
 
-void grpc_transport_move_stats(grpc_transport_stream_stats* from,
-                               grpc_transport_stream_stats* to);
+void grpc_transport_move_stats(grpc_transport_stream_stats* from, grpc_transport_stream_stats* to);
 
 // This struct (which is present in both grpc_transport_stream_op_batch
 // and grpc_transport_op_batch) is a convenience to allow filters or
@@ -155,8 +149,7 @@ struct grpc_handler_private_op_data {
   grpc_handler_private_op_data() { memset(&closure, 0, sizeof(closure)); }
 };
 
-typedef struct grpc_transport_stream_op_batch_payload
-    grpc_transport_stream_op_batch_payload;
+typedef struct grpc_transport_stream_op_batch_payload grpc_transport_stream_op_batch_payload;
 
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
@@ -218,8 +211,7 @@ struct grpc_transport_stream_op_batch {
 };
 
 struct grpc_transport_stream_op_batch_payload {
-  explicit grpc_transport_stream_op_batch_payload(
-      grpc_call_context_element* context)
+  explicit grpc_transport_stream_op_batch_payload(grpc_call_context_element* context)
       : context(context) {}
   ~grpc_transport_stream_op_batch_payload() {
     // We don't really own `send_message`, so release ownership and let the
@@ -333,11 +325,9 @@ typedef struct grpc_transport_op {
   /** Called when processing of this op is done. */
   grpc_closure* on_consumed = nullptr;
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
-  grpc_core::OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>
-      start_connectivity_watch;
+  grpc_core::OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface> start_connectivity_watch;
   grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
-  grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
-      nullptr;
+  grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch = nullptr;
   /** should the transport be disconnected
    * Error contract: the transport that gets this op must cause
    *                 disconnect_with_error to be unref'ed after processing it */
@@ -391,8 +381,7 @@ size_t grpc_transport_stream_size(grpc_transport* transport);
      server_data - either NULL for a client initiated stream, or a pointer
                    supplied from the accept_stream callback function */
 int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
-                               grpc_stream_refcount* refcount,
-                               const void* server_data,
+                               grpc_stream_refcount* refcount, const void* server_data,
                                grpc_core::Arena* arena);
 
 void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
@@ -408,16 +397,14 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
      transport - the transport on which to create this stream
      stream    - the grpc_stream to destroy (memory is still owned by the
                  caller, but any child memory must be cleaned up) */
-void grpc_transport_destroy_stream(grpc_transport* transport,
-                                   grpc_stream* stream,
+void grpc_transport_destroy_stream(grpc_transport* transport, grpc_stream* stream,
                                    grpc_closure* then_schedule_closure);
 
-void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
-    grpc_core::CallCombiner* call_combiner);
+void grpc_transport_stream_op_batch_finish_with_failure(grpc_transport_stream_op_batch* batch,
+                                                        grpc_error_handle error,
+                                                        grpc_core::CallCombiner* call_combiner);
 
-std::string grpc_transport_stream_op_batch_string(
-    grpc_transport_stream_op_batch* op);
+std::string grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch* op);
 std::string grpc_transport_op_string(grpc_transport_op* op);
 
 /* Send a batch of operations on a transport
@@ -430,12 +417,10 @@ std::string grpc_transport_op_string(grpc_transport_op* op);
                  non-NULL and previously initialized by the same transport.
      op        - a grpc_transport_stream_op_batch specifying the op to perform
    */
-void grpc_transport_perform_stream_op(grpc_transport* transport,
-                                      grpc_stream* stream,
+void grpc_transport_perform_stream_op(grpc_transport* transport, grpc_stream* stream,
                                       grpc_transport_stream_op_batch* op);
 
-void grpc_transport_perform_op(grpc_transport* transport,
-                               grpc_transport_op* op);
+void grpc_transport_perform_op(grpc_transport* transport, grpc_transport_op* op);
 
 /* Send a ping on a transport
 
@@ -458,14 +443,12 @@ grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
 /* Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
    closure
    to \a on_complete and then delete the returned transport op */
-grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
-    grpc_closure* on_complete);
+grpc_transport_stream_op_batch* grpc_make_transport_stream_op(grpc_closure* on_complete);
 
 namespace grpc_core {
 // This is the key to be used for loading/storing keepalive_throttling in the
 // absl::Status object.
-constexpr const char* kKeepaliveThrottlingKey =
-    "grpc.internal.keepalive_throttling";
+constexpr const char* kKeepaliveThrottlingKey = "grpc.internal.keepalive_throttling";
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H */

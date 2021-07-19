@@ -50,16 +50,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static bool posix_source_addr_factory_get_source_addr(
-    address_sorting_source_addr_factory* factory,
-    const address_sorting_address* dest_addr,
-    address_sorting_address* source_addr) {
+static bool posix_source_addr_factory_get_source_addr(address_sorting_source_addr_factory* factory,
+                                                      const address_sorting_address* dest_addr,
+                                                      address_sorting_address* source_addr) {
   bool source_addr_exists = false;
   // Android sets SOCK_CLOEXEC. Don't set this here for portability.
   int s = socket(((struct sockaddr*)dest_addr)->sa_family, SOCK_DGRAM, 0);
   if (s != -1) {
-    if (connect(s, (const struct sockaddr*)&dest_addr->addr,
-                (socklen_t)dest_addr->len) != -1) {
+    if (connect(s, (const struct sockaddr*)&dest_addr->addr, (socklen_t)dest_addr->len) != -1) {
       address_sorting_address found_source_addr;
       memset(&found_source_addr, 0, sizeof(found_source_addr));
       found_source_addr.len = sizeof(found_source_addr.addr);
@@ -74,15 +72,13 @@ static bool posix_source_addr_factory_get_source_addr(
   return source_addr_exists;
 }
 
-static void posix_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* self) {
+static void posix_source_addr_factory_destroy(address_sorting_source_addr_factory* self) {
   free(self);
 }
 
-static const address_sorting_source_addr_factory_vtable
-    posix_source_addr_factory_vtable = {
-        posix_source_addr_factory_get_source_addr,
-        posix_source_addr_factory_destroy,
+static const address_sorting_source_addr_factory_vtable posix_source_addr_factory_vtable = {
+    posix_source_addr_factory_get_source_addr,
+    posix_source_addr_factory_destroy,
 };
 
 address_sorting_source_addr_factory*

@@ -39,8 +39,7 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
 
 // ---- Asymmetry of conversions of "Special" errors ----
 TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
-  grpc_error_handle error =
-      absl_status_to_grpc_error(absl::CancelledError("Cancelled"));
+  grpc_error_handle error = absl_status_to_grpc_error(absl::CancelledError("Cancelled"));
   ASSERT_NE(error, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
 }
@@ -59,8 +58,7 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
 
 // ---- Ordinary statuses ----
 TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
-  grpc_error_handle error =
-      absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
+  grpc_error_handle error = absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
   // Status code checks
   intptr_t code;
   ASSERT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &code));
@@ -75,14 +73,13 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
 }
 
 TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
-  grpc_error_handle error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "weighted_target: all children report state TRANSIENT_FAILURE"),
-      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  grpc_error_handle error =
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                             "weighted_target: all children report state TRANSIENT_FAILURE"),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   absl::Status status = grpc_error_to_absl_status(error);
   ASSERT_TRUE(absl::IsUnavailable(status));
-  ASSERT_EQ(status.message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
+  ASSERT_EQ(status.message(), "weighted_target: all children report state TRANSIENT_FAILURE");
   GRPC_ERROR_UNREF(error);
 }
 

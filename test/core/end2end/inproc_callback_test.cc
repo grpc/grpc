@@ -146,8 +146,8 @@ static void verify_tags(gpr_timespec deadline) {
         if (tags_valid[i]) {
           gpr_log(GPR_DEBUG, "Verifying tag %d", static_cast<int>(i));
           if (tags[i] != tags_expected[i]) {
-            gpr_log(GPR_ERROR, "Got wrong result (%d instead of %d) for tag %d",
-                    tags[i], tags_expected[i], static_cast<int>(i));
+            gpr_log(GPR_ERROR, "Got wrong result (%d instead of %d) for tag %d", tags[i],
+                    tags_expected[i], static_cast<int>(i));
             GPR_ASSERT(false);
           }
           tags_valid[i] = false;
@@ -168,8 +168,7 @@ static void verify_tags(gpr_timespec deadline) {
     if (done) {
       for (size_t i = 0; i < kAvailableTags; i++) {
         if (tags_valid[i]) {
-          gpr_log(GPR_ERROR, "Got unexpected tag %d and result %d",
-                  static_cast<int>(i), tags[i]);
+          gpr_log(GPR_ERROR, "Got unexpected tag %d and result %d", static_cast<int>(i), tags[i]);
           GPR_ASSERT(false);
         }
         tags_valid[i] = false;
@@ -205,30 +204,27 @@ static grpc_completion_queue_functor* tag(intptr_t t) {
   return cb;
 }
 
-static grpc_end2end_test_fixture inproc_create_fixture(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+static grpc_end2end_test_fixture inproc_create_fixture(grpc_channel_args* /*client_args*/,
+                                                       grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
-  inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(
-      gpr_malloc(sizeof(inproc_fixture_data)));
+  inproc_fixture_data* ffd =
+      static_cast<inproc_fixture_data*>(gpr_malloc(sizeof(inproc_fixture_data)));
   memset(&f, 0, sizeof(f));
 
   f.fixture_data = ffd;
   g_shutdown_callback = new ShutdownCallback();
-  f.cq =
-      grpc_completion_queue_create_for_callback(g_shutdown_callback, nullptr);
+  f.cq = grpc_completion_queue_create_for_callback(g_shutdown_callback, nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
 
-void inproc_init_client(grpc_end2end_test_fixture* f,
-                        grpc_channel_args* client_args) {
+void inproc_init_client(grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
   f->client = grpc_inproc_channel_create(f->server, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
-void inproc_init_server(grpc_end2end_test_fixture* f,
-                        grpc_channel_args* server_args) {
+void inproc_init_server(grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -242,8 +238,7 @@ void inproc_tear_down(grpc_end2end_test_fixture* f) {
   gpr_free(ffd);
 }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -254,9 +249,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
 static gpr_timespec five_seconds_from_now() { return n_seconds_from_now(5); }
 
@@ -269,13 +262,11 @@ static void drain_cq(grpc_completion_queue* /*cq*/) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(
-      f->server, f->shutdown_cq,
-      reinterpret_cast<void*>(static_cast<intptr_t>(1000)));
-  GPR_ASSERT(
-      grpc_completion_queue_pluck(f->shutdown_cq, (void*)((intptr_t)1000),
-                                  grpc_timeout_seconds_to_deadline(5), nullptr)
-          .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq,
+                                  reinterpret_cast<void*>(static_cast<intptr_t>(1000)));
+  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, (void*)((intptr_t)1000),
+                                         grpc_timeout_seconds_to_deadline(5), nullptr)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -296,8 +287,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config config,
-                                grpc_end2end_test_fixture f) {
+static void simple_request_body(grpc_end2end_test_config config, grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -315,8 +305,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   gpr_timespec deadline = five_seconds_from_now();
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -354,13 +343,12 @@ static void simple_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Register a call at the server-side to match the incoming client call
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq, tag(2));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // We expect that the server call creation callback (and no others) will
@@ -398,8 +386,7 @@ static void simple_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(3),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Both the client request and server response batches should get complete
@@ -469,9 +456,7 @@ static void test_invoke_many_simple_requests(grpc_end2end_test_config config) {
   for (i = 0; i < many; i++) {
     simple_request_body(config, f);
   }
-  double us =
-      gpr_timespec_to_micros(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), t1)) /
-      many;
+  double us = gpr_timespec_to_micros(gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), t1)) / many;
   gpr_log(GPR_INFO, "Time per ping %f us", us);
   end_test(&f);
   config.tear_down_data(&f);
@@ -493,9 +478,8 @@ static void simple_request_pre_init() {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"inproc-callback", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
-     inproc_create_fixture, inproc_init_client, inproc_init_server,
-     inproc_tear_down},
+    {"inproc-callback", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr, inproc_create_fixture,
+     inproc_init_client, inproc_init_server, inproc_tear_down},
 };
 
 int main(int argc, char** argv) {

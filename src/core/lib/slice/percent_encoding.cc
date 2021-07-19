@@ -25,21 +25,17 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 const uint8_t grpc_url_percent_encoding_unreserved_bytes[256 / 8] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0xfe, 0xff, 0xff,
-    0x87, 0xfe, 0xff, 0xff, 0x47, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x47,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 const uint8_t grpc_compatible_percent_encoding_unreserved_bytes[256 / 8] = {
-    0x00, 0x00, 0x00, 0x00, 0xdf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    0x00, 0x00, 0x00, 0x00, 0xdf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-static bool is_unreserved_character(uint8_t c,
-                                    const uint8_t* unreserved_bytes) {
+static bool is_unreserved_character(uint8_t c, const uint8_t* unreserved_bytes) {
   return ((unreserved_bytes[c / 8] >> (c % 8)) & 1) != 0;
 }
 
-grpc_slice grpc_percent_encode_slice(const grpc_slice& slice,
-                                     const uint8_t* unreserved_bytes) {
+grpc_slice grpc_percent_encode_slice(const grpc_slice& slice, const uint8_t* unreserved_bytes) {
   static const uint8_t hex[] = "0123456789ABCDEF";
 
   // first pass: count the number of bytes needed to output this string
@@ -75,8 +71,7 @@ grpc_slice grpc_percent_encode_slice(const grpc_slice& slice,
 
 static bool valid_hex(const uint8_t* p, const uint8_t* end) {
   if (p >= end) return false;
-  return (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f') ||
-         (*p >= 'A' && *p <= 'F');
+  return (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f') || (*p >= 'A' && *p <= 'F');
 }
 
 static uint8_t dehex(uint8_t c) {
@@ -86,8 +81,7 @@ static uint8_t dehex(uint8_t c) {
   GPR_UNREACHABLE_CODE(return 255);
 }
 
-bool grpc_strict_percent_decode_slice(const grpc_slice& slice_in,
-                                      const uint8_t* unreserved_bytes,
+bool grpc_strict_percent_decode_slice(const grpc_slice& slice_in, const uint8_t* unreserved_bytes,
                                       grpc_slice* slice_out) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice_in);
   const uint8_t* in_end = GRPC_SLICE_END_PTR(slice_in);

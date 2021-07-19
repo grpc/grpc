@@ -42,25 +42,21 @@
 // grpc_tls_certificate_distributor object. When the credentials and validation
 // contexts become valid or changed, a grpc_tls_certificate_provider should
 // notify its distributor so as to propagate the update to the watchers.
-struct grpc_tls_certificate_provider
-    : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
+struct grpc_tls_certificate_provider : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
   virtual grpc_pollset_set* interested_parties() const { return nullptr; }
 
-  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
-  distributor() const = 0;
+  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor() const = 0;
 };
 
 namespace grpc_core {
 
 // A basic provider class that will get credentials from string during
 // initialization.
-class StaticDataCertificateProvider final
-    : public grpc_tls_certificate_provider {
+class StaticDataCertificateProvider final : public grpc_tls_certificate_provider {
  public:
-  StaticDataCertificateProvider(
-      std::string root_certificate,
-      grpc_core::PemKeyCertPairList pem_key_cert_pairs);
+  StaticDataCertificateProvider(std::string root_certificate,
+                                grpc_core::PemKeyCertPairList pem_key_cert_pairs);
 
   ~StaticDataCertificateProvider() override;
 
@@ -84,12 +80,10 @@ class StaticDataCertificateProvider final
 };
 
 // A provider class that will watch the credential changes on the file system.
-class FileWatcherCertificateProvider final
-    : public grpc_tls_certificate_provider {
+class FileWatcherCertificateProvider final : public grpc_tls_certificate_provider {
  public:
   FileWatcherCertificateProvider(std::string private_key_path,
-                                 std::string identity_certificate_path,
-                                 std::string root_cert_path,
+                                 std::string identity_certificate_path, std::string root_cert_path,
                                  unsigned int refresh_interval_sec);
 
   ~FileWatcherCertificateProvider() override;
@@ -106,12 +100,10 @@ class FileWatcherCertificateProvider final
   // Force an update from the file system regardless of the interval.
   void ForceUpdate();
   // Read the root certificates from files and update the distributor.
-  absl::optional<std::string> ReadRootCertificatesFromFile(
-      const std::string& root_cert_full_path);
+  absl::optional<std::string> ReadRootCertificatesFromFile(const std::string& root_cert_full_path);
   // Read the root certificates from files and update the distributor.
   absl::optional<PemKeyCertPairList> ReadIdentityKeyCertPairFromFiles(
-      const std::string& private_key_path,
-      const std::string& identity_certificate_path);
+      const std::string& private_key_path, const std::string& identity_certificate_path);
 
   // Information that is used by the refreshing thread.
   std::string private_key_path_;
@@ -137,8 +129,8 @@ class FileWatcherCertificateProvider final
 //  Checks if the private key matches the certificate's public key.
 //  Returns a not-OK status on failure, or a bool indicating
 //  whether the key/cert pair matches.
-absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
-    absl::string_view private_key, absl::string_view cert_chain);
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(absl::string_view private_key,
+                                                   absl::string_view cert_chain);
 
 }  // namespace grpc_core
 

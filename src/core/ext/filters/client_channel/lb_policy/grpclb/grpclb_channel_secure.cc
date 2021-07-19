@@ -45,38 +45,30 @@ grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args) {
   // Substitute the channel credentials with a version without call
   // credentials: the load balancer is not necessarily trusted to handle
   // bearer token credentials.
-  grpc_channel_credentials* channel_credentials =
-      grpc_channel_credentials_find_in_args(args);
+  grpc_channel_credentials* channel_credentials = grpc_channel_credentials_find_in_args(args);
   RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
   if (channel_credentials != nullptr) {
-    creds_sans_call_creds =
-        channel_credentials->duplicate_without_call_credentials();
+    creds_sans_call_creds = channel_credentials->duplicate_without_call_credentials();
     GPR_ASSERT(creds_sans_call_creds != nullptr);
     args_to_remove.emplace_back(GRPC_ARG_CHANNEL_CREDENTIALS);
-    args_to_add.emplace_back(
-        grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
+    args_to_add.emplace_back(grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
   }
   grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
-      args_to_add.size());
+      args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(), args_to_add.size());
   // Clean up.
   grpc_channel_args_destroy(args);
   return result;
 }
 
-grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
-                                          const grpc_channel_args& args) {
-  grpc_channel_credentials* creds =
-      grpc_channel_credentials_find_in_args(&args);
+grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri, const grpc_channel_args& args) {
+  grpc_channel_credentials* creds = grpc_channel_credentials_find_in_args(&args);
   if (creds == nullptr) {
     // Build with security but parent channel is insecure.
     return grpc_insecure_channel_create(target_uri, &args, nullptr);
   }
   const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
-  grpc_channel* channel =
-      grpc_secure_channel_create(creds, target_uri, new_args, nullptr);
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
+  grpc_channel* channel = grpc_secure_channel_create(creds, target_uri, new_args, nullptr);
   grpc_channel_args_destroy(new_args);
   return channel;
 }

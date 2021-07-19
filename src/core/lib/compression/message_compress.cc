@@ -31,8 +31,7 @@
 
 #define OUTPUT_BLOCK_SIZE 1024
 
-static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
-                     grpc_slice_buffer* output,
+static int zlib_body(z_stream* zs, grpc_slice_buffer* input, grpc_slice_buffer* output,
                      int (*flate)(z_stream* zs, int flush)) {
   int r = Z_STREAM_END; /* Do not fail on an empty input. */
   int flush;
@@ -84,15 +83,13 @@ error:
   return 0;
 }
 
-static void* zalloc_gpr(void* /*opaque*/, unsigned int items,
-                        unsigned int size) {
+static void* zalloc_gpr(void* /*opaque*/, unsigned int items, unsigned int size) {
   return gpr_malloc(items * size);
 }
 
 static void zfree_gpr(void* /*opaque*/, void* address) { gpr_free(address); }
 
-static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
-                         int gzip) {
+static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output, int gzip) {
   z_stream zs;
   int r;
   size_t i;
@@ -101,8 +98,8 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   memset(&zs, 0, sizeof(zs));
   zs.zalloc = zalloc_gpr;
   zs.zfree = zfree_gpr;
-  r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0),
-                   8, Z_DEFAULT_STRATEGY);
+  r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0), 8,
+                   Z_DEFAULT_STRATEGY);
   GPR_ASSERT(r == Z_OK);
   r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
   if (!r) {
@@ -116,8 +113,7 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   return r;
 }
 
-static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
-                           int gzip) {
+static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output, int gzip) {
   z_stream zs;
   int r;
   size_t i;
@@ -148,8 +144,8 @@ static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
   return 1;
 }
 
-static int compress_inner(grpc_message_compression_algorithm algorithm,
-                          grpc_slice_buffer* input, grpc_slice_buffer* output) {
+static int compress_inner(grpc_message_compression_algorithm algorithm, grpc_slice_buffer* input,
+                          grpc_slice_buffer* output) {
   switch (algorithm) {
     case GRPC_MESSAGE_COMPRESS_NONE:
       /* the fallback path always needs to be send uncompressed: we simply
@@ -166,8 +162,8 @@ static int compress_inner(grpc_message_compression_algorithm algorithm,
   return 0;
 }
 
-int grpc_msg_compress(grpc_message_compression_algorithm algorithm,
-                      grpc_slice_buffer* input, grpc_slice_buffer* output) {
+int grpc_msg_compress(grpc_message_compression_algorithm algorithm, grpc_slice_buffer* input,
+                      grpc_slice_buffer* output) {
   if (!compress_inner(algorithm, input, output)) {
     copy(input, output);
     return 0;
@@ -175,8 +171,8 @@ int grpc_msg_compress(grpc_message_compression_algorithm algorithm,
   return 1;
 }
 
-int grpc_msg_decompress(grpc_message_compression_algorithm algorithm,
-                        grpc_slice_buffer* input, grpc_slice_buffer* output) {
+int grpc_msg_decompress(grpc_message_compression_algorithm algorithm, grpc_slice_buffer* input,
+                        grpc_slice_buffer* output) {
   switch (algorithm) {
     case GRPC_MESSAGE_COMPRESS_NONE:
       return copy(input, output);

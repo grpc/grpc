@@ -38,9 +38,9 @@ using Chttp2ServerArgsModifier =
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.
-grpc_error_handle Chttp2ServerAddPort(
-    Server* server, const char* addr, grpc_channel_args* args,
-    Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
+grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr, grpc_channel_args* args,
+                                      Chttp2ServerArgsModifier connection_args_modifier,
+                                      int* port_num);
 
 }  // namespace grpc_core
 

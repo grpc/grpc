@@ -25,16 +25,14 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-grpc_connectivity_state grpc_channel_check_connectivity_state(
-    grpc_channel* channel, int try_to_connect) {
+grpc_connectivity_state grpc_channel_check_connectivity_state(grpc_channel* channel,
+                                                              int try_to_connect) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE(
-      "grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)", 2,
-      (channel, try_to_connect));
+  GRPC_API_TRACE("grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)", 2,
+                 (channel, try_to_connect));
   // Forward through to the underlying client channel.
-  grpc_core::ClientChannel* client_channel =
-      grpc_core::ClientChannel::GetFromChannel(channel);
+  grpc_core::ClientChannel* client_channel = grpc_core::ClientChannel::GetFromChannel(channel);
   if (GPR_UNLIKELY(client_channel == nullptr)) {
     gpr_log(GPR_ERROR,
             "grpc_channel_check_connectivity_state called on something that is "
@@ -45,8 +43,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
 }
 
 int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel) {
-  grpc_core::ClientChannel* client_channel =
-      grpc_core::ClientChannel::GetFromChannel(channel);
+  grpc_core::ClientChannel* client_channel = grpc_core::ClientChannel::GetFromChannel(channel);
   if (client_channel == nullptr) {
     gpr_log(GPR_ERROR,
             "grpc_channel_num_external_connectivity_watchers called on "
@@ -66,25 +63,22 @@ namespace {
 class StateWatcher {
  public:
   StateWatcher(grpc_channel* channel, grpc_completion_queue* cq, void* tag,
-               grpc_connectivity_state last_observed_state,
-               gpr_timespec deadline)
+               grpc_connectivity_state last_observed_state, gpr_timespec deadline)
       : channel_(channel), cq_(cq), tag_(tag), state_(last_observed_state) {
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
     GRPC_CLOSURE_INIT(&on_complete_, WatchComplete, this, nullptr);
     GRPC_CLOSURE_INIT(&on_timeout_, TimeoutComplete, this, nullptr);
-    auto* watcher_timer_init_state = new WatcherTimerInitState(
-        this, grpc_timespec_to_millis_round_up(deadline));
+    auto* watcher_timer_init_state =
+        new WatcherTimerInitState(this, grpc_timespec_to_millis_round_up(deadline));
     ClientChannel* client_channel = ClientChannel::GetFromChannel(channel);
     GPR_ASSERT(client_channel != nullptr);
     client_channel->AddExternalConnectivityWatcher(
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &state_,
-        &on_complete_, watcher_timer_init_state->closure());
+        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &state_, &on_complete_,
+        watcher_timer_init_state->closure());
   }
 
-  ~StateWatcher() {
-    GRPC_CHANNEL_INTERNAL_UNREF(channel_, "watch_channel_connectivity");
-  }
+  ~StateWatcher() { GRPC_CHANNEL_INTERNAL_UNREF(channel_, "watch_channel_connectivity"); }
 
  private:
   // A fire-and-forget object used to delay starting the timer until the
@@ -139,8 +133,7 @@ class StateWatcher {
     if (due_to_completion) {
       grpc_timer_cancel(&timer_);
     } else {
-      grpc_core::ClientChannel* client_channel =
-          grpc_core::ClientChannel::GetFromChannel(channel_);
+      grpc_core::ClientChannel* client_channel = grpc_core::ClientChannel::GetFromChannel(channel_);
       GPR_ASSERT(client_channel != nullptr);
       client_channel->CancelExternalConnectivityWatcher(&on_complete_);
     }
@@ -154,8 +147,8 @@ class StateWatcher {
         error = GRPC_ERROR_NONE;
       } else {
         if (error == GRPC_ERROR_NONE) {
-          error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "Timed out waiting for connection state change");
+          error =
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timed out waiting for connection state change");
         } else if (error == GRPC_ERROR_CANCELLED) {
           error = GRPC_ERROR_NONE;
         }
@@ -185,8 +178,8 @@ class StateWatcher {
       }
     }
     if (end_op) {
-      grpc_cq_end_op(end_op_cq, end_op_tag, end_op_error, FinishedCompletion,
-                     this, end_op_completion_storage);
+      grpc_cq_end_op(end_op_cq, end_op_tag, end_op_error, FinishedCompletion, this,
+                     end_op_completion_storage);
     }
     GRPC_ERROR_UNREF(error);
   }
@@ -221,9 +214,10 @@ class StateWatcher {
 }  // namespace
 }  // namespace grpc_core
 
-void grpc_channel_watch_connectivity_state(
-    grpc_channel* channel, grpc_connectivity_state last_observed_state,
-    gpr_timespec deadline, grpc_completion_queue* cq, void* tag) {
+void grpc_channel_watch_connectivity_state(grpc_channel* channel,
+                                           grpc_connectivity_state last_observed_state,
+                                           gpr_timespec deadline, grpc_completion_queue* cq,
+                                           void* tag) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(

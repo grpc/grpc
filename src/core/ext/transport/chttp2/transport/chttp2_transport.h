@@ -34,27 +34,26 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
 
 extern bool g_flow_control_enabled;
 
-grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
-    grpc_resource_user* resource_user = nullptr);
+grpc_transport* grpc_create_chttp2_transport(const grpc_channel_args* channel_args,
+                                             grpc_endpoint* ep, bool is_client,
+                                             grpc_resource_user* resource_user = nullptr);
 
-grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
-grpc_chttp2_transport_get_socket_node(grpc_transport* transport);
+grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> grpc_chttp2_transport_get_socket_node(
+    grpc_transport* transport);
 
 /// Takes ownership of \a read_buffer, which (if non-NULL) contains
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
 /// If non-null, \a notify_on_receive_settings will be scheduled when
 /// HTTP/2 settings are received from the peer.
-void grpc_chttp2_transport_start_reading(
-    grpc_transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close);
+void grpc_chttp2_transport_start_reading(grpc_transport* transport, grpc_slice_buffer* read_buffer,
+                                         grpc_closure* notify_on_receive_settings,
+                                         grpc_closure* notify_on_close);
 
 namespace grpc_core {
 typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();
 typedef void (*TestOnlyGlobalHttp2TransportDestructCallback)();
 
-void TestOnlySetGlobalHttp2TransportInitCallback(
-    TestOnlyGlobalHttp2TransportInitCallback callback);
+void TestOnlySetGlobalHttp2TransportInitCallback(TestOnlyGlobalHttp2TransportInitCallback callback);
 
 void TestOnlySetGlobalHttp2TransportDestructCallback(
     TestOnlyGlobalHttp2TransportDestructCallback callback);

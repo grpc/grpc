@@ -36,8 +36,7 @@ namespace testing {
 class AdminServicesTest : public ::testing::Test {
  public:
   void SetUp() override {
-    std::string address =
-        absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
+    std::string address = absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
     // Create admin server
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
@@ -66,28 +65,24 @@ class AdminServicesTest : public ::testing::Test {
  private:
   std::unique_ptr<Server> server_;
   ClientContext reflection_ctx_;
-  std::shared_ptr<
-      ClientReaderWriter<reflection::v1alpha::ServerReflectionRequest,
-                         reflection::v1alpha::ServerReflectionResponse>>
+  std::shared_ptr<ClientReaderWriter<reflection::v1alpha::ServerReflectionRequest,
+                                     reflection::v1alpha::ServerReflectionResponse>>
       stream_;
 };
 
 TEST_F(AdminServicesTest, ValidateRegisteredServices) {
   // Using Contains here, because the server builder might register other
   // services in certain environments.
+  EXPECT_THAT(GetServiceList(),
+              ::testing::AllOf(::testing::Contains("grpc.channelz.v1.Channelz"),
+                               ::testing::Contains("grpc.reflection.v1alpha.ServerReflection")));
+#if defined(GRPC_NO_XDS) || defined(DISABLED_XDS_PROTO_IN_CC)
   EXPECT_THAT(
       GetServiceList(),
-      ::testing::AllOf(
-          ::testing::Contains("grpc.channelz.v1.Channelz"),
-          ::testing::Contains("grpc.reflection.v1alpha.ServerReflection")));
-#if defined(GRPC_NO_XDS) || defined(DISABLED_XDS_PROTO_IN_CC)
-  EXPECT_THAT(GetServiceList(),
-              ::testing::Not(::testing::Contains(
-                  "envoy.service.status.v3.ClientStatusDiscoveryService")));
+      ::testing::Not(::testing::Contains("envoy.service.status.v3.ClientStatusDiscoveryService")));
 #else
   EXPECT_THAT(GetServiceList(),
-              ::testing::Contains(
-                  "envoy.service.status.v3.ClientStatusDiscoveryService"));
+              ::testing::Contains("envoy.service.status.v3.ClientStatusDiscoveryService"));
 #endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
 }
 

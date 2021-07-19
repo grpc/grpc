@@ -46,8 +46,7 @@ class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
   intptr_t milli_token_ratio() const { return milli_token_ratio_; }
 
  private:
-  void GetReplacementThrottleDataIfNeeded(
-      ServerRetryThrottleData** throttle_data);
+  void GetReplacementThrottleDataIfNeeded(ServerRetryThrottleData** throttle_data);
 
   const intptr_t max_milli_tokens_;
   const intptr_t milli_token_ratio_;
@@ -68,9 +67,9 @@ class ServerRetryThrottleMap {
 
   /// Returns the failure data for \a server_name, creating a new entry if
   /// needed.
-  static RefCountedPtr<ServerRetryThrottleData> GetDataForServer(
-      const std::string& server_name, intptr_t max_milli_tokens,
-      intptr_t milli_token_ratio);
+  static RefCountedPtr<ServerRetryThrottleData> GetDataForServer(const std::string& server_name,
+                                                                 intptr_t max_milli_tokens,
+                                                                 intptr_t milli_token_ratio);
 };
 
 }  // namespace internal

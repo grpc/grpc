@@ -26,8 +26,7 @@ using grpc::health::v1::HealthCheckResponse;
 namespace grpc {
 namespace testing {
 
-Status HealthCheckServiceImpl::Check(ServerContext* /*context*/,
-                                     const HealthCheckRequest* request,
+Status HealthCheckServiceImpl::Check(ServerContext* /*context*/, const HealthCheckRequest* request,
                                      HealthCheckResponse* response) {
   std::lock_guard<std::mutex> lock(mu_);
   auto iter = status_map_.find(request->service());
@@ -38,9 +37,8 @@ Status HealthCheckServiceImpl::Check(ServerContext* /*context*/,
   return Status::OK;
 }
 
-Status HealthCheckServiceImpl::Watch(
-    ServerContext* context, const HealthCheckRequest* request,
-    ::grpc::ServerWriter<HealthCheckResponse>* writer) {
+Status HealthCheckServiceImpl::Watch(ServerContext* context, const HealthCheckRequest* request,
+                                     ::grpc::ServerWriter<HealthCheckResponse>* writer) {
   auto last_state = HealthCheckResponse::UNKNOWN;
   while (!context->IsCancelled()) {
     {
@@ -57,15 +55,14 @@ Status HealthCheckServiceImpl::Watch(
         last_state = response.status();
       }
     }
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                 gpr_time_from_millis(1000, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(1000, GPR_TIMESPAN)));
   }
   return Status::OK;
 }
 
-void HealthCheckServiceImpl::SetStatus(
-    const std::string& service_name,
-    HealthCheckResponse::ServingStatus status) {
+void HealthCheckServiceImpl::SetStatus(const std::string& service_name,
+                                       HealthCheckResponse::ServingStatus status) {
   std::lock_guard<std::mutex> lock(mu_);
   if (shutdown_) {
     status = HealthCheckResponse::NOT_SERVING;

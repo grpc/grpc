@@ -48,8 +48,7 @@ typedef struct grpc_tcp_server_acceptor {
 
 /* Called for newly connected TCP connections.
    Takes ownership of acceptor. */
-typedef void (*grpc_tcp_server_cb)(void* arg, grpc_endpoint* ep,
-                                   grpc_pollset* accepting_pollset,
+typedef void (*grpc_tcp_server_cb)(void* arg, grpc_endpoint* ep, grpc_pollset* accepting_pollset,
                                    grpc_tcp_server_acceptor* acceptor);
 namespace grpc_core {
 // An interface for a handler to take a externally connected fd as a internal
@@ -57,27 +56,22 @@ namespace grpc_core {
 class TcpServerFdHandler {
  public:
   virtual ~TcpServerFdHandler() = default;
-  virtual void Handle(int listener_fd, int fd,
-                      grpc_byte_buffer* pending_read) = 0;
+  virtual void Handle(int listener_fd, int fd, grpc_byte_buffer* pending_read) = 0;
 };
 }  // namespace grpc_core
 
 typedef struct grpc_tcp_server_vtable {
-  grpc_error_handle (*create)(grpc_closure* shutdown_complete,
-                              const grpc_channel_args* args,
+  grpc_error_handle (*create)(grpc_closure* shutdown_complete, const grpc_channel_args* args,
                               grpc_tcp_server** server);
-  void (*start)(grpc_tcp_server* server,
-                const std::vector<grpc_pollset*>* pollsets,
+  void (*start)(grpc_tcp_server* server, const std::vector<grpc_pollset*>* pollsets,
                 grpc_tcp_server_cb on_accept_cb, void* cb_arg);
-  grpc_error_handle (*add_port)(grpc_tcp_server* s,
-                                const grpc_resolved_address* addr,
+  grpc_error_handle (*add_port)(grpc_tcp_server* s, const grpc_resolved_address* addr,
                                 int* out_port);
   grpc_core::TcpServerFdHandler* (*create_fd_handler)(grpc_tcp_server* s);
   unsigned (*port_fd_count)(grpc_tcp_server* s, unsigned port_index);
   int (*port_fd)(grpc_tcp_server* s, unsigned port_index, unsigned fd_index);
   grpc_tcp_server* (*ref)(grpc_tcp_server* s);
-  void (*shutdown_starting_add)(grpc_tcp_server* s,
-                                grpc_closure* shutdown_starting);
+  void (*shutdown_starting_add)(grpc_tcp_server* s, grpc_closure* shutdown_starting);
   void (*unref)(grpc_tcp_server* s);
   void (*shutdown_listeners)(grpc_tcp_server* s);
 } grpc_tcp_server_vtable;
@@ -86,12 +80,10 @@ typedef struct grpc_tcp_server_vtable {
    If shutdown_complete is not NULL, it will be used by
    grpc_tcp_server_unref() when the ref count reaches zero. */
 grpc_error_handle grpc_tcp_server_create(grpc_closure* shutdown_complete,
-                                         const grpc_channel_args* args,
-                                         grpc_tcp_server** server);
+                                         const grpc_channel_args* args, grpc_tcp_server** server);
 
 /* Start listening to bound ports */
-void grpc_tcp_server_start(grpc_tcp_server* server,
-                           const std::vector<grpc_pollset*>* pollsets,
+void grpc_tcp_server_start(grpc_tcp_server* server, const std::vector<grpc_pollset*>* pollsets,
                            grpc_tcp_server_cb on_accept_cb, void* cb_arg);
 
 /* Add a port to the server, returning the newly allocated port on success, or
@@ -103,14 +95,12 @@ void grpc_tcp_server_start(grpc_tcp_server* server,
    but not dualstack sockets. */
 /* TODO(ctiller): deprecate this, and make grpc_tcp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-grpc_error_handle grpc_tcp_server_add_port(grpc_tcp_server* s,
-                                           const grpc_resolved_address* addr,
+grpc_error_handle grpc_tcp_server_add_port(grpc_tcp_server* s, const grpc_resolved_address* addr,
                                            int* out_port);
 
 /* Create and return a TcpServerFdHandler so that it can be used by upper layer
    to hand over an externally connected fd to the grpc server. */
-grpc_core::TcpServerFdHandler* grpc_tcp_server_create_fd_handler(
-    grpc_tcp_server* s);
+grpc_core::TcpServerFdHandler* grpc_tcp_server_create_fd_handler(grpc_tcp_server* s);
 
 /* Number of fds at the given port_index, or 0 if port_index is out of
    bounds. */
@@ -120,8 +110,7 @@ unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server* s, unsigned port_index);
    (port_index) call to add_port() on this server, or -1 if the indices are out
    of bounds. The file descriptor remains owned by the server, and will be
    cleaned up when the ref count reaches zero. */
-int grpc_tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
-                            unsigned fd_index);
+int grpc_tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index, unsigned fd_index);
 
 /* Ref s and return s. */
 grpc_tcp_server* grpc_tcp_server_ref(grpc_tcp_server* s);
@@ -129,8 +118,7 @@ grpc_tcp_server* grpc_tcp_server_ref(grpc_tcp_server* s);
 /* shutdown_starting is called when ref count has reached zero and the server is
    about to be destroyed. The server will be deleted after it returns. Calling
    grpc_tcp_server_ref() from it has no effect. */
-void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
-                                           grpc_closure* shutdown_starting);
+void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s, grpc_closure* shutdown_starting);
 
 /* If the refcount drops to zero, enqueue calls on exec_ctx to
    shutdown_listeners and delete s. */

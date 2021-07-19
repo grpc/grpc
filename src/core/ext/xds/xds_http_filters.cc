@@ -24,8 +24,7 @@
 
 namespace grpc_core {
 
-const char* kXdsHttpRouterFilterConfigName =
-    "envoy.extensions.filters.http.router.v3.Router";
+const char* kXdsHttpRouterFilterConfigName = "envoy.extensions.filters.http.router.v3.Router";
 
 namespace {
 
@@ -35,21 +34,18 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
     envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
   }
 
-  absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const override {
+  absl::StatusOr<FilterConfig> GenerateFilterConfig(upb_strview serialized_filter_config,
+                                                    upb_arena* arena) const override {
     if (envoy_extensions_filters_http_router_v3_Router_parse(
-            serialized_filter_config.data, serialized_filter_config.size,
-            arena) == nullptr) {
+            serialized_filter_config.data, serialized_filter_config.size, arena) == nullptr) {
       return absl::InvalidArgumentError("could not parse router filter config");
     }
     return FilterConfig{kXdsHttpRouterFilterConfigName, Json()};
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview /*serialized_filter_config*/,
-      upb_arena* /*arena*/) const override {
-    return absl::InvalidArgumentError(
-        "router filter does not support config override");
+      upb_strview /*serialized_filter_config*/, upb_arena* /*arena*/) const override {
+    return absl::InvalidArgumentError("router filter does not support config override");
   }
 
   // No-op -- this filter is special-cased by the xds resolver.
@@ -100,10 +96,8 @@ void XdsHttpFilterRegistry::PopulateSymtab(upb_symtab* symtab) {
 void XdsHttpFilterRegistry::Init() {
   g_filters = new FilterOwnerList;
   g_filter_registry = new FilterRegistryMap;
-  RegisterFilter(absl::make_unique<XdsHttpRouterFilter>(),
-                 {kXdsHttpRouterFilterConfigName});
-  RegisterFilter(absl::make_unique<XdsHttpFaultFilter>(),
-                 {kXdsHttpFaultFilterConfigName});
+  RegisterFilter(absl::make_unique<XdsHttpRouterFilter>(), {kXdsHttpRouterFilterConfigName});
+  RegisterFilter(absl::make_unique<XdsHttpFaultFilter>(), {kXdsHttpFaultFilterConfigName});
 }
 
 void XdsHttpFilterRegistry::Shutdown() {

@@ -40,9 +40,7 @@ class ServerInitializer {
     return true;
   }
 
-  const std::vector<std::string>* GetServiceList() {
-    return &server_->services_;
-  }
+  const std::vector<std::string>* GetServiceList() { return &server_->services_; }
 
  private:
   grpc::Server* server_;

@@ -79,8 +79,7 @@ class Server : public InternallyRefCounted<Server> {
 
     /// Starts listening. This listener may refer to the pollset object beyond
     /// this call, so it is a pointer rather than a reference.
-    virtual void Start(Server* server,
-                       const std::vector<grpc_pollset*>* pollsets) = 0;
+    virtual void Start(Server* server, const std::vector<grpc_pollset*>* pollsets) = 0;
 
     /// Returns the channelz node for the listen socket, or null if not
     /// supported.
@@ -97,9 +96,7 @@ class Server : public InternallyRefCounted<Server> {
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
   const grpc_channel_args* channel_args() const { return channel_args_; }
-  grpc_resource_user* default_resource_user() const {
-    return default_resource_user_;
-  }
+  grpc_resource_user* default_resource_user() const { return default_resource_user_; }
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 
   // Do not call this before Start(). Returns the pollsets. The
@@ -107,12 +104,9 @@ class Server : public InternallyRefCounted<Server> {
   // result is valid for the lifetime of the server.
   const std::vector<grpc_pollset*>& pollsets() const { return pollsets_; }
 
-  grpc_server_config_fetcher* config_fetcher() const {
-    return config_fetcher_.get();
-  }
+  grpc_server_config_fetcher* config_fetcher() const { return config_fetcher_.get(); }
 
-  void set_config_fetcher(
-      std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
+  void set_config_fetcher(std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
     config_fetcher_ = std::move(config_fetcher);
   }
 
@@ -128,39 +122,35 @@ class Server : public InternallyRefCounted<Server> {
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
-  grpc_error_handle SetupTransport(
-      grpc_transport* transport, grpc_pollset* accepting_pollset,
-      const grpc_channel_args* args,
-      const RefCountedPtr<channelz::SocketNode>& socket_node,
-      grpc_resource_user* resource_user = nullptr);
+  grpc_error_handle SetupTransport(grpc_transport* transport, grpc_pollset* accepting_pollset,
+                                   const grpc_channel_args* args,
+                                   const RefCountedPtr<channelz::SocketNode>& socket_node,
+                                   grpc_resource_user* resource_user = nullptr);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
   // Functions to specify that a specific registered method or the unregistered
   // collection should use a specific allocator for request matching.
-  void SetRegisteredMethodAllocator(
-      grpc_completion_queue* cq, void* method_tag,
-      std::function<RegisteredCallAllocation()> allocator);
+  void SetRegisteredMethodAllocator(grpc_completion_queue* cq, void* method_tag,
+                                    std::function<RegisteredCallAllocation()> allocator);
   void SetBatchMethodAllocator(grpc_completion_queue* cq,
                                std::function<BatchCallAllocation()> allocator);
 
-  RegisteredMethod* RegisterMethod(
-      const char* method, const char* host,
-      grpc_server_register_method_payload_handling payload_handling,
-      uint32_t flags);
+  RegisteredMethod* RegisterMethod(const char* method, const char* host,
+                                   grpc_server_register_method_payload_handling payload_handling,
+                                   uint32_t flags);
 
   grpc_call_error RequestCall(grpc_call** call, grpc_call_details* details,
                               grpc_metadata_array* request_metadata,
                               grpc_completion_queue* cq_bound_to_call,
-                              grpc_completion_queue* cq_for_notification,
-                              void* tag);
+                              grpc_completion_queue* cq_for_notification, void* tag);
 
-  grpc_call_error RequestRegisteredCall(
-      RegisteredMethod* rm, grpc_call** call, gpr_timespec* deadline,
-      grpc_metadata_array* request_metadata,
-      grpc_byte_buffer** optional_payload,
-      grpc_completion_queue* cq_bound_to_call,
-      grpc_completion_queue* cq_for_notification, void* tag_new);
+  grpc_call_error RequestRegisteredCall(RegisteredMethod* rm, grpc_call** call,
+                                        gpr_timespec* deadline,
+                                        grpc_metadata_array* request_metadata,
+                                        grpc_byte_buffer** optional_payload,
+                                        grpc_completion_queue* cq_bound_to_call,
+                                        grpc_completion_queue* cq_for_notification, void* tag_new);
 
   void ShutdownAndNotify(grpc_completion_queue* cq, void* tag)
       ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
@@ -189,21 +179,19 @@ class Server : public InternallyRefCounted<Server> {
     ChannelData() = default;
     ~ChannelData();
 
-    void InitTransport(RefCountedPtr<Server> server, grpc_channel* channel,
-                       size_t cq_idx, grpc_transport* transport,
-                       intptr_t channelz_socket_uuid);
+    void InitTransport(RefCountedPtr<Server> server, grpc_channel* channel, size_t cq_idx,
+                       grpc_transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
     grpc_channel* channel() const { return channel_; }
     size_t cq_idx() const { return cq_idx_; }
 
-    ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
-                                                 const grpc_slice& path,
+    ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host, const grpc_slice& path,
                                                  bool is_idempotent);
 
     // Filter vtable functions.
-    static grpc_error_handle InitChannelElement(
-        grpc_channel_element* elem, grpc_channel_element_args* args);
+    static grpc_error_handle InitChannelElement(grpc_channel_element* elem,
+                                                grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
 
    private:
@@ -264,18 +252,17 @@ class Server : public InternallyRefCounted<Server> {
     void FailCallCreation();
 
     // Filter vtable functions.
-    static grpc_error_handle InitCallElement(
-        grpc_call_element* elem, const grpc_call_element_args* args);
+    static grpc_error_handle InitCallElement(grpc_call_element* elem,
+                                             const grpc_call_element_args* args);
     static void DestroyCallElement(grpc_call_element* elem,
                                    const grpc_call_final_info* /*final_info*/,
                                    grpc_closure* /*ignored*/);
-    static void StartTransportStreamOpBatch(
-        grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
+    static void StartTransportStreamOpBatch(grpc_call_element* elem,
+                                            grpc_transport_stream_op_batch* batch);
 
    private:
     // Helper functions for handling calls at the top of the call stack.
-    static void RecvInitialMetadataBatchComplete(void* arg,
-                                                 grpc_error_handle error);
+    static void RecvInitialMetadataBatchComplete(void* arg, grpc_error_handle error);
     void StartNewRpc(grpc_call_element* elem);
     static void PublishNewRpc(void* arg, grpc_error_handle error);
 
@@ -302,8 +289,7 @@ class Server : public InternallyRefCounted<Server> {
 
     grpc_closure kill_zombie_closure_;
 
-    grpc_metadata_array initial_metadata_ =
-        grpc_metadata_array();  // Zero-initialize the C struct.
+    grpc_metadata_array initial_metadata_ = grpc_metadata_array();  // Zero-initialize the C struct.
     grpc_closure recv_initial_metadata_batch_complete_;
 
     grpc_metadata_batch* recv_initial_metadata_ = nullptr;
@@ -323,15 +309,13 @@ class Server : public InternallyRefCounted<Server> {
   };
 
   struct Listener {
-    explicit Listener(OrphanablePtr<ListenerInterface> l)
-        : listener(std::move(l)) {}
+    explicit Listener(OrphanablePtr<ListenerInterface> l) : listener(std::move(l)) {}
     OrphanablePtr<ListenerInterface> listener;
     grpc_closure destroy_done;
   };
 
   struct ShutdownTag {
-    ShutdownTag(void* tag_arg, grpc_completion_queue* cq_arg)
-        : tag(tag_arg), cq(cq_arg) {}
+    ShutdownTag(void* tag_arg, grpc_completion_queue* cq_arg) : tag(tag_arg), cq(cq_arg) {}
     void* const tag;
     grpc_completion_queue* const cq;
     grpc_cq_completion completion;
@@ -339,8 +323,7 @@ class Server : public InternallyRefCounted<Server> {
 
   static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
-  static void DoneShutdownEvent(void* server,
-                                grpc_cq_completion* /*completion*/) {
+  static void DoneShutdownEvent(void* server, grpc_cq_completion* /*completion*/) {
     static_cast<Server*>(server)->Unref();
   }
 
@@ -352,15 +335,15 @@ class Server : public InternallyRefCounted<Server> {
   void MaybeFinishShutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_)
       ABSL_LOCKS_EXCLUDED(mu_call_);
 
-  void KillPendingWorkLocked(grpc_error_handle error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_call_);
+  void KillPendingWorkLocked(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_call_);
 
-  static grpc_call_error ValidateServerRequest(
-      grpc_completion_queue* cq_for_notification, void* tag,
-      grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
-  grpc_call_error ValidateServerRequestAndCq(
-      size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
-      grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
+  static grpc_call_error ValidateServerRequest(grpc_completion_queue* cq_for_notification,
+                                               void* tag, grpc_byte_buffer** optional_payload,
+                                               RegisteredMethod* rm);
+  grpc_call_error ValidateServerRequestAndCq(size_t* cq_idx,
+                                             grpc_completion_queue* cq_for_notification, void* tag,
+                                             grpc_byte_buffer** optional_payload,
+                                             RegisteredMethod* rm);
 
   std::vector<grpc_channel*> GetChannelsLocked() const;
 
@@ -386,16 +369,12 @@ class Server : public InternallyRefCounted<Server> {
     }
   }
 
-  bool ShutdownCalled() const {
-    return (shutdown_refs_.Load(MemoryOrder::ACQUIRE) & 1) == 0;
-  }
+  bool ShutdownCalled() const { return (shutdown_refs_.Load(MemoryOrder::ACQUIRE) & 1) == 0; }
 
   // Returns whether there are no more shutdown refs, which means that shutdown
   // has been called and all accepted requests have been published if using an
   // AllocatingRequestMatcher.
-  bool ShutdownReady() const {
-    return shutdown_refs_.Load(MemoryOrder::ACQUIRE) == 0;
-  }
+  bool ShutdownReady() const { return shutdown_refs_.Load(MemoryOrder::ACQUIRE) == 0; }
 
   grpc_channel_args* const channel_args_;
   grpc_resource_user* default_resource_user_ = nullptr;
@@ -472,8 +451,7 @@ struct grpc_server_config_fetcher {
     // UpdateConnectionManager() is invoked by the config fetcher when a new
     // config is available. Implementations should update the connection manager
     // and start serving if not already serving.
-    virtual void UpdateConnectionManager(
-        grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
+    virtual void UpdateConnectionManager(grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
     // Implementations should stop serving when this is called. Serving should
     // only resume when UpdateConfig() is invoked.
     virtual void StopServing() = 0;
@@ -482,8 +460,7 @@ struct grpc_server_config_fetcher {
   virtual ~grpc_server_config_fetcher() = default;
 
   // Ownership of \a args is transferred.
-  virtual void StartWatch(std::string listening_address,
-                          grpc_channel_args* args,
+  virtual void StartWatch(std::string listening_address, grpc_channel_args* args,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;

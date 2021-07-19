@@ -36,8 +36,7 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -51,13 +50,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -69,8 +64,7 @@ static void drain_cq(grpc_completion_queue* cq) {
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev = grpc_completion_queue_next(
-      f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+  grpc_event ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == tag(1000));
   grpc_server_destroy(f->server);
@@ -96,8 +90,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // Test with request larger than the limit.
 // If send_limit is true, applies send limit on client; otherwise, applies
 // recv limit on server.
-static void test_max_message_length_on_request(grpc_end2end_test_config config,
-                                               bool send_limit,
+static void test_max_message_length_on_request(grpc_end2end_test_config config, bool send_limit,
                                                bool use_service_config,
                                                bool use_string_json_value) {
   gpr_log(GPR_INFO,
@@ -111,10 +104,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
-  grpc_slice request_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_slice request_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* recv_payload = nullptr;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -133,33 +124,31 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;
     arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
-    arg.value.string =
-        use_string_json_value
-            ? const_cast<char*>(
-                  "{\n"
-                  "  \"methodConfig\": [ {\n"
-                  "    \"name\": [\n"
-                  "      { \"service\": \"service\", \"method\": \"method\" }\n"
-                  "    ],\n"
-                  "    \"maxRequestMessageBytes\": \"5\"\n"
-                  "  } ]\n"
-                  "}")
-            : const_cast<char*>(
-                  "{\n"
-                  "  \"methodConfig\": [ {\n"
-                  "    \"name\": [\n"
-                  "      { \"service\": \"service\", \"method\": \"method\" }\n"
-                  "    ],\n"
-                  "    \"maxRequestMessageBytes\": 5\n"
-                  "  } ]\n"
-                  "}");
+    arg.value.string = use_string_json_value
+                           ? const_cast<char*>(
+                                 "{\n"
+                                 "  \"methodConfig\": [ {\n"
+                                 "    \"name\": [\n"
+                                 "      { \"service\": \"service\", \"method\": \"method\" }\n"
+                                 "    ],\n"
+                                 "    \"maxRequestMessageBytes\": \"5\"\n"
+                                 "  } ]\n"
+                                 "}")
+                           : const_cast<char*>(
+                                 "{\n"
+                                 "  \"methodConfig\": [ {\n"
+                                 "    \"name\": [\n"
+                                 "      { \"service\": \"service\", \"method\": \"method\" }\n"
+                                 "    ],\n"
+                                 "    \"maxRequestMessageBytes\": 5\n"
+                                 "  } ]\n"
+                                 "}");
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   } else {
     // Set limit via channel args.
     grpc_arg arg;
-    arg.key = send_limit
-                  ? const_cast<char*>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)
-                  : const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
+    arg.key = send_limit ? const_cast<char*>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)
+                         : const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
     arg.type = GRPC_ARG_INTEGER;
     arg.value.integer = 5;
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
@@ -170,8 +159,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
     }
   }
 
-  f = begin_test(config, "test_max_request_message_length", client_args,
-                 server_args);
+  f = begin_test(config, "test_max_request_message_length", client_args, server_args);
   {
     grpc_core::ExecCtx exec_ctx;
     if (client_args != nullptr) grpc_channel_args_destroy(client_args);
@@ -181,9 +169,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
-                               nullptr);
+                               grpc_slice_from_static_string("/service/method"), nullptr,
+                               gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -219,8 +206,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (send_limit) {
@@ -229,9 +215,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
     goto done;
   }
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -248,8 +233,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -261,11 +245,9 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
 
 done:
   GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-  GPR_ASSERT(
-      grpc_slice_str_cmp(
-          details, send_limit
-                       ? "Sent message larger than max (11 vs. 5)"
-                       : "Received message larger than max (11 vs. 5)") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(details, send_limit
+                                             ? "Sent message larger than max (11 vs. 5)"
+                                             : "Received message larger than max (11 vs. 5)") == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -287,8 +269,7 @@ done:
 // Test with response larger than the limit.
 // If send_limit is true, applies send limit on server; otherwise, applies
 // recv limit on client.
-static void test_max_message_length_on_response(grpc_end2end_test_config config,
-                                                bool send_limit,
+static void test_max_message_length_on_response(grpc_end2end_test_config config, bool send_limit,
                                                 bool use_service_config,
                                                 bool use_string_json_value) {
   gpr_log(GPR_INFO,
@@ -302,10 +283,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
-  grpc_slice response_payload_slice =
-      grpc_slice_from_copied_string("hello world");
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_slice response_payload_slice = grpc_slice_from_copied_string("hello world");
+  grpc_byte_buffer* response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_byte_buffer* recv_payload = nullptr;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -325,30 +304,28 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
     arg.type = GRPC_ARG_STRING;
     arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
     arg.value.string = const_cast<char*>(
-        use_string_json_value
-            ? "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"maxResponseMessageBytes\": \"5\"\n"
-              "  } ]\n"
-              "}"
-            : "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"maxResponseMessageBytes\": 5\n"
-              "  } ]\n"
-              "}");
+        use_string_json_value ? "{\n"
+                                "  \"methodConfig\": [ {\n"
+                                "    \"name\": [\n"
+                                "      { \"service\": \"service\", \"method\": \"method\" }\n"
+                                "    ],\n"
+                                "    \"maxResponseMessageBytes\": \"5\"\n"
+                                "  } ]\n"
+                                "}"
+                              : "{\n"
+                                "  \"methodConfig\": [ {\n"
+                                "    \"name\": [\n"
+                                "      { \"service\": \"service\", \"method\": \"method\" }\n"
+                                "    ],\n"
+                                "    \"maxResponseMessageBytes\": 5\n"
+                                "  } ]\n"
+                                "}");
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   } else {
     // Set limit via channel args.
     grpc_arg arg;
-    arg.key = send_limit
-                  ? const_cast<char*>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)
-                  : const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
+    arg.key = send_limit ? const_cast<char*>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH)
+                         : const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH);
     arg.type = GRPC_ARG_INTEGER;
     arg.value.integer = 5;
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
@@ -359,8 +336,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
     }
   }
 
-  f = begin_test(config, "test_max_response_message_length", client_args,
-                 server_args);
+  f = begin_test(config, "test_max_response_message_length", client_args, server_args);
   {
     grpc_core::ExecCtx exec_ctx;
     if (client_args != nullptr) grpc_channel_args_destroy(client_args);
@@ -369,9 +345,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
-                               nullptr);
+                               grpc_slice_from_static_string("/service/method"), nullptr,
+                               gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -407,13 +382,11 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -443,8 +416,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -453,11 +425,9 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-  GPR_ASSERT(
-      grpc_slice_str_cmp(
-          details, send_limit
-                       ? "Sent message larger than max (11 vs. 5)"
-                       : "Received message larger than max (11 vs. 5)") == 0);
+  GPR_ASSERT(grpc_slice_str_cmp(details, send_limit
+                                             ? "Sent message larger than max (11 vs. 5)"
+                                             : "Received message larger than max (11 vs. 5)") == 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -484,8 +454,8 @@ static grpc_metadata gzip_compression_override() {
 }
 
 // Test receive message limit with compressed request larger than the limit
-static void test_max_receive_message_length_on_compressed_request(
-    grpc_end2end_test_config config, bool minimal_stack) {
+static void test_max_receive_message_length_on_compressed_request(grpc_end2end_test_config config,
+                                                                  bool minimal_stack) {
   gpr_log(GPR_INFO,
           "test max receive message length on compressed request with "
           "minimal_stack=%d",
@@ -498,8 +468,7 @@ static void test_max_receive_message_length_on_compressed_request(
   grpc_op* op;
   grpc_slice request_payload_slice = grpc_slice_malloc(1024);
   memset(GRPC_SLICE_START_PTR(request_payload_slice), 'a', 1024);
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* recv_payload = nullptr;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -512,24 +481,21 @@ static void test_max_receive_message_length_on_compressed_request(
 
   // Set limit via channel args.
   grpc_arg arg[2];
-  arg[0] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), 5);
-  arg[1] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_MINIMAL_STACK), minimal_stack);
-  grpc_channel_args* server_args =
-      grpc_channel_args_copy_and_add(nullptr, arg, 2);
+  arg[0] =
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), 5);
+  arg[1] =
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_MINIMAL_STACK), minimal_stack);
+  grpc_channel_args* server_args = grpc_channel_args_copy_and_add(nullptr, arg, 2);
 
-  f = begin_test(config, "test_max_request_message_length", nullptr,
-                 server_args);
+  f = begin_test(config, "test_max_request_message_length", nullptr, server_args);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(server_args);
   }
   cqv = cq_verifier_create(f.cq);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
-                               nullptr);
+                               grpc_slice_from_static_string("/service/method"), nullptr,
+                               gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -567,13 +533,11 @@ static void test_max_receive_message_length_on_compressed_request(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -606,8 +570,7 @@ static void test_max_receive_message_length_on_compressed_request(
     op->reserved = nullptr;
     op++;
   }
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -621,9 +584,7 @@ static void test_max_receive_message_length_on_compressed_request(
   } else {
     GPR_ASSERT(was_cancelled == 1);
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    GPR_ASSERT(grpc_slice_str_cmp(
-                   details, "Received message larger than max (29 vs. 5)") ==
-               0);
+    GPR_ASSERT(grpc_slice_str_cmp(details, "Received message larger than max (29 vs. 5)") == 0);
   }
   grpc_slice_unref(details);
   grpc_slice_unref(request_payload_slice);
@@ -642,8 +603,8 @@ static void test_max_receive_message_length_on_compressed_request(
 }
 
 // Test receive message limit with compressed response larger than the limit.
-static void test_max_receive_message_length_on_compressed_response(
-    grpc_end2end_test_config config, bool minimal_stack) {
+static void test_max_receive_message_length_on_compressed_response(grpc_end2end_test_config config,
+                                                                   bool minimal_stack) {
   gpr_log(GPR_INFO,
           "testing max receive message length on compressed response with "
           "minimal_stack=%d",
@@ -656,8 +617,7 @@ static void test_max_receive_message_length_on_compressed_response(
   grpc_op* op;
   grpc_slice response_payload_slice = grpc_slice_malloc(1024);
   memset(GRPC_SLICE_START_PTR(response_payload_slice), 'a', 1024);
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_byte_buffer* response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_byte_buffer* recv_payload = nullptr;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -670,15 +630,13 @@ static void test_max_receive_message_length_on_compressed_response(
 
   // Set limit via channel args.
   grpc_arg arg[2];
-  arg[0] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), 5);
-  arg[1] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_MINIMAL_STACK), minimal_stack);
-  grpc_channel_args* client_args =
-      grpc_channel_args_copy_and_add(nullptr, arg, 2);
+  arg[0] =
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH), 5);
+  arg[1] =
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_MINIMAL_STACK), minimal_stack);
+  grpc_channel_args* client_args = grpc_channel_args_copy_and_add(nullptr, arg, 2);
 
-  f = begin_test(config, "test_max_response_message_length", client_args,
-                 nullptr);
+  f = begin_test(config, "test_max_response_message_length", client_args, nullptr);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(client_args);
@@ -686,9 +644,8 @@ static void test_max_receive_message_length_on_compressed_response(
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
-                               nullptr);
+                               grpc_slice_from_static_string("/service/method"), nullptr,
+                               gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -724,13 +681,11 @@ static void test_max_receive_message_length_on_compressed_response(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -762,8 +717,7 @@ static void test_max_receive_message_length_on_compressed_response(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -776,9 +730,7 @@ static void test_max_receive_message_length_on_compressed_response(
     GPR_ASSERT(status == GRPC_STATUS_OK);
   } else {
     GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
-    GPR_ASSERT(grpc_slice_str_cmp(
-                   details, "Received message larger than max (29 vs. 5)") ==
-               0);
+    GPR_ASSERT(grpc_slice_str_cmp(details, "Received message larger than max (29 vs. 5)") == 0);
   }
   grpc_slice_unref(details);
   grpc_slice_unref(response_payload_slice);
@@ -799,29 +751,22 @@ static void test_max_receive_message_length_on_compressed_response(
 }
 
 void max_message_length(grpc_end2end_test_config config) {
-  test_max_message_length_on_request(config, false /* send_limit */,
-                                     false /* use_service_config */,
+  test_max_message_length_on_request(config, false /* send_limit */, false /* use_service_config */,
                                      false /* use_string_json_value */);
-  test_max_message_length_on_request(config, true /* send_limit */,
-                                     false /* use_service_config */,
+  test_max_message_length_on_request(config, true /* send_limit */, false /* use_service_config */,
                                      false /* use_string_json_value */);
   test_max_message_length_on_response(config, false /* send_limit */,
                                       false /* use_service_config */,
                                       false /* use_string_json_value */);
-  test_max_message_length_on_response(config, true /* send_limit */,
-                                      false /* use_service_config */,
+  test_max_message_length_on_response(config, true /* send_limit */, false /* use_service_config */,
                                       false /* use_string_json_value */);
-  test_max_message_length_on_request(config, true /* send_limit */,
-                                     true /* use_service_config */,
+  test_max_message_length_on_request(config, true /* send_limit */, true /* use_service_config */,
                                      false /* use_string_json_value */);
-  test_max_message_length_on_request(config, true /* send_limit */,
-                                     true /* use_service_config */,
+  test_max_message_length_on_request(config, true /* send_limit */, true /* use_service_config */,
                                      true /* use_string_json_value */);
-  test_max_message_length_on_response(config, false /* send_limit */,
-                                      true /* use_service_config */,
+  test_max_message_length_on_response(config, false /* send_limit */, true /* use_service_config */,
                                       false /* use_string_json_value */);
-  test_max_message_length_on_response(config, false /* send_limit */,
-                                      true /* use_service_config */,
+  test_max_message_length_on_response(config, false /* send_limit */, true /* use_service_config */,
                                       true /* use_string_json_value */);
   /* The following tests are not useful for inproc transport and do not work
    * with our simple proxy. */

@@ -81,14 +81,12 @@ RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
   return node->RefIfNonZero();
 }
 
-std::string ChannelzRegistry::InternalGetTopChannels(
-    intptr_t start_channel_id) {
+std::string ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   absl::InlinedVector<RefCountedPtr<BaseNode>, 10> top_level_channels;
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
-    for (auto it = node_map_.lower_bound(start_channel_id);
-         it != node_map_.end(); ++it) {
+    for (auto it = node_map_.lower_bound(start_channel_id); it != node_map_.end(); ++it) {
       BaseNode* node = it->second;
       RefCountedPtr<BaseNode> node_ref;
       if (node->type() == BaseNode::EntityType::kTopLevelChannel &&
@@ -126,8 +124,7 @@ std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
-    for (auto it = node_map_.lower_bound(start_server_id);
-         it != node_map_.end(); ++it) {
+    for (auto it = node_map_.lower_bound(start_server_id); it != node_map_.end(); ++it) {
       BaseNode* node = it->second;
       RefCountedPtr<BaseNode> node_ref;
       if (node->type() == BaseNode::EntityType::kServer &&
@@ -184,16 +181,13 @@ char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return gpr_strdup(
-      grpc_core::channelz::ChannelzRegistry::GetTopChannels(start_channel_id)
-          .c_str());
+      grpc_core::channelz::ChannelzRegistry::GetTopChannels(start_channel_id).c_str());
 }
 
 char* grpc_channelz_get_servers(intptr_t start_server_id) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  return gpr_strdup(
-      grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id)
-          .c_str());
+  return gpr_strdup(grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id).c_str());
 }
 
 char* grpc_channelz_get_server(intptr_t server_id) {
@@ -202,8 +196,7 @@ char* grpc_channelz_get_server(intptr_t server_id) {
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> server_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
   if (server_node == nullptr ||
-      server_node->type() !=
-          grpc_core::channelz::BaseNode::EntityType::kServer) {
+      server_node->type() != grpc_core::channelz::BaseNode::EntityType::kServer) {
     return nullptr;
   }
   grpc_core::Json json = grpc_core::Json::Object{
@@ -212,8 +205,7 @@ char* grpc_channelz_get_server(intptr_t server_id) {
   return gpr_strdup(json.Dump().c_str());
 }
 
-char* grpc_channelz_get_server_sockets(intptr_t server_id,
-                                       intptr_t start_socket_id,
+char* grpc_channelz_get_server_sockets(intptr_t server_id, intptr_t start_socket_id,
                                        intptr_t max_results) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
@@ -229,8 +221,7 @@ char* grpc_channelz_get_server_sockets(intptr_t server_id,
   // actually a server node.
   grpc_core::channelz::ServerNode* server_node =
       static_cast<grpc_core::channelz::ServerNode*>(base_node.get());
-  return gpr_strdup(
-      server_node->RenderServerSockets(start_socket_id, max_results).c_str());
+  return gpr_strdup(server_node->RenderServerSockets(start_socket_id, max_results).c_str());
 }
 
 char* grpc_channelz_get_channel(intptr_t channel_id) {
@@ -239,10 +230,8 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> channel_node =
       grpc_core::channelz::ChannelzRegistry::Get(channel_id);
   if (channel_node == nullptr ||
-      (channel_node->type() !=
-           grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel &&
-       channel_node->type() !=
-           grpc_core::channelz::BaseNode::EntityType::kInternalChannel)) {
+      (channel_node->type() != grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel &&
+       channel_node->type() != grpc_core::channelz::BaseNode::EntityType::kInternalChannel)) {
     return nullptr;
   }
   grpc_core::Json json = grpc_core::Json::Object{
@@ -257,8 +246,7 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> subchannel_node =
       grpc_core::channelz::ChannelzRegistry::Get(subchannel_id);
   if (subchannel_node == nullptr ||
-      subchannel_node->type() !=
-          grpc_core::channelz::BaseNode::EntityType::kSubchannel) {
+      subchannel_node->type() != grpc_core::channelz::BaseNode::EntityType::kSubchannel) {
     return nullptr;
   }
   grpc_core::Json json = grpc_core::Json::Object{
@@ -273,8 +261,7 @@ char* grpc_channelz_get_socket(intptr_t socket_id) {
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> socket_node =
       grpc_core::channelz::ChannelzRegistry::Get(socket_id);
   if (socket_node == nullptr ||
-      socket_node->type() !=
-          grpc_core::channelz::BaseNode::EntityType::kSocket) {
+      socket_node->type() != grpc_core::channelz::BaseNode::EntityType::kSocket) {
     return nullptr;
   }
   grpc_core::Json json = grpc_core::Json::Object{

@@ -74,9 +74,9 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
   return Status::OK;
 }
 
-Status ClientStatusDiscoveryService::FetchClientStatus(
-    ServerContext* /*context*/, const ClientStatusRequest* /*request*/,
-    ClientStatusResponse* response) {
+Status ClientStatusDiscoveryService::FetchClientStatus(ServerContext* /*context*/,
+                                                       const ClientStatusRequest* /*request*/,
+                                                       ClientStatusResponse* response) {
   absl::StatusOr<ClientConfig> s = DumpClientConfig();
   if (!s.ok()) {
     if (s.status().code() == absl::StatusCode::kUnavailable) {

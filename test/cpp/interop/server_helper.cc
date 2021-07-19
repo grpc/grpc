@@ -44,23 +44,19 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
   } else if (absl::GetFlag(FLAGS_use_tls)) {
     return GetCredentialsProvider()->GetServerCredentials(kTlsCredentialsType);
   } else {
-    return GetCredentialsProvider()->GetServerCredentials(
-        kInsecureCredentialsType);
+    return GetCredentialsProvider()->GetServerCredentials(kInsecureCredentialsType);
   }
 }
 
-InteropServerContextInspector::InteropServerContextInspector(
-    const ::grpc::ServerContext& context)
+InteropServerContextInspector::InteropServerContextInspector(const ::grpc::ServerContext& context)
     : context_(context) {}
 
-grpc_compression_algorithm
-InteropServerContextInspector::GetCallCompressionAlgorithm() const {
+grpc_compression_algorithm InteropServerContextInspector::GetCallCompressionAlgorithm() const {
   return grpc_call_test_only_get_compression_algorithm(context_.call_.call);
 }
 
 uint32_t InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
-  return grpc_call_test_only_get_encodings_accepted_by_peer(
-      context_.call_.call);
+  return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_.call);
 }
 
 bool InteropServerContextInspector::WasCompressed() const {
@@ -70,14 +66,11 @@ bool InteropServerContextInspector::WasCompressed() const {
           GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED);
 }
 
-std::shared_ptr<const AuthContext>
-InteropServerContextInspector::GetAuthContext() const {
+std::shared_ptr<const AuthContext> InteropServerContextInspector::GetAuthContext() const {
   return context_.auth_context();
 }
 
-bool InteropServerContextInspector::IsCancelled() const {
-  return context_.IsCancelled();
-}
+bool InteropServerContextInspector::IsCancelled() const { return context_.IsCancelled(); }
 
 }  // namespace testing
 }  // namespace grpc

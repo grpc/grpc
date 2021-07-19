@@ -36,14 +36,9 @@ namespace testing {
 
 class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
-  BidiClient(benchmark::State* state, EchoTestService::Stub* stub,
-             ClientContext* cli_ctx, EchoRequest* request,
-             EchoResponse* response)
-      : state_{state},
-        stub_{stub},
-        cli_ctx_{cli_ctx},
-        request_{request},
-        response_{response} {
+  BidiClient(benchmark::State* state, EchoTestService::Stub* stub, ClientContext* cli_ctx,
+             EchoRequest* request, EchoResponse* response)
+      : state_{state}, stub_{stub}, cli_ctx_{cli_ctx}, request_{request}, response_{response} {
     msgs_size_ = state->range(0);
     msgs_to_send_ = state->range(1);
     StartNewRpc();
@@ -123,8 +118,7 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
   int max_ping_pongs = state.range(1);
   CallbackStreamingTestService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
-  std::unique_ptr<EchoTestService::Stub> stub_(
-      EchoTestService::NewStub(fixture->channel()));
+  std::unique_ptr<EchoTestService::Stub> stub_(EchoTestService::NewStub(fixture->channel()));
   EchoRequest request;
   EchoResponse response;
   ClientContext cli_ctx;
@@ -140,8 +134,7 @@ static void BM_CallbackBidiStreaming(benchmark::State& state) {
   }
   fixture->Finish(state);
   fixture.reset();
-  state.SetBytesProcessed(2 * message_size * max_ping_pongs *
-                          state.iterations());
+  state.SetBytesProcessed(2 * message_size * max_ping_pongs * state.iterations());
 }
 
 }  // namespace testing

@@ -44,8 +44,7 @@
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.channelz_channel_node"
 
 // Channel arg key for indicating an internal channel.
-#define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
-  "grpc.channelz_is_internal_channel"
+#define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL "grpc.channelz_is_internal_channel"
 
 /** This is the default value for whether or not to enable channelz. If
  * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
@@ -137,8 +136,7 @@ class CallCountingHelper {
         : calls_started(that.calls_started.Load(MemoryOrder::RELAXED)),
           calls_succeeded(that.calls_succeeded.Load(MemoryOrder::RELAXED)),
           calls_failed(that.calls_failed.Load(MemoryOrder::RELAXED)),
-          last_call_started_cycle(
-              that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {}
+          last_call_started_cycle(that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {}
 
     Atomic<int64_t> calls_started{0};
     Atomic<int64_t> calls_succeeded{0};
@@ -173,12 +171,10 @@ class CallCountingHelper {
 // Handles channelz bookkeeping for channels
 class ChannelNode : public BaseNode {
  public:
-  ChannelNode(std::string target, size_t channel_tracer_max_nodes,
-              bool is_internal_channel);
+  ChannelNode(std::string target, size_t channel_tracer_max_nodes, bool is_internal_channel);
 
   // Returns the string description of the given connectivity state.
-  static const char* GetChannelConnectivityStateChangeString(
-      grpc_connectivity_state state);
+  static const char* GetChannelConnectivityStateChangeString(grpc_connectivity_state state);
 
   Json RenderJson() override;
 
@@ -186,11 +182,9 @@ class ChannelNode : public BaseNode {
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
-  void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
+  void AddTraceEventWithReference(ChannelTrace::Severity severity, const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
-    trace_.AddTraceEventWithReference(severity, data,
-                                      std::move(referenced_channel));
+    trace_.AddTraceEventWithReference(severity, data, std::move(referenced_channel));
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
@@ -236,8 +230,7 @@ class ServerNode : public BaseNode {
 
   Json RenderJson() override;
 
-  std::string RenderServerSockets(intptr_t start_socket_id,
-                                  intptr_t max_results);
+  std::string RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
 
   void AddChildSocket(RefCountedPtr<SocketNode> node);
 
@@ -251,11 +244,9 @@ class ServerNode : public BaseNode {
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
-  void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
+  void AddTraceEventWithReference(ChannelTrace::Severity severity, const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
-    trace_.AddTraceEventWithReference(severity, data,
-                                      std::move(referenced_channel));
+    trace_.AddTraceEventWithReference(severity, data, std::move(referenced_channel));
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
@@ -297,8 +288,7 @@ class SocketNode : public BaseNode {
 
     grpc_arg MakeChannelArg() const;
 
-    static RefCountedPtr<Security> GetFromChannelArgs(
-        const grpc_channel_args* args);
+    static RefCountedPtr<Security> GetFromChannelArgs(const grpc_channel_args* args);
   };
 
   SocketNode(std::string local, std::string remote, std::string name,
@@ -309,17 +299,11 @@ class SocketNode : public BaseNode {
 
   void RecordStreamStartedFromLocal();
   void RecordStreamStartedFromRemote();
-  void RecordStreamSucceeded() {
-    streams_succeeded_.FetchAdd(1, MemoryOrder::RELAXED);
-  }
-  void RecordStreamFailed() {
-    streams_failed_.FetchAdd(1, MemoryOrder::RELAXED);
-  }
+  void RecordStreamSucceeded() { streams_succeeded_.FetchAdd(1, MemoryOrder::RELAXED); }
+  void RecordStreamFailed() { streams_failed_.FetchAdd(1, MemoryOrder::RELAXED); }
   void RecordMessagesSent(uint32_t num_sent);
   void RecordMessageReceived();
-  void RecordKeepaliveSent() {
-    keepalives_sent_.FetchAdd(1, MemoryOrder::RELAXED);
-  }
+  void RecordKeepaliveSent() { keepalives_sent_.FetchAdd(1, MemoryOrder::RELAXED); }
 
   const std::string& remote() { return remote_; }
 

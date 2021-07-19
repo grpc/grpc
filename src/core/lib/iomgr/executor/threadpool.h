@@ -62,12 +62,12 @@ class ThreadPoolInterface {
 // NULL closure.
 class ThreadPoolWorker {
  public:
-  ThreadPoolWorker(const char* thd_name, MPMCQueueInterface* queue,
-                   Thread::Options& options, int index)
+  ThreadPoolWorker(const char* thd_name, MPMCQueueInterface* queue, Thread::Options& options,
+                   int index)
       : queue_(queue), thd_name_(thd_name), index_(index) {
     thd_ = Thread(
-        thd_name, [](void* th) { static_cast<ThreadPoolWorker*>(th)->Run(); },
-        this, nullptr, options);
+        thd_name, [](void* th) { static_cast<ThreadPoolWorker*>(th)->Run(); }, this, nullptr,
+        options);
   }
 
   ~ThreadPoolWorker() {}
@@ -112,8 +112,7 @@ class ThreadPool : public ThreadPoolInterface {
   // value 0, default ThreadPool stack size will be used. The current default
   // stack size of this implementation is 1952K for mobile platform and 64K for
   // all others.
-  ThreadPool(int num_threads, const char* thd_name,
-             const Thread::Options& thread_options);
+  ThreadPool(int num_threads, const char* thd_name, const Thread::Options& thread_options);
 
   // Waits for all pending closures to complete, then shuts down thread pool.
   ~ThreadPool() override;

@@ -35,12 +35,12 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
   void PopulateSymtab(upb_symtab* symtab) const override;
 
   // Overrides the GenerateFilterConfig method
-  absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const override;
+  absl::StatusOr<FilterConfig> GenerateFilterConfig(upb_strview serialized_filter_config,
+                                                    upb_arena* arena) const override;
 
   // Overrides the GenerateFilterConfigOverride method
-  absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview serialized_filter_config, upb_arena* arena) const override;
+  absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(upb_strview serialized_filter_config,
+                                                            upb_arena* arena) const override;
 
   // Overrides the channel_filter method
   const grpc_channel_filter* channel_filter() const override;

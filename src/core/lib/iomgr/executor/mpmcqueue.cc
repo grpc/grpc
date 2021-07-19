@@ -33,24 +33,21 @@ inline void* InfLenFIFOQueue::PopFront() {
 
   // Updates Stats when trace flag turned on.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
-    gpr_timespec wait_time =
-        gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), queue_head_->insert_time);
+    gpr_timespec wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), queue_head_->insert_time);
     stats_.num_completed++;
     stats_.total_queue_time = gpr_time_add(stats_.total_queue_time, wait_time);
-    stats_.max_queue_time = gpr_time_max(
-        gpr_convert_clock_type(stats_.max_queue_time, GPR_TIMESPAN), wait_time);
+    stats_.max_queue_time =
+        gpr_time_max(gpr_convert_clock_type(stats_.max_queue_time, GPR_TIMESPAN), wait_time);
 
     if (count_.Load(MemoryOrder::RELAXED) == 0) {
-      stats_.busy_queue_time =
-          gpr_time_add(stats_.busy_queue_time,
-                       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), busy_time));
+      stats_.busy_queue_time = gpr_time_add(stats_.busy_queue_time,
+                                            gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), busy_time));
     }
 
     gpr_log(GPR_INFO,
             "[InfLenFIFOQueue PopFront] num_completed:        %" PRIu64
             " total_queue_time: %f max_queue_time:   %f busy_queue_time:   %f",
-            stats_.num_completed,
-            gpr_timespec_to_micros(stats_.total_queue_time),
+            stats_.num_completed, gpr_timespec_to_micros(stats_.total_queue_time),
             gpr_timespec_to_micros(stats_.max_queue_time),
             gpr_timespec_to_micros(stats_.busy_queue_time));
   }
@@ -78,8 +75,7 @@ InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
 
 InfLenFIFOQueue::InfLenFIFOQueue() {
   delete_list_size_ = kDeleteListInitSize;
-  delete_list_ =
-      static_cast<Node**>(gpr_zalloc(sizeof(Node*) * delete_list_size_));
+  delete_list_ = static_cast<Node**>(gpr_zalloc(sizeof(Node*) * delete_list_size_));
 
   Node* new_chunk = AllocateNodes(kQueueInitNumNodes);
   delete_list_[delete_list_count_++] = new_chunk;
@@ -111,8 +107,8 @@ void InfLenFIFOQueue::Put(void* elem) {
     // Expands delete list on full.
     if (delete_list_count_ == delete_list_size_) {
       delete_list_size_ = delete_list_size_ * 2;
-      delete_list_ = static_cast<Node**>(
-          gpr_realloc(delete_list_, sizeof(Node*) * delete_list_size_));
+      delete_list_ =
+          static_cast<Node**>(gpr_realloc(delete_list_, sizeof(Node*) * delete_list_size_));
     }
     new_chunk[0].prev = queue_tail_->prev;
     new_chunk[curr_count - 1].next = queue_head_;
@@ -125,8 +121,7 @@ void InfLenFIFOQueue::Put(void* elem) {
   // Updates Stats info
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     stats_.num_started++;
-    gpr_log(GPR_INFO, "[InfLenFIFOQueue Put] num_started:        %" PRIu64,
-            stats_.num_started);
+    gpr_log(GPR_INFO, "[InfLenFIFOQueue Put] num_started:        %" PRIu64, stats_.num_started);
     auto current_time = gpr_now(GPR_CLOCK_MONOTONIC);
     if (curr_count == 0) {
       busy_time = current_time;
@@ -145,8 +140,7 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
 
   if (count_.Load(MemoryOrder::RELAXED) == 0) {
     gpr_timespec start_time;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
-        wait_time != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) && wait_time != nullptr) {
       start_time = gpr_now(GPR_CLOCK_MONOTONIC);
     }
 
@@ -156,8 +150,7 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
       self.cv.Wait(&mu_);
     } while (count_.Load(MemoryOrder::RELAXED) == 0);
     RemoveWaiter(&self);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
-        wait_time != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) && wait_time != nullptr) {
       *wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_time);
     }
   }

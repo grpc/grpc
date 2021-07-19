@@ -34,8 +34,7 @@
 namespace grpc_core {
 
 // Map for xDS based grpc_tls_certificate_provider instances.
-class CertificateProviderStore
-    : public InternallyRefCounted<CertificateProviderStore> {
+class CertificateProviderStore : public InternallyRefCounted<CertificateProviderStore> {
  public:
   struct PluginDefinition {
     std::string plugin_name;
@@ -63,19 +62,15 @@ class CertificateProviderStore
   // the entry from the CertificateProviderStore when the refcount reaches zero.
   class CertificateProviderWrapper : public grpc_tls_certificate_provider {
    public:
-    CertificateProviderWrapper(
-        RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
-        RefCountedPtr<CertificateProviderStore> store, absl::string_view key)
+    CertificateProviderWrapper(RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
+                               RefCountedPtr<CertificateProviderStore> store, absl::string_view key)
         : certificate_provider_(std::move(certificate_provider)),
           store_(std::move(store)),
           key_(key) {}
 
-    ~CertificateProviderWrapper() override {
-      store_->ReleaseCertificateProvider(key_, this);
-    }
+    ~CertificateProviderWrapper() override { store_->ReleaseCertificateProvider(key_, this); }
 
-    grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-        const override {
+    grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
       return certificate_provider_->distributor();
     }
 
@@ -91,20 +86,19 @@ class CertificateProviderStore
     absl::string_view key_;
   };
 
-  RefCountedPtr<CertificateProviderWrapper> CreateCertificateProviderLocked(
-      absl::string_view key) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  RefCountedPtr<CertificateProviderWrapper> CreateCertificateProviderLocked(absl::string_view key)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Releases a previously created certificate provider from the certificate
   // provider map if the value matches \a wrapper.
-  void ReleaseCertificateProvider(absl::string_view key,
-                                  CertificateProviderWrapper* wrapper);
+  void ReleaseCertificateProvider(absl::string_view key, CertificateProviderWrapper* wrapper);
 
   Mutex mu_;
   // Map of plugin configurations
   const PluginDefinitionMap plugin_config_map_;
   // Underlying map for the providers.
-  std::map<absl::string_view, CertificateProviderWrapper*>
-      certificate_providers_map_ ABSL_GUARDED_BY(mu_);
+  std::map<absl::string_view, CertificateProviderWrapper*> certificate_providers_map_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

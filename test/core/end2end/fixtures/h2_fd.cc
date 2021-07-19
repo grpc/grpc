@@ -52,8 +52,7 @@ static void create_sockets(int sv[2]) {
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
-  sp_fixture_data* fixture_data =
-      static_cast<sp_fixture_data*>(gpr_malloc(sizeof(*fixture_data)));
+  sp_fixture_data* fixture_data = static_cast<sp_fixture_data*>(gpr_malloc(sizeof(*fixture_data)));
 
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
@@ -72,8 +71,7 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
 
   GPR_ASSERT(!f->client);
-  f->client = grpc_insecure_channel_create_from_fd(
-      "fixture_client", sfd->fd_pair[0], client_args);
+  f->client = grpc_insecure_channel_create_from_fd("fixture_client", sfd->fd_pair[0], client_args);
   GPR_ASSERT(f->client);
 }
 
@@ -90,15 +88,12 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   grpc_server_add_insecure_channel_from_fd(f->server, nullptr, sfd->fd_pair[1]);
 }
 
-static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
-  gpr_free(f->fixture_data);
-}
+static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) { gpr_free(f->fixture_data); }
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fd", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
-     chttp2_create_fixture_socketpair, chttp2_init_client_socketpair,
-     chttp2_init_server_socketpair, chttp2_tear_down_socketpair},
+    {"chttp2/fd", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr, chttp2_create_fixture_socketpair,
+     chttp2_init_client_socketpair, chttp2_init_server_socketpair, chttp2_tear_down_socketpair},
 };
 
 int main(int argc, char** argv) {

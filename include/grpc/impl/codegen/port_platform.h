@@ -66,12 +66,10 @@
 #include <windows.h>
 
 #ifndef _WIN32_WINNT
-#error \
-    "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
+#error "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
 #else /* !defined(_WIN32_WINNT) */
 #if (_WIN32_WINNT < 0x0600)
-#error \
-    "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
+#error "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* defined(_WIN32_WINNT) */
 
@@ -489,9 +487,7 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 /* Validate platform combinations */
-#if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + \
-        defined(GPR_WINDOWS_ATOMIC) !=                \
-    1
+#if defined(GPR_GCC_ATOMIC) + defined(GPR_GCC_SYNC) + defined(GPR_WINDOWS_ATOMIC) != 1
 #error Must define exactly one of GPR_GCC_ATOMIC, GPR_GCC_SYNC, GPR_WINDOWS_ATOMIC
 #endif
 
@@ -543,8 +539,7 @@ typedef unsigned __int64 uint64_t;
 
 #ifndef GPR_PRINT_FORMAT_CHECK
 #ifdef __GNUC__
-#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
-  __attribute__((format(printf, FORMAT_STR, ARGS)))
+#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) __attribute__((format(printf, FORMAT_STR, ARGS)))
 #else
 #define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
 #endif

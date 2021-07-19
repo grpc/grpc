@@ -33,8 +33,7 @@ namespace {
 
 class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
  public:
-  explicit HierarchicalPathAttribute(std::vector<std::string> path)
-      : path_(std::move(path)) {}
+  explicit HierarchicalPathAttribute(std::vector<std::string> path) : path_(std::move(path)) {}
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<HierarchicalPathAttribute>(path_);
@@ -64,18 +63,16 @@ class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
 
 }  // namespace
 
-std::unique_ptr<ServerAddress::AttributeInterface>
-MakeHierarchicalPathAttribute(std::vector<std::string> path) {
+std::unique_ptr<ServerAddress::AttributeInterface> MakeHierarchicalPathAttribute(
+    std::vector<std::string> path) {
   return absl::make_unique<HierarchicalPathAttribute>(std::move(path));
 }
 
-HierarchicalAddressMap MakeHierarchicalAddressMap(
-    const ServerAddressList& addresses) {
+HierarchicalAddressMap MakeHierarchicalAddressMap(const ServerAddressList& addresses) {
   HierarchicalAddressMap result;
   for (const ServerAddress& address : addresses) {
-    const HierarchicalPathAttribute* path_attribute =
-        static_cast<const HierarchicalPathAttribute*>(
-            address.GetAttribute(kHierarchicalPathAttributeKey));
+    const HierarchicalPathAttribute* path_attribute = static_cast<const HierarchicalPathAttribute*>(
+        address.GetAttribute(kHierarchicalPathAttributeKey));
     if (path_attribute == nullptr) continue;
     const std::vector<std::string>& path = path_attribute->path();
     auto it = path.begin();
@@ -84,11 +81,10 @@ HierarchicalAddressMap MakeHierarchicalAddressMap(
     ++it;
     if (it != path.end()) {
       std::vector<std::string> remaining_path(it, path.end());
-      new_attribute = absl::make_unique<HierarchicalPathAttribute>(
-          std::move(remaining_path));
+      new_attribute = absl::make_unique<HierarchicalPathAttribute>(std::move(remaining_path));
     }
-    target_list.emplace_back(address.WithAttribute(
-        kHierarchicalPathAttributeKey, std::move(new_attribute)));
+    target_list.emplace_back(
+        address.WithAttribute(kHierarchicalPathAttributeKey, std::move(new_attribute)));
   }
   return result;
 }

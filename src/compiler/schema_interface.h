@@ -60,13 +60,11 @@ struct Method : public CommentHolder {
   virtual std::string output_type_name() const = 0;
 
   virtual bool get_module_and_message_path_input(
-      std::string* str, std::string generator_file_name,
-      bool generate_in_pb2_grpc, std::string import_prefix,
-      const std::vector<std::string>& prefixes_to_filter) const = 0;
+      std::string* str, std::string generator_file_name, bool generate_in_pb2_grpc,
+      std::string import_prefix, const std::vector<std::string>& prefixes_to_filter) const = 0;
   virtual bool get_module_and_message_path_output(
-      std::string* str, std::string generator_file_name,
-      bool generate_in_pb2_grpc, std::string import_prefix,
-      const std::vector<std::string>& prefixes_to_filter) const = 0;
+      std::string* str, std::string generator_file_name, bool generate_in_pb2_grpc,
+      std::string import_prefix, const std::vector<std::string>& prefixes_to_filter) const = 0;
 
   virtual std::string get_input_type_name() const = 0;
   virtual std::string get_output_type_name() const = 0;

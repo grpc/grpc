@@ -40,8 +40,7 @@ class StringMatcher {
 
   // Creates StringMatcher instance. Returns error status on failure.
   // Note: case_sensitive is ignored for type kSafeRegex.
-  static absl::StatusOr<StringMatcher> Create(Type type,
-                                              absl::string_view matcher,
+  static absl::StatusOr<StringMatcher> Create(Type type, absl::string_view matcher,
                                               bool case_sensitive = true);
 
   StringMatcher() = default;
@@ -90,28 +89,21 @@ class HeaderMatcher {
   // Make sure that the first five HeaderMatcher::Type enum values match up to
   // the corresponding StringMatcher::Type enum values, so that it's safe to
   // convert by casting when delegating to StringMatcher.
-  static_assert(static_cast<StringMatcher::Type>(Type::kExact) ==
-                    StringMatcher::Type::kExact,
+  static_assert(static_cast<StringMatcher::Type>(Type::kExact) == StringMatcher::Type::kExact, "");
+  static_assert(static_cast<StringMatcher::Type>(Type::kPrefix) == StringMatcher::Type::kPrefix,
                 "");
-  static_assert(static_cast<StringMatcher::Type>(Type::kPrefix) ==
-                    StringMatcher::Type::kPrefix,
-                "");
-  static_assert(static_cast<StringMatcher::Type>(Type::kSuffix) ==
-                    StringMatcher::Type::kSuffix,
+  static_assert(static_cast<StringMatcher::Type>(Type::kSuffix) == StringMatcher::Type::kSuffix,
                 "");
   static_assert(static_cast<StringMatcher::Type>(Type::kSafeRegex) ==
                     StringMatcher::Type::kSafeRegex,
                 "");
-  static_assert(static_cast<StringMatcher::Type>(Type::kContains) ==
-                    StringMatcher::Type::kContains,
+  static_assert(static_cast<StringMatcher::Type>(Type::kContains) == StringMatcher::Type::kContains,
                 "");
 
   // Creates HeaderMatcher instance. Returns error status on failure.
   static absl::StatusOr<HeaderMatcher> Create(absl::string_view name, Type type,
-                                              absl::string_view matcher,
-                                              int64_t range_start = 0,
-                                              int64_t range_end = 0,
-                                              bool present_match = false,
+                                              absl::string_view matcher, int64_t range_start = 0,
+                                              int64_t range_end = 0, bool present_match = false,
                                               bool invert_match = false);
 
   HeaderMatcher() = default;
@@ -126,9 +118,7 @@ class HeaderMatcher {
   Type type() const { return type_; }
 
   // Valid for kExact, kPrefix, kSuffix and kContains.
-  const std::string& string_matcher() const {
-    return matcher_.string_matcher();
-  }
+  const std::string& string_matcher() const { return matcher_.string_matcher(); }
 
   // Valid for kSafeRegex.
   RE2* regex_matcher() const { return matcher_.regex_matcher(); }
@@ -139,11 +129,9 @@ class HeaderMatcher {
 
  private:
   // For StringMatcher.
-  HeaderMatcher(absl::string_view name, Type type, StringMatcher matcher,
-                bool invert_match);
+  HeaderMatcher(absl::string_view name, Type type, StringMatcher matcher, bool invert_match);
   // For RangeMatcher.
-  HeaderMatcher(absl::string_view name, int64_t range_start, int64_t range_end,
-                bool invert_match);
+  HeaderMatcher(absl::string_view name, int64_t range_start, int64_t range_end, bool invert_match);
   // For PresentMatcher.
   HeaderMatcher(absl::string_view name, bool present_match, bool invert_match);
 

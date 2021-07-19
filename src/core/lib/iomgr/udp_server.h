@@ -51,13 +51,11 @@ class GrpcUdpHandler {
   virtual bool Read() = 0;
   // Called when socket becomes write unblocked. The given closure should be
   // scheduled when the socket becomes blocked next time.
-  virtual void OnCanWrite(void* user_data,
-                          grpc_closure* notify_on_write_closure) = 0;
+  virtual void OnCanWrite(void* user_data, grpc_closure* notify_on_write_closure) = 0;
   // Called before the gRPC FD is orphaned. Notify udp server to continue
   // orphaning fd by scheduling the given closure, afterwards the associated fd
   // will be closed.
-  virtual void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure,
-                                 void* user_data) = 0;
+  virtual void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure, void* user_data) = 0;
 };
 
 class GrpcUdpHandlerFactory {
@@ -74,8 +72,7 @@ class GrpcUdpHandlerFactory {
 grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args);
 
 /* Start listening to bound ports. user_data is passed to callbacks. */
-void grpc_udp_server_start(grpc_udp_server* udp_server,
-                           const std::vector<grpc_pollset*>* pollsets,
+void grpc_udp_server_start(grpc_udp_server* udp_server, const std::vector<grpc_pollset*>* pollsets,
                            void* user_data);
 
 int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index);
@@ -93,9 +90,8 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index);
 
 /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
-                             int rcv_buf_size, int snd_buf_size,
-                             GrpcUdpHandlerFactory* handler_factory,
+int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr, int rcv_buf_size,
+                             int snd_buf_size, GrpcUdpHandlerFactory* handler_factory,
                              size_t num_listeners);
 
 void grpc_udp_server_destroy(grpc_udp_server* server, grpc_closure* on_done);

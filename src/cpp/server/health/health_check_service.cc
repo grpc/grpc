@@ -23,9 +23,7 @@ namespace {
 bool g_grpc_default_health_check_service_enabled = false;
 }  // namespace
 
-bool DefaultHealthCheckServiceEnabled() {
-  return g_grpc_default_health_check_service_enabled;
-}
+bool DefaultHealthCheckServiceEnabled() { return g_grpc_default_health_check_service_enabled; }
 
 void EnableDefaultHealthCheckService(bool enable) {
   g_grpc_default_health_check_service_enabled = enable;

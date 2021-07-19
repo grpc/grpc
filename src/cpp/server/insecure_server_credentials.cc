@@ -40,8 +40,7 @@ class InsecureServerCredentialsImpl final : public ServerCredentials {
 }  // namespace
 
 std::shared_ptr<ServerCredentials> InsecureServerCredentials() {
-  return std::shared_ptr<ServerCredentials>(
-      new InsecureServerCredentialsImpl());
+  return std::shared_ptr<ServerCredentials>(new InsecureServerCredentialsImpl());
 }
 
 }  // namespace grpc

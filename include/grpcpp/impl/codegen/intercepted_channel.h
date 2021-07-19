@@ -54,14 +54,10 @@ class InterceptedChannel : public ChannelInterface {
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override {
     return channel_->PerformOpsOnCall(ops, call);
   }
-  void* RegisterMethod(const char* method) override {
-    return channel_->RegisterMethod(method);
-  }
+  void* RegisterMethod(const char* method) override { return channel_->RegisterMethod(method); }
 
-  void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline,
-                               ::grpc::CompletionQueue* cq,
-                               void* tag) override {
+  void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed, gpr_timespec deadline,
+                               ::grpc::CompletionQueue* cq, void* tag) override {
     return channel_->NotifyOnStateChangeImpl(last_observed, deadline, cq, tag);
   }
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
@@ -69,9 +65,7 @@ class InterceptedChannel : public ChannelInterface {
     return channel_->WaitForStateChangeImpl(last_observed, deadline);
   }
 
-  ::grpc::CompletionQueue* CallbackCQ() override {
-    return channel_->CallbackCQ();
-  }
+  ::grpc::CompletionQueue* CallbackCQ() override { return channel_->CallbackCQ(); }
 
   ChannelInterface* channel_;
   size_t interceptor_pos_;

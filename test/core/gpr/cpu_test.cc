@@ -113,8 +113,7 @@ static void cpu_test(void) {
   ct.is_done = 0;
 
   uint32_t nthreads = ct.ncores * 3;
-  grpc_core::Thread* thd =
-      static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*thd) * nthreads));
+  grpc_core::Thread* thd = static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*thd) * nthreads));
 
   for (i = 0; i < nthreads; i++) {
     thd[i] = grpc_core::Thread("grpc_cpu_test", &worker_thread, &ct);

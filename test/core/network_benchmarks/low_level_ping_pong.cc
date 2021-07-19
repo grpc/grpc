@@ -162,8 +162,7 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
     GPR_ASSERT(ev.data.fd == args->fds.read_fd);
     do {
       do {
-        err2 =
-            read(args->fds.read_fd, buf + bytes_read, read_size - bytes_read);
+        err2 = read(args->fds.read_fd, buf + bytes_read, read_size - bytes_read);
       } while (err2 < 0 && errno == EINTR);
       if (errno == EAGAIN) break;
       bytes_read += static_cast<size_t>(err2);
@@ -193,8 +192,7 @@ static int blocking_write_bytes(struct thread_args* args, char* buf) {
   ssize_t err;
   size_t write_size = args->msg_size;
   do {
-    err = write(args->fds.write_fd, buf + bytes_written,
-                write_size - bytes_written);
+    err = write(args->fds.write_fd, buf + bytes_written, write_size - bytes_written);
     if (err < 0) {
       if (errno == EINTR) {
         continue;
@@ -280,10 +278,8 @@ static void print_histogram(grpc_histogram* histogram) {
   /* TODO(klempner): Print more detailed information, such as detailed histogram
      buckets */
   gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
-          grpc_histogram_percentile(histogram, 50),
-          grpc_histogram_percentile(histogram, 95),
-          grpc_histogram_percentile(histogram, 99),
-          grpc_histogram_percentile(histogram, 99.9));
+          grpc_histogram_percentile(histogram, 50), grpc_histogram_percentile(histogram, 95),
+          grpc_histogram_percentile(histogram, 99), grpc_histogram_percentile(histogram, 99.9));
 }
 
 static double now(void) {
@@ -557,8 +553,7 @@ static test_strategy test_strategies[] = {
 
 static const char* socket_types[] = {"tcp", "socketpair", "pipe"};
 
-int create_socket(const char* socket_type, fd_pair* client_fds,
-                  fd_pair* server_fds) {
+int create_socket(const char* socket_type, fd_pair* client_fds, fd_pair* server_fds) {
   if (strcmp(socket_type, "tcp") == 0) {
     create_sockets_tcp(client_fds, server_fds);
   } else if (strcmp(socket_type, "socketpair") == 0) {
@@ -582,8 +577,8 @@ static int run_benchmark(const char* socket_type, thread_args* client_args,
     return rv;
   }
 
-  gpr_log(GPR_INFO, "Starting test %s %s %zu", client_args->strategy_name,
-          socket_type, client_args->msg_size);
+  gpr_log(GPR_INFO, "Starting test %s %s %zu", client_args->strategy_name, socket_type,
+          client_args->msg_size);
 
   grpc_core::Thread server("server_thread", server_thread_wrap, server_args);
   server.Start();
@@ -600,10 +595,8 @@ static int run_all_benchmarks(size_t msg_size) {
     test_strategy* strategy = &test_strategies[i];
     size_t j;
     for (j = 0; j < GPR_ARRAY_SIZE(socket_types); ++j) {
-      thread_args* client_args =
-          static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
-      thread_args* server_args =
-          static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
+      thread_args* client_args = static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
+      thread_args* server_args = static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
       const char* socket_type = socket_types[j];
 
       client_args->read_bytes = strategy->read_strategy;
@@ -626,10 +619,8 @@ static int run_all_benchmarks(size_t msg_size) {
 }
 
 int main(int argc, char** argv) {
-  thread_args* client_args =
-      static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
-  thread_args* server_args =
-      static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
+  thread_args* client_args = static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
+  thread_args* server_args = static_cast<thread_args*>(gpr_malloc(sizeof(thread_args)));
   int msg_size = -1;
   const char* read_strategy = nullptr;
   const char* socket_type = nullptr;
@@ -637,14 +628,11 @@ int main(int argc, char** argv) {
   const test_strategy* strategy = nullptr;
   int error = 0;
 
-  gpr_cmdline* cmdline =
-      gpr_cmdline_create("low_level_ping_pong network benchmarking tool");
+  gpr_cmdline* cmdline = gpr_cmdline_create("low_level_ping_pong network benchmarking tool");
 
   gpr_cmdline_add_int(cmdline, "msg_size", "Size of sent messages", &msg_size);
-  gpr_cmdline_add_string(cmdline, "read_strategy", read_strategy_usage,
-                         &read_strategy);
-  gpr_cmdline_add_string(cmdline, "socket_type", socket_type_usage,
-                         &socket_type);
+  gpr_cmdline_add_string(cmdline, "read_strategy", read_strategy_usage, &read_strategy);
+  gpr_cmdline_add_string(cmdline, "socket_type", socket_type_usage, &socket_type);
 
   gpr_cmdline_parse(cmdline, argc, argv);
 

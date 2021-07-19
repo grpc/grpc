@@ -28,11 +28,9 @@
 /** The virtual table of grpc_socket_factory */
 struct grpc_socket_factory_vtable {
   /** Replacement for socket(2) */
-  int (*socket)(grpc_socket_factory* factory, int domain, int type,
-                int protocol);
+  int (*socket)(grpc_socket_factory* factory, int domain, int type, int protocol);
   /** Replacement for bind(2) */
-  int (*bind)(grpc_socket_factory* factory, int sockfd,
-              const grpc_resolved_address* addr);
+  int (*bind)(grpc_socket_factory* factory, int sockfd, const grpc_resolved_address* addr);
   /** Compare socket factory \a a and \a b */
   int (*compare)(grpc_socket_factory* a, grpc_socket_factory* b);
   /** Destroys the socket factory instance */
@@ -52,8 +50,7 @@ void grpc_socket_factory_init(grpc_socket_factory* factory,
 grpc_arg grpc_socket_factory_to_arg(grpc_socket_factory* factory);
 
 /** Perform the equivalent of a socket(2) operation using \a factory */
-int grpc_socket_factory_socket(grpc_socket_factory* factory, int domain,
-                               int type, int protocol);
+int grpc_socket_factory_socket(grpc_socket_factory* factory, int domain, int type, int protocol);
 
 /** Perform the equivalent of a bind(2) operation using \a factory */
 int grpc_socket_factory_bind(grpc_socket_factory* factory, int sockfd,

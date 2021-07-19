@@ -64,8 +64,7 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
    * 4. http_proxy environment variable
    * If none of the above are set, then no HTTP proxy will be used.
    */
-  char* uri_str =
-      gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY));
+  char* uri_str = gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY));
   if (uri_str == nullptr) uri_str = gpr_getenv("grpc_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
@@ -79,13 +78,11 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
     goto done;
   }
   if (uri->scheme() != "http") {
-    gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI",
-            uri->scheme().c_str());
+    gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI", uri->scheme().c_str());
     goto done;
   }
   /* Split on '@' to separate user credentials from host */
-  gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
-                   &authority_nstrs);
+  gpr_string_split(uri->authority().c_str(), "@", &authority_strs, &authority_nstrs);
   GPR_ASSERT(authority_nstrs != 0); /* should have at least 1 string */
   if (authority_nstrs == 1) {
     /* User cred not present in authority */
@@ -121,8 +118,8 @@ std::string MaybeAddDefaultPort(absl::string_view target) {
 
 class HttpProxyMapper : public ProxyMapperInterface {
  public:
-  bool MapName(const char* server_uri, const grpc_channel_args* args,
-               char** name_to_resolve, grpc_channel_args** new_args) override {
+  bool MapName(const char* server_uri, const grpc_channel_args* args, char** name_to_resolve,
+               grpc_channel_args** new_args) override {
     if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_HTTP_PROXY, true)) {
       return false;
     }
@@ -140,8 +137,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
       goto no_use_proxy;
     }
     if (uri->scheme() == "unix") {
-      gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'",
-              server_uri);
+      gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'", server_uri);
       goto no_use_proxy;
     }
     /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
@@ -152,8 +148,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
       bool use_proxy = true;
       std::string server_host;
       std::string server_port;
-      if (!SplitHostPort(absl::StripPrefix(uri->path(), "/"), &server_host,
-                         &server_port)) {
+      if (!SplitHostPort(absl::StripPrefix(uri->path(), "/"), &server_host, &server_port)) {
         gpr_log(GPR_INFO,
                 "unable to split host and port, not checking no_proxy list for "
                 "host '%s'",
@@ -163,17 +158,13 @@ class HttpProxyMapper : public ProxyMapperInterface {
         size_t uri_len = server_host.size();
         char** no_proxy_hosts;
         size_t num_no_proxy_hosts;
-        gpr_string_split(no_proxy_str, NO_PROXY_SEPARATOR, &no_proxy_hosts,
-                         &num_no_proxy_hosts);
+        gpr_string_split(no_proxy_str, NO_PROXY_SEPARATOR, &no_proxy_hosts, &num_no_proxy_hosts);
         for (size_t i = 0; i < num_no_proxy_hosts; i++) {
           char* no_proxy_entry = no_proxy_hosts[i];
           size_t no_proxy_len = strlen(no_proxy_entry);
           if (no_proxy_len <= uri_len &&
-              gpr_stricmp(no_proxy_entry,
-                          &(server_host.c_str()[uri_len - no_proxy_len])) ==
-                  0) {
-            gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
-                    server_uri);
+              gpr_stricmp(no_proxy_entry, &(server_host.c_str()[uri_len - no_proxy_len])) == 0) {
+            gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'", server_uri);
             use_proxy = false;
             break;
           }
@@ -186,22 +177,17 @@ class HttpProxyMapper : public ProxyMapperInterface {
         if (!use_proxy) goto no_use_proxy;
       }
     }
-    server_target =
-        MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")).c_str();
+    server_target = MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")).c_str();
     grpc_arg args_to_add[2];
-    args_to_add[0] = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER),
-        const_cast<char*>(server_target.c_str()));
+    args_to_add[0] = grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER),
+                                                    const_cast<char*>(server_target.c_str()));
     if (user_cred != nullptr) {
       /* Use base64 encoding for user credentials as stated in RFC 7617 */
-      char* encoded_user_cred =
-          grpc_base64_encode(user_cred, strlen(user_cred), 0, 0);
-      std::string header =
-          absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred);
+      char* encoded_user_cred = grpc_base64_encode(user_cred, strlen(user_cred), 0, 0);
+      std::string header = absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred);
       gpr_free(encoded_user_cred);
       args_to_add[1] = grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_HTTP_CONNECT_HEADERS),
-          const_cast<char*>(header.c_str()));
+          const_cast<char*>(GRPC_ARG_HTTP_CONNECT_HEADERS), const_cast<char*>(header.c_str()));
       *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 2);
     } else {
       *new_args = grpc_channel_args_copy_and_add(args, args_to_add, 1);
@@ -215,8 +201,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
     return false;
   }
 
-  bool MapAddress(const grpc_resolved_address& /*address*/,
-                  const grpc_channel_args* /*args*/,
+  bool MapAddress(const grpc_resolved_address& /*address*/, const grpc_channel_args* /*args*/,
                   grpc_resolved_address** /*new_address*/,
                   grpc_channel_args** /*new_args*/) override {
     return false;
@@ -226,9 +211,8 @@ class HttpProxyMapper : public ProxyMapperInterface {
 }  // namespace
 
 void RegisterHttpProxyMapper() {
-  ProxyMapperRegistry::Register(
-      true /* at_start */,
-      std::unique_ptr<ProxyMapperInterface>(new HttpProxyMapper()));
+  ProxyMapperRegistry::Register(true /* at_start */,
+                                std::unique_ptr<ProxyMapperInterface>(new HttpProxyMapper()));
 }
 
 }  // namespace grpc_core

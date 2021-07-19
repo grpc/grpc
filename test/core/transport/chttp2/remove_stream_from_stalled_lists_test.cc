@@ -50,8 +50,7 @@ class TransportTargetWindowEstimatesMocker
  public:
   explicit TransportTargetWindowEstimatesMocker() {}
 
-  double ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
-      double current_target) override {
+  double ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(double current_target) override {
     const double kTinyWindow = 512;
     const double kSmallWindow = 8192;
     // The goal is to bounce back and forth between 512 and 8192 initial window
@@ -81,11 +80,10 @@ void StartCall(grpc_call* call, grpc_completion_queue* cq) {
   op->reserved = nullptr;
   op++;
   void* tag = call;
-  grpc_call_error error = grpc_call_start_batch(
-      call, ops, static_cast<size_t>(op - ops), tag, nullptr);
+  grpc_call_error error =
+      grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  grpc_event event = grpc_completion_queue_next(
-      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_event event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
@@ -125,11 +123,10 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op->reserved = nullptr;
   op++;
   void* tag = call;
-  grpc_call_error error = grpc_call_start_batch(
-      call, ops, static_cast<size_t>(op - ops), tag, nullptr);
+  grpc_call_error error =
+      grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  grpc_event event = grpc_completion_queue_next(
-      cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_event event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(event.success);
   GPR_ASSERT(event.tag == tag);
@@ -161,9 +158,8 @@ class TestServer {
     accept_thread_.join();
     grpc_server_destroy(server_);
     grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                      nullptr)
-               .type != GRPC_QUEUE_SHUTDOWN) {
+    while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr).type !=
+           GRPC_QUEUE_SHUTDOWN) {
     }
     grpc_completion_queue_destroy(cq_);
     return num_calls_handled_;
@@ -187,14 +183,14 @@ class TestServer {
         grpc_core::MutexLock lock(&shutdown_mu_);
         if (!shutdown_) {
           call_cq = grpc_completion_queue_create_for_next(nullptr);
-          grpc_call_error error = grpc_server_request_call(
-              server_, &call, &call_details, &request_metadata_recv, call_cq,
-              cq_, request_call_tag);
+          grpc_call_error error =
+              grpc_server_request_call(server_, &call, &call_details, &request_metadata_recv,
+                                       call_cq, cq_, request_call_tag);
           GPR_ASSERT(error == GRPC_CALL_OK);
         }
       }
-      grpc_event event = grpc_completion_queue_next(
-          cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+      grpc_event event =
+          grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
       GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
       grpc_call_details_destroy(&call_details);
       grpc_metadata_array_destroy(&request_metadata_recv);
@@ -202,8 +198,7 @@ class TestServer {
         if (event.tag == request_call_tag) {
           // HandleOneRpc takes ownership of its parameters
           num_calls_handled_++;
-          rpc_threads.push_back(
-              std::thread(std::bind(&TestServer::HandleOneRpc, call, call_cq)));
+          rpc_threads.push_back(std::thread(std::bind(&TestServer::HandleOneRpc, call, call_cq)));
         } else if (event.tag == this /* shutdown_and_notify tag */) {
           grpc_core::MutexLock lock(&shutdown_mu_);
           GPR_ASSERT(shutdown_);
@@ -231,10 +226,8 @@ class TestServer {
     for (int i = 0; i < 4 * 1e6; i++) {
       send_payload += "a";
     }
-    grpc_slice request_payload_slice =
-        grpc_slice_from_copied_string(send_payload.c_str());
-    grpc_byte_buffer* request_payload =
-        grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+    grpc_slice request_payload_slice = grpc_slice_from_copied_string(send_payload.c_str());
+    grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
     void* tag = call_cq;
     grpc_op ops[2];
     grpc_op* op;
@@ -248,15 +241,15 @@ class TestServer {
     op->data.send_message.send_message = request_payload;
     op->reserved = nullptr;
     op++;
-    grpc_call_error error = grpc_call_start_batch(
-        call, ops, static_cast<size_t>(op - ops), tag, nullptr);
+    grpc_call_error error =
+        grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag, nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     std::thread poller([call_cq]() {
       // poll the connection so that we actively pick up bytes off the wire,
       // including settings frames with window size increases
-      while (grpc_completion_queue_next(
-                 call_cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-                 .type != GRPC_QUEUE_SHUTDOWN) {
+      while (
+          grpc_completion_queue_next(call_cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr).type !=
+          GRPC_QUEUE_SHUTDOWN) {
       }
     });
     grpc_call_cancel(call, nullptr);
@@ -300,27 +293,24 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
       grpc_channel* channel = grpc_insecure_channel_create(
           std::string("ipv6:" + server_address).c_str(), channel_args, nullptr);
       grpc_channel_args_destroy(channel_args);
-      grpc_completion_queue* cq =
-          grpc_completion_queue_create_for_next(nullptr);
-      grpc_call* call = grpc_channel_create_call(
-          channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-          grpc_slice_from_static_string("/foo"), nullptr,
-          gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+      grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+      grpc_call* call = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                                                 grpc_slice_from_static_string("/foo"), nullptr,
+                                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
       StartCall(call, cq);
       // Explicitly avoid reading on this RPC for a period of time. The
       // goal is to get the server side RPC to stall on it's outgoing stream
       // flow control window, as the first step in trying to trigger a bug.
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
+      gpr_sleep_until(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(1, GPR_TIMESPAN)));
       // Note that this test doesn't really care what the status of the RPC was,
       // because we're just trying to make sure that we don't crash.
       FinishCall(call, cq);
       grpc_call_unref(call);
       grpc_channel_destroy(channel);
       grpc_completion_queue_shutdown(cq);
-      while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                        nullptr)
-                 .type != GRPC_QUEUE_SHUTDOWN) {
+      while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr).type !=
+             GRPC_QUEUE_SHUTDOWN) {
       }
       grpc_completion_queue_destroy(cq);
     }));

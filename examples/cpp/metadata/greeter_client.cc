@@ -37,8 +37,7 @@ using helloworld::HelloRequest;
 
 class CustomHeaderClient {
  public:
-  CustomHeaderClient(std::shared_ptr<Channel> channel)
-      : stub_(Greeter::NewStub(channel)) {}
+  CustomHeaderClient(std::shared_ptr<Channel> channel) : stub_(Greeter::NewStub(channel)) {}
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
@@ -67,19 +66,14 @@ class CustomHeaderClient {
     // Act upon its status.
     if (status.ok()) {
       std::cout << "Client received initial metadata from server: "
-                << context.GetServerInitialMetadata()
-                       .find("custom-server-metadata")
-                       ->second
+                << context.GetServerInitialMetadata().find("custom-server-metadata")->second
                 << std::endl;
       std::cout << "Client received trailing metadata from server: "
-                << context.GetServerTrailingMetadata()
-                       .find("custom-trailing-metadata")
-                       ->second
+                << context.GetServerTrailingMetadata().find("custom-trailing-metadata")->second
                 << std::endl;
       return reply.message();
     } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
+      std::cout << status.error_code() << ": " << status.error_message() << std::endl;
       return "RPC failed";
     }
   }
@@ -93,8 +87,8 @@ int main(int argc, char** argv) {
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureChannelCredentials()).
-  CustomHeaderClient greeter(grpc::CreateChannel(
-      "localhost:50051", grpc::InsecureChannelCredentials()));
+  CustomHeaderClient greeter(
+      grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Client received message: " << reply << std::endl;

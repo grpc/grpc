@@ -47,11 +47,9 @@ static void BM_InitCancelTimer(benchmark::State& state) {
   for (auto _ : state) {
     TimerClosure* timer_closure = &timer_closures[i++ % kTimerCount];
     GRPC_CLOSURE_INIT(
-        &timer_closure->closure,
-        [](void* /*args*/, grpc_error_handle /*err*/) {}, nullptr,
+        &timer_closure->closure, [](void* /*args*/, grpc_error_handle /*err*/) {}, nullptr,
         grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&timer_closure->timer, GRPC_MILLIS_INF_FUTURE,
-                    &timer_closure->closure);
+    grpc_timer_init(&timer_closure->timer, GRPC_MILLIS_INF_FUTURE, &timer_closure->closure);
     grpc_timer_cancel(&timer_closure->timer);
     exec_ctx.Flush();
   }
@@ -64,10 +62,8 @@ static void BM_TimerBatch(benchmark::State& state) {
   const bool check = state.range(0);
   const bool reverse = state.range(1);
 
-  const grpc_millis start =
-      reverse ? GRPC_MILLIS_INF_FUTURE : GRPC_MILLIS_INF_FUTURE - kTimerCount;
-  const grpc_millis end =
-      reverse ? GRPC_MILLIS_INF_FUTURE - kTimerCount : GRPC_MILLIS_INF_FUTURE;
+  const grpc_millis start = reverse ? GRPC_MILLIS_INF_FUTURE : GRPC_MILLIS_INF_FUTURE - kTimerCount;
+  const grpc_millis end = reverse ? GRPC_MILLIS_INF_FUTURE - kTimerCount : GRPC_MILLIS_INF_FUTURE;
   const grpc_millis increment = reverse ? -1 : 1;
 
   TrackCounters track_counters;
@@ -77,8 +73,7 @@ static void BM_TimerBatch(benchmark::State& state) {
     for (grpc_millis deadline = start; deadline != end; deadline += increment) {
       TimerClosure* timer_closure = &timer_closures[deadline % kTimerCount];
       GRPC_CLOSURE_INIT(
-          &timer_closure->closure,
-          [](void* /*args*/, grpc_error_handle /*err*/) {}, nullptr,
+          &timer_closure->closure, [](void* /*args*/, grpc_error_handle /*err*/) {}, nullptr,
           grpc_schedule_on_exec_ctx);
 
       grpc_timer_init(&timer_closure->timer, deadline, &timer_closure->closure);

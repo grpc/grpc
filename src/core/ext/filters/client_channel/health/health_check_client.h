@@ -72,8 +72,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     void StartBatch(grpc_transport_stream_op_batch* batch);
     static void StartBatchInCallCombiner(void* arg, grpc_error_handle error);
 
-    void CallEndedLocked(bool retry)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(health_check_client_->mu_);
+    void CallEndedLocked(bool retry) ABSL_EXCLUSIVE_LOCKS_REQUIRED(health_check_client_->mu_);
 
     static void OnComplete(void* arg, grpc_error_handle error);
     static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
@@ -156,8 +155,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 
   Mutex mu_;
-  RefCountedPtr<ConnectivityStateWatcherInterface> watcher_
-      ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<ConnectivityStateWatcherInterface> watcher_ ABSL_GUARDED_BY(mu_);
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 
   // The data associated with the current health check call.  It holds a ref

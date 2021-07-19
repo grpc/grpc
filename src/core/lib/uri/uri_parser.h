@@ -62,16 +62,13 @@ class URI {
   // Stores the *last* value appearing for each repeated key in the query
   // string. If you need to capture repeated query parameters, use
   // `query_parameter_pairs`.
-  const std::map<absl::string_view, absl::string_view>& query_parameter_map()
-      const {
+  const std::map<absl::string_view, absl::string_view>& query_parameter_map() const {
     return query_parameter_map_;
   }
   // A vector of key:value query parameter pairs, kept in order of appearance
   // within the URI search string. Repeated keys are represented as separate
   // key:value elements.
-  const std::vector<QueryParam>& query_parameter_pairs() const {
-    return query_parameter_pairs_;
-  }
+  const std::vector<QueryParam>& query_parameter_pairs() const { return query_parameter_pairs_; }
   const std::string& fragment() const { return fragment_; }
 
  private:

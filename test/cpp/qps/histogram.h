@@ -28,9 +28,7 @@ namespace testing {
 class Histogram {
  public:
   // TODO(unknown): look into making histogram params not hardcoded for C++
-  Histogram()
-      : impl_(grpc_histogram_create(default_resolution(),
-                                    default_max_possible())) {}
+  Histogram() : impl_(grpc_histogram_create(default_resolution(), default_max_possible())) {}
   ~Histogram() {
     if (impl_) grpc_histogram_destroy(impl_);
   }
@@ -39,15 +37,11 @@ class Histogram {
     impl_ = grpc_histogram_create(default_resolution(), default_max_possible());
   }
 
-  Histogram(Histogram&& other) noexcept : impl_(other.impl_) {
-    other.impl_ = nullptr;
-  }
+  Histogram(Histogram&& other) noexcept : impl_(other.impl_) { other.impl_ = nullptr; }
 
   void Merge(const Histogram& h) { grpc_histogram_merge(impl_, h.impl_); }
   void Add(double value) { grpc_histogram_add(impl_, value); }
-  double Percentile(double pctile) const {
-    return grpc_histogram_percentile(impl_, pctile);
-  }
+  double Percentile(double pctile) const { return grpc_histogram_percentile(impl_, pctile); }
   double Count() const { return grpc_histogram_count(impl_); }
   void Swap(Histogram* other) { std::swap(impl_, other->impl_); }
   void FillProto(HistogramData* p) {
@@ -63,9 +57,8 @@ class Histogram {
     p->set_count(grpc_histogram_count(impl_));
   }
   void MergeProto(const HistogramData& p) {
-    grpc_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(),
-                                  p.min_seen(), p.max_seen(), p.sum(),
-                                  p.sum_of_squares(), p.count());
+    grpc_histogram_merge_contents(impl_, &*p.bucket().begin(), p.bucket_size(), p.min_seen(),
+                                  p.max_seen(), p.sum(), p.sum_of_squares(), p.count());
   }
 
   static double default_resolution() { return 0.01; }

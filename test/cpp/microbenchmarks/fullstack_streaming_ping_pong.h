@@ -62,15 +62,13 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       send_response.set_message(std::string(msg_size, 'b'));
     }
 
-    std::unique_ptr<EchoTestService::Stub> stub(
-        EchoTestService::NewStub(fixture->channel()));
+    std::unique_ptr<EchoTestService::Stub> stub(EchoTestService::NewStub(fixture->channel()));
 
     for (auto _ : state) {
       ServerContext svr_ctx;
       ServerContextMutator svr_ctx_mut(&svr_ctx);
       ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
-      service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                                fixture->cq(), tag(0));
+      service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(), fixture->cq(), tag(0));
 
       ClientContext cli_ctx;
       ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -155,14 +153,12 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
       send_response.set_message(std::string(msg_size, 'b'));
     }
 
-    std::unique_ptr<EchoTestService::Stub> stub(
-        EchoTestService::NewStub(fixture->channel()));
+    std::unique_ptr<EchoTestService::Stub> stub(EchoTestService::NewStub(fixture->channel()));
 
     ServerContext svr_ctx;
     ServerContextMutator svr_ctx_mut(&svr_ctx);
     ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
-    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                              fixture->cq(), tag(0));
+    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(), fixture->cq(), tag(0));
 
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -259,15 +255,13 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
       send_response.set_message(std::string(msg_size, 'b'));
     }
 
-    std::unique_ptr<EchoTestService::Stub> stub(
-        EchoTestService::NewStub(fixture->channel()));
+    std::unique_ptr<EchoTestService::Stub> stub(EchoTestService::NewStub(fixture->channel()));
 
     for (auto _ : state) {
       ServerContext svr_ctx;
       ServerContextMutator svr_ctx_mut(&svr_ctx);
       ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
-      service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                                fixture->cq(), tag(0));
+      service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(), fixture->cq(), tag(0));
 
       ClientContext cli_ctx;
       ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -323,8 +317,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
           if (i == 3) {
             if (ping_pong_cnt == max_ping_pongs - 1) {
               if (write_and_finish == 1) {
-                response_rw.WriteAndFinish(send_response, WriteOptions(),
-                                           Status::OK, tag(5));
+                response_rw.WriteAndFinish(send_response, WriteOptions(), Status::OK, tag(5));
                 expect_tags |= (1 << 5);
               } else {
                 response_rw.WriteLast(send_response, WriteOptions(), tag(5));

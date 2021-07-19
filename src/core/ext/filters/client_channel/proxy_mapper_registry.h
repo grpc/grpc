@@ -33,16 +33,13 @@ class ProxyMapperRegistry {
   /// Registers a new proxy mapper.
   /// If \a at_start is true, the new mapper will be at the beginning of
   /// the list.  Otherwise, it will be added to the end.
-  static void Register(bool at_start,
-                       std::unique_ptr<ProxyMapperInterface> mapper);
+  static void Register(bool at_start, std::unique_ptr<ProxyMapperInterface> mapper);
 
-  static bool MapName(const char* server_uri, const grpc_channel_args* args,
-                      char** name_to_resolve, grpc_channel_args** new_args);
+  static bool MapName(const char* server_uri, const grpc_channel_args* args, char** name_to_resolve,
+                      grpc_channel_args** new_args);
 
-  static bool MapAddress(const grpc_resolved_address& address,
-                         const grpc_channel_args* args,
-                         grpc_resolved_address** new_address,
-                         grpc_channel_args** new_args);
+  static bool MapAddress(const grpc_resolved_address& address, const grpc_channel_args* args,
+                         grpc_resolved_address** new_address, grpc_channel_args** new_args);
 };
 
 }  // namespace grpc_core

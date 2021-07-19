@@ -32,8 +32,7 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
   if (file->name().size() > proto_suffix_length &&
       file->name().find_last_of(".proto") == file->name().size() - 1) {
     *file_name_or_error =
-        file->name().substr(0, file->name().size() - proto_suffix_length) +
-        "_services_pb.rb";
+        file->name().substr(0, file->name().size() - proto_suffix_length) + "_services_pb.rb";
     return true;
   } else {
     *file_name_or_error = "Invalid proto file name:  must end with .proto";
@@ -41,8 +40,7 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
   }
 }
 
-inline std::string MessagesRequireName(
-    const grpc::protobuf::FileDescriptor* file) {
+inline std::string MessagesRequireName(const grpc::protobuf::FileDescriptor* file) {
   return Replace(file->name(), ".proto", "_pb");
 }
 

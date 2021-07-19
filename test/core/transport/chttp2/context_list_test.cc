@@ -38,8 +38,7 @@ const uint32_t kByteOffset = 123;
 
 void* PhonyArgsCopier(void* arg) { return arg; }
 
-void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts,
-                                    grpc_error_handle error) {
+void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts, grpc_error_handle error) {
   ASSERT_NE(arg, nullptr);
   EXPECT_EQ(error, GRPC_ERROR_NONE);
   if (ts) {
@@ -69,21 +68,16 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   grpc_core::ExecCtx exec_ctx;
   grpc_stream_refcount ref;
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("context_list_test");
-  grpc_endpoint* mock_endpoint =
-      grpc_mock_endpoint_create(discard_write, resource_quota);
-  grpc_transport* t =
-      grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create("context_list_test");
+  grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write, resource_quota);
+  grpc_transport* t = grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
   for (auto i = 0; i < kNumElems; i++) {
-    s.push_back(static_cast<grpc_chttp2_stream*>(
-        gpr_malloc(grpc_transport_stream_size(t))));
+    s.push_back(static_cast<grpc_chttp2_stream*>(gpr_malloc(grpc_transport_stream_size(t))));
     grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
-                               reinterpret_cast<grpc_stream*>(s[i]), &ref,
-                               nullptr, nullptr);
+                               reinterpret_cast<grpc_stream*>(s[i]), &ref, nullptr, nullptr);
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
@@ -94,8 +88,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   for (auto i = 0; i < kNumElems; i++) {
     EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
-                                  reinterpret_cast<grpc_stream*>(s[i]),
-                                  nullptr);
+                                  reinterpret_cast<grpc_stream*>(s[i]), nullptr);
     exec_ctx.Flush();
     gpr_free(s[i]);
   }
@@ -125,21 +118,16 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   grpc_core::ExecCtx exec_ctx;
   grpc_stream_refcount ref;
   GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "phony ref");
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("context_list_test");
-  grpc_endpoint* mock_endpoint =
-      grpc_mock_endpoint_create(discard_write, resource_quota);
-  grpc_transport* t =
-      grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create("context_list_test");
+  grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write, resource_quota);
+  grpc_transport* t = grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
   for (auto i = 0; i < kNumElems; i++) {
-    s.push_back(static_cast<grpc_chttp2_stream*>(
-        gpr_malloc(grpc_transport_stream_size(t))));
+    s.push_back(static_cast<grpc_chttp2_stream*>(gpr_malloc(grpc_transport_stream_size(t))));
     grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
-                               reinterpret_cast<grpc_stream*>(s[i]), &ref,
-                               nullptr, nullptr);
+                               reinterpret_cast<grpc_stream*>(s[i]), &ref, nullptr, nullptr);
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
@@ -149,8 +137,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   for (auto i = 0; i < kNumElems; i++) {
     EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
-                                  reinterpret_cast<grpc_stream*>(s[i]),
-                                  nullptr);
+                                  reinterpret_cast<grpc_stream*>(s[i]), nullptr);
     exec_ctx.Flush();
     gpr_free(s[i]);
   }

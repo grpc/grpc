@@ -110,8 +110,7 @@ class ChannelDataImpl : public ChannelData {
 
 class CallDataImpl : public CallData {
  public:
-  void StartTransportStreamOpBatch(grpc_call_element* elem,
-                                   TransportStreamOpBatch* op) override {
+  void StartTransportStreamOpBatch(grpc_call_element* elem, TransportStreamOpBatch* op) override {
     // Incrementing the counter could be done from Init(), but we want
     // to test that the individual methods are actually called correctly.
     if (op->recv_initial_metadata() != nullptr) IncrementCallCounter();
@@ -129,8 +128,8 @@ class FilterEnd2endTest : public ::testing::Test {
     static bool setup_done = false;
     if (!setup_done) {
       setup_done = true;
-      grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
-          "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+      grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>("test-filter", GRPC_SERVER_CHANNEL,
+                                                                 INT_MAX, nullptr);
     }
   }
 
@@ -139,8 +138,7 @@ class FilterEnd2endTest : public ::testing::Test {
     server_address_ << server_host_ << ":" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
-                             InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -159,8 +157,8 @@ class FilterEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel =
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     generic_stub_ = absl::make_unique<GenericStub>(channel);
     ResetConnectionCounter();
     ResetCallCounter();
@@ -191,8 +189,7 @@ class FilterEnd2endTest : public ::testing::Test {
           generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
       call->StartCall(tag(1));
       client_ok(1);
-      std::unique_ptr<ByteBuffer> send_buffer =
-          SerializeToByteBuffer(&send_request);
+      std::unique_ptr<ByteBuffer> send_buffer = SerializeToByteBuffer(&send_request);
       call->Write(*send_buffer, tag(2));
       // Send ByteBuffer can be destroyed after calling Write.
       send_buffer.reset();
@@ -200,8 +197,7 @@ class FilterEnd2endTest : public ::testing::Test {
       call->WritesDone(tag(3));
       client_ok(3);
 
-      generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
-                                   srv_cq_.get(), tag(4));
+      generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(), srv_cq_.get(), tag(4));
 
       request_call.join();
       EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
@@ -268,8 +264,7 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   EXPECT_EQ(0, GetConnectionCounterValue());
   EXPECT_EQ(0, GetCallCounterValue());
 
-  const std::string kMethodName(
-      "/grpc.cpp.test.util.EchoTestService/BidiStream");
+  const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/BidiStream");
   EchoRequest send_request;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -287,15 +282,13 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   cli_stream->StartCall(tag(1));
   client_ok(1);
 
-  generic_service_.RequestCall(&srv_ctx, &srv_stream, srv_cq_.get(),
-                               srv_cq_.get(), tag(2));
+  generic_service_.RequestCall(&srv_ctx, &srv_stream, srv_cq_.get(), srv_cq_.get(), tag(2));
 
   request_call.join();
   EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
   EXPECT_EQ(kMethodName, srv_ctx.method());
 
-  std::unique_ptr<ByteBuffer> send_buffer =
-      SerializeToByteBuffer(&send_request);
+  std::unique_ptr<ByteBuffer> send_buffer = SerializeToByteBuffer(&send_request);
   cli_stream->Write(*send_buffer, tag(3));
   send_buffer.reset();
   client_ok(3);

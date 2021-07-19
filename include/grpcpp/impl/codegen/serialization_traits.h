@@ -53,8 +53,7 @@ namespace grpc {
 ///
 /// Both functions return a Status, allowing them to explain what went
 /// wrong if required.
-template <class Message,
-          class UnusedButHereForPartialTemplateSpecialization = void>
+template <class Message, class UnusedButHereForPartialTemplateSpecialization = void>
 class SerializationTraits;
 
 }  // namespace grpc

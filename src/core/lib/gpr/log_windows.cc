@@ -35,8 +35,7 @@
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
 
-void gpr_log(const char* file, int line, gpr_log_severity severity,
-             const char* format, ...) {
+void gpr_log(const char* file, int line, gpr_log_severity severity, const char* format, ...) {
   /* Avoid message construction if gpr_log_message won't log */
   if (gpr_should_log(severity) == 0) {
     return;
@@ -90,24 +89,19 @@ void gpr_default_log(gpr_log_func_args* args) {
 
   if (localtime_s(&tm, &timer)) {
     strcpy(time_buffer, "error:localtime");
-  } else if (0 ==
-             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
+  } else if (0 == strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
     strcpy(time_buffer, "error:strftime");
   }
 
   absl::optional<std::string> stack_trace =
-      gpr_should_log_stacktrace(args->severity)
-          ? grpc_core::GetCurrentStackTrace()
-          : absl::nullopt;
+      gpr_should_log_stacktrace(args->severity) ? grpc_core::GetCurrentStackTrace() : absl::nullopt;
   if (stack_trace) {
-    fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n%s\n",
-            gpr_log_severity_string(args->severity), time_buffer,
-            (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
+    fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n%s\n", gpr_log_severity_string(args->severity),
+            time_buffer, (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
             args->message, stack_trace->c_str());
   } else {
-    fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n",
-            gpr_log_severity_string(args->severity), time_buffer,
-            (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
+    fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n", gpr_log_severity_string(args->severity),
+            time_buffer, (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
             args->message);
   }
   fflush(stderr);

@@ -108,8 +108,7 @@ static void test_load_small_file(void) {
   error = grpc_load_file(tmp_name, 1, &slice_with_null_term);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_with_null_term) == (strlen(blah) + 1));
-  GPR_ASSERT(strcmp((const char*)GRPC_SLICE_START_PTR(slice_with_null_term),
-                    blah) == 0);
+  GPR_ASSERT(strcmp((const char*)GRPC_SLICE_START_PTR(slice_with_null_term), blah) == 0);
 
   remove(tmp_name);
   gpr_free(tmp_name);

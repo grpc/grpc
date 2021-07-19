@@ -33,24 +33,20 @@ TEST(MockStreamTest, Basic) {
   auto cw = absl::make_unique<grpc::testing::MockClientWriter<EchoResponse>>();
   ASSERT_NE(cw, nullptr);
 
-  auto crw = absl::make_unique<
-      grpc::testing::MockClientReaderWriter<EchoResponse, EchoResponse>>();
+  auto crw = absl::make_unique<grpc::testing::MockClientReaderWriter<EchoResponse, EchoResponse>>();
   ASSERT_NE(crw, nullptr);
 
-  auto carr = absl::make_unique<
-      grpc::testing::MockClientAsyncResponseReader<EchoResponse>>();
+  auto carr = absl::make_unique<grpc::testing::MockClientAsyncResponseReader<EchoResponse>>();
   ASSERT_NE(carr, nullptr);
 
-  auto car =
-      absl::make_unique<grpc::testing::MockClientAsyncReader<EchoResponse>>();
+  auto car = absl::make_unique<grpc::testing::MockClientAsyncReader<EchoResponse>>();
   ASSERT_NE(car, nullptr);
 
-  auto caw =
-      absl::make_unique<grpc::testing::MockClientAsyncWriter<EchoResponse>>();
+  auto caw = absl::make_unique<grpc::testing::MockClientAsyncWriter<EchoResponse>>();
   ASSERT_NE(caw, nullptr);
 
-  auto carw = absl::make_unique<
-      grpc::testing::MockClientAsyncReaderWriter<EchoRequest, EchoResponse>>();
+  auto carw =
+      absl::make_unique<grpc::testing::MockClientAsyncReaderWriter<EchoRequest, EchoResponse>>();
   ASSERT_NE(carw, nullptr);
 
   auto sr = absl::make_unique<grpc::testing::MockServerReader<EchoRequest>>();
@@ -59,8 +55,7 @@ TEST(MockStreamTest, Basic) {
   auto sw = absl::make_unique<grpc::testing::MockServerWriter<EchoResponse>>();
   ASSERT_NE(sw, nullptr);
 
-  auto srw = absl::make_unique<
-      grpc::testing::MockServerReaderWriter<EchoResponse, EchoRequest>>();
+  auto srw = absl::make_unique<grpc::testing::MockServerReaderWriter<EchoResponse, EchoRequest>>();
   ASSERT_NE(srw, nullptr);
 }
 

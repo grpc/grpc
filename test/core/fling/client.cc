@@ -77,13 +77,11 @@ static void init_ping_pong_request(void) {
 static void step_ping_pong_request(void) {
   GPR_TIMER_SCOPE("ping_pong", 1);
   grpc_slice host = grpc_slice_from_static_string("localhost");
-  call = grpc_channel_create_call(
-      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-      grpc_slice_from_static_string("/Reflector/reflectUnary"), &host,
-      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), (void*)1,
-                                                   nullptr));
+  call = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  grpc_slice_from_static_string("/Reflector/reflectUnary"), &host,
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call, ops, (size_t)(op - ops), (void*)1, nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_call_unref(call);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -95,17 +93,14 @@ static void init_ping_pong_stream(void) {
 
   grpc_call_error error;
   grpc_slice host = grpc_slice_from_static_string("localhost");
-  call = grpc_channel_create_call(
-      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-      grpc_slice_from_static_string("/Reflector/reflectStream"), &host,
-      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  call = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  grpc_slice_from_static_string("/Reflector/reflectStream"), &host,
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   stream_init_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   stream_init_ops[0].data.send_initial_metadata.count = 0;
   stream_init_ops[1].op = GRPC_OP_RECV_INITIAL_METADATA;
-  stream_init_ops[1].data.recv_initial_metadata.recv_initial_metadata =
-      &initial_metadata_recv;
-  error = grpc_call_start_batch(call, stream_init_ops, 2,
-                                reinterpret_cast<void*>(1), nullptr);
+  stream_init_ops[1].data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  error = grpc_call_start_batch(call, stream_init_ops, 2, reinterpret_cast<void*>(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
@@ -120,8 +115,7 @@ static void init_ping_pong_stream(void) {
 static void step_ping_pong_stream(void) {
   GPR_TIMER_SCOPE("ping_pong", 1);
   grpc_call_error error;
-  error = grpc_call_start_batch(call, stream_step_ops, 2,
-                                reinterpret_cast<void*>(1), nullptr);
+  error = grpc_call_start_batch(call, stream_step_ops, 2, reinterpret_cast<void*>(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -170,8 +164,7 @@ int main(int argc, char** argv) {
   int benchmark_seconds = 5;
 
   cl = gpr_cmdline_create("fling client");
-  gpr_cmdline_add_int(cl, "payload_size", "Size of the payload to send",
-                      &payload_size);
+  gpr_cmdline_add_int(cl, "payload_size", "Size of the payload to send", &payload_size);
   gpr_cmdline_add_string(cl, "target", "Target host:port", &target);
   gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
   gpr_cmdline_add_string(cl, "scenario", "Scenario", &scenario_name);
@@ -197,15 +190,13 @@ int main(int argc, char** argv) {
 
   channel = grpc_insecure_channel_create(target, nullptr, nullptr);
   cq = grpc_completion_queue_create_for_next(nullptr);
-  the_buffer =
-      grpc_raw_byte_buffer_create(&slice, static_cast<size_t>(payload_size));
+  the_buffer = grpc_raw_byte_buffer_create(&slice, static_cast<size_t>(payload_size));
   histogram = grpc_histogram_create(0.01, 60e9);
 
   sc.init();
 
   gpr_timespec end_warmup = grpc_timeout_seconds_to_deadline(warmup_seconds);
-  gpr_timespec end_profiling =
-      grpc_timeout_seconds_to_deadline(warmup_seconds + benchmark_seconds);
+  gpr_timespec end_profiling = grpc_timeout_seconds_to_deadline(warmup_seconds + benchmark_seconds);
 
   while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();
@@ -228,18 +219,15 @@ int main(int argc, char** argv) {
   grpc_channel_destroy(channel);
   grpc_completion_queue_shutdown(cq);
   do {
-    event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                       nullptr);
+    event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   } while (event.type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
   grpc_byte_buffer_destroy(the_buffer);
   grpc_slice_unref(slice);
 
   gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
-          grpc_histogram_percentile(histogram, 50),
-          grpc_histogram_percentile(histogram, 95),
-          grpc_histogram_percentile(histogram, 99),
-          grpc_histogram_percentile(histogram, 99.9));
+          grpc_histogram_percentile(histogram, 50), grpc_histogram_percentile(histogram, 95),
+          grpc_histogram_percentile(histogram, 99), grpc_histogram_percentile(histogram, 99.9));
   grpc_histogram_destroy(histogram);
 
   grpc_shutdown();

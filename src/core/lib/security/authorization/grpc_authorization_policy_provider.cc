@@ -28,32 +28,24 @@ StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
   if (!policies_or.ok()) {
     return policies_or.status();
   }
-  return MakeRefCounted<StaticDataAuthorizationPolicyProvider>(
-      std::move(*policies_or));
+  return MakeRefCounted<StaticDataAuthorizationPolicyProvider>(std::move(*policies_or));
 }
 
-StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
-    RbacPolicies policies)
-    : allow_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
-          std::move(policies.allow_policy))),
-      deny_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
-          std::move(policies.deny_policy))) {}
+StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(RbacPolicies policies)
+    : allow_engine_(MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies.allow_policy))),
+      deny_engine_(MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies.deny_policy))) {}
 
 }  // namespace grpc_core
 
 // Wrapper APIs declared in grpc_security.h
 
-grpc_authorization_policy_provider*
-grpc_authorization_policy_provider_static_data_create(
-    const char* authz_policy, grpc_status_code* code,
-    const char** error_details) {
+grpc_authorization_policy_provider* grpc_authorization_policy_provider_static_data_create(
+    const char* authz_policy, grpc_status_code* code, const char** error_details) {
   GPR_ASSERT(authz_policy != nullptr);
-  auto provider_or =
-      grpc_core::StaticDataAuthorizationPolicyProvider::Create(authz_policy);
+  auto provider_or = grpc_core::StaticDataAuthorizationPolicyProvider::Create(authz_policy);
   if (!provider_or.ok()) {
     *code = static_cast<grpc_status_code>(provider_or.status().code());
-    *error_details =
-        gpr_strdup(std::string(provider_or.status().message()).c_str());
+    *error_details = gpr_strdup(std::string(provider_or.status().message()).c_str());
     return nullptr;
   }
   *code = GRPC_STATUS_OK;
@@ -61,7 +53,6 @@ grpc_authorization_policy_provider_static_data_create(
   return provider_or->release();
 }
 
-void grpc_authorization_policy_provider_release(
-    grpc_authorization_policy_provider* provider) {
+void grpc_authorization_policy_provider_release(grpc_authorization_policy_provider* provider) {
   if (provider != nullptr) provider->Unref();
 }

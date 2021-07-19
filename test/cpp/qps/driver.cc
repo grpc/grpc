@@ -89,10 +89,9 @@ static deque<string> get_workers(const string& env_name) {
   return out;
 }
 
-std::string GetCredType(
-    const std::string& worker_addr,
-    const std::map<std::string, std::string>& per_worker_credential_types,
-    const std::string& credential_type) {
+std::string GetCredType(const std::string& worker_addr,
+                        const std::map<std::string, std::string>& per_worker_credential_types,
+                        const std::string& credential_type) {
   auto it = per_worker_credential_types.find(worker_addr);
   if (it != per_worker_credential_types.end()) {
     return it->second;
@@ -109,12 +108,8 @@ static double SvrPollCount(const ServerStats& s) { return s.cq_poll_count(); }
 static double ServerWallTime(const ServerStats& s) { return s.time_elapsed(); }
 static double ServerSystemTime(const ServerStats& s) { return s.time_system(); }
 static double ServerUserTime(const ServerStats& s) { return s.time_user(); }
-static double ServerTotalCpuTime(const ServerStats& s) {
-  return s.total_cpu_time();
-}
-static double ServerIdleCpuTime(const ServerStats& s) {
-  return s.idle_cpu_time();
-}
+static double ServerTotalCpuTime(const ServerStats& s) { return s.total_cpu_time(); }
+static double ServerIdleCpuTime(const ServerStats& s) { return s.idle_cpu_time(); }
 static int Cores(int n) { return n; }
 
 static bool IsSuccess(const Status& s) {
@@ -150,28 +145,22 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   for (int i = 0; i < result->client_stats_size(); i++) {
     auto client_stat = result->client_stats(i);
     qps += client_stat.latencies().count() / client_stat.time_elapsed();
-    client_system_cpu_load +=
-        client_stat.time_system() / client_stat.time_elapsed();
-    client_user_cpu_load +=
-        client_stat.time_user() / client_stat.time_elapsed();
+    client_system_cpu_load += client_stat.time_system() / client_stat.time_elapsed();
+    client_user_cpu_load += client_stat.time_user() / client_stat.time_elapsed();
   }
   // Calculate cpu load for each server and then aggregate results for all
   // servers
   double server_system_cpu_load = 0, server_user_cpu_load = 0;
   for (int i = 0; i < result->server_stats_size(); i++) {
     auto server_stat = result->server_stats(i);
-    server_system_cpu_load +=
-        server_stat.time_system() / server_stat.time_elapsed();
-    server_user_cpu_load +=
-        server_stat.time_user() / server_stat.time_elapsed();
+    server_system_cpu_load += server_stat.time_system() / server_stat.time_elapsed();
+    server_user_cpu_load += server_stat.time_user() / server_stat.time_elapsed();
   }
   result->mutable_summary()->set_qps(qps);
   // Populate the percentage of cpu load to result summary.
-  result->mutable_summary()->set_server_system_time(100 *
-                                                    server_system_cpu_load);
+  result->mutable_summary()->set_server_system_time(100 * server_system_cpu_load);
   result->mutable_summary()->set_server_user_time(100 * server_user_cpu_load);
-  result->mutable_summary()->set_client_system_time(100 *
-                                                    client_system_cpu_load);
+  result->mutable_summary()->set_client_system_time(100 * client_system_cpu_load);
   result->mutable_summary()->set_client_user_time(100 * client_user_cpu_load);
 
   // For Non-linux platform, get_cpu_usage() is not implemented. Thus,
@@ -179,9 +168,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   if (average(result->server_stats(), ServerTotalCpuTime) == 0) {
     result->mutable_summary()->set_server_cpu_usage(0);
   } else {
-    auto server_cpu_usage =
-        100 - 100 * average(result->server_stats(), ServerIdleCpuTime) /
-                  average(result->server_stats(), ServerTotalCpuTime);
+    auto server_cpu_usage = 100 - 100 * average(result->server_stats(), ServerIdleCpuTime) /
+                                      average(result->server_stats(), ServerTotalCpuTime);
     result->mutable_summary()->set_server_cpu_usage(server_cpu_usage);
   }
 
@@ -199,10 +187,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
         failures += rrc.count();
       }
     }
-    result->mutable_summary()->set_successful_requests_per_second(
-        successes / time_estimate);
-    result->mutable_summary()->set_failed_requests_per_second(failures /
-                                                              time_estimate);
+    result->mutable_summary()->set_successful_requests_per_second(successes / time_estimate);
+    result->mutable_summary()->set_failed_requests_per_second(failures / time_estimate);
   }
 
   // Fill in data for other metrics required in result summary
@@ -214,16 +200,13 @@ static void postprocess_scenario_result(ScenarioResult* result) {
       sum(result->server_stats(), SvrPollCount) / histogram.Count());
 
   auto server_queries_per_cpu_sec =
-      histogram.Count() / (sum(result->server_stats(), ServerSystemTime) +
-                           sum(result->server_stats(), ServerUserTime));
-  auto client_queries_per_cpu_sec =
-      histogram.Count() / (sum(result->client_stats(), SystemTime) +
-                           sum(result->client_stats(), UserTime));
+      histogram.Count() /
+      (sum(result->server_stats(), ServerSystemTime) + sum(result->server_stats(), ServerUserTime));
+  auto client_queries_per_cpu_sec = histogram.Count() / (sum(result->client_stats(), SystemTime) +
+                                                         sum(result->client_stats(), UserTime));
 
-  result->mutable_summary()->set_server_queries_per_cpu_sec(
-      server_queries_per_cpu_sec);
-  result->mutable_summary()->set_client_queries_per_cpu_sec(
-      client_queries_per_cpu_sec);
+  result->mutable_summary()->set_server_queries_per_cpu_sec(server_queries_per_cpu_sec);
+  result->mutable_summary()->set_client_queries_per_cpu_sec(client_queries_per_cpu_sec);
 }
 
 struct ClientData {
@@ -236,8 +219,7 @@ struct ServerData {
   unique_ptr<ClientReaderWriter<ServerArgs, ServerStatus>> stream;
 };
 
-static void FinishClients(const std::vector<ClientData>& clients,
-                          const ClientArgs& client_mark) {
+static void FinishClients(const std::vector<ClientData>& clients, const ClientArgs& client_mark) {
   gpr_log(GPR_INFO, "Finishing clients");
   for (size_t i = 0, i_end = clients.size(); i < i_end; i++) {
     auto client = &clients[i];
@@ -252,9 +234,10 @@ static void FinishClients(const std::vector<ClientData>& clients,
   }
 }
 
-static void ReceiveFinalStatusFromClients(
-    const std::vector<ClientData>& clients, Histogram& merged_latencies,
-    std::unordered_map<int, int64_t>& merged_statuses, ScenarioResult& result) {
+static void ReceiveFinalStatusFromClients(const std::vector<ClientData>& clients,
+                                          Histogram& merged_latencies,
+                                          std::unordered_map<int, int64_t>& merged_statuses,
+                                          ScenarioResult& result) {
   gpr_log(GPR_INFO, "Receiving final status from clients");
   ClientStatus client_status;
   for (size_t i = 0, i_end = clients.size(); i < i_end; i++) {
@@ -265,8 +248,7 @@ static void ReceiveFinalStatusFromClients(
       const auto& stats = client_status.stats();
       merged_latencies.MergeProto(stats.latencies());
       for (int i = 0; i < stats.request_results_size(); i++) {
-        merged_statuses[stats.request_results(i).status_code()] +=
-            stats.request_results(i).count();
+        merged_statuses[stats.request_results(i).status_code()] += stats.request_results(i).count();
       }
       result.add_client_stats()->CopyFrom(stats);
       // That final status should be the last message on the client stream
@@ -278,8 +260,7 @@ static void ReceiveFinalStatusFromClients(
   }
 }
 
-static void ShutdownClients(const std::vector<ClientData>& clients,
-                            ScenarioResult& result) {
+static void ShutdownClients(const std::vector<ClientData>& clients, ScenarioResult& result) {
   gpr_log(GPR_INFO, "Shutdown clients");
   for (size_t i = 0, i_end = clients.size(); i < i_end; i++) {
     auto client = &clients[i];
@@ -290,15 +271,13 @@ static void ShutdownClients(const std::vector<ClientData>& clients,
     const bool success = IsSuccess(s);
     result.add_client_success(success);
     if (!success) {
-      gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
-              s.error_message().c_str());
+      gpr_log(GPR_ERROR, "Client %zu had an error %s", i, s.error_message().c_str());
       GPR_ASSERT(false);
     }
   }
 }
 
-static void FinishServers(const std::vector<ServerData>& servers,
-                          const ServerArgs& server_mark) {
+static void FinishServers(const std::vector<ServerData>& servers, const ServerArgs& server_mark) {
   gpr_log(GPR_INFO, "Finishing servers");
   for (size_t i = 0, i_end = servers.size(); i < i_end; i++) {
     auto server = &servers[i];
@@ -333,8 +312,7 @@ static void ReceiveFinalStatusFromServer(const std::vector<ServerData>& servers,
   }
 }
 
-static void ShutdownServers(const std::vector<ServerData>& servers,
-                            ScenarioResult& result) {
+static void ShutdownServers(const std::vector<ServerData>& servers, ScenarioResult& result) {
   gpr_log(GPR_INFO, "Shutdown servers");
   for (size_t i = 0, i_end = servers.size(); i < i_end; i++) {
     auto server = &servers[i];
@@ -345,8 +323,7 @@ static void ShutdownServers(const std::vector<ServerData>& servers,
     const bool success = IsSuccess(s);
     result.add_server_success(success);
     if (!success) {
-      gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
-              s.error_message().c_str());
+      gpr_log(GPR_ERROR, "Server %zu had an error %s", i, s.error_message().c_str());
       GPR_ASSERT(false);
     }
   }
@@ -356,12 +333,11 @@ std::vector<grpc::testing::Server*>* g_inproc_servers = nullptr;
 
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
-    const ServerConfig& initial_server_config, size_t num_servers,
-    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
-    const std::string& qps_server_target_override,
-    const std::string& credential_type,
-    const std::map<std::string, std::string>& per_worker_credential_types,
-    bool run_inproc, int32_t median_latency_collection_interval_millis) {
+    const ServerConfig& initial_server_config, size_t num_servers, int warmup_seconds,
+    int benchmark_seconds, int spawn_local_worker_count,
+    const std::string& qps_server_target_override, const std::string& credential_type,
+    const std::map<std::string, std::string>& per_worker_credential_types, bool run_inproc,
+    int32_t median_latency_collection_interval_millis) {
   if (run_inproc) {
     g_inproc_servers = new std::vector<grpc::testing::Server*>;
   }
@@ -431,22 +407,18 @@ std::unique_ptr<ScenarioResult> RunScenario(
   ChannelArguments channel_args;
 
   for (size_t i = 0; i < num_servers; i++) {
-    gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
-            workers[i].c_str(), i);
+    gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")", workers[i].c_str(), i);
     if (!run_inproc) {
       servers[i].stub = WorkerService::NewStub(grpc::CreateTestChannel(
-          workers[i],
-          GetCredType(workers[i], per_worker_credential_types, credential_type),
+          workers[i], GetCredType(workers[i], per_worker_credential_types, credential_type),
           nullptr /* call creds */, {} /* interceptor creators */));
     } else {
-      servers[i].stub = WorkerService::NewStub(
-          local_workers[i]->InProcessChannel(channel_args));
+      servers[i].stub = WorkerService::NewStub(local_workers[i]->InProcessChannel(channel_args));
     }
 
     const ServerConfig& server_config = initial_server_config;
     if (server_config.core_limit() != 0) {
-      gpr_log(GPR_ERROR,
-              "server config core limit is set but ignored by driver");
+      gpr_log(GPR_ERROR, "server config core limit is set but ignored by driver");
       GPR_ASSERT(false);
     }
 
@@ -468,8 +440,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target);
     } else {
       std::string host = get_host(workers[i]);
-      std::string cli_target =
-          grpc_core::JoinHostPort(host.c_str(), init_status.port());
+      std::string cli_target = grpc_core::JoinHostPort(host.c_str(), init_status.port());
       client_config.add_server_targets(cli_target.c_str());
     }
   }
@@ -489,16 +460,15 @@ std::unique_ptr<ScenarioResult> RunScenario(
   size_t channels_allocated = 0;
   for (size_t i = 0; i < num_clients; i++) {
     const auto& worker = workers[i + num_servers];
-    gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
-            worker.c_str(), i + num_servers);
+    gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")", worker.c_str(),
+            i + num_servers);
     if (!run_inproc) {
       clients[i].stub = WorkerService::NewStub(grpc::CreateTestChannel(
-          worker,
-          GetCredType(worker, per_worker_credential_types, credential_type),
+          worker, GetCredType(worker, per_worker_credential_types, credential_type),
           nullptr /* call creds */, {} /* interceptor creators */));
     } else {
-      clients[i].stub = WorkerService::NewStub(
-          local_workers[i + num_servers]->InProcessChannel(channel_args));
+      clients[i].stub =
+          WorkerService::NewStub(local_workers[i + num_servers]->InProcessChannel(channel_args));
     }
     ClientConfig per_client_config = client_config;
 
@@ -510,11 +480,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     // Reduce channel count so that total channels specified is held regardless
     // of the number of clients available
     size_t num_channels =
-        (client_config.client_channels() - channels_allocated) /
-        (num_clients - i);
+        (client_config.client_channels() - channels_allocated) / (num_clients - i);
     channels_allocated += num_channels;
-    gpr_log(GPR_DEBUG, "Client %" PRIdPTR " gets %" PRIdPTR " channels", i,
-            num_channels);
+    gpr_log(GPR_DEBUG, "Client %" PRIdPTR " gets %" PRIdPTR " channels", i, num_channels);
     per_client_config.set_client_channels(num_channels);
 
     ClientArgs args;
@@ -561,8 +529,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Let everything warmup
   gpr_log(GPR_INFO, "Warming up");
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
-  gpr_sleep_until(
-      gpr_time_add(start, gpr_time_from_seconds(warmup_seconds, GPR_TIMESPAN)));
+  gpr_sleep_until(gpr_time_add(start, gpr_time_from_seconds(warmup_seconds, GPR_TIMESPAN)));
 
   // Start a run
   gpr_log(GPR_INFO, "Starting");
@@ -599,9 +566,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   gpr_log(GPR_INFO, "Running");
   // Use gpr_sleep_until rather than this_thread::sleep_until to support
   // compilers that don't work with this_thread
-  gpr_sleep_until(gpr_time_add(
-      start,
-      gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
+  gpr_sleep_until(
+      gpr_time_add(start, gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
 
   gpr_timer_set_enabled(0);
 
@@ -614,8 +580,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // STREAMING_FROM_CLIENT, clients need to finish completely while a server
   // is running to prevent the clients from being stuck while waiting for
   // the result.
-  bool client_finish_first =
-      (client_config.rpc_type() != STREAMING_FROM_SERVER);
+  bool client_finish_first = (client_config.rpc_type() != STREAMING_FROM_SERVER);
 
   FinishClients(clients, client_mark);
 
@@ -623,8 +588,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     FinishServers(servers, server_mark);
   }
 
-  ReceiveFinalStatusFromClients(clients, merged_latencies, merged_statuses,
-                                *result);
+  ReceiveFinalStatusFromClients(clients, merged_latencies, merged_statuses, *result);
   ShutdownClients(clients, *result);
 
   if (client_finish_first) {
@@ -647,9 +611,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   return result;
 }
 
-bool RunQuit(
-    const std::string& credential_type,
-    const std::map<std::string, std::string>& per_worker_credential_types) {
+bool RunQuit(const std::string& credential_type,
+             const std::map<std::string, std::string>& per_worker_credential_types) {
   // Get client, server lists
   bool result = true;
   auto workers = get_workers("QPS_WORKERS");
@@ -659,8 +622,7 @@ bool RunQuit(
 
   for (size_t i = 0; i < workers.size(); i++) {
     auto stub = WorkerService::NewStub(grpc::CreateTestChannel(
-        workers[i],
-        GetCredType(workers[i], per_worker_credential_types, credential_type),
+        workers[i], GetCredType(workers[i], per_worker_credential_types, credential_type),
         nullptr /* call creds */, {} /* interceptor creators */));
     Void phony;
     grpc::ClientContext ctx;

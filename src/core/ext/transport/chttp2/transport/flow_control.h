@@ -68,12 +68,8 @@ class FlowControlAction {
 
   Urgency send_stream_update() const { return send_stream_update_; }
   Urgency send_transport_update() const { return send_transport_update_; }
-  Urgency send_initial_window_update() const {
-    return send_initial_window_update_;
-  }
-  Urgency send_max_frame_size_update() const {
-    return send_max_frame_size_update_;
-  }
+  Urgency send_initial_window_update() const { return send_initial_window_update_; }
+  Urgency send_max_frame_size_update() const { return send_max_frame_size_update_; }
   uint32_t initial_window_size() const { return initial_window_size_; }
   uint32_t max_frame_size() const { return max_frame_size_; }
 
@@ -85,14 +81,12 @@ class FlowControlAction {
     send_transport_update_ = u;
     return *this;
   }
-  FlowControlAction& set_send_initial_window_update(Urgency u,
-                                                    uint32_t update) {
+  FlowControlAction& set_send_initial_window_update(Urgency u, uint32_t update) {
     send_initial_window_update_ = u;
     initial_window_size_ = update;
     return *this;
   }
-  FlowControlAction& set_send_max_frame_size_update(Urgency u,
-                                                    uint32_t update) {
+  FlowControlAction& set_send_max_frame_size_update(Urgency u, uint32_t update) {
     send_max_frame_size_update_ = u;
     max_frame_size_ = update;
     return *this;
@@ -112,8 +106,7 @@ class FlowControlAction {
 
 class FlowControlTrace {
  public:
-  FlowControlTrace(const char* reason, TransportFlowControl* tfc,
-                   StreamFlowControl* sfc) {
+  FlowControlTrace(const char* reason, TransportFlowControl* tfc, StreamFlowControl* sfc) {
     if (enabled_) Init(reason, tfc, sfc);
   }
 
@@ -122,8 +115,7 @@ class FlowControlTrace {
   }
 
  private:
-  void Init(const char* reason, TransportFlowControl* tfc,
-            StreamFlowControl* sfc);
+  void Init(const char* reason, TransportFlowControl* tfc, StreamFlowControl* sfc);
   void Finish();
 
   const bool enabled_ = GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace);
@@ -210,9 +202,7 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
   FlowControlAction MakeAction() override { return FlowControlAction(); }
   FlowControlAction PeriodicUpdate() override { return FlowControlAction(); }
   void StreamSentData(int64_t /* size */) override {}
-  grpc_error_handle RecvData(int64_t /* incoming_frame_size */) override {
-    return GRPC_ERROR_NONE;
-  }
+  grpc_error_handle RecvData(int64_t /* incoming_frame_size */) override { return GRPC_ERROR_NONE; }
   void RecvUpdate(uint32_t /* size */) override {}
 };
 
@@ -235,9 +225,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
 
   // Reads the flow control data and returns and actionable struct that will
   // tell chttp2 exactly what it needs to do
-  FlowControlAction MakeAction() override {
-    return UpdateAction(FlowControlAction());
-  }
+  FlowControlAction MakeAction() override { return UpdateAction(FlowControlAction()); }
 
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
@@ -247,9 +235,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
   void StreamSentData(int64_t size) override { remote_window_ -= size; }
 
   grpc_error_handle ValidateRecvData(int64_t incoming_frame_size);
-  void CommitRecvData(int64_t incoming_frame_size) {
-    announced_window_ -= incoming_frame_size;
-  }
+  void CommitRecvData(int64_t incoming_frame_size) { announced_window_ -= incoming_frame_size; }
 
   grpc_error_handle RecvData(int64_t incoming_frame_size) override {
     FlowControlTrace trace("  data recv", this, nullptr);
@@ -270,8 +256,7 @@ class TransportFlowControl final : public TransportFlowControlBase {
   int64_t target_window() const override {
     return static_cast<uint32_t> GPR_MIN(
         (int64_t)((1u << 31) - 1),
-        announced_stream_total_over_incoming_window_ +
-            target_initial_window_size_);
+        announced_stream_total_over_incoming_window_ + target_initial_window_size_);
   }
 
   const grpc_chttp2_transport* transport() const { return t_; }
@@ -298,13 +283,11 @@ class TransportFlowControl final : public TransportFlowControlBase {
  private:
   double TargetLogBdp();
   double SmoothLogBdp(double value);
-  FlowControlAction::Urgency DeltaUrgency(int64_t value,
-                                          grpc_chttp2_setting_id setting_id);
+  FlowControlAction::Urgency DeltaUrgency(int64_t value, grpc_chttp2_setting_id setting_id);
 
   FlowControlAction UpdateAction(FlowControlAction action) {
     if (announced_window_ < target_window() / 2) {
-      action.set_send_transport_update(
-          FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+      action.set_send_transport_update(FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
     }
     return action;
   }
@@ -340,9 +323,7 @@ class StreamFlowControlBase {
   virtual ~StreamFlowControlBase() {}
 
   // Updates an action using the protected members.
-  virtual FlowControlAction UpdateAction(FlowControlAction /* action */) {
-    abort();
-  }
+  virtual FlowControlAction UpdateAction(FlowControlAction /* action */) { abort(); }
 
   // Using the protected members, returns an Action for this stream to be
   // taken by the tranport.
@@ -363,8 +344,7 @@ class StreamFlowControlBase {
   // Bookkeeping for when a call pulls bytes out of the transport. At this
   // point we consider the data 'used' and can thus let out peer know we are
   // ready for more data.
-  virtual void IncomingByteStreamUpdate(size_t /* max_size_hint */,
-                                        size_t /* have_already */) {
+  virtual void IncomingByteStreamUpdate(size_t /* max_size_hint */, size_t /* have_already */) {
     abort();
   }
 
@@ -390,18 +370,13 @@ class StreamFlowControlBase {
 // performance.
 class StreamFlowControlDisabled : public StreamFlowControlBase {
  public:
-  FlowControlAction UpdateAction(FlowControlAction action) override {
-    return action;
-  }
+  FlowControlAction UpdateAction(FlowControlAction action) override { return action; }
   FlowControlAction MakeAction() override { return FlowControlAction(); }
   void SentData(int64_t /* outgoing_frame_size */) override {}
-  grpc_error_handle RecvData(int64_t /* incoming_frame_size */) override {
-    return GRPC_ERROR_NONE;
-  }
+  grpc_error_handle RecvData(int64_t /* incoming_frame_size */) override { return GRPC_ERROR_NONE; }
   uint32_t MaybeSendUpdate() override { return 0; }
   void RecvUpdate(uint32_t /* size */) override {}
-  void IncomingByteStreamUpdate(size_t /* max_size_hint */,
-                                size_t /* have_already */) override {}
+  void IncomingByteStreamUpdate(size_t /* max_size_hint */, size_t /* have_already */) override {}
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
@@ -414,9 +389,7 @@ class StreamFlowControl final : public StreamFlowControlBase {
   }
 
   FlowControlAction UpdateAction(FlowControlAction action) override;
-  FlowControlAction MakeAction() override {
-    return UpdateAction(tfc_->MakeAction());
-  }
+  FlowControlAction MakeAction() override { return UpdateAction(tfc_->MakeAction()); }
 
   // we have sent data on the wire, we must track this in our bookkeeping for
   // the remote peer's flow control.
@@ -440,8 +413,7 @@ class StreamFlowControl final : public StreamFlowControlBase {
   }
 
   // the application is asking for a certain amount of bytes
-  void IncomingByteStreamUpdate(size_t max_size_hint,
-                                size_t have_already) override;
+  void IncomingByteStreamUpdate(size_t max_size_hint, size_t have_already) override;
 
   int64_t remote_window_delta() const { return remote_window_delta_; }
   int64_t local_window_delta() const { return local_window_delta_; }
@@ -469,8 +441,7 @@ class StreamFlowControl final : public StreamFlowControlBase {
 class TestOnlyTransportTargetWindowEstimatesMocker {
  public:
   virtual ~TestOnlyTransportTargetWindowEstimatesMocker() {}
-  virtual double ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
-      double current_target) = 0;
+  virtual double ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(double current_target) = 0;
 };
 
 extern TestOnlyTransportTargetWindowEstimatesMocker*

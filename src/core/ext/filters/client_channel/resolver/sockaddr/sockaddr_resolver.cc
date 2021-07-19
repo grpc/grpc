@@ -57,15 +57,12 @@ class SockaddrResolver : public Resolver {
   const grpc_channel_args* channel_args_ = nullptr;
 };
 
-SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
-                                   ResolverArgs args)
+SockaddrResolver::SockaddrResolver(ServerAddressList addresses, ResolverArgs args)
     : result_handler_(std::move(args.result_handler)),
       addresses_(std::move(addresses)),
       channel_args_(grpc_channel_args_copy(args.args)) {}
 
-SockaddrResolver::~SockaddrResolver() {
-  grpc_channel_args_destroy(channel_args_);
-}
+SockaddrResolver::~SockaddrResolver() { grpc_channel_args_destroy(channel_args_); }
 
 void SockaddrResolver::StartLocked() {
   Result result;
@@ -80,12 +77,10 @@ void SockaddrResolver::StartLocked() {
 // Factory
 //
 
-bool ParseUri(const URI& uri,
-              bool parse(const URI& uri, grpc_resolved_address* dst),
+bool ParseUri(const URI& uri, bool parse(const URI& uri, grpc_resolved_address* dst),
               ServerAddressList* addresses) {
   if (!uri.authority().empty()) {
-    gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
-            uri.scheme().c_str());
+    gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme", uri.scheme().c_str());
     return false;
   }
   // Construct addresses.
@@ -104,20 +99,18 @@ bool ParseUri(const URI& uri,
   return !errors_found;
 }
 
-OrphanablePtr<Resolver> CreateSockaddrResolver(
-    ResolverArgs args, bool parse(const URI& uri, grpc_resolved_address* dst)) {
+OrphanablePtr<Resolver> CreateSockaddrResolver(ResolverArgs args,
+                                               bool parse(const URI& uri,
+                                                          grpc_resolved_address* dst)) {
   ServerAddressList addresses;
   if (!ParseUri(args.uri, parse, &addresses)) return nullptr;
   // Instantiate resolver.
-  return MakeOrphanable<SockaddrResolver>(std::move(addresses),
-                                          std::move(args));
+  return MakeOrphanable<SockaddrResolver>(std::move(addresses), std::move(args));
 }
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& uri) const override {
-    return ParseUri(uri, grpc_parse_ipv4, nullptr);
-  }
+  bool IsValidUri(const URI& uri) const override { return ParseUri(uri, grpc_parse_ipv4, nullptr); }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv4);
@@ -128,9 +121,7 @@ class IPv4ResolverFactory : public ResolverFactory {
 
 class IPv6ResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& uri) const override {
-    return ParseUri(uri, grpc_parse_ipv6, nullptr);
-  }
+  bool IsValidUri(const URI& uri) const override { return ParseUri(uri, grpc_parse_ipv6, nullptr); }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv6);
@@ -142,17 +133,13 @@ class IPv6ResolverFactory : public ResolverFactory {
 #ifdef GRPC_HAVE_UNIX_SOCKET
 class UnixResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const URI& uri) const override {
-    return ParseUri(uri, grpc_parse_unix, nullptr);
-  }
+  bool IsValidUri(const URI& uri) const override { return ParseUri(uri, grpc_parse_unix, nullptr); }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
-  std::string GetDefaultAuthority(const URI& /*uri*/) const override {
-    return "localhost";
-  }
+  std::string GetDefaultAuthority(const URI& /*uri*/) const override { return "localhost"; }
 
   const char* scheme() const override { return "unix"; }
 };
@@ -167,9 +154,7 @@ class UnixAbstractResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix_abstract);
   }
 
-  std::string GetDefaultAuthority(const URI& /*uri*/) const override {
-    return "localhost";
-  }
+  std::string GetDefaultAuthority(const URI& /*uri*/) const override { return "localhost"; }
 
   const char* scheme() const override { return "unix-abstract"; }
 };

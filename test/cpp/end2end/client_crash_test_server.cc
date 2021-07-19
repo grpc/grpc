@@ -38,9 +38,8 @@ namespace grpc {
 namespace testing {
 
 class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
-  Status BidiStream(
-      ServerContext* /*context*/,
-      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+  Status BidiStream(ServerContext* /*context*/,
+                    ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
@@ -56,12 +55,10 @@ void RunServer() {
   ServiceImpl service;
 
   ServerBuilder builder;
-  builder.AddListeningPort(absl::GetFlag(FLAGS_address),
-                           grpc::InsecureServerCredentials());
+  builder.AddListeningPort(absl::GetFlag(FLAGS_address), grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << absl::GetFlag(FLAGS_address)
-            << std::endl;
+  std::cout << "Server listening on " << absl::GetFlag(FLAGS_address) << std::endl;
   server->Wait();
 }
 }  // namespace testing

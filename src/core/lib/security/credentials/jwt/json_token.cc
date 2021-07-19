@@ -57,14 +57,12 @@ gpr_timespec grpc_max_auth_token_lifetime() {
 
 /* --- Override for testing. --- */
 
-static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override =
-    nullptr;
+static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override = nullptr;
 
 /* --- grpc_auth_json_key. --- */
 
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
-  return (json_key != nullptr) &&
-         strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID) != 0;
+  return (json_key != nullptr) && strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID) != 0;
 }
 
 grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
@@ -83,17 +81,14 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
 
   prop_value = grpc_json_get_string_property(json, "type", &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
-  if (prop_value == nullptr ||
-      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT) != 0) {
+  if (prop_value == nullptr || strcmp(prop_value, GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT) != 0) {
     goto end;
   }
   result.type = GRPC_AUTH_JSON_TYPE_SERVICE_ACCOUNT;
 
-  if (!grpc_copy_json_string_property(json, "private_key_id",
-                                      &result.private_key_id) ||
+  if (!grpc_copy_json_string_property(json, "private_key_id", &result.private_key_id) ||
       !grpc_copy_json_string_property(json, "client_id", &result.client_id) ||
-      !grpc_copy_json_string_property(json, "client_email",
-                                      &result.client_email)) {
+      !grpc_copy_json_string_property(json, "client_email", &result.client_email)) {
     goto end;
   }
 
@@ -108,8 +103,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
     gpr_log(GPR_ERROR, "Could not write into openssl BIO.");
     goto end;
   }
-  result.private_key =
-      PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, const_cast<char*>(""));
+  result.private_key = PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, const_cast<char*>(""));
   if (result.private_key == nullptr) {
     gpr_log(GPR_ERROR, "Could not deserialize private key.");
     goto end;
@@ -122,8 +116,7 @@ end:
   return result;
 }
 
-grpc_auth_json_key grpc_auth_json_key_create_from_string(
-    const char* json_string) {
+grpc_auth_json_key grpc_auth_json_key_create_from_string(const char* json_string) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_string, &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
@@ -163,8 +156,7 @@ static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
   return grpc_base64_encode(json_str.c_str(), json_str.size(), 1, 0);
 }
 
-static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
-                               const char* audience,
+static char* encoded_jwt_claim(const grpc_auth_json_key* json_key, const char* audience,
                                gpr_timespec token_lifetime, const char* scope) {
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
@@ -195,8 +187,7 @@ static char* dot_concat_and_free_strings(char* str1, char* str2) {
   size_t str1_len = strlen(str1);
   size_t str2_len = strlen(str2);
   size_t result_len = str1_len + 1 /* dot */ + str2_len;
-  char* result =
-      static_cast<char*>(gpr_malloc(result_len + 1 /* NULL terminated */));
+  char* result = static_cast<char*>(gpr_malloc(result_len + 1 /* NULL terminated */));
   char* current = result;
   memcpy(current, str1, str1_len);
   current += str1_len;
@@ -221,8 +212,7 @@ const EVP_MD* openssl_digest_from_algorithm(const char* algorithm) {
 }
 
 char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
-                                   const char* signature_algorithm,
-                                   const char* to_sign) {
+                                   const char* signature_algorithm, const char* to_sign) {
   const EVP_MD* md = openssl_digest_from_algorithm(signature_algorithm);
   EVP_MD_CTX* md_ctx = nullptr;
   EVP_PKEY* key = EVP_PKEY_new();
@@ -262,17 +252,15 @@ end:
   return result;
 }
 
-char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key,
-                               const char* audience,
+char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key, const char* audience,
                                gpr_timespec token_lifetime, const char* scope) {
   if (g_jwt_encode_and_sign_override != nullptr) {
-    return g_jwt_encode_and_sign_override(json_key, audience, token_lifetime,
-                                          scope);
+    return g_jwt_encode_and_sign_override(json_key, audience, token_lifetime, scope);
   } else {
     const char* sig_algo = GRPC_JWT_RSA_SHA256_ALGORITHM;
-    char* to_sign = dot_concat_and_free_strings(
-        encoded_jwt_header(json_key->private_key_id, sig_algo),
-        encoded_jwt_claim(json_key, audience, token_lifetime, scope));
+    char* to_sign =
+        dot_concat_and_free_strings(encoded_jwt_header(json_key->private_key_id, sig_algo),
+                                    encoded_jwt_claim(json_key, audience, token_lifetime, scope));
     char* sig = compute_and_encode_signature(json_key, sig_algo, to_sign);
     if (sig == nullptr) {
       gpr_free(to_sign);
@@ -282,7 +270,6 @@ char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key,
   }
 }
 
-void grpc_jwt_encode_and_sign_set_override(
-    grpc_jwt_encode_and_sign_override func) {
+void grpc_jwt_encode_and_sign_set_override(grpc_jwt_encode_and_sign_override func) {
   g_jwt_encode_and_sign_override = func;
 }

@@ -25,35 +25,27 @@
 #include "absl/flags/flag.h"
 #include "src/core/lib/iomgr/load_file.h"
 
-ABSL_RETIRED_FLAG(bool, enable_ssl, false,
-                  "Replaced by --channel_creds_type=ssl.");
-ABSL_RETIRED_FLAG(bool, use_auth, false,
-                  "Replaced by --channel_creds_type=gdc.");
-ABSL_RETIRED_FLAG(std::string, access_token, "",
-                  "Replaced by --call_creds=access_token=<token>.");
-ABSL_FLAG(
-    std::string, ssl_target, "",
-    "If not empty, treat the server host name as this for ssl/tls certificate "
-    "validation.");
-ABSL_FLAG(
-    std::string, ssl_client_cert, "",
-    "If not empty, load this PEM formatted client certificate file. Requires "
-    "use of --ssl_client_key.");
+ABSL_RETIRED_FLAG(bool, enable_ssl, false, "Replaced by --channel_creds_type=ssl.");
+ABSL_RETIRED_FLAG(bool, use_auth, false, "Replaced by --channel_creds_type=gdc.");
+ABSL_RETIRED_FLAG(std::string, access_token, "", "Replaced by --call_creds=access_token=<token>.");
+ABSL_FLAG(std::string, ssl_target, "",
+          "If not empty, treat the server host name as this for ssl/tls certificate "
+          "validation.");
+ABSL_FLAG(std::string, ssl_client_cert, "",
+          "If not empty, load this PEM formatted client certificate file. Requires "
+          "use of --ssl_client_key.");
 ABSL_FLAG(std::string, ssl_client_key, "",
           "If not empty, load this PEM formatted private key. Requires use of "
           "--ssl_client_cert");
-ABSL_FLAG(
-    std::string, local_connect_type, "local_tcp",
-    "The type of local connections for which local channel credentials will "
-    "be applied. Should be local_tcp or uds.");
-ABSL_FLAG(
-    std::string, channel_creds_type, "",
-    "The channel creds type: insecure, ssl, gdc (Google Default Credentials), "
-    "alts, or local.");
-ABSL_FLAG(
-    std::string, call_creds, "",
-    "Call credentials to use: none (default), or access_token=<token>. If "
-    "provided, the call creds are composited on top of channel creds.");
+ABSL_FLAG(std::string, local_connect_type, "local_tcp",
+          "The type of local connections for which local channel credentials will "
+          "be applied. Should be local_tcp or uds.");
+ABSL_FLAG(std::string, channel_creds_type, "",
+          "The channel creds type: insecure, ssl, gdc (Google Default Credentials), "
+          "alts, or local.");
+ABSL_FLAG(std::string, call_creds, "",
+          "Call credentials to use: none (default), or access_token=<token>. If "
+          "provided, the call creds are composited on top of channel creds.");
 
 namespace grpc {
 namespace testing {
@@ -78,14 +70,11 @@ std::string AccessToken(const std::string& auth) {
 
 }  // namespace
 
-std::string CliCredentials::GetDefaultChannelCredsType() const {
-  return "insecure";
-}
+std::string CliCredentials::GetDefaultChannelCredsType() const { return "insecure"; }
 
 std::string CliCredentials::GetDefaultCallCreds() const { return "none"; }
 
-std::shared_ptr<grpc::ChannelCredentials>
-CliCredentials::GetChannelCredentials() const {
+std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetChannelCredentials() const {
   if (absl::GetFlag(FLAGS_channel_creds_type) == "insecure") {
     return grpc::InsecureChannelCredentials();
   } else if (absl::GetFlag(FLAGS_channel_creds_type) == "ssl") {
@@ -93,38 +82,30 @@ CliCredentials::GetChannelCredentials() const {
     // TODO(@Capstan): This won't affect Google Default Credentials using SSL.
     if (!absl::GetFlag(FLAGS_ssl_client_cert).empty()) {
       grpc_slice cert_slice = grpc_empty_slice();
-      GRPC_LOG_IF_ERROR(
-          "load_file",
-          grpc_load_file(absl::GetFlag(FLAGS_ssl_client_cert).c_str(), 1,
-                         &cert_slice));
-      ssl_creds_options.pem_cert_chain =
-          grpc::StringFromCopiedSlice(cert_slice);
+      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(absl::GetFlag(FLAGS_ssl_client_cert).c_str(), 1,
+                                                    &cert_slice));
+      ssl_creds_options.pem_cert_chain = grpc::StringFromCopiedSlice(cert_slice);
       grpc_slice_unref(cert_slice);
     }
     if (!absl::GetFlag(FLAGS_ssl_client_key).empty()) {
       grpc_slice key_slice = grpc_empty_slice();
-      GRPC_LOG_IF_ERROR(
-          "load_file",
-          grpc_load_file(absl::GetFlag(FLAGS_ssl_client_key).c_str(), 1,
-                         &key_slice));
-      ssl_creds_options.pem_private_key =
-          grpc::StringFromCopiedSlice(key_slice);
+      GRPC_LOG_IF_ERROR("load_file",
+                        grpc_load_file(absl::GetFlag(FLAGS_ssl_client_key).c_str(), 1, &key_slice));
+      ssl_creds_options.pem_private_key = grpc::StringFromCopiedSlice(key_slice);
       grpc_slice_unref(key_slice);
     }
     return grpc::SslCredentials(ssl_creds_options);
   } else if (absl::GetFlag(FLAGS_channel_creds_type) == "gdc") {
     return grpc::GoogleDefaultCredentials();
   } else if (absl::GetFlag(FLAGS_channel_creds_type) == "alts") {
-    return grpc::experimental::AltsCredentials(
-        grpc::experimental::AltsCredentialsOptions());
+    return grpc::experimental::AltsCredentials(grpc::experimental::AltsCredentialsOptions());
   } else if (absl::GetFlag(FLAGS_channel_creds_type) == "local") {
     if (absl::GetFlag(FLAGS_local_connect_type) == "local_tcp") {
       return grpc::experimental::LocalCredentials(LOCAL_TCP);
     } else if (absl::GetFlag(FLAGS_local_connect_type) == "uds") {
       return grpc::experimental::LocalCredentials(UDS);
     } else {
-      fprintf(stderr,
-              "--local_connect_type=%s invalid; must be local_tcp or uds.\n",
+      fprintf(stderr, "--local_connect_type=%s invalid; must be local_tcp or uds.\n",
               absl::GetFlag(FLAGS_local_connect_type).c_str());
     }
   }
@@ -135,11 +116,9 @@ CliCredentials::GetChannelCredentials() const {
   return std::shared_ptr<grpc::ChannelCredentials>();
 }
 
-std::shared_ptr<grpc::CallCredentials> CliCredentials::GetCallCredentials()
-    const {
+std::shared_ptr<grpc::CallCredentials> CliCredentials::GetCallCredentials() const {
   if (IsAccessToken(absl::GetFlag(FLAGS_call_creds))) {
-    return grpc::AccessTokenCredentials(
-        AccessToken(absl::GetFlag(FLAGS_call_creds)));
+    return grpc::AccessTokenCredentials(AccessToken(absl::GetFlag(FLAGS_call_creds)));
   }
   if (absl::GetFlag(FLAGS_call_creds) == "none") {
     // Nothing to do; creds, if any, are baked into the channel.
@@ -152,16 +131,14 @@ std::shared_ptr<grpc::CallCredentials> CliCredentials::GetCallCredentials()
   return std::shared_ptr<grpc::CallCredentials>();
 }
 
-std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
-    const {
+std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials() const {
   if (absl::GetFlag(FLAGS_call_creds).empty()) {
     absl::SetFlag(&FLAGS_call_creds, GetDefaultCallCreds());
   }
   if (absl::GetFlag(FLAGS_channel_creds_type).empty()) {
     absl::SetFlag(&FLAGS_channel_creds_type, GetDefaultChannelCredsType());
   }
-  std::shared_ptr<grpc::ChannelCredentials> channel_creds =
-      GetChannelCredentials();
+  std::shared_ptr<grpc::ChannelCredentials> channel_creds = GetChannelCredentials();
   // Composite any call-type credentials on top of the base channel.
   std::shared_ptr<grpc::CallCredentials> call_creds = GetCallCredentials();
   return (channel_creds == nullptr || call_creds == nullptr)

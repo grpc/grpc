@@ -28,8 +28,7 @@ const size_t kFrameMessageType = 0x06;
 const size_t kFrameLengthFieldSize = 4;
 const size_t kFrameMessageTypeFieldSize = 4;
 const size_t kFrameMaxSize = 1024 * 1024;
-const size_t kFrameHeaderSize =
-    kFrameLengthFieldSize + kFrameMessageTypeFieldSize;
+const size_t kFrameHeaderSize = kFrameLengthFieldSize + kFrameMessageTypeFieldSize;
 
 /**
  * Implementation of frame reader and frame writer. All APIs in the
@@ -77,8 +76,7 @@ alts_frame_writer* alts_create_frame_writer();
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_reset_frame_writer(alts_frame_writer* writer,
-                             const unsigned char* buffer, size_t length);
+bool alts_reset_frame_writer(alts_frame_writer* writer, const unsigned char* buffer, size_t length);
 
 /**
  * This method writes up to bytes_size bytes of a frame to output.
@@ -91,8 +89,7 @@ bool alts_reset_frame_writer(alts_frame_writer* writer,
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
-                            size_t* bytes_size);
+bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output, size_t* bytes_size);
 
 /**
  * This method checks if a reset can be called to write a new frame. It returns
@@ -158,8 +155,8 @@ bool alts_reset_frame_reader(alts_frame_reader* reader, unsigned char* buffer);
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_read_frame_bytes(alts_frame_reader* reader,
-                           const unsigned char* bytes, size_t* bytes_size);
+bool alts_read_frame_bytes(alts_frame_reader* reader, const unsigned char* bytes,
+                           size_t* bytes_size);
 
 /**
  * This method checks if a frame length has been read.
@@ -200,8 +197,7 @@ size_t alts_get_reader_bytes_remaining(alts_frame_reader* reader);
  * - reader: a frame reader instance.
  * - buffer: a buffer used to set reader's output_buffer.
  */
-void alts_reset_reader_output_buffer(alts_frame_reader* reader,
-                                     unsigned char* buffer);
+void alts_reset_reader_output_buffer(alts_frame_reader* reader, unsigned char* buffer);
 
 /**
  * This method checks if reset can be called to start processing a new frame.

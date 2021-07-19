@@ -38,8 +38,7 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -50,13 +49,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -69,8 +64,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+                                         grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -93,15 +87,13 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 static void request_with_payload_template(
-    grpc_end2end_test_config config, const char* test_name,
-    uint32_t client_send_flags_bitmask,
+    grpc_end2end_test_config config, const char* test_name, uint32_t client_send_flags_bitmask,
     grpc_compression_algorithm default_client_channel_compression_algorithm,
     grpc_compression_algorithm default_server_channel_compression_algorithm,
     grpc_compression_algorithm expected_algorithm_from_client,
-    grpc_compression_algorithm expected_algorithm_from_server,
-    grpc_metadata* client_init_metadata, bool set_server_level,
-    grpc_compression_level server_compression_level, char* user_agent_override,
-    bool decompress_in_core) {
+    grpc_compression_algorithm expected_algorithm_from_server, grpc_metadata* client_init_metadata,
+    bool set_server_level, grpc_compression_level server_compression_level,
+    char* user_agent_override, bool decompress_in_core) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice;
@@ -133,23 +125,21 @@ static void request_with_payload_template(
   response_str[1023] = '\0';
 
   request_payload_slice = grpc_slice_from_copied_string(request_str);
-  grpc_slice response_payload_slice =
-      grpc_slice_from_copied_string(response_str);
+  grpc_slice response_payload_slice = grpc_slice_from_copied_string(response_str);
 
   client_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, default_client_channel_compression_algorithm);
   server_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, default_server_channel_compression_algorithm);
   if (!decompress_in_core) {
-    grpc_arg disable_decompression_in_core_arg =
-        grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
+    grpc_arg disable_decompression_in_core_arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION), 0);
     grpc_channel_args* old_client_args = client_args;
     grpc_channel_args* old_server_args = server_args;
-    client_args = grpc_channel_args_copy_and_add(
-        client_args, &disable_decompression_in_core_arg, 1);
-    server_args = grpc_channel_args_copy_and_add(
-        server_args, &disable_decompression_in_core_arg, 1);
+    client_args =
+        grpc_channel_args_copy_and_add(client_args, &disable_decompression_in_core_arg, 1);
+    server_args =
+        grpc_channel_args_copy_and_add(server_args, &disable_decompression_in_core_arg, 1);
     grpc_channel_args_destroy(old_client_args);
     grpc_channel_args_destroy(old_server_args);
   }
@@ -169,8 +159,7 @@ static void request_with_payload_template(
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -202,25 +191,23 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(100));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(100), true);
   cq_verify(cqv);
 
-  GPR_ASSERT(GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(
-                 s)) == GRPC_COMPRESS_ALGORITHMS_COUNT);
-  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_NONE) != 0);
+  GPR_ASSERT(GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(s)) ==
+             GRPC_COMPRESS_ALGORITHMS_COUNT);
+  GPR_ASSERT(
+      GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s), GRPC_COMPRESS_NONE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_DEFLATE) != 0);
-  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_GZIP) != 0);
+  GPR_ASSERT(
+      GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s), GRPC_COMPRESS_GZIP) != 0);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -228,8 +215,7 @@ static void request_with_payload_template(
   op->data.send_initial_metadata.count = 0;
   if (set_server_level) {
     op->data.send_initial_metadata.maybe_compression_level.is_set = true;
-    op->data.send_initial_metadata.maybe_compression_level.level =
-        server_compression_level;
+    op->data.send_initial_metadata.maybe_compression_level.level = server_compression_level;
   }
   op->flags = 0;
   op->reserved = nullptr;
@@ -239,8 +225,7 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(101),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(101), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (int i = 0; i < 2; i++) {
@@ -259,8 +244,7 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                  nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -270,8 +254,7 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  tag(102), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
     cq_verify(cqv);
@@ -279,8 +262,7 @@ static void request_with_payload_template(
     GPR_ASSERT(request_payload_recv->type == GRPC_BB_RAW);
     GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, request_str));
     GPR_ASSERT(request_payload_recv->data.raw.compression ==
-               (decompress_in_core ? GRPC_COMPRESS_NONE
-                                   : expected_algorithm_from_client));
+               (decompress_in_core ? GRPC_COMPRESS_NONE : expected_algorithm_from_client));
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -289,8 +271,7 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
-                                  tag(103), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
@@ -301,13 +282,11 @@ static void request_with_payload_template(
     if (server_compression_level > GRPC_COMPRESS_LEVEL_NONE) {
       const grpc_compression_algorithm algo_for_server_level =
           grpc_call_compression_for_level(s, server_compression_level);
-      GPR_ASSERT(
-          response_payload_recv->data.raw.compression ==
-          (decompress_in_core ? GRPC_COMPRESS_NONE : algo_for_server_level));
+      GPR_ASSERT(response_payload_recv->data.raw.compression ==
+                 (decompress_in_core ? GRPC_COMPRESS_NONE : algo_for_server_level));
     } else {
       GPR_ASSERT(response_payload_recv->data.raw.compression ==
-                 (decompress_in_core ? GRPC_COMPRESS_NONE
-                                     : expected_algorithm_from_server));
+                 (decompress_in_core ? GRPC_COMPRESS_NONE : expected_algorithm_from_server));
     }
 
     grpc_byte_buffer_destroy(request_payload);
@@ -325,8 +304,7 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -339,8 +317,7 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -377,34 +354,27 @@ typedef struct workaround_cronet_compression_config {
 
 static workaround_cronet_compression_config workaround_configs[] = {
     {nullptr, GRPC_COMPRESS_GZIP},
-    {const_cast<char*>(
-         "grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; cronet_http; gentle)"),
+    {const_cast<char*>("grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; cronet_http; gentle)"),
      GRPC_COMPRESS_NONE},
-    {const_cast<char*>(
-         "grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; chttp2; gentle)"),
+    {const_cast<char*>("grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; chttp2; gentle)"),
      GRPC_COMPRESS_GZIP},
-    {const_cast<char*>(
-         "grpc-objc/1.4.0 grpc-c/3.0.0-dev (ios; cronet_http; gentle)"),
+    {const_cast<char*>("grpc-objc/1.4.0 grpc-c/3.0.0-dev (ios; cronet_http; gentle)"),
      GRPC_COMPRESS_GZIP}};
 static const size_t workaround_configs_num =
     sizeof(workaround_configs) / sizeof(*workaround_configs);
 
-static void test_workaround_cronet_compression(
-    grpc_end2end_test_config config) {
+static void test_workaround_cronet_compression(grpc_end2end_test_config config) {
   for (uint32_t i = 0; i < workaround_configs_num; i++) {
     request_with_payload_template(
-        config, "test_invoke_request_with_compressed_payload", 0,
+        config, "test_invoke_request_with_compressed_payload", 0, GRPC_COMPRESS_GZIP,
+        GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
+        workaround_configs[i].expected_algorithm_from_server, nullptr, false,
+        /* ignored */ GRPC_COMPRESS_LEVEL_NONE, workaround_configs[i].user_agent_override, true);
+    request_with_payload_template(
+        config, "test_invoke_request_with_compressed_payload_with_compression_disabled", 0,
         GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
         workaround_configs[i].expected_algorithm_from_server, nullptr, false,
-        /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
-        workaround_configs[i].user_agent_override, true);
-    request_with_payload_template(
-        config,
-        "test_invoke_request_with_compressed_payload_with_compression_disabled",
-        0, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
-        workaround_configs[i].expected_algorithm_from_server, nullptr, false,
-        /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
-        workaround_configs[i].user_agent_override, false);
+        /* ignored */ GRPC_COMPRESS_LEVEL_NONE, workaround_configs[i].user_agent_override, false);
   }
 }
 

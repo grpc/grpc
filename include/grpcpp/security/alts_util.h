@@ -40,9 +40,8 @@ std::unique_ptr<AltsContext> GetAltsContextFromAuthContext(
 // This utility function performs ALTS client authorization check on server
 // side, i.e., checks if the client identity matches one of the expected service
 // accounts. It returns OK if client is authorized and an error otherwise.
-grpc::Status AltsClientAuthzCheck(
-    const std::shared_ptr<const AuthContext>& auth_context,
-    const std::vector<std::string>& expected_service_accounts);
+grpc::Status AltsClientAuthzCheck(const std::shared_ptr<const AuthContext>& auth_context,
+                                  const std::vector<std::string>& expected_service_accounts);
 
 }  // namespace experimental
 }  // namespace grpc

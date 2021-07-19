@@ -40,8 +40,7 @@ char* gpr_dump(const char* buf, size_t len, uint32_t flags);
 /* Converts array buf, of length len, into a C string according to the flags.
    The length of the returned buffer is stored in out_len.
    Result should be freed with gpr_free() */
-char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags,
-                          size_t* out_len);
+char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags, size_t* out_len);
 
 /* Parses an array of bytes into an integer (base 10). Returns 1 on success,
    0 on failure. */
@@ -83,11 +82,9 @@ char* gpr_strjoin(const char** strs, size_t nstrs, size_t* final_length);
 /* Join a set of strings using a separator, returning the resulting string.
    Total combined length (excluding null terminator) is returned in final_length
    if it is non-null. */
-char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
-                      size_t* final_length);
+char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep, size_t* final_length);
 
-void gpr_string_split(const char* input, const char* sep, char*** strs,
-                      size_t* nstrs);
+void gpr_string_split(const char* input, const char* sep, char*** strs, size_t* nstrs);
 
 /* Returns a string that represents tm according to RFC-3339, and,
    more specifically, follows:

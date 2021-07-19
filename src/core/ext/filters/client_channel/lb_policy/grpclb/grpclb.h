@@ -24,8 +24,7 @@
 /** Channel arg indicating if a target corresponding to the address is grpclb
  * loadbalancer. The type of this arg is an integer and the value is treated as
  * a bool. */
-#define GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER \
-  "grpc.address_is_grpclb_load_balancer"
+#define GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER "grpc.address_is_grpclb_load_balancer"
 /** Channel arg indicating if a target corresponding to the address is a backend
  * received from a balancer. The type of this arg is an integer and the value is
  * treated as a bool. */

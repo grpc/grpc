@@ -30,8 +30,7 @@ struct grpc_server;
 
 namespace grpc {
 
-typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
-    GenericServerAsyncReaderWriter;
+typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer> GenericServerAsyncReaderWriter;
 typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
 typedef ServerAsyncReader<ByteBuffer, ByteBuffer> GenericServerAsyncReader;
 typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
@@ -69,10 +68,9 @@ class AsyncGenericService final {
  public:
   AsyncGenericService() : server_(nullptr) {}
 
-  void RequestCall(GenericServerContext* ctx,
-                   GenericServerAsyncReaderWriter* reader_writer,
-                   ::grpc::CompletionQueue* call_cq,
-                   ::grpc::ServerCompletionQueue* notification_cq, void* tag);
+  void RequestCall(GenericServerContext* ctx, GenericServerAsyncReaderWriter* reader_writer,
+                   ::grpc::CompletionQueue* call_cq, ::grpc::ServerCompletionQueue* notification_cq,
+                   void* tag);
 
  private:
   friend class grpc::Server;
@@ -107,8 +105,7 @@ class CallbackGenericService {
   /// The "method handler" for the generic API. This function should be
   /// overridden to provide a ServerGenericBidiReactor that implements the
   /// application-level interface for this RPC. Unimplemented by default.
-  virtual ServerGenericBidiReactor* CreateReactor(
-      GenericCallbackServerContext* /*ctx*/) {
+  virtual ServerGenericBidiReactor* CreateReactor(GenericCallbackServerContext* /*ctx*/) {
     class Reactor : public ServerGenericBidiReactor {
      public:
       Reactor() { this->Finish(Status(StatusCode::UNIMPLEMENTED, "")); }

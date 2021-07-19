@@ -39,13 +39,10 @@
 
 namespace {
 
-grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
-                                           grpc_error_handle* error) {
-  grpc_server_credentials* server_credentials =
-      grpc_find_server_credentials_in_args(args);
+grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args, grpc_error_handle* error) {
+  grpc_server_credentials* server_credentials = grpc_find_server_credentials_in_args(args);
   if (server_credentials == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Could not find server credentials");
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not find server credentials");
     return args;
   }
   auto security_connector = server_credentials->create_security_connector(args);
@@ -56,10 +53,8 @@ grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
             .c_str());
     return args;
   }
-  grpc_arg arg_to_add =
-      grpc_security_connector_to_arg(security_connector.get());
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
+  grpc_arg arg_to_add = grpc_security_connector_to_arg(security_connector.get());
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
   grpc_channel_args_destroy(args);
   return new_args;
 }
@@ -96,23 +91,19 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
   if (server->core_server->config_fetcher() != nullptr) {
     // Create channel args.
     grpc_arg arg_to_add = grpc_server_credentials_to_arg(creds);
-    args = grpc_channel_args_copy_and_add(server->core_server->channel_args(),
-                                          &arg_to_add, 1);
+    args = grpc_channel_args_copy_and_add(server->core_server->channel_args(), &arg_to_add, 1);
   } else {
     sc = creds->create_security_connector(nullptr);
     if (sc == nullptr) {
       err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat(
-              "Unable to create secure server with credentials of type ",
-              creds->type())
+          absl::StrCat("Unable to create secure server with credentials of type ", creds->type())
               .c_str());
       goto done;
     }
     grpc_arg args_to_add[2];
     args_to_add[0] = grpc_server_credentials_to_arg(creds);
     args_to_add[1] = grpc_security_connector_to_arg(sc.get());
-    args = grpc_channel_args_copy_and_add(server->core_server->channel_args(),
-                                          args_to_add,
+    args = grpc_channel_args_copy_and_add(server->core_server->channel_args(), args_to_add,
                                           GPR_ARRAY_SIZE(args_to_add));
   }
   // Add server port.

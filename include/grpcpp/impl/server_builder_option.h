@@ -34,8 +34,7 @@ class ServerBuilderOption {
   /// Alter the \a ChannelArguments used to create the gRPC server.
   virtual void UpdateArguments(grpc::ChannelArguments* args) = 0;
   /// Alter the ServerBuilderPlugin map that will be added into ServerBuilder.
-  virtual void UpdatePlugins(
-      std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* plugins) = 0;
+  virtual void UpdatePlugins(std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* plugins) = 0;
 };
 
 }  // namespace grpc

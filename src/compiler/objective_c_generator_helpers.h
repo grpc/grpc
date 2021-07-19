@@ -45,8 +45,7 @@ inline ::std::string LocalImport(const ::std::string& import) {
   return ::std::string("#import \"" + import + "\"\n");
 }
 
-inline ::std::string FrameworkImport(const ::std::string& import,
-                                     const ::std::string& framework) {
+inline ::std::string FrameworkImport(const ::std::string& import, const ::std::string& framework) {
   // Flattens the directory structure: grab the file name only
   std::size_t pos = import.rfind("/");
   // If pos is npos, pos + 1 is 0, which gives us the entire string,
@@ -60,34 +59,27 @@ inline ::std::string SystemImport(const ::std::string& import) {
 }
 
 inline ::std::string PreprocConditional(::std::string symbol, bool invert) {
-  return invert ? "!defined(" + symbol + ") || !" + symbol
-                : "defined(" + symbol + ") && " + symbol;
+  return invert ? "!defined(" + symbol + ") || !" + symbol : "defined(" + symbol + ") && " + symbol;
 }
 
-inline ::std::string PreprocIf(const ::std::string& symbol,
-                               const ::std::string& if_true) {
-  return ::std::string("#if " + PreprocConditional(symbol, false) + "\n" +
-                       if_true + "#endif\n");
+inline ::std::string PreprocIf(const ::std::string& symbol, const ::std::string& if_true) {
+  return ::std::string("#if " + PreprocConditional(symbol, false) + "\n" + if_true + "#endif\n");
 }
 
-inline ::std::string PreprocIfNot(const ::std::string& symbol,
-                                  const ::std::string& if_true) {
-  return ::std::string("#if " + PreprocConditional(symbol, true) + "\n" +
-                       if_true + "#endif\n");
+inline ::std::string PreprocIfNot(const ::std::string& symbol, const ::std::string& if_true) {
+  return ::std::string("#if " + PreprocConditional(symbol, true) + "\n" + if_true + "#endif\n");
 }
 
-inline ::std::string PreprocIfElse(const ::std::string& symbol,
-                                   const ::std::string& if_true,
+inline ::std::string PreprocIfElse(const ::std::string& symbol, const ::std::string& if_true,
                                    const ::std::string& if_false) {
-  return ::std::string("#if " + PreprocConditional(symbol, false) + "\n" +
-                       if_true + "#else\n" + if_false + "#endif\n");
+  return ::std::string("#if " + PreprocConditional(symbol, false) + "\n" + if_true + "#else\n" +
+                       if_false + "#endif\n");
 }
 
-inline ::std::string PreprocIfNotElse(const ::std::string& symbol,
-                                      const ::std::string& if_true,
+inline ::std::string PreprocIfNotElse(const ::std::string& symbol, const ::std::string& if_true,
                                       const ::std::string& if_false) {
-  return ::std::string("#if " + PreprocConditional(symbol, true) + "\n" +
-                       if_true + "#else\n" + if_false + "#endif\n");
+  return ::std::string("#if " + PreprocConditional(symbol, true) + "\n" + if_true + "#else\n" +
+                       if_false + "#endif\n");
 }
 
 }  // namespace grpc_objective_c_generator

@@ -82,22 +82,20 @@ TEST(RefCounted, NoDeleteUponUnref) {
   // Add two objects to the registry.
   auto v1 = MakeRefCounted<Value>(1, &registry);
   auto v2 = MakeRefCounted<Value>(2, &registry);
-  EXPECT_THAT(registry,
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pointee(::testing::Property(&Value::value, 1)),
-                  ::testing::Pointee(::testing::Property(&Value::value, 2))));
+  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
+                            ::testing::Pointee(::testing::Property(&Value::value, 1)),
+                            ::testing::Pointee(::testing::Property(&Value::value, 2))));
   // Running garbage collection should not delete anything, since both
   // entries still have refs.
   GarbageCollectRegistry(&registry);
-  EXPECT_THAT(registry,
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pointee(::testing::Property(&Value::value, 1)),
-                  ::testing::Pointee(::testing::Property(&Value::value, 2))));
+  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
+                            ::testing::Pointee(::testing::Property(&Value::value, 1)),
+                            ::testing::Pointee(::testing::Property(&Value::value, 2))));
   // Unref v2 and run GC to remove it.
   v2.reset();
   GarbageCollectRegistry(&registry);
-  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(::testing::Pointee(
-                            ::testing::Property(&Value::value, 1))));
+  EXPECT_THAT(registry, ::testing::UnorderedElementsAre(
+                            ::testing::Pointee(::testing::Property(&Value::value, 1))));
   // Now unref v1 and run GC again.
   v1.reset();
   GarbageCollectRegistry(&registry);
@@ -105,8 +103,7 @@ TEST(RefCounted, NoDeleteUponUnref) {
 }
 
 class ValueInExternalAllocation
-    : public RefCounted<ValueInExternalAllocation, PolymorphicRefCount,
-                        kUnrefCallDtor> {
+    : public RefCounted<ValueInExternalAllocation, PolymorphicRefCount, kUnrefCallDtor> {
  public:
   explicit ValueInExternalAllocation(int value) : value_(value) {}
 
@@ -117,15 +114,13 @@ class ValueInExternalAllocation
 };
 
 TEST(RefCounted, CallDtorUponUnref) {
-  std::aligned_storage<sizeof(ValueInExternalAllocation),
-                       alignof(ValueInExternalAllocation)>::type storage;
-  RefCountedPtr<ValueInExternalAllocation> value(
-      new (&storage) ValueInExternalAllocation(5));
+  std::aligned_storage<sizeof(ValueInExternalAllocation), alignof(ValueInExternalAllocation)>::type
+      storage;
+  RefCountedPtr<ValueInExternalAllocation> value(new (&storage) ValueInExternalAllocation(5));
   EXPECT_EQ(value->value(), 5);
 }
 
-class FooNonPolymorphic
-    : public RefCounted<FooNonPolymorphic, NonPolymorphicRefCount> {
+class FooNonPolymorphic : public RefCounted<FooNonPolymorphic, NonPolymorphicRefCount> {
  public:
   FooNonPolymorphic() {
     static_assert(!std::has_virtual_destructor<FooNonPolymorphic>::value,
@@ -171,8 +166,7 @@ class FooNonPolymorphicWithTracing
 
 TEST(RefCountedNonPolymorphicWithTracing, Basic) {
   FooNonPolymorphicWithTracing* foo = new FooNonPolymorphicWithTracing();
-  RefCountedPtr<FooNonPolymorphicWithTracing> foop =
-      foo->Ref(DEBUG_LOCATION, "extra_ref");
+  RefCountedPtr<FooNonPolymorphicWithTracing> foop = foo->Ref(DEBUG_LOCATION, "extra_ref");
   foop.release();
   foo->Unref(DEBUG_LOCATION, "extra_ref");
   // Can use the no-argument methods, too.

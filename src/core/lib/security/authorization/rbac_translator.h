@@ -31,8 +31,7 @@ struct RbacPolicies {
 // Translates SDK authorization policy to Envoy RBAC policies. Returns error on
 // failure.
 // authz_policy: Authorization Policy string in JSON format.
-absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
-    absl::string_view authz_policy);
+absl::StatusOr<RbacPolicies> GenerateRbacPolicies(absl::string_view authz_policy);
 
 }  // namespace grpc_core
 

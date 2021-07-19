@@ -25,30 +25,27 @@
 namespace {
 
 TEST(GetStatusCodeFromMetadata, OK) {
-  EXPECT_EQ(GRPC_STATUS_OK,
-            grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_0));
+  EXPECT_EQ(GRPC_STATUS_OK, grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_0));
 }
 
 TEST(GetStatusCodeFromMetadata, CANCELLED) {
-  EXPECT_EQ(GRPC_STATUS_CANCELLED,
-            grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_1));
+  EXPECT_EQ(GRPC_STATUS_CANCELLED, grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_1));
 }
 
 TEST(GetStatusCodeFromMetadata, UNKNOWN) {
-  EXPECT_EQ(GRPC_STATUS_UNKNOWN,
-            grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_2));
+  EXPECT_EQ(GRPC_STATUS_UNKNOWN, grpc_get_status_code_from_metadata(GRPC_MDELEM_GRPC_STATUS_2));
 }
 
 TEST(GetStatusCodeFromMetadata, Other) {
-  grpc_mdelem status_md = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_static_string("10"));
+  grpc_mdelem status_md =
+      grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_static_string("10"));
   EXPECT_EQ(GRPC_STATUS_ABORTED, grpc_get_status_code_from_metadata(status_md));
   GRPC_MDELEM_UNREF(status_md);
 }
 
 TEST(GetStatusCodeFromMetadata, Unparseable) {
-  grpc_mdelem status_md = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_static_string("NaN"));
+  grpc_mdelem status_md =
+      grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_static_string("NaN"));
   EXPECT_EQ(GRPC_STATUS_UNKNOWN, grpc_get_status_code_from_metadata(status_md));
   GRPC_MDELEM_UNREF(status_md);
 }

@@ -66,15 +66,12 @@ void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   for (size_t i = 0; i < n; i++) {
     estimator->AddIncomingBytes(samples[i]);
   }
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_millis(1, GPR_TIMESPAN)));
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(1, GPR_TIMESPAN)));
   grpc_core::ExecCtx::Get()->InvalidateNow();
   estimator->CompletePing();
 }
 
-void AddSample(BdpEstimator* estimator, int64_t sample) {
-  AddSamples(estimator, &sample, 1);
-}
+void AddSample(BdpEstimator* estimator, int64_t sample) { AddSamples(estimator, &sample, 1); }
 }  // namespace
 
 TEST(BdpEstimatorTest, GetEstimate1Sample) {
@@ -132,8 +129,8 @@ TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
 }
 
 INSTANTIATE_TEST_SUITE_P(TooManyNames, BdpEstimatorRandomTest,
-                         ::testing::Values(3, 4, 6, 9, 13, 19, 28, 42, 63, 94,
-                                           141, 211, 316, 474, 711));
+                         ::testing::Values(3, 4, 6, 9, 13, 19, 28, 42, 63, 94, 141, 211, 316, 474,
+                                           711));
 
 }  // namespace testing
 }  // namespace grpc_core

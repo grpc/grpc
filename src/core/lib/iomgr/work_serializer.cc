@@ -35,8 +35,7 @@ struct CallbackWrapper {
 
 class WorkSerializer::WorkSerializerImpl : public Orphanable {
  public:
-  void Run(std::function<void()> callback,
-           const grpc_core::DebugLocation& location);
+  void Run(std::function<void()> callback, const grpc_core::DebugLocation& location);
 
   void Orphan() override;
 
@@ -49,11 +48,11 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   MultiProducerSingleConsumerQueue queue_;
 };
 
-void WorkSerializer::WorkSerializerImpl::Run(
-    std::function<void()> callback, const grpc_core::DebugLocation& location) {
+void WorkSerializer::WorkSerializerImpl::Run(std::function<void()> callback,
+                                             const grpc_core::DebugLocation& location) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-    gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
-            this, location.file(), location.line());
+    gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]", this, location.file(),
+            location.line());
   }
   const size_t prev_size = size_.FetchAdd(1);
   // The work serializer should not have been orphaned.
@@ -68,8 +67,7 @@ void WorkSerializer::WorkSerializerImpl::Run(
     // Loan this thread to the work serializer thread and drain the queue.
     DrainQueue();
   } else {
-    CallbackWrapper* cb_wrapper =
-        new CallbackWrapper(std::move(callback), location);
+    CallbackWrapper* cb_wrapper = new CallbackWrapper(std::move(callback), location);
     // There already are closures executing on this work serializer. Simply add
     // this closure to the queue.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
@@ -131,9 +129,8 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
       }
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
-              cb_wrapper, cb_wrapper->location.file(),
-              cb_wrapper->location.line());
+      gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]", cb_wrapper,
+              cb_wrapper->location.file(), cb_wrapper->location.line());
     }
     cb_wrapper->callback();
     delete cb_wrapper;
@@ -142,13 +139,11 @@ void WorkSerializer::WorkSerializerImpl::DrainQueue() {
 
 // WorkSerializer
 
-WorkSerializer::WorkSerializer()
-    : impl_(MakeOrphanable<WorkSerializerImpl>()) {}
+WorkSerializer::WorkSerializer() : impl_(MakeOrphanable<WorkSerializerImpl>()) {}
 
 WorkSerializer::~WorkSerializer() {}
 
-void WorkSerializer::Run(std::function<void()> callback,
-                         const grpc_core::DebugLocation& location) {
+void WorkSerializer::Run(std::function<void()> callback, const grpc_core::DebugLocation& location) {
   impl_->Run(std::move(callback), location);
 }
 

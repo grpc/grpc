@@ -49,8 +49,7 @@ inline std::vector<std::string> Split(const std::string& s, char delim) {
 }
 
 // Replace replaces from with to in s.
-inline std::string Replace(std::string s, const std::string& from,
-                           const std::string& to) {
+inline std::string Replace(std::string s, const std::string& from, const std::string& to) {
   size_t start_pos = s.find(from);
   if (start_pos == std::string::npos) {
     return s;
@@ -71,8 +70,7 @@ inline std::string ReplaceAll(std::string s, const std::string& search,
 }
 
 // ReplacePrefix replaces from with to in s if search is a prefix of s.
-inline bool ReplacePrefix(std::string* s, const std::string& from,
-                          const std::string& to) {
+inline bool ReplacePrefix(std::string* s, const std::string& from, const std::string& to) {
   size_t start_pos = s->find(from);
   if (start_pos == std::string::npos || start_pos != 0) {
     return false;

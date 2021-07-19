@@ -140,17 +140,15 @@ int64_t grpc_test_slowdown_factor() {
 gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
   return gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_millis(
-          grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_s,
-          GPR_TIMESPAN));
+      gpr_time_from_millis(grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_s,
+                           GPR_TIMESPAN));
 }
 
 gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
   return gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_micros(
-          grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_ms,
-          GPR_TIMESPAN));
+      gpr_time_from_micros(grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_ms,
+                           GPR_TIMESPAN));
 }
 
 void grpc_test_init(int /*argc*/, char** argv) {
@@ -159,8 +157,8 @@ void grpc_test_init(int /*argc*/, char** argv) {
   absl::InstallFailureSignalHandler(options);
   gpr_log_verbosity_init();
   gpr_log(GPR_DEBUG,
-          "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
-          ", poller=%" PRId64 ", total=%" PRId64,
+          "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64 ", poller=%" PRId64
+          ", total=%" PRId64,
           grpc_test_sanitizer_slowdown_factor(), g_fixture_slowdown_factor,
           g_poller_slowdown_factor, grpc_test_slowdown_factor());
   /* seed rng with pid, so we don't end up with the same random numbers as a
@@ -172,8 +170,8 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(time_s);
   while (grpc_is_initialized()) {
     grpc_maybe_wait_for_async_shutdown();
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_millis(1, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(1, GPR_TIMESPAN)));
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) > 0) {
       return false;
     }
@@ -184,9 +182,7 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
 namespace grpc {
 namespace testing {
 
-TestEnvironment::TestEnvironment(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-}
+TestEnvironment::TestEnvironment(int argc, char** argv) { grpc_test_init(argc, argv); }
 
 TestEnvironment::~TestEnvironment() {
   // This will wait until gRPC shutdown has actually happened to make sure
@@ -200,8 +196,8 @@ TestEnvironment::~TestEnvironment() {
     // are that thread itself is still alive. To workaround this problem, this
     // is going to wait for 0.5 sec to give a chance to the shutdown thread to
     // exit. https://github.com/grpc/grpc/issues/23695
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_millis(500, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(500, GPR_TIMESPAN)));
   }
   gpr_log(GPR_INFO, "TestEnvironment ends");
 }

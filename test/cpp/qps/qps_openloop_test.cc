@@ -50,9 +50,8 @@ static void RunQPS() {
   server_config.set_server_type(ASYNC_SERVER);
   server_config.set_async_server_threads(8);
 
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
-                  kInsecureCredentialsType, {}, false, 0);
+  const auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
+                                  kInsecureCredentialsType, {}, false, 0);
 
   GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);

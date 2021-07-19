@@ -25,8 +25,8 @@ StaticDataAuthorizationPolicyProvider::Create(const std::string& authz_policy,
   grpc_status_code code;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_static_data_create(
-          authz_policy.c_str(), &code, &error_details);
+      grpc_authorization_policy_provider_static_data_create(authz_policy.c_str(), &code,
+                                                            &error_details);
   if (code != GRPC_STATUS_OK) {
     *status = grpc::Status(static_cast<grpc::StatusCode>(code), error_details);
     gpr_free(const_cast<char*>(error_details));
@@ -36,8 +36,7 @@ StaticDataAuthorizationPolicyProvider::Create(const std::string& authz_policy,
   return std::make_shared<StaticDataAuthorizationPolicyProvider>(provider);
 }
 
-StaticDataAuthorizationPolicyProvider::
-    ~StaticDataAuthorizationPolicyProvider() {
+StaticDataAuthorizationPolicyProvider::~StaticDataAuthorizationPolicyProvider() {
   grpc_authorization_policy_provider_release(c_provider_);
 }
 

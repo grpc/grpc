@@ -54,10 +54,9 @@ static void run_test(const char* target, size_t nops) {
   grpc_op ops[6];
   grpc_op* op;
 
-  grpc_arg ssl_name_override = {
-      GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      {const_cast<char*>("foo.test.google.fr")}};
+  grpc_arg ssl_name_override = {GRPC_ARG_STRING,
+                                const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
+                                {const_cast<char*>("foo.test.google.fr")}};
   grpc_channel_args args;
 
   args.num_args = 1;
@@ -69,8 +68,7 @@ static void run_test(const char* target, size_t nops) {
   channel = grpc_secure_channel_create(ssl_creds, target, &args, nullptr);
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), &host, deadline, nullptr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -142,8 +140,7 @@ int main(int argc, char** argv) {
   tmp++;
   memcpy(test, tmp, static_cast<size_t>(lunder - tmp));
   /* start the server */
-  gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
-               gpr_subprocess_binary_extension());
+  gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test, gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--bind");
   std::string joined = grpc_core::JoinHostPort("::", port);
   args[2] = const_cast<char*>(joined.c_str());

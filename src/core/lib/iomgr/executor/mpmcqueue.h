@@ -102,9 +102,9 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // Stats of queue. This will only be collect when debug trace mode is on.
   // All printed stats info will have time measurement in microsecond.
   struct Stats {
-    uint64_t num_started;    // Number of elements have been added to queue
-    uint64_t num_completed;  // Number of elements have been removed from
-                             // the queue
+    uint64_t num_started;           // Number of elements have been added to queue
+    uint64_t num_completed;         // Number of elements have been removed from
+                                    // the queue
     gpr_timespec total_queue_time;  // Total waiting time that all the
                                     // removed elements have spent in queue
     gpr_timespec max_queue_time;    // Max waiting time among all removed

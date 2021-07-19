@@ -32,27 +32,20 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            cancellation_mode mode,
-                                            grpc_channel_args* client_args,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
+                                            cancellation_mode mode, grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s/%s", test_name, config.name,
-          mode.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s/%s", test_name, config.name, mode.name);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -65,8 +58,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+                                         grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -89,8 +81,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 /* Cancel and do nothing */
-static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
-                                    cancellation_mode mode) {
+static void test_cancel_in_a_vacuum(grpc_end2end_test_config config, cancellation_mode mode) {
   grpc_call* c;
   grpc_end2end_test_fixture f =
       begin_test(config, "test_cancel_in_a_vacuum", mode, nullptr, nullptr);
@@ -98,8 +89,7 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));

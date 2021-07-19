@@ -32,8 +32,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
-static void add_metadata(const grpc_metadata* md, size_t count,
-                         std::vector<std::string>* b) {
+static void add_metadata(const grpc_metadata* md, size_t count, std::vector<std::string>* b) {
   if (md == nullptr) {
     b->push_back("(nil)");
     return;
@@ -53,47 +52,41 @@ static std::string grpc_op_string(const grpc_op* op) {
   switch (op->op) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       parts.push_back("SEND_INITIAL_METADATA");
-      add_metadata(op->data.send_initial_metadata.metadata,
-                   op->data.send_initial_metadata.count, &parts);
+      add_metadata(op->data.send_initial_metadata.metadata, op->data.send_initial_metadata.count,
+                   &parts);
       break;
     case GRPC_OP_SEND_MESSAGE:
-      parts.push_back(absl::StrFormat("SEND_MESSAGE ptr=%p",
-                                      op->data.send_message.send_message));
+      parts.push_back(absl::StrFormat("SEND_MESSAGE ptr=%p", op->data.send_message.send_message));
       break;
     case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
       parts.push_back("SEND_CLOSE_FROM_CLIENT");
       break;
     case GRPC_OP_SEND_STATUS_FROM_SERVER:
-      parts.push_back(
-          absl::StrFormat("SEND_STATUS_FROM_SERVER status=%d details=",
-                          op->data.send_status_from_server.status));
+      parts.push_back(absl::StrFormat("SEND_STATUS_FROM_SERVER status=%d details=",
+                                      op->data.send_status_from_server.status));
       if (op->data.send_status_from_server.status_details != nullptr) {
-        char* dump = grpc_dump_slice(
-            *op->data.send_status_from_server.status_details, GPR_DUMP_ASCII);
+        char* dump =
+            grpc_dump_slice(*op->data.send_status_from_server.status_details, GPR_DUMP_ASCII);
         parts.push_back(dump);
         gpr_free(dump);
       } else {
         parts.push_back("(null)");
       }
       add_metadata(op->data.send_status_from_server.trailing_metadata,
-                   op->data.send_status_from_server.trailing_metadata_count,
-                   &parts);
+                   op->data.send_status_from_server.trailing_metadata_count, &parts);
       break;
     case GRPC_OP_RECV_INITIAL_METADATA:
-      parts.push_back(absl::StrFormat(
-          "RECV_INITIAL_METADATA ptr=%p",
-          op->data.recv_initial_metadata.recv_initial_metadata));
+      parts.push_back(absl::StrFormat("RECV_INITIAL_METADATA ptr=%p",
+                                      op->data.recv_initial_metadata.recv_initial_metadata));
       break;
     case GRPC_OP_RECV_MESSAGE:
-      parts.push_back(absl::StrFormat("RECV_MESSAGE ptr=%p",
-                                      op->data.recv_message.recv_message));
+      parts.push_back(absl::StrFormat("RECV_MESSAGE ptr=%p", op->data.recv_message.recv_message));
       break;
     case GRPC_OP_RECV_STATUS_ON_CLIENT:
-      parts.push_back(absl::StrFormat(
-          "RECV_STATUS_ON_CLIENT metadata=%p status=%p details=%p",
-          op->data.recv_status_on_client.trailing_metadata,
-          op->data.recv_status_on_client.status,
-          op->data.recv_status_on_client.status_details));
+      parts.push_back(absl::StrFormat("RECV_STATUS_ON_CLIENT metadata=%p status=%p details=%p",
+                                      op->data.recv_status_on_client.trailing_metadata,
+                                      op->data.recv_status_on_client.status,
+                                      op->data.recv_status_on_client.status_details));
       break;
     case GRPC_OP_RECV_CLOSE_ON_SERVER:
       parts.push_back(absl::StrFormat("RECV_CLOSE_ON_SERVER cancelled=%p",
@@ -102,10 +95,9 @@ static std::string grpc_op_string(const grpc_op* op) {
   return absl::StrJoin(parts, "");
 }
 
-void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
-                         const grpc_op* ops, size_t nops) {
+void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity, const grpc_op* ops,
+                         size_t nops) {
   for (size_t i = 0; i < nops; i++) {
-    gpr_log(file, line, severity, "ops[%" PRIuPTR "]: %s", i,
-            grpc_op_string(&ops[i]).c_str());
+    gpr_log(file, line, severity, "ops[%" PRIuPTR "]: %s", i, grpc_op_string(&ops[i]).c_str());
   }
 }

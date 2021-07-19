@@ -38,8 +38,7 @@ using helloworld::HelloRequest;
 
 class GreeterClient {
  public:
-  GreeterClient(std::shared_ptr<Channel> channel)
-      : stub_(Greeter::NewStub(channel)) {}
+  GreeterClient(std::shared_ptr<Channel> channel) : stub_(Greeter::NewStub(channel)) {}
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
@@ -62,8 +61,7 @@ class GreeterClient {
     if (status.ok()) {
       return reply.message();
     } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
+      std::cout << status.error_code() << ": " << status.error_message() << std::endl;
       return "RPC failed";
     }
   }
@@ -80,8 +78,8 @@ int main(int argc, char** argv) {
   ChannelArguments args;
   // Set the load balancing policy for the channel.
   args.SetLoadBalancingPolicyName("round_robin");
-  GreeterClient greeter(grpc::CreateCustomChannel(
-      "localhost:50051", grpc::InsecureChannelCredentials(), args));
+  GreeterClient greeter(
+      grpc::CreateCustomChannel("localhost:50051", grpc::InsecureChannelCredentials(), args));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;

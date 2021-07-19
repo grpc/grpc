@@ -47,13 +47,12 @@ namespace testing {
 std::vector<grpc::testing::Server*>* g_inproc_servers = nullptr;
 
 static void RunServer() {
-  QpsWorker worker(absl::GetFlag(FLAGS_driver_port),
-                   absl::GetFlag(FLAGS_server_port),
+  QpsWorker worker(absl::GetFlag(FLAGS_driver_port), absl::GetFlag(FLAGS_server_port),
                    absl::GetFlag(FLAGS_credential_type));
 
   while (!got_sigint && !worker.Done()) {
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
 }
 

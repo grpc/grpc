@@ -41,13 +41,12 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
 
   switch (grpc_get_cq_completion_type(cc)) {
     case GRPC_CQ_NEXT: {
-      ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                      nullptr);
+      ev = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
       break;
     }
     case GRPC_CQ_PLUCK: {
-      ev = grpc_completion_queue_pluck(
-          cc, create_test_tag(), gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
+      ev = grpc_completion_queue_pluck(cc, create_test_tag(), gpr_inf_past(GPR_CLOCK_REALTIME),
+                                       nullptr);
       break;
     }
     default: {
@@ -60,8 +59,7 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
   grpc_completion_queue_destroy(cc);
 }
 
-static void do_nothing_end_completion(void* /*arg*/,
-                                      grpc_cq_completion* /*c*/) {}
+static void do_nothing_end_completion(void* /*arg*/, grpc_cq_completion* /*c*/) {}
 
 struct thread_state {
   grpc_completion_queue* cc;
@@ -70,8 +68,7 @@ struct thread_state {
 
 static void pluck_one(void* arg) {
   struct thread_state* state = static_cast<struct thread_state*>(arg);
-  grpc_completion_queue_pluck(state->cc, state->tag,
-                              gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_completion_queue_pluck(state->cc, state->tag, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 }
 
 static void test_too_many_plucks(void) {
@@ -95,22 +92,21 @@ static void test_too_many_plucks(void) {
     }
     thread_states[i].cc = cc;
     thread_states[i].tag = tags[i];
-    threads[i] =
-        grpc_core::Thread("grpc_pluck_test", pluck_one, thread_states + i);
+    threads[i] = grpc_core::Thread("grpc_pluck_test", pluck_one, thread_states + i);
     threads[i].Start();
   }
 
   /* wait until all other threads are plucking */
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
 
-  ev = grpc_completion_queue_pluck(cc, create_test_tag(),
-                                   gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  ev = grpc_completion_queue_pluck(cc, create_test_tag(), gpr_inf_future(GPR_CLOCK_REALTIME),
+                                   nullptr);
   GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     GPR_ASSERT(grpc_cq_begin_op(cc, tags[i]));
-    grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion,
-                   nullptr, &completions[i]);
+    grpc_cq_end_op(cc, tags[i], GRPC_ERROR_NONE, do_nothing_end_completion, nullptr,
+                   &completions[i]);
   }
 
   for (auto& th : threads) {
@@ -133,13 +129,9 @@ typedef struct test_thread_options {
   grpc_completion_queue* cc;
 } test_thread_options;
 
-gpr_timespec ten_seconds_time(void) {
-  return grpc_timeout_seconds_to_deadline(10);
-}
+gpr_timespec ten_seconds_time(void) { return grpc_timeout_seconds_to_deadline(10); }
 
-static void free_completion(void* /*arg*/, grpc_cq_completion* completion) {
-  gpr_free(completion);
-}
+static void free_completion(void* /*arg*/, grpc_cq_completion* completion) { gpr_free(completion); }
 
 static void producer_thread(void* arg) {
   test_thread_options* opt = static_cast<test_thread_options*>(arg);
@@ -161,10 +153,8 @@ static void producer_thread(void* arg) {
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_cq_end_op(opt->cc, reinterpret_cast<void*>(1), GRPC_ERROR_NONE,
-                   free_completion, nullptr,
-                   static_cast<grpc_cq_completion*>(
-                       gpr_malloc(sizeof(grpc_cq_completion))));
+    grpc_cq_end_op(opt->cc, reinterpret_cast<void*>(1), GRPC_ERROR_NONE, free_completion, nullptr,
+                   static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
     opt->events_triggered++;
   }
 
@@ -188,8 +178,7 @@ static void consumer_thread(void* arg) {
 
   gpr_log(GPR_INFO, "consumer %d phase 2", opt->id);
   for (;;) {
-    ev = grpc_completion_queue_next(
-        opt->cc, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
+    ev = grpc_completion_queue_next(opt->cc, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
         GPR_ASSERT(ev.success);
@@ -216,12 +205,12 @@ static void test_threading(size_t producers, size_t consumers) {
   size_t total_consumed = 0;
   static int optid = 101;
 
-  gpr_log(GPR_INFO, "%s: %" PRIuPTR " producers, %" PRIuPTR " consumers",
-          "test_threading", producers, consumers);
+  gpr_log(GPR_INFO, "%s: %" PRIuPTR " producers, %" PRIuPTR " consumers", "test_threading",
+          producers, consumers);
 
   /* start all threads: they will wait for phase1 */
-  grpc_core::Thread* threads = static_cast<grpc_core::Thread*>(
-      gpr_malloc(sizeof(*threads) * (producers + consumers)));
+  grpc_core::Thread* threads =
+      static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*threads) * (producers + consumers)));
   for (i = 0; i < producers + consumers; i++) {
     gpr_event_init(&options[i].on_started);
     gpr_event_init(&options[i].on_phase1_done);
@@ -233,9 +222,9 @@ static void test_threading(size_t producers, size_t consumers) {
     options[i].id = optid++;
 
     bool ok;
-    threads[i] = grpc_core::Thread(
-        i < producers ? "grpc_producer" : "grpc_consumer",
-        i < producers ? producer_thread : consumer_thread, options + i, &ok);
+    threads[i] =
+        grpc_core::Thread(i < producers ? "grpc_producer" : "grpc_consumer",
+                          i < producers ? producer_thread : consumer_thread, options + i, &ok);
     GPR_ASSERT(ok);
     threads[i].Start();
     gpr_event_wait(&options[i].on_started, ten_seconds_time());

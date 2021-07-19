@@ -25,25 +25,21 @@
 #include <grpc/support/log.h>
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
 
-static const char alphabet[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 struct b64_huff_sym {
   uint16_t bits;
   uint8_t length;
 };
 static const b64_huff_sym huff_alphabet[64] = {
-    {0x21, 6}, {0x5d, 7}, {0x5e, 7},   {0x5f, 7}, {0x60, 7}, {0x61, 7},
-    {0x62, 7}, {0x63, 7}, {0x64, 7},   {0x65, 7}, {0x66, 7}, {0x67, 7},
-    {0x68, 7}, {0x69, 7}, {0x6a, 7},   {0x6b, 7}, {0x6c, 7}, {0x6d, 7},
-    {0x6e, 7}, {0x6f, 7}, {0x70, 7},   {0x71, 7}, {0x72, 7}, {0xfc, 8},
-    {0x73, 7}, {0xfd, 8}, {0x3, 5},    {0x23, 6}, {0x4, 5},  {0x24, 6},
-    {0x5, 5},  {0x25, 6}, {0x26, 6},   {0x27, 6}, {0x6, 5},  {0x74, 7},
-    {0x75, 7}, {0x28, 6}, {0x29, 6},   {0x2a, 6}, {0x7, 5},  {0x2b, 6},
-    {0x76, 7}, {0x2c, 6}, {0x8, 5},    {0x9, 5},  {0x2d, 6}, {0x77, 7},
-    {0x78, 7}, {0x79, 7}, {0x7a, 7},   {0x7b, 7}, {0x0, 5},  {0x1, 5},
-    {0x2, 5},  {0x19, 6}, {0x1a, 6},   {0x1b, 6}, {0x1c, 6}, {0x1d, 6},
-    {0x1e, 6}, {0x1f, 6}, {0x7fb, 11}, {0x18, 6}};
+    {0x21, 6}, {0x5d, 7}, {0x5e, 7}, {0x5f, 7}, {0x60, 7}, {0x61, 7}, {0x62, 7},   {0x63, 7},
+    {0x64, 7}, {0x65, 7}, {0x66, 7}, {0x67, 7}, {0x68, 7}, {0x69, 7}, {0x6a, 7},   {0x6b, 7},
+    {0x6c, 7}, {0x6d, 7}, {0x6e, 7}, {0x6f, 7}, {0x70, 7}, {0x71, 7}, {0x72, 7},   {0xfc, 8},
+    {0x73, 7}, {0xfd, 8}, {0x3, 5},  {0x23, 6}, {0x4, 5},  {0x24, 6}, {0x5, 5},    {0x25, 6},
+    {0x26, 6}, {0x27, 6}, {0x6, 5},  {0x74, 7}, {0x75, 7}, {0x28, 6}, {0x29, 6},   {0x2a, 6},
+    {0x7, 5},  {0x2b, 6}, {0x76, 7}, {0x2c, 6}, {0x8, 5},  {0x9, 5},  {0x2d, 6},   {0x77, 7},
+    {0x78, 7}, {0x79, 7}, {0x7a, 7}, {0x7b, 7}, {0x0, 5},  {0x1, 5},  {0x2, 5},    {0x19, 6},
+    {0x1a, 6}, {0x1b, 6}, {0x1c, 6}, {0x1d, 6}, {0x1e, 6}, {0x1f, 6}, {0x7fb, 11}, {0x18, 6}};
 
 static const uint8_t tail_xtra[3] = {0, 2, 3};
 
@@ -100,15 +96,13 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
   uint32_t temp_length = 0;
 
   nbits = 0;
-  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input);
-       ++in) {
+  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input); ++in) {
     nbits += grpc_chttp2_huffsyms[*in].length;
   }
 
   output = GRPC_SLICE_MALLOC(nbits / 8 + (nbits % 8 != 0));
   out = GRPC_SLICE_START_PTR(output);
-  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input);
-       ++in) {
+  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input); ++in) {
     int sym = *in;
     temp <<= grpc_chttp2_huffsyms[sym].length;
     temp |= grpc_chttp2_huffsyms[sym].bits;
@@ -125,9 +119,8 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
      * expanded form due to the "integral promotion" performed (see section
      * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
      * is then required to avoid the compiler warning */
-    *out++ =
-        static_cast<uint8_t>(static_cast<uint8_t>(temp << (8u - temp_length)) |
-                             static_cast<uint8_t>(0xffu >> temp_length));
+    *out++ = static_cast<uint8_t>(static_cast<uint8_t>(temp << (8u - temp_length)) |
+                                  static_cast<uint8_t>(0xffu >> temp_length));
   }
 
   GPR_ASSERT(out == GRPC_SLICE_END_PTR(output));
@@ -152,8 +145,7 @@ static void enc_add2(huff_out* out, uint8_t a, uint8_t b) {
   b64_huff_sym sb = huff_alphabet[b];
   out->temp = (out->temp << (sa.length + sb.length)) |
               (static_cast<uint32_t>(sa.bits) << sb.length) | sb.bits;
-  out->temp_length +=
-      static_cast<uint32_t>(sa.length) + static_cast<uint32_t>(sb.length);
+  out->temp_length += static_cast<uint32_t>(sa.length) + static_cast<uint32_t>(sb.length);
   enc_flush_some(out);
 }
 
@@ -164,8 +156,7 @@ static void enc_add1(huff_out* out, uint8_t a) {
   enc_flush_some(out);
 }
 
-grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
-    const grpc_slice& input) {
+grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(const grpc_slice& input) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;
@@ -217,9 +208,8 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
      * expanded form due to the "integral promotion" performed (see section
      * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
      * is then required to avoid the compiler warning */
-    *out.out++ = static_cast<uint8_t>(
-        static_cast<uint8_t>(out.temp << (8u - out.temp_length)) |
-        static_cast<uint8_t>(0xffu >> out.temp_length));
+    *out.out++ = static_cast<uint8_t>(static_cast<uint8_t>(out.temp << (8u - out.temp_length)) |
+                                      static_cast<uint8_t>(0xffu >> out.temp_length));
   }
 
   GPR_ASSERT(out.out <= GRPC_SLICE_END_PTR(output));

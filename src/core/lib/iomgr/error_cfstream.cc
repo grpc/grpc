@@ -31,8 +31,7 @@
 
 #define MAX_ERROR_DESCRIPTION 256
 
-grpc_error_handle grpc_error_create_from_cferror(const char* file, int line,
-                                                 void* arg,
+grpc_error_handle grpc_error_create_from_cferror(const char* file, int line, void* arg,
                                                  const char* custom_desc) {
   CFErrorRef error = static_cast<CFErrorRef>(arg);
   char buf_domain[MAX_ERROR_DESCRIPTION];
@@ -40,15 +39,11 @@ grpc_error_handle grpc_error_create_from_cferror(const char* file, int line,
   CFErrorDomain domain = CFErrorGetDomain((error));
   CFIndex code = CFErrorGetCode((error));
   CFStringRef desc = CFErrorCopyDescription((error));
-  CFStringGetCString(domain, buf_domain, MAX_ERROR_DESCRIPTION,
-                     kCFStringEncodingUTF8);
-  CFStringGetCString(desc, buf_desc, MAX_ERROR_DESCRIPTION,
-                     kCFStringEncodingUTF8);
-  std::string error_msg =
-      absl::StrFormat("%s (error domain:%s, code:%ld, description:%s)",
-                      custom_desc, buf_domain, code, buf_desc);
+  CFStringGetCString(domain, buf_domain, MAX_ERROR_DESCRIPTION, kCFStringEncodingUTF8);
+  CFStringGetCString(desc, buf_desc, MAX_ERROR_DESCRIPTION, kCFStringEncodingUTF8);
+  std::string error_msg = absl::StrFormat("%s (error domain:%s, code:%ld, description:%s)",
+                                          custom_desc, buf_domain, code, buf_desc);
   CFRelease(desc);
-  return grpc_error_create(
-      file, line, grpc_slice_from_copied_string(error_msg.c_str()), NULL, 0);
+  return grpc_error_create(file, line, grpc_slice_from_copied_string(error_msg.c_str()), NULL, 0);
 }
 #endif /* GRPC_CFSTREAM */

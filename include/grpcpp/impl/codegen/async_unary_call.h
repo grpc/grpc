@@ -88,18 +88,18 @@ class ClientAsyncResponseReaderHelper {
   /// can't have an explicit template parameter, the last argument is an
   /// extraneous parameter just to provide the needed type information.
   template <class R, class W, class BaseR = R, class BaseW = W>
-  static ClientAsyncResponseReader<R>* Create(
-      ::grpc::ChannelInterface* channel, ::grpc::CompletionQueue* cq,
-      const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
-      const W& request) /* __attribute__((noinline)) */ {
+  static ClientAsyncResponseReader<R>* Create(::grpc::ChannelInterface* channel,
+                                              ::grpc::CompletionQueue* cq,
+                                              const ::grpc::internal::RpcMethod& method,
+                                              ::grpc::ClientContext* context,
+                                              const W& request) /* __attribute__((noinline)) */ {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
     ClientAsyncResponseReader<R>* result =
         new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
             call.call(), sizeof(ClientAsyncResponseReader<R>)))
             ClientAsyncResponseReader<R>(call, context);
-    SetupRequest<BaseR, BaseW>(
-        call.call(), &result->single_buf_, &result->read_initial_metadata_,
-        &result->finish_, static_cast<const BaseW&>(request));
+    SetupRequest<BaseR, BaseW>(call.call(), &result->single_buf_, &result->read_initial_metadata_,
+                               &result->finish_, static_cast<const BaseW&>(request));
 
     return result;
   }
@@ -108,26 +108,20 @@ class ClientAsyncResponseReaderHelper {
 
   template <class R, class W>
   static void SetupRequest(
-      grpc_call* call,
-      ::grpc::internal::CallOpSendInitialMetadata** single_buf_ptr,
-      std::function<void(ClientContext*, internal::Call*,
-                         internal::CallOpSendInitialMetadata*, void*)>*
-          read_initial_metadata,
-      std::function<
-          void(ClientContext*, internal::Call*, bool initial_metadata_read,
-               internal::CallOpSendInitialMetadata*,
-               internal::CallOpSetInterface**, void*, Status*, void*)>* finish,
+      grpc_call* call, ::grpc::internal::CallOpSendInitialMetadata** single_buf_ptr,
+      std::function<void(ClientContext*, internal::Call*, internal::CallOpSendInitialMetadata*,
+                         void*)>* read_initial_metadata,
+      std::function<void(ClientContext*, internal::Call*, bool initial_metadata_read,
+                         internal::CallOpSendInitialMetadata*, internal::CallOpSetInterface**,
+                         void*, Status*, void*)>* finish,
       const W& request) {
-    using SingleBufType =
-        ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                    ::grpc::internal::CallOpSendMessage,
-                                    ::grpc::internal::CallOpClientSendClose,
-                                    ::grpc::internal::CallOpRecvInitialMetadata,
-                                    ::grpc::internal::CallOpRecvMessage<R>,
-                                    ::grpc::internal::CallOpClientRecvStatus>;
+    using SingleBufType = ::grpc::internal::CallOpSet<
+        ::grpc::internal::CallOpSendInitialMetadata, ::grpc::internal::CallOpSendMessage,
+        ::grpc::internal::CallOpClientSendClose, ::grpc::internal::CallOpRecvInitialMetadata,
+        ::grpc::internal::CallOpRecvMessage<R>, ::grpc::internal::CallOpClientRecvStatus>;
     SingleBufType* single_buf =
-        new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-            call, sizeof(SingleBufType))) SingleBufType;
+        new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(call, sizeof(SingleBufType)))
+            SingleBufType;
     *single_buf_ptr = single_buf;
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(single_buf->SendMessage(request).ok());
@@ -138,14 +132,13 @@ class ClientAsyncResponseReaderHelper {
     // function definition rather than specifying it as an argument of the
     // function or a member of the class. The type-erased CallOpSet will get
     // static_cast'ed back to the real type so that it can be used properly.
-    *read_initial_metadata =
-        [](ClientContext* context, internal::Call* call,
-           internal::CallOpSendInitialMetadata* single_buf_view, void* tag) {
-          auto* single_buf = static_cast<SingleBufType*>(single_buf_view);
-          single_buf->set_output_tag(tag);
-          single_buf->RecvInitialMetadata(context);
-          call->PerformOps(single_buf);
-        };
+    *read_initial_metadata = [](ClientContext* context, internal::Call* call,
+                                internal::CallOpSendInitialMetadata* single_buf_view, void* tag) {
+      auto* single_buf = static_cast<SingleBufType*>(single_buf_view);
+      single_buf->set_output_tag(tag);
+      single_buf->RecvInitialMetadata(context);
+      call->PerformOps(single_buf);
+    };
 
     // Note that this function goes one step further than the previous one
     // because it type-erases the message being written down to a void*. This
@@ -154,18 +147,15 @@ class ClientAsyncResponseReaderHelper {
     // expects the class being specified here for R to be a base-class of the
     // "real" R without any multiple-inheritance (as applies in protbuf wrt
     // MessageLite)
-    *finish = [](ClientContext* context, internal::Call* call,
-                 bool initial_metadata_read,
+    *finish = [](ClientContext* context, internal::Call* call, bool initial_metadata_read,
                  internal::CallOpSendInitialMetadata* single_buf_view,
-                 internal::CallOpSetInterface** finish_buf_ptr, void* msg,
-                 Status* status, void* tag) {
+                 internal::CallOpSetInterface** finish_buf_ptr, void* msg, Status* status,
+                 void* tag) {
       if (initial_metadata_read) {
-        using FinishBufType = ::grpc::internal::CallOpSet<
-            ::grpc::internal::CallOpRecvMessage<R>,
-            ::grpc::internal::CallOpClientRecvStatus>;
-        FinishBufType* finish_buf =
-            new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-                call->call(), sizeof(FinishBufType))) FinishBufType;
+        using FinishBufType = ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>,
+                                                          ::grpc::internal::CallOpClientRecvStatus>;
+        FinishBufType* finish_buf = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+            call->call(), sizeof(FinishBufType))) FinishBufType;
         *finish_buf_ptr = finish_buf;
         finish_buf->set_output_tag(tag);
         finish_buf->RecvMessage(static_cast<R*>(msg));
@@ -184,9 +174,8 @@ class ClientAsyncResponseReaderHelper {
     };
   }
 
-  static void StartCall(
-      ::grpc::ClientContext* context,
-      ::grpc::internal::CallOpSendInitialMetadata* single_buf) {
+  static void StartCall(::grpc::ClientContext* context,
+                        ::grpc::internal::CallOpSendInitialMetadata* single_buf) {
     single_buf->SendInitialMetadata(&context->send_initial_metadata_,
                                     context->initial_metadata_flags());
   }
@@ -198,12 +187,13 @@ template <class R>
 class ClientAsyncResponseReaderFactory {
  public:
   template <class W>
-  static ClientAsyncResponseReader<R>* Create(
-      ::grpc::ChannelInterface* channel, ::grpc::CompletionQueue* cq,
-      const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
-      const W& request, bool start) {
-    auto* result = ClientAsyncResponseReaderHelper::Create<R>(
-        channel, cq, method, context, request);
+  static ClientAsyncResponseReader<R>* Create(::grpc::ChannelInterface* channel,
+                                              ::grpc::CompletionQueue* cq,
+                                              const ::grpc::internal::RpcMethod& method,
+                                              ::grpc::ClientContext* context, const W& request,
+                                              bool start) {
+    auto* result =
+        ClientAsyncResponseReaderHelper::Create<R>(channel, cq, method, context, request);
     if (start) {
       result->StartCall();
     }
@@ -216,8 +206,7 @@ class ClientAsyncResponseReaderFactory {
 /// Async API for client-side unary RPCs, where the message response
 /// received from the server is of type \a R.
 template <class R>
-class ClientAsyncResponseReader final
-    : public ClientAsyncResponseReaderInterface<R> {
+class ClientAsyncResponseReader final : public ClientAsyncResponseReaderInterface<R> {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
@@ -268,8 +257,7 @@ class ClientAsyncResponseReader final
   bool started_ = false;
   bool initial_metadata_read_ = false;
 
-  ClientAsyncResponseReader(::grpc::internal::Call call,
-                            ::grpc::ClientContext* context)
+  ClientAsyncResponseReader(::grpc::internal::Call call, ::grpc::ClientContext* context)
       : context_(context), call_(call) {}
 
   // disable operator new
@@ -278,21 +266,18 @@ class ClientAsyncResponseReader final
 
   internal::CallOpSendInitialMetadata* single_buf_;
   internal::CallOpSetInterface* finish_buf_ = nullptr;
-  std::function<void(ClientContext*, internal::Call*,
-                     internal::CallOpSendInitialMetadata*, void*)>
+  std::function<void(ClientContext*, internal::Call*, internal::CallOpSendInitialMetadata*, void*)>
       read_initial_metadata_;
-  std::function<void(ClientContext*, internal::Call*,
-                     bool initial_metadata_read,
-                     internal::CallOpSendInitialMetadata*,
-                     internal::CallOpSetInterface**, void*, Status*, void*)>
+  std::function<void(ClientContext*, internal::Call*, bool initial_metadata_read,
+                     internal::CallOpSendInitialMetadata*, internal::CallOpSetInterface**, void*,
+                     Status*, void*)>
       finish_;
 };
 
 /// Async server-side API for handling unary calls, where the single
 /// response message sent to the client is of type \a W.
 template <class W>
-class ServerAsyncResponseWriter final
-    : public ::grpc::internal::ServerAsyncStreamingInterface {
+class ServerAsyncResponseWriter final : public ::grpc::internal::ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(::grpc::ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
@@ -308,8 +293,7 @@ class ServerAsyncResponseWriter final
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_buf_.set_output_tag(tag);
-    meta_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
-                                  ctx_->initial_metadata_flags());
+    meta_buf_.SendInitialMetadata(&ctx_->initial_metadata_, ctx_->initial_metadata_flags());
     if (ctx_->compression_level_set()) {
       meta_buf_.set_compression_level(ctx_->compression_level());
     }
@@ -336,8 +320,7 @@ class ServerAsyncResponseWriter final
     finish_buf_.set_output_tag(tag);
     finish_buf_.set_core_cq_tag(&finish_buf_);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
-                                      ctx_->initial_metadata_flags());
+      finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_, ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
         finish_buf_.set_compression_level(ctx_->compression_level());
       }
@@ -345,8 +328,7 @@ class ServerAsyncResponseWriter final
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                   finish_buf_.SendMessage(msg));
+      finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, finish_buf_.SendMessage(msg));
     } else {
       finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     }
@@ -369,8 +351,7 @@ class ServerAsyncResponseWriter final
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
-      finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
-                                      ctx_->initial_metadata_flags());
+      finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_, ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
         finish_buf_.set_compression_level(ctx_->compression_level());
       }
@@ -385,8 +366,7 @@ class ServerAsyncResponseWriter final
 
   ::grpc::internal::Call call_;
   ::grpc::ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
-      meta_buf_;
+  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata> meta_buf_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                               ::grpc::internal::CallOpSendMessage,
                               ::grpc::internal::CallOpServerSendStatus>

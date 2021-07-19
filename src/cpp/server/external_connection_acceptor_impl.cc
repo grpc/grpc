@@ -32,9 +32,7 @@ class AcceptorWrapper : public experimental::ExternalConnectionAcceptor {
  public:
   explicit AcceptorWrapper(std::shared_ptr<ExternalConnectionAcceptorImpl> impl)
       : impl_(std::move(impl)) {}
-  void HandleNewConnection(NewConnectionParameters* p) override {
-    impl_->HandleNewConnection(p);
-  }
+  void HandleNewConnection(NewConnectionParameters* p) override { impl_->HandleNewConnection(p); }
 
  private:
   std::shared_ptr<ExternalConnectionAcceptorImpl> impl_;
@@ -42,12 +40,10 @@ class AcceptorWrapper : public experimental::ExternalConnectionAcceptor {
 }  // namespace
 
 ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
-    const std::string& name,
-    ServerBuilder::experimental_type::ExternalConnectionType type,
+    const std::string& name, ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
-  GPR_ASSERT(type ==
-             ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
+  GPR_ASSERT(type == ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
@@ -64,10 +60,8 @@ void ExternalConnectionAcceptorImpl::HandleNewConnection(
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
-    gpr_log(
-        GPR_ERROR,
-        "NOT handling external connection with fd %d, started %d, shutdown %d",
-        p->fd, started_, shutdown_);
+    gpr_log(GPR_ERROR, "NOT handling external connection with fd %d, started %d, shutdown %d",
+            p->fd, started_, shutdown_);
     return;
   }
   if (handler_) {

@@ -50,10 +50,8 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     Status recv_status;
     ServerContext svr_ctx;
     ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
-    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                              fixture->cq(), tag(0));
-    std::unique_ptr<EchoTestService::Stub> stub(
-        EchoTestService::NewStub(fixture->channel()));
+    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(), fixture->cq(), tag(0));
+    std::unique_ptr<EchoTestService::Stub> stub(EchoTestService::NewStub(fixture->channel()));
     ClientContext cli_ctx;
     auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);
@@ -119,10 +117,8 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     Status recv_status;
     ServerContext svr_ctx;
     ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
-    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
-                              fixture->cq(), tag(0));
-    std::unique_ptr<EchoTestService::Stub> stub(
-        EchoTestService::NewStub(fixture->channel()));
+    service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(), fixture->cq(), tag(0));
+    std::unique_ptr<EchoTestService::Stub> stub(EchoTestService::NewStub(fixture->channel()));
     ClientContext cli_ctx;
     auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);

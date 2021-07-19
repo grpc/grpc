@@ -53,8 +53,7 @@ class ConnectivityStateWatcherInterface
   ~ConnectivityStateWatcherInterface() override = default;
 
   // Notifies the watcher that the state has changed to new_state.
-  virtual void Notify(grpc_connectivity_state new_state,
-                      const absl::Status& status) = 0;
+  virtual void Notify(grpc_connectivity_state new_state, const absl::Status& status) = 0;
 
   void Orphan() override { Unref(); }
 };
@@ -62,15 +61,13 @@ class ConnectivityStateWatcherInterface
 // An alternative watcher interface that performs notifications via an
 // asynchronous callback scheduled on the ExecCtx.
 // Subclasses must implement the OnConnectivityStateChange() method.
-class AsyncConnectivityStateWatcherInterface
-    : public ConnectivityStateWatcherInterface {
+class AsyncConnectivityStateWatcherInterface : public ConnectivityStateWatcherInterface {
  public:
   ~AsyncConnectivityStateWatcherInterface() override = default;
 
   // Schedules a closure on the ExecCtx to invoke
   // OnConnectivityStateChange() asynchronously.
-  void Notify(grpc_connectivity_state new_state,
-              const absl::Status& status) final;
+  void Notify(grpc_connectivity_state new_state, const absl::Status& status) final;
 
  protected:
   class Notifier;
@@ -97,9 +94,9 @@ class AsyncConnectivityStateWatcherInterface
 // to be called).
 class ConnectivityStateTracker {
  public:
-  explicit ConnectivityStateTracker(
-      const char* name, grpc_connectivity_state state = GRPC_CHANNEL_IDLE,
-      const absl::Status& status = absl::Status())
+  explicit ConnectivityStateTracker(const char* name,
+                                    grpc_connectivity_state state = GRPC_CHANNEL_IDLE,
+                                    const absl::Status& status = absl::Status())
       : name_(name), state_(state), status_(status) {}
 
   ~ConnectivityStateTracker();
@@ -118,8 +115,7 @@ class ConnectivityStateTracker {
 
   // Sets connectivity state.
   // Not thread safe; access must be serialized with an external lock.
-  void SetState(grpc_connectivity_state state, const absl::Status& status,
-                const char* reason);
+  void SetState(grpc_connectivity_state state, const absl::Status& status, const char* reason);
 
   // Gets the current state.
   // Thread safe; no need to use an external lock.
@@ -135,8 +131,7 @@ class ConnectivityStateTracker {
   absl::Status status_;
   // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
   // be a set instead of a map.
-  std::map<ConnectivityStateWatcherInterface*,
-           OrphanablePtr<ConnectivityStateWatcherInterface>>
+  std::map<ConnectivityStateWatcherInterface*, OrphanablePtr<ConnectivityStateWatcherInterface>>
       watchers_;
 };
 

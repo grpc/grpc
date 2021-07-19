@@ -32,8 +32,7 @@ extern const char kCredentialsTypeXds[];
 
 class XdsCredentials final : public grpc_channel_credentials {
  public:
-  explicit XdsCredentials(
-      RefCountedPtr<grpc_channel_credentials> fallback_credentials)
+  explicit XdsCredentials(RefCountedPtr<grpc_channel_credentials> fallback_credentials)
       : grpc_channel_credentials(kCredentialsTypeXds),
         fallback_credentials_(std::move(fallback_credentials)) {}
 
@@ -47,8 +46,7 @@ class XdsCredentials final : public grpc_channel_credentials {
 
 class XdsServerCredentials final : public grpc_server_credentials {
  public:
-  explicit XdsServerCredentials(
-      RefCountedPtr<grpc_server_credentials> fallback_credentials)
+  explicit XdsServerCredentials(RefCountedPtr<grpc_server_credentials> fallback_credentials)
       : grpc_server_credentials(kCredentialsTypeXds),
         fallback_credentials_(std::move(fallback_credentials)) {}
 
@@ -59,10 +57,9 @@ class XdsServerCredentials final : public grpc_server_credentials {
   RefCountedPtr<grpc_server_credentials> fallback_credentials_;
 };
 
-bool TestOnlyXdsVerifySubjectAlternativeNames(
-    const char* const* subject_alternative_names,
-    size_t subject_alternative_names_size,
-    const std::vector<StringMatcher>& matchers);
+bool TestOnlyXdsVerifySubjectAlternativeNames(const char* const* subject_alternative_names,
+                                              size_t subject_alternative_names_size,
+                                              const std::vector<StringMatcher>& matchers);
 
 }  // namespace grpc_core
 

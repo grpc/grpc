@@ -40,8 +40,7 @@ struct SslServerCredentialsOptions {
   SslServerCredentialsOptions()
       : force_client_auth(false),
         client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
-  explicit SslServerCredentialsOptions(
-      grpc_ssl_client_certificate_request_type request_type)
+  explicit SslServerCredentialsOptions(grpc_ssl_client_certificate_request_type request_type)
       : force_client_auth(false), client_certificate_request(request_type) {}
 
   struct PemKeyCertPair {
@@ -83,8 +82,7 @@ class ServerCredentials : private grpc::GrpcLibraryCodegen {
   // We need this friend declaration for access to Insecure() and
   // AsSecureServerCredentials(). When these two functions are no longer
   // necessary, this friend declaration can be removed too.
-  friend std::shared_ptr<ServerCredentials>
-  grpc::experimental::XdsServerCredentials(
+  friend std::shared_ptr<ServerCredentials> grpc::experimental::XdsServerCredentials(
       const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
   /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
@@ -101,9 +99,7 @@ class ServerCredentials : private grpc::GrpcLibraryCodegen {
 
   // TODO(yashkt): This is a hack that should be removed once we remove insecure
   // builds and the indirect method of adding ports to a server.
-  virtual SecureServerCredentials* AsSecureServerCredentials() {
-    return nullptr;
-  }
+  virtual SecureServerCredentials* AsSecureServerCredentials() { return nullptr; }
 };
 
 /// Builds SSL ServerCredentials given SSL specific options
@@ -127,8 +123,7 @@ std::shared_ptr<ServerCredentials> AltsServerCredentials(
 std::shared_ptr<ServerCredentials> AltsServerCredentials(
     const AltsServerCredentialsOptions& options);
 
-std::shared_ptr<ServerCredentials> LocalServerCredentials(
-    grpc_local_connect_type type);
+std::shared_ptr<ServerCredentials> LocalServerCredentials(grpc_local_connect_type type);
 
 /// Builds TLS ServerCredentials given TLS options.
 std::shared_ptr<ServerCredentials> TlsServerCredentials(

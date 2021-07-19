@@ -43,17 +43,12 @@ void cq_verifier_destroy(cq_verifier* v) {
   gpr_free(v);
 }
 
-expectation* cq_verifier_get_first_expectation(cq_verifier* v) {
-  return v->first_expectation;
-}
+expectation* cq_verifier_get_first_expectation(cq_verifier* v) { return v->first_expectation; }
 
-void cq_verifier_set_first_expectation(cq_verifier* v, expectation* e) {
-  v->first_expectation = e;
-}
+void cq_verifier_set_first_expectation(cq_verifier* v, expectation* e) { v->first_expectation = e; }
 
 grpc_event cq_verifier_next_event(cq_verifier* v, int timeout_seconds) {
-  const gpr_timespec deadline =
-      grpc_timeout_seconds_to_deadline(timeout_seconds);
+  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_seconds);
   return grpc_completion_queue_next(v->cq, deadline, nullptr);
 }
 

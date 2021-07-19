@@ -48,15 +48,13 @@ class CelExpressionFlatImpl : public CelExpression {
   // iterations in the comprehension expressions (use 0 to disable the upper
   // bound).
  public:
-  CelExpressionFlatImpl(const google_api_expr_v1alpha1_Expr* root_expr,
-                        ExecutionPath path, int max_iterations,
-                        std::set<std::string> iter_variable_names,
+  CelExpressionFlatImpl(const google_api_expr_v1alpha1_Expr* root_expr, ExecutionPath path,
+                        int max_iterations, std::set<std::string> iter_variable_names,
                         bool enable_unknowns = false,
                         bool enable_unknown_function_results = false) {}
 
   // Implementation of CelExpression evaluate method.
-  absl::StatusOr<CelValue> Evaluate(
-      const BaseActivation& activation) const override {
+  absl::StatusOr<CelValue> Evaluate(const BaseActivation& activation) const override {
     return CelValue::CreateNull();
   }
 };

@@ -52,8 +52,7 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
   gpr_mu* mu;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure shutdown_ps_closure;
-  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps, grpc_schedule_on_exec_ctx);
   for (auto _ : state) {
     memset(ps, 0, ps_sz);
     grpc_pollset_init(ps, &mu);
@@ -120,8 +119,7 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
     GRPC_ERROR_UNREF(grpc_pollset_work(ps, nullptr, 0));
   }
   grpc_closure shutdown_ps_closure;
-  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps, grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
@@ -138,8 +136,7 @@ static void BM_PollAddFd(benchmark::State& state) {
   grpc_pollset_init(ps, &mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
   grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx", false);
   for (auto _ : state) {
     grpc_pollset_add_fd(ps, fd);
@@ -147,8 +144,7 @@ static void BM_PollAddFd(benchmark::State& state) {
   }
   grpc_fd_orphan(fd, nullptr, nullptr, "xxx");
   grpc_closure shutdown_ps_closure;
-  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps, grpc_schedule_on_exec_ctx);
   gpr_mu_lock(mu);
   grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
@@ -240,8 +236,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd_orphan(wakeup, nullptr, nullptr, "done");
   wakeup_fd.read_fd = 0;
   grpc_closure shutdown_ps_closure;
-  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps, grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();

@@ -48,24 +48,22 @@
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-ABSL_FLAG(std::string, custom_credentials_type, "",
-          "User provided credentials type.");
+ABSL_FLAG(std::string, custom_credentials_type, "", "User provided credentials type.");
 ABSL_FLAG(std::string, server_uri, "localhost:1000", "Server URI target");
 ABSL_FLAG(std::string, unroute_lb_and_backend_addrs_cmd, "exit 1",
           "Shell command used to make LB and backend addresses unroutable");
 ABSL_FLAG(std::string, blackhole_lb_and_backend_addrs_cmd, "exit 1",
           "Shell command used to make LB and backend addresses blackholed");
-ABSL_FLAG(
-    std::string, test_case, "",
-    "Test case to run. Valid options are:\n\n"
-    "fast_fallback_before_startup : fallback before establishing connection to "
-    "LB;\n"
-    "fast_fallback_after_startup : fallback after startup due to LB/backend "
-    "addresses becoming unroutable;\n"
-    "slow_fallback_before_startup : fallback before startup due to LB address "
-    "being blackholed;\n"
-    "slow_fallback_after_startup : fallback after startup due to LB/backend "
-    "addresses becoming blackholed;\n");
+ABSL_FLAG(std::string, test_case, "",
+          "Test case to run. Valid options are:\n\n"
+          "fast_fallback_before_startup : fallback before establishing connection to "
+          "LB;\n"
+          "fast_fallback_after_startup : fallback after startup due to LB/backend "
+          "addresses becoming unroutable;\n"
+          "slow_fallback_before_startup : fallback before startup due to LB address "
+          "being blackholed;\n"
+          "slow_fallback_after_startup : fallback after startup due to LB/backend "
+          "addresses becoming blackholed;\n");
 
 #ifdef LINUX_VERSION_CODE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
@@ -86,10 +84,8 @@ enum RpcMode {
   WaitForReady,
 };
 
-GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
-                                RpcMode rpc_mode) {
-  gpr_log(GPR_INFO, "DoRPCAndGetPath deadline_seconds:%d rpc_mode:%d",
-          deadline_seconds, rpc_mode);
+GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds, RpcMode rpc_mode) {
+  gpr_log(GPR_INFO, "DoRPCAndGetPath deadline_seconds:%d rpc_mode:%d", deadline_seconds, rpc_mode);
   SimpleRequest request;
   SimpleResponse response;
   grpc::ClientContext context;
@@ -102,16 +98,12 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
   context.set_deadline(deadline);
   grpc::Status s = stub->UnaryCall(&context, request, &response);
   if (!s.ok()) {
-    gpr_log(GPR_INFO, "DoRPCAndGetPath failed. status-message: %s",
-            s.error_message().c_str());
+    gpr_log(GPR_INFO, "DoRPCAndGetPath failed. status-message: %s", s.error_message().c_str());
     return GrpclbRouteType::GRPCLB_ROUTE_TYPE_UNKNOWN;
   }
-  GPR_ASSERT(response.grpclb_route_type() ==
-                 GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
-             response.grpclb_route_type() ==
-                 GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
-  gpr_log(GPR_INFO, "DoRPCAndGetPath done. grpclb_route_type:%d",
-          response.grpclb_route_type());
+  GPR_ASSERT(response.grpclb_route_type() == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
+             response.grpclb_route_type() == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
+  gpr_log(GPR_INFO, "DoRPCAndGetPath done. grpclb_route_type:%d", response.grpclb_route_type());
   return response.grpclb_route_type();
 }
 
@@ -119,55 +111,46 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds) {
   return DoRPCAndGetPath(stub, deadline_seconds, FailFast);
 }
 
-GrpclbRouteType DoWaitForReadyRPCAndGetPath(TestService::Stub* stub,
-                                            int deadline_seconds) {
+GrpclbRouteType DoWaitForReadyRPCAndGetPath(TestService::Stub* stub, int deadline_seconds) {
   return DoRPCAndGetPath(stub, deadline_seconds, WaitForReady);
 }
 
 bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* /*mutator*/) {
   int timeout = 20000;  // 20 seconds
   gpr_log(GPR_INFO, "Setting socket option TCP_USER_TIMEOUT on fd: %d", fd);
-  if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
-                      sizeof(timeout))) {
+  if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout, sizeof(timeout))) {
     gpr_log(GPR_ERROR, "Failed to set socket option TCP_USER_TIMEOUT");
     abort();
   }
   int newval;
   socklen_t len = sizeof(newval);
-  if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len) ||
-      newval != timeout) {
+  if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len) || newval != timeout) {
     gpr_log(GPR_ERROR, "Failed to get expected socket option TCP_USER_TIMEOUT");
     abort();
   }
   return true;
 }
 
-int TcpUserTimeoutCompare(grpc_socket_mutator* /*a*/,
-                          grpc_socket_mutator* /*b*/) {
-  return 0;
-}
+int TcpUserTimeoutCompare(grpc_socket_mutator* /*a*/, grpc_socket_mutator* /*b*/) { return 0; }
 
 void TcpUserTimeoutDestroy(grpc_socket_mutator* mutator) { gpr_free(mutator); }
 
-const grpc_socket_mutator_vtable kTcpUserTimeoutMutatorVtable =
-    grpc_socket_mutator_vtable{TcpUserTimeoutMutateFd, TcpUserTimeoutCompare,
-                               TcpUserTimeoutDestroy, nullptr};
+const grpc_socket_mutator_vtable kTcpUserTimeoutMutatorVtable = grpc_socket_mutator_vtable{
+    TcpUserTimeoutMutateFd, TcpUserTimeoutCompare, TcpUserTimeoutDestroy, nullptr};
 
 std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
   grpc::ChannelArguments channel_args;
   grpc_socket_mutator* tcp_user_timeout_mutator =
-      static_cast<grpc_socket_mutator*>(
-          gpr_malloc(sizeof(tcp_user_timeout_mutator)));
-  grpc_socket_mutator_init(tcp_user_timeout_mutator,
-                           &kTcpUserTimeoutMutatorVtable);
+      static_cast<grpc_socket_mutator*>(gpr_malloc(sizeof(tcp_user_timeout_mutator)));
+  grpc_socket_mutator_init(tcp_user_timeout_mutator, &kTcpUserTimeoutMutatorVtable);
   channel_args.SetSocketMutator(tcp_user_timeout_mutator);
   // Allow LB policy to be configured by service config
   channel_args.SetInt(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 0);
   std::shared_ptr<grpc::ChannelCredentials> channel_creds =
       grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
           absl::GetFlag(FLAGS_custom_credentials_type), &channel_args);
-  return TestService::NewStub(grpc::CreateCustomChannel(
-      absl::GetFlag(FLAGS_server_uri), channel_creds, channel_args));
+  return TestService::NewStub(
+      grpc::CreateCustomChannel(absl::GetFlag(FLAGS_server_uri), channel_creds, channel_args));
 }
 
 void RunCommand(const std::string& command) {
@@ -176,8 +159,7 @@ void RunCommand(const std::string& command) {
   if (WIFEXITED(out)) {
     int code = WEXITSTATUS(out);
     if (code != 0) {
-      gpr_log(GPR_ERROR, "RunCommand failed exit code:%d command:|%s|", code,
-              command.c_str());
+      gpr_log(GPR_ERROR, "RunCommand failed exit code:%d command:|%s|", code, command.c_str());
       abort();
     }
   } else {
@@ -186,17 +168,14 @@ void RunCommand(const std::string& command) {
   }
 }
 
-void RunFallbackBeforeStartupTest(
-    const std::string& break_lb_and_backend_conns_cmd,
-    int per_rpc_deadline_seconds) {
+void RunFallbackBeforeStartupTest(const std::string& break_lb_and_backend_conns_cmd,
+                                  int per_rpc_deadline_seconds) {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   RunCommand(break_lb_and_backend_conns_cmd);
   for (size_t i = 0; i < 30; i++) {
-    GrpclbRouteType grpclb_route_type =
-        DoRPCAndGetPath(stub.get(), per_rpc_deadline_seconds);
+    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), per_rpc_deadline_seconds);
     if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d",
-              grpclb_route_type);
+      gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d", grpclb_route_type);
       abort();
     }
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -204,28 +183,23 @@ void RunFallbackBeforeStartupTest(
 }
 
 void DoFastFallbackBeforeStartup() {
-  RunFallbackBeforeStartupTest(
-      absl::GetFlag(FLAGS_unroute_lb_and_backend_addrs_cmd), 9);
+  RunFallbackBeforeStartupTest(absl::GetFlag(FLAGS_unroute_lb_and_backend_addrs_cmd), 9);
 }
 
 void DoSlowFallbackBeforeStartup() {
-  RunFallbackBeforeStartupTest(
-      absl::GetFlag(FLAGS_blackhole_lb_and_backend_addrs_cmd), 20);
+  RunFallbackBeforeStartupTest(absl::GetFlag(FLAGS_blackhole_lb_and_backend_addrs_cmd), 20);
 }
 
-void RunFallbackAfterStartupTest(
-    const std::string& break_lb_and_backend_conns_cmd) {
+void RunFallbackAfterStartupTest(const std::string& break_lb_and_backend_conns_cmd) {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
   if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
-    gpr_log(GPR_ERROR, "Expected grpclb route type: BACKEND. Got: %d",
-            grpclb_route_type);
+    gpr_log(GPR_ERROR, "Expected grpclb route type: BACKEND. Got: %d", grpclb_route_type);
     abort();
   }
   RunCommand(break_lb_and_backend_conns_cmd);
   for (size_t i = 0; i < 40; i++) {
-    GrpclbRouteType grpclb_route_type =
-        DoWaitForReadyRPCAndGetPath(stub.get(), 1);
+    GrpclbRouteType grpclb_route_type = DoWaitForReadyRPCAndGetPath(stub.get(), 1);
     // Backends should be unreachable by now, otherwise the test is broken.
     GPR_ASSERT(grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
     if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
@@ -240,8 +214,7 @@ void RunFallbackAfterStartupTest(
   for (size_t i = 0; i < 30; i++) {
     GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
     if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d",
-              grpclb_route_type);
+      gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d", grpclb_route_type);
       abort();
     }
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -249,13 +222,11 @@ void RunFallbackAfterStartupTest(
 }
 
 void DoFastFallbackAfterStartup() {
-  RunFallbackAfterStartupTest(
-      absl::GetFlag(FLAGS_unroute_lb_and_backend_addrs_cmd));
+  RunFallbackAfterStartupTest(absl::GetFlag(FLAGS_unroute_lb_and_backend_addrs_cmd));
 }
 
 void DoSlowFallbackAfterStartup() {
-  RunFallbackAfterStartupTest(
-      absl::GetFlag(FLAGS_blackhole_lb_and_backend_addrs_cmd));
+  RunFallbackAfterStartupTest(absl::GetFlag(FLAGS_blackhole_lb_and_backend_addrs_cmd));
 }
 }  // namespace
 
@@ -275,8 +246,7 @@ int main(int argc, char** argv) {
     DoSlowFallbackAfterStartup();
     gpr_log(GPR_INFO, "DoSlowFallbackAfterStartup done!");
   } else {
-    gpr_log(GPR_ERROR, "Invalid test case: %s",
-            absl::GetFlag(FLAGS_test_case).c_str());
+    gpr_log(GPR_ERROR, "Invalid test case: %s", absl::GetFlag(FLAGS_test_case).c_str());
     abort();
   }
 }
@@ -285,8 +255,7 @@ int main(int argc, char** argv) {
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_ERROR,
-          "This test requires TCP_USER_TIMEOUT, which isn't available");
+  gpr_log(GPR_ERROR, "This test requires TCP_USER_TIMEOUT, which isn't available");
   abort();
 }
 

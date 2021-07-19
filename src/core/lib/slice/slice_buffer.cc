@@ -36,8 +36,7 @@
  * memmove/malloc/realloc) - only if we were up against the full capacity of the
  * slice buffer. If do_embiggen is inlined, the compiler clobbers multiple
  * registers pointlessly in the common case. */
-static void GPR_ATTRIBUTE_NOINLINE do_embiggen(grpc_slice_buffer* sb,
-                                               const size_t slice_count,
+static void GPR_ATTRIBUTE_NOINLINE do_embiggen(grpc_slice_buffer* sb, const size_t slice_count,
                                                const size_t slice_offset) {
   if (slice_offset != 0) {
     /* Make room by moving elements if there's still space unused */
@@ -48,12 +47,11 @@ static void GPR_ATTRIBUTE_NOINLINE do_embiggen(grpc_slice_buffer* sb,
     const size_t new_capacity = GROW(sb->capacity);
     sb->capacity = new_capacity;
     if (sb->base_slices == sb->inlined) {
-      sb->base_slices = static_cast<grpc_slice*>(
-          gpr_malloc(new_capacity * sizeof(grpc_slice)));
+      sb->base_slices = static_cast<grpc_slice*>(gpr_malloc(new_capacity * sizeof(grpc_slice)));
       memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
     } else {
-      sb->base_slices = static_cast<grpc_slice*>(
-          gpr_realloc(sb->base_slices, new_capacity * sizeof(grpc_slice)));
+      sb->base_slices =
+          static_cast<grpc_slice*>(gpr_realloc(sb->base_slices, new_capacity * sizeof(grpc_slice)));
     }
 
     sb->slices = sb->base_slices + slice_offset;
@@ -110,8 +108,7 @@ uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
     goto add_new;
   }
   out = back->data.inlined.bytes + back->data.inlined.length;
-  back->data.inlined.length =
-      static_cast<uint8_t>(back->data.inlined.length + n);
+  back->data.inlined.length = static_cast<uint8_t>(back->data.inlined.length + n);
   return out;
 
 add_new:
@@ -142,27 +139,22 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
      writes */
   if (!s.refcount && n) {
     grpc_slice* back = &sb->slices[n - 1];
-    if (!back->refcount &&
-        back->data.inlined.length < GRPC_SLICE_INLINED_SIZE) {
-      if (s.data.inlined.length + back->data.inlined.length <=
-          GRPC_SLICE_INLINED_SIZE) {
-        memcpy(back->data.inlined.bytes + back->data.inlined.length,
-               s.data.inlined.bytes, s.data.inlined.length);
-        back->data.inlined.length = static_cast<uint8_t>(
-            back->data.inlined.length + s.data.inlined.length);
+    if (!back->refcount && back->data.inlined.length < GRPC_SLICE_INLINED_SIZE) {
+      if (s.data.inlined.length + back->data.inlined.length <= GRPC_SLICE_INLINED_SIZE) {
+        memcpy(back->data.inlined.bytes + back->data.inlined.length, s.data.inlined.bytes,
+               s.data.inlined.length);
+        back->data.inlined.length =
+            static_cast<uint8_t>(back->data.inlined.length + s.data.inlined.length);
       } else {
         size_t cp1 = GRPC_SLICE_INLINED_SIZE - back->data.inlined.length;
-        memcpy(back->data.inlined.bytes + back->data.inlined.length,
-               s.data.inlined.bytes, cp1);
+        memcpy(back->data.inlined.bytes + back->data.inlined.length, s.data.inlined.bytes, cp1);
         back->data.inlined.length = GRPC_SLICE_INLINED_SIZE;
         maybe_embiggen(sb);
         back = &sb->slices[n];
         sb->count = n + 1;
         back->refcount = nullptr;
-        back->data.inlined.length =
-            static_cast<uint8_t>(s.data.inlined.length - cp1);
-        memcpy(back->data.inlined.bytes, s.data.inlined.bytes + cp1,
-               s.data.inlined.length - cp1);
+        back->data.inlined.length = static_cast<uint8_t>(s.data.inlined.length - cp1);
+        memcpy(back->data.inlined.bytes, s.data.inlined.bytes + cp1, s.data.inlined.length - cp1);
       }
       sb->length += s.data.inlined.length;
       return; /* early out */
@@ -247,8 +239,7 @@ void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {
   GPR_SWAP(size_t, a->length, b->length);
 }
 
-void grpc_slice_buffer_move_into(grpc_slice_buffer* src,
-                                 grpc_slice_buffer* dst) {
+void grpc_slice_buffer_move_into(grpc_slice_buffer* src, grpc_slice_buffer* dst) {
   /* anything to move? */
   if (src->count == 0) {
     return;
@@ -304,18 +295,15 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
   GPR_ASSERT(src->count > 0);
 }
 
-void grpc_slice_buffer_move_first(grpc_slice_buffer* src, size_t n,
-                                  grpc_slice_buffer* dst) {
+void grpc_slice_buffer_move_first(grpc_slice_buffer* src, size_t n, grpc_slice_buffer* dst) {
   slice_buffer_move_first_maybe_ref<true>(src, n, dst);
 }
 
-void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer* src, size_t n,
-                                         grpc_slice_buffer* dst) {
+void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer* src, size_t n, grpc_slice_buffer* dst) {
   slice_buffer_move_first_maybe_ref<false>(src, n, dst);
 }
 
-void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
-                                              void* dst) {
+void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n, void* dst) {
   char* dstp = static_cast<char*>(dst);
   GPR_ASSERT(src->length >= n);
 
@@ -324,8 +312,7 @@ void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
     size_t slice_len = GRPC_SLICE_LENGTH(slice);
     if (slice_len > n) {
       memcpy(dstp, GRPC_SLICE_START_PTR(slice), n);
-      grpc_slice_buffer_undo_take_first(
-          src, grpc_slice_sub_no_ref(slice, n, slice_len));
+      grpc_slice_buffer_undo_take_first(src, grpc_slice_sub_no_ref(slice, n, slice_len));
       n = 0;
     } else if (slice_len == n) {
       memcpy(dstp, GRPC_SLICE_START_PTR(slice), n);
@@ -340,8 +327,7 @@ void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
   }
 }
 
-void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
-                                grpc_slice_buffer* garbage) {
+void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n, grpc_slice_buffer* garbage) {
   GPR_ASSERT(n <= sb->length);
   sb->length -= n;
   for (;;) {
@@ -397,16 +383,14 @@ void grpc_slice_buffer_remove_first(grpc_slice_buffer* sb) {
   }
 }
 
-void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin,
-                                 size_t end) {
+void grpc_slice_buffer_sub_first(grpc_slice_buffer* sb, size_t begin, size_t end) {
   // TODO(soheil): Introduce a ptr version for sub.
   sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
   sb->slices[0] = grpc_slice_sub_no_ref(sb->slices[0], begin, end);
   sb->length += end - begin;
 }
 
-void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb,
-                                       grpc_slice slice) {
+void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb, grpc_slice slice) {
   sb->slices--;
   sb->slices[0] = slice;
   sb->count++;

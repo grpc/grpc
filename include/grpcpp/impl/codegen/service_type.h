@@ -69,8 +69,7 @@ class Service {
 
   bool has_synchronous_methods() const {
     for (const auto& method : methods_) {
-      if (method &&
-          method->api_type() == internal::RpcServiceMethod::ApiType::SYNC) {
+      if (method && method->api_type() == internal::RpcServiceMethod::ApiType::SYNC) {
         return true;
       }
     }
@@ -79,10 +78,8 @@ class Service {
 
   bool has_callback_methods() const {
     for (const auto& method : methods_) {
-      if (method && (method->api_type() ==
-                         internal::RpcServiceMethod::ApiType::CALL_BACK ||
-                     method->api_type() ==
-                         internal::RpcServiceMethod::ApiType::RAW_CALL_BACK)) {
+      if (method && (method->api_type() == internal::RpcServiceMethod::ApiType::CALL_BACK ||
+                     method->api_type() == internal::RpcServiceMethod::ApiType::RAW_CALL_BACK)) {
         return true;
       }
     }
@@ -100,60 +97,50 @@ class Service {
 
  protected:
   template <class Message>
-  void RequestAsyncUnary(int index, ::grpc::ServerContext* context,
-                         Message* request,
+  void RequestAsyncUnary(int index, ::grpc::ServerContext* context, Message* request,
                          internal::ServerAsyncStreamingInterface* stream,
                          ::grpc::CompletionQueue* call_cq,
-                         ::grpc::ServerCompletionQueue* notification_cq,
-                         void* tag) {
+                         ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     // Typecast the index to size_t for indexing into a vector
     // while preserving the API that existed before a compiler
     // warning was first seen (grpc/grpc#11664)
     size_t idx = static_cast<size_t>(index);
-    server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
-                              notification_cq, tag, request);
+    server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq, notification_cq, tag,
+                              request);
   }
-  void RequestAsyncClientStreaming(
-      int index, ::grpc::ServerContext* context,
-      internal::ServerAsyncStreamingInterface* stream,
-      ::grpc::CompletionQueue* call_cq,
-      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
+  void RequestAsyncClientStreaming(int index, ::grpc::ServerContext* context,
+                                   internal::ServerAsyncStreamingInterface* stream,
+                                   ::grpc::CompletionQueue* call_cq,
+                                   ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
-    server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
-                              notification_cq, tag);
+    server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq, notification_cq, tag);
   }
   template <class Message>
-  void RequestAsyncServerStreaming(
-      int index, ::grpc::ServerContext* context, Message* request,
-      internal::ServerAsyncStreamingInterface* stream,
-      ::grpc::CompletionQueue* call_cq,
-      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
+  void RequestAsyncServerStreaming(int index, ::grpc::ServerContext* context, Message* request,
+                                   internal::ServerAsyncStreamingInterface* stream,
+                                   ::grpc::CompletionQueue* call_cq,
+                                   ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
-    server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
-                              notification_cq, tag, request);
+    server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq, notification_cq, tag,
+                              request);
   }
-  void RequestAsyncBidiStreaming(
-      int index, ::grpc::ServerContext* context,
-      internal::ServerAsyncStreamingInterface* stream,
-      ::grpc::CompletionQueue* call_cq,
-      ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
+  void RequestAsyncBidiStreaming(int index, ::grpc::ServerContext* context,
+                                 internal::ServerAsyncStreamingInterface* stream,
+                                 ::grpc::CompletionQueue* call_cq,
+                                 ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     size_t idx = static_cast<size_t>(index);
-    server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq,
-                              notification_cq, tag);
+    server_->RequestAsyncCall(methods_[idx].get(), context, stream, call_cq, notification_cq, tag);
   }
 
-  void AddMethod(internal::RpcServiceMethod* method) {
-    methods_.emplace_back(method);
-  }
+  void AddMethod(internal::RpcServiceMethod* method) { methods_.emplace_back(method); }
 
   void MarkMethodAsync(int index) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(
-        methods_[idx].get() != nullptr &&
-        "Cannot mark the method as 'async' because it has already been "
-        "marked as 'generic'.");
+    GPR_CODEGEN_ASSERT(methods_[idx].get() != nullptr &&
+                       "Cannot mark the method as 'async' because it has already been "
+                       "marked as 'generic'.");
     methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::ASYNC);
   }
 
@@ -171,10 +158,9 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(
-        methods_[idx]->handler() != nullptr &&
-        "Cannot mark the method as 'generic' because it has already been "
-        "marked as 'async' or 'raw'.");
+    GPR_CODEGEN_ASSERT(methods_[idx]->handler() != nullptr &&
+                       "Cannot mark the method as 'generic' because it has already been "
+                       "marked as 'async' or 'raw'.");
     methods_[idx].reset();
   }
 
@@ -197,26 +183,22 @@ class Service {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(
-        methods_[idx].get() != nullptr &&
-        "Cannot mark the method as 'callback' because it has already been "
-        "marked as 'generic'.");
+    GPR_CODEGEN_ASSERT(methods_[idx].get() != nullptr &&
+                       "Cannot mark the method as 'callback' because it has already been "
+                       "marked as 'generic'.");
     methods_[idx]->SetHandler(handler);
-    methods_[idx]->SetServerApiType(
-        internal::RpcServiceMethod::ApiType::CALL_BACK);
+    methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::CALL_BACK);
   }
 
   void MarkMethodRawCallback(int index, internal::MethodHandler* handler) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
     size_t idx = static_cast<size_t>(index);
-    GPR_CODEGEN_ASSERT(
-        methods_[idx].get() != nullptr &&
-        "Cannot mark the method as 'raw callback' because it has already "
-        "been marked as 'generic'.");
+    GPR_CODEGEN_ASSERT(methods_[idx].get() != nullptr &&
+                       "Cannot mark the method as 'raw callback' because it has already "
+                       "been marked as 'generic'.");
     methods_[idx]->SetHandler(handler);
-    methods_[idx]->SetServerApiType(
-        internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
+    methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
   }
 
   internal::MethodHandler* GetHandler(int index) {

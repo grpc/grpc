@@ -133,13 +133,10 @@ class ChannelInterface {
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ::grpc::ClientContext* context,
                                     ::grpc::CompletionQueue* cq) = 0;
-  virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                                internal::Call* call) = 0;
+  virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops, internal::Call* call) = 0;
   virtual void* RegisterMethod(const char* method) = 0;
-  virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                                       gpr_timespec deadline,
-                                       ::grpc::CompletionQueue* cq,
-                                       void* tag) = 0;
+  virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed, gpr_timespec deadline,
+                                       ::grpc::CompletionQueue* cq, void* tag) = 0;
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline) = 0;
 
@@ -150,9 +147,10 @@ class ChannelInterface {
   // Returns an empty Call object (rather than being pure) since this is a new
   // method and adding a new pure method to an interface would be a breaking
   // change (even though this is private and non-API)
-  virtual internal::Call CreateCallInternal(
-      const internal::RpcMethod& /*method*/, ::grpc::ClientContext* /*context*/,
-      ::grpc::CompletionQueue* /*cq*/, size_t /*interceptor_pos*/) {
+  virtual internal::Call CreateCallInternal(const internal::RpcMethod& /*method*/,
+                                            ::grpc::ClientContext* /*context*/,
+                                            ::grpc::CompletionQueue* /*cq*/,
+                                            size_t /*interceptor_pos*/) {
     return internal::Call();
   }
 

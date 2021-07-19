@@ -56,8 +56,7 @@ ABSL_FLAG(std::string, server_addresses, "localhost:8080",
           " \"<name_1>:<port_1>,<name_2>:<port_1>...<name_N>:<port_N>\"\n"
           " Note: <name> can be servername or IP address.");
 
-ABSL_FLAG(int32_t, num_channels_per_server, 1,
-          "Number of channels for each server");
+ABSL_FLAG(int32_t, num_channels_per_server, 1, "Number of channels for each server");
 
 ABSL_FLAG(int32_t, num_stubs_per_channel, 1,
           "Number of stubs per each channels to server. This number also "
@@ -102,8 +101,7 @@ ABSL_FLAG(bool, do_not_abort_on_transient_failures, true,
 
 // Options from client.cc (for compatibility with interop test).
 // TODO(sreek): Consolidate overlapping options
-ABSL_FLAG(bool, use_alts, false,
-          "Whether to use alts. Enable alts will disable tls.");
+ABSL_FLAG(bool, use_alts, false, "Whether to use alts. Enable alts will disable tls.");
 ABSL_FLAG(bool, use_tls, false, "Whether to use tls.");
 ABSL_FLAG(bool, use_test_ca, false, "False to use SSL roots for google");
 ABSL_FLAG(std::string, server_host_override, "",
@@ -196,21 +194,15 @@ bool ParseTestCasesString(const std::string& test_cases,
 // For debugging purposes
 void LogParameterInfo(const std::vector<std::string>& addresses,
                       const std::vector<std::pair<TestCaseType, int>>& tests) {
-  gpr_log(GPR_INFO, "server_addresses: %s",
-          absl::GetFlag(FLAGS_server_addresses).c_str());
+  gpr_log(GPR_INFO, "server_addresses: %s", absl::GetFlag(FLAGS_server_addresses).c_str());
   gpr_log(GPR_INFO, "test_cases : %s", absl::GetFlag(FLAGS_test_cases).c_str());
-  gpr_log(GPR_INFO, "sleep_duration_ms: %d",
-          absl::GetFlag(FLAGS_sleep_duration_ms));
-  gpr_log(GPR_INFO, "test_duration_secs: %d",
-          absl::GetFlag(FLAGS_test_duration_secs));
-  gpr_log(GPR_INFO, "num_channels_per_server: %d",
-          absl::GetFlag(FLAGS_num_channels_per_server));
-  gpr_log(GPR_INFO, "num_stubs_per_channel: %d",
-          absl::GetFlag(FLAGS_num_stubs_per_channel));
+  gpr_log(GPR_INFO, "sleep_duration_ms: %d", absl::GetFlag(FLAGS_sleep_duration_ms));
+  gpr_log(GPR_INFO, "test_duration_secs: %d", absl::GetFlag(FLAGS_test_duration_secs));
+  gpr_log(GPR_INFO, "num_channels_per_server: %d", absl::GetFlag(FLAGS_num_channels_per_server));
+  gpr_log(GPR_INFO, "num_stubs_per_channel: %d", absl::GetFlag(FLAGS_num_stubs_per_channel));
   gpr_log(GPR_INFO, "log_level: %d", absl::GetFlag(FLAGS_log_level));
   gpr_log(GPR_INFO, "do_not_abort_on_transient_failures: %s",
-          absl::GetFlag(FLAGS_do_not_abort_on_transient_failures) ? "true"
-                                                                  : "false");
+          absl::GetFlag(FLAGS_do_not_abort_on_transient_failures) ? "true" : "false");
 
   int num = 0;
   for (auto it = addresses.begin(); it != addresses.end(); it++) {
@@ -221,8 +213,7 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
   for (auto it = tests.begin(); it != tests.end(); it++) {
     TestCaseType test_case = it->first;
     int weight = it->second;
-    gpr_log(GPR_INFO, "%d. TestCaseType: %d, Weight: %d", ++num, test_case,
-            weight);
+    gpr_log(GPR_INFO, "%d. TestCaseType: %d, Weight: %d", ++num, test_case, weight);
   }
 }
 
@@ -231,8 +222,8 @@ int main(int argc, char** argv) {
 
   if (absl::GetFlag(FLAGS_log_level) > GPR_LOG_SEVERITY_ERROR ||
       absl::GetFlag(FLAGS_log_level) < GPR_LOG_SEVERITY_DEBUG) {
-    gpr_log(GPR_ERROR, "log_level should be an integer between %d and %d",
-            GPR_LOG_SEVERITY_DEBUG, GPR_LOG_SEVERITY_ERROR);
+    gpr_log(GPR_ERROR, "log_level should be an integer between %d and %d", GPR_LOG_SEVERITY_DEBUG,
+            GPR_LOG_SEVERITY_ERROR);
     return 1;
   }
 
@@ -245,8 +236,7 @@ int main(int argc, char** argv) {
 
   // Parse the server addresses
   std::vector<std::string> server_addresses;
-  ParseCommaDelimitedString(absl::GetFlag(FLAGS_server_addresses),
-                            server_addresses);
+  ParseCommaDelimitedString(absl::GetFlag(FLAGS_server_addresses), server_addresses);
 
   // Parse test cases and weights
   if (absl::GetFlag(FLAGS_test_cases).length() == 0) {
@@ -283,43 +273,35 @@ int main(int argc, char** argv) {
   int server_idx = -1;
   char buffer[256];
   transport_security security_type =
-      absl::GetFlag(FLAGS_use_alts)
-          ? ALTS
-          : (absl::GetFlag(FLAGS_use_tls) ? TLS : INSECURE);
+      absl::GetFlag(FLAGS_use_alts) ? ALTS : (absl::GetFlag(FLAGS_use_tls) ? TLS : INSECURE);
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
     ++server_idx;
     // Create channel(s) for each server
-    for (int channel_idx = 0;
-         channel_idx < absl::GetFlag(FLAGS_num_channels_per_server);
+    for (int channel_idx = 0; channel_idx < absl::GetFlag(FLAGS_num_channels_per_server);
          channel_idx++) {
-      gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(),
-              channel_idx);
-      grpc::testing::ChannelCreationFunc channel_creation_func =
-          std::bind(static_cast<std::shared_ptr<grpc::Channel> (*)(
-                        const std::string&, const std::string&,
-                        grpc::testing::transport_security, bool)>(
-                        grpc::CreateTestChannel),
-                    *it, absl::GetFlag(FLAGS_server_host_override),
-                    security_type, !absl::GetFlag(FLAGS_use_test_ca));
+      gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(), channel_idx);
+      grpc::testing::ChannelCreationFunc channel_creation_func = std::bind(
+          static_cast<std::shared_ptr<grpc::Channel> (*)(const std::string&, const std::string&,
+                                                         grpc::testing::transport_security, bool)>(
+              grpc::CreateTestChannel),
+          *it, absl::GetFlag(FLAGS_server_host_override), security_type,
+          !absl::GetFlag(FLAGS_use_test_ca));
 
       // Create stub(s) for each channel
-      for (int stub_idx = 0;
-           stub_idx < absl::GetFlag(FLAGS_num_stubs_per_channel); stub_idx++) {
+      for (int stub_idx = 0; stub_idx < absl::GetFlag(FLAGS_num_stubs_per_channel); stub_idx++) {
         clients.emplace_back(new StressTestInteropClient(
             ++thread_idx, *it, channel_creation_func, test_selector,
-            absl::GetFlag(FLAGS_test_duration_secs),
-            absl::GetFlag(FLAGS_sleep_duration_ms),
+            absl::GetFlag(FLAGS_test_duration_secs), absl::GetFlag(FLAGS_sleep_duration_ms),
             absl::GetFlag(FLAGS_do_not_abort_on_transient_failures)));
 
         bool is_already_created = false;
         // QpsGauge name
-        std::snprintf(buffer, sizeof(buffer),
-                      "/stress_test/server_%d/channel_%d/stub_%d/qps",
+        std::snprintf(buffer, sizeof(buffer), "/stress_test/server_%d/channel_%d/stub_%d/qps",
                       server_idx, channel_idx, stub_idx);
 
-        test_threads.emplace_back(std::thread(
-            &StressTestInteropClient::MainLoop, clients.back().get(),
-            metrics_service.CreateQpsGauge(buffer, &is_already_created)));
+        test_threads.emplace_back(
+            std::thread(&StressTestInteropClient::MainLoop, clients.back().get(),
+                        metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
         // The QpsGauge should not have been already created
         GPR_ASSERT(!is_already_created);
@@ -330,8 +312,7 @@ int main(int argc, char** argv) {
   // Start metrics server before waiting for the stress test threads
   std::unique_ptr<grpc::Server> metrics_server;
   if (absl::GetFlag(FLAGS_metrics_port) > 0) {
-    metrics_server =
-        metrics_service.StartServer(absl::GetFlag(FLAGS_metrics_port));
+    metrics_server = metrics_service.StartServer(absl::GetFlag(FLAGS_metrics_port));
   }
 
   // Wait for the stress test threads to complete

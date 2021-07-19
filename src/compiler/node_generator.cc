@@ -61,8 +61,7 @@ std::string GetJSMessageFilename(const std::string& filename) {
 
 // Given a filename like foo/bar/baz.proto, returns the root directory
 // path ../../
-std::string GetRootPath(const std::string& from_filename,
-                        const std::string& to_filename) {
+std::string GetRootPath(const std::string& from_filename, const std::string& to_filename) {
   if (to_filename.find("google/protobuf") == 0) {
     // Well-known types (.proto files in the google/protobuf directory) are
     // assumed to come from the 'google-protobuf' npm package.  We may want to
@@ -83,8 +82,7 @@ std::string GetRootPath(const std::string& from_filename,
 
 // Return the relative path to load to_file from the directory containing
 // from_file, assuming that both paths are relative to the same directory
-std::string GetRelativePath(const std::string& from_file,
-                            const std::string& to_file) {
+std::string GetRelativePath(const std::string& from_file, const std::string& to_file) {
   return GetRootPath(from_file, to_file) + to_file;
 }
 
@@ -92,11 +90,9 @@ std::string GetRelativePath(const std::string& from_file,
  * as a map of fully qualified message type name to message descriptor */
 map<std::string, const Descriptor*> GetAllMessages(const FileDescriptor* file) {
   map<std::string, const Descriptor*> message_types;
-  for (int service_num = 0; service_num < file->service_count();
-       service_num++) {
+  for (int service_num = 0; service_num < file->service_count(); service_num++) {
     const ServiceDescriptor* service = file->service(service_num);
-    for (int method_num = 0; method_num < service->method_count();
-         method_num++) {
+    for (int method_num = 0; method_num < service->method_count(); method_num++) {
       const MethodDescriptor* method = service->method(method_num);
       const Descriptor* input_type = method->input_type();
       const Descriptor* output_type = method->output_type();
@@ -119,8 +115,7 @@ std::string NodeObjectPath(const Descriptor* descriptor) {
 }
 
 // Prints out the message serializer and deserializer functions
-void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
-                             const Parameters& params) {
+void PrintMessageTransformer(const Descriptor* descriptor, Printer* out, const Parameters& params) {
   map<std::string, std::string> template_vars;
   std::string full_name = descriptor->full_name();
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
@@ -131,8 +126,7 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
   out->Indent();
   out->Print(template_vars, "if (!(arg instanceof $node_name$)) {\n");
   out->Indent();
-  out->Print(template_vars,
-             "throw new Error('Expected argument of type $name$');\n");
+  out->Print(template_vars, "throw new Error('Expected argument of type $name$');\n");
   out->Outdent();
   out->Print("}\n");
   if (params.minimum_node_version > 5) {
@@ -145,12 +139,9 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
   out->Print("}\n\n");
 
   // Print the deserializer
-  out->Print(template_vars,
-             "function deserialize_$identifier_name$(buffer_arg) {\n");
+  out->Print(template_vars, "function deserialize_$identifier_name$(buffer_arg) {\n");
   out->Indent();
-  out->Print(
-      template_vars,
-      "return $node_name$.deserializeBinary(new Uint8Array(buffer_arg));\n");
+  out->Print(template_vars, "return $node_name$.deserializeBinary(new Uint8Array(buffer_arg));\n");
   out->Outdent();
   out->Print("}\n\n");
 }
@@ -190,8 +181,7 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
   out->Print(template_vars, "var $name$Service = exports.$name$Service = {\n");
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
-    std::string method_name =
-        grpc_generator::LowercaseFirstLetter(service->method(i)->name());
+    std::string method_name = grpc_generator::LowercaseFirstLetter(service->method(i)->name());
     out->Print(GetNodeComments(service->method(i), true).c_str());
     out->Print("$method_name$: ", "method_name", method_name);
     PrintMethod(service->method(i), out);
@@ -209,24 +199,21 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
 void PrintImports(const FileDescriptor* file, Printer* out) {
   out->Print("var grpc = require('grpc');\n");
   if (file->message_type_count() > 0) {
-    std::string file_path =
-        GetRelativePath(file->name(), GetJSMessageFilename(file->name()));
+    std::string file_path = GetRelativePath(file->name(), GetJSMessageFilename(file->name()));
     out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
                ModuleAlias(file->name()), "file_path", file_path);
   }
 
   for (int i = 0; i < file->dependency_count(); i++) {
-    std::string file_path = GetRelativePath(
-        file->name(), GetJSMessageFilename(file->dependency(i)->name()));
+    std::string file_path =
+        GetRelativePath(file->name(), GetJSMessageFilename(file->dependency(i)->name()));
     out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
-               ModuleAlias(file->dependency(i)->name()), "file_path",
-               file_path);
+               ModuleAlias(file->dependency(i)->name()), "file_path", file_path);
   }
   out->Print("\n");
 }
 
-void PrintTransformers(const FileDescriptor* file, Printer* out,
-                       const Parameters& params) {
+void PrintTransformers(const FileDescriptor* file, Printer* out, const Parameters& params) {
   map<std::string, const Descriptor*> messages = GetAllMessages(file);
   for (std::map<std::string, const Descriptor*>::iterator it = messages.begin();
        it != messages.end(); it++) {

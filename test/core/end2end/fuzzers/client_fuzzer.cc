@@ -45,29 +45,24 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
 
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("client_fuzzer");
-    grpc_endpoint* mock_endpoint =
-        grpc_mock_endpoint_create(discard_write, resource_quota);
+    grpc_resource_quota* resource_quota = grpc_resource_quota_create("client_fuzzer");
+    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write, resource_quota);
     grpc_resource_quota_unref_internal(resource_quota);
 
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_transport* transport =
-        grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
+    grpc_transport* transport = grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_arg authority_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>("test-authority"));
-    grpc_channel_args* args =
-        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
-    grpc_channel* channel = grpc_channel_create(
-        "test-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>("test-authority"));
+    grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+    grpc_channel* channel =
+        grpc_channel_create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_channel_args_destroy(args);
     grpc_slice host = grpc_slice_from_static_string("localhost");
-    grpc_call* call = grpc_channel_create_call(
-        channel, nullptr, 0, cq, grpc_slice_from_static_string("/foo"), &host,
-        gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    grpc_call* call =
+        grpc_channel_create_call(channel, nullptr, 0, cq, grpc_slice_from_static_string("/foo"),
+                                 &host, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
     grpc_metadata_array initial_metadata_recv;
     grpc_metadata_array_init(&initial_metadata_recv);
@@ -90,8 +85,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     op->reserved = nullptr;
     op++;
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata.recv_initial_metadata =
-        &initial_metadata_recv;
+    op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
     op->flags = 0;
     op->reserved = nullptr;
     op++;
@@ -107,19 +101,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    grpc_call_error error =
-        grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr);
+    grpc_call_error error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr);
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
+    grpc_mock_endpoint_put_read(mock_endpoint,
+                                grpc_slice_from_copied_buffer((const char*)data, size));
 
     grpc_event ev;
     while (true) {
       grpc_core::ExecCtx::Get()->Flush();
-      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                      nullptr);
+      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
       switch (ev.type) {
         case GRPC_QUEUE_TIMEOUT:
           goto done;
@@ -136,14 +128,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_call_cancel(call, nullptr);
     }
     for (int i = 0; i < requested_calls; i++) {
-      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                      nullptr);
+      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
     for (int i = 0; i < requested_calls; i++) {
-      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                      nullptr);
+      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME), nullptr);
       GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_call_unref(call);

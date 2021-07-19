@@ -28,8 +28,7 @@ extern "C" {
 
 typedef struct grpc_histogram grpc_histogram;
 
-grpc_histogram* grpc_histogram_create(double resolution,
-                                      double max_bucket_start);
+grpc_histogram* grpc_histogram_create(double resolution, double max_bucket_start);
 void grpc_histogram_destroy(grpc_histogram* h);
 void grpc_histogram_add(grpc_histogram* h, double x);
 
@@ -48,11 +47,9 @@ double grpc_histogram_count(grpc_histogram* histogram);
 double grpc_histogram_sum(grpc_histogram* histogram);
 double grpc_histogram_sum_of_squares(grpc_histogram* histogram);
 
-const uint32_t* grpc_histogram_get_contents(grpc_histogram* histogram,
-                                            size_t* count);
-void grpc_histogram_merge_contents(grpc_histogram* histogram,
-                                   const uint32_t* data, size_t data_count,
-                                   double min_seen, double max_seen, double sum,
+const uint32_t* grpc_histogram_get_contents(grpc_histogram* histogram, size_t* count);
+void grpc_histogram_merge_contents(grpc_histogram* histogram, const uint32_t* data,
+                                   size_t data_count, double min_seen, double max_seen, double sum,
                                    double sum_of_squares, double count);
 
 #ifdef __cplusplus

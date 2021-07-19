@@ -36,13 +36,11 @@ class AuthorizationMatcher {
 
   // Creates an instance of a matcher based off the rules defined in Permission
   // config.
-  static std::unique_ptr<AuthorizationMatcher> Create(
-      Rbac::Permission permission);
+  static std::unique_ptr<AuthorizationMatcher> Create(Rbac::Permission permission);
 
   // Creates an instance of a matcher based off the rules defined in Principal
   // config.
-  static std::unique_ptr<AuthorizationMatcher> Create(
-      Rbac::Principal principal);
+  static std::unique_ptr<AuthorizationMatcher> Create(Rbac::Principal principal);
 };
 
 class AlwaysAuthorizationMatcher : public AuthorizationMatcher {
@@ -54,8 +52,7 @@ class AlwaysAuthorizationMatcher : public AuthorizationMatcher {
 
 class AndAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit AndAuthorizationMatcher(
-      std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
+  explicit AndAuthorizationMatcher(std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
       : matchers_(std::move(matchers)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
@@ -66,8 +63,7 @@ class AndAuthorizationMatcher : public AuthorizationMatcher {
 
 class OrAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit OrAuthorizationMatcher(
-      std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
+  explicit OrAuthorizationMatcher(std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
       : matchers_(std::move(matchers)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
@@ -79,8 +75,7 @@ class OrAuthorizationMatcher : public AuthorizationMatcher {
 // Negates matching the provided permission/principal.
 class NotAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit NotAuthorizationMatcher(
-      std::unique_ptr<AuthorizationMatcher> matcher)
+  explicit NotAuthorizationMatcher(std::unique_ptr<AuthorizationMatcher> matcher)
       : matcher_(std::move(matcher)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
@@ -94,8 +89,7 @@ class NotAuthorizationMatcher : public AuthorizationMatcher {
 // Perform a match against HTTP headers.
 class HeaderAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit HeaderAuthorizationMatcher(HeaderMatcher matcher)
-      : matcher_(std::move(matcher)) {}
+  explicit HeaderAuthorizationMatcher(HeaderMatcher matcher) : matcher_(std::move(matcher)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
@@ -139,8 +133,7 @@ class PortAuthorizationMatcher : public AuthorizationMatcher {
 // or DNS SAN in that order, otherwise uses subject field.
 class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit AuthenticatedAuthorizationMatcher(StringMatcher auth)
-      : matcher_(std::move(auth)) {}
+  explicit AuthenticatedAuthorizationMatcher(StringMatcher auth) : matcher_(std::move(auth)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
@@ -152,8 +145,7 @@ class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
 // request. This is typically TLS SNI. Currently unsupported.
 class ReqServerNameAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit ReqServerNameAuthorizationMatcher(
-      StringMatcher requested_server_name)
+  explicit ReqServerNameAuthorizationMatcher(StringMatcher requested_server_name)
       : matcher_(std::move(requested_server_name)) {}
 
   bool Matches(const EvaluateArgs&) const override;
@@ -165,8 +157,7 @@ class ReqServerNameAuthorizationMatcher : public AuthorizationMatcher {
 // Perform a match against the path header of HTTP request.
 class PathAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit PathAuthorizationMatcher(StringMatcher path)
-      : matcher_(std::move(path)) {}
+  explicit PathAuthorizationMatcher(StringMatcher path) : matcher_(std::move(path)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
@@ -180,10 +171,8 @@ class PathAuthorizationMatcher : public AuthorizationMatcher {
 class PolicyAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit PolicyAuthorizationMatcher(Rbac::Policy policy)
-      : permissions_(
-            AuthorizationMatcher::Create(std::move(policy.permissions))),
-        principals_(
-            AuthorizationMatcher::Create(std::move(policy.principals))) {}
+      : permissions_(AuthorizationMatcher::Create(std::move(policy.permissions))),
+        principals_(AuthorizationMatcher::Create(std::move(policy.principals))) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 

@@ -29,13 +29,9 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -69,8 +65,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
-                                           grpc_end2end_test_fixture* f,
-                                           cq_verifier* cqv) {
+                                           grpc_end2end_test_fixture* f, cq_verifier* cqv) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -85,9 +80,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   int was_cancelled = 2;
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq, grpc_slice_from_static_string("/foo"),
-                               nullptr, deadline, nullptr);
+  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS, f->cq,
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -118,13 +112,11 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
+  error = grpc_server_request_call(f->server, &s, &call_details, &request_metadata_recv, f->cq,
+                                   f->cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -153,8 +145,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -189,8 +180,7 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
-  gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",
-          config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test", config.name);
 
   config.init_client(&f, nullptr);
   config.init_server(&f, nullptr);

@@ -35,10 +35,8 @@ class TestResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReturnError(grpc_error_handle /*error*/) override {}
 };
 
-static void test_succeeds(grpc_core::ResolverFactory* factory,
-                          const char* string) {
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          factory->scheme());
+static void test_succeeds(grpc_core::ResolverFactory* factory, const char* string) {
+  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string, factory->scheme());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -49,15 +47,12 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<TestResultHandler>();
-  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(std::move(args));
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
 }
 
-static void test_fails(grpc_core::ResolverFactory* factory,
-                       const char* string) {
-  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          factory->scheme());
+static void test_fails(grpc_core::ResolverFactory* factory, const char* string) {
+  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string, factory->scheme());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -68,8 +63,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<TestResultHandler>();
-  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(std::move(args));
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);
 }
 
@@ -80,15 +74,13 @@ int main(int argc, char** argv) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  grpc_core::ResolverFactory* dns =
-      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+  grpc_core::ResolverFactory* dns = grpc_core::ResolverRegistry::LookupResolverFactory("dns");
 
   test_succeeds(dns, "dns:10.2.1.1");
   test_succeeds(dns, "dns:10.2.1.1:1234");
   test_succeeds(dns, "dns:www.google.com");
   test_succeeds(dns, "dns:///www.google.com");
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  grpc_core::UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (gpr_stricmp(resolver.get(), "native") == 0) {
     test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
   } else {

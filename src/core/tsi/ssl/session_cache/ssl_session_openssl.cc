@@ -65,8 +65,7 @@ class OpenSslCachedSession : public SslCachedSession {
 
 }  // namespace
 
-std::unique_ptr<SslCachedSession> SslCachedSession::Create(
-    SslSessionPtr session) {
+std::unique_ptr<SslCachedSession> SslCachedSession::Create(SslSessionPtr session) {
   return absl::make_unique<OpenSslCachedSession>(std::move(session));
 }
 

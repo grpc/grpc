@@ -62,8 +62,7 @@ class MockClientWriter : public ::grpc::ClientWriterInterface<W> {
 };
 
 template <class W, class R>
-class MockClientReaderWriter
-    : public ::grpc::ClientReaderWriterInterface<W, R> {
+class MockClientReaderWriter : public ::grpc::ClientReaderWriterInterface<W, R> {
  public:
   MockClientReaderWriter() = default;
 
@@ -85,8 +84,7 @@ class MockClientReaderWriter
 /// TODO: We do not support mocking an async RPC for now.
 
 template <class R>
-class MockClientAsyncResponseReader
-    : public ::grpc::ClientAsyncResponseReaderInterface<R> {
+class MockClientAsyncResponseReader : public ::grpc::ClientAsyncResponseReaderInterface<R> {
  public:
   MockClientAsyncResponseReader() = default;
 
@@ -129,8 +127,7 @@ class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
 };
 
 template <class W, class R>
-class MockClientAsyncReaderWriter
-    : public ClientAsyncReaderWriterInterface<W, R> {
+class MockClientAsyncReaderWriter : public ClientAsyncReaderWriterInterface<W, R> {
  public:
   MockClientAsyncReaderWriter() = default;
 

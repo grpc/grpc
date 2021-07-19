@@ -34,8 +34,7 @@ class SecureAuthContext;
 
 typedef std::pair<string_ref, string_ref> AuthProperty;
 
-class AuthPropertyIterator
-    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
+class AuthPropertyIterator : public std::iterator<std::input_iterator_tag, const AuthProperty> {
  public:
   ~AuthPropertyIterator();
   AuthPropertyIterator& operator++();
@@ -46,8 +45,7 @@ class AuthPropertyIterator
 
  protected:
   AuthPropertyIterator();
-  AuthPropertyIterator(const grpc_auth_property* property,
-                       const grpc_auth_property_iterator* iter);
+  AuthPropertyIterator(const grpc_auth_property* property, const grpc_auth_property_iterator* iter);
 
  private:
   friend class SecureAuthContext;
@@ -77,8 +75,7 @@ class AuthContext {
   virtual std::string GetPeerIdentityPropertyName() const = 0;
 
   /// Returns all the property values with the given name.
-  virtual std::vector<grpc::string_ref> FindPropertyValues(
-      const std::string& name) const = 0;
+  virtual std::vector<grpc::string_ref> FindPropertyValues(const std::string& name) const = 0;
 
   /// Iteration over all the properties.
   virtual AuthPropertyIterator begin() const = 0;

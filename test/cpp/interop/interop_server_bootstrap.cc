@@ -33,8 +33,7 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
-  grpc::testing::interop::RunServer(
-      grpc::testing::CreateInteropServerCredentials());
+  grpc::testing::interop::RunServer(grpc::testing::CreateInteropServerCredentials());
 
   return 0;
 }

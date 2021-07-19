@@ -64,17 +64,15 @@ bool grpc_is_epollexclusive_available(void) {
   /* choose events that should cause an error on
      EPOLLEXCLUSIVE enabled kernels - specifically the combination of
      EPOLLONESHOT and EPOLLEXCLUSIVE */
-  ev.events =
-      static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT);
+  ev.events = static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT);
   ev.data.ptr = nullptr;
   if (epoll_ctl(fd, EPOLL_CTL_ADD, evfd, &ev) != 0) {
     if (errno != EINVAL) {
       if (!logged_why_not) {
-        gpr_log(
-            GPR_ERROR,
-            "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT failed with error: "
-            "%d. Not using epollex polling engine.",
-            errno);
+        gpr_log(GPR_ERROR,
+                "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT failed with error: "
+                "%d. Not using epollex polling engine.",
+                errno);
         logged_why_not = true;
       }
       close(fd);

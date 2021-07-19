@@ -77,10 +77,9 @@ class CallbackBidiHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
 template <class ResponseType>
-void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter&,
-                           ResponseType*, Status&);
-template <class ServiceType, class RequestType, class ResponseType,
-          class BaseRequestType, class BaseResponseType>
+void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter&, ResponseType*, Status&);
+template <class ServiceType, class RequestType, class ResponseType, class BaseRequestType,
+          class BaseResponseType>
 class RpcMethodHandler;
 template <class Base>
 class FinishOnlyReactor;
@@ -218,15 +217,12 @@ class ServerContextBase {
   /// safe to access as soon as the call has begun on the server side.
   ///
   /// \return A multimap of initial metadata key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
-      const {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata() const {
     return *client_metadata_.map();
   }
 
   /// Return the compression algorithm to be used by the server call.
-  grpc_compression_level compression_level() const {
-    return compression_level_;
-  }
+  grpc_compression_level compression_level() const { return compression_level_; }
 
   /// Set \a level to be the compression level used for the server call.
   ///
@@ -245,9 +241,7 @@ class ServerContextBase {
   /// Note that the gRPC runtime may decide to ignore this request, for example,
   /// due to resource constraints, or if the server is aware the client doesn't
   /// support the requested algorithm.
-  grpc_compression_algorithm compression_algorithm() const {
-    return compression_algorithm_;
-  }
+  grpc_compression_algorithm compression_algorithm() const { return compression_algorithm_; }
   /// Set \a algorithm to be the compression algorithm used for the server call.
   ///
   /// \param algorithm The compression algorithm used for the server call.
@@ -318,8 +312,7 @@ class ServerContextBase {
     new (&default_reactor_) Reactor;
 #ifndef NDEBUG
     bool old = false;
-    assert(default_reactor_used_.compare_exchange_strong(
-        old, true, std::memory_order_relaxed));
+    assert(default_reactor_used_.compare_exchange_strong(old, true, std::memory_order_relaxed));
 #else
     default_reactor_used_.store(true, std::memory_order_relaxed);
 #endif
@@ -358,10 +351,9 @@ class ServerContextBase {
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ResponseType>
   friend void ::grpc::internal::UnaryRunHandlerHelper(
-      const internal::MethodHandler::HandlerParameter& param, ResponseType* rsp,
-      Status& status);
-  template <class ServiceType, class RequestType, class ResponseType,
-            class BaseRequestType, class BaseResponseType>
+      const internal::MethodHandler::HandlerParameter& param, ResponseType* rsp, Status& status);
+  template <class ServiceType, class RequestType, class ResponseType, class BaseRequestType,
+            class BaseResponseType>
   friend class ::grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ::grpc::internal::ClientStreamingHandler;
@@ -391,9 +383,8 @@ class ServerContextBase {
 
   class CompletionOp;
 
-  void BeginCompletionOp(
-      ::grpc::internal::Call* call, std::function<void(bool)> callback,
-      ::grpc::internal::ServerCallbackCall* callback_controller);
+  void BeginCompletionOp(::grpc::internal::Call* call, std::function<void(bool)> callback,
+                         ::grpc::internal::ServerCallbackCall* callback_controller);
   /// Return the tag queued by BeginCompletionOp()
   ::grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
@@ -405,8 +396,8 @@ class ServerContextBase {
 
   ::grpc::experimental::ServerRpcInfo* set_server_rpc_info(
       const char* method, ::grpc::internal::RpcMethod::RpcType type,
-      const std::vector<std::unique_ptr<
-          ::grpc::experimental::ServerInterceptorFactoryInterface>>& creators) {
+      const std::vector<std::unique_ptr<::grpc::experimental::ServerInterceptorFactoryInterface>>&
+          creators) {
     if (!creators.empty()) {
       rpc_info_ = new ::grpc::experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
@@ -473,15 +464,12 @@ class ServerContextBase {
     // NOLINTNEXTLINE(modernize-make-unique)
     test_unary_.reset(new TestServerCallbackUnary(this, std::move(func)));
   }
-  bool test_status_set() const {
-    return (test_unary_ != nullptr) && test_unary_->status_set();
-  }
+  bool test_status_set() const { return (test_unary_ != nullptr) && test_unary_->status_set(); }
   ::grpc::Status test_status() const { return test_unary_->status(); }
 
   class TestServerCallbackUnary : public ::grpc::ServerCallbackUnary {
    public:
-    TestServerCallbackUnary(ServerContextBase* ctx,
-                            std::function<void(::grpc::Status)> func)
+    TestServerCallbackUnary(ServerContextBase* ctx, std::function<void(::grpc::Status)> func)
         : reactor_(ctx->DefaultReactor()), func_(std::move(func)) {
       this->BindReactor(reactor_);
     }
@@ -492,9 +480,7 @@ class ServerContextBase {
     }
     void SendInitialMetadata() override {}
 
-    bool status_set() const {
-      return status_set_.load(std::memory_order_acquire);
-    }
+    bool status_set() const { return status_set_.load(std::memory_order_acquire); }
     ::grpc::Status status() const { return status_; }
 
    private:
@@ -507,8 +493,7 @@ class ServerContextBase {
     const std::function<void(::grpc::Status s)> func_;
   };
 
-  typename std::aligned_storage<sizeof(Reactor), alignof(Reactor)>::type
-      default_reactor_;
+  typename std::aligned_storage<sizeof(Reactor), alignof(Reactor)>::type default_reactor_;
   std::atomic_bool default_reactor_used_{false};
 
   std::atomic_bool marked_cancelled_{false};
@@ -622,9 +607,7 @@ class ContextAllocator {
 
   virtual CallbackServerContext* NewCallbackServerContext() { return nullptr; }
 
-  virtual GenericCallbackServerContext* NewGenericCallbackServerContext() {
-    return nullptr;
-  }
+  virtual GenericCallbackServerContext* NewGenericCallbackServerContext() { return nullptr; }
 
   virtual void Release(CallbackServerContext*) {}
 
@@ -633,17 +616,12 @@ class ContextAllocator {
 
 }  // namespace grpc
 
-static_assert(
-    std::is_base_of<::grpc::ServerContextBase, ::grpc::ServerContext>::value,
-    "improper base class");
-static_assert(std::is_base_of<::grpc::ServerContextBase,
-                              ::grpc::CallbackServerContext>::value,
+static_assert(std::is_base_of<::grpc::ServerContextBase, ::grpc::ServerContext>::value,
               "improper base class");
-static_assert(sizeof(::grpc::ServerContextBase) ==
-                  sizeof(::grpc::ServerContext),
-              "wrong size");
-static_assert(sizeof(::grpc::ServerContextBase) ==
-                  sizeof(::grpc::CallbackServerContext),
+static_assert(std::is_base_of<::grpc::ServerContextBase, ::grpc::CallbackServerContext>::value,
+              "improper base class");
+static_assert(sizeof(::grpc::ServerContextBase) == sizeof(::grpc::ServerContext), "wrong size");
+static_assert(sizeof(::grpc::ServerContextBase) == sizeof(::grpc::CallbackServerContext),
               "wrong size");
 
 #endif  // GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H

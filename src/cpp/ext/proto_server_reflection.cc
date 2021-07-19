@@ -38,15 +38,13 @@ namespace grpc {
 ProtoServerReflection::ProtoServerReflection()
     : descriptor_pool_(protobuf::DescriptorPool::generated_pool()) {}
 
-void ProtoServerReflection::SetServiceList(
-    const std::vector<std::string>* services) {
+void ProtoServerReflection::SetServiceList(const std::vector<std::string>* services) {
   services_ = services;
 }
 
 Status ProtoServerReflection::ServerReflectionInfo(
     ServerContext* context,
-    ServerReaderWriter<ServerReflectionResponse, ServerReflectionRequest>*
-        stream) {
+    ServerReaderWriter<ServerReflectionResponse, ServerReflectionRequest>* stream) {
   ServerReflectionRequest request;
   ServerReflectionResponse response;
   Status status;
@@ -56,23 +54,18 @@ Status ProtoServerReflection::ServerReflectionInfo(
         status = GetFileByName(context, request.file_by_filename(), &response);
         break;
       case ServerReflectionRequest::MessageRequestCase::kFileContainingSymbol:
-        status = GetFileContainingSymbol(
-            context, request.file_containing_symbol(), &response);
+        status = GetFileContainingSymbol(context, request.file_containing_symbol(), &response);
         break;
-      case ServerReflectionRequest::MessageRequestCase::
-          kFileContainingExtension:
-        status = GetFileContainingExtension(
-            context, &request.file_containing_extension(), &response);
+      case ServerReflectionRequest::MessageRequestCase::kFileContainingExtension:
+        status =
+            GetFileContainingExtension(context, &request.file_containing_extension(), &response);
         break;
-      case ServerReflectionRequest::MessageRequestCase::
-          kAllExtensionNumbersOfType:
-        status = GetAllExtensionNumbers(
-            context, request.all_extension_numbers_of_type(),
-            response.mutable_all_extension_numbers_response());
+      case ServerReflectionRequest::MessageRequestCase::kAllExtensionNumbersOfType:
+        status = GetAllExtensionNumbers(context, request.all_extension_numbers_of_type(),
+                                        response.mutable_all_extension_numbers_response());
         break;
       case ServerReflectionRequest::MessageRequestCase::kListServices:
-        status =
-            ListService(context, response.mutable_list_services_response());
+        status = ListService(context, response.mutable_list_services_response());
         break;
       default:
         status = Status(StatusCode::UNIMPLEMENTED, "");
@@ -82,16 +75,14 @@ Status ProtoServerReflection::ServerReflectionInfo(
       FillErrorResponse(status, response.mutable_error_response());
     }
     response.set_valid_host(request.host());
-    response.set_allocated_original_request(
-        new ServerReflectionRequest(request));
+    response.set_allocated_original_request(new ServerReflectionRequest(request));
     stream->Write(response);
   }
 
   return Status::OK;
 }
 
-void ProtoServerReflection::FillErrorResponse(const Status& status,
-                                              ErrorResponse* error_response) {
+void ProtoServerReflection::FillErrorResponse(const Status& status, ErrorResponse* error_response) {
   error_response->set_error_code(status.error_code());
   error_response->set_error_message(status.error_message());
 }
@@ -108,15 +99,14 @@ Status ProtoServerReflection::ListService(ServerContext* /*context*/,
   return Status::OK;
 }
 
-Status ProtoServerReflection::GetFileByName(
-    ServerContext* /*context*/, const std::string& file_name,
-    ServerReflectionResponse* response) {
+Status ProtoServerReflection::GetFileByName(ServerContext* /*context*/,
+                                            const std::string& file_name,
+                                            ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const protobuf::FileDescriptor* file_desc =
-      descriptor_pool_->FindFileByName(file_name);
+  const protobuf::FileDescriptor* file_desc = descriptor_pool_->FindFileByName(file_name);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "File not found.");
   }
@@ -125,15 +115,14 @@ Status ProtoServerReflection::GetFileByName(
   return Status::OK;
 }
 
-Status ProtoServerReflection::GetFileContainingSymbol(
-    ServerContext* /*context*/, const std::string& symbol,
-    ServerReflectionResponse* response) {
+Status ProtoServerReflection::GetFileContainingSymbol(ServerContext* /*context*/,
+                                                      const std::string& symbol,
+                                                      ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const protobuf::FileDescriptor* file_desc =
-      descriptor_pool_->FindFileContainingSymbol(symbol);
+  const protobuf::FileDescriptor* file_desc = descriptor_pool_->FindFileContainingSymbol(symbol);
   if (file_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Symbol not found.");
   }
@@ -142,9 +131,9 @@ Status ProtoServerReflection::GetFileContainingSymbol(
   return Status::OK;
 }
 
-Status ProtoServerReflection::GetFileContainingExtension(
-    ServerContext* /*context*/, const ExtensionRequest* request,
-    ServerReflectionResponse* response) {
+Status ProtoServerReflection::GetFileContainingExtension(ServerContext* /*context*/,
+                                                         const ExtensionRequest* request,
+                                                         ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
@@ -156,8 +145,7 @@ Status ProtoServerReflection::GetFileContainingExtension(
   }
 
   const protobuf::FieldDescriptor* field_desc =
-      descriptor_pool_->FindExtensionByNumber(desc,
-                                              request->extension_number());
+      descriptor_pool_->FindExtensionByNumber(desc, request->extension_number());
   if (field_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Extension not found.");
   }
@@ -166,15 +154,14 @@ Status ProtoServerReflection::GetFileContainingExtension(
   return Status::OK;
 }
 
-Status ProtoServerReflection::GetAllExtensionNumbers(
-    ServerContext* /*context*/, const std::string& type,
-    ExtensionNumberResponse* response) {
+Status ProtoServerReflection::GetAllExtensionNumbers(ServerContext* /*context*/,
+                                                     const std::string& type,
+                                                     ExtensionNumberResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
   }
 
-  const protobuf::Descriptor* desc =
-      descriptor_pool_->FindMessageTypeByName(type);
+  const protobuf::Descriptor* desc = descriptor_pool_->FindMessageTypeByName(type);
   if (desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
@@ -189,8 +176,7 @@ Status ProtoServerReflection::GetAllExtensionNumbers(
 }
 
 void ProtoServerReflection::FillFileDescriptorResponse(
-    const protobuf::FileDescriptor* file_desc,
-    ServerReflectionResponse* response,
+    const protobuf::FileDescriptor* file_desc, ServerReflectionResponse* response,
     std::unordered_set<std::string>* seen_files) {
   if (seen_files->find(file_desc->name()) != seen_files->end()) {
     return;

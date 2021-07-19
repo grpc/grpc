@@ -158,12 +158,10 @@ static void test_slice_sub_works(unsigned length) {
   grpc_slice_unref(slice);
 }
 
-static void check_head_tail(grpc_slice slice, grpc_slice head,
-                            grpc_slice tail) {
-  GPR_ASSERT(GRPC_SLICE_LENGTH(slice) ==
-             GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
-  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice),
-                         GRPC_SLICE_START_PTR(head), GRPC_SLICE_LENGTH(head)));
+static void check_head_tail(grpc_slice slice, grpc_slice head, grpc_slice tail) {
+  GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
+  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_START_PTR(head),
+                         GRPC_SLICE_LENGTH(head)));
   GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(head),
                          GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
 }
@@ -232,8 +230,7 @@ static void test_slice_from_copied_string_works(void) {
 
   slice = grpc_slice_from_copied_string(text);
   GPR_ASSERT(strlen(text) == GRPC_SLICE_LENGTH(slice));
-  GPR_ASSERT(
-      0 == memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
+  GPR_ASSERT(0 == memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
   grpc_slice_unref(slice);
 }
 
@@ -252,8 +249,7 @@ static void test_slice_interning(void) {
 
   grpc_slice interned1 = grpc_slice_intern(src1);
   grpc_slice interned2 = grpc_slice_intern(src2);
-  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
-             GRPC_SLICE_START_PTR(interned2));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) == GRPC_SLICE_START_PTR(interned2));
   GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) != GRPC_SLICE_START_PTR(src1));
   GPR_ASSERT(GRPC_SLICE_START_PTR(interned2) != GRPC_SLICE_START_PTR(src2));
   grpc_slice_unref(src1);
@@ -270,9 +266,8 @@ static void test_static_slice_interning(void) {
   // to intern a static slice
 
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    GPR_ASSERT(grpc_slice_is_equivalent(
-        grpc_static_slice_table()[i],
-        grpc_slice_intern(grpc_static_slice_table()[i])));
+    GPR_ASSERT(grpc_slice_is_equivalent(grpc_static_slice_table()[i],
+                                        grpc_slice_intern(grpc_static_slice_table()[i])));
   }
 }
 
@@ -284,8 +279,7 @@ static void test_static_slice_copy_interning(void) {
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
     grpc_slice copy = grpc_slice_dup(grpc_static_slice_table()[i]);
     GPR_ASSERT(grpc_static_slice_table()[i].refcount != copy.refcount);
-    GPR_ASSERT(grpc_static_slice_table()[i].refcount ==
-               grpc_slice_intern(copy).refcount);
+    GPR_ASSERT(grpc_static_slice_table()[i].refcount == grpc_slice_intern(copy).refcount);
     grpc_slice_unref(copy);
   }
 
@@ -300,31 +294,25 @@ static void test_moved_string_slice(void) {
   // Small string should be inlined.
   constexpr char kSmallStr[] = "hello12345";
   char* small_ptr = strdup(kSmallStr);
-  grpc_slice small =
-      grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(small_ptr));
+  grpc_slice small = grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(small_ptr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
-  GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
-             reinterpret_cast<uint8_t*>(small_ptr));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(small) != reinterpret_cast<uint8_t*>(small_ptr));
   grpc_slice_unref(small);
 
   // Large string should be move the reference.
   constexpr char kSLargeStr[] = "hello123456789123456789123456789";
   char* large_ptr = strdup(kSLargeStr);
-  grpc_slice large =
-      grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(large_ptr));
+  grpc_slice large = grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(large_ptr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(large) == strlen(kSLargeStr));
-  GPR_ASSERT(GRPC_SLICE_START_PTR(large) ==
-             reinterpret_cast<uint8_t*>(large_ptr));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(large) == reinterpret_cast<uint8_t*>(large_ptr));
   grpc_slice_unref(large);
 
   // Moved buffer must respect the provided length not the actual length of the
   // string.
   large_ptr = strdup(kSLargeStr);
-  small = grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char>(large_ptr),
-                                       strlen(kSmallStr));
+  small = grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char>(large_ptr), strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
-  GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
-             reinterpret_cast<uint8_t*>(large_ptr));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(small) != reinterpret_cast<uint8_t*>(large_ptr));
   grpc_slice_unref(small);
 
   grpc_shutdown();
@@ -332,8 +320,7 @@ static void test_moved_string_slice(void) {
 
 void test_string_view_from_slice() {
   constexpr char kStr[] = "foo";
-  absl::string_view sv(
-      grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
+  absl::string_view sv(grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
   GPR_ASSERT(std::string(sv) == kStr);
 }
 

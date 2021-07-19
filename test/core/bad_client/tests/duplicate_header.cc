@@ -51,8 +51,7 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* /*registered_method*/) {
+static void verifier(grpc_server* server, grpc_completion_queue* cq, void* /*registered_method*/) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
@@ -66,8 +65,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_call_details_init(&call_details);
   grpc_metadata_array_init(&request_metadata_recv);
 
-  error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+  error =
+      grpc_server_request_call(server, &s, &call_details, &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -87,8 +86,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -109,8 +107,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
@@ -126,10 +123,8 @@ int main(int argc, char** argv) {
   grpc_init();
 
   /* Verify that sending multiple headers doesn't segfault */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR HEADER_STR HEADER_STR PAYLOAD_STR, 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR HEADER_STR HEADER_STR HEADER_STR PAYLOAD_STR,
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR HEADER_STR HEADER_STR PAYLOAD_STR, 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR HEADER_STR HEADER_STR HEADER_STR PAYLOAD_STR,
                            0);
   grpc_shutdown();
   return 0;

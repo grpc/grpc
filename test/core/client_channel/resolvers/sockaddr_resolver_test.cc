@@ -34,15 +34,11 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
 
-  void ReturnError(grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+  void ReturnError(grpc_error_handle error) override { GRPC_ERROR_UNREF(error); }
 };
 
-static void test_succeeds(grpc_core::ResolverFactory* factory,
-                          const char* string) {
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          factory->scheme());
+static void test_succeeds(grpc_core::ResolverFactory* factory, const char* string) {
+  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string, factory->scheme());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -53,8 +49,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<ResultHandler>();
-  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(std::move(args));
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver != nullptr);
   resolver->StartLocked();
   /* Flush ExecCtx to avoid stack-use-after-scope on on_res_arg which is
@@ -62,10 +57,8 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   grpc_core::ExecCtx::Get()->Flush();
 }
 
-static void test_fails(grpc_core::ResolverFactory* factory,
-                       const char* string) {
-  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          factory->scheme());
+static void test_fails(grpc_core::ResolverFactory* factory, const char* string) {
+  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string, factory->scheme());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -76,8 +69,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
   args.result_handler = absl::make_unique<ResultHandler>();
-  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(std::move(args));
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = factory->CreateResolver(std::move(args));
   GPR_ASSERT(resolver == nullptr);
 }
 
@@ -88,10 +80,8 @@ int main(int argc, char** argv) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  grpc_core::ResolverFactory* ipv4 =
-      grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
-  grpc_core::ResolverFactory* ipv6 =
-      grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
+  grpc_core::ResolverFactory* ipv4 = grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
+  grpc_core::ResolverFactory* ipv6 = grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
 
   test_fails(ipv4, "ipv4:10.2.1.1");
   test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
@@ -108,8 +98,7 @@ int main(int argc, char** argv) {
   test_fails(ipv6, "ipv6:www.google.com");
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-  grpc_core::ResolverFactory* uds =
-      grpc_core::ResolverRegistry::LookupResolverFactory("unix");
+  grpc_core::ResolverFactory* uds = grpc_core::ResolverRegistry::LookupResolverFactory("unix");
   grpc_core::ResolverFactory* uds_abstract =
       grpc_core::ResolverRegistry::LookupResolverFactory("unix-abstract");
 

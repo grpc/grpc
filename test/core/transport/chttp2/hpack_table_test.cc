@@ -36,13 +36,12 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-static void assert_str(const grpc_chttp2_hptbl* /*tbl*/, grpc_slice mdstr,
-                       const char* str) {
+static void assert_str(const grpc_chttp2_hptbl* /*tbl*/, grpc_slice mdstr, const char* str) {
   GPR_ASSERT(grpc_slice_str_cmp(mdstr, str) == 0);
 }
 
-static void assert_index(const grpc_chttp2_hptbl* tbl, uint32_t idx,
-                         const char* key, const char* value) {
+static void assert_index(const grpc_chttp2_hptbl* tbl, uint32_t idx, const char* key,
+                         const char* value) {
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(tbl, idx);
   assert_str(tbl, GRPC_MDKEY(md), key);
   assert_str(tbl, GRPC_MDVALUE(md), value);
@@ -130,29 +129,26 @@ static void test_many_additions(void) {
     grpc_mdelem elem;
     std::string key = absl::StrCat("K:", i);
     std::string value = absl::StrCat("VALUE:", i);
-    elem = grpc_mdelem_from_slices(grpc_slice_from_cpp_string(key),
-                                   grpc_slice_from_cpp_string(value));
+    elem =
+        grpc_mdelem_from_slices(grpc_slice_from_cpp_string(key), grpc_slice_from_cpp_string(value));
     GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
     GRPC_MDELEM_UNREF(elem);
-    assert_index(&tbl, 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key.c_str(),
-                 value.c_str());
+    assert_index(&tbl, 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key.c_str(), value.c_str());
     if (i) {
       std::string key = absl::StrCat("K:", i - 1);
       std::string value = absl::StrCat("VALUE:", i - 1);
-      assert_index(&tbl, 2 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key.c_str(),
-                   value.c_str());
+      assert_index(&tbl, 2 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key.c_str(), value.c_str());
     }
   }
 
   grpc_chttp2_hptbl_destroy(&tbl);
 }
 
-static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl,
-                                                 const char* key,
+static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl, const char* key,
                                                  const char* value) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_mdelem md = grpc_mdelem_from_slices(
-      grpc_slice_from_copied_string(key), grpc_slice_from_copied_string(value));
+  grpc_mdelem md = grpc_mdelem_from_slices(grpc_slice_from_copied_string(key),
+                                           grpc_slice_from_copied_string(value));
   grpc_chttp2_hptbl_find_result r = grpc_chttp2_hptbl_find(tbl, md);
   GRPC_MDELEM_UNREF(md);
 

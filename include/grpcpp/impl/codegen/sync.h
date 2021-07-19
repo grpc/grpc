@@ -63,12 +63,8 @@ class ABSL_LOCKABLE Mutex {
   Mutex(const Mutex&) = delete;
   Mutex& operator=(const Mutex&) = delete;
 
-  void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
-    g_core_codegen_interface->gpr_mu_lock(&mu_);
-  }
-  void Unlock() ABSL_UNLOCK_FUNCTION() {
-    g_core_codegen_interface->gpr_mu_unlock(&mu_);
-  }
+  void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() { g_core_codegen_interface->gpr_mu_lock(&mu_); }
+  void Unlock() ABSL_UNLOCK_FUNCTION() { g_core_codegen_interface->gpr_mu_unlock(&mu_); }
 
  private:
   union {
@@ -84,9 +80,7 @@ class ABSL_LOCKABLE Mutex {
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
-    mu_->Lock();
-  }
+  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) { mu_->Lock(); }
   ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
 
   MutexLock(const MutexLock&) = delete;
@@ -98,8 +92,7 @@ class ABSL_SCOPED_LOCKABLE MutexLock {
 
 class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
  public:
-  explicit ReleasableMutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
-      : mu_(mu) {
+  explicit ReleasableMutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
     mu_->Lock();
   }
   ~ReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
@@ -133,8 +126,7 @@ class CondVar {
 
   void Wait(Mutex* mu) {
     g_core_codegen_interface->gpr_cv_wait(
-        &cv_, &mu->mu_,
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
+        &cv_, &mu->mu_, g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME));
   }
 
  private:

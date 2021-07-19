@@ -22,14 +22,11 @@ namespace grpc {
 namespace testing {
 namespace {
 
-std::string ToString(const grpc::string_ref& r) {
-  return std::string(r.data(), r.size());
-}
+std::string ToString(const grpc::string_ref& r) { return std::string(r.data(), r.size()); }
 
-int GetIntValueFromMetadataHelper(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    int default_value) {
+int GetIntValueFromMetadataHelper(const char* key,
+                                  const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+                                  int default_value) {
   if (metadata.find(key) != metadata.end()) {
     std::istringstream iss(ToString(metadata.find(key)->second));
     iss >> default_value;
@@ -38,19 +35,18 @@ int GetIntValueFromMetadataHelper(
   return default_value;
 }
 
-int GetIntValueFromMetadata(
-    const char* key,
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    int default_value) {
+int GetIntValueFromMetadata(const char* key,
+                            const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+                            int default_value) {
   return GetIntValueFromMetadataHelper(key, metadata, default_value);
 }
 }  // namespace
 
-ServerUnaryReactor* CallbackStreamingTestService::Echo(
-    CallbackServerContext* context, const EchoRequest* /*request*/,
-    EchoResponse* response) {
-  int response_msgs_size = GetIntValueFromMetadata(
-      kServerMessageSize, context->client_metadata(), 0);
+ServerUnaryReactor* CallbackStreamingTestService::Echo(CallbackServerContext* context,
+                                                       const EchoRequest* /*request*/,
+                                                       EchoResponse* response) {
+  int response_msgs_size =
+      GetIntValueFromMetadata(kServerMessageSize, context->client_metadata(), 0);
   if (response_msgs_size > 0) {
     response->set_message(std::string(response_msgs_size, 'a'));
   } else {
@@ -61,13 +57,12 @@ ServerUnaryReactor* CallbackStreamingTestService::Echo(
   return reactor;
 }
 
-ServerBidiReactor<EchoRequest, EchoResponse>*
-CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
+ServerBidiReactor<EchoRequest, EchoResponse>* CallbackStreamingTestService::BidiStream(
+    CallbackServerContext* context) {
   class Reactor : public ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
     explicit Reactor(CallbackServerContext* context) {
-      message_size_ = GetIntValueFromMetadata(kServerMessageSize,
-                                              context->client_metadata(), 0);
+      message_size_ = GetIntValueFromMetadata(kServerMessageSize, context->client_metadata(), 0);
       StartRead(&request_);
     }
     void OnDone() override {

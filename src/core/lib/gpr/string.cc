@@ -62,8 +62,7 @@ std::string gpr_format_timespec(gpr_timespec tm) {
   // right point. We iterate in chunks of three because we want 0, 3, 6, or 9
   // fractional digits.
   for (int i = 7; i >= 1; i -= 3) {
-    if (ns_buffer[i] == '0' && ns_buffer[i + 1] == '0' &&
-        ns_buffer[i + 2] == '0') {
+    if (ns_buffer[i] == '0' && ns_buffer[i + 1] == '0' && ns_buffer[i + 2] == '0') {
       ns_buffer[i] = '\0';
       // Edge case in which all fractional digits were 0.
       if (i == 1) {
@@ -119,16 +118,14 @@ static void asciidump(dump_out* out, const char* buf, size_t len) {
     dump_out_append(out, '\'');
   }
   for (cur = beg; cur != end; ++cur) {
-    dump_out_append(
-        out, (isprint(*cur) ? *reinterpret_cast<const char*>(cur) : '.'));
+    dump_out_append(out, (isprint(*cur) ? *reinterpret_cast<const char*>(cur) : '.'));
   }
   if (!out_was_empty) {
     dump_out_append(out, '\'');
   }
 }
 
-char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags,
-                          size_t* out_len) {
+char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags, size_t* out_len) {
   dump_out out = dump_out_create();
   if (flags & GPR_DUMP_HEX) {
     hexdump(&out, buf, len);
@@ -236,8 +233,7 @@ char* gpr_strjoin(const char** strs, size_t nstrs, size_t* final_length) {
   return gpr_strjoin_sep(strs, nstrs, "", final_length);
 }
 
-char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
-                      size_t* final_length) {
+char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep, size_t* final_length) {
   const size_t sep_len = strlen(sep);
   size_t out_length = 0;
   size_t i;
@@ -279,14 +275,11 @@ int gpr_strincmp(const char* a, const char* b, size_t n) {
   return ca - cb;
 }
 
-int gpr_stricmp(const char* a, const char* b) {
-  return gpr_strincmp(a, b, SIZE_MAX);
-}
+int gpr_stricmp(const char* a, const char* b) { return gpr_strincmp(a, b, SIZE_MAX); }
 
-static void add_string_to_split(const char* beg, const char* end, char*** strs,
-                                size_t* nstrs, size_t* capstrs) {
-  char* out =
-      static_cast<char*>(gpr_malloc(static_cast<size_t>(end - beg) + 1));
+static void add_string_to_split(const char* beg, const char* end, char*** strs, size_t* nstrs,
+                                size_t* capstrs) {
+  char* out = static_cast<char*>(gpr_malloc(static_cast<size_t>(end - beg) + 1));
   memcpy(out, beg, static_cast<size_t>(end - beg));
   out[end - beg] = 0;
   if (*nstrs == *capstrs) {
@@ -297,8 +290,7 @@ static void add_string_to_split(const char* beg, const char* end, char*** strs,
   ++*nstrs;
 }
 
-void gpr_string_split(const char* input, const char* sep, char*** strs,
-                      size_t* nstrs) {
+void gpr_string_split(const char* input, const char* sep, char*** strs, size_t* nstrs) {
   const char* next;
   *strs = nullptr;
   *nstrs = 0;

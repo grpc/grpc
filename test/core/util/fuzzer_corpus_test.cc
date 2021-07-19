@@ -50,8 +50,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   grpc_slice buffer;
   squelch = false;
   leak_check = false;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(GetParam().c_str(), 0, &buffer)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(GetParam().c_str(), 0, &buffer)));
   size_t length = GRPC_SLICE_LENGTH(buffer);
   void* data = gpr_malloc(length);
   memcpy(data, GPR_SLICE_START_PTR(buffer), length);
@@ -61,13 +60,10 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   gpr_free(data);
 }
 
-class ExampleGenerator
-    : public ::testing::internal::ParamGeneratorInterface<std::string> {
+class ExampleGenerator : public ::testing::internal::ParamGeneratorInterface<std::string> {
  public:
-  ::testing::internal::ParamIteratorInterface<std::string>* Begin()
-      const override;
-  ::testing::internal::ParamIteratorInterface<std::string>* End()
-      const override;
+  ::testing::internal::ParamIteratorInterface<std::string>* Begin() const override;
+  ::testing::internal::ParamIteratorInterface<std::string>* End() const override;
 
  private:
   void Materialize() const {
@@ -80,8 +76,7 @@ class ExampleGenerator
         gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"", test_srcdir);
         std::string directory = absl::GetFlag(FLAGS_directory);
         if (test_srcdir != nullptr) {
-          directory =
-              test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
+          directory = test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
         }
         gpr_log(GPR_DEBUG, "Using corpus directory: %s", directory.c_str());
         DIR* dp;
@@ -111,11 +106,9 @@ class ExampleGenerator
   mutable std::vector<std::string> examples_;
 };
 
-class ExampleIterator
-    : public ::testing::internal::ParamIteratorInterface<std::string> {
+class ExampleIterator : public ::testing::internal::ParamIteratorInterface<std::string> {
  public:
-  ExampleIterator(const ExampleGenerator& base_,
-                  std::vector<std::string>::const_iterator begin)
+  ExampleIterator(const ExampleGenerator& base_, std::vector<std::string>::const_iterator begin)
       : base_(base_), begin_(begin), current_(begin) {}
 
   const ExampleGenerator* BaseGenerator() const override { return &base_; }
@@ -138,21 +131,18 @@ class ExampleIterator
   std::vector<std::string>::const_iterator current_;
 };
 
-::testing::internal::ParamIteratorInterface<std::string>*
-ExampleGenerator::Begin() const {
+::testing::internal::ParamIteratorInterface<std::string>* ExampleGenerator::Begin() const {
   Materialize();
   return new ExampleIterator(*this, examples_.begin());
 }
 
-::testing::internal::ParamIteratorInterface<std::string>*
-ExampleGenerator::End() const {
+::testing::internal::ParamIteratorInterface<std::string>* ExampleGenerator::End() const {
   Materialize();
   return new ExampleIterator(*this, examples_.end());
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    CorpusExamples, FuzzerCorpusTest,
-    ::testing::internal::ParamGenerator<std::string>(new ExampleGenerator));
+INSTANTIATE_TEST_SUITE_P(CorpusExamples, FuzzerCorpusTest,
+                         ::testing::internal::ParamGenerator<std::string>(new ExampleGenerator));
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

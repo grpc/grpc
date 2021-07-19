@@ -38,14 +38,12 @@ class ClientStatusDiscoveryService final
   Status StreamClientStatus(
       ServerContext* /*context*/,
       ServerReaderWriter<envoy::service::status::v3::ClientStatusResponse,
-                         envoy::service::status::v3::ClientStatusRequest>*
-          stream) override;
+                         envoy::service::status::v3::ClientStatusRequest>* stream) override;
 
   // An unary call to fetch client status.
-  Status FetchClientStatus(
-      ServerContext* /*unused*/,
-      const envoy::service::status::v3::ClientStatusRequest* /*request*/,
-      envoy::service::status::v3::ClientStatusResponse* response) override;
+  Status FetchClientStatus(ServerContext* /*unused*/,
+                           const envoy::service::status::v3::ClientStatusRequest* /*request*/,
+                           envoy::service::status::v3::ClientStatusResponse* response) override;
 };
 
 }  // namespace experimental

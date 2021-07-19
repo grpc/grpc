@@ -29,12 +29,11 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
  public:
   CronetChannelCredentialsImpl(void* engine) : engine_(engine) {}
 
-  std::shared_ptr<grpc::Channel> CreateChannelImpl(
-      const string& target, const grpc::ChannelArguments& args) override {
+  std::shared_ptr<grpc::Channel> CreateChannelImpl(const string& target,
+                                                   const grpc::ChannelArguments& args) override {
     return CreateChannelWithInterceptors(
         target, args,
-        std::vector<std::unique_ptr<
-            experimental::ClientInterceptorFactoryInterface>>());
+        std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
   }
 
   SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
@@ -42,22 +41,18 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
  private:
   std::shared_ptr<grpc::Channel> CreateChannelWithInterceptors(
       const string& target, const grpc::ChannelArguments& args,
-      std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
     return CreateChannelInternal(
-        "",
-        grpc_cronet_secure_channel_create(engine_, target.c_str(),
-                                          &channel_args, nullptr),
+        "", grpc_cronet_secure_channel_create(engine_, target.c_str(), &channel_args, nullptr),
         std::move(interceptor_creators));
   }
   void* engine_;
 };
 
 std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine) {
-  return std::shared_ptr<ChannelCredentials>(
-      new grpc::CronetChannelCredentialsImpl(engine));
+  return std::shared_ptr<ChannelCredentials>(new grpc::CronetChannelCredentialsImpl(engine));
 }
 }  // namespace grpc

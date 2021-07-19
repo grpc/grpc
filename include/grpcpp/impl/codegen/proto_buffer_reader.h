@@ -47,15 +47,12 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
  public:
   /// Constructs buffer reader from \a buffer. Will set \a status() to non ok
   /// if \a buffer is invalid (the internal buffer has not been initialized).
-  explicit ProtoBufferReader(ByteBuffer* buffer)
-      : byte_count_(0), backup_count_(0), status_() {
+  explicit ProtoBufferReader(ByteBuffer* buffer) : byte_count_(0), backup_count_(0), status_() {
     /// Implemented through a grpc_byte_buffer_reader which iterates
     /// over the slices that make up a byte buffer
     if (!buffer->Valid() ||
-        !g_core_codegen_interface->grpc_byte_buffer_reader_init(
-            &reader_, buffer->c_buffer())) {
-      status_ = Status(StatusCode::INTERNAL,
-                       "Couldn't initialize byte buffer reader");
+        !g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader_, buffer->c_buffer())) {
+      status_ = Status(StatusCode::INTERNAL, "Couldn't initialize byte buffer reader");
     }
   }
 
@@ -73,16 +70,14 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
     }
     /// If we have backed up previously, we need to return the backed-up slice
     if (backup_count_ > 0) {
-      *data = GRPC_SLICE_START_PTR(*slice_) + GRPC_SLICE_LENGTH(*slice_) -
-              backup_count_;
+      *data = GRPC_SLICE_START_PTR(*slice_) + GRPC_SLICE_LENGTH(*slice_) - backup_count_;
       GPR_CODEGEN_ASSERT(backup_count_ <= INT_MAX);
       *size = static_cast<int>(backup_count_);
       backup_count_ = 0;
       return true;
     }
     /// Otherwise get the next slice from the byte buffer reader
-    if (!g_core_codegen_interface->grpc_byte_buffer_reader_peek(&reader_,
-                                                                &slice_)) {
+    if (!g_core_codegen_interface->grpc_byte_buffer_reader_peek(&reader_, &slice_)) {
       return false;
     }
     *data = GRPC_SLICE_START_PTR(*slice_);

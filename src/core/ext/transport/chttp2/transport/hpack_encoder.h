@@ -85,10 +85,10 @@ struct grpc_chttp2_hpack_compressor {
 
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor* c);
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor* c);
-void grpc_chttp2_hpack_compressor_set_max_table_size(
-    grpc_chttp2_hpack_compressor* c, uint32_t max_table_size);
-void grpc_chttp2_hpack_compressor_set_max_usable_size(
-    grpc_chttp2_hpack_compressor* c, uint32_t max_table_size);
+void grpc_chttp2_hpack_compressor_set_max_table_size(grpc_chttp2_hpack_compressor* c,
+                                                     uint32_t max_table_size);
+void grpc_chttp2_hpack_compressor_set_max_usable_size(grpc_chttp2_hpack_compressor* c,
+                                                      uint32_t max_table_size);
 
 struct grpc_encode_header_options {
   uint32_t stream_id;
@@ -97,10 +97,8 @@ struct grpc_encode_header_options {
   size_t max_frame_size;
   grpc_transport_one_way_stats* stats;
 };
-void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
-                               grpc_mdelem** extra_headers,
-                               size_t extra_headers_size,
-                               grpc_metadata_batch* metadata,
+void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c, grpc_mdelem** extra_headers,
+                               size_t extra_headers_size, grpc_metadata_batch* metadata,
                                const grpc_encode_header_options* options,
                                grpc_slice_buffer* outbuf);
 

@@ -47,8 +47,7 @@ class SliceAllocator {
   SliceAllocator& operator=(SliceAllocator&& other) noexcept;
   ~SliceAllocator();
 
-  using AllocateCallback =
-      std::function<void(absl::Status, SliceBuffer* buffer)>;
+  using AllocateCallback = std::function<void(absl::Status, SliceBuffer* buffer)>;
   /// Requests \a size bytes from gRPC, and populates \a dest with the allocated
   /// slices. Ownership of the \a SliceBuffer is not transferred.
   ///
@@ -57,8 +56,7 @@ class SliceAllocator {
   /// interrupted to attempt to reclaim memory from participating gRPC
   /// internals. When there is sufficient memory available, slice allocation
   /// proceeds as normal.
-  absl::Status Allocate(size_t size, SliceBuffer* dest,
-                        SliceAllocator::AllocateCallback cb);
+  absl::Status Allocate(size_t size, SliceBuffer* dest, SliceAllocator::AllocateCallback cb);
 
  private:
   grpc_resource_user* resource_user_;

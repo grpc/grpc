@@ -65,22 +65,18 @@ struct grpc_end2end_test_config {
 
   grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args* client_args,
                                               grpc_channel_args* server_args);
-  void (*init_client)(grpc_end2end_test_fixture* f,
-                      grpc_channel_args* client_args);
-  void (*init_server)(grpc_end2end_test_fixture* f,
-                      grpc_channel_args* server_args);
+  void (*init_client)(grpc_end2end_test_fixture* f, grpc_channel_args* client_args);
+  void (*init_server)(grpc_end2end_test_fixture* f, grpc_channel_args* server_args);
   void (*tear_down_data)(grpc_end2end_test_fixture* f);
 };
 
 void grpc_end2end_tests_pre_init(void);
 void grpc_end2end_tests(int argc, char** argv, grpc_end2end_test_config config);
 
-const char* get_host_override_string(const char* str,
-                                     grpc_end2end_test_config config);
+const char* get_host_override_string(const char* str, grpc_end2end_test_config config);
 /* Returns a pointer to a statically allocated slice: future invocations
    overwrite past invocations, not threadsafe, etc... */
-const grpc_slice* get_host_override_slice(const char* str,
-                                          grpc_end2end_test_config config);
+const grpc_slice* get_host_override_slice(const char* str, grpc_end2end_test_config config);
 
 void validate_host_override_string(const char* pattern, grpc_slice str,
                                    grpc_end2end_test_config config);

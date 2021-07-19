@@ -65,8 +65,7 @@ struct async_connect {
   grpc_channel_args* channel_args;
 };
 
-static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
-                                        int fd,
+static grpc_error_handle prepare_socket(const grpc_resolved_address* addr, int fd,
                                         const grpc_channel_args* channel_args) {
   grpc_error_handle err = GRPC_ERROR_NONE;
 
@@ -81,15 +80,13 @@ static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
     if (err != GRPC_ERROR_NONE) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
-    err = grpc_set_socket_tcp_user_timeout(fd, channel_args,
-                                           true /* is_client */);
+    err = grpc_set_socket_tcp_user_timeout(fd, channel_args, true /* is_client */);
     if (err != GRPC_ERROR_NONE) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_CLIENT_CONNECTION_USAGE,
-                                          channel_args);
+  err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_CLIENT_CONNECTION_USAGE, channel_args);
   if (err != GRPC_ERROR_NONE) goto error;
 
   goto done;
@@ -106,13 +103,12 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   int done;
   async_connect* ac = static_cast<async_connect*>(acp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s", ac->addr_str.c_str(),
+            grpc_error_std_string(error).c_str());
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
-    grpc_fd_shutdown(
-        ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
+    grpc_fd_shutdown(ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -123,8 +119,8 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   }
 }
 
-grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str) {
+grpc_endpoint* grpc_tcp_client_create_from_fd(grpc_fd* fd, const grpc_channel_args* channel_args,
+                                              const char* addr_str) {
   return grpc_tcp_create(fd, channel_args, addr_str);
 }
 
@@ -141,8 +137,8 @@ static void on_writable(void* acp, grpc_error_handle error) {
   GRPC_ERROR_REF(error);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s", ac->addr_str.c_str(),
+            grpc_error_std_string(error).c_str());
   }
 
   gpr_mu_lock(&ac->mu);
@@ -155,16 +151,14 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
   if (error != GRPC_ERROR_NONE) {
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                           grpc_slice_from_static_string("Timeout occurred"));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                               grpc_slice_from_static_string("Timeout occurred"));
     goto finish;
   }
 
   do {
     so_error_size = sizeof(so_error);
-    err = getsockopt(grpc_fd_wrapped_fd(fd), SOL_SOCKET, SO_ERROR, &so_error,
-                     &so_error_size);
+    err = getsockopt(grpc_fd_wrapped_fd(fd), SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
     error = GRPC_OS_ERROR(errno, "getsockopt");
@@ -174,8 +168,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   switch (so_error) {
     case 0:
       grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args,
-                                           ac->addr_str.c_str());
+      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args, ac->addr_str.c_str());
       fd = nullptr;
       break;
     case ENOBUFS:
@@ -223,11 +216,10 @@ finish:
     grpc_slice str;
     bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
     GPR_ASSERT(ret);
-    std::string description = absl::StrCat("Failed to connect to remote host: ",
-                                           grpc_core::StringViewFromSlice(str));
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
-                           grpc_slice_from_cpp_string(std::move(description)));
+    std::string description =
+        absl::StrCat("Failed to connect to remote host: ", grpc_core::StringViewFromSlice(str));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                               grpc_slice_from_cpp_string(std::move(description)));
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
                                addr_str_slice /* takes ownership */);
   } else {
@@ -246,9 +238,9 @@ finish:
   grpc_core::Executor::Run(closure, error);
 }
 
-grpc_error_handle grpc_tcp_client_prepare_fd(
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_resolved_address* mapped_addr, int* fd) {
+grpc_error_handle grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
+                                             const grpc_resolved_address* addr,
+                                             grpc_resolved_address* mapped_addr, int* fd) {
   grpc_dualstack_mode dsmode;
   grpc_error_handle error;
   *fd = -1;
@@ -258,8 +250,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
     /* addr is v4 mapped to v6 or v6. */
     memcpy(mapped_addr, addr, sizeof(*mapped_addr));
   }
-  error =
-      grpc_create_dualstack_socket(mapped_addr, SOCK_STREAM, 0, &dsmode, fd);
+  error = grpc_create_dualstack_socket(mapped_addr, SOCK_STREAM, 0, &dsmode, fd);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
@@ -269,37 +260,34 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
       memcpy(mapped_addr, addr, sizeof(*mapped_addr));
     }
   }
-  if ((error = prepare_socket(mapped_addr, *fd, channel_args)) !=
-      GRPC_ERROR_NONE) {
+  if ((error = prepare_socket(mapped_addr, *fd, channel_args)) != GRPC_ERROR_NONE) {
     return error;
   }
   return GRPC_ERROR_NONE;
 }
 
-void grpc_tcp_client_create_from_prepared_fd(
-    grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_millis deadline, grpc_endpoint** ep) {
+void grpc_tcp_client_create_from_prepared_fd(grpc_pollset_set* interested_parties,
+                                             grpc_closure* closure, const int fd,
+                                             const grpc_channel_args* channel_args,
+                                             const grpc_resolved_address* addr,
+                                             grpc_millis deadline, grpc_endpoint** ep) {
   int err;
   do {
-    err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
-                  addr->len);
+    err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr), addr->len);
   } while (err < 0 && errno == EINTR);
 
   std::string name = absl::StrCat("tcp-client:", grpc_sockaddr_to_uri(addr));
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
 
   if (err >= 0) {
-    *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args,
-                                         grpc_sockaddr_to_uri(addr).c_str());
+    *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, grpc_sockaddr_to_uri(addr).c_str());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
-    error = grpc_error_set_str(
-        error, GRPC_ERROR_STR_TARGET_ADDRESS,
-        grpc_slice_from_cpp_string(grpc_sockaddr_to_uri(addr)));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
+                               grpc_slice_from_cpp_string(grpc_sockaddr_to_uri(addr)));
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
@@ -315,13 +303,12 @@ void grpc_tcp_client_create_from_prepared_fd(
   ac->addr_str = grpc_sockaddr_to_uri(addr);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
-  GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac, grpc_schedule_on_exec_ctx);
   ac->channel_args = grpc_channel_args_copy(channel_args);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
-            ac->addr_str.c_str(), fdobj);
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p", ac->addr_str.c_str(),
+            fdobj);
   }
 
   gpr_mu_lock(&ac->mu);
@@ -332,22 +319,19 @@ void grpc_tcp_client_create_from_prepared_fd(
 }
 
 static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_millis deadline) {
+                        grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+                        const grpc_resolved_address* addr, grpc_millis deadline) {
   grpc_resolved_address mapped_addr;
   int fd = -1;
   grpc_error_handle error;
   *ep = nullptr;
-  if ((error = grpc_tcp_client_prepare_fd(channel_args, addr, &mapped_addr,
-                                          &fd)) != GRPC_ERROR_NONE) {
+  if ((error = grpc_tcp_client_prepare_fd(channel_args, addr, &mapped_addr, &fd)) !=
+      GRPC_ERROR_NONE) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
   }
-  grpc_tcp_client_create_from_prepared_fd(interested_parties, closure, fd,
-                                          channel_args, &mapped_addr, deadline,
-                                          ep);
+  grpc_tcp_client_create_from_prepared_fd(interested_parties, closure, fd, channel_args,
+                                          &mapped_addr, deadline, ep);
 }
 
 grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect};

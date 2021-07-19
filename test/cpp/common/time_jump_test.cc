@@ -44,12 +44,11 @@ void run_cmd(const char* cmd) { std::system(cmd); }
 #else
 void run_cmd(const char* cmd) {
   pid_t pid;
-  const char* argv[] = {const_cast<const char*>("sh"),
-                        const_cast<const char*>("-c"), cmd, nullptr};
+  const char* argv[] = {const_cast<const char*>("sh"), const_cast<const char*>("-c"), cmd, nullptr};
   int status;
 
-  status = posix_spawn(&pid, const_cast<const char*>("/bin/sh"), nullptr,
-                       nullptr, const_cast<char**>(argv), environ);
+  status = posix_spawn(&pid, const_cast<const char*>("/bin/sh"), nullptr, nullptr,
+                       const_cast<char**>(argv), environ);
   if (status == 0) {
     if (waitpid(pid, &status, 0) == -1) {
       perror("waitpid");
@@ -82,18 +81,16 @@ class TimeJumpTest : public ::testing::TestWithParam<std::string> {
 std::vector<std::string> CreateTestScenarios() {
   return {"-1M", "+1M", "-1H", "+1H", "-1d", "+1d", "-1y", "+1y"};
 }
-INSTANTIATE_TEST_SUITE_P(TimeJump, TimeJumpTest,
-                         ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(TimeJump, TimeJumpTest, ::testing::ValuesIn(CreateTestScenarios()));
 
 TEST_P(TimeJumpTest, TimerRunning) {
   grpc_core::ExecCtx exec_ctx;
   grpc_timer timer;
-  grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 3000,
-                  GRPC_CLOSURE_CREATE(
-                      [](void*, grpc_error_handle error) {
-                        GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
-                      },
-                      nullptr, grpc_schedule_on_exec_ctx));
+  grpc_timer_init(
+      &timer, grpc_core::ExecCtx::Get()->Now() + 3000,
+      GRPC_CLOSURE_CREATE(
+          [](void*, grpc_error_handle error) { GPR_ASSERT(error == GRPC_ERROR_CANCELLED); },
+          nullptr, grpc_schedule_on_exec_ctx));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   std::ostringstream cmd;
   cmd << "sudo date `date -v" << GetParam() << " \"+%m%d%H%M%y\"`";
@@ -121,13 +118,11 @@ TEST_P(TimeJumpTest, TimedWait) {
     bool timedout = cond.WaitWithTimeout(&mu, absl::Milliseconds(kWaitTimeMs));
     gpr_timespec after = gpr_now(GPR_CLOCK_MONOTONIC);
     int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(after, before));
-    gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d", timedout,
-            elapsed_ms);
+    gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d", timedout, elapsed_ms);
     GPR_ASSERT(1 == timedout);
-    GPR_ASSERT(1 ==
-               gpr_time_similar(gpr_time_sub(after, before),
-                                gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
-                                gpr_time_from_millis(50, GPR_TIMESPAN)));
+    GPR_ASSERT(1 == gpr_time_similar(gpr_time_sub(after, before),
+                                     gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
+                                     gpr_time_from_millis(50, GPR_TIMESPAN)));
 
     thd.join();
   }

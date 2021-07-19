@@ -46,24 +46,21 @@ typedef struct {
   grpc_closure* write_cb;
 } trickle_endpoint;
 
-static void te_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool urgent) {
+static void te_read(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb, bool urgent) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_read(te->wrapped, slices, cb, urgent);
 }
 
 static void maybe_call_write_cb_locked(trickle_endpoint* te) {
   if (te->write_cb != nullptr &&
-      (te->error != GRPC_ERROR_NONE ||
-       te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, te->write_cb,
-                            GRPC_ERROR_REF(te->error));
+      (te->error != GRPC_ERROR_NONE || te->write_buffer.length <= WRITE_BUFFER_SIZE)) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, te->write_cb, GRPC_ERROR_REF(te->error));
     te->write_cb = nullptr;
   }
 }
 
-static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* /*arg*/) {
+static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+                     void* /*arg*/) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   GPR_ASSERT(te->write_cb == nullptr);
@@ -71,8 +68,7 @@ static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     te->last_write = gpr_now(GPR_CLOCK_MONOTONIC);
   }
   for (size_t i = 0; i < slices->count; i++) {
-    grpc_slice_buffer_add(&te->write_buffer,
-                          grpc_slice_copy(slices->slices[i]));
+    grpc_slice_buffer_add(&te->write_buffer, grpc_slice_copy(slices->slices[i]));
   }
   te->write_cb = cb;
   maybe_call_write_cb_locked(te);
@@ -84,14 +80,12 @@ static void te_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {
   grpc_endpoint_add_to_pollset(te->wrapped, pollset);
 }
 
-static void te_add_to_pollset_set(grpc_endpoint* ep,
-                                  grpc_pollset_set* pollset_set) {
+static void te_add_to_pollset_set(grpc_endpoint* ep, grpc_pollset_set* pollset_set) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_add_to_pollset_set(te->wrapped, pollset_set);
 }
 
-static void te_delete_from_pollset_set(grpc_endpoint* ep,
-                                       grpc_pollset_set* pollset_set) {
+static void te_delete_from_pollset_set(grpc_endpoint* ep, grpc_pollset_set* pollset_set) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_delete_from_pollset_set(te->wrapped, pollset_set);
 }
@@ -160,10 +154,8 @@ static const grpc_endpoint_vtable vtable = {te_read,
                                             te_get_fd,
                                             te_can_track_err};
 
-grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
-                                            double bytes_per_second) {
-  trickle_endpoint* te =
-      static_cast<trickle_endpoint*>(gpr_malloc(sizeof(*te)));
+grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap, double bytes_per_second) {
+  trickle_endpoint* te = static_cast<trickle_endpoint*>(gpr_malloc(sizeof(*te)));
   te->base.vtable = &vtable;
   te->wrapped = wrap;
   te->bytes_per_second = bytes_per_second;
@@ -189,15 +181,13 @@ size_t grpc_trickle_endpoint_trickle(grpc_endpoint* ep) {
     size_t bytes = static_cast<size_t>(te->bytes_per_second * elapsed);
     // gpr_log(GPR_DEBUG, "%lf elapsed --> %" PRIdPTR " bytes", elapsed, bytes);
     if (bytes > 0) {
-      grpc_slice_buffer_move_first(&te->write_buffer,
-                                   GPR_MIN(bytes, te->write_buffer.length),
+      grpc_slice_buffer_move_first(&te->write_buffer, GPR_MIN(bytes, te->write_buffer.length),
                                    &te->writing_buffer);
       te->writing = true;
       te->last_write = now;
-      grpc_endpoint_write(
-          te->wrapped, &te->writing_buffer,
-          GRPC_CLOSURE_CREATE(te_finish_write, te, grpc_schedule_on_exec_ctx),
-          nullptr);
+      grpc_endpoint_write(te->wrapped, &te->writing_buffer,
+                          GRPC_CLOSURE_CREATE(te_finish_write, te, grpc_schedule_on_exec_ctx),
+                          nullptr);
       maybe_call_write_cb_locked(te);
     }
   }

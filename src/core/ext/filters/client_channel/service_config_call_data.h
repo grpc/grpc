@@ -37,12 +37,11 @@ namespace grpc_core {
 /// easily access method and global parameters for the call.
 class ServiceConfigCallData {
  public:
-  ServiceConfigCallData(
-      RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
-      ConfigSelector::CallAttributes call_attributes,
-      ConfigSelector::CallDispatchController* call_dispatch_controller,
-      grpc_call_context_element* call_context)
+  ServiceConfigCallData(RefCountedPtr<ServiceConfig> service_config,
+                        const ServiceConfigParser::ParsedConfigVector* method_configs,
+                        ConfigSelector::CallAttributes call_attributes,
+                        ConfigSelector::CallDispatchController* call_dispatch_controller,
+                        grpc_call_context_element* call_context)
       : service_config_(std::move(service_config)),
         method_configs_(method_configs),
         call_attributes_(std::move(call_attributes)),
@@ -51,18 +50,16 @@ class ServiceConfigCallData {
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
   }
 
-  ServiceConfigCallData(
-      RefCountedPtr<ServiceConfig> service_config,
-      const ServiceConfigParser::ParsedConfigVector* method_configs,
-      grpc_call_context_element* call_context)
-      : ServiceConfigCallData(std::move(service_config), method_configs, {},
-                              nullptr, call_context) {}
+  ServiceConfigCallData(RefCountedPtr<ServiceConfig> service_config,
+                        const ServiceConfigParser::ParsedConfigVector* method_configs,
+                        grpc_call_context_element* call_context)
+      : ServiceConfigCallData(std::move(service_config), method_configs, {}, nullptr,
+                              call_context) {}
 
   ServiceConfig* service_config() { return service_config_.get(); }
 
   ServiceConfigParser::ParsedConfig* GetMethodParsedConfig(size_t index) const {
-    return method_configs_ != nullptr ? (*method_configs_)[index].get()
-                                      : nullptr;
+    return method_configs_ != nullptr ? (*method_configs_)[index].get() : nullptr;
   }
 
   ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(size_t index) const {
@@ -84,8 +81,7 @@ class ServiceConfigCallData {
   // Also ensures that we call Commit() at most once, which allows the
   // client channel code to call Commit() when the call is complete in case
   // it wasn't called earlier, without needing to know whether or not it was.
-  class SingleCommitCallDispatchController
-      : public ConfigSelector::CallDispatchController {
+  class SingleCommitCallDispatchController : public ConfigSelector::CallDispatchController {
    public:
     explicit SingleCommitCallDispatchController(
         ConfigSelector::CallDispatchController* call_dispatch_controller)

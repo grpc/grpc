@@ -50,8 +50,7 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
 class MessageSizeParser : public ServiceConfigParser::Parser {
  public:
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* /*args*/, const Json& json,
-      grpc_error_handle* error) override;
+      const grpc_channel_args* /*args*/, const Json& json, grpc_error_handle* error) override;
 
   static void Register();
 

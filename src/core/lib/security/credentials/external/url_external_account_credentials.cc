@@ -23,12 +23,10 @@
 
 namespace grpc_core {
 
-RefCountedPtr<UrlExternalAccountCredentials>
-UrlExternalAccountCredentials::Create(Options options,
-                                      std::vector<std::string> scopes,
-                                      grpc_error_handle* error) {
-  auto creds = MakeRefCounted<UrlExternalAccountCredentials>(
-      std::move(options), std::move(scopes), error);
+RefCountedPtr<UrlExternalAccountCredentials> UrlExternalAccountCredentials::Create(
+    Options options, std::vector<std::string> scopes, grpc_error_handle* error) {
+  auto creds =
+      MakeRefCounted<UrlExternalAccountCredentials>(std::move(options), std::move(scopes), error);
   if (*error == GRPC_ERROR_NONE) {
     return creds;
   } else {
@@ -36,8 +34,9 @@ UrlExternalAccountCredentials::Create(Options options,
   }
 }
 
-UrlExternalAccountCredentials::UrlExternalAccountCredentials(
-    Options options, std::vector<std::string> scopes, grpc_error_handle* error)
+UrlExternalAccountCredentials::UrlExternalAccountCredentials(Options options,
+                                                             std::vector<std::string> scopes,
+                                                             grpc_error_handle* error)
     : ExternalAccountCredentials(options, std::move(scopes)) {
   auto it = options.credential_source.object_value().find("url");
   if (it == options.credential_source.object_value().end()) {
@@ -45,15 +44,13 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
     return;
   }
   if (it->second.type() != Json::Type::STRING) {
-    *error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("url field must be a string.");
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("url field must be a string.");
     return;
   }
   absl::StatusOr<URI> tmp_url = URI::Parse(it->second.string_value());
   if (!tmp_url.ok()) {
     *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Invalid credential source url. Error: %s",
-                        tmp_url.status().ToString())
+        absl::StrFormat("Invalid credential source url. Error: %s", tmp_url.status().ToString())
             .c_str());
     return;
   }
@@ -83,13 +80,11 @@ UrlExternalAccountCredentials::UrlExternalAccountCredentials(
     }
     auto format_it = format_json.object_value().find("type");
     if (format_it == format_json.object_value().end()) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "format.type field not present.");
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("format.type field not present.");
       return;
     }
     if (format_it->second.type() != Json::Type::STRING) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "format.type field must be a string.");
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("format.type field must be a string.");
       return;
     }
     format_type_ = format_it->second.string_value();
@@ -115,10 +110,9 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* ctx, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
   if (ctx == nullptr) {
-    FinishRetrieveSubjectToken(
-        "",
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Missing HTTPRequestContext to start subject token retrieval."));
+    FinishRetrieveSubjectToken("",
+                               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "Missing HTTPRequestContext to start subject token retrieval."));
     return;
   }
   ctx_ = ctx;
@@ -129,8 +123,8 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   request.http.path = gpr_strdup(url_full_path_.c_str());
   grpc_http_header* headers = nullptr;
   request.http.hdr_count = headers_.size();
-  headers = static_cast<grpc_http_header*>(
-      gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
+  headers =
+      static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header) * request.http.hdr_count));
   int i = 0;
   for (auto const& header : headers_) {
     headers[i].key = gpr_strdup(header.first.c_str());
@@ -138,55 +132,45 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
     ++i;
   }
   request.http.hdrs = headers;
-  request.handshaker =
-      url_.scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
+  request.handshaker = url_.scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create("external_account_credentials");
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
-  grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
-                   &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
+  grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota, &request, ctx_->deadline,
+                   &ctx_->closure, &ctx_->response);
   grpc_resource_quota_unref_internal(resource_quota);
   grpc_http_request_destroy(&request.http);
 }
 
-void UrlExternalAccountCredentials::OnRetrieveSubjectToken(
-    void* arg, grpc_error_handle error) {
-  UrlExternalAccountCredentials* self =
-      static_cast<UrlExternalAccountCredentials*>(arg);
+void UrlExternalAccountCredentials::OnRetrieveSubjectToken(void* arg, grpc_error_handle error) {
+  UrlExternalAccountCredentials* self = static_cast<UrlExternalAccountCredentials*>(arg);
   self->OnRetrieveSubjectTokenInternal(GRPC_ERROR_REF(error));
 }
 
-void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
-    grpc_error_handle error) {
+void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     FinishRetrieveSubjectToken("", error);
     return;
   }
-  absl::string_view response_body(ctx_->response.body,
-                                  ctx_->response.body_length);
+  absl::string_view response_body(ctx_->response.body, ctx_->response.body_length);
   if (format_type_ == "json") {
     grpc_error_handle error = GRPC_ERROR_NONE;
     Json response_json = Json::Parse(response_body, &error);
-    if (error != GRPC_ERROR_NONE ||
-        response_json.type() != Json::Type::OBJECT) {
-      FinishRetrieveSubjectToken(
-          "", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "The format of response is not a valid json object."));
+    if (error != GRPC_ERROR_NONE || response_json.type() != Json::Type::OBJECT) {
+      FinishRetrieveSubjectToken("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                         "The format of response is not a valid json object."));
       return;
     }
-    auto response_it =
-        response_json.object_value().find(format_subject_token_field_name_);
+    auto response_it = response_json.object_value().find(format_subject_token_field_name_);
     if (response_it == response_json.object_value().end()) {
-      FinishRetrieveSubjectToken("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                         "Subject token field not present."));
+      FinishRetrieveSubjectToken(
+          "", GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subject token field not present."));
       return;
     }
     if (response_it->second.type() != Json::Type::STRING) {
-      FinishRetrieveSubjectToken("",
-                                 GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "Subject token field must be a string."));
+      FinishRetrieveSubjectToken(
+          "", GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subject token field must be a string."));
       return;
     }
     FinishRetrieveSubjectToken(response_it->second.string_value(), error);
@@ -195,8 +179,8 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
   FinishRetrieveSubjectToken(std::string(response_body), GRPC_ERROR_NONE);
 }
 
-void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
-    std::string subject_token, grpc_error_handle error) {
+void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(std::string subject_token,
+                                                               grpc_error_handle error) {
   // Reset context
   ctx_ = nullptr;
   // Move object state into local variables.

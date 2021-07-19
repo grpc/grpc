@@ -76,10 +76,8 @@ class CFStreamHandle : public GrpcLibraryInitHolder {
 };
 
 #ifdef DEBUG
-#define CFSTREAM_HANDLE_REF(handle, reason) \
-  (handle)->Ref(__FILE__, __LINE__, (reason))
-#define CFSTREAM_HANDLE_UNREF(handle, reason) \
-  (handle)->Unref(__FILE__, __LINE__, (reason))
+#define CFSTREAM_HANDLE_REF(handle, reason) (handle)->Ref(__FILE__, __LINE__, (reason))
+#define CFSTREAM_HANDLE_UNREF(handle, reason) (handle)->Unref(__FILE__, __LINE__, (reason))
 #else
 #define CFSTREAM_HANDLE_REF(handle, reason) (handle)->Ref()
 #define CFSTREAM_HANDLE_UNREF(handle, reason) (handle)->Unref()

@@ -32,9 +32,8 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
-extern grpc_core::DebugOnlyTraceFlag grpc_fd_trace; /* Disabled by default */
-extern grpc_core::DebugOnlyTraceFlag
-    grpc_polling_trace; /* Disabled by default */
+extern grpc_core::DebugOnlyTraceFlag grpc_fd_trace;      /* Disabled by default */
+extern grpc_core::DebugOnlyTraceFlag grpc_polling_trace; /* Disabled by default */
 
 #define GRPC_FD_TRACE(format, ...)                        \
   if (GRPC_TRACE_FLAG_ENABLED(grpc_fd_trace)) {           \
@@ -50,8 +49,7 @@ typedef struct grpc_event_engine_vtable {
 
   grpc_fd* (*fd_create)(int fd, const char* name, bool track_err);
   int (*fd_wrapped_fd)(grpc_fd* fd);
-  void (*fd_orphan)(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                    const char* reason);
+  void (*fd_orphan)(grpc_fd* fd, grpc_closure* on_done, int* release_fd, const char* reason);
   void (*fd_shutdown)(grpc_fd* fd, grpc_error_handle why);
   void (*fd_notify_on_read)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_write)(grpc_fd* fd, grpc_closure* closure);
@@ -64,37 +62,30 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_init)(grpc_pollset* pollset, gpr_mu** mu);
   void (*pollset_shutdown)(grpc_pollset* pollset, grpc_closure* closure);
   void (*pollset_destroy)(grpc_pollset* pollset);
-  grpc_error_handle (*pollset_work)(grpc_pollset* pollset,
-                                    grpc_pollset_worker** worker,
+  grpc_error_handle (*pollset_work)(grpc_pollset* pollset, grpc_pollset_worker** worker,
                                     grpc_millis deadline);
-  grpc_error_handle (*pollset_kick)(grpc_pollset* pollset,
-                                    grpc_pollset_worker* specific_worker);
+  grpc_error_handle (*pollset_kick)(grpc_pollset* pollset, grpc_pollset_worker* specific_worker);
   void (*pollset_add_fd)(grpc_pollset* pollset, struct grpc_fd* fd);
 
   grpc_pollset_set* (*pollset_set_create)(void);
   void (*pollset_set_destroy)(grpc_pollset_set* pollset_set);
-  void (*pollset_set_add_pollset)(grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset);
-  void (*pollset_set_del_pollset)(grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset);
-  void (*pollset_set_add_pollset_set)(grpc_pollset_set* bag,
-                                      grpc_pollset_set* item);
-  void (*pollset_set_del_pollset_set)(grpc_pollset_set* bag,
-                                      grpc_pollset_set* item);
+  void (*pollset_set_add_pollset)(grpc_pollset_set* pollset_set, grpc_pollset* pollset);
+  void (*pollset_set_del_pollset)(grpc_pollset_set* pollset_set, grpc_pollset* pollset);
+  void (*pollset_set_add_pollset_set)(grpc_pollset_set* bag, grpc_pollset_set* item);
+  void (*pollset_set_del_pollset_set)(grpc_pollset_set* bag, grpc_pollset_set* item);
   void (*pollset_set_add_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
   void (*pollset_set_del_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
 
   bool (*is_any_background_poller_thread)(void);
   void (*shutdown_background_closure)(void);
   void (*shutdown_engine)(void);
-  bool (*add_closure_to_background_poller)(grpc_closure* closure,
-                                           grpc_error_handle error);
+  bool (*add_closure_to_background_poller)(grpc_closure* closure, grpc_error_handle error);
 } grpc_event_engine_vtable;
 
 /* register a new event engine factory */
-void grpc_register_event_engine_factory(
-    const char* name, const grpc_event_engine_vtable* (*factory)(bool),
-    bool add_at_head);
+void grpc_register_event_engine_factory(const char* name,
+                                        const grpc_event_engine_vtable* (*factory)(bool),
+                                        bool add_at_head);
 
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
@@ -132,8 +123,7 @@ int grpc_fd_wrapped_fd(grpc_fd* fd);
    Requires: *fd initialized; no outstanding notify_on_read or
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
-void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                    const char* reason);
+void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd, const char* reason);
 
 /* Has grpc_fd_shutdown been called on an fd? */
 bool grpc_fd_is_shutdown(grpc_fd* fd);
@@ -194,8 +184,7 @@ bool grpc_is_any_background_poller_thread();
 /* Returns true if the closure is registered into the background poller. Note
  * that the closure may or may not run yet when this function returns, and the
  * closure should not be blocking or long-running. */
-bool grpc_add_closure_to_background_poller(grpc_closure* closure,
-                                           grpc_error_handle error);
+bool grpc_add_closure_to_background_poller(grpc_closure* closure, grpc_error_handle error);
 
 /* Shut down all the closures registered in the background poller. */
 void grpc_shutdown_background_closure();

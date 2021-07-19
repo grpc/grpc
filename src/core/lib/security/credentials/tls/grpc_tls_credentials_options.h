@@ -30,13 +30,10 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
-struct grpc_tls_error_details
-    : public grpc_core::RefCounted<grpc_tls_error_details> {
+struct grpc_tls_error_details : public grpc_core::RefCounted<grpc_tls_error_details> {
  public:
   grpc_tls_error_details() : error_details_("") {}
-  void set_error_details(const char* err_details) {
-    error_details_ = err_details;
-  }
+  void set_error_details(const char* err_details) { error_details_ = err_details; }
   const std::string& error_details() { return error_details_; }
 
  private:
@@ -49,10 +46,8 @@ struct grpc_tls_server_authorization_check_config
  public:
   grpc_tls_server_authorization_check_config(
       const void* config_user_data,
-      int (*schedule)(void* config_user_data,
-                      grpc_tls_server_authorization_check_arg* arg),
-      void (*cancel)(void* config_user_data,
-                     grpc_tls_server_authorization_check_arg* arg),
+      int (*schedule)(void* config_user_data, grpc_tls_server_authorization_check_arg* arg),
+      void (*cancel)(void* config_user_data, grpc_tls_server_authorization_check_arg* arg),
       void (*destruct)(void* config_user_data));
   ~grpc_tls_server_authorization_check_config() override;
 
@@ -83,12 +78,10 @@ struct grpc_tls_server_authorization_check_config
      Application then invokes \a arg->cb when processing is completed. Note that
      \a arg->cb cannot be invoked before \a schedule() returns.
   */
-  int (*schedule_)(void* config_user_data,
-                   grpc_tls_server_authorization_check_arg* arg);
+  int (*schedule_)(void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
 
   /** callback function for canceling a server authorization check request. */
-  void (*cancel_)(void* config_user_data,
-                  grpc_tls_server_authorization_check_arg* arg);
+  void (*cancel_)(void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
 
   /** callback function for cleaning up any data associated with server
      authorization check config. */
@@ -98,22 +91,18 @@ struct grpc_tls_server_authorization_check_config
 // Contains configurable options specified by callers to configure their certain
 // security features supported in TLS.
 // TODO(ZhenLian): consider making this not ref-counted.
-struct grpc_tls_credentials_options
-    : public grpc_core::RefCounted<grpc_tls_credentials_options> {
+struct grpc_tls_credentials_options : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
   ~grpc_tls_credentials_options() override = default;
 
   // Getters for member fields.
-  grpc_ssl_client_certificate_request_type cert_request_type() const {
-    return cert_request_type_;
-  }
+  grpc_ssl_client_certificate_request_type cert_request_type() const { return cert_request_type_; }
   grpc_tls_server_verification_option server_verification_option() const {
     return server_verification_option_;
   }
   grpc_tls_version min_tls_version() const { return min_tls_version_; }
   grpc_tls_version max_tls_version() const { return max_tls_version_; }
-  grpc_tls_server_authorization_check_config*
-  server_authorization_check_config() const {
+  grpc_tls_server_authorization_check_config* server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
   // Returns the distributor from provider_ if it is set, nullptr otherwise.
@@ -127,28 +116,21 @@ struct grpc_tls_credentials_options
   const std::string& identity_cert_name() { return identity_cert_name_; }
 
   // Setters for member fields.
-  void set_cert_request_type(
-      const grpc_ssl_client_certificate_request_type type) {
+  void set_cert_request_type(const grpc_ssl_client_certificate_request_type type) {
     cert_request_type_ = type;
   }
   void set_server_verification_option(
       const grpc_tls_server_verification_option server_verification_option) {
     server_verification_option_ = server_verification_option;
   }
-  void set_min_tls_version(grpc_tls_version min_tls_version) {
-    min_tls_version_ = min_tls_version;
-  }
-  void set_max_tls_version(grpc_tls_version max_tls_version) {
-    max_tls_version_ = max_tls_version;
-  }
+  void set_min_tls_version(grpc_tls_version min_tls_version) { min_tls_version_ = min_tls_version; }
+  void set_max_tls_version(grpc_tls_version max_tls_version) { max_tls_version_ = max_tls_version; }
   void set_server_authorization_check_config(
-      grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
-          config) {
+      grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config> config) {
     server_authorization_check_config_ = std::move(config);
   }
   // Sets the provider in the options.
-  void set_certificate_provider(
-      grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
+  void set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
     provider_ = std::move(provider);
   }
   // If need to watch the updates of root certificates with name
@@ -177,8 +159,7 @@ struct grpc_tls_credentials_options
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
-  grpc_tls_server_verification_option server_verification_option_ =
-      GRPC_TLS_SERVER_VERIFICATION;
+  grpc_tls_server_verification_option server_verification_option_ = GRPC_TLS_SERVER_VERIFICATION;
   grpc_tls_version min_tls_version_ = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>

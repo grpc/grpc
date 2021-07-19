@@ -56,8 +56,7 @@ void gsec_test_copy(const uint8_t* src, uint8_t** des, size_t source_len) {
   }
 }
 
-void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des,
-                                          size_t source_len) {
+void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des, size_t source_len) {
   if (src != nullptr && des != nullptr) {
     *des = static_cast<uint8_t*>(gpr_malloc(source_len));
     memcpy(*des, src, source_len);
@@ -72,10 +71,8 @@ void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des,
   }
 }
 
-int gsec_test_expect_compare_code_and_substr(grpc_status_code status1,
-                                             grpc_status_code status2,
-                                             const char* msg1,
-                                             const char* msg2) {
+int gsec_test_expect_compare_code_and_substr(grpc_status_code status1, grpc_status_code status2,
+                                             const char* msg1, const char* msg2) {
   int failure = 1;
   if (status1 != status2) {
     fprintf(stderr, "Status %d does not equal %d.\n", status1, status2);

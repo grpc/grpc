@@ -42,9 +42,7 @@
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
-static gpr_timespec test_deadline(void) {
-  return grpc_timeout_seconds_to_deadline(100);
-}
+static gpr_timespec test_deadline(void) { return grpc_timeout_seconds_to_deadline(100); }
 
 typedef struct args_struct {
   grpc_core::Thread thd;
@@ -77,8 +75,7 @@ void args_finish(args_struct* args) {
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure do_nothing_cb;
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(args->pollset, &do_nothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
   grpc_core::ExecCtx::Get()->Flush();
@@ -87,8 +84,7 @@ void args_finish(args_struct* args) {
 }
 
 static grpc_millis n_sec_deadline(int seconds) {
-  return grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void actually_poll(void* argsp) {
@@ -105,9 +101,8 @@ static void actually_poll(void* argsp) {
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
       GPR_ASSERT(time_left >= 0);
       grpc_pollset_worker* worker = nullptr;
-      GRPC_LOG_IF_ERROR(
-          "pollset_work",
-          grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
+      GRPC_LOG_IF_ERROR("pollset_work",
+                        grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
     }
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
@@ -141,10 +136,9 @@ static void resolve_address_must_succeed(const char* target) {
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
-  grpc_resolve_address(
-      target, "1" /* port number */, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  grpc_resolve_address(target, "1" /* port number */, args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   args_finish(&args);
 }
@@ -157,9 +151,8 @@ static void test_named_and_numeric_scope_ids(void) {
   for (size_t i = 1; i < 65536; i++) {
     if (if_indextoname(i, arbitrary_interface_name) != nullptr) {
       gpr_log(GPR_DEBUG,
-              "Found interface at index %" PRIuPTR
-              " named %s. Will use this for the test",
-              i, arbitrary_interface_name);
+              "Found interface at index %" PRIuPTR " named %s. Will use this for the test", i,
+              arbitrary_interface_name);
       interface_index = static_cast<int>(i);
       break;
     }
@@ -173,8 +166,7 @@ static void test_named_and_numeric_scope_ids(void) {
   gpr_free(arbitrary_interface_name);
   // Test resolution of an ipv6 address with a numeric scope ID
   gpr_log(GPR_DEBUG, "test resolution with a numeric scope ID");
-  std::string target_with_numeric_scope_id =
-      absl::StrFormat("fe80::1234%%%d", interface_index);
+  std::string target_with_numeric_scope_id = absl::StrFormat("fe80::1234%%%d", interface_index);
   resolve_address_must_succeed(target_with_numeric_scope_id.c_str());
 }
 
@@ -182,22 +174,18 @@ int main(int argc, char** argv) {
   // First set the resolver type based off of --resolver
   const char* resolver_type = nullptr;
   gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
-  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
-                         &resolver_type);
+  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)", &resolver_type);
   // In case that there are more than one argument on the command line,
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  grpc_core::UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            resolver.get());
+    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s", resolver.get());
   }
   if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-  } else if (resolver_type != nullptr &&
-             gpr_stricmp(resolver_type, "ares") == 0) {
+  } else if (resolver_type != nullptr && gpr_stricmp(resolver_type, "ares") == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
@@ -212,8 +200,7 @@ int main(int argc, char** argv) {
     // c-ares resolver doesn't support UDS (ability for native DNS resolver
     // to handle this is only expected to be used by servers, which
     // unconditionally use the native DNS resolver).
-    grpc_core::UniquePtr<char> resolver =
-        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+    grpc_core::UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   }
   gpr_cmdline_destroy(cl);
 

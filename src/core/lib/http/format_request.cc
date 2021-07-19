@@ -34,8 +34,7 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/gpr/string.h"
 
-static void fill_common_header(const grpc_httpcli_request* request,
-                               bool connection_close,
+static void fill_common_header(const grpc_httpcli_request* request, bool connection_close,
                                std::vector<std::string>* buf) {
   buf->push_back(request->http.path);
   buf->push_back(" HTTP/1.0\r\n");
@@ -54,8 +53,7 @@ static void fill_common_header(const grpc_httpcli_request* request,
   }
 }
 
-grpc_slice grpc_httpcli_format_get_request(
-    const grpc_httpcli_request* request) {
+grpc_slice grpc_httpcli_format_get_request(const grpc_httpcli_request* request) {
   std::vector<std::string> out;
   out.push_back("GET ");
   fill_common_header(request, true, &out);
@@ -65,8 +63,7 @@ grpc_slice grpc_httpcli_format_get_request(
 }
 
 grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
-                                            const char* body_bytes,
-                                            size_t body_size) {
+                                            const char* body_bytes, size_t body_size) {
   std::vector<std::string> out;
   out.push_back("POST ");
   fill_common_header(request, true, &out);
@@ -81,8 +78,8 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
     if (!has_content_type) {
       out.push_back("Content-Type: text/plain\r\n");
     }
-    out.push_back(absl::StrFormat("Content-Length: %lu\r\n",
-                                  static_cast<unsigned long>(body_size)));
+    out.push_back(
+        absl::StrFormat("Content-Length: %lu\r\n", static_cast<unsigned long>(body_size)));
   }
   out.push_back("\r\n");
   std::string req = absl::StrJoin(out, "");
@@ -92,8 +89,7 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
   return grpc_slice_from_copied_buffer(req.data(), req.size());
 }
 
-grpc_slice grpc_httpcli_format_connect_request(
-    const grpc_httpcli_request* request) {
+grpc_slice grpc_httpcli_format_connect_request(const grpc_httpcli_request* request) {
   std::vector<std::string> out;
   out.push_back("CONNECT ");
   fill_common_header(request, false, &out);

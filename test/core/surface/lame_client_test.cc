@@ -30,8 +30,7 @@
 
 class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
  public:
-  void Notify(grpc_connectivity_state new_state,
-              const absl::Status& /* status */) override {
+  void Notify(grpc_connectivity_state new_state, const absl::Status& /* status */) override {
     GPR_ASSERT(new_state == GRPC_CHANNEL_SHUTDOWN);
   }
 };
@@ -50,8 +49,7 @@ void test_transport_op(grpc_channel* channel) {
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(elem, op);
 
-  GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, nullptr, grpc_schedule_on_exec_ctx);
   op = grpc_make_transport_op(&transport_op_cb);
   elem->filter->start_transport_op(elem, op);
 }
@@ -78,22 +76,19 @@ int main(int argc, char** argv) {
 
   const char* error_message = "Rpc sent on a lame channel.";
   grpc_status_code error_code = GRPC_STATUS_ABORTED;
-  chan = grpc_lame_client_channel_create("lampoon:national", error_code,
-                                         error_message);
+  chan = grpc_lame_client_channel_create("lampoon:national", error_code, error_message);
   GPR_ASSERT(chan);
 
   test_transport_op(chan);
 
-  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN ==
-             grpc_channel_check_connectivity_state(chan, 0));
+  GPR_ASSERT(GRPC_CHANNEL_SHUTDOWN == grpc_channel_check_connectivity_state(chan, 0));
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 
   grpc_slice host = grpc_slice_from_static_string("anywhere");
-  call =
-      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/Foo"), &host,
-                               grpc_timeout_seconds_to_deadline(100), nullptr);
+  call = grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  grpc_slice_from_static_string("/Foo"), &host,
+                                  grpc_timeout_seconds_to_deadline(100), nullptr);
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 
@@ -109,8 +104,7 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(1), nullptr);
+  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */
@@ -126,8 +120,7 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(2), nullptr);
+  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */

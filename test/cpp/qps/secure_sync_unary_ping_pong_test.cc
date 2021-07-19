@@ -54,9 +54,8 @@ static void RunSynchronousUnaryPingPong() {
   client_config.mutable_security_params()->CopyFrom(security);
   server_config.mutable_security_params()->CopyFrom(security);
 
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
-                  kInsecureCredentialsType, {}, false, 0);
+  const auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
+                                  kInsecureCredentialsType, {}, false, 0);
 
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportLatency(*result);

@@ -63,8 +63,7 @@ grpc::Status SetErrorDetails(const T& from, grpc::Status* to) {
     return grpc::Status(grpc::StatusCode::FAILED_PRECONDITION, "");
   }
   grpc::StatusCode code = grpc::StatusCode::UNKNOWN;
-  if (from.code() >= grpc::StatusCode::OK &&
-      from.code() <= grpc::StatusCode::UNAUTHENTICATED) {
+  if (from.code() >= grpc::StatusCode::OK && from.code() <= grpc::StatusCode::UNAUTHENTICATED) {
     code = static_cast<grpc::StatusCode>(from.code());
   }
   *to = grpc::Status(code, from.message(), from.SerializeAsString());

@@ -109,9 +109,7 @@ class PolymorphicManualConstructor {
   // this class is to bypass constructor and destructor.
 
   BaseType* get() { return reinterpret_cast<BaseType*>(&space_); }
-  const BaseType* get() const {
-    return reinterpret_cast<const BaseType*>(&space_);
-  }
+  const BaseType* get() const { return reinterpret_cast<const BaseType*>(&space_); }
 
   BaseType* operator->() { return get(); }
   const BaseType* operator->() const { return get(); }
@@ -153,16 +151,14 @@ class PolymorphicManualConstructor {
  private:
   template <class DerivedType>
   void FinishInit(DerivedType* p) {
-    static_assert(
-        manual_ctor_impl::is_one_of<DerivedType, DerivedTypes...>::value,
-        "DerivedType must be one of the predeclared DerivedTypes");
+    static_assert(manual_ctor_impl::is_one_of<DerivedType, DerivedTypes...>::value,
+                  "DerivedType must be one of the predeclared DerivedTypes");
     GPR_ASSERT(static_cast<BaseType*>(p) == p);
   }
 
   typename std::aligned_storage<
       grpc_core::manual_ctor_impl::max_size_of<DerivedTypes...>::value,
-      grpc_core::manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type
-      space_;
+      grpc_core::manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type space_;
 };
 
 template <typename Type>

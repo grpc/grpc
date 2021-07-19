@@ -74,33 +74,27 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
     ssize_t byte_count;
 
     gpr_mu_lock(g_mu);
-    byte_count =
-        recv(grpc_fd_wrapped_fd(emfd()), read_buffer, sizeof(read_buffer), 0);
+    byte_count = recv(grpc_fd_wrapped_fd(emfd()), read_buffer, sizeof(read_buffer), 0);
 
     g_number_of_reads++;
     g_number_of_bytes_read += static_cast<int>(byte_count);
 
     gpr_log(GPR_DEBUG, "receive %zu on handler %p", byte_count, this);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
-                                 grpc_pollset_kick(g_pollset, nullptr)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
     return false;
   }
 
-  void OnCanWrite(void* /*user_data*/,
-                  grpc_closure* /*notify_on_write_closure*/) override {
+  void OnCanWrite(void* /*user_data*/, grpc_closure* /*notify_on_write_closure*/) override {
     gpr_mu_lock(g_mu);
     g_number_of_writes++;
 
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
-                                 grpc_pollset_kick(g_pollset, nullptr)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
   }
 
-  void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure,
-                         void* /*user_data*/) override {
-    gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
-            grpc_fd_wrapped_fd(emfd()));
+  void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure, void* /*user_data*/) override {
+    gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d", grpc_fd_wrapped_fd(emfd()));
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, orphan_fd_closure, GRPC_ERROR_NONE);
     g_number_of_orphan_calls++;
   }
@@ -133,8 +127,8 @@ struct test_socket_factory {
 };
 typedef struct test_socket_factory test_socket_factory;
 
-static int test_socket_factory_socket(grpc_socket_factory* factory, int domain,
-                                      int type, int protocol) {
+static int test_socket_factory_socket(grpc_socket_factory* factory, int domain, int type,
+                                      int protocol) {
   test_socket_factory* f = reinterpret_cast<test_socket_factory*>(factory);
   f->number_of_socket_calls++;
   return socket(domain, type, protocol);
@@ -144,13 +138,11 @@ static int test_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
                                     const grpc_resolved_address* addr) {
   test_socket_factory* f = reinterpret_cast<test_socket_factory*>(factory);
   f->number_of_bind_calls++;
-  return bind(sockfd,
-              reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)),
+  return bind(sockfd, reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)),
               static_cast<socklen_t>(addr->len));
 }
 
-static int test_socket_factory_compare(grpc_socket_factory* a,
-                                       grpc_socket_factory* b) {
+static int test_socket_factory_compare(grpc_socket_factory* a, grpc_socket_factory* b) {
   return GPR_ICMP(a, b);
 }
 
@@ -160,12 +152,12 @@ static void test_socket_factory_destroy(grpc_socket_factory* factory) {
 }
 
 static const grpc_socket_factory_vtable test_socket_factory_vtable = {
-    test_socket_factory_socket, test_socket_factory_bind,
-    test_socket_factory_compare, test_socket_factory_destroy};
+    test_socket_factory_socket, test_socket_factory_bind, test_socket_factory_compare,
+    test_socket_factory_destroy};
 
 static test_socket_factory* test_socket_factory_create(void) {
-  test_socket_factory* factory = static_cast<test_socket_factory*>(
-      gpr_malloc(sizeof(test_socket_factory)));
+  test_socket_factory* factory =
+      static_cast<test_socket_factory*>(gpr_malloc(sizeof(test_socket_factory)));
   grpc_socket_factory_init(&factory->base, &test_socket_factory_vtable);
   factory->number_of_socket_calls = 0;
   factory->number_of_bind_calls = 0;
@@ -178,8 +170,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 
 static void shutdown_and_destroy_pollset() {
   gpr_mu_lock(g_mu);
-  auto closure = GRPC_CLOSURE_CREATE(destroy_pollset, g_pollset,
-                                     grpc_schedule_on_exec_ctx);
+  auto closure = GRPC_CLOSURE_CREATE(destroy_pollset, g_pollset, grpc_schedule_on_exec_ctx);
   grpc_pollset_shutdown(g_pollset, closure);
   gpr_mu_unlock(g_mu);
   /* Flush exec_ctx to run |destroyed| */
@@ -211,17 +202,15 @@ static void test_no_op_with_port(void) {
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr =
-      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
-                                      snd_buf_size, &handler_factory,
-                                      g_num_listeners) > 0);
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size, snd_buf_size,
+                                      &handler_factory, g_num_listeners) > 0);
 
   grpc_udp_server_destroy(s, nullptr);
 
@@ -235,14 +224,11 @@ static void test_no_op_with_port_and_socket_factory(void) {
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr =
-      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
 
   test_socket_factory* socket_factory = test_socket_factory_create();
-  grpc_arg socket_factory_arg =
-      grpc_socket_factory_to_arg(&socket_factory->base);
-  grpc_channel_args* channel_args =
-      grpc_channel_args_copy_and_add(nullptr, &socket_factory_arg, 1);
+  grpc_arg socket_factory_arg = grpc_socket_factory_to_arg(&socket_factory->base);
+  grpc_channel_args* channel_args = grpc_channel_args_copy_and_add(nullptr, &socket_factory_arg, 1);
   grpc_udp_server* s = grpc_udp_server_create(channel_args);
   grpc_channel_args_destroy(channel_args);
 
@@ -251,9 +237,8 @@ static void test_no_op_with_port_and_socket_factory(void) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
-                                      snd_buf_size, &handler_factory,
-                                      g_num_listeners) > 0);
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size, snd_buf_size,
+                                      &handler_factory, g_num_listeners) > 0);
   GPR_ASSERT(socket_factory->number_of_socket_calls == g_num_listeners);
   GPR_ASSERT(socket_factory->number_of_bind_calls == g_num_listeners);
 
@@ -271,17 +256,15 @@ static void test_no_op_with_port_and_start(void) {
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr =
-      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_port_and_start");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
-                                      snd_buf_size, &handler_factory,
-                                      g_num_listeners) > 0);
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size, snd_buf_size,
+                                      &handler_factory, g_num_listeners) > 0);
 
   std::vector<grpc_pollset*> empty_pollset;
   grpc_udp_server_start(s, &empty_pollset, nullptr);
@@ -298,8 +281,7 @@ static void test_receive(int number_of_clients) {
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_storage* addr =
-      reinterpret_cast<struct sockaddr_storage*>(resolved_addr.addr);
+  struct sockaddr_storage* addr = reinterpret_cast<struct sockaddr_storage*>(resolved_addr.addr);
   int clifd, svrfd;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   int i;
@@ -313,14 +295,12 @@ static void test_receive(int number_of_clients) {
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
   addr->ss_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
-                                      snd_buf_size, &handler_factory,
-                                      g_num_listeners) > 0);
+  GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size, snd_buf_size,
+                                      &handler_factory, g_num_listeners) > 0);
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
-  GPR_ASSERT(getsockname(svrfd, (struct sockaddr*)addr,
-                         (socklen_t*)&resolved_addr.len) == 0);
+  GPR_ASSERT(getsockname(svrfd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr.len) == 0);
   GPR_ASSERT(resolved_addr.len <= sizeof(struct sockaddr_storage));
 
   std::vector<grpc_pollset*> test_pollsets;
@@ -330,21 +310,19 @@ static void test_receive(int number_of_clients) {
   gpr_mu_lock(g_mu);
 
   for (i = 0; i < number_of_clients; i++) {
-    deadline =
-        grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+    deadline = grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
 
     int number_of_bytes_read_before = g_number_of_bytes_read;
     /* Create a socket, send a packet to the UDP server. */
     clifd = socket(addr->ss_family, SOCK_DGRAM, 0);
     GPR_ASSERT(clifd >= 0);
-    GPR_ASSERT(connect(clifd, (struct sockaddr*)addr,
-                       (socklen_t)resolved_addr.len) == 0);
+    GPR_ASSERT(connect(clifd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len) == 0);
     GPR_ASSERT(5 == write(clifd, "hello", 5));
     while (g_number_of_bytes_read < (number_of_bytes_read_before + 5) &&
            deadline > grpc_core::ExecCtx::Get()->Now()) {
       grpc_pollset_worker* worker = nullptr;
-      GPR_ASSERT(GRPC_LOG_IF_ERROR(
-          "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+      GPR_ASSERT(
+          GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
       gpr_mu_unlock(g_mu);
       grpc_core::ExecCtx::Get()->Flush();
       gpr_mu_lock(g_mu);

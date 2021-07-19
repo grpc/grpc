@@ -53,9 +53,8 @@ static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> combiner);
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses, char** service_config_json,
+    int query_timeout_ms, std::shared_ptr<grpc_core::WorkSerializer> combiner);
 
 static void (*iomgr_cancel_ares_request_locked)(grpc_ares_request* request);
 
@@ -66,12 +65,10 @@ static void set_resolve_port(int port) {
 }
 
 static void my_resolve_address(const char* addr, const char* default_port,
-                               grpc_pollset_set* interested_parties,
-                               grpc_closure* on_done,
+                               grpc_pollset_set* interested_parties, grpc_closure* on_done,
                                grpc_resolved_addresses** addrs) {
   if (0 != strcmp(addr, "test")) {
-    default_resolver->resolve_address(addr, default_port, interested_parties,
-                                      on_done, addrs);
+    default_resolver->resolve_address(addr, default_port, interested_parties, on_done, addrs);
     return;
   }
 
@@ -83,11 +80,9 @@ static void my_resolve_address(const char* addr, const char* default_port,
   } else {
     *addrs = static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(**addrs)));
     (*addrs)->naddrs = 1;
-    (*addrs)->addrs = static_cast<grpc_resolved_address*>(
-        gpr_malloc(sizeof(*(*addrs)->addrs)));
+    (*addrs)->addrs = static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(*(*addrs)->addrs)));
     memset((*addrs)->addrs, 0, sizeof(*(*addrs)->addrs));
-    grpc_sockaddr_in* sa =
-        reinterpret_cast<grpc_sockaddr_in*>((*addrs)->addrs[0].addr);
+    grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>((*addrs)->addrs[0].addr);
     sa->sin_family = GRPC_AF_INET;
     sa->sin_addr.s_addr = 0x100007f;
     sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
@@ -97,28 +92,24 @@ static void my_resolve_address(const char* addr, const char* default_port,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
-static grpc_error_handle my_blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
-  return default_resolver->blocking_resolve_address(name, default_port,
-                                                    addresses);
+static grpc_error_handle my_blocking_resolve_address(const char* name, const char* default_port,
+                                                     grpc_resolved_addresses** addresses) {
+  return default_resolver->blocking_resolve_address(name, default_port, addresses);
 }
 
-static grpc_address_resolver_vtable test_resolver = {
-    my_resolve_address, my_blocking_resolve_address};
+static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
+                                                     my_blocking_resolve_address};
 
 static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses, char** service_config_json,
+    int query_timeout_ms, std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   if (0 != strcmp(addr, "test")) {
-    return iomgr_dns_lookup_ares_locked(
-        dns_server, addr, default_port, interested_parties, on_done, addresses,
-        balancer_addresses, service_config_json, query_timeout_ms,
-        std::move(work_serializer));
+    return iomgr_dns_lookup_ares_locked(dns_server, addr, default_port, interested_parties, on_done,
+                                        addresses, balancer_addresses, service_config_json,
+                                        query_timeout_ms, std::move(work_serializer));
   }
 
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -195,8 +186,7 @@ int main(int argc, char** argv) {
   grpc_channel_args client_args;
   grpc_arg arg_array[2];
   arg_array[0].type = GRPC_ARG_INTEGER;
-  arg_array[0].key =
-      const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
+  arg_array[0].key = const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
   arg_array[0].value.integer = 1000;
   /* When this test brings down server1 and then brings up server2,
    * the targetted server port number changes, and the client channel
@@ -205,21 +195,18 @@ int main(int argc, char** argv) {
    * resolution attempts to at most once every 30 seconds by default.
    * So we tweak it for this test. */
   arg_array[1].type = GRPC_ARG_INTEGER;
-  arg_array[1].key =
-      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
+  arg_array[1].key = const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
   arg_array[1].value.integer = 1000;
   client_args.args = arg_array;
   client_args.num_args = 2;
 
   /* create a channel that picks first amongst the servers */
-  grpc_channel* chan =
-      grpc_insecure_channel_create("test", &client_args, nullptr);
+  grpc_channel* chan = grpc_insecure_channel_create("test", &client_args, nullptr);
   /* and an initial call to them */
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");
-  grpc_call* call1 =
-      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               grpc_timeout_seconds_to_deadline(20), nullptr);
+  grpc_call* call1 = grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                                              grpc_slice_from_static_string("/foo"), &host,
+                                              grpc_timeout_seconds_to_deadline(20), nullptr);
   /* send initial metadata to probe connectivity */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -228,9 +215,8 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x101), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call1, ops, (size_t)(op - ops), tag(0x101), nullptr));
   /* and receive status to probe termination */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -241,9 +227,8 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x102), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call1, ops, (size_t)(op - ops), tag(0x102), nullptr));
 
   /* bring a server up on the first port */
   grpc_server* server1 = grpc_server_create(nullptr, nullptr);
@@ -254,9 +239,8 @@ int main(int argc, char** argv) {
 
   /* request a call to the server */
   grpc_call* server_call1;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(server1, &server_call1, &request_details1,
-                                      &request_metadata1, cq, cq, tag(0x301)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(server1, &server_call1, &request_details1,
+                                                      &request_metadata1, cq, cq, tag(0x301)));
 
   set_resolve_port(port1);
 
@@ -265,11 +249,9 @@ int main(int argc, char** argv) {
   CQ_EXPECT_COMPLETION(cqv, tag(0x301), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(GRPC_CHANNEL_READY ==
-             grpc_channel_check_connectivity_state(chan, 0));
+  GPR_ASSERT(GRPC_CHANNEL_READY == grpc_channel_check_connectivity_state(chan, 0));
   grpc_channel_watch_connectivity_state(chan, GRPC_CHANNEL_READY,
-                                        gpr_inf_future(GPR_CLOCK_REALTIME), cq,
-                                        tag(0x9999));
+                                        gpr_inf_future(GPR_CLOCK_REALTIME), cq, tag(0x9999));
 
   /* listen for close on the server call to probe for finishing */
   memset(ops, 0, sizeof(ops));
@@ -278,9 +260,8 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled1;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call1, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x302), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(server_call1, ops, (size_t)(op - ops), tag(0x302), nullptr));
 
   /* shutdown first server:
    * we should see a connectivity change and then nothing */
@@ -291,10 +272,9 @@ int main(int argc, char** argv) {
   cq_verify_empty(cqv);
 
   /* and a new call: should go through to server2 when we start it */
-  grpc_call* call2 =
-      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               grpc_timeout_seconds_to_deadline(20), nullptr);
+  grpc_call* call2 = grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+                                              grpc_slice_from_static_string("/foo"), &host,
+                                              grpc_timeout_seconds_to_deadline(20), nullptr);
   /* send initial metadata to probe connectivity */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -303,9 +283,8 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x201), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call2, ops, (size_t)(op - ops), tag(0x201), nullptr));
   /* and receive status to probe termination */
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -316,9 +295,8 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x202), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call2, ops, (size_t)(op - ops), tag(0x202), nullptr));
 
   /* and bring up second server */
   set_resolve_port(port2);
@@ -330,9 +308,8 @@ int main(int argc, char** argv) {
 
   /* request a call to the server */
   grpc_call* server_call2;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(server2, &server_call2, &request_details2,
-                                      &request_metadata2, cq, cq, tag(0x401)));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(server2, &server_call2, &request_details2,
+                                                      &request_metadata2, cq, cq, tag(0x401)));
 
   /* second call should now start */
   CQ_EXPECT_COMPLETION(cqv, tag(0x201), 1);
@@ -346,9 +323,8 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled2;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(server_call2, ops,
-                                                   (size_t)(op - ops),
-                                                   tag(0x402), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(server_call2, ops, (size_t)(op - ops), tag(0x402), nullptr));
 
   /* shutdown second server: we should see nothing */
   grpc_server_shutdown_and_notify(server2, cq, tag(0xdead2));

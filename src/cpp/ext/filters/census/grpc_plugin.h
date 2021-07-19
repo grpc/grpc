@@ -52,23 +52,19 @@ extern const absl::string_view kRpcServerServerLatencyMeasureName;
 // Canonical gRPC view definitions.
 const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientSentBytesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ClientReceivedMessagesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ClientReceivedBytesPerRpcCumulative();
+const ::opencensus::stats::ViewDescriptor& ClientReceivedMessagesPerRpcCumulative();
+const ::opencensus::stats::ViewDescriptor& ClientReceivedBytesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatencyCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientServerLatencyCumulative();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcsCumulative();
 
 const ::opencensus::stats::ViewDescriptor& ServerSentBytesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ServerReceivedBytesPerRpcCumulative();
+const ::opencensus::stats::ViewDescriptor& ServerReceivedBytesPerRpcCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerServerLatencyCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerStartedCountCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsCumulative();
 const ::opencensus::stats::ViewDescriptor& ServerSentMessagesPerRpcCumulative();
-const ::opencensus::stats::ViewDescriptor&
-ServerReceivedMessagesPerRpcCumulative();
+const ::opencensus::stats::ViewDescriptor& ServerReceivedMessagesPerRpcCumulative();
 
 const ::opencensus::stats::ViewDescriptor& ClientSentMessagesPerRpcMinute();
 const ::opencensus::stats::ViewDescriptor& ClientSentBytesPerRpcMinute();

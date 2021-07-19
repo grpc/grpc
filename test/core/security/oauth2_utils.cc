@@ -45,51 +45,44 @@ static void on_oauth2_response(void* arg, grpc_error_handle error) {
   char* token = nullptr;
   grpc_slice token_slice;
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Fetching token failed: %s",
-            grpc_error_std_string(error).c_str());
+    gpr_log(GPR_ERROR, "Fetching token failed: %s", grpc_error_std_string(error).c_str());
   } else {
     GPR_ASSERT(request->md_array.size == 1);
     token_slice = GRPC_MDVALUE(request->md_array.md[0]);
     token = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1));
-    memcpy(token, GRPC_SLICE_START_PTR(token_slice),
-           GRPC_SLICE_LENGTH(token_slice));
+    memcpy(token, GRPC_SLICE_START_PTR(token_slice), GRPC_SLICE_LENGTH(token_slice));
     token[GRPC_SLICE_LENGTH(token_slice)] = '\0';
   }
   grpc_credentials_mdelem_array_destroy(&request->md_array);
   gpr_mu_lock(request->mu);
   request->is_done = true;
   request->token = token;
-  GRPC_LOG_IF_ERROR(
-      "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&request->pops), nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(grpc_polling_entity_pollset(&request->pops), nullptr));
   gpr_mu_unlock(request->mu);
 }
 
 static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
-char* grpc_test_fetch_oauth2_token_with_credentials(
-    grpc_call_credentials* creds) {
+char* grpc_test_fetch_oauth2_token_with_credentials(grpc_call_credentials* creds) {
   oauth2_request request;
   memset(&request, 0, sizeof(request));
   grpc_core::ExecCtx exec_ctx;
   grpc_closure do_nothing_closure;
   grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};
 
-  grpc_pollset* pollset =
-      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  grpc_pollset* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &request.mu);
   request.pops = grpc_polling_entity_create_from_pollset(pollset);
   request.is_done = false;
 
-  GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, nullptr, grpc_schedule_on_exec_ctx);
 
-  GRPC_CLOSURE_INIT(&request.closure, on_oauth2_response, &request,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&request.closure, on_oauth2_response, &request, grpc_schedule_on_exec_ctx);
 
   grpc_error_handle error = GRPC_ERROR_NONE;
-  if (creds->get_request_metadata(&request.pops, null_ctx, &request.md_array,
-                                  &request.closure, &error)) {
+  if (creds->get_request_metadata(&request.pops, null_ctx, &request.md_array, &request.closure,
+                                  &error)) {
     // Synchronous result; invoke callback directly.
     on_oauth2_response(&request, error);
     GRPC_ERROR_UNREF(error);
@@ -99,17 +92,15 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   gpr_mu_lock(request.mu);
   while (!request.is_done) {
     grpc_pollset_worker* worker = nullptr;
-    if (!GRPC_LOG_IF_ERROR(
-            "pollset_work",
-            grpc_pollset_work(grpc_polling_entity_pollset(&request.pops),
-                              &worker, GRPC_MILLIS_INF_FUTURE))) {
+    if (!GRPC_LOG_IF_ERROR("pollset_work",
+                           grpc_pollset_work(grpc_polling_entity_pollset(&request.pops), &worker,
+                                             GRPC_MILLIS_INF_FUTURE))) {
       request.is_done = true;
     }
   }
   gpr_mu_unlock(request.mu);
 
-  grpc_pollset_shutdown(grpc_polling_entity_pollset(&request.pops),
-                        &do_nothing_closure);
+  grpc_pollset_shutdown(grpc_polling_entity_pollset(&request.pops), &do_nothing_closure);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(grpc_polling_entity_pollset(&request.pops));
   gpr_free(pollset);

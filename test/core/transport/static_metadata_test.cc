@@ -32,8 +32,7 @@ TEST(StaticMetadataTest, ReadAllStaticElements) {
   // grpc_mdelem_from_slices is called with key pairs pregenerated.
   for (int i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
     const grpc_mdelem mdelem = grpc_static_mdelem_manifested()[i];
-    const grpc_mdelem mdelem2 =
-        grpc_mdelem_from_slices(GRPC_MDKEY(mdelem), GRPC_MDVALUE(mdelem));
+    const grpc_mdelem mdelem2 = grpc_mdelem_from_slices(GRPC_MDKEY(mdelem), GRPC_MDVALUE(mdelem));
     EXPECT_EQ(mdelem.payload, mdelem2.payload);
   }
 }

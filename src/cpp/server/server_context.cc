@@ -43,13 +43,11 @@ static internal::GrpcLibraryInitializer g_gli_initializer;
 
 // CompletionOp
 
-class ServerContextBase::CompletionOp final
-    : public internal::CallOpSetInterface {
+class ServerContextBase::CompletionOp final : public internal::CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
   // must ref the call before calling constructor and after deleting this
-  CompletionOp(internal::Call* call,
-               ::grpc::internal::ServerCallbackCall* callback_controller)
+  CompletionOp(internal::Call* call, ::grpc::internal::ServerCallbackCall* callback_controller)
       : call_(*call),
         callback_controller_(callback_controller),
         has_tag_(false),
@@ -131,8 +129,8 @@ class ServerContextBase::CompletionOp final
       return;
     }
     /* Start a phony op so that we can return the tag */
-    GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_,
-                                     nullptr) == GRPC_CALL_OK);
+    GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_, nullptr) ==
+               GRPC_CALL_OK);
   }
 
  private:
@@ -173,8 +171,7 @@ void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
   interceptor_methods_.SetCallOpSetInterface(this);
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
-  GPR_ASSERT(grpc_call_start_batch(call->call(), &ops, 1, core_cq_tag_,
-                                   nullptr) == GRPC_CALL_OK);
+  GPR_ASSERT(grpc_call_start_batch(call->call(), &ops, 1, core_cq_tag_, nullptr) == GRPC_CALL_OK);
   /* No interceptors to run here */
 }
 
@@ -236,19 +233,16 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 
 // ServerContextBase body
 
-ServerContextBase::ServerContextBase()
-    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {
+ServerContextBase::ServerContextBase() : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {
   g_gli_initializer.summon();
 }
 
-ServerContextBase::ServerContextBase(gpr_timespec deadline,
-                                     grpc_metadata_array* arr)
+ServerContextBase::ServerContextBase(gpr_timespec deadline, grpc_metadata_array* arr)
     : deadline_(deadline) {
   std::swap(*client_metadata_.arr(), *arr);
 }
 
-void ServerContextBase::BindDeadlineAndMetadata(gpr_timespec deadline,
-                                                grpc_metadata_array* arr) {
+void ServerContextBase::BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr) {
   deadline_ = deadline;
   std::swap(*client_metadata_.arr(), *arr);
 }
@@ -282,12 +276,10 @@ void ServerContextBase::BeginCompletionOp(
     rpc_info_->Ref();
   }
   grpc_call_ref(call->call());
-  completion_op_ =
-      new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
-          CompletionOp(call, callback_controller);
+  completion_op_ = new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
+      CompletionOp(call, callback_controller);
   if (callback_controller != nullptr) {
-    completion_tag_.Set(call->call(), std::move(callback), completion_op_,
-                        true);
+    completion_tag_.Set(call->call(), std::move(callback), completion_op_, true);
     completion_op_->set_core_cq_tag(&completion_tag_);
     completion_op_->set_tag(completion_op_);
   } else if (has_notify_when_done_tag_) {
@@ -300,13 +292,11 @@ internal::CompletionQueueTag* ServerContextBase::GetCompletionOpTag() {
   return static_cast<internal::CompletionQueueTag*>(completion_op_);
 }
 
-void ServerContextBase::AddInitialMetadata(const std::string& key,
-                                           const std::string& value) {
+void ServerContextBase::AddInitialMetadata(const std::string& key, const std::string& value) {
   initial_metadata_.insert(std::make_pair(key, value));
 }
 
-void ServerContextBase::AddTrailingMetadata(const std::string& key,
-                                            const std::string& value) {
+void ServerContextBase::AddTrailingMetadata(const std::string& key, const std::string& value) {
   trailing_metadata_.insert(std::make_pair(key, value));
 }
 
@@ -317,9 +307,8 @@ void ServerContextBase::TryCancel() const {
       rpc_info_->RunInterceptor(&cancel_methods, i);
     }
   }
-  grpc_call_error err =
-      grpc_call_cancel_with_status(call_.call, GRPC_STATUS_CANCELLED,
-                                   "Cancelled on the server side", nullptr);
+  grpc_call_error err = grpc_call_cancel_with_status(call_.call, GRPC_STATUS_CANCELLED,
+                                                     "Cancelled on the server side", nullptr);
   if (err != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
@@ -346,13 +335,11 @@ bool ServerContextBase::IsCancelled() const {
   }
 }
 
-void ServerContextBase::set_compression_algorithm(
-    grpc_compression_algorithm algorithm) {
+void ServerContextBase::set_compression_algorithm(grpc_compression_algorithm algorithm) {
   compression_algorithm_ = algorithm;
   const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
-    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
-            algorithm);
+    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.", algorithm);
     abort();
   }
   GPR_ASSERT(algorithm_name != nullptr);
@@ -370,12 +357,10 @@ std::string ServerContextBase::peer() const {
 }
 
 const struct census_context* ServerContextBase::census_context() const {
-  return call_.call == nullptr ? nullptr
-                               : grpc_census_call_get_context(call_.call);
+  return call_.call == nullptr ? nullptr : grpc_census_call_get_context(call_.call);
 }
 
-void ServerContextBase::SetLoadReportingCosts(
-    const std::vector<std::string>& cost_data) {
+void ServerContextBase::SetLoadReportingCosts(const std::vector<std::string>& cost_data) {
   if (call_.call == nullptr) return;
   for (const auto& cost_datum : cost_data) {
     AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);

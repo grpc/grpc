@@ -103,8 +103,7 @@ class ServerInterface : public internal::CallHook {
   /// serving) must be shutdown *after* this method has returned:
   /// See \a ServerBuilder::AddCompletionQueue for details.
   void Shutdown() {
-    ShutdownInternal(
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    ShutdownInternal(g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
 
   /// Block waiting for all work to complete.
@@ -142,8 +141,7 @@ class ServerInterface : public internal::CallHook {
   /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
-  virtual int AddListeningPort(const std::string& addr,
-                               ServerCredentials* creds) = 0;
+  virtual int AddListeningPort(const std::string& addr, ServerCredentials* creds) = 0;
 
   /// Start the server.
   ///
@@ -159,8 +157,7 @@ class ServerInterface : public internal::CallHook {
 
   virtual grpc_server* server() = 0;
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override = 0;
+  void PerformOpsOnCall(internal::CallOpSetInterface* ops, internal::Call* call) override = 0;
 
   class BaseAsyncRequest : public internal::CompletionQueueTag {
    public:
@@ -193,13 +190,11 @@ class ServerInterface : public internal::CallHook {
   /// RegisteredAsyncRequest is not part of the C++ API
   class RegisteredAsyncRequest : public BaseAsyncRequest {
    public:
-    RegisteredAsyncRequest(ServerInterface* server,
-                           ::grpc::ServerContext* context,
+    RegisteredAsyncRequest(ServerInterface* server, ::grpc::ServerContext* context,
                            internal::ServerAsyncStreamingInterface* stream,
                            ::grpc::CompletionQueue* call_cq,
-                           ::grpc::ServerCompletionQueue* notification_cq,
-                           void* tag, const char* name,
-                           internal::RpcMethod::RpcType type);
+                           ::grpc::ServerCompletionQueue* notification_cq, void* tag,
+                           const char* name, internal::RpcMethod::RpcType type);
 
     bool FinalizeResult(void** tag, bool* status) override {
       /* If we are done intercepting, then there is nothing more for us to do */
@@ -208,8 +203,7 @@ class ServerInterface : public internal::CallHook {
       }
       call_wrapper_ = ::grpc::internal::Call(
           call_, server_, call_cq_, server_->max_receive_message_size(),
-          context_->set_server_rpc_info(name_, type_,
-                                        *server_->interceptor_creators()));
+          context_->set_server_rpc_info(name_, type_, *server_->interceptor_creators()));
       return BaseAsyncRequest::FinalizeResult(tag, status);
     }
 
@@ -222,16 +216,13 @@ class ServerInterface : public internal::CallHook {
 
   class NoPayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
-    NoPayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
-                          ServerInterface* server,
+    NoPayloadAsyncRequest(internal::RpcServiceMethod* registered_method, ServerInterface* server,
                           ::grpc::ServerContext* context,
                           internal::ServerAsyncStreamingInterface* stream,
                           ::grpc::CompletionQueue* call_cq,
-                          ::grpc::ServerCompletionQueue* notification_cq,
-                          void* tag)
-        : RegisteredAsyncRequest(
-              server, context, stream, call_cq, notification_cq, tag,
-              registered_method->name(), registered_method->method_type()) {
+                          ::grpc::ServerCompletionQueue* notification_cq, void* tag)
+        : RegisteredAsyncRequest(server, context, stream, call_cq, notification_cq, tag,
+                                 registered_method->name(), registered_method->method_type()) {
       IssueRequest(registered_method->server_tag(), nullptr, notification_cq);
     }
 
@@ -241,19 +232,16 @@ class ServerInterface : public internal::CallHook {
   template <class Message>
   class PayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
-    PayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
-                        ServerInterface* server, ::grpc::ServerContext* context,
+    PayloadAsyncRequest(internal::RpcServiceMethod* registered_method, ServerInterface* server,
+                        ::grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc::CompletionQueue* call_cq,
-                        ::grpc::ServerCompletionQueue* notification_cq,
-                        void* tag, Message* request)
-        : RegisteredAsyncRequest(
-              server, context, stream, call_cq, notification_cq, tag,
-              registered_method->name(), registered_method->method_type()),
+                        ::grpc::ServerCompletionQueue* notification_cq, void* tag, Message* request)
+        : RegisteredAsyncRequest(server, context, stream, call_cq, notification_cq, tag,
+                                 registered_method->name(), registered_method->method_type()),
           registered_method_(registered_method),
           request_(request) {
-      IssueRequest(registered_method->server_tag(), payload_.bbuf_ptr(),
-                   notification_cq);
+      IssueRequest(registered_method->server_tag(), payload_.bbuf_ptr(), notification_cq);
     }
 
     ~PayloadAsyncRequest() override {
@@ -266,9 +254,8 @@ class ServerInterface : public internal::CallHook {
         return RegisteredAsyncRequest::FinalizeResult(tag, status);
       }
       if (*status) {
-        if (!payload_.Valid() || !SerializationTraits<Message>::Deserialize(
-                                      payload_.bbuf_ptr(), request_)
-                                      .ok()) {
+        if (!payload_.Valid() ||
+            !SerializationTraits<Message>::Deserialize(payload_.bbuf_ptr(), request_).ok()) {
           // If deserialization fails, we cancel the call and instantiate
           // a new instance of ourselves to request another call.  We then
           // return false, which prevents the call from being returned to
@@ -276,9 +263,8 @@ class ServerInterface : public internal::CallHook {
           g_core_codegen_interface->grpc_call_cancel_with_status(
               call_, GRPC_STATUS_INTERNAL, "Unable to parse request", nullptr);
           g_core_codegen_interface->grpc_call_unref(call_);
-          new PayloadAsyncRequest(registered_method_, server_, context_,
-                                  stream_, call_cq_, notification_cq_, tag_,
-                                  request_);
+          new PayloadAsyncRequest(registered_method_, server_, context_, stream_, call_cq_,
+                                  notification_cq_, tag_, request_);
           delete this;
           return false;
         }
@@ -301,8 +287,8 @@ class ServerInterface : public internal::CallHook {
     GenericAsyncRequest(ServerInterface* server, GenericServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc::CompletionQueue* call_cq,
-                        ::grpc::ServerCompletionQueue* notification_cq,
-                        void* tag, bool delete_on_finalize);
+                        ::grpc::ServerCompletionQueue* notification_cq, void* tag,
+                        bool delete_on_finalize);
 
     bool FinalizeResult(void** tag, bool* status) override;
 
@@ -311,35 +297,29 @@ class ServerInterface : public internal::CallHook {
   };
 
   template <class Message>
-  void RequestAsyncCall(internal::RpcServiceMethod* method,
-                        ::grpc::ServerContext* context,
+  void RequestAsyncCall(internal::RpcServiceMethod* method, ::grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc::CompletionQueue* call_cq,
-                        ::grpc::ServerCompletionQueue* notification_cq,
-                        void* tag, Message* message) {
+                        ::grpc::ServerCompletionQueue* notification_cq, void* tag,
+                        Message* message) {
     GPR_CODEGEN_ASSERT(method);
-    new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
-                                     notification_cq, tag, message);
+    new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq, notification_cq, tag,
+                                     message);
   }
 
-  void RequestAsyncCall(internal::RpcServiceMethod* method,
-                        ::grpc::ServerContext* context,
+  void RequestAsyncCall(internal::RpcServiceMethod* method, ::grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc::CompletionQueue* call_cq,
-                        ::grpc::ServerCompletionQueue* notification_cq,
-                        void* tag) {
+                        ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
     GPR_CODEGEN_ASSERT(method);
-    new NoPayloadAsyncRequest(method, this, context, stream, call_cq,
-                              notification_cq, tag);
+    new NoPayloadAsyncRequest(method, this, context, stream, call_cq, notification_cq, tag);
   }
 
   void RequestAsyncGenericCall(GenericServerContext* context,
                                internal::ServerAsyncStreamingInterface* stream,
                                ::grpc::CompletionQueue* call_cq,
-                               ::grpc::ServerCompletionQueue* notification_cq,
-                               void* tag) {
-    new GenericAsyncRequest(this, context, stream, call_cq, notification_cq,
-                            tag, true);
+                               ::grpc::ServerCompletionQueue* notification_cq, void* tag) {
+    new GenericAsyncRequest(this, context, stream, call_cq, notification_cq, tag, true);
   }
 
  private:
@@ -348,8 +328,7 @@ class ServerInterface : public internal::CallHook {
   // Returns a nullptr (rather than being pure) since this is a post-1.0 method
   // and adding a new pure method to an interface would be a breaking change
   // (even though this is private and non-API)
-  virtual std::vector<
-      std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
+  virtual std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
   interceptor_creators() {
     return nullptr;
   }

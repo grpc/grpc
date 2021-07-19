@@ -105,10 +105,7 @@ static void grpc_rb_call_destroy(void* p) {
 
 const rb_data_type_t grpc_rb_md_ary_data_type = {
     "grpc_metadata_array",
-    {GRPC_RB_GC_NOT_MARKED,
-     GRPC_RB_GC_DONT_FREE,
-     GRPC_RB_MEMSIZE_UNAVAILABLE,
-     {NULL, NULL}},
+    {GRPC_RB_GC_NOT_MARKED, GRPC_RB_GC_DONT_FREE, GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL,
     NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
@@ -122,15 +119,13 @@ const rb_data_type_t grpc_rb_md_ary_data_type = {
 };
 
 /* Describes grpc_call struct for RTypedData */
-static const rb_data_type_t grpc_call_data_type = {"grpc_call",
-                                                   {GRPC_RB_GC_NOT_MARKED,
-                                                    grpc_rb_call_destroy,
-                                                    GRPC_RB_MEMSIZE_UNAVAILABLE,
-                                                    {NULL, NULL}},
-                                                   NULL,
-                                                   NULL,
+static const rb_data_type_t grpc_call_data_type = {
+    "grpc_call",
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_call_destroy, GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
+    NULL,
+    NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
-                                                   RUBY_TYPED_FREE_IMMEDIATELY
+    RUBY_TYPED_FREE_IMMEDIATELY
 #endif
 };
 
@@ -160,8 +155,8 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
   TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
   err = grpc_call_cancel(call->wrapped, NULL);
   if (err != GRPC_CALL_OK) {
-    rb_raise(grpc_rb_eCallError, "cancel failed: %s (code=%d)",
-             grpc_call_error_detail_of(err), err);
+    rb_raise(grpc_rb_eCallError, "cancel failed: %s (code=%d)", grpc_call_error_detail_of(err),
+             err);
   }
 
   return Qnil;
@@ -172,8 +167,7 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
  * client-side bidi calls. It provides a way for the background write-thread
  * to propagate failures to the main read-thread and give the user an error
  * message. */
-static VALUE grpc_rb_call_cancel_with_status(VALUE self, VALUE status_code,
-                                             VALUE details) {
+static VALUE grpc_rb_call_cancel_with_status(VALUE self, VALUE status_code, VALUE details) {
   grpc_rb_call* call = NULL;
   grpc_call_error err;
   if (RTYPEDDATA_DATA(self) == NULL) {
@@ -189,8 +183,8 @@ static VALUE grpc_rb_call_cancel_with_status(VALUE self, VALUE status_code,
   }
 
   TypedData_Get_Struct(self, grpc_rb_call, &grpc_call_data_type, call);
-  err = grpc_call_cancel_with_status(call->wrapped, NUM2LONG(status_code),
-                                     StringValueCStr(details), NULL);
+  err = grpc_call_cancel_with_status(call->wrapped, NUM2LONG(status_code), StringValueCStr(details),
+                                     NULL);
   if (err != GRPC_CALL_OK) {
     rb_raise(grpc_rb_eCallError, "cancel with status failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
@@ -249,8 +243,8 @@ static VALUE grpc_rb_call_get_peer_cert(VALUE self) {
   }
 
   {
-    grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-        ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+    grpc_auth_property_iterator it =
+        grpc_auth_context_find_properties_by_name(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
     const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
     if (prop == NULL) {
       return Qnil;
@@ -269,9 +263,7 @@ static VALUE grpc_rb_call_get_peer_cert(VALUE self) {
   status = call.status
 
   Gets the status object saved the call.  */
-static VALUE grpc_rb_call_get_status(VALUE self) {
-  return rb_ivar_get(self, id_status);
-}
+static VALUE grpc_rb_call_get_status(VALUE self) { return rb_ivar_get(self, id_status); }
 
 /*
   call-seq:
@@ -293,9 +285,7 @@ static VALUE grpc_rb_call_set_status(VALUE self, VALUE status) {
   metadata = call.metadata
 
   Gets the metadata object saved the call.  */
-static VALUE grpc_rb_call_get_metadata(VALUE self) {
-  return rb_ivar_get(self, id_metadata);
-}
+static VALUE grpc_rb_call_get_metadata(VALUE self) { return rb_ivar_get(self, id_metadata); }
 
 /*
   call-seq:
@@ -304,8 +294,7 @@ static VALUE grpc_rb_call_get_metadata(VALUE self) {
   Saves the metadata hash on the call.  */
 static VALUE grpc_rb_call_set_metadata(VALUE self, VALUE metadata) {
   if (!NIL_P(metadata) && TYPE(metadata) != T_HASH) {
-    rb_raise(rb_eTypeError, "bad metadata: got:<%s> want: <Hash>",
-             rb_obj_classname(metadata));
+    rb_raise(rb_eTypeError, "bad metadata: got:<%s> want: <Hash>", rb_obj_classname(metadata));
     return Qnil;
   }
 
@@ -328,8 +317,7 @@ static VALUE grpc_rb_call_get_trailing_metadata(VALUE self) {
   Saves the trailing metadata hash on the call. */
 static VALUE grpc_rb_call_set_trailing_metadata(VALUE self, VALUE metadata) {
   if (!NIL_P(metadata) && TYPE(metadata) != T_HASH) {
-    rb_raise(rb_eTypeError, "bad metadata: got:<%s> want: <Hash>",
-             rb_obj_classname(metadata));
+    rb_raise(rb_eTypeError, "bad metadata: got:<%s> want: <Hash>", rb_obj_classname(metadata));
     return Qnil;
   }
 
@@ -341,9 +329,7 @@ static VALUE grpc_rb_call_set_trailing_metadata(VALUE self, VALUE metadata) {
   write_flag = call.write_flag
 
   Gets the write_flag value saved the call.  */
-static VALUE grpc_rb_call_get_write_flag(VALUE self) {
-  return rb_ivar_get(self, id_write_flag);
-}
+static VALUE grpc_rb_call_get_write_flag(VALUE self) { return rb_ivar_get(self, id_write_flag); }
 
 /*
   call-seq:
@@ -377,8 +363,7 @@ static VALUE grpc_rb_call_set_credentials(VALUE self, VALUE credentials) {
   creds = grpc_rb_get_wrapped_call_credentials(credentials);
   err = grpc_call_set_credentials(call->wrapped, creds);
   if (err != GRPC_CALL_OK) {
-    rb_raise(grpc_rb_eCallError,
-             "grpc_call_set_credentials failed with %s (code=%d)",
+    rb_raise(grpc_rb_eCallError, "grpc_call_set_credentials failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
   }
   /* We need the credentials to be alive for as long as the call is alive,
@@ -404,37 +389,31 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   if (TYPE(key) == T_SYMBOL) {
     key_slice = grpc_slice_from_static_string(rb_id2name(SYM2ID(key)));
   } else if (TYPE(key) == T_STRING) {
-    key_slice =
-        grpc_slice_from_copied_buffer(RSTRING_PTR(key), RSTRING_LEN(key));
+    key_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(key), RSTRING_LEN(key));
   } else {
-    rb_raise(rb_eTypeError,
-             "grpc_rb_md_ary_fill_hash_cb: bad type for key parameter");
+    rb_raise(rb_eTypeError, "grpc_rb_md_ary_fill_hash_cb: bad type for key parameter");
     return ST_STOP;
   }
 
   if (!grpc_header_key_is_legal(key_slice)) {
     tmp_str = grpc_slice_to_c_string(key_slice);
-    rb_raise(rb_eArgError,
-             "'%s' is an invalid header key, must match [a-z0-9-_.]+", tmp_str);
+    rb_raise(rb_eArgError, "'%s' is an invalid header key, must match [a-z0-9-_.]+", tmp_str);
     return ST_STOP;
   }
 
   /* Construct a metadata object from key and value and add it */
-  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
-                       &grpc_rb_md_ary_data_type, md_ary);
+  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array, &grpc_rb_md_ary_data_type, md_ary);
 
   if (TYPE(val) == T_ARRAY) {
     array_length = RARRAY_LEN(val);
     /* If the value is an array, add capacity for each value in the array */
     for (i = 0; i < array_length; i++) {
-      value_slice = grpc_slice_from_copied_buffer(
-          RSTRING_PTR(rb_ary_entry(val, i)), RSTRING_LEN(rb_ary_entry(val, i)));
-      if (!grpc_is_binary_header(key_slice) &&
-          !grpc_header_nonbin_value_is_legal(value_slice)) {
+      value_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(rb_ary_entry(val, i)),
+                                                  RSTRING_LEN(rb_ary_entry(val, i)));
+      if (!grpc_is_binary_header(key_slice) && !grpc_header_nonbin_value_is_legal(value_slice)) {
         // The value has invalid characters
         tmp_str = grpc_slice_to_c_string(value_slice);
-        rb_raise(rb_eArgError, "Header value '%s' has invalid characters",
-                 tmp_str);
+        rb_raise(rb_eArgError, "Header value '%s' has invalid characters", tmp_str);
         return ST_STOP;
       }
       GPR_ASSERT(md_ary->count < md_ary->capacity);
@@ -443,14 +422,11 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
       md_ary->count += 1;
     }
   } else if (TYPE(val) == T_STRING) {
-    value_slice =
-        grpc_slice_from_copied_buffer(RSTRING_PTR(val), RSTRING_LEN(val));
-    if (!grpc_is_binary_header(key_slice) &&
-        !grpc_header_nonbin_value_is_legal(value_slice)) {
+    value_slice = grpc_slice_from_copied_buffer(RSTRING_PTR(val), RSTRING_LEN(val));
+    if (!grpc_is_binary_header(key_slice) && !grpc_header_nonbin_value_is_legal(value_slice)) {
       // The value has invalid characters
       tmp_str = grpc_slice_to_c_string(value_slice);
-      rb_raise(rb_eArgError, "Header value '%s' has invalid characters",
-               tmp_str);
+      rb_raise(rb_eArgError, "Header value '%s' has invalid characters", tmp_str);
       return ST_STOP;
     }
     GPR_ASSERT(md_ary->count < md_ary->capacity);
@@ -467,15 +443,13 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
 /* grpc_rb_md_ary_capacity_hash_cb is the hash iteration callback used
    to pre-compute the capacity a grpc_metadata_array.
 */
-static int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val,
-                                           VALUE md_ary_obj) {
+static int grpc_rb_md_ary_capacity_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
   grpc_metadata_array* md_ary = NULL;
 
   (void)key;
 
   /* Construct a metadata object from key and value and add it */
-  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array,
-                       &grpc_rb_md_ary_data_type, md_ary);
+  TypedData_Get_Struct(md_ary_obj, grpc_metadata_array, &grpc_rb_md_ary_data_type, md_ary);
 
   if (TYPE(val) == T_ARRAY) {
     /* If the value is an array, add capacity for each value in the array */
@@ -497,15 +471,13 @@ void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array* md_ary) {
     return; /* Do nothing if the expected has value is nil */
   }
   if (TYPE(md_ary_hash) != T_HASH) {
-    rb_raise(rb_eTypeError, "md_ary_convert: got <%s>, want <Hash>",
-             rb_obj_classname(md_ary_hash));
+    rb_raise(rb_eTypeError, "md_ary_convert: got <%s>, want <Hash>", rb_obj_classname(md_ary_hash));
     return;
   }
 
   /* Initialize the array, compute it's capacity, then fill it. */
   grpc_metadata_array_init(md_ary);
-  md_ary_obj =
-      TypedData_Wrap_Struct(grpc_rb_cMdAry, &grpc_rb_md_ary_data_type, md_ary);
+  md_ary_obj = TypedData_Wrap_Struct(grpc_rb_cMdAry, &grpc_rb_md_ary_data_type, md_ary);
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_capacity_hash_cb, md_ary_obj);
   md_ary->metadata = gpr_zalloc(md_ary->capacity * sizeof(grpc_metadata));
   rb_hash_foreach(md_ary_hash, grpc_rb_md_ary_fill_hash_cb, md_ary_obj);
@@ -527,14 +499,12 @@ VALUE grpc_rb_md_ary_to_h(grpc_metadata_array* md_ary) {
       rb_hash_aset(result, key, value);
     } else if (TYPE(value) == T_ARRAY) {
       /* Add the string to the returned array */
-      rb_ary_push(value,
-                  grpc_rb_slice_to_ruby_string(md_ary->metadata[i].value));
+      rb_ary_push(value, grpc_rb_slice_to_ruby_string(md_ary->metadata[i].value));
     } else {
       /* Add the current value with this key and the new one to an array */
       new_ary = rb_ary_new();
       rb_ary_push(new_ary, value);
-      rb_ary_push(new_ary,
-                  grpc_rb_slice_to_ruby_string(md_ary->metadata[i].value));
+      rb_ary_push(new_ary, grpc_rb_slice_to_ruby_string(md_ary->metadata[i].value));
       rb_hash_aset(result, key, new_ary);
     }
   }
@@ -544,14 +514,12 @@ VALUE grpc_rb_md_ary_to_h(grpc_metadata_array* md_ary) {
 /* grpc_rb_call_check_op_keys_hash_cb is a hash iteration func that checks
    each key of an ops hash is valid.
 */
-static int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val,
-                                              VALUE ops_ary) {
+static int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val, VALUE ops_ary) {
   (void)val;
   /* Update the capacity; the value is an array, add capacity for each value in
    * the array */
   if (TYPE(key) != T_FIXNUM) {
-    rb_raise(rb_eTypeError, "invalid operation : got <%s>, want <Fixnum>",
-             rb_obj_classname(key));
+    rb_raise(rb_eTypeError, "invalid operation : got <%s>, want <Fixnum>", rb_obj_classname(key));
     return ST_STOP;
   }
   switch (NUM2INT(key)) {
@@ -574,27 +542,23 @@ static int grpc_rb_call_check_op_keys_hash_cb(VALUE key, VALUE val,
 /* grpc_rb_op_update_status_from_server adds the values in a ruby status
    struct to the 'send_status_from_server' portion of an op.
 */
-static void grpc_rb_op_update_status_from_server(
-    grpc_op* op, grpc_metadata_array* md_ary, grpc_slice* send_status_details,
-    VALUE status) {
+static void grpc_rb_op_update_status_from_server(grpc_op* op, grpc_metadata_array* md_ary,
+                                                 grpc_slice* send_status_details, VALUE status) {
   VALUE code = rb_struct_aref(status, sym_code);
   VALUE details = rb_struct_aref(status, sym_details);
   VALUE metadata_hash = rb_struct_aref(status, sym_metadata);
 
   /* TODO: add check to ensure status is the correct struct type */
   if (TYPE(code) != T_FIXNUM) {
-    rb_raise(rb_eTypeError, "invalid code : got <%s>, want <Fixnum>",
-             rb_obj_classname(code));
+    rb_raise(rb_eTypeError, "invalid code : got <%s>, want <Fixnum>", rb_obj_classname(code));
     return;
   }
   if (TYPE(details) != T_STRING) {
-    rb_raise(rb_eTypeError, "invalid details : got <%s>, want <String>",
-             rb_obj_classname(code));
+    rb_raise(rb_eTypeError, "invalid details : got <%s>, want <String>", rb_obj_classname(code));
     return;
   }
 
-  *send_status_details =
-      grpc_slice_from_copied_buffer(RSTRING_PTR(details), RSTRING_LEN(details));
+  *send_status_details = grpc_slice_from_copied_buffer(RSTRING_PTR(details), RSTRING_LEN(details));
 
   op->data.send_status_from_server.status = NUM2INT(code);
   op->data.send_status_from_server.status_details = send_status_details;
@@ -628,8 +592,7 @@ typedef struct run_batch_stack {
 
 /* grpc_run_batch_stack_init ensures the run_batch_stack is properly
  * initialized */
-static void grpc_run_batch_stack_init(run_batch_stack* st,
-                                      unsigned write_flag) {
+static void grpc_run_batch_stack_init(run_batch_stack* st, unsigned write_flag) {
   MEMZERO(st, run_batch_stack, 1);
   grpc_metadata_array_init(&st->send_metadata);
   grpc_metadata_array_init(&st->send_trailing_metadata);
@@ -639,8 +602,7 @@ static void grpc_run_batch_stack_init(run_batch_stack* st,
   st->write_flag = write_flag;
 }
 
-void grpc_rb_metadata_array_destroy_including_entries(
-    grpc_metadata_array* array) {
+void grpc_rb_metadata_array_destroy_including_entries(grpc_metadata_array* array) {
   size_t i;
   if (array->metadata) {
     for (i = 0; i < array->count; i++) {
@@ -699,27 +661,22 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack* st, VALUE ops_hash) {
     switch (NUM2INT(this_op)) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         grpc_rb_md_ary_convert(this_value, &st->send_metadata);
-        st->ops[st->op_num].data.send_initial_metadata.count =
-            st->send_metadata.count;
-        st->ops[st->op_num].data.send_initial_metadata.metadata =
-            st->send_metadata.metadata;
+        st->ops[st->op_num].data.send_initial_metadata.count = st->send_metadata.count;
+        st->ops[st->op_num].data.send_initial_metadata.metadata = st->send_metadata.metadata;
         break;
       case GRPC_OP_SEND_MESSAGE:
         st->ops[st->op_num].data.send_message.send_message =
-            grpc_rb_s_to_byte_buffer(RSTRING_PTR(this_value),
-                                     RSTRING_LEN(this_value));
+            grpc_rb_s_to_byte_buffer(RSTRING_PTR(this_value), RSTRING_LEN(this_value));
         st->ops[st->op_num].flags = st->write_flag;
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER:
-        grpc_rb_op_update_status_from_server(
-            &st->ops[st->op_num], &st->send_trailing_metadata,
-            &st->send_status_details, this_value);
+        grpc_rb_op_update_status_from_server(&st->ops[st->op_num], &st->send_trailing_metadata,
+                                             &st->send_status_details, this_value);
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
-        st->ops[st->op_num].data.recv_initial_metadata.recv_initial_metadata =
-            &st->recv_metadata;
+        st->ops[st->op_num].data.recv_initial_metadata.recv_initial_metadata = &st->recv_metadata;
         break;
       case GRPC_OP_RECV_MESSAGE:
         st->ops[st->op_num].data.recv_message.recv_message = &st->recv_message;
@@ -727,21 +684,17 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack* st, VALUE ops_hash) {
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
         st->ops[st->op_num].data.recv_status_on_client.trailing_metadata =
             &st->recv_trailing_metadata;
-        st->ops[st->op_num].data.recv_status_on_client.status =
-            &st->recv_status;
-        st->ops[st->op_num].data.recv_status_on_client.status_details =
-            &st->recv_status_details;
+        st->ops[st->op_num].data.recv_status_on_client.status = &st->recv_status;
+        st->ops[st->op_num].data.recv_status_on_client.status_details = &st->recv_status_details;
         st->ops[st->op_num].data.recv_status_on_client.error_string =
             &st->recv_status_debug_error_string;
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
-        st->ops[st->op_num].data.recv_close_on_server.cancelled =
-            &st->recv_cancelled;
+        st->ops[st->op_num].data.recv_close_on_server.cancelled = &st->recv_cancelled;
         break;
       default:
         grpc_run_batch_stack_cleanup(st);
-        rb_raise(rb_eTypeError, "invalid operation : bad value %d",
-                 NUM2INT(this_op));
+        rb_raise(rb_eTypeError, "invalid operation : bad value %d", NUM2INT(this_op));
     };
     st->ops[st->op_num].op = (grpc_op_type)NUM2INT(this_op);
     st->ops[st->op_num].reserved = NULL;
@@ -753,8 +706,8 @@ static void grpc_run_batch_stack_fill_ops(run_batch_stack* st, VALUE ops_hash) {
    after the results have run */
 static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
   size_t i = 0;
-  VALUE result = rb_struct_new(grpc_rb_sBatchResult, Qnil, Qnil, Qnil, Qnil,
-                               Qnil, Qnil, Qnil, Qnil, NULL);
+  VALUE result =
+      rb_struct_new(grpc_rb_sBatchResult, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, Qnil, NULL);
   for (i = 0; i < st->op_num; i++) {
     switch (st->ops[i].op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
@@ -770,25 +723,21 @@ static VALUE grpc_run_batch_stack_build_result(run_batch_stack* st) {
         rb_struct_aset(result, sym_send_status, Qtrue);
         break;
       case GRPC_OP_RECV_INITIAL_METADATA:
-        rb_struct_aset(result, sym_metadata,
-                       grpc_rb_md_ary_to_h(&st->recv_metadata));
+        rb_struct_aset(result, sym_metadata, grpc_rb_md_ary_to_h(&st->recv_metadata));
       case GRPC_OP_RECV_MESSAGE:
-        rb_struct_aset(result, sym_message,
-                       grpc_rb_byte_buffer_to_s(st->recv_message));
+        rb_struct_aset(result, sym_message, grpc_rb_byte_buffer_to_s(st->recv_message));
         break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT:
-        rb_struct_aset(
-            result, sym_status,
-            rb_struct_new(
-                grpc_rb_sStatus, UINT2NUM(st->recv_status),
-                (GRPC_SLICE_START_PTR(st->recv_status_details) == NULL
-                     ? Qnil
-                     : grpc_rb_slice_to_ruby_string(st->recv_status_details)),
-                grpc_rb_md_ary_to_h(&st->recv_trailing_metadata),
-                st->recv_status_debug_error_string == NULL
-                    ? Qnil
-                    : rb_str_new_cstr(st->recv_status_debug_error_string),
-                NULL));
+        rb_struct_aset(result, sym_status,
+                       rb_struct_new(grpc_rb_sStatus, UINT2NUM(st->recv_status),
+                                     (GRPC_SLICE_START_PTR(st->recv_status_details) == NULL
+                                          ? Qnil
+                                          : grpc_rb_slice_to_ruby_string(st->recv_status_details)),
+                                     grpc_rb_md_ary_to_h(&st->recv_trailing_metadata),
+                                     st->recv_status_debug_error_string == NULL
+                                         ? Qnil
+                                         : rb_str_new_cstr(st->recv_status_debug_error_string),
+                                     NULL));
         gpr_free((void*)st->recv_status_debug_error_string);
         break;
       case GRPC_OP_RECV_CLOSE_ON_SERVER:
@@ -853,13 +802,11 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   if (err != GRPC_CALL_OK) {
     grpc_run_batch_stack_cleanup(st);
     gpr_free(st);
-    rb_raise(grpc_rb_eCallError,
-             "grpc_call_start_batch failed with %s (code=%d)",
+    rb_raise(grpc_rb_eCallError, "grpc_call_start_batch failed with %s (code=%d)",
              grpc_call_error_detail_of(err), err);
     return Qnil;
   }
-  ev = rb_completion_queue_pluck(call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  ev = rb_completion_queue_pluck(call->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
   }
@@ -873,62 +820,48 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
 
 static void Init_grpc_write_flags() {
   /* Constants representing the write flags in grpc.h */
-  VALUE grpc_rb_mWriteFlags =
-      rb_define_module_under(grpc_rb_mGrpcCore, "WriteFlags");
-  rb_define_const(grpc_rb_mWriteFlags, "BUFFER_HINT",
-                  UINT2NUM(GRPC_WRITE_BUFFER_HINT));
-  rb_define_const(grpc_rb_mWriteFlags, "NO_COMPRESS",
-                  UINT2NUM(GRPC_WRITE_NO_COMPRESS));
+  VALUE grpc_rb_mWriteFlags = rb_define_module_under(grpc_rb_mGrpcCore, "WriteFlags");
+  rb_define_const(grpc_rb_mWriteFlags, "BUFFER_HINT", UINT2NUM(GRPC_WRITE_BUFFER_HINT));
+  rb_define_const(grpc_rb_mWriteFlags, "NO_COMPRESS", UINT2NUM(GRPC_WRITE_NO_COMPRESS));
 }
 
 static void Init_grpc_error_codes() {
   /* Constants representing the error codes of grpc_call_error in grpc.h */
-  VALUE grpc_rb_mRpcErrors =
-      rb_define_module_under(grpc_rb_mGrpcCore, "RpcErrors");
+  VALUE grpc_rb_mRpcErrors = rb_define_module_under(grpc_rb_mGrpcCore, "RpcErrors");
   rb_define_const(grpc_rb_mRpcErrors, "OK", UINT2NUM(GRPC_CALL_OK));
   rb_define_const(grpc_rb_mRpcErrors, "ERROR", UINT2NUM(GRPC_CALL_ERROR));
-  rb_define_const(grpc_rb_mRpcErrors, "NOT_ON_SERVER",
-                  UINT2NUM(GRPC_CALL_ERROR_NOT_ON_SERVER));
-  rb_define_const(grpc_rb_mRpcErrors, "NOT_ON_CLIENT",
-                  UINT2NUM(GRPC_CALL_ERROR_NOT_ON_CLIENT));
+  rb_define_const(grpc_rb_mRpcErrors, "NOT_ON_SERVER", UINT2NUM(GRPC_CALL_ERROR_NOT_ON_SERVER));
+  rb_define_const(grpc_rb_mRpcErrors, "NOT_ON_CLIENT", UINT2NUM(GRPC_CALL_ERROR_NOT_ON_CLIENT));
   rb_define_const(grpc_rb_mRpcErrors, "ALREADY_ACCEPTED",
                   UINT2NUM(GRPC_CALL_ERROR_ALREADY_ACCEPTED));
-  rb_define_const(grpc_rb_mRpcErrors, "ALREADY_INVOKED",
-                  UINT2NUM(GRPC_CALL_ERROR_ALREADY_INVOKED));
-  rb_define_const(grpc_rb_mRpcErrors, "NOT_INVOKED",
-                  UINT2NUM(GRPC_CALL_ERROR_NOT_INVOKED));
+  rb_define_const(grpc_rb_mRpcErrors, "ALREADY_INVOKED", UINT2NUM(GRPC_CALL_ERROR_ALREADY_INVOKED));
+  rb_define_const(grpc_rb_mRpcErrors, "NOT_INVOKED", UINT2NUM(GRPC_CALL_ERROR_NOT_INVOKED));
   rb_define_const(grpc_rb_mRpcErrors, "ALREADY_FINISHED",
                   UINT2NUM(GRPC_CALL_ERROR_ALREADY_FINISHED));
   rb_define_const(grpc_rb_mRpcErrors, "TOO_MANY_OPERATIONS",
                   UINT2NUM(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS));
-  rb_define_const(grpc_rb_mRpcErrors, "INVALID_FLAGS",
-                  UINT2NUM(GRPC_CALL_ERROR_INVALID_FLAGS));
+  rb_define_const(grpc_rb_mRpcErrors, "INVALID_FLAGS", UINT2NUM(GRPC_CALL_ERROR_INVALID_FLAGS));
 
   /* Hint the GC that this is a global and shouldn't be sweeped. */
   rb_global_variable(&rb_error_code_details);
 
   /* Add the detail strings to a Hash */
   rb_error_code_details = rb_hash_new();
-  rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_OK),
-               rb_str_new2("ok"));
-  rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR),
-               rb_str_new2("unknown error"));
+  rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_OK), rb_str_new2("ok"));
+  rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR), rb_str_new2("unknown error"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_NOT_ON_SERVER),
                rb_str_new2("not available on a server"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_NOT_ON_CLIENT),
                rb_str_new2("not available on a client"));
-  rb_hash_aset(rb_error_code_details,
-               UINT2NUM(GRPC_CALL_ERROR_ALREADY_ACCEPTED),
+  rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_ALREADY_ACCEPTED),
                rb_str_new2("call is already accepted"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_ALREADY_INVOKED),
                rb_str_new2("call is already invoked"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_NOT_INVOKED),
                rb_str_new2("call is not yet invoked"));
-  rb_hash_aset(rb_error_code_details,
-               UINT2NUM(GRPC_CALL_ERROR_ALREADY_FINISHED),
+  rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_ALREADY_FINISHED),
                rb_str_new2("call is already finished"));
-  rb_hash_aset(rb_error_code_details,
-               UINT2NUM(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS),
+  rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS),
                rb_str_new2("outstanding read or write present"));
   rb_hash_aset(rb_error_code_details, UINT2NUM(GRPC_CALL_ERROR_INVALID_FLAGS),
                rb_str_new2("a bad flag was given"));
@@ -941,50 +874,41 @@ static void Init_grpc_op_codes() {
   VALUE grpc_rb_mCallOps = rb_define_module_under(grpc_rb_mGrpcCore, "CallOps");
   rb_define_const(grpc_rb_mCallOps, "SEND_INITIAL_METADATA",
                   UINT2NUM(GRPC_OP_SEND_INITIAL_METADATA));
-  rb_define_const(grpc_rb_mCallOps, "SEND_MESSAGE",
-                  UINT2NUM(GRPC_OP_SEND_MESSAGE));
+  rb_define_const(grpc_rb_mCallOps, "SEND_MESSAGE", UINT2NUM(GRPC_OP_SEND_MESSAGE));
   rb_define_const(grpc_rb_mCallOps, "SEND_CLOSE_FROM_CLIENT",
                   UINT2NUM(GRPC_OP_SEND_CLOSE_FROM_CLIENT));
   rb_define_const(grpc_rb_mCallOps, "SEND_STATUS_FROM_SERVER",
                   UINT2NUM(GRPC_OP_SEND_STATUS_FROM_SERVER));
   rb_define_const(grpc_rb_mCallOps, "RECV_INITIAL_METADATA",
                   UINT2NUM(GRPC_OP_RECV_INITIAL_METADATA));
-  rb_define_const(grpc_rb_mCallOps, "RECV_MESSAGE",
-                  UINT2NUM(GRPC_OP_RECV_MESSAGE));
+  rb_define_const(grpc_rb_mCallOps, "RECV_MESSAGE", UINT2NUM(GRPC_OP_RECV_MESSAGE));
   rb_define_const(grpc_rb_mCallOps, "RECV_STATUS_ON_CLIENT",
                   UINT2NUM(GRPC_OP_RECV_STATUS_ON_CLIENT));
-  rb_define_const(grpc_rb_mCallOps, "RECV_CLOSE_ON_SERVER",
-                  UINT2NUM(GRPC_OP_RECV_CLOSE_ON_SERVER));
+  rb_define_const(grpc_rb_mCallOps, "RECV_CLOSE_ON_SERVER", UINT2NUM(GRPC_OP_RECV_CLOSE_ON_SERVER));
 }
 
 static void Init_grpc_metadata_keys() {
-  VALUE grpc_rb_mMetadataKeys =
-      rb_define_module_under(grpc_rb_mGrpcCore, "MetadataKeys");
+  VALUE grpc_rb_mMetadataKeys = rb_define_module_under(grpc_rb_mGrpcCore, "MetadataKeys");
   rb_define_const(grpc_rb_mMetadataKeys, "COMPRESSION_REQUEST_ALGORITHM",
                   rb_str_new2(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY));
 }
 
 void Init_grpc_call() {
   /* CallError inherits from Exception to signal that it is non-recoverable */
-  grpc_rb_eCallError =
-      rb_define_class_under(grpc_rb_mGrpcCore, "CallError", rb_eException);
-  grpc_rb_eOutOfTime =
-      rb_define_class_under(grpc_rb_mGrpcCore, "OutOfTime", rb_eException);
+  grpc_rb_eCallError = rb_define_class_under(grpc_rb_mGrpcCore, "CallError", rb_eException);
+  grpc_rb_eOutOfTime = rb_define_class_under(grpc_rb_mGrpcCore, "OutOfTime", rb_eException);
   grpc_rb_cCall = rb_define_class_under(grpc_rb_mGrpcCore, "Call", rb_cObject);
-  grpc_rb_cMdAry =
-      rb_define_class_under(grpc_rb_mGrpcCore, "MetadataArray", rb_cObject);
+  grpc_rb_cMdAry = rb_define_class_under(grpc_rb_mGrpcCore, "MetadataArray", rb_cObject);
 
   /* Prevent allocation or inialization of the Call class */
   rb_define_alloc_func(grpc_rb_cCall, grpc_rb_cannot_alloc);
   rb_define_method(grpc_rb_cCall, "initialize", grpc_rb_cannot_init, 0);
-  rb_define_method(grpc_rb_cCall, "initialize_copy", grpc_rb_cannot_init_copy,
-                   1);
+  rb_define_method(grpc_rb_cCall, "initialize_copy", grpc_rb_cannot_init_copy, 1);
 
   /* Add ruby analogues of the Call methods. */
   rb_define_method(grpc_rb_cCall, "run_batch", grpc_rb_call_run_batch, 1);
   rb_define_method(grpc_rb_cCall, "cancel", grpc_rb_call_cancel, 0);
-  rb_define_method(grpc_rb_cCall, "cancel_with_status",
-                   grpc_rb_call_cancel_with_status, 2);
+  rb_define_method(grpc_rb_cCall, "cancel_with_status", grpc_rb_call_cancel_with_status, 2);
   rb_define_method(grpc_rb_cCall, "close", grpc_rb_call_close, 0);
   rb_define_method(grpc_rb_cCall, "peer", grpc_rb_call_get_peer, 0);
   rb_define_method(grpc_rb_cCall, "peer_cert", grpc_rb_call_get_peer_cert, 0);
@@ -992,15 +916,11 @@ void Init_grpc_call() {
   rb_define_method(grpc_rb_cCall, "status=", grpc_rb_call_set_status, 1);
   rb_define_method(grpc_rb_cCall, "metadata", grpc_rb_call_get_metadata, 0);
   rb_define_method(grpc_rb_cCall, "metadata=", grpc_rb_call_set_metadata, 1);
-  rb_define_method(grpc_rb_cCall, "trailing_metadata",
-                   grpc_rb_call_get_trailing_metadata, 0);
-  rb_define_method(grpc_rb_cCall,
-                   "trailing_metadata=", grpc_rb_call_set_trailing_metadata, 1);
+  rb_define_method(grpc_rb_cCall, "trailing_metadata", grpc_rb_call_get_trailing_metadata, 0);
+  rb_define_method(grpc_rb_cCall, "trailing_metadata=", grpc_rb_call_set_trailing_metadata, 1);
   rb_define_method(grpc_rb_cCall, "write_flag", grpc_rb_call_get_write_flag, 0);
-  rb_define_method(grpc_rb_cCall, "write_flag=", grpc_rb_call_set_write_flag,
-                   1);
-  rb_define_method(grpc_rb_cCall, "set_credentials!",
-                   grpc_rb_call_set_credentials, 1);
+  rb_define_method(grpc_rb_cCall, "write_flag=", grpc_rb_call_set_write_flag, 1);
+  rb_define_method(grpc_rb_cCall, "set_credentials!", grpc_rb_call_set_credentials, 1);
 
   /* Ids used to support call attributes */
   id_metadata = rb_intern("metadata");
@@ -1021,9 +941,9 @@ void Init_grpc_call() {
   sym_cancelled = ID2SYM(rb_intern("cancelled"));
 
   /* The Struct used to return the run_batch result. */
-  grpc_rb_sBatchResult = rb_struct_define(
-      "BatchResult", "send_message", "send_metadata", "send_close",
-      "send_status", "message", "metadata", "status", "cancelled", NULL);
+  grpc_rb_sBatchResult =
+      rb_struct_define("BatchResult", "send_message", "send_metadata", "send_close", "send_status",
+                       "message", "metadata", "status", "cancelled", NULL);
 
   Init_grpc_error_codes();
   Init_grpc_op_codes();

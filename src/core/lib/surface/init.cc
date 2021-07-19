@@ -91,18 +91,15 @@ static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
 }
 
 static void register_builtin_channel_init() {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      append_filter, const_cast<grpc_channel_filter*>(&grpc_lame_filter));
+  grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   append_filter,
+                                   const_cast<grpc_channel_filter*>(&grpc_lame_filter));
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
       const_cast<grpc_channel_filter*>(&grpc_core::Server::kServerTopFilter));
@@ -214,12 +211,10 @@ void grpc_shutdown(void) {
   grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
-    grpc_core::ApplicationCallbackExecCtx* acec =
-        grpc_core::ApplicationCallbackExecCtx::Get();
+    grpc_core::ApplicationCallbackExecCtx* acec = grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
         (acec == nullptr ||
-         (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
-             0)) {
+         (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) == 0)) {
       // just run clean-up when this is called on non-executor thread.
       gpr_log(GPR_DEBUG, "grpc_shutdown starts clean-up now");
       g_shutting_down = true;

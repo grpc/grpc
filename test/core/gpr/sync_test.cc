@@ -163,8 +163,7 @@ struct test {
 static struct test* test_new(int nthreads, int64_t iterations, int incr_step) {
   struct test* m = static_cast<struct test*>(gpr_malloc(sizeof(*m)));
   m->nthreads = nthreads;
-  m->threads = static_cast<grpc_core::Thread*>(
-      gpr_malloc(sizeof(*m->threads) * nthreads));
+  m->threads = static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*m->threads) * nthreads));
   m->iterations = iterations;
   m->counter = 0;
   m->thread_count = 0;
@@ -239,15 +238,14 @@ static void mark_thread_done(struct test* m) {
    incr_step controls by how much m->refcount should be incremented/decremented
    (if at all) each time in the tests.
    */
-static void test(const char* name, void (*body)(void* m),
-                 void (*extra)(void* m), int timeout_s, int incr_step) {
+static void test(const char* name, void (*body)(void* m), void (*extra)(void* m), int timeout_s,
+                 int incr_step) {
   int64_t iterations = 256;
   struct test* m;
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec time_taken;
   gpr_timespec deadline = gpr_time_add(
-      start, gpr_time_from_micros(static_cast<int64_t>(timeout_s) * 1000000,
-                                  GPR_TIMESPAN));
+      start, gpr_time_from_micros(static_cast<int64_t>(timeout_s) * 1000000, GPR_TIMESPAN));
   fprintf(stderr, "%s:", name);
   fflush(stderr);
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
@@ -266,9 +264,8 @@ static void test(const char* name, void (*body)(void* m),
       extra_thd.Join();
     }
     if (m->counter != m->nthreads * m->iterations * m->incr_step) {
-      fprintf(stderr, "counter %ld  threads %d  iterations %ld\n",
-              static_cast<long>(m->counter), m->nthreads,
-              static_cast<long>(m->iterations));
+      fprintf(stderr, "counter %ld  threads %d  iterations %ld\n", static_cast<long>(m->counter),
+              m->nthreads, static_cast<long>(m->iterations));
       fflush(stderr);
       GPR_ASSERT(0);
     }
@@ -276,8 +273,7 @@ static void test(const char* name, void (*body)(void* m),
     iterations <<= 1;
   }
   time_taken = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), start);
-  fprintf(stderr, " done %lld.%09d s\n",
-          static_cast<long long>(time_taken.tv_sec),
+  fprintf(stderr, " done %lld.%09d s\n", static_cast<long long>(time_taken.tv_sec),
           static_cast<int>(time_taken.tv_nsec));
   fflush(stderr);
 }
@@ -335,8 +331,7 @@ static void inc_with_1ms_delay(void* v /*=m*/) {
   for (i = 0; i != m->iterations; i++) {
     gpr_timespec deadline;
     gpr_mu_lock(&m->mu);
-    deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                            gpr_time_from_micros(1000, GPR_TIMESPAN));
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_micros(1000, GPR_TIMESPAN));
     while (!gpr_cv_wait(&m->cv, &m->mu, deadline)) {
     }
     m->counter++;
@@ -352,8 +347,7 @@ static void inc_with_1ms_delay_event(void* v /*=m*/) {
   int64_t i;
   for (i = 0; i != m->iterations; i++) {
     gpr_timespec deadline;
-    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                            gpr_time_from_micros(1000, GPR_TIMESPAN));
+    deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_micros(1000, GPR_TIMESPAN));
     GPR_ASSERT(gpr_event_wait(&m->event, deadline) == nullptr);
     gpr_mu_lock(&m->mu);
     m->counter++;
@@ -396,10 +390,9 @@ static void consumer(void* v /*=m*/) {
   gpr_mu_lock(&m->mu);
   m->counter = n;
   gpr_mu_unlock(&m->mu);
-  GPR_ASSERT(
-      !queue_remove(&m->q, &value,
-                    gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                 gpr_time_from_micros(1000000, GPR_TIMESPAN))));
+  GPR_ASSERT(!queue_remove(
+      &m->q, &value,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_micros(1000000, GPR_TIMESPAN))));
   mark_thread_done(m);
 }
 
@@ -443,8 +436,7 @@ static void refcheck(void* v /*=m*/) {
   struct test* m = static_cast<struct test*>(v);
   int64_t n = m->iterations * m->nthreads * m->incr_step;
   int64_t i;
-  GPR_ASSERT(gpr_event_wait(&m->event, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
-             (void*)1);
+  GPR_ASSERT(gpr_event_wait(&m->event, gpr_inf_future(GPR_CLOCK_REALTIME)) == (void*)1);
   GPR_ASSERT(gpr_event_get(&m->event) == (void*)1);
   for (i = 1; i != n; i++) {
     GPR_ASSERT(!gpr_unref(&m->refcount));

@@ -62,34 +62,27 @@ static void* credentials_pointer_arg_copy(void* p) {
 static int credentials_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
 
 static const grpc_arg_pointer_vtable credentials_pointer_vtable = {
-    credentials_pointer_arg_copy, credentials_pointer_arg_destroy,
-    credentials_pointer_cmp};
+    credentials_pointer_arg_copy, credentials_pointer_arg_destroy, credentials_pointer_cmp};
 
-grpc_arg grpc_channel_credentials_to_arg(
-    grpc_channel_credentials* credentials) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CHANNEL_CREDENTIALS), credentials,
-      &credentials_pointer_vtable);
+grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials* credentials) {
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_CHANNEL_CREDENTIALS),
+                                         credentials, &credentials_pointer_vtable);
 }
 
-grpc_channel_credentials* grpc_channel_credentials_from_arg(
-    const grpc_arg* arg) {
+grpc_channel_credentials* grpc_channel_credentials_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_ARG_CHANNEL_CREDENTIALS);
+    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type, GRPC_ARG_CHANNEL_CREDENTIALS);
     return nullptr;
   }
   return static_cast<grpc_channel_credentials*>(arg->value.pointer.p);
 }
 
-grpc_channel_credentials* grpc_channel_credentials_find_in_args(
-    const grpc_channel_args* args) {
+grpc_channel_credentials* grpc_channel_credentials_find_in_args(const grpc_channel_args* args) {
   size_t i;
   if (args == nullptr) return nullptr;
   for (i = 0; i < args->num_args; i++) {
-    grpc_channel_credentials* credentials =
-        grpc_channel_credentials_from_arg(&args->args[i]);
+    grpc_channel_credentials* credentials = grpc_channel_credentials_from_arg(&args->args[i]);
     if (credentials != nullptr) return credentials;
   }
   return nullptr;
@@ -112,8 +105,8 @@ void grpc_server_credentials::set_auth_metadata_processor(
   processor_ = processor;
 }
 
-void grpc_server_credentials_set_auth_metadata_processor(
-    grpc_server_credentials* creds, grpc_auth_metadata_processor processor) {
+void grpc_server_credentials_set_auth_metadata_processor(grpc_server_credentials* creds,
+                                                         grpc_auth_metadata_processor processor) {
   GPR_DEBUG_ASSERT(creds != nullptr);
   creds->set_auth_metadata_processor(processor);
 }
@@ -126,36 +119,31 @@ static void* server_credentials_pointer_arg_copy(void* p) {
   return static_cast<grpc_server_credentials*>(p)->Ref().release();
 }
 
-static int server_credentials_pointer_cmp(void* a, void* b) {
-  return GPR_ICMP(a, b);
-}
+static int server_credentials_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
 
-static const grpc_arg_pointer_vtable cred_ptr_vtable = {
-    server_credentials_pointer_arg_copy, server_credentials_pointer_arg_destroy,
-    server_credentials_pointer_cmp};
+static const grpc_arg_pointer_vtable cred_ptr_vtable = {server_credentials_pointer_arg_copy,
+                                                        server_credentials_pointer_arg_destroy,
+                                                        server_credentials_pointer_cmp};
 
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_SERVER_CREDENTIALS_ARG), c, &cred_ptr_vtable);
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_SERVER_CREDENTIALS_ARG), c,
+                                         &cred_ptr_vtable);
 }
 
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_SERVER_CREDENTIALS_ARG) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_SERVER_CREDENTIALS_ARG);
+    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type, GRPC_SERVER_CREDENTIALS_ARG);
     return nullptr;
   }
   return static_cast<grpc_server_credentials*>(arg->value.pointer.p);
 }
 
-grpc_server_credentials* grpc_find_server_credentials_in_args(
-    const grpc_channel_args* args) {
+grpc_server_credentials* grpc_find_server_credentials_in_args(const grpc_channel_args* args) {
   size_t i;
   if (args == nullptr) return nullptr;
   for (i = 0; i < args->num_args; i++) {
-    grpc_server_credentials* p =
-        grpc_server_credentials_from_arg(&args->args[i]);
+    grpc_server_credentials* p = grpc_server_credentials_from_arg(&args->args[i]);
     if (p != nullptr) return p;
   }
   return nullptr;

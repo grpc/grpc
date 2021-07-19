@@ -28,18 +28,15 @@ namespace {
 
 class RegistryState {
  public:
-  void RegisterCertificateProviderFactory(
-      std::unique_ptr<CertificateProviderFactory> factory) {
-    gpr_log(GPR_DEBUG, "registering certificate provider factory for \"%s\"",
-            factory->name());
+  void RegisterCertificateProviderFactory(std::unique_ptr<CertificateProviderFactory> factory) {
+    gpr_log(GPR_DEBUG, "registering certificate provider factory for \"%s\"", factory->name());
     for (size_t i = 0; i < factories_.size(); ++i) {
       GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
     }
     factories_.push_back(std::move(factory));
   }
 
-  CertificateProviderFactory* LookupCertificateProviderFactory(
-      absl::string_view name) const {
+  CertificateProviderFactory* LookupCertificateProviderFactory(absl::string_view name) const {
     for (size_t i = 0; i < factories_.size(); ++i) {
       if (name == factories_[i]->name()) {
         return factories_[i].get();
@@ -54,8 +51,7 @@ class RegistryState {
   // more factories are needed and the additional allocations are
   // hurting performance (which is unlikely, since these allocations
   // only occur at gRPC initialization time).
-  absl::InlinedVector<std::unique_ptr<CertificateProviderFactory>, 3>
-      factories_;
+  absl::InlinedVector<std::unique_ptr<CertificateProviderFactory>, 3> factories_;
 };
 
 static RegistryState* g_state = nullptr;
@@ -66,8 +62,7 @@ static RegistryState* g_state = nullptr;
 // CertificateProviderRegistry
 //
 
-CertificateProviderFactory*
-CertificateProviderRegistry::LookupCertificateProviderFactory(
+CertificateProviderFactory* CertificateProviderRegistry::LookupCertificateProviderFactory(
     absl::string_view name) {
   GPR_ASSERT(g_state != nullptr);
   return g_state->LookupCertificateProviderFactory(name);

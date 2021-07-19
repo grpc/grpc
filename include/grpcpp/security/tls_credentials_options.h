@@ -30,8 +30,7 @@
 
 // TODO(yihuazhang): remove the forward declaration here and include
 // <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
-typedef struct grpc_tls_server_authorization_check_arg
-    grpc_tls_server_authorization_check_arg;
+typedef struct grpc_tls_server_authorization_check_arg grpc_tls_server_authorization_check_arg;
 typedef struct grpc_tls_server_authorization_check_config
     grpc_tls_server_authorization_check_config;
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
@@ -54,8 +53,7 @@ class TlsServerAuthorizationCheckArg {
   /** TlsServerAuthorizationCheckArg does not take ownership of the C arg passed
    * to the constructor. One must remember to free any memory allocated to the
    * C arg after using the setter functions below. **/
-  explicit TlsServerAuthorizationCheckArg(
-      grpc_tls_server_authorization_check_arg* arg);
+  explicit TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg);
   ~TlsServerAuthorizationCheckArg();
 
   /** Getters for member fields. **/
@@ -103,8 +101,7 @@ struct TlsServerAuthorizationCheckInterface {
 class TlsServerAuthorizationCheckConfig {
  public:
   explicit TlsServerAuthorizationCheckConfig(
-      std::shared_ptr<TlsServerAuthorizationCheckInterface>
-          server_authorization_check_interface);
+      std::shared_ptr<TlsServerAuthorizationCheckInterface> server_authorization_check_interface);
   ~TlsServerAuthorizationCheckConfig();
 
   int Schedule(TlsServerAuthorizationCheckArg* arg) const {
@@ -136,14 +133,11 @@ class TlsServerAuthorizationCheckConfig {
   }
 
   /** Returns C struct for the server authorization check config. **/
-  grpc_tls_server_authorization_check_config* c_config() const {
-    return c_config_;
-  }
+  grpc_tls_server_authorization_check_config* c_config() const { return c_config_; }
 
  private:
   grpc_tls_server_authorization_check_config* c_config_;
-  std::shared_ptr<TlsServerAuthorizationCheckInterface>
-      server_authorization_check_interface_;
+  std::shared_ptr<TlsServerAuthorizationCheckInterface> server_authorization_check_interface_;
 };
 
 // Base class of configurable options specified by users to configure their
@@ -158,8 +152,7 @@ class TlsCredentialsOptions {
   TlsCredentialsOptions();
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
-  void set_certificate_provider(
-      std::shared_ptr<CertificateProviderInterface> certificate_provider);
+  void set_certificate_provider(std::shared_ptr<CertificateProviderInterface> certificate_provider);
   // Watches the updates of root certificates with name |root_cert_name|.
   // If used in TLS credentials, setting this field is optional for both the
   // client side and the server side.
@@ -190,9 +183,7 @@ class TlsCredentialsOptions {
 
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.
-  grpc_tls_credentials_options* c_credentials_options() const {
-    return c_credentials_options_;
-  }
+  grpc_tls_credentials_options* c_credentials_options() const { return c_credentials_options_; }
 
  private:
   std::shared_ptr<CertificateProviderInterface> certificate_provider_;
@@ -213,8 +204,7 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
       grpc_tls_server_verification_option server_verification_option);
   // Sets the custom authorization config.
   void set_server_authorization_check_config(
-      std::shared_ptr<TlsServerAuthorizationCheckConfig>
-          authorization_check_config);
+      std::shared_ptr<TlsServerAuthorizationCheckConfig> authorization_check_config);
 
  private:
 };
@@ -233,8 +223,7 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
 
   // Sets option to request the certificates from the client.
   // The default is GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE.
-  void set_cert_request_type(
-      grpc_ssl_client_certificate_request_type cert_request_type);
+  void set_cert_request_type(grpc_ssl_client_certificate_request_type cert_request_type);
 
  private:
 };

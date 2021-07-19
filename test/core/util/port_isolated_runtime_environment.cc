@@ -35,8 +35,8 @@
 
 static int get_random_port_offset() {
   srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
-  double rnd = static_cast<double>(rand()) /
-               (static_cast<double>(RAND_MAX) + 1.0);  // values from [0,1)
+  double rnd =
+      static_cast<double>(rand()) / (static_cast<double>(RAND_MAX) + 1.0);  // values from [0,1)
   return static_cast<int>(rnd * (MAX_PORT - MIN_PORT + 1));
 }
 
@@ -44,11 +44,9 @@ static int s_initial_offset = get_random_port_offset();
 static gpr_atm s_pick_counter = 0;
 
 static int grpc_pick_unused_port_or_die_impl(void) {
-  int orig_counter_val =
-      static_cast<int>(gpr_atm_full_fetch_add(&s_pick_counter, 1));
+  int orig_counter_val = static_cast<int>(gpr_atm_full_fetch_add(&s_pick_counter, 1));
   GPR_ASSERT(orig_counter_val < (MAX_PORT - MIN_PORT + 1));
-  return MIN_PORT +
-         (s_initial_offset + orig_counter_val) % (MAX_PORT - MIN_PORT + 1);
+  return MIN_PORT + (s_initial_offset + orig_counter_val) % (MAX_PORT - MIN_PORT + 1);
 }
 
 int grpc_pick_unused_port_or_die(void) {

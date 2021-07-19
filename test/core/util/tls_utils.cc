@@ -41,12 +41,11 @@ void TmpFile::RewriteFile(absl::string_view credential_data) {
   GPR_ASSERT(rename(new_name.c_str(), name_.c_str()) == 0);
 }
 
-std::string TmpFile::CreateTmpFileAndWriteData(
-    absl::string_view credential_data) {
+std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view credential_data) {
   char* name = nullptr;
   FILE* file_descriptor = gpr_tmpfile("GrpcTlsCertificateProviderTest", &name);
-  GPR_ASSERT(fwrite(credential_data.data(), 1, credential_data.size(),
-                    file_descriptor) == credential_data.size());
+  GPR_ASSERT(fwrite(credential_data.data(), 1, credential_data.size(), file_descriptor) ==
+             credential_data.size());
   GPR_ASSERT(fclose(file_descriptor) == 0);
   GPR_ASSERT(file_descriptor != nullptr);
   GPR_ASSERT(name != nullptr);
@@ -55,8 +54,7 @@ std::string TmpFile::CreateTmpFileAndWriteData(
   return name_to_return;
 }
 
-PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
-                                    absl::string_view certs) {
+PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key, absl::string_view certs) {
   if (private_key.empty() && certs.empty()) {
     return {};
   }

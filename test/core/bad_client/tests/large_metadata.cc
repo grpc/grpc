@@ -77,9 +77,9 @@ int main(int argc, char** argv) {
   // Test sending more metadata than the server will accept.
   std::vector<std::string> headers;
   for (i = 0; i < NUM_HEADERS; ++i) {
-    headers.push_back(absl::StrFormat(
-        "%s%02d%s", PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
-        PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR));
+    headers.push_back(absl::StrFormat("%s%02d%s",
+                                      PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
+                                      PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR));
   }
   std::string client_headers = absl::StrJoin(headers, "");
   char client_payload[TOO_MUCH_METADATA_FROM_CLIENT_REQUEST_SIZE] =

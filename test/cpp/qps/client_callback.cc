@@ -45,8 +45,7 @@ namespace testing {
  * Maintains context info per RPC
  */
 struct CallbackClientRpcContext {
-  explicit CallbackClientRpcContext(BenchmarkService::Stub* stub)
-      : alarm_(nullptr), stub_(stub) {}
+  explicit CallbackClientRpcContext(BenchmarkService::Stub* stub) : alarm_(nullptr), stub_(stub) {}
 
   ~CallbackClientRpcContext() {}
 
@@ -61,20 +60,17 @@ static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
   return BenchmarkService::NewStub(ch);
 }
 
-class CallbackClient
-    : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
+class CallbackClient : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit CallbackClient(const ClientConfig& config)
-      : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
-            config, BenchmarkStubCreator) {
+      : ClientImpl<BenchmarkService::Stub, SimpleRequest>(config, BenchmarkStubCreator) {
     num_threads_ = NumThreads(config);
     rpcs_done_ = 0;
 
     //  Don't divide the fixed load among threads as the user threads
     //  only bootstrap the RPCs
     SetupLoadTest(config, 1);
-    total_outstanding_rpcs_ =
-        config.client_channels() * config.outstanding_rpcs_per_channel();
+    total_outstanding_rpcs_ = config.client_channels() * config.outstanding_rpcs_per_channel();
   }
 
   ~CallbackClient() override {}
@@ -144,12 +140,10 @@ class CallbackClient
 
 class CallbackUnaryClient final : public CallbackClient {
  public:
-  explicit CallbackUnaryClient(const ClientConfig& config)
-      : CallbackClient(config) {
+  explicit CallbackUnaryClient(const ClientConfig& config) : CallbackClient(config) {
     for (int ch = 0; ch < config.client_channels(); ch++) {
       for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
-        ctx_.emplace_back(
-            new CallbackClientRpcContext(channels_[ch].get_stub()));
+        ctx_.emplace_back(new CallbackClientRpcContext(channels_[ch].get_stub()));
       }
     }
     StartThreads(num_threads_);
@@ -176,10 +170,9 @@ class CallbackUnaryClient final : public CallbackClient {
       if (ctx_[vector_idx]->alarm_ == nullptr) {
         ctx_[vector_idx]->alarm_ = absl::make_unique<Alarm>();
       }
-      ctx_[vector_idx]->alarm_->Set(next_issue_time,
-                                    [this, t, vector_idx](bool /*ok*/) {
-                                      IssueUnaryCallbackRpc(t, vector_idx);
-                                    });
+      ctx_[vector_idx]->alarm_->Set(next_issue_time, [this, t, vector_idx](bool /*ok*/) {
+        IssueUnaryCallbackRpc(t, vector_idx);
+      });
     } else {
       IssueUnaryCallbackRpc(t, vector_idx);
     }
@@ -204,8 +197,7 @@ class CallbackUnaryClient final : public CallbackClient {
             NotifyMainThreadOfThreadCompletion();
           } else {
             // Reallocate ctx for next RPC
-            ctx_[vector_idx] = absl::make_unique<CallbackClientRpcContext>(
-                ctx_[vector_idx]->stub_);
+            ctx_[vector_idx] = absl::make_unique<CallbackClientRpcContext>(ctx_[vector_idx]->stub_);
             // Schedule a new RPC
             ScheduleRpc(t, vector_idx);
           }
@@ -216,12 +208,10 @@ class CallbackUnaryClient final : public CallbackClient {
 class CallbackStreamingClient : public CallbackClient {
  public:
   explicit CallbackStreamingClient(const ClientConfig& config)
-      : CallbackClient(config),
-        messages_per_stream_(config.messages_per_stream()) {
+      : CallbackClient(config), messages_per_stream_(config.messages_per_stream()) {
     for (int ch = 0; ch < config.client_channels(); ch++) {
       for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
-        ctx_.emplace_back(
-            new CallbackClientRpcContext(channels_[ch].get_stub()));
+        ctx_.emplace_back(new CallbackClientRpcContext(channels_[ch].get_stub()));
       }
     }
     StartThreads(num_threads_);
@@ -253,9 +243,8 @@ class CallbackStreamingPingPongClient : public CallbackStreamingClient {
 class CallbackStreamingPingPongReactor final
     : public grpc::ClientBidiReactor<SimpleRequest, SimpleResponse> {
  public:
-  CallbackStreamingPingPongReactor(
-      CallbackStreamingPingPongClient* client,
-      std::unique_ptr<CallbackClientRpcContext> ctx)
+  CallbackStreamingPingPongReactor(CallbackStreamingPingPongClient* client,
+                                   std::unique_ptr<CallbackClientRpcContext> ctx)
       : client_(client), ctx_(std::move(ctx)), messages_issued_(0) {}
 
   void StartNewRpc() {
@@ -270,8 +259,7 @@ class CallbackStreamingPingPongReactor final
     if (!ok) {
       gpr_log(GPR_ERROR, "Error writing RPC");
     }
-    if ((!ok || client_->ThreadCompleted()) &&
-        !writes_done_started_.test_and_set()) {
+    if ((!ok || client_->ThreadCompleted()) && !writes_done_started_.test_and_set()) {
       StartWritesDone();
     }
     StartRead(&ctx_->response_);
@@ -322,8 +310,7 @@ class CallbackStreamingPingPongReactor final
       if (ctx_->alarm_ == nullptr) {
         ctx_->alarm_ = absl::make_unique<Alarm>();
       }
-      ctx_->alarm_->Set(next_issue_time,
-                        [this](bool /*ok*/) { StartNewRpc(); });
+      ctx_->alarm_->Set(next_issue_time, [this](bool /*ok*/) { StartNewRpc(); });
     } else {
       StartNewRpc();
     }
@@ -339,14 +326,12 @@ class CallbackStreamingPingPongReactor final
   int messages_issued_;         // Messages issued by this stream
 };
 
-class CallbackStreamingPingPongClientImpl final
-    : public CallbackStreamingPingPongClient {
+class CallbackStreamingPingPongClientImpl final : public CallbackStreamingPingPongClient {
  public:
   explicit CallbackStreamingPingPongClientImpl(const ClientConfig& config)
       : CallbackStreamingPingPongClient(config) {
     for (size_t i = 0; i < total_outstanding_rpcs_; i++) {
-      reactor_.emplace_back(
-          new CallbackStreamingPingPongReactor(this, std::move(ctx_[i])));
+      reactor_.emplace_back(new CallbackStreamingPingPongReactor(this, std::move(ctx_[i])));
     }
   }
   ~CallbackStreamingPingPongClientImpl() override {}
@@ -373,8 +358,7 @@ std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& config) {
     case UNARY:
       return std::unique_ptr<Client>(new CallbackUnaryClient(config));
     case STREAMING:
-      return std::unique_ptr<Client>(
-          new CallbackStreamingPingPongClientImpl(config));
+      return std::unique_ptr<Client>(new CallbackStreamingPingPongClientImpl(config));
     case STREAMING_FROM_CLIENT:
     case STREAMING_FROM_SERVER:
     case STREAMING_BOTH_WAYS:

@@ -31,8 +31,8 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   uint64_t busy = 0, total = 0;
   host_cpu_load_info_data_t cpuinfo;
   mach_msg_type_number_t count = HOST_CPU_LOAD_INFO_COUNT;
-  if (host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO,
-                      (host_info_t)&cpuinfo, &count) == KERN_SUCCESS) {
+  if (host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, (host_info_t)&cpuinfo, &count) ==
+      KERN_SUCCESS) {
     for (int i = 0; i < CPU_STATE_MAX; i++) total += cpuinfo.cpu_ticks[i];
     busy = total - cpuinfo.cpu_ticks[CPU_STATE_IDLE];
   }

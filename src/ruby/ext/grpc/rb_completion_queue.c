@@ -44,8 +44,7 @@ static void* grpc_rb_completion_queue_pluck_no_gil(void* param) {
   gpr_timespec deadline;
   do {
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
-    next_call->event = grpc_completion_queue_pluck(
-        next_call->cq, next_call->tag, deadline, NULL);
+    next_call->event = grpc_completion_queue_pluck(next_call->cq, next_call->tag, deadline, NULL);
     if (next_call->event.type != GRPC_QUEUE_TIMEOUT ||
         gpr_time_cmp(deadline, next_call->timeout) > 0) {
       break;
@@ -71,8 +70,8 @@ static void unblock_func(void* param) {
 
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
    the GVL and handling interrupts */
-grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
-                                     gpr_timespec deadline, void* reserved) {
+grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag, gpr_timespec deadline,
+                                     void* reserved) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   next_call.cq = queue;
@@ -90,9 +89,8 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
      to get back to plucking when the interrupt has been handled. */
   do {
     next_call.interrupted = 0;
-    rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
-                               (void*)&next_call, unblock_func,
-                               (void*)&next_call);
+    rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil, (void*)&next_call,
+                               unblock_func, (void*)&next_call);
     /* If an interrupt prevented pluck from returning useful information, then
        any plucks that did complete must have timed out */
   } while (next_call.interrupted && next_call.event.type == GRPC_QUEUE_TIMEOUT);

@@ -33,11 +33,8 @@ namespace grpc_core {
 namespace testing {
 
 TEST(PidController, NoOp) {
-  PidController pid(PidController::Args()
-                        .set_gain_p(1)
-                        .set_gain_i(1)
-                        .set_gain_d(1)
-                        .set_initial_control_value(1));
+  PidController pid(
+      PidController::Args().set_gain_p(1).set_gain_i(1).set_gain_d(1).set_initial_control_value(1));
 }
 
 struct SimpleConvergenceTestArgs {
@@ -50,13 +47,11 @@ struct SimpleConvergenceTestArgs {
 };
 
 std::ostream& operator<<(std::ostream& out, SimpleConvergenceTestArgs args) {
-  return out << "gain_p:" << args.gain_p << " gain_i:" << args.gain_i
-             << " gain_d:" << args.gain_d << " dt:" << args.dt
-             << " set_point:" << args.set_point << " start:" << args.start;
+  return out << "gain_p:" << args.gain_p << " gain_i:" << args.gain_i << " gain_d:" << args.gain_d
+             << " dt:" << args.dt << " set_point:" << args.set_point << " start:" << args.start;
 }
 
-class SimpleConvergenceTest
-    : public ::testing::TestWithParam<SimpleConvergenceTestArgs> {};
+class SimpleConvergenceTest : public ::testing::TestWithParam<SimpleConvergenceTestArgs> {};
 
 TEST_P(SimpleConvergenceTest, Converges) {
   PidController pid(PidController::Args()
@@ -75,11 +70,10 @@ TEST_P(SimpleConvergenceTest, Converges) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    X, SimpleConvergenceTest,
-    ::testing::Values(SimpleConvergenceTestArgs{0.2, 0, 0, 1, 100, 0},
-                      SimpleConvergenceTestArgs{0.2, 0.1, 0, 1, 100, 0},
-                      SimpleConvergenceTestArgs{0.2, 0.1, 0.1, 1, 100, 0}));
+INSTANTIATE_TEST_SUITE_P(X, SimpleConvergenceTest,
+                         ::testing::Values(SimpleConvergenceTestArgs{0.2, 0, 0, 1, 100, 0},
+                                           SimpleConvergenceTestArgs{0.2, 0.1, 0, 1, 100, 0},
+                                           SimpleConvergenceTestArgs{0.2, 0.1, 0.1, 1, 100, 0}));
 
 }  // namespace testing
 }  // namespace grpc_core

@@ -62,13 +62,11 @@ static void grpc_rb_server_maybe_shutdown_and_notify(grpc_rb_server* server,
       ev = rb_completion_queue_pluck(server->queue, tag, deadline, NULL);
       if (ev.type == GRPC_QUEUE_TIMEOUT) {
         grpc_server_cancel_all_calls(server->wrapped);
-        ev = rb_completion_queue_pluck(
-            server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+        ev =
+            rb_completion_queue_pluck(server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
       }
       if (ev.type != GRPC_OP_COMPLETE) {
-        gpr_log(GPR_INFO,
-                "GRPC_RUBY: bad grpc_server_shutdown_and_notify result:%d",
-                ev.type);
+        gpr_log(GPR_INFO, "GRPC_RUBY: bad grpc_server_shutdown_and_notify result:%d", ev.type);
       }
     }
   }
@@ -95,8 +93,7 @@ static void grpc_rb_server_free_internal(void* p) {
   };
   svr = (grpc_rb_server*)p;
 
-  deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                          gpr_time_from_seconds(2, GPR_TIMESPAN));
+  deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(2, GPR_TIMESPAN));
 
   grpc_rb_server_maybe_shutdown_and_notify(svr, deadline);
   grpc_rb_server_maybe_destroy(svr);
@@ -112,10 +109,7 @@ static void grpc_rb_server_free(void* p) {
 
 static const rb_data_type_t grpc_rb_server_data_type = {
     "grpc_server",
-    {GRPC_RB_GC_NOT_MARKED,
-     grpc_rb_server_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE,
-     {NULL, NULL}},
+    {GRPC_RB_GC_NOT_MARKED, grpc_rb_server_free, GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL,
     NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
@@ -150,8 +144,7 @@ static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
   MEMZERO(&args, grpc_channel_args, 1);
 
   cq = grpc_completion_queue_create_for_pluck(NULL);
-  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type,
-                       wrapper);
+  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, wrapper);
   grpc_rb_hash_convert_to_channel_args(channel_args, &args);
   srv = grpc_server_create(&args, NULL);
 
@@ -202,8 +195,7 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
   request_call_stack st;
   VALUE result;
   void* tag = (void*)&st;
-  grpc_completion_queue* call_queue =
-      grpc_completion_queue_create_for_pluck(NULL);
+  grpc_completion_queue* call_queue = grpc_completion_queue_create_for_pluck(NULL);
   gpr_timespec deadline;
 
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
@@ -214,18 +206,16 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
   grpc_request_call_stack_init(&st);
   /* call grpc_server_request_call, then wait for it to complete using
    * pluck_event */
-  err = grpc_server_request_call(s->wrapped, &call, &st.details, &st.md_ary,
-                                 call_queue, s->queue, tag);
+  err = grpc_server_request_call(s->wrapped, &call, &st.details, &st.md_ary, call_queue, s->queue,
+                                 tag);
   if (err != GRPC_CALL_OK) {
     grpc_request_call_stack_cleanup(&st);
-    rb_raise(grpc_rb_eCallError,
-             "grpc_server_request_call failed: %s (code=%d)",
+    rb_raise(grpc_rb_eCallError, "grpc_server_request_call failed: %s (code=%d)",
              grpc_call_error_detail_of(err), err);
     return Qnil;
   }
 
-  ev = rb_completion_queue_pluck(s->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  ev = rb_completion_queue_pluck(s->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   if (!ev.success) {
     grpc_request_call_stack_cleanup(&st);
     rb_raise(grpc_rb_eCallError, "request_call completion failed");
@@ -237,10 +227,8 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
   result = rb_struct_new(
       grpc_rb_sNewServerRpc, grpc_rb_slice_to_ruby_string(st.details.method),
       grpc_rb_slice_to_ruby_string(st.details.host),
-      rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec),
-                 INT2NUM(deadline.tv_nsec / 1000)),
-      grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call, call_queue),
-      NULL);
+      rb_funcall(rb_cTime, id_at, 2, INT2NUM(deadline.tv_sec), INT2NUM(deadline.tv_nsec / 1000)),
+      grpc_rb_md_ary_to_h(&st.md_ary), grpc_rb_wrap_call(call, call_queue), NULL);
   grpc_request_call_stack_cleanup(&st);
   return result;
 }
@@ -304,8 +292,7 @@ static VALUE grpc_rb_server_destroy(VALUE self) {
     secure_server.add_http_port('mydomain:50051', server_creds)
 
     Adds a http2 port to server */
-static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
-                                           VALUE rb_creds) {
+static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port, VALUE rb_creds) {
   grpc_rb_server* s = NULL;
   grpc_server_credentials* creds = NULL;
   int recvd_port = 0;
@@ -319,11 +306,9 @@ static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
       rb_raise(rb_eTypeError, "bad creds symbol, want :this_port_is_insecure");
       return Qnil;
     }
-    recvd_port =
-        grpc_server_add_insecure_http2_port(s->wrapped, StringValueCStr(port));
+    recvd_port = grpc_server_add_insecure_http2_port(s->wrapped, StringValueCStr(port));
     if (recvd_port == 0) {
-      rb_raise(rb_eRuntimeError,
-               "could not add port %s to server, not sure why",
+      rb_raise(rb_eRuntimeError, "could not add port %s to server, not sure why",
                StringValueCStr(port));
     }
   } else {
@@ -339,11 +324,9 @@ static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
                "failed to create server because credentials parameter has an "
                "invalid type, want ServerCredentials or XdsServerCredentials");
     }
-    recvd_port = grpc_server_add_secure_http2_port(
-        s->wrapped, StringValueCStr(port), creds);
+    recvd_port = grpc_server_add_secure_http2_port(s->wrapped, StringValueCStr(port), creds);
     if (recvd_port == 0) {
-      rb_raise(rb_eRuntimeError,
-               "could not add secure port %s to server, not sure why",
+      rb_raise(rb_eRuntimeError, "could not add secure port %s to server, not sure why",
                StringValueCStr(port));
     }
   }
@@ -351,27 +334,22 @@ static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
 }
 
 void Init_grpc_server() {
-  grpc_rb_cServer =
-      rb_define_class_under(grpc_rb_mGrpcCore, "Server", rb_cObject);
+  grpc_rb_cServer = rb_define_class_under(grpc_rb_mGrpcCore, "Server", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(grpc_rb_cServer, grpc_rb_server_alloc);
 
   /* Provides a ruby constructor and support for dup/clone. */
   rb_define_method(grpc_rb_cServer, "initialize", grpc_rb_server_init, 1);
-  rb_define_method(grpc_rb_cServer, "initialize_copy", grpc_rb_cannot_init_copy,
-                   1);
+  rb_define_method(grpc_rb_cServer, "initialize_copy", grpc_rb_cannot_init_copy, 1);
 
   /* Add the server methods. */
-  rb_define_method(grpc_rb_cServer, "request_call", grpc_rb_server_request_call,
-                   0);
+  rb_define_method(grpc_rb_cServer, "request_call", grpc_rb_server_request_call, 0);
   rb_define_method(grpc_rb_cServer, "start", grpc_rb_server_start, 0);
-  rb_define_method(grpc_rb_cServer, "shutdown_and_notify",
-                   grpc_rb_server_shutdown_and_notify, 1);
+  rb_define_method(grpc_rb_cServer, "shutdown_and_notify", grpc_rb_server_shutdown_and_notify, 1);
   rb_define_method(grpc_rb_cServer, "destroy", grpc_rb_server_destroy, 0);
   rb_define_alias(grpc_rb_cServer, "close", "destroy");
-  rb_define_method(grpc_rb_cServer, "add_http2_port",
-                   grpc_rb_server_add_http2_port, 2);
+  rb_define_method(grpc_rb_cServer, "add_http2_port", grpc_rb_server_add_http2_port, 2);
   id_at = rb_intern("at");
   id_insecure_server = rb_intern("this_port_is_insecure");
 }

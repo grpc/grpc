@@ -49,15 +49,13 @@ class Arena {
   // Create an arena, with \a initial_size bytes in the first allocated buffer,
   // and return both a void pointer to the returned arena and a void* with the
   // first allocation.
-  static std::pair<Arena*, void*> CreateWithAlloc(size_t initial_size,
-                                                  size_t alloc_size);
+  static std::pair<Arena*, void*> CreateWithAlloc(size_t initial_size, size_t alloc_size);
 
   // Destroy an arena, returning the total number of bytes allocated.
   size_t Destroy();
   // Allocate \a size bytes from the arena.
   void* Alloc(size_t size) {
-    static constexpr size_t base_size =
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
+    static constexpr size_t base_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
     size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
     size_t begin = total_used_.FetchAdd(size, MemoryOrder::RELAXED);
     if (begin + size <= initial_zone_size_) {

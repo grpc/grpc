@@ -101,15 +101,12 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
   // Modifies channel args to be passed to the dynamic filter stack.
   // Takes ownership of argument.  Caller takes ownership of result.
-  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) {
-    return args;
-  }
+  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) { return args; }
 
   virtual CallConfig GetCallConfig(GetCallConfigArgs args) = 0;
 
   grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<ConfigSelector> GetFromChannelArgs(
-      const grpc_channel_args& args);
+  static RefCountedPtr<ConfigSelector> GetFromChannelArgs(const grpc_channel_args& args);
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.
@@ -131,8 +128,7 @@ class DefaultConfigSelector : public ConfigSelector {
 
   CallConfig GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;
-    call_config.method_configs =
-        service_config_->GetMethodParsedConfigVector(*args.path);
+    call_config.method_configs = service_config_->GetMethodParsedConfigVector(*args.path);
     call_config.service_config = service_config_;
     return call_config;
   }

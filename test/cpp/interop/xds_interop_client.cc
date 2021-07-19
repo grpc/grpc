@@ -54,16 +54,13 @@ ABSL_FLAG(int32_t, qps, 1, "Qps per channel.");
 // TODO(Capstan): Consider using absl::Duration
 ABSL_FLAG(int32_t, rpc_timeout_sec, 30, "Per RPC timeout seconds.");
 ABSL_FLAG(std::string, server, "localhost:50051", "Address of server.");
-ABSL_FLAG(int32_t, stats_port, 50052,
-          "Port to expose peer distribution stats service.");
-ABSL_FLAG(std::string, rpc, "UnaryCall",
-          "a comma separated list of rpc methods.");
+ABSL_FLAG(int32_t, stats_port, 50052, "Port to expose peer distribution stats service.");
+ABSL_FLAG(std::string, rpc, "UnaryCall", "a comma separated list of rpc methods.");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
           "RPC status for the test RPC to be considered successful");
-ABSL_FLAG(
-    bool, secure_mode, false,
-    "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
+ABSL_FLAG(bool, secure_mode, false,
+          "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -124,8 +121,7 @@ struct AsyncClientCall {
   int saved_request_id;
   ClientConfigureRequest::RpcType rpc_type;
   std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
-  std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
-      simple_response_reader;
+  std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>> simple_response_reader;
 };
 
 /** Records the remote peer distribution for a given range of RPCs. */
@@ -141,8 +137,7 @@ class XdsStatsWatcher {
     // We count RPCs for global watcher or if the request_id falls into the
     // watcher's interested range of request ids.
     if ((start_id_ == 0 && end_id_ == 0) ||
-        (start_id_ <= call->saved_request_id &&
-         call->saved_request_id < end_id_)) {
+        (start_id_ <= call->saved_request_id && call->saved_request_id < end_id_)) {
       {
         std::lock_guard<std::mutex> lock(m_);
         if (peer.empty()) {
@@ -156,12 +151,9 @@ class XdsStatsWatcher {
         rpcs_needed_--;
         // Report accumulated stats.
         auto& stats_per_method = *accumulated_stats_.mutable_stats_per_method();
-        auto& method_stat =
-            stats_per_method[ClientConfigureRequest_RpcType_Name(
-                call->rpc_type)];
+        auto& method_stat = stats_per_method[ClientConfigureRequest_RpcType_Name(call->rpc_type)];
         auto& result = *method_stat.mutable_result();
-        grpc_status_code code =
-            static_cast<grpc_status_code>(call->status.error_code());
+        grpc_status_code code = static_cast<grpc_status_code>(call->status.error_code());
         auto& num_rpcs = result[code];
         ++num_rpcs;
         auto rpcs_started = method_stat.rpcs_started();
@@ -171,13 +163,10 @@ class XdsStatsWatcher {
     }
   }
 
-  void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response,
-                               int timeout_sec) {
+  void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response, int timeout_sec) {
     std::unique_lock<std::mutex> lock(m_);
-    cv_.wait_for(lock, std::chrono::seconds(timeout_sec),
-                 [this] { return rpcs_needed_ == 0; });
-    response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
-                                             rpcs_by_peer_.end());
+    cv_.wait_for(lock, std::chrono::seconds(timeout_sec), [this] { return rpcs_needed_ == 0; });
+    response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(), rpcs_by_peer_.end());
     auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
     for (const auto& rpc_by_type : rpcs_by_type_) {
       std::string method_name;
@@ -192,8 +181,7 @@ class XdsStatsWatcher {
       // and UNARY_CALL we will just use the name of the enum instead of the
       // method_name variable.
       auto& response_rpc_by_method = response_rpcs_by_method[method_name];
-      auto& response_rpcs_by_peer =
-          *response_rpc_by_method.mutable_rpcs_by_peer();
+      auto& response_rpcs_by_peer = *response_rpc_by_method.mutable_rpcs_by_peer();
       for (const auto& rpc_by_peer : rpc_by_type.second) {
         auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
         response_rpc_by_peer = rpc_by_peer.second;
@@ -208,24 +196,20 @@ class XdsStatsWatcher {
     response->CopyFrom(accumulated_stats_);
     // TODO(@donnadionne): delete deprecated stats below when the test is no
     // longer using them.
-    auto& response_rpcs_started_by_method =
-        *response->mutable_num_rpcs_started_by_method();
-    auto& response_rpcs_succeeded_by_method =
-        *response->mutable_num_rpcs_succeeded_by_method();
-    auto& response_rpcs_failed_by_method =
-        *response->mutable_num_rpcs_failed_by_method();
+    auto& response_rpcs_started_by_method = *response->mutable_num_rpcs_started_by_method();
+    auto& response_rpcs_succeeded_by_method = *response->mutable_num_rpcs_succeeded_by_method();
+    auto& response_rpcs_failed_by_method = *response->mutable_num_rpcs_failed_by_method();
     for (const auto& rpc_by_type : rpcs_by_type_) {
       auto total_succeeded = 0;
       for (const auto& rpc_by_peer : rpc_by_type.second) {
         total_succeeded += rpc_by_peer.second;
       }
-      response_rpcs_succeeded_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] = total_succeeded;
-      response_rpcs_started_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] =
+      response_rpcs_succeeded_by_method[ClientConfigureRequest_RpcType_Name(rpc_by_type.first)] =
+          total_succeeded;
+      response_rpcs_started_by_method[ClientConfigureRequest_RpcType_Name(rpc_by_type.first)] =
           stats_watchers->global_request_id_by_type[rpc_by_type.first];
-      response_rpcs_failed_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] = no_remote_peer_by_type_[rpc_by_type.first];
+      response_rpcs_failed_by_method[ClientConfigureRequest_RpcType_Name(rpc_by_type.first)] =
+          no_remote_peer_by_type_[rpc_by_type.first];
     }
   }
 
@@ -248,8 +232,7 @@ class XdsStatsWatcher {
 
 class TestClient {
  public:
-  TestClient(const std::shared_ptr<Channel>& channel,
-             StatsWatchers* stats_watchers)
+  TestClient(const std::shared_ptr<Channel>& channel, StatsWatchers* stats_watchers)
       : stub_(TestService::NewStub(channel)), stats_watchers_(stats_watchers) {}
 
   void AsyncUnaryCall(const RpcConfig& config) {
@@ -258,31 +241,27 @@ class TestClient {
     {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
       saved_request_id = ++stats_watchers_->global_request_id;
-      ++stats_watchers_
-            ->global_request_id_by_type[ClientConfigureRequest::UNARY_CALL];
+      ++stats_watchers_->global_request_id_by_type[ClientConfigureRequest::UNARY_CALL];
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
-        std::chrono::seconds(config.timeout_sec != 0
-                                 ? config.timeout_sec
-                                 : absl::GetFlag(FLAGS_rpc_timeout_sec));
+        std::chrono::seconds(config.timeout_sec != 0 ? config.timeout_sec
+                                                     : absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
     for (const auto& data : config.metadata) {
       call->context.AddMetadata(data.first, data.second);
       // TODO(@donnadionne): move deadline to separate proto.
       if (data.first == "rpc-behavior" && data.second == "keep-open") {
-        deadline =
-            std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
+        deadline = std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
       }
     }
     call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
     call->rpc_type = ClientConfigureRequest::UNARY_CALL;
-    call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
-        &call->context, SimpleRequest::default_instance(), &cq_);
+    call->simple_response_reader =
+        stub_->PrepareAsyncUnaryCall(&call->context, SimpleRequest::default_instance(), &cq_);
     call->simple_response_reader->StartCall();
-    call->simple_response_reader->Finish(&call->simple_response, &call->status,
-                                         call);
+    call->simple_response_reader->Finish(&call->simple_response, &call->status, call);
   }
 
   void AsyncEmptyCall(const RpcConfig& config) {
@@ -291,31 +270,27 @@ class TestClient {
     {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
       saved_request_id = ++stats_watchers_->global_request_id;
-      ++stats_watchers_
-            ->global_request_id_by_type[ClientConfigureRequest::EMPTY_CALL];
+      ++stats_watchers_->global_request_id_by_type[ClientConfigureRequest::EMPTY_CALL];
     }
     std::chrono::system_clock::time_point deadline =
         std::chrono::system_clock::now() +
-        std::chrono::seconds(config.timeout_sec != 0
-                                 ? config.timeout_sec
-                                 : absl::GetFlag(FLAGS_rpc_timeout_sec));
+        std::chrono::seconds(config.timeout_sec != 0 ? config.timeout_sec
+                                                     : absl::GetFlag(FLAGS_rpc_timeout_sec));
     AsyncClientCall* call = new AsyncClientCall;
     for (const auto& data : config.metadata) {
       call->context.AddMetadata(data.first, data.second);
       // TODO(@donnadionne): move deadline to separate proto.
       if (data.first == "rpc-behavior" && data.second == "keep-open") {
-        deadline =
-            std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
+        deadline = std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
       }
     }
     call->context.set_deadline(deadline);
     call->saved_request_id = saved_request_id;
     call->rpc_type = ClientConfigureRequest::EMPTY_CALL;
-    call->empty_response_reader = stub_->PrepareAsyncEmptyCall(
-        &call->context, Empty::default_instance(), &cq_);
+    call->empty_response_reader =
+        stub_->PrepareAsyncEmptyCall(&call->context, Empty::default_instance(), &cq_);
     call->empty_response_reader->StartCall();
-    call->empty_response_reader->Finish(&call->empty_response, &call->status,
-                                        call);
+    call->empty_response_reader->Finish(&call->empty_response, &call->status, call);
   }
 
   void AsyncCompleteRpc() {
@@ -327,12 +302,10 @@ class TestClient {
       {
         std::lock_guard<std::mutex> lock(stats_watchers_->mu);
         auto server_initial_metadata = call->context.GetServerInitialMetadata();
-        auto metadata_hostname =
-            call->context.GetServerInitialMetadata().find("hostname");
+        auto metadata_hostname = call->context.GetServerInitialMetadata().find("hostname");
         std::string hostname =
             metadata_hostname != call->context.GetServerInitialMetadata().end()
-                ? std::string(metadata_hostname->second.data(),
-                              metadata_hostname->second.length())
+                ? std::string(metadata_hostname->second.data(), metadata_hostname->second.length())
                 : call->simple_response.hostname();
         for (auto watcher : stats_watchers_->watchers) {
           watcher->RpcCompleted(call, hostname);
@@ -340,27 +313,22 @@ class TestClient {
       }
 
       if (!RpcStatusCheckSuccess(call)) {
-        if (absl::GetFlag(FLAGS_print_response) ||
-            absl::GetFlag(FLAGS_fail_on_failed_rpc)) {
+        if (absl::GetFlag(FLAGS_print_response) || absl::GetFlag(FLAGS_fail_on_failed_rpc)) {
           std::cout << "RPC failed: " << call->status.error_code() << ": "
                     << call->status.error_message() << std::endl;
         }
-        if (absl::GetFlag(FLAGS_fail_on_failed_rpc) &&
-            one_rpc_succeeded.load()) {
+        if (absl::GetFlag(FLAGS_fail_on_failed_rpc) && one_rpc_succeeded.load()) {
           abort();
         }
       } else {
         if (absl::GetFlag(FLAGS_print_response)) {
-          auto metadata_hostname =
-              call->context.GetServerInitialMetadata().find("hostname");
-          std::string hostname =
-              metadata_hostname !=
-                      call->context.GetServerInitialMetadata().end()
-                  ? std::string(metadata_hostname->second.data(),
-                                metadata_hostname->second.length())
-                  : call->simple_response.hostname();
-          std::cout << "Greeting: Hello world, this is " << hostname
-                    << ", from " << call->context.peer() << std::endl;
+          auto metadata_hostname = call->context.GetServerInitialMetadata().find("hostname");
+          std::string hostname = metadata_hostname != call->context.GetServerInitialMetadata().end()
+                                     ? std::string(metadata_hostname->second.data(),
+                                                   metadata_hostname->second.length())
+                                     : call->simple_response.hostname();
+          std::cout << "Greeting: Hello world, this is " << hostname << ", from "
+                    << call->context.peer() << std::endl;
         }
         one_rpc_succeeded = true;
       }
@@ -373,8 +341,7 @@ class TestClient {
   static bool RpcStatusCheckSuccess(AsyncClientCall* call) {
     // Determine RPC success based on expected status.
     grpc_status_code code;
-    GPR_ASSERT(grpc_status_code_from_string(
-        absl::GetFlag(FLAGS_expect_status).c_str(), &code));
+    GPR_ASSERT(grpc_status_code_from_string(absl::GetFlag(FLAGS_expect_status).c_str(), &code));
     return code == static_cast<grpc_status_code>(call->status.error_code());
   }
 
@@ -388,8 +355,7 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
   explicit LoadBalancerStatsServiceImpl(StatsWatchers* stats_watchers)
       : stats_watchers_(stats_watchers) {}
 
-  Status GetClientStats(ServerContext* /*context*/,
-                        const LoadBalancerStatsRequest* request,
+  Status GetClientStats(ServerContext* /*context*/, const LoadBalancerStatsRequest* request,
                         LoadBalancerStatsResponse* response) override {
     int start_id;
     int end_id;
@@ -410,13 +376,11 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
     return Status::OK;
   }
 
-  Status GetClientAccumulatedStats(
-      ServerContext* /*context*/,
-      const LoadBalancerAccumulatedStatsRequest* /*request*/,
-      LoadBalancerAccumulatedStatsResponse* response) override {
+  Status GetClientAccumulatedStats(ServerContext* /*context*/,
+                                   const LoadBalancerAccumulatedStatsRequest* /*request*/,
+                                   LoadBalancerAccumulatedStatsResponse* response) override {
     std::lock_guard<std::mutex> lock(stats_watchers_->mu);
-    stats_watchers_->global_watcher->GetCurrentRpcStats(response,
-                                                        stats_watchers_);
+    stats_watchers_->global_watcher->GetCurrentRpcStats(response, stats_watchers_);
     return Status::OK;
   }
 
@@ -424,18 +388,14 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
   StatsWatchers* stats_watchers_;
 };
 
-class XdsUpdateClientConfigureServiceImpl
-    : public XdsUpdateClientConfigureService::Service {
+class XdsUpdateClientConfigureServiceImpl : public XdsUpdateClientConfigureService::Service {
  public:
-  explicit XdsUpdateClientConfigureServiceImpl(
-      RpcConfigurationsQueue* rpc_configs_queue)
+  explicit XdsUpdateClientConfigureServiceImpl(RpcConfigurationsQueue* rpc_configs_queue)
       : rpc_configs_queue_(rpc_configs_queue) {}
 
-  Status Configure(ServerContext* /*context*/,
-                   const ClientConfigureRequest* request,
+  Status Configure(ServerContext* /*context*/, const ClientConfigureRequest* request,
                    ClientConfigureResponse* /*response*/) override {
-    std::map<int, std::vector<std::pair<std::string, std::string>>>
-        metadata_map;
+    std::map<int, std::vector<std::pair<std::string, std::string>>> metadata_map;
     for (const auto& data : request->metadata()) {
       metadata_map[data.type()].push_back({data.key(), data.value()});
     }
@@ -451,8 +411,7 @@ class XdsUpdateClientConfigureServiceImpl
       configs.push_back(std::move(config));
     }
     {
-      std::lock_guard<std::mutex> lock(
-          rpc_configs_queue_->mu_rpc_configs_queue);
+      std::lock_guard<std::mutex> lock(rpc_configs_queue_->mu_rpc_configs_queue);
       rpc_configs_queue_->rpc_configs_queue.emplace_back(std::move(configs));
     }
     return Status::OK;
@@ -462,18 +421,15 @@ class XdsUpdateClientConfigureServiceImpl
   RpcConfigurationsQueue* rpc_configs_queue_;
 };
 
-void RunTestLoop(std::chrono::duration<double> duration_per_query,
-                 StatsWatchers* stats_watchers,
+void RunTestLoop(std::chrono::duration<double> duration_per_query, StatsWatchers* stats_watchers,
                  RpcConfigurationsQueue* rpc_configs_queue) {
-  TestClient client(
-      grpc::CreateChannel(absl::GetFlag(FLAGS_server),
-                          absl::GetFlag(FLAGS_secure_mode)
-                              ? grpc::experimental::XdsCredentials(
-                                    grpc::InsecureChannelCredentials())
-                              : grpc::InsecureChannelCredentials()),
-      stats_watchers);
-  std::chrono::time_point<std::chrono::system_clock> start =
-      std::chrono::system_clock::now();
+  TestClient client(grpc::CreateChannel(
+                        absl::GetFlag(FLAGS_server),
+                        absl::GetFlag(FLAGS_secure_mode)
+                            ? grpc::experimental::XdsCredentials(grpc::InsecureChannelCredentials())
+                            : grpc::InsecureChannelCredentials()),
+                    stats_watchers);
+  std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
   std::chrono::duration<double> elapsed;
 
   std::thread thread = std::thread(&TestClient::AsyncCompleteRpc, &client);
@@ -481,8 +437,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
   std::vector<RpcConfig> configs;
   while (true) {
     {
-      std::lock_guard<std::mutex> lockk(
-          rpc_configs_queue->mu_rpc_configs_queue);
+      std::lock_guard<std::mutex> lockk(rpc_configs_queue->mu_rpc_configs_queue);
       if (!rpc_configs_queue->rpc_configs_queue.empty()) {
         configs = std::move(rpc_configs_queue->rpc_configs_queue.front());
         rpc_configs_queue->rpc_configs_queue.pop_front();
@@ -520,8 +475,7 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   builder.RegisterService(&stats_service);
   builder.RegisterService(&client_config_service);
   grpc::AddAdminServices(&builder);
-  builder.AddListeningPort(server_address.str(),
-                           grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address.str(), grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_DEBUG, "Server listening on %s", server_address.str().c_str());
 
@@ -538,15 +492,12 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
       absl::StrSplit(absl::GetFlag(FLAGS_metadata), ',', absl::SkipEmpty());
   std::map<int, std::vector<std::pair<std::string, std::string>>> metadata_map;
   for (auto& data : rpc_metadata) {
-    std::vector<std::string> metadata =
-        absl::StrSplit(data, ':', absl::SkipEmpty());
+    std::vector<std::string> metadata = absl::StrSplit(data, ':', absl::SkipEmpty());
     GPR_ASSERT(metadata.size() == 3);
     if (metadata[0] == "EmptyCall") {
-      metadata_map[ClientConfigureRequest::EMPTY_CALL].push_back(
-          {metadata[1], metadata[2]});
+      metadata_map[ClientConfigureRequest::EMPTY_CALL].push_back({metadata[1], metadata[2]});
     } else if (metadata[0] == "UnaryCall") {
-      metadata_map[ClientConfigureRequest::UNARY_CALL].push_back(
-          {metadata[1], metadata[2]});
+      metadata_map[ClientConfigureRequest::UNARY_CALL].push_back({metadata[1], metadata[2]});
     } else {
       GPR_ASSERT(0);
     }
@@ -580,8 +531,7 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   // Validate the expect_status flag.
   grpc_status_code code;
-  GPR_ASSERT(grpc_status_code_from_string(
-      absl::GetFlag(FLAGS_expect_status).c_str(), &code));
+  GPR_ASSERT(grpc_status_code_from_string(absl::GetFlag(FLAGS_expect_status).c_str(), &code));
   StatsWatchers stats_watchers;
   RpcConfigurationsQueue rpc_config_queue;
 
@@ -594,18 +544,16 @@ int main(int argc, char** argv) {
   BuildRpcConfigsFromFlags(&rpc_config_queue);
 
   std::chrono::duration<double> duration_per_query =
-      std::chrono::nanoseconds(std::chrono::seconds(1)) /
-      absl::GetFlag(FLAGS_qps);
+      std::chrono::nanoseconds(std::chrono::seconds(1)) / absl::GetFlag(FLAGS_qps);
 
   std::vector<std::thread> test_threads;
   test_threads.reserve(absl::GetFlag(FLAGS_num_channels));
   for (int i = 0; i < absl::GetFlag(FLAGS_num_channels); i++) {
-    test_threads.emplace_back(std::thread(&RunTestLoop, duration_per_query,
-                                          &stats_watchers, &rpc_config_queue));
+    test_threads.emplace_back(
+        std::thread(&RunTestLoop, duration_per_query, &stats_watchers, &rpc_config_queue));
   }
 
-  RunServer(absl::GetFlag(FLAGS_stats_port), &stats_watchers,
-            &rpc_config_queue);
+  RunServer(absl::GetFlag(FLAGS_stats_port), &stats_watchers, &rpc_config_queue);
 
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
     it->join();

@@ -47,14 +47,11 @@ static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
   return BenchmarkService::NewStub(ch);
 }
 
-class SynchronousClient
-    : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
+class SynchronousClient : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
   explicit SynchronousClient(const ClientConfig& config)
-      : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
-            config, BenchmarkStubCreator) {
-    num_threads_ =
-        config.outstanding_rpcs_per_channel() * config.client_channels();
+      : ClientImpl<BenchmarkService::Stub, SimpleRequest>(config, BenchmarkStubCreator) {
+    num_threads_ = config.outstanding_rpcs_per_channel() * config.client_channels();
     responses_.resize(num_threads_);
     SetupLoadTest(config, num_threads_);
   }
@@ -89,8 +86,7 @@ class SynchronousClient
       // exponential distribution can occasionally produce bad outliers
       while (true) {
         const gpr_timespec one_sec_delay =
-            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_seconds(1, GPR_TIMESPAN));
+            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(1, GPR_TIMESPAN));
         if (gpr_time_cmp(next_issue_time, one_sec_delay) <= 0) {
           gpr_sleep_until(next_issue_time);
           return true;
@@ -111,8 +107,7 @@ class SynchronousClient
 
 class SynchronousUnaryClient final : public SynchronousClient {
  public:
-  explicit SynchronousUnaryClient(const ClientConfig& config)
-      : SynchronousClient(config) {
+  explicit SynchronousUnaryClient(const ClientConfig& config) : SynchronousClient(config) {
     StartThreads(num_threads_);
   }
   ~SynchronousUnaryClient() override {}
@@ -127,8 +122,7 @@ class SynchronousUnaryClient final : public SynchronousClient {
     double start = UsageTimer::Now();
     GPR_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
     grpc::ClientContext context;
-    grpc::Status s =
-        stub->UnaryCall(&context, request_, &responses_[thread_idx]);
+    grpc::Status s = stub->UnaryCall(&context, request_, &responses_[thread_idx]);
     if (s.ok()) {
       entry->set_value((UsageTimer::Now() - start) * 1e9);
     }
@@ -181,8 +175,8 @@ class SynchronousStreamingClient : public SynchronousClient {
     if (!s.ok()) {
       std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
       if (!shutdown_[thread_idx].val) {
-        gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s",
-                thread_idx, s.error_message().c_str());
+        gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s", thread_idx,
+                s.error_message().c_str());
       }
     }
     // Lock the stream_mu_ now because the client context could change
@@ -209,21 +203,18 @@ class SynchronousStreamingClient : public SynchronousClient {
 
  private:
   void DestroyMultithreading() final {
-    CleanupAllStreams(
-        [this](size_t thread_idx) { context_[thread_idx].TryCancel(); });
+    CleanupAllStreams([this](size_t thread_idx) { context_[thread_idx].TryCancel(); });
     EndThreads();
   }
 };
 
 class SynchronousStreamingPingPongClient final
-    : public SynchronousStreamingClient<
-          grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>> {
+    : public SynchronousStreamingClient<grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>> {
  public:
   explicit SynchronousStreamingPingPongClient(const ClientConfig& config)
       : SynchronousStreamingClient(config) {}
   ~SynchronousStreamingPingPongClient() override {
-    CleanupAllStreams(
-        [this](size_t thread_idx) { stream_[thread_idx]->WritesDone(); });
+    CleanupAllStreams([this](size_t thread_idx) { stream_[thread_idx]->WritesDone(); });
   }
 
  private:
@@ -249,8 +240,7 @@ class SynchronousStreamingPingPongClient final
         stream_[thread_idx]->Read(&responses_[thread_idx])) {
       entry->set_value((UsageTimer::Now() - start) * 1e9);
       // don't set the status since there isn't one yet
-      if ((messages_per_stream_ != 0) &&
-          (++messages_issued_[thread_idx] < messages_per_stream_)) {
+      if ((messages_per_stream_ != 0) && (++messages_issued_[thread_idx] < messages_per_stream_)) {
         return true;
       } else if (messages_per_stream_ == 0) {
         return true;
@@ -279,8 +269,7 @@ class SynchronousStreamingFromClientClient final
   explicit SynchronousStreamingFromClientClient(const ClientConfig& config)
       : SynchronousStreamingClient(config), last_issue_(num_threads_) {}
   ~SynchronousStreamingFromClientClient() override {
-    CleanupAllStreams(
-        [this](size_t thread_idx) { stream_[thread_idx]->WritesDone(); });
+    CleanupAllStreams([this](size_t thread_idx) { stream_[thread_idx]->WritesDone(); });
   }
 
  private:
@@ -290,8 +279,8 @@ class SynchronousStreamingFromClientClient final
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
-      stream_[thread_idx] = stub->StreamingFromClient(&context_[thread_idx],
-                                                      &responses_[thread_idx]);
+      stream_[thread_idx] =
+          stub->StreamingFromClient(&context_[thread_idx], &responses_[thread_idx]);
     } else {
       return false;
     }
@@ -316,8 +305,8 @@ class SynchronousStreamingFromClientClient final
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
-      stream_[thread_idx] = stub->StreamingFromClient(&context_[thread_idx],
-                                                      &responses_[thread_idx]);
+      stream_[thread_idx] =
+          stub->StreamingFromClient(&context_[thread_idx], &responses_[thread_idx]);
     } else {
       stream_[thread_idx].reset();
       return false;
@@ -340,8 +329,7 @@ class SynchronousStreamingFromServerClient final
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
-      stream_[thread_idx] =
-          stub->StreamingFromServer(&context_[thread_idx], request_);
+      stream_[thread_idx] = stub->StreamingFromServer(&context_[thread_idx], request_);
     } else {
       return false;
     }
@@ -361,8 +349,7 @@ class SynchronousStreamingFromServerClient final
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
     if (!shutdown_[thread_idx].val) {
-      stream_[thread_idx] =
-          stub->StreamingFromServer(&context_[thread_idx], request_);
+      stream_[thread_idx] = stub->StreamingFromServer(&context_[thread_idx], request_);
     } else {
       stream_[thread_idx].reset();
       return false;
@@ -372,14 +359,12 @@ class SynchronousStreamingFromServerClient final
 };
 
 class SynchronousStreamingBothWaysClient final
-    : public SynchronousStreamingClient<
-          grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>> {
+    : public SynchronousStreamingClient<grpc::ClientReaderWriter<SimpleRequest, SimpleResponse>> {
  public:
   explicit SynchronousStreamingBothWaysClient(const ClientConfig& config)
       : SynchronousStreamingClient(config) {}
   ~SynchronousStreamingBothWaysClient() override {
-    CleanupAllStreams(
-        [this](size_t thread_idx) { stream_[thread_idx]->WritesDone(); });
+    CleanupAllStreams([this](size_t thread_idx) { stream_[thread_idx]->WritesDone(); });
   }
 
  private:
@@ -394,8 +379,7 @@ class SynchronousStreamingBothWaysClient final
     return true;
   }
 
-  bool ThreadFuncImpl(HistogramEntry* /*entry*/,
-                      size_t /*thread_idx*/) override {
+  bool ThreadFuncImpl(HistogramEntry* /*entry*/, size_t /*thread_idx*/) override {
     // TODO (vjpai): Do this
     return true;
   }
@@ -407,17 +391,13 @@ std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config) {
     case UNARY:
       return std::unique_ptr<Client>(new SynchronousUnaryClient(config));
     case STREAMING:
-      return std::unique_ptr<Client>(
-          new SynchronousStreamingPingPongClient(config));
+      return std::unique_ptr<Client>(new SynchronousStreamingPingPongClient(config));
     case STREAMING_FROM_CLIENT:
-      return std::unique_ptr<Client>(
-          new SynchronousStreamingFromClientClient(config));
+      return std::unique_ptr<Client>(new SynchronousStreamingFromClientClient(config));
     case STREAMING_FROM_SERVER:
-      return std::unique_ptr<Client>(
-          new SynchronousStreamingFromServerClient(config));
+      return std::unique_ptr<Client>(new SynchronousStreamingFromServerClient(config));
     case STREAMING_BOTH_WAYS:
-      return std::unique_ptr<Client>(
-          new SynchronousStreamingBothWaysClient(config));
+      return std::unique_ptr<Client>(new SynchronousStreamingBothWaysClient(config));
     default:
       assert(false);
       return nullptr;

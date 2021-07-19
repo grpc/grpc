@@ -55,9 +55,8 @@ struct IdentityKeyCertPair {
 // return the same cert data for all cert names, and reloading is not supported.
 class StaticDataCertificateProvider : public CertificateProviderInterface {
  public:
-  StaticDataCertificateProvider(
-      const std::string& root_certificate,
-      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+  StaticDataCertificateProvider(const std::string& root_certificate,
+                                const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
   explicit StaticDataCertificateProvider(const std::string& root_certificate)
       : StaticDataCertificateProvider(root_certificate, {}) {}
@@ -88,8 +87,7 @@ class StaticDataCertificateProvider : public CertificateProviderInterface {
 //   then renaming the new directory to the original name of the old directory.
 //   2)  using a symlink for the directory. When need to change, put new
 //   credential data in a new directory, and change symlink.
-class FileWatcherCertificateProvider final
-    : public CertificateProviderInterface {
+class FileWatcherCertificateProvider final : public CertificateProviderInterface {
  public:
   // Constructor to get credential updates from root and identity file paths.
   //
@@ -107,14 +105,12 @@ class FileWatcherCertificateProvider final
   FileWatcherCertificateProvider(const std::string& private_key_path,
                                  const std::string& identity_certificate_path,
                                  unsigned int refresh_interval_sec)
-      : FileWatcherCertificateProvider(private_key_path,
-                                       identity_certificate_path, "",
+      : FileWatcherCertificateProvider(private_key_path, identity_certificate_path, "",
                                        refresh_interval_sec) {}
   // Constructor to get credential updates from root file path only.
   FileWatcherCertificateProvider(const std::string& root_cert_path,
                                  unsigned int refresh_interval_sec)
-      : FileWatcherCertificateProvider("", "", root_cert_path,
-                                       refresh_interval_sec) {}
+      : FileWatcherCertificateProvider("", "", root_cert_path, refresh_interval_sec) {}
 
   ~FileWatcherCertificateProvider() override;
 

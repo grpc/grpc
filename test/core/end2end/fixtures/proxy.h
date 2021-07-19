@@ -26,10 +26,8 @@
 typedef struct grpc_end2end_proxy grpc_end2end_proxy;
 
 typedef struct grpc_end2end_proxy_def {
-  grpc_server* (*create_server)(const char* port,
-                                grpc_channel_args* server_args);
-  grpc_channel* (*create_client)(const char* target,
-                                 grpc_channel_args* client_args);
+  grpc_server* (*create_server)(const char* port, grpc_channel_args* server_args);
+  grpc_channel* (*create_client)(const char* target, grpc_channel_args* client_args);
 } grpc_end2end_proxy_def;
 
 grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,

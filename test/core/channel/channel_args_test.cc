@@ -34,10 +34,9 @@ static void test_create(void) {
   grpc_arg to_add[2];
   grpc_channel_args* ch_args;
 
-  to_add[0] =
-      grpc_channel_arg_integer_create(const_cast<char*>("int_arg"), 123);
-  to_add[1] = grpc_channel_arg_string_create(const_cast<char*>("str key"),
-                                             const_cast<char*>("str value"));
+  to_add[0] = grpc_channel_arg_integer_create(const_cast<char*>("int_arg"), 123);
+  to_add[1] =
+      grpc_channel_arg_string_create(const_cast<char*>("str key"), const_cast<char*>("str value"));
   ch_args = grpc_channel_args_copy_and_add(nullptr, to_add, 2);
 
   GPR_ASSERT(ch_args->num_args == 2);
@@ -47,8 +46,7 @@ static void test_create(void) {
 
   GPR_ASSERT(strcmp(ch_args->args[1].key, to_add[1].key) == 0);
   GPR_ASSERT(ch_args->args[1].type == to_add[1].type);
-  GPR_ASSERT(strcmp(ch_args->args[1].value.string, to_add[1].value.string) ==
-             0);
+  GPR_ASSERT(strcmp(ch_args->args[1].value.string, to_add[1].value.string) == 0);
 
   grpc_channel_args_destroy(ch_args);
 }
@@ -79,35 +77,30 @@ static const grpc_arg_pointer_vtable fake_pointer_arg_vtable = {
 static void test_channel_create_with_args(void) {
   grpc_arg client_a[3];
 
-  client_a[0] =
-      grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);
-  client_a[1] = grpc_channel_arg_string_create(
-      const_cast<char*>("arg_str"), const_cast<char*>("arg_str_val"));
+  client_a[0] = grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);
+  client_a[1] = grpc_channel_arg_string_create(const_cast<char*>("arg_str"),
+                                               const_cast<char*>("arg_str_val"));
   // allocated and adds custom pointer arg
   fake_class* fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
   fc->foo = 42;
-  client_a[2] = grpc_channel_arg_pointer_create(
-      const_cast<char*>("arg_pointer"), fc, &fake_pointer_arg_vtable);
+  client_a[2] = grpc_channel_arg_pointer_create(const_cast<char*>("arg_pointer"), fc,
+                                                &fake_pointer_arg_vtable);
 
   // creates channel
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel* c =
-      grpc_insecure_channel_create("fake_target", &client_args, nullptr);
+  grpc_channel* c = grpc_insecure_channel_create("fake_target", &client_args, nullptr);
   // user is can free the memory they allocated here
   gpr_free(fc);
   grpc_channel_destroy(c);
 }
 
-grpc_channel_args* mutate_channel_args(const char* target,
-                                       grpc_channel_args* old_args,
+grpc_channel_args* mutate_channel_args(const char* target, grpc_channel_args* old_args,
                                        grpc_channel_stack_type /*type*/) {
   GPR_ASSERT(old_args != nullptr);
   GPR_ASSERT(grpc_channel_args_find(old_args, "arg_int")->value.integer == 0);
-  GPR_ASSERT(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,
-                    "arg_str_val") == 0);
-  GPR_ASSERT(
-      grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
-      &fake_pointer_arg_vtable);
+  GPR_ASSERT(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string, "arg_str_val") == 0);
+  GPR_ASSERT(grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
+             &fake_pointer_arg_vtable);
 
   if (strcmp(target, "no_op_mutator") == 0) {
     return old_args;
@@ -116,12 +109,11 @@ grpc_channel_args* mutate_channel_args(const char* target,
   GPR_ASSERT(strcmp(target, "minimal_stack_mutator") == 0);
   const char* args_to_remove[] = {"arg_int", "arg_str", "arg_pointer"};
 
-  grpc_arg no_deadline_filter_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1);
+  grpc_arg no_deadline_filter_arg =
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1);
   grpc_channel_args* new_args = nullptr;
   new_args = grpc_channel_args_copy_and_add_and_remove(
-      old_args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove),
-      &no_deadline_filter_arg, 1);
+      old_args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &no_deadline_filter_arg, 1);
   grpc_channel_args_destroy(old_args);
   return new_args;
 }
@@ -130,8 +122,7 @@ grpc_channel_args* mutate_channel_args(const char* target,
 static bool channel_has_client_idle_filter(grpc_channel* c) {
   grpc_channel_stack* stack = grpc_channel_get_channel_stack(c);
   for (size_t i = 0; i < stack->count; i++) {
-    if (strcmp(grpc_channel_stack_element(stack, i)->filter->name,
-               "client_idle") == 0) {
+    if (strcmp(grpc_channel_stack_element(stack, i)->filter->name, "client_idle") == 0) {
       return true;
     }
   }
@@ -143,25 +134,22 @@ static void test_channel_create_with_global_mutator(void) {
   // We also add some custom args to make sure the ownership is correct.
   grpc_arg client_a[3];
 
-  client_a[0] =
-      grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);
-  client_a[1] = grpc_channel_arg_string_create(
-      const_cast<char*>("arg_str"), const_cast<char*>("arg_str_val"));
+  client_a[0] = grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);
+  client_a[1] = grpc_channel_arg_string_create(const_cast<char*>("arg_str"),
+                                               const_cast<char*>("arg_str_val"));
   // allocated and adds custom pointer arg
   fake_class* fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
   fc->foo = 42;
-  client_a[2] = grpc_channel_arg_pointer_create(
-      const_cast<char*>("arg_pointer"), fc, &fake_pointer_arg_vtable);
+  client_a[2] = grpc_channel_arg_pointer_create(const_cast<char*>("arg_pointer"), fc,
+                                                &fake_pointer_arg_vtable);
 
   // creates channels
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel* c =
-      grpc_insecure_channel_create("no_op_mutator", &client_args, nullptr);
+  grpc_channel* c = grpc_insecure_channel_create("no_op_mutator", &client_args, nullptr);
   GPR_ASSERT(channel_has_client_idle_filter(c));
   grpc_channel_destroy(c);
 
-  c = grpc_insecure_channel_create("minimal_stack_mutator", &client_args,
-                                   nullptr);
+  c = grpc_insecure_channel_create("minimal_stack_mutator", &client_args, nullptr);
   GPR_ASSERT(channel_has_client_idle_filter(c) == false);
   grpc_channel_destroy(c);
 

@@ -46,8 +46,7 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer* buffer) {
     return Qnil;
   }
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
-    rb_str_cat(rb_string, (const char*)GRPC_SLICE_START_PTR(next),
-               GRPC_SLICE_LENGTH(next));
+    rb_str_cat(rb_string, (const char*)GRPC_SLICE_START_PTR(next), GRPC_SLICE_LENGTH(next));
     grpc_slice_unref(next);
   }
   grpc_byte_buffer_reader_destroy(&reader);
@@ -56,9 +55,7 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer* buffer) {
 
 VALUE grpc_rb_slice_to_ruby_string(grpc_slice slice) {
   if (GRPC_SLICE_START_PTR(slice) == NULL) {
-    rb_raise(rb_eRuntimeError,
-             "attempt to convert uninitialized grpc_slice to ruby string");
+    rb_raise(rb_eRuntimeError, "attempt to convert uninitialized grpc_slice to ruby string");
   }
-  return rb_str_new((char*)GRPC_SLICE_START_PTR(slice),
-                    GRPC_SLICE_LENGTH(slice));
+  return rb_str_new((char*)GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice));
 }

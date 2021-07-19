@@ -63,8 +63,7 @@ bool mock_socket_mutator_mutate_fd(int /*fd*/, grpc_socket_mutator* m) {
   return true;
 }
 
-int mock_socket_mutator_compare(grpc_socket_mutator* a,
-                                grpc_socket_mutator* b) {
+int mock_socket_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
   return reinterpret_cast<uintptr_t>(a) - reinterpret_cast<uintptr_t>(b);
 }
 
@@ -75,16 +74,14 @@ void mock_socket_mutator_destroy(grpc_socket_mutator* m) {
 
 class MockSocketMutatorServerBuilderOption : public grpc::ServerBuilderOption {
  public:
-  explicit MockSocketMutatorServerBuilderOption(
-      MockSocketMutator* mock_socket_mutator)
+  explicit MockSocketMutatorServerBuilderOption(MockSocketMutator* mock_socket_mutator)
       : mock_socket_mutator_(mock_socket_mutator) {}
 
   void UpdateArguments(ChannelArguments* args) override {
     args->SetSocketMutator(mock_socket_mutator_);
   }
 
-  void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>*) override{};
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>*) override{};
 
   MockSocketMutator* mock_socket_mutator_;
 };

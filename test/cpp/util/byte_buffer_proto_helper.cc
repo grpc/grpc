@@ -34,16 +34,14 @@ bool ParseFromByteBuffer(ByteBuffer* buffer, grpc::protobuf::Message* message) {
   return message->ParseFromString(buf);
 }
 
-std::unique_ptr<ByteBuffer> SerializeToByteBuffer(
-    grpc::protobuf::Message* message) {
+std::unique_ptr<ByteBuffer> SerializeToByteBuffer(grpc::protobuf::Message* message) {
   std::string buf;
   message->SerializeToString(&buf);
   Slice slice(buf);
   return absl::make_unique<ByteBuffer>(&slice, 1);
 }
 
-bool SerializeToByteBufferInPlace(grpc::protobuf::Message* message,
-                                  ByteBuffer* buffer) {
+bool SerializeToByteBufferInPlace(grpc::protobuf::Message* message, ByteBuffer* buffer) {
   std::string buf;
   if (!message->SerializeToString(&buf)) {
     return false;

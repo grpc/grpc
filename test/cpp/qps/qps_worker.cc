@@ -51,8 +51,7 @@ namespace testing {
 
 static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   gpr_log(GPR_INFO, "Starting client of type %s %s %d",
-          ClientType_Name(config.client_type()).c_str(),
-          RpcType_Name(config.rpc_type()).c_str(),
+          ClientType_Name(config.client_type()).c_str(), RpcType_Name(config.rpc_type()).c_str(),
           config.payload_config().has_bytebuf_params());
 
   switch (config.client_type()) {
@@ -71,8 +70,7 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
 }
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
-  gpr_log(GPR_INFO, "Starting server of type %s",
-          ServerType_Name(config.server_type()).c_str());
+  gpr_log(GPR_INFO, "Starting server of type %s", ServerType_Name(config.server_type()).c_str());
 
   switch (config.server_type()) {
     case ServerType::SYNC_SERVER:
@@ -107,9 +105,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
   WorkerServiceImpl(int server_port, QpsWorker* worker)
       : acquired_(false), server_port_(server_port), worker_(worker) {}
 
-  Status RunClient(
-      ServerContext* ctx,
-      ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
+  Status RunClient(ServerContext* ctx,
+                   ServerReaderWriter<ClientStatus, ClientArgs>* stream) override {
     gpr_log(GPR_INFO, "RunClient: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
@@ -122,9 +119,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return ret;
   }
 
-  Status RunServer(
-      ServerContext* ctx,
-      ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
+  Status RunServer(ServerContext* ctx,
+                   ServerReaderWriter<ServerStatus, ServerArgs>* stream) override {
     gpr_log(GPR_INFO, "RunServer: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
@@ -137,8 +133,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return ret;
   }
 
-  Status CoreCount(ServerContext* /*ctx*/, const CoreRequest*,
-                   CoreResponse* resp) override {
+  Status CoreCount(ServerContext* /*ctx*/, const CoreRequest*, CoreResponse* resp) override {
     resp->set_cores(gpr_cpu_num_cores());
     return Status::OK;
   }
@@ -276,8 +271,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
   QpsWorker* worker_;
 };
 
-QpsWorker::QpsWorker(int driver_port, int server_port,
-                     const std::string& credential_type) {
+QpsWorker::QpsWorker(int driver_port, int server_port, const std::string& credential_type) {
   impl_ = absl::make_unique<WorkerServiceImpl>(server_port, this);
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
@@ -285,31 +279,24 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   builder->AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
   if (driver_port >= 0) {
     std::string server_address = grpc_core::JoinHostPort("::", driver_port);
-    builder->AddListeningPort(
-        server_address.c_str(),
-        GetCredentialsProvider()->GetServerCredentials(credential_type));
+    builder->AddListeningPort(server_address.c_str(),
+                              GetCredentialsProvider()->GetServerCredentials(credential_type));
   }
   builder->RegisterService(impl_.get());
 
   server_ = builder->BuildAndStart();
   if (server_ == nullptr) {
-    gpr_log(GPR_ERROR,
-            "QpsWorker: Fail to BuildAndStart(driver_port=%d, server_port=%d)",
+    gpr_log(GPR_ERROR, "QpsWorker: Fail to BuildAndStart(driver_port=%d, server_port=%d)",
             driver_port, server_port);
   } else {
-    gpr_log(GPR_INFO,
-            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
-            driver_port, server_port);
+    gpr_log(GPR_INFO, "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done", driver_port,
+            server_port);
   }
 }
 
 QpsWorker::~QpsWorker() {}
 
-bool QpsWorker::Done() const {
-  return (gpr_atm_acq_load(&done_) != static_cast<gpr_atm>(0));
-}
-void QpsWorker::MarkDone() {
-  gpr_atm_rel_store(&done_, static_cast<gpr_atm>(1));
-}
+bool QpsWorker::Done() const { return (gpr_atm_acq_load(&done_) != static_cast<gpr_atm>(0)); }
+void QpsWorker::MarkDone() { gpr_atm_rel_store(&done_, static_cast<gpr_atm>(1)); }
 }  // namespace testing
 }  // namespace grpc

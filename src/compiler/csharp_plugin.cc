@@ -29,12 +29,9 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   CSharpGrpcGenerator() {}
   ~CSharpGrpcGenerator() {}
 
-  uint64_t GetSupportedFeatures() const override {
-    return FEATURE_PROTO3_OPTIONAL;
-  }
+  uint64_t GetSupportedFeatures() const override { return FEATURE_PROTO3_OPTIONAL; }
 
-  bool Generate(const grpc::protobuf::FileDescriptor* file,
-                const std::string& parameter,
+  bool Generate(const grpc::protobuf::FileDescriptor* file, const std::string& parameter,
                 grpc::protobuf::compiler::GeneratorContext* context,
                 std::string* error) const override {
     std::vector<std::pair<std::string, std::string> > options;
@@ -62,20 +59,18 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
     }
 
-    std::string code = grpc_csharp_generator::GetServices(
-        file, generate_client, generate_server, internal_access);
+    std::string code =
+        grpc_csharp_generator::GetServices(file, generate_client, generate_server, internal_access);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
     }
 
     // Get output file name.
     std::string file_name;
-    if (!grpc_csharp_generator::ServicesFilename(file, file_suffix,
-                                                 file_name)) {
+    if (!grpc_csharp_generator::ServicesFilename(file, file_suffix, file_name)) {
       return false;
     }
-    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
-        context->Open(file_name));
+    std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(context->Open(file_name));
     grpc::protobuf::io::CodedOutputStream coded_out(output.get());
     coded_out.WriteRaw(code.data(), code.size());
     return true;

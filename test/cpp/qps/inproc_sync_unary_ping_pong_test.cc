@@ -47,9 +47,8 @@ static void RunSynchronousUnaryPingPong() {
   ServerConfig server_config;
   server_config.set_server_type(SYNC_SERVER);
 
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
-                  kInsecureCredentialsType, {}, true, 0);
+  const auto result = RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
+                                  kInsecureCredentialsType, {}, true, 0);
 
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportLatency(*result);

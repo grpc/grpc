@@ -32,8 +32,7 @@ static gpr_subprocess* MakeProcess(const std::vector<std::string>& args) {
   return gpr_subprocess_create(vargs.size(), &vargs[0]);
 }
 
-SubProcess::SubProcess(const std::vector<std::string>& args)
-    : subprocess_(MakeProcess(args)) {}
+SubProcess::SubProcess(const std::vector<std::string>& args) : subprocess_(MakeProcess(args)) {}
 
 SubProcess::~SubProcess() { gpr_subprocess_destroy(subprocess_); }
 

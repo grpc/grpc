@@ -41,8 +41,8 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
-void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, bool /* urgent */) {
+void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+                   bool /* urgent */) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (eeep->endpoint == nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
@@ -54,16 +54,14 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
         read_buffer->~SliceBuffer();
         grpc_core::ExecCtx exec_ctx;
-        grpc_core::Closure::Run(DEBUG_LOCATION, cb,
-                                absl_status_to_grpc_error(status));
+        grpc_core::Closure::Run(DEBUG_LOCATION, cb, absl_status_to_grpc_error(status));
         exec_ctx.Flush();
         grpc_pollset_ee_broadcast_event();
       },
       read_buffer, absl::InfiniteFuture());
 }
 
-void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, void* arg) {
+void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb, void* arg) {
   // TODO(hork): adapt arg to some metrics collection mechanism.
   (void)arg;
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
@@ -74,23 +72,18 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
   eeep->endpoint->Write(
       [eeep, cb](absl::Status status) {
-        auto* write_buffer =
-            reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
+        auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
         write_buffer->~SliceBuffer();
         grpc_core::ExecCtx exec_ctx;
-        grpc_core::Closure::Run(DEBUG_LOCATION, cb,
-                                absl_status_to_grpc_error(status));
+        grpc_core::Closure::Run(DEBUG_LOCATION, cb, absl_status_to_grpc_error(status));
         exec_ctx.Flush();
         grpc_pollset_ee_broadcast_event();
       },
       write_buffer, absl::InfiniteFuture());
 }
-void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
-                             grpc_pollset* /* pollset */) {}
-void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
-                                 grpc_pollset_set* /* pollset */) {}
-void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
-                                      grpc_pollset_set* /* pollset */) {}
+void endpoint_add_to_pollset(grpc_endpoint* /* ep */, grpc_pollset* /* pollset */) {}
+void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */, grpc_pollset_set* /* pollset */) {}
+void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */, grpc_pollset_set* /* pollset */) {}
 /// After shutdown, all endpoint operations except destroy are no-op,
 /// and will return some kind of sane default (empty strings, nullptrs, etc). It
 /// is the caller's responsibility to ensure that calls to endpoint_shutdown are
@@ -99,8 +92,7 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(why);
-    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint.get(),
-            str);
+    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint.get(), str);
   }
   grpc_resource_user_shutdown(eeep->ru);
   eeep->endpoint.reset();
@@ -136,8 +128,7 @@ absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
     return "";
   }
   if (eeep->local_address.empty()) {
-    const EventEngine::ResolvedAddress* addr =
-        eeep->endpoint->GetLocalAddress();
+    const EventEngine::ResolvedAddress* addr = eeep->endpoint->GetLocalAddress();
     GPR_ASSERT(addr != nullptr);
     eeep->local_address = ResolvedAddressToURI(*addr);
   }
@@ -148,19 +139,18 @@ int endpoint_get_fd(grpc_endpoint* /* ep */) { return -1; }
 
 bool endpoint_can_track_err(grpc_endpoint* /* ep */) { return false; }
 
-grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
-    endpoint_read,
-    endpoint_write,
-    endpoint_add_to_pollset,
-    endpoint_add_to_pollset_set,
-    endpoint_delete_from_pollset_set,
-    endpoint_shutdown,
-    endpoint_destroy,
-    endpoint_get_resource_user,
-    endpoint_get_peer,
-    endpoint_get_local_address,
-    endpoint_get_fd,
-    endpoint_can_track_err};
+grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {endpoint_read,
+                                                          endpoint_write,
+                                                          endpoint_add_to_pollset,
+                                                          endpoint_add_to_pollset_set,
+                                                          endpoint_delete_from_pollset_set,
+                                                          endpoint_shutdown,
+                                                          endpoint_destroy,
+                                                          endpoint_get_resource_user,
+                                                          endpoint_get_peer,
+                                                          endpoint_get_local_address,
+                                                          endpoint_get_fd,
+                                                          endpoint_can_track_err};
 
 }  // namespace
 
@@ -178,15 +168,13 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   grpc_resource_quota* resource_quota =
-      grpc_channel_args_find_pointer<grpc_resource_quota>(
-          channel_args, GRPC_ARG_RESOURCE_QUOTA);
+      grpc_channel_args_find_pointer<grpc_resource_quota>(channel_args, GRPC_ARG_RESOURCE_QUOTA);
   if (resource_quota != nullptr) {
     grpc_resource_quota_ref_internal(resource_quota);
   } else {
     resource_quota = grpc_resource_quota_create(nullptr);
   }
-  endpoint->ru = grpc_resource_user_create(resource_quota,
-                                           std::string(peer_address).c_str());
+  endpoint->ru = grpc_resource_user_create(resource_quota, std::string(peer_address).c_str());
   grpc_resource_quota_unref_internal(resource_quota);
   return &endpoint->base;
 }

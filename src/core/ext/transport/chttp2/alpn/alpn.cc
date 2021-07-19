@@ -34,9 +34,7 @@ int grpc_chttp2_is_alpn_version_supported(const char* version, size_t size) {
   return 0;
 }
 
-size_t grpc_chttp2_num_alpn_versions(void) {
-  return GPR_ARRAY_SIZE(supported_versions);
-}
+size_t grpc_chttp2_num_alpn_versions(void) { return GPR_ARRAY_SIZE(supported_versions); }
 
 const char* grpc_chttp2_get_alpn_version_index(size_t i) {
   GPR_ASSERT(i < GPR_ARRAY_SIZE(supported_versions));

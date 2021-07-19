@@ -87,8 +87,8 @@ static void dump_objects(const char* kind) {
 }
 
 void grpc_iomgr_shutdown() {
-  gpr_timespec shutdown_deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
+  gpr_timespec shutdown_deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
 
   {
@@ -98,12 +98,10 @@ void grpc_iomgr_shutdown() {
     gpr_mu_lock(&g_mu);
     g_shutdown = 1;
     while (g_root_object.next != &g_root_object) {
-      if (gpr_time_cmp(
-              gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
-              gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
+      if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
+                       gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
         if (g_root_object.next != &g_root_object) {
-          gpr_log(GPR_DEBUG,
-                  "Waiting for %" PRIuPTR " iomgr objects to be destroyed",
+          gpr_log(GPR_DEBUG, "Waiting for %" PRIuPTR " iomgr objects to be destroyed",
                   count_objects());
         }
         last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
@@ -127,11 +125,9 @@ void grpc_iomgr_shutdown() {
           abort();
         }
         gpr_timespec short_deadline =
-            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_millis(100, GPR_TIMESPAN));
+            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(100, GPR_TIMESPAN));
         if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
-          if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) >
-              0) {
+          if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) > 0) {
             if (g_root_object.next != &g_root_object) {
               gpr_log(GPR_DEBUG,
                       "Failed to free %" PRIuPTR
@@ -160,16 +156,13 @@ void grpc_iomgr_shutdown() {
   gpr_cv_destroy(&g_rcv);
 }
 
-void grpc_iomgr_shutdown_background_closure() {
-  grpc_iomgr_platform_shutdown_background_closure();
-}
+void grpc_iomgr_shutdown_background_closure() { grpc_iomgr_platform_shutdown_background_closure(); }
 
 bool grpc_iomgr_is_any_background_poller_thread() {
   return grpc_iomgr_platform_is_any_background_poller_thread();
 }
 
-bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
-                                                 grpc_error_handle error) {
+bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure, grpc_error_handle error) {
   return grpc_iomgr_platform_add_closure_to_background_poller(closure, error);
 }
 

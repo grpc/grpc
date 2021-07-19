@@ -39,22 +39,18 @@ typedef struct grpc_custom_socket {
   int refs;
 } grpc_custom_socket;
 
-typedef void (*grpc_custom_connect_callback)(grpc_custom_socket* socket,
-                                             grpc_error_handle error);
-typedef void (*grpc_custom_write_callback)(grpc_custom_socket* socket,
-                                           grpc_error_handle error);
-typedef void (*grpc_custom_read_callback)(grpc_custom_socket* socket,
-                                          size_t nread,
+typedef void (*grpc_custom_connect_callback)(grpc_custom_socket* socket, grpc_error_handle error);
+typedef void (*grpc_custom_write_callback)(grpc_custom_socket* socket, grpc_error_handle error);
+typedef void (*grpc_custom_read_callback)(grpc_custom_socket* socket, size_t nread,
                                           grpc_error_handle error);
-typedef void (*grpc_custom_accept_callback)(grpc_custom_socket* socket,
-                                            grpc_custom_socket* client,
+typedef void (*grpc_custom_accept_callback)(grpc_custom_socket* socket, grpc_custom_socket* client,
                                             grpc_error_handle error);
 typedef void (*grpc_custom_close_callback)(grpc_custom_socket* socket);
 
 typedef struct grpc_socket_vtable {
   grpc_error_handle (*init)(grpc_custom_socket* socket, int domain);
-  void (*connect)(grpc_custom_socket* socket, const grpc_sockaddr* addr,
-                  size_t len, grpc_custom_connect_callback cb);
+  void (*connect)(grpc_custom_socket* socket, const grpc_sockaddr* addr, size_t len,
+                  grpc_custom_connect_callback cb);
   void (*destroy)(grpc_custom_socket* socket);
   void (*shutdown)(grpc_custom_socket* socket);
   void (*close)(grpc_custom_socket* socket, grpc_custom_close_callback cb);
@@ -62,12 +58,10 @@ typedef struct grpc_socket_vtable {
                 grpc_custom_write_callback cb);
   void (*read)(grpc_custom_socket* socket, char* buffer, size_t length,
                grpc_custom_read_callback cb);
-  grpc_error_handle (*getpeername)(grpc_custom_socket* socket,
-                                   const grpc_sockaddr* addr, int* len);
-  grpc_error_handle (*getsockname)(grpc_custom_socket* socket,
-                                   const grpc_sockaddr* addr, int* len);
-  grpc_error_handle (*bind)(grpc_custom_socket* socket,
-                            const grpc_sockaddr* addr, size_t len, int flags);
+  grpc_error_handle (*getpeername)(grpc_custom_socket* socket, const grpc_sockaddr* addr, int* len);
+  grpc_error_handle (*getsockname)(grpc_custom_socket* socket, const grpc_sockaddr* addr, int* len);
+  grpc_error_handle (*bind)(grpc_custom_socket* socket, const grpc_sockaddr* addr, size_t len,
+                            int flags);
   grpc_error_handle (*listen)(grpc_custom_socket* socket);
   void (*accept)(grpc_custom_socket* socket, grpc_custom_socket* client,
                  grpc_custom_accept_callback cb);

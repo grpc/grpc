@@ -55,9 +55,7 @@ static void delete_thread_id(void* value) {
   }
 }
 
-static void init_thread_id_key(void) {
-  pthread_key_create(&thread_id_key, delete_thread_id);
-}
+static void init_thread_id_key(void) { pthread_key_create(&thread_id_key, delete_thread_id); }
 
 unsigned gpr_cpu_current_cpu(void) {
   /* NOTE: there's no way I know to return the actual cpu index portably...
@@ -67,8 +65,7 @@ unsigned gpr_cpu_current_cpu(void) {
   static gpr_once once = GPR_ONCE_INIT;
   gpr_once_init(&once, init_thread_id_key);
 
-  unsigned int* thread_id =
-      static_cast<unsigned int*>(pthread_getspecific(thread_id_key));
+  unsigned int* thread_id = static_cast<unsigned int*>(pthread_getspecific(thread_id_key));
   if (thread_id == nullptr) {
     // Note we cannot use gpr_malloc here because this allocation can happen in
     // a main thread and will only be free'd when the main thread exits, which

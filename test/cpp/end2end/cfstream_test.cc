@@ -67,16 +67,12 @@ struct TestScenario {
 
 class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  CFStreamTest()
-      : server_host_("grpctest"),
-        interface_("lo0"),
-        ipv4_address_("10.0.0.1") {}
+  CFStreamTest() : server_host_("grpctest"), interface_("lo0"), ipv4_address_("10.0.0.1") {}
 
   void DNSUp() {
     std::ostringstream cmd;
     // Add DNS entry for server_host_ in /etc/hosts
-    cmd << "echo '" << ipv4_address_ << "      " << server_host_
-        << "  ' | sudo tee -a /etc/hosts";
+    cmd << "echo '" << ipv4_address_ << "      " << server_host_ << "  ' | sudo tee -a /etc/hosts";
     std::system(cmd.str().c_str());
   }
 
@@ -139,14 +135,13 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     std::ostringstream server_address;
     server_address << server_host_ << ":" << port_;
     ChannelArguments args;
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(GetParam().credentials_type, &args);
     return CreateCustomChannel(server_address.str(), channel_creds, args);
   }
 
-  void SendRpc(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      bool expect_success = false) {
+  void SendRpc(const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+               bool expect_success = false) {
     auto response = std::unique_ptr<EchoResponse>(new EchoResponse());
     EchoRequest request;
     auto& msg = GetParam().message_content;
@@ -163,16 +158,14 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
       EXPECT_TRUE(status.ok());
     }
   }
-  void SendAsyncRpc(
-      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      RequestParams param = RequestParams()) {
+  void SendAsyncRpc(const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+                    RequestParams param = RequestParams()) {
     EchoRequest request;
     request.set_message(GetParam().message_content);
     *request.mutable_param() = std::move(param);
     AsyncClientCall* call = new AsyncClientCall;
 
-    call->response_reader =
-        stub->PrepareAsyncEcho(&call->context, request, &cq_);
+    call->response_reader = stub->PrepareAsyncEcho(&call->context, request, &cq_);
 
     call->response_reader->StartCall();
     call->response_reader->Finish(&call->reply, &call->status, (void*)call);
@@ -198,22 +191,18 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
-    while ((state = channel->GetState(false /* try_to_connect */)) ==
-           GRPC_CHANNEL_READY) {
+    while ((state = channel->GetState(false /* try_to_connect */)) == GRPC_CHANNEL_READY) {
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
     return true;
   }
 
   bool WaitForChannelReady(Channel* channel, int timeout_seconds = 10) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
-    while ((state = channel->GetState(true /* try_to_connect */)) !=
-           GRPC_CHANNEL_READY) {
+    while ((state = channel->GetState(true /* try_to_connect */)) != GRPC_CHANNEL_READY) {
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
     return true;
@@ -235,28 +224,24 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     std::unique_ptr<std::thread> thread_;
     bool server_ready_ = false;
 
-    ServerData(int port, const std::string& creds)
-        : port_(port), creds_(creds) {}
+    ServerData(int port, const std::string& creds) : port_(port), creds_(creds) {}
 
     void Start(const std::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
+      thread_.reset(new std::thread(std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
     }
 
-    void Serve(const std::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+    void Serve(const std::string& server_host, std::mutex* mu, std::condition_variable* cond) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      auto server_creds =
-          GetCredentialsProvider()->GetServerCredentials(creds_);
+      auto server_creds = GetCredentialsProvider()->GetServerCredentials(creds_);
       builder.AddListeningPort(server_address.str(), server_creds);
       builder.RegisterService(&service_);
       server_ = builder.BuildAndStart();
@@ -299,8 +284,7 @@ std::vector<TestScenario> CreateTestScenarios() {
     }
     messages.push_back(big_msg);
   }
-  for (auto cred = credentials_types.begin(); cred != credentials_types.end();
-       ++cred) {
+  for (auto cred = credentials_types.begin(); cred != credentials_types.end(); ++cred) {
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
       scenarios.emplace_back(*cred, *msg);
     }
@@ -309,8 +293,7 @@ std::vector<TestScenario> CreateTestScenarios() {
   return scenarios;
 }
 
-INSTANTIATE_TEST_SUITE_P(CFStreamTest, CFStreamTest,
-                         ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(CFStreamTest, CFStreamTest, ::testing::ValuesIn(CreateTestScenarios()));
 
 // gRPC should automatically detech network flaps (without enabling keepalives)
 //  when CFStream is enabled
@@ -378,8 +361,7 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
       GPR_ASSERT(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
-        gpr_log(GPR_DEBUG, "RPC failed with error: %s",
-                call->status.error_message().c_str());
+        gpr_log(GPR_DEBUG, "RPC failed with error: %s", call->status.error_message().c_str());
         // Bring network up when RPCs start failing
         if (network_down) {
           NetworkUp();
@@ -425,8 +407,7 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
       GPR_ASSERT(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
-        gpr_log(GPR_DEBUG, "RPC failed with error: %s",
-                call->status.error_message().c_str());
+        gpr_log(GPR_DEBUG, "RPC failed with error: %s", call->status.error_message().c_str());
         // Bring network up when RPCs start failing
       } else {
         gpr_log(GPR_DEBUG, "RPC succeeded");

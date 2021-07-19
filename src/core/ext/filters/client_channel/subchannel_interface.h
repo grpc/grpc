@@ -39,8 +39,7 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     // Will be invoked whenever the subchannel's connectivity state
     // changes.  There will be only one invocation of this method on a
     // given watcher instance at any given time.
-    virtual void OnConnectivityStateChange(
-        grpc_connectivity_state new_state) = 0;
+    virtual void OnConnectivityStateChange(grpc_connectivity_state new_state) = 0;
 
     // TODO(roth): Remove this as soon as we move to EventManager-based
     // polling.
@@ -72,8 +71,7 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
-  virtual void CancelConnectivityStateWatch(
-      ConnectivityStateWatcherInterface* watcher) = 0;
+  virtual void CancelConnectivityStateWatch(ConnectivityStateWatcherInterface* watcher) = 0;
 
   // Attempt to connect to the backend.  Has no effect if already connected.
   // If the subchannel is currently in backoff delay due to a previously
@@ -98,28 +96,21 @@ class DelegatingSubchannel : public SubchannelInterface {
   explicit DelegatingSubchannel(RefCountedPtr<SubchannelInterface> subchannel)
       : wrapped_subchannel_(std::move(subchannel)) {}
 
-  RefCountedPtr<SubchannelInterface> wrapped_subchannel() const {
-    return wrapped_subchannel_;
-  }
+  RefCountedPtr<SubchannelInterface> wrapped_subchannel() const { return wrapped_subchannel_; }
 
   grpc_connectivity_state CheckConnectivityState() override {
     return wrapped_subchannel_->CheckConnectivityState();
   }
-  void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
-      std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
-    return wrapped_subchannel_->WatchConnectivityState(initial_state,
-                                                       std::move(watcher));
+  void WatchConnectivityState(grpc_connectivity_state initial_state,
+                              std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
+    return wrapped_subchannel_->WatchConnectivityState(initial_state, std::move(watcher));
   }
-  void CancelConnectivityStateWatch(
-      ConnectivityStateWatcherInterface* watcher) override {
+  void CancelConnectivityStateWatch(ConnectivityStateWatcherInterface* watcher) override {
     return wrapped_subchannel_->CancelConnectivityStateWatch(watcher);
   }
   void AttemptToConnect() override { wrapped_subchannel_->AttemptToConnect(); }
   void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
-  const grpc_channel_args* channel_args() override {
-    return wrapped_subchannel_->channel_args();
-  }
+  const grpc_channel_args* channel_args() override { return wrapped_subchannel_->channel_args(); }
 
  private:
   RefCountedPtr<SubchannelInterface> wrapped_subchannel_;

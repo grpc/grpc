@@ -33,16 +33,13 @@ int main(int argc, char** argv) {
   attr.version = 1;
   attr.cq_completion_type = GRPC_CQ_NEXT;
   attr.cq_polling_type = GRPC_CQ_DEFAULT_POLLING;
-  cq1 = grpc_completion_queue_create(
-      grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
+  cq1 = grpc_completion_queue_create(grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
   attr.cq_polling_type = GRPC_CQ_NON_LISTENING;
-  cq2 = grpc_completion_queue_create(
-      grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
+  cq2 = grpc_completion_queue_create(grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
   attr.cq_polling_type = GRPC_CQ_NON_POLLING;
-  cq3 = grpc_completion_queue_create(
-      grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
+  cq3 = grpc_completion_queue_create(grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
   server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq1, nullptr);

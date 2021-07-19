@@ -57,8 +57,7 @@ static void BM_ClosureInitAgainstExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_closure c;
   for (auto _ : state) {
-    benchmark::DoNotOptimize(
-        GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx));
+    benchmark::DoNotOptimize(GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx));
   }
   track_counters.Finish(state);
 }
@@ -70,8 +69,7 @@ static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
   grpc_closure c;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    benchmark::DoNotOptimize(
-        GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, nullptr));
+    benchmark::DoNotOptimize(GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, nullptr));
   }
   GRPC_COMBINER_UNREF(combiner, "finished");
 
@@ -96,10 +94,9 @@ static void BM_ClosureCreateAndRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    grpc_core::Closure::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_CREATE(DoNothing, nullptr, grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(DEBUG_LOCATION,
+                            GRPC_CLOSURE_CREATE(DoNothing, nullptr, grpc_schedule_on_exec_ctx),
+                            GRPC_ERROR_NONE);
   }
 
   track_counters.Finish(state);
@@ -111,10 +108,9 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_closure c;
   for (auto _ : state) {
-    grpc_core::Closure::Run(
-        DEBUG_LOCATION,
-        GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(DEBUG_LOCATION,
+                            GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx),
+                            GRPC_ERROR_NONE);
   }
 
   track_counters.Finish(state);
@@ -355,13 +351,10 @@ class Rescheduler {
     GRPC_CLOSURE_INIT(&closure_, Step, this, nullptr);
   }
 
-  void ScheduleFirst() {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
-  }
+  void ScheduleFirst() { grpc_core::ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE); }
 
   void ScheduleFirstAgainstDifferentScheduler() {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                            GRPC_CLOSURE_CREATE(Step, this, nullptr),
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, GRPC_CLOSURE_CREATE(Step, this, nullptr),
                             GRPC_ERROR_NONE);
   }
 

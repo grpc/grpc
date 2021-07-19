@@ -48,8 +48,7 @@ using ::grpc_event_engine::experimental::Promise;
 std::shared_ptr<EventEngine>* g_event_engine;
 
 void iomgr_platform_init(void) {
-  g_event_engine =
-      new std::shared_ptr<EventEngine>(DefaultEventEngineFactory());
+  g_event_engine = new std::shared_ptr<EventEngine>(DefaultEventEngineFactory());
 }
 
 void iomgr_platform_flush(void) {}
@@ -71,18 +70,17 @@ bool iomgr_platform_is_any_background_poller_thread(void) {
   return (*g_event_engine)->IsWorkerThread();
 }
 
-bool iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* /* closure */, grpc_error* /* error */) {
+bool iomgr_platform_add_closure_to_background_poller(grpc_closure* /* closure */,
+                                                     grpc_error* /* error */) {
   return false;
 }
 
-grpc_iomgr_platform_vtable vtable = {
-    iomgr_platform_init,
-    iomgr_platform_flush,
-    iomgr_platform_shutdown,
-    iomgr_platform_shutdown_background_closure,
-    iomgr_platform_is_any_background_poller_thread,
-    iomgr_platform_add_closure_to_background_poller};
+grpc_iomgr_platform_vtable vtable = {iomgr_platform_init,
+                                     iomgr_platform_flush,
+                                     iomgr_platform_shutdown,
+                                     iomgr_platform_shutdown_background_closure,
+                                     iomgr_platform_is_any_background_poller_thread,
+                                     iomgr_platform_add_closure_to_background_poller};
 
 }  // namespace
 

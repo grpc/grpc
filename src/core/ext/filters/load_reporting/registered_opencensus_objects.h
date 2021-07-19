@@ -37,44 +37,42 @@ namespace load_reporter {
 
 inline ::opencensus::stats::MeasureInt64 MeasureStartCount() {
   static const ::opencensus::stats::MeasureInt64 measure =
-      ::opencensus::stats::MeasureInt64::Register(
-          kMeasureStartCount, kMeasureStartCount, kMeasureStartCount);
+      ::opencensus::stats::MeasureInt64::Register(kMeasureStartCount, kMeasureStartCount,
+                                                  kMeasureStartCount);
   return measure;
 }
 
 inline ::opencensus::stats::MeasureInt64 MeasureEndCount() {
   static const ::opencensus::stats::MeasureInt64 measure =
-      ::opencensus::stats::MeasureInt64::Register(
-          kMeasureEndCount, kMeasureEndCount, kMeasureEndCount);
+      ::opencensus::stats::MeasureInt64::Register(kMeasureEndCount, kMeasureEndCount,
+                                                  kMeasureEndCount);
   return measure;
 }
 
 inline ::opencensus::stats::MeasureInt64 MeasureEndBytesSent() {
   static const ::opencensus::stats::MeasureInt64 measure =
-      ::opencensus::stats::MeasureInt64::Register(
-          kMeasureEndBytesSent, kMeasureEndBytesSent, kMeasureEndBytesSent);
+      ::opencensus::stats::MeasureInt64::Register(kMeasureEndBytesSent, kMeasureEndBytesSent,
+                                                  kMeasureEndBytesSent);
   return measure;
 }
 
 inline ::opencensus::stats::MeasureInt64 MeasureEndBytesReceived() {
   static const ::opencensus::stats::MeasureInt64 measure =
-      ::opencensus::stats::MeasureInt64::Register(kMeasureEndBytesReceived,
-                                                  kMeasureEndBytesReceived,
-                                                  kMeasureEndBytesReceived);
+      ::opencensus::stats::MeasureInt64::Register(
+          kMeasureEndBytesReceived, kMeasureEndBytesReceived, kMeasureEndBytesReceived);
   return measure;
 }
 
 inline ::opencensus::stats::MeasureInt64 MeasureEndLatencyMs() {
   static const ::opencensus::stats::MeasureInt64 measure =
-      ::opencensus::stats::MeasureInt64::Register(
-          kMeasureEndLatencyMs, kMeasureEndLatencyMs, kMeasureEndLatencyMs);
+      ::opencensus::stats::MeasureInt64::Register(kMeasureEndLatencyMs, kMeasureEndLatencyMs,
+                                                  kMeasureEndLatencyMs);
   return measure;
 }
 
 inline ::opencensus::stats::MeasureDouble MeasureOtherCallMetric() {
   static const ::opencensus::stats::MeasureDouble measure =
-      ::opencensus::stats::MeasureDouble::Register(kMeasureOtherCallMetric,
-                                                   kMeasureOtherCallMetric,
+      ::opencensus::stats::MeasureDouble::Register(kMeasureOtherCallMetric, kMeasureOtherCallMetric,
                                                    kMeasureOtherCallMetric);
   return measure;
 }
@@ -82,26 +80,22 @@ inline ::opencensus::stats::MeasureDouble MeasureOtherCallMetric() {
 // Tags.
 
 inline ::opencensus::tags::TagKey TagKeyToken() {
-  static const ::opencensus::tags::TagKey token =
-      opencensus::tags::TagKey::Register(kTagKeyToken);
+  static const ::opencensus::tags::TagKey token = opencensus::tags::TagKey::Register(kTagKeyToken);
   return token;
 }
 
 inline ::opencensus::tags::TagKey TagKeyHost() {
-  static const ::opencensus::tags::TagKey token =
-      opencensus::tags::TagKey::Register(kTagKeyHost);
+  static const ::opencensus::tags::TagKey token = opencensus::tags::TagKey::Register(kTagKeyHost);
   return token;
 }
 
 inline ::opencensus::tags::TagKey TagKeyUserId() {
-  static const ::opencensus::tags::TagKey token =
-      opencensus::tags::TagKey::Register(kTagKeyUserId);
+  static const ::opencensus::tags::TagKey token = opencensus::tags::TagKey::Register(kTagKeyUserId);
   return token;
 }
 
 inline ::opencensus::tags::TagKey TagKeyStatus() {
-  static const ::opencensus::tags::TagKey token =
-      opencensus::tags::TagKey::Register(kTagKeyStatus);
+  static const ::opencensus::tags::TagKey token = opencensus::tags::TagKey::Register(kTagKeyStatus);
   return token;
 }
 

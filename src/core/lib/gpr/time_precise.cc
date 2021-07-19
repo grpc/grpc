@@ -103,10 +103,8 @@ void gpr_precise_clock_init(void) {
     } while (loop_ns < measurement_ns);
     gpr_cycle_counter end_cycle = gpr_get_cycle_counter();
     // Frequency should be in Hz.
-    const double freq =
-        static_cast<double>(end_cycle - start_cycle) / loop_ns * GPR_NS_PER_SEC;
-    converged =
-        last_freq != -1 && (freq * 0.99 < last_freq && last_freq < freq * 1.01);
+    const double freq = static_cast<double>(end_cycle - start_cycle) / loop_ns * GPR_NS_PER_SEC;
+    converged = last_freq != -1 && (freq * 0.99 < last_freq && last_freq < freq * 1.01);
     last_freq = freq;
   }
   cycles_per_second = last_freq;
@@ -114,12 +112,10 @@ void gpr_precise_clock_init(void) {
 }
 
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
-  const double secs =
-      static_cast<double>(cycles - start_cycle) / cycles_per_second;
+  const double secs = static_cast<double>(cycles - start_cycle) / cycles_per_second;
   gpr_timespec ts;
   ts.tv_sec = static_cast<int64_t>(secs);
-  ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC *
-                                    (secs - static_cast<double>(ts.tv_sec)));
+  ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC * (secs - static_cast<double>(ts.tv_sec)));
   ts.clock_type = GPR_CLOCK_PRECISE;
   return ts;
 }
@@ -128,8 +124,7 @@ gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
   const double secs = static_cast<double>(a - b) / cycles_per_second;
   gpr_timespec ts;
   ts.tv_sec = static_cast<int64_t>(secs);
-  ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC *
-                                    (secs - static_cast<double>(ts.tv_sec)));
+  ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC * (secs - static_cast<double>(ts.tv_sec)));
   ts.clock_type = GPR_TIMESPAN;
   return ts;
 }
@@ -149,8 +144,7 @@ gpr_cycle_counter gpr_get_cycle_counter() {
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   gpr_timespec ts;
   ts.tv_sec = static_cast<int64_t>(cycles / GPR_US_PER_SEC);
-  ts.tv_nsec = static_cast<int64_t>((cycles - ts.tv_sec * GPR_US_PER_SEC) *
-                                    GPR_NS_PER_US);
+  ts.tv_nsec = static_cast<int64_t>((cycles - ts.tv_sec * GPR_US_PER_SEC) * GPR_NS_PER_US);
   ts.clock_type = GPR_CLOCK_PRECISE;
   return ts;
 }
@@ -161,8 +155,7 @@ void gpr_precise_clock_now(gpr_timespec* clk) {
 }
 
 gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
-  return gpr_time_sub(gpr_cycle_counter_to_time(a),
-                      gpr_cycle_counter_to_time(b));
+  return gpr_time_sub(gpr_cycle_counter_to_time(a), gpr_cycle_counter_to_time(b));
 }
 #endif /* GPR_CYCLE_COUNTER_FALLBACK */
 #endif /* !GPR_CYCLE_COUNTER_CUSTOM */

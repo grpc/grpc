@@ -50,8 +50,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -110,8 +109,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -143,20 +141,17 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
   gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
-      static_cast<int>(MAX_CONNECTION_AGE_MS *
-                       MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
+      static_cast<int>(MAX_CONNECTION_AGE_MS * MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
       MAX_CONNECTION_AGE_GRACE_MS + IMMEDIATE_SHUTDOWN_GRACE_TIME_MS);
 
   /* Wait for the channel to reach its max age */
@@ -190,8 +185,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
   cq_verify(cqv);
@@ -252,8 +246,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -285,13 +278,11 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
@@ -323,8 +314,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);

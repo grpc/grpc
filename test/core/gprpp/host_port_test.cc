@@ -24,8 +24,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/test_config.h"
 
-static void join_host_port_expect(const char* host, int port,
-                                  const char* expected) {
+static void join_host_port_expect(const char* host, int port, const char* expected) {
   std::string actual = grpc_core::JoinHostPort(host, port);
   GPR_ASSERT(actual == expected);
 }
@@ -44,12 +43,10 @@ static void test_join_host_port_garbage(void) {
   join_host_port_expect("::]", 107, "[::]]:107");
 }
 
-static void split_host_port_expect(const char* name, const char* host,
-                                   const char* port, bool ret) {
+static void split_host_port_expect(const char* name, const char* host, const char* port, bool ret) {
   std::string actual_host;
   std::string actual_port;
-  const bool actual_ret =
-      grpc_core::SplitHostPort(name, &actual_host, &actual_port);
+  const bool actual_ret = grpc_core::SplitHostPort(name, &actual_host, &actual_port);
   GPR_ASSERT(actual_ret == ret);
   GPR_ASSERT(actual_host == (host == nullptr ? "" : host));
   GPR_ASSERT(actual_port == (port == nullptr ? "" : port));

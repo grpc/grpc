@@ -53,30 +53,24 @@ FakeNonResponsiveDNSServer::FakeNonResponsiveDNSServer(int port) {
   addr.sin6_family = AF_INET6;
   addr.sin6_port = htons(port);
   (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
-  if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),
-           sizeof(addr)) != 0) {
+  if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) != 0) {
     gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d", port);
     abort();
   }
 #ifdef GPR_WINDOWS
   char val = 1;
-  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
-      SOCKET_ERROR) {
-    gpr_log(GPR_DEBUG,
-            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) == SOCKET_ERROR) {
+    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
     abort();
   }
 #else
   int val = 1;
-  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
-      0) {
-    gpr_log(GPR_DEBUG,
-            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) != 0) {
+    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
     abort();
   }
 #endif
-  if (bind(tcp_socket_, reinterpret_cast<const sockaddr*>(&addr),
-           sizeof(addr)) != 0) {
+  if (bind(tcp_socket_, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) != 0) {
     gpr_log(GPR_DEBUG, "Failed to bind TCP ipv6 socket to [::1]:%d", port);
     abort();
   }

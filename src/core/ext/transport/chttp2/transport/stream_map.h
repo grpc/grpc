@@ -36,14 +36,12 @@ struct grpc_chttp2_stream_map {
   size_t free;
   size_t capacity;
 };
-void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
-                                 size_t initial_capacity);
+void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map, size_t initial_capacity);
 void grpc_chttp2_stream_map_destroy(grpc_chttp2_stream_map* map);
 
 /* Add a new key: given http2 semantics, new keys must always be greater than
    existing keys - this is asserted */
-void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
-                                void* value);
+void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key, void* value);
 
 /* Delete an existing key - returns the previous value of the key if it existed,
    or NULL otherwise */
@@ -60,8 +58,7 @@ size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map* map);
 
 /* Callback on each stream */
 void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map* map,
-                                     void (*f)(void* user_data, uint32_t key,
-                                               void* value),
+                                     void (*f)(void* user_data, uint32_t key, void* value),
                                      void* user_data);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_MAP_H */

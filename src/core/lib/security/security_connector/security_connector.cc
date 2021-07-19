@@ -37,20 +37,17 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
-    false, "security_connector_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(false,
+                                                                     "security_connector_refcount");
 
 grpc_server_security_connector::grpc_server_security_connector(
-    const char* url_scheme,
-    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-    : grpc_security_connector(url_scheme),
-      server_creds_(std::move(server_creds)) {}
+    const char* url_scheme, grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
+    : grpc_security_connector(url_scheme), server_creds_(std::move(server_creds)) {}
 
 grpc_server_security_connector::~grpc_server_security_connector() = default;
 
 grpc_channel_security_connector::grpc_channel_security_connector(
-    const char* url_scheme,
-    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    const char* url_scheme, grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds)
     : grpc_security_connector(url_scheme),
       channel_creds_(std::move(channel_creds)),
@@ -85,8 +82,7 @@ int grpc_server_security_connector::server_security_connector_cmp(
 }
 
 static void connector_arg_destroy(void* p) {
-  static_cast<grpc_security_connector*>(p)->Unref(DEBUG_LOCATION,
-                                                  "connector_arg_destroy");
+  static_cast<grpc_security_connector*>(p)->Unref(DEBUG_LOCATION, "connector_arg_destroy");
 }
 
 static void* connector_arg_copy(void* p) {
@@ -96,36 +92,31 @@ static void* connector_arg_copy(void* p) {
 }
 
 static int connector_cmp(void* a, void* b) {
-  return static_cast<grpc_security_connector*>(a)->cmp(
-      static_cast<grpc_security_connector*>(b));
+  return static_cast<grpc_security_connector*>(a)->cmp(static_cast<grpc_security_connector*>(b));
 }
 
-static const grpc_arg_pointer_vtable connector_arg_vtable = {
-    connector_arg_copy, connector_arg_destroy, connector_cmp};
+static const grpc_arg_pointer_vtable connector_arg_vtable = {connector_arg_copy,
+                                                             connector_arg_destroy, connector_cmp};
 
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SECURITY_CONNECTOR), sc,
-      &connector_arg_vtable);
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_SECURITY_CONNECTOR), sc,
+                                         &connector_arg_vtable);
 }
 
 grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_ARG_SECURITY_CONNECTOR) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_ARG_SECURITY_CONNECTOR);
+    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type, GRPC_ARG_SECURITY_CONNECTOR);
     return nullptr;
   }
   return static_cast<grpc_security_connector*>(arg->value.pointer.p);
 }
 
-grpc_security_connector* grpc_security_connector_find_in_args(
-    const grpc_channel_args* args) {
+grpc_security_connector* grpc_security_connector_find_in_args(const grpc_channel_args* args) {
   size_t i;
   if (args == nullptr) return nullptr;
   for (i = 0; i < args->num_args; i++) {
-    grpc_security_connector* sc =
-        grpc_security_connector_from_arg(&args->args[i]);
+    grpc_security_connector* sc = grpc_security_connector_from_arg(&args->args[i]);
     if (sc != nullptr) return sc;
   }
   return nullptr;

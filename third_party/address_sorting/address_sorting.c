@@ -52,22 +52,20 @@ static const int kIPv6AddrScopeLinkLocal = 1;
 static const int kIPv6AddrScopeSiteLocal = 2;
 static const int kIPv6AddrScopeGlobal = 3;
 
-static address_sorting_source_addr_factory* g_current_source_addr_factory =
-    NULL;
+static address_sorting_source_addr_factory* g_current_source_addr_factory = NULL;
 
 static bool address_sorting_get_source_addr(const address_sorting_address* dest,
                                             address_sorting_address* source) {
-  return g_current_source_addr_factory->vtable->get_source_addr(
-      g_current_source_addr_factory, dest, source);
+  return g_current_source_addr_factory->vtable->get_source_addr(g_current_source_addr_factory, dest,
+                                                                source);
 }
 
-bool address_sorting_get_source_addr_for_testing(
-    const address_sorting_address* dest, address_sorting_address* source) {
+bool address_sorting_get_source_addr_for_testing(const address_sorting_address* dest,
+                                                 address_sorting_address* source) {
   return address_sorting_get_source_addr(dest, source);
 }
 
-static int ipv6_prefix_match_length(const struct sockaddr_in6* sa,
-                                    const struct sockaddr_in6* sb) {
+static int ipv6_prefix_match_length(const struct sockaddr_in6* sa, const struct sockaddr_in6* sb) {
   unsigned char* a = (unsigned char*)&sa->sin6_addr;
   unsigned char* b = (unsigned char*)&sb->sin6_addr;
   int cur_bit = 0;
@@ -86,8 +84,7 @@ static int ipv6_prefix_match_length(const struct sockaddr_in6* sa,
 
 static int in6_is_addr_loopback(const struct in6_addr* ipv6_address) {
   uint32_t* bits32 = (uint32_t*)ipv6_address;
-  return bits32[0] == 0 && bits32[1] == 0 && bits32[2] == 0 &&
-         bits32[3] == htonl(1);
+  return bits32[0] == 0 && bits32[1] == 0 && bits32[2] == 0 && bits32[3] == htonl(1);
 }
 
 static int in6_is_addr_v4mapped(const struct in6_addr* ipv6_address) {
@@ -123,8 +120,7 @@ static int in6_is_addr_ula(const struct in6_addr* ipv6_address) {
 
 static int in6_is_addr_teredo(const struct in6_addr* ipv6_address) {
   uint8_t* bytes = (uint8_t*)ipv6_address;
-  return bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x00 &&
-         bytes[3] == 0x00;
+  return bytes[0] == 0x20 && bytes[1] == 0x01 && bytes[2] == 0x00 && bytes[3] == 0x00;
 }
 
 static int in6_is_addr_6bone(const struct in6_addr* ipv6_address) {
@@ -132,8 +128,7 @@ static int in6_is_addr_6bone(const struct in6_addr* ipv6_address) {
   return bytes[0] == 0x3f && bytes[1] == 0xfe;
 }
 
-address_sorting_family address_sorting_abstract_get_family(
-    const address_sorting_address* address) {
+address_sorting_family address_sorting_abstract_get_family(const address_sorting_address* address) {
   switch (((struct sockaddr*)address)->sa_family) {
     case AF_INET:
       return ADDRESS_SORTING_AF_INET;
@@ -145,11 +140,9 @@ address_sorting_family address_sorting_abstract_get_family(
 }
 
 static int get_label_value(const address_sorting_address* resolved_addr) {
-  if (address_sorting_abstract_get_family(resolved_addr) ==
-      ADDRESS_SORTING_AF_INET) {
+  if (address_sorting_abstract_get_family(resolved_addr) == ADDRESS_SORTING_AF_INET) {
     return 4;
-  } else if (address_sorting_abstract_get_family(resolved_addr) !=
-             ADDRESS_SORTING_AF_INET6) {
+  } else if (address_sorting_abstract_get_family(resolved_addr) != ADDRESS_SORTING_AF_INET6) {
     return 1;
   }
   struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
@@ -174,11 +167,9 @@ static int get_label_value(const address_sorting_address* resolved_addr) {
 }
 
 static int get_precedence_value(const address_sorting_address* resolved_addr) {
-  if (address_sorting_abstract_get_family(resolved_addr) ==
-      ADDRESS_SORTING_AF_INET) {
+  if (address_sorting_abstract_get_family(resolved_addr) == ADDRESS_SORTING_AF_INET) {
     return 35;
-  } else if (address_sorting_abstract_get_family(resolved_addr) !=
-             ADDRESS_SORTING_AF_INET6) {
+  } else if (address_sorting_abstract_get_family(resolved_addr) != ADDRESS_SORTING_AF_INET6) {
     return 1;
   }
   struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
@@ -201,11 +192,9 @@ static int get_precedence_value(const address_sorting_address* resolved_addr) {
 }
 
 static int sockaddr_get_scope(const address_sorting_address* resolved_addr) {
-  if (address_sorting_abstract_get_family(resolved_addr) ==
-      ADDRESS_SORTING_AF_INET) {
+  if (address_sorting_abstract_get_family(resolved_addr) == ADDRESS_SORTING_AF_INET) {
     return kIPv6AddrScopeGlobal;
-  } else if (address_sorting_abstract_get_family(resolved_addr) ==
-             ADDRESS_SORTING_AF_INET6) {
+  } else if (address_sorting_abstract_get_family(resolved_addr) == ADDRESS_SORTING_AF_INET6) {
     struct sockaddr_in6* ipv6_addr = (struct sockaddr_in6*)&resolved_addr->addr;
     if (in6_is_addr_loopback(&ipv6_addr->sin6_addr) ||
         in6_is_addr_linklocal(&ipv6_addr->sin6_addr)) {
@@ -227,17 +216,14 @@ static int compare_source_addr_exists(const address_sorting_sortable* first,
   return 0;
 }
 
-static int compare_source_dest_scope_matches(
-    const address_sorting_sortable* first,
-    const address_sorting_sortable* second) {
+static int compare_source_dest_scope_matches(const address_sorting_sortable* first,
+                                             const address_sorting_sortable* second) {
   bool first_src_dst_scope_matches = false;
-  if (sockaddr_get_scope(&first->dest_addr) ==
-      sockaddr_get_scope(&first->source_addr)) {
+  if (sockaddr_get_scope(&first->dest_addr) == sockaddr_get_scope(&first->source_addr)) {
     first_src_dst_scope_matches = true;
   }
   bool second_src_dst_scope_matches = false;
-  if (sockaddr_get_scope(&second->dest_addr) ==
-      sockaddr_get_scope(&second->source_addr)) {
+  if (sockaddr_get_scope(&second->dest_addr) == sockaddr_get_scope(&second->source_addr)) {
     second_src_dst_scope_matches = true;
   }
   if (first_src_dst_scope_matches != second_src_dst_scope_matches) {
@@ -246,17 +232,14 @@ static int compare_source_dest_scope_matches(
   return 0;
 }
 
-static int compare_source_dest_labels_match(
-    const address_sorting_sortable* first,
-    const address_sorting_sortable* second) {
+static int compare_source_dest_labels_match(const address_sorting_sortable* first,
+                                            const address_sorting_sortable* second) {
   bool first_label_matches = false;
-  if (get_label_value(&first->dest_addr) ==
-      get_label_value(&first->source_addr)) {
+  if (get_label_value(&first->dest_addr) == get_label_value(&first->source_addr)) {
     first_label_matches = true;
   }
   bool second_label_matches = false;
-  if (get_label_value(&second->dest_addr) ==
-      get_label_value(&second->source_addr)) {
+  if (get_label_value(&second->dest_addr) == get_label_value(&second->source_addr)) {
     second_label_matches = true;
   }
   if (first_label_matches != second_label_matches) {
@@ -267,31 +250,26 @@ static int compare_source_dest_labels_match(
 
 static int compare_dest_precedence(const address_sorting_sortable* first,
                                    const address_sorting_sortable* second) {
-  return get_precedence_value(&second->dest_addr) -
-         get_precedence_value(&first->dest_addr);
+  return get_precedence_value(&second->dest_addr) - get_precedence_value(&first->dest_addr);
 }
 
 static int compare_dest_scope(const address_sorting_sortable* first,
                               const address_sorting_sortable* second) {
-  return sockaddr_get_scope(&first->dest_addr) -
-         sockaddr_get_scope(&second->dest_addr);
+  return sockaddr_get_scope(&first->dest_addr) - sockaddr_get_scope(&second->dest_addr);
 }
 
-static int compare_source_dest_prefix_match_lengths(
-    const address_sorting_sortable* first,
-    const address_sorting_sortable* second) {
+static int compare_source_dest_prefix_match_lengths(const address_sorting_sortable* first,
+                                                    const address_sorting_sortable* second) {
   if (first->source_addr_exists &&
-      address_sorting_abstract_get_family(&first->source_addr) ==
-          ADDRESS_SORTING_AF_INET6 &&
+      address_sorting_abstract_get_family(&first->source_addr) == ADDRESS_SORTING_AF_INET6 &&
       second->source_addr_exists &&
-      address_sorting_abstract_get_family(&second->source_addr) ==
-          ADDRESS_SORTING_AF_INET6) {
+      address_sorting_abstract_get_family(&second->source_addr) == ADDRESS_SORTING_AF_INET6) {
     int first_match_length =
         ipv6_prefix_match_length((struct sockaddr_in6*)&first->source_addr.addr,
                                  (struct sockaddr_in6*)&first->dest_addr.addr);
-    int second_match_length = ipv6_prefix_match_length(
-        (struct sockaddr_in6*)&second->source_addr.addr,
-        (struct sockaddr_in6*)&second->dest_addr.addr);
+    int second_match_length =
+        ipv6_prefix_match_length((struct sockaddr_in6*)&second->source_addr.addr,
+                                 (struct sockaddr_in6*)&second->dest_addr.addr);
     return second_match_length - first_match_length;
   }
   return 0;
@@ -335,35 +313,30 @@ void address_sorting_override_source_addr_factory_for_testing(
   g_current_source_addr_factory = factory;
 }
 
-static void sanity_check_private_fields_are_unused(
-    const address_sorting_sortable* sortable) {
+static void sanity_check_private_fields_are_unused(const address_sorting_sortable* sortable) {
   address_sorting_address expected_source_addr;
   memset(&expected_source_addr, 0, sizeof(expected_source_addr));
-  if (memcmp(&expected_source_addr, &sortable->source_addr,
-             sizeof(address_sorting_address)) ||
+  if (memcmp(&expected_source_addr, &sortable->source_addr, sizeof(address_sorting_address)) ||
       sortable->original_index || sortable->source_addr_exists) {
     abort();
   }
 }
 
-void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables,
-                                   size_t sortables_len) {
+void address_sorting_rfc_6724_sort(address_sorting_sortable* sortables, size_t sortables_len) {
   for (size_t i = 0; i < sortables_len; i++) {
     sanity_check_private_fields_are_unused(&sortables[i]);
     sortables[i].original_index = i;
-    sortables[i].source_addr_exists = address_sorting_get_source_addr(
-        &sortables[i].dest_addr, &sortables[i].source_addr);
+    sortables[i].source_addr_exists =
+        address_sorting_get_source_addr(&sortables[i].dest_addr, &sortables[i].source_addr);
   }
-  qsort(sortables, sortables_len, sizeof(address_sorting_sortable),
-        rfc_6724_compare);
+  qsort(sortables, sortables_len, sizeof(address_sorting_sortable), rfc_6724_compare);
 }
 
 void address_sorting_init() {
   if (g_current_source_addr_factory != NULL) {
     abort();
   }
-  g_current_source_addr_factory =
-      address_sorting_create_source_addr_factory_for_current_platform();
+  g_current_source_addr_factory = address_sorting_create_source_addr_factory_for_current_platform();
 }
 
 void address_sorting_shutdown() {

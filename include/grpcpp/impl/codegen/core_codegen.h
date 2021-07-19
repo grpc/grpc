@@ -35,17 +35,13 @@ class CoreCodegen final : public CoreCodegenInterface {
       const grpc_completion_queue_attributes* attributes) override;
   grpc_completion_queue* grpc_completion_queue_create(
       const grpc_completion_queue_factory* factory,
-      const grpc_completion_queue_attributes* attributes,
-      void* reserved) override;
-  grpc_completion_queue* grpc_completion_queue_create_for_next(
-      void* reserved) override;
-  grpc_completion_queue* grpc_completion_queue_create_for_pluck(
-      void* reserved) override;
+      const grpc_completion_queue_attributes* attributes, void* reserved) override;
+  grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved) override;
+  grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) override;
   void grpc_completion_queue_shutdown(grpc_completion_queue* cq) override;
   void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
   grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
-                                         gpr_timespec deadline,
-                                         void* reserved) override;
+                                         gpr_timespec deadline, void* reserved) override;
 
   void* gpr_malloc(size_t size) override;
   void gpr_free(void* p) override;
@@ -63,13 +59,10 @@ class CoreCodegen final : public CoreCodegenInterface {
   void gpr_cv_signal(gpr_cv* cv) override;
   void gpr_cv_broadcast(gpr_cv* cv) override;
 
-  grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
-                                        size_t nops, void* tag,
+  grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops, size_t nops, void* tag,
                                         void* reserved) override;
-  grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
-                                               grpc_status_code status,
-                                               const char* description,
-                                               void* reserved) override;
+  grpc_call_error grpc_call_cancel_with_status(grpc_call* call, grpc_status_code status,
+                                               const char* description, void* reserved) override;
   void grpc_call_ref(grpc_call* call) override;
   void grpc_call_unref(grpc_call* call) override;
   void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;
@@ -81,20 +74,14 @@ class CoreCodegen final : public CoreCodegenInterface {
 
   int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                    grpc_byte_buffer* buffer) override;
-  void grpc_byte_buffer_reader_destroy(
-      grpc_byte_buffer_reader* reader) override;
-  int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
-                                   grpc_slice* slice) override;
-  int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
-                                   grpc_slice** slice) override;
+  void grpc_byte_buffer_reader_destroy(grpc_byte_buffer_reader* reader) override;
+  int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader, grpc_slice* slice) override;
+  int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader, grpc_slice** slice) override;
 
-  grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
-                                                size_t nslices) override;
-  grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
-                                           void (*destroy)(void*),
+  grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice, size_t nslices) override;
+  grpc_slice grpc_slice_new_with_user_data(void* p, size_t len, void (*destroy)(void*),
                                            void* user_data) override;
-  grpc_slice grpc_slice_new_with_len(void* p, size_t len,
-                                     void (*destroy)(void*, size_t)) override;
+  grpc_slice grpc_slice_new_with_len(void* p, size_t len, void (*destroy)(void*, size_t)) override;
   grpc_slice grpc_empty_slice() override;
   grpc_slice grpc_slice_malloc(size_t length) override;
   void grpc_slice_unref(grpc_slice slice) override;
@@ -104,10 +91,8 @@ class CoreCodegen final : public CoreCodegenInterface {
   grpc_slice grpc_slice_sub(grpc_slice s, size_t begin, size_t end) override;
   void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice slice) override;
   void grpc_slice_buffer_pop(grpc_slice_buffer* sb) override;
-  grpc_slice grpc_slice_from_static_buffer(const void* buffer,
-                                           size_t length) override;
-  grpc_slice grpc_slice_from_copied_buffer(const void* buffer,
-                                           size_t length) override;
+  grpc_slice grpc_slice_from_static_buffer(const void* buffer, size_t length) override;
+  grpc_slice grpc_slice_from_copied_buffer(const void* buffer, size_t length) override;
   void grpc_metadata_array_init(grpc_metadata_array* array) override;
   void grpc_metadata_array_destroy(grpc_metadata_array* array) override;
 
@@ -117,8 +102,7 @@ class CoreCodegen final : public CoreCodegenInterface {
   const Status& ok() override;
   const Status& cancelled() override;
 
-  void assert_fail(const char* failed_assertion, const char* file,
-                   int line) override;
+  void assert_fail(const char* failed_assertion, const char* file, int line) override;
 };
 
 }  // namespace grpc

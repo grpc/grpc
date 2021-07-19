@@ -87,8 +87,7 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* /*registered_method*/) {
+static void verifier(grpc_server* server, grpc_completion_queue* cq, void* /*registered_method*/) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
@@ -98,8 +97,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_call_details_init(&call_details);
   grpc_metadata_array_init(&request_metadata_recv);
 
-  error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+  error =
+      grpc_server_request_call(server, &s, &call_details, &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -116,9 +115,9 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
                              void* /*registered_method*/) {
   while (server->core_server->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(cq, grpc_timeout_milliseconds_to_deadline(20), nullptr).type ==
+        GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -139,8 +138,7 @@ int main(int argc, char** argv) {
                            0);
 
   /* push a data frame with bad flags */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
   /* push a window update with a bad length */
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x01\x08\x00\x00\x00\x00\x01", 0);

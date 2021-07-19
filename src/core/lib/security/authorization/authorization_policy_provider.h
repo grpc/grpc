@@ -23,10 +23,8 @@
 struct grpc_authorization_policy_provider
     : public grpc_core::DualRefCounted<grpc_authorization_policy_provider> {
  public:
-  virtual grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine>
-  allow_engine() const = 0;
-  virtual grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> deny_engine()
-      const = 0;
+  virtual grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> allow_engine() const = 0;
+  virtual grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> deny_engine() const = 0;
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_POLICY_PROVIDER_H

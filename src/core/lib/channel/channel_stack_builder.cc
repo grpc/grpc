@@ -51,8 +51,7 @@ struct grpc_channel_stack_builder_iterator {
 };
 
 grpc_channel_stack_builder* grpc_channel_stack_builder_create(void) {
-  grpc_channel_stack_builder* b =
-      static_cast<grpc_channel_stack_builder*>(gpr_zalloc(sizeof(*b)));
+  grpc_channel_stack_builder* b = static_cast<grpc_channel_stack_builder*>(gpr_zalloc(sizeof(*b)));
 
   b->begin.filter = nullptr;
   b->end.filter = nullptr;
@@ -64,46 +63,39 @@ grpc_channel_stack_builder* grpc_channel_stack_builder_create(void) {
   return b;
 }
 
-void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder* b,
-                                           const char* target) {
+void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder* b, const char* target) {
   gpr_free(b->target);
   b->target = gpr_strdup(target);
 }
 
-const char* grpc_channel_stack_builder_get_target(
-    grpc_channel_stack_builder* b) {
+const char* grpc_channel_stack_builder_get_target(grpc_channel_stack_builder* b) {
   return b->target;
 }
 
 static grpc_channel_stack_builder_iterator* create_iterator_at_filter_node(
     grpc_channel_stack_builder* builder, filter_node* node) {
   grpc_channel_stack_builder_iterator* it =
-      static_cast<grpc_channel_stack_builder_iterator*>(
-          gpr_malloc(sizeof(*it)));
+      static_cast<grpc_channel_stack_builder_iterator*>(gpr_malloc(sizeof(*it)));
   it->builder = builder;
   it->node = node;
   return it;
 }
 
-void grpc_channel_stack_builder_iterator_destroy(
-    grpc_channel_stack_builder_iterator* it) {
+void grpc_channel_stack_builder_iterator_destroy(grpc_channel_stack_builder_iterator* it) {
   gpr_free(it);
 }
 
-grpc_channel_stack_builder_iterator*
-grpc_channel_stack_builder_create_iterator_at_first(
+grpc_channel_stack_builder_iterator* grpc_channel_stack_builder_create_iterator_at_first(
     grpc_channel_stack_builder* builder) {
   return create_iterator_at_filter_node(builder, &builder->begin);
 }
 
-grpc_channel_stack_builder_iterator*
-grpc_channel_stack_builder_create_iterator_at_last(
+grpc_channel_stack_builder_iterator* grpc_channel_stack_builder_create_iterator_at_last(
     grpc_channel_stack_builder* builder) {
   return create_iterator_at_filter_node(builder, &builder->end);
 }
 
-bool grpc_channel_stack_builder_iterator_is_end(
-    grpc_channel_stack_builder_iterator* iterator) {
+bool grpc_channel_stack_builder_iterator_is_end(grpc_channel_stack_builder_iterator* iterator) {
   return iterator->node == &iterator->builder->end;
 }
 
@@ -113,15 +105,13 @@ const char* grpc_channel_stack_builder_iterator_filter_name(
   return iterator->node->filter->name;
 }
 
-bool grpc_channel_stack_builder_move_next(
-    grpc_channel_stack_builder_iterator* iterator) {
+bool grpc_channel_stack_builder_move_next(grpc_channel_stack_builder_iterator* iterator) {
   if (iterator->node == &iterator->builder->end) return false;
   iterator->node = iterator->node->next;
   return true;
 }
 
-bool grpc_channel_stack_builder_move_prev(
-    grpc_channel_stack_builder_iterator* iterator) {
+bool grpc_channel_stack_builder_move_prev(grpc_channel_stack_builder_iterator* iterator) {
   if (iterator->node == &iterator->builder->begin) return false;
   iterator->node = iterator->node->prev;
   return true;
@@ -134,24 +124,21 @@ grpc_channel_stack_builder_iterator* grpc_channel_stack_builder_iterator_find(
       grpc_channel_stack_builder_create_iterator_at_first(builder);
   while (grpc_channel_stack_builder_move_next(it)) {
     if (grpc_channel_stack_builder_iterator_is_end(it)) break;
-    const char* filter_name_at_it =
-        grpc_channel_stack_builder_iterator_filter_name(it);
+    const char* filter_name_at_it = grpc_channel_stack_builder_iterator_filter_name(it);
     if (strcmp(filter_name, filter_name_at_it) == 0) break;
   }
   return it;
 }
 
-bool grpc_channel_stack_builder_move_prev(
-    grpc_channel_stack_builder_iterator* iterator);
+bool grpc_channel_stack_builder_move_prev(grpc_channel_stack_builder_iterator* iterator);
 
-void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder* builder,
-                                         const char* name) {
+void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder* builder, const char* name) {
   GPR_ASSERT(builder->name == nullptr);
   builder->name = name;
 }
 
-void grpc_channel_stack_builder_set_channel_arguments(
-    grpc_channel_stack_builder* builder, const grpc_channel_args* args) {
+void grpc_channel_stack_builder_set_channel_arguments(grpc_channel_stack_builder* builder,
+                                                      const grpc_channel_args* args) {
   if (builder->args != nullptr) {
     grpc_channel_args_destroy(builder->args);
   }
@@ -163,19 +150,18 @@ const grpc_channel_args* grpc_channel_stack_builder_get_channel_arguments(
   return builder->args;
 }
 
-void grpc_channel_stack_builder_set_transport(
-    grpc_channel_stack_builder* builder, grpc_transport* transport) {
+void grpc_channel_stack_builder_set_transport(grpc_channel_stack_builder* builder,
+                                              grpc_transport* transport) {
   GPR_ASSERT(builder->transport == nullptr);
   builder->transport = transport;
 }
 
-grpc_transport* grpc_channel_stack_builder_get_transport(
-    grpc_channel_stack_builder* builder) {
+grpc_transport* grpc_channel_stack_builder_get_transport(grpc_channel_stack_builder* builder) {
   return builder->transport;
 }
 
-void grpc_channel_stack_builder_set_resource_user(
-    grpc_channel_stack_builder* builder, grpc_resource_user* resource_user) {
+void grpc_channel_stack_builder_set_resource_user(grpc_channel_stack_builder* builder,
+                                                  grpc_resource_user* resource_user) {
   GPR_ASSERT(builder->resource_user == nullptr);
   builder->resource_user = resource_user;
 }
@@ -185,19 +171,19 @@ grpc_resource_user* grpc_channel_stack_builder_get_resource_user(
   return builder->resource_user;
 }
 
-bool grpc_channel_stack_builder_append_filter(
-    grpc_channel_stack_builder* builder, const grpc_channel_filter* filter,
-    grpc_post_filter_create_init_func post_init_func, void* user_data) {
+bool grpc_channel_stack_builder_append_filter(grpc_channel_stack_builder* builder,
+                                              const grpc_channel_filter* filter,
+                                              grpc_post_filter_create_init_func post_init_func,
+                                              void* user_data) {
   grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_create_iterator_at_last(builder);
-  bool ok = grpc_channel_stack_builder_add_filter_before(
-      it, filter, post_init_func, user_data);
+  bool ok = grpc_channel_stack_builder_add_filter_before(it, filter, post_init_func, user_data);
   grpc_channel_stack_builder_iterator_destroy(it);
   return ok;
 }
 
-bool grpc_channel_stack_builder_remove_filter(
-    grpc_channel_stack_builder* builder, const char* filter_name) {
+bool grpc_channel_stack_builder_remove_filter(grpc_channel_stack_builder* builder,
+                                              const char* filter_name) {
   grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_iterator_find(builder, filter_name);
   if (grpc_channel_stack_builder_iterator_is_end(it)) {
@@ -211,22 +197,20 @@ bool grpc_channel_stack_builder_remove_filter(
   return true;
 }
 
-bool grpc_channel_stack_builder_prepend_filter(
-    grpc_channel_stack_builder* builder, const grpc_channel_filter* filter,
-    grpc_post_filter_create_init_func post_init_func, void* user_data) {
+bool grpc_channel_stack_builder_prepend_filter(grpc_channel_stack_builder* builder,
+                                               const grpc_channel_filter* filter,
+                                               grpc_post_filter_create_init_func post_init_func,
+                                               void* user_data) {
   grpc_channel_stack_builder_iterator* it =
       grpc_channel_stack_builder_create_iterator_at_first(builder);
-  bool ok = grpc_channel_stack_builder_add_filter_after(
-      it, filter, post_init_func, user_data);
+  bool ok = grpc_channel_stack_builder_add_filter_after(it, filter, post_init_func, user_data);
   grpc_channel_stack_builder_iterator_destroy(it);
   return ok;
 }
 
 static void add_after(filter_node* before, const grpc_channel_filter* filter,
-                      grpc_post_filter_create_init_func post_init_func,
-                      void* user_data) {
-  filter_node* new_node =
-      static_cast<filter_node*>(gpr_malloc(sizeof(*new_node)));
+                      grpc_post_filter_create_init_func post_init_func, void* user_data) {
+  filter_node* new_node = static_cast<filter_node*>(gpr_malloc(sizeof(*new_node)));
   new_node->next = before->next;
   new_node->prev = before;
   new_node->next->prev = new_node->prev->next = new_node;
@@ -235,19 +219,19 @@ static void add_after(filter_node* before, const grpc_channel_filter* filter,
   new_node->init_arg = user_data;
 }
 
-bool grpc_channel_stack_builder_add_filter_before(
-    grpc_channel_stack_builder_iterator* iterator,
-    const grpc_channel_filter* filter,
-    grpc_post_filter_create_init_func post_init_func, void* user_data) {
+bool grpc_channel_stack_builder_add_filter_before(grpc_channel_stack_builder_iterator* iterator,
+                                                  const grpc_channel_filter* filter,
+                                                  grpc_post_filter_create_init_func post_init_func,
+                                                  void* user_data) {
   if (iterator->node == &iterator->builder->begin) return false;
   add_after(iterator->node->prev, filter, post_init_func, user_data);
   return true;
 }
 
-bool grpc_channel_stack_builder_add_filter_after(
-    grpc_channel_stack_builder_iterator* iterator,
-    const grpc_channel_filter* filter,
-    grpc_post_filter_create_init_func post_init_func, void* user_data) {
+bool grpc_channel_stack_builder_add_filter_after(grpc_channel_stack_builder_iterator* iterator,
+                                                 const grpc_channel_filter* filter,
+                                                 grpc_post_filter_create_init_func post_init_func,
+                                                 void* user_data) {
   if (iterator->node == &iterator->builder->end) return false;
   add_after(iterator->node, filter, post_init_func, user_data);
   return true;
@@ -267,9 +251,10 @@ void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder) {
   gpr_free(builder);
 }
 
-grpc_error_handle grpc_channel_stack_builder_finish(
-    grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
-    grpc_iomgr_cb_func destroy, void* destroy_arg, void** result) {
+grpc_error_handle grpc_channel_stack_builder_finish(grpc_channel_stack_builder* builder,
+                                                    size_t prefix_bytes, int initial_refs,
+                                                    grpc_iomgr_cb_func destroy, void* destroy_arg,
+                                                    void** result) {
   // count the number of filters
   size_t num_filters = 0;
   for (filter_node* p = builder->begin.next; p != &builder->end; p = p->next) {
@@ -278,8 +263,7 @@ grpc_error_handle grpc_channel_stack_builder_finish(
 
   // create an array of filters
   const grpc_channel_filter** filters =
-      static_cast<const grpc_channel_filter**>(
-          gpr_malloc(sizeof(*filters) * num_filters));
+      static_cast<const grpc_channel_filter**>(gpr_malloc(sizeof(*filters) * num_filters));
   size_t i = 0;
   for (filter_node* p = builder->begin.next; p != &builder->end; p = p->next) {
     filters[i++] = p->filter;
@@ -291,13 +275,12 @@ grpc_error_handle grpc_channel_stack_builder_finish(
   // allocate memory, with prefix_bytes followed by channel_stack_size
   *result = gpr_zalloc(prefix_bytes + channel_stack_size);
   // fetch a pointer to the channel stack
-  grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
-      static_cast<char*>(*result) + prefix_bytes);
+  grpc_channel_stack* channel_stack =
+      reinterpret_cast<grpc_channel_stack*>(static_cast<char*>(*result) + prefix_bytes);
   // and initialize it
   grpc_error_handle error = grpc_channel_stack_init(
-      initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
-      filters, num_filters, builder->args, builder->transport, builder->name,
-      channel_stack);
+      initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg, filters, num_filters,
+      builder->args, builder->transport, builder->name, channel_stack);
 
   if (error != GRPC_ERROR_NONE) {
     grpc_channel_stack_destroy(channel_stack);
@@ -306,11 +289,9 @@ grpc_error_handle grpc_channel_stack_builder_finish(
   } else {
     // run post-initialization functions
     i = 0;
-    for (filter_node* p = builder->begin.next; p != &builder->end;
-         p = p->next) {
+    for (filter_node* p = builder->begin.next; p != &builder->end; p = p->next) {
       if (p->init != nullptr) {
-        p->init(channel_stack, grpc_channel_stack_element(channel_stack, i),
-                p->init_arg);
+        p->init(channel_stack, grpc_channel_stack_element(channel_stack, i), p->init_arg);
       }
       i++;
     }

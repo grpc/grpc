@@ -36,14 +36,11 @@ static int* box(int x) {
 static long int_compare(void* int1, void* int2, void* /*unused*/) {
   return (*static_cast<int*>(int1)) - (*static_cast<int*>(int2));
 }
-static void* int_copy(void* p, void* /*unused*/) {
-  return box(*static_cast<int*>(p));
-}
+static void* int_copy(void* p, void* /*unused*/) { return box(*static_cast<int*>(p)); }
 
 static void destroy(void* p, void* /*unused*/) { gpr_free(p); }
 
-static const grpc_avl_vtable int_int_vtable = {destroy, int_copy, int_compare,
-                                               destroy, int_copy};
+static const grpc_avl_vtable int_int_vtable = {destroy, int_copy, int_compare, destroy, int_copy};
 
 static void check_get(grpc_avl avl, int key, int value) {
   int* k = box(key);
@@ -261,8 +258,7 @@ static void test_stress(int amount_of_stress) {
     GPR_ASSERT(i);
     if (rand() < RAND_MAX / 2) {
       added[idx] = i;
-      printf("avl = grpc_avl_add(avl, box(%d), box(%d), NULL); /* d=%d */\n",
-             idx, i, deletions);
+      printf("avl = grpc_avl_add(avl, box(%d), box(%d), NULL); /* d=%d */\n", idx, i, deletions);
       avl = grpc_avl_add(avl, box(idx), box(i), nullptr);
     } else {
       deletions += (added[idx] != 0);

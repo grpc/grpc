@@ -32,7 +32,7 @@
 
 static int check_availability_invalid(void) { return 0; }
 
-const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable = {
-    nullptr, nullptr, nullptr, nullptr, check_availability_invalid};
+const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable = {nullptr, nullptr, nullptr, nullptr,
+                                                                 check_availability_invalid};
 
 #endif /* GRPC_POSIX_NO_SPECIAL_WAKEUP_FD */

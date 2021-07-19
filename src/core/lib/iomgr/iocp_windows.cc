@@ -63,9 +63,8 @@ grpc_iocp_work_status grpc_iocp_work(grpc_millis deadline) {
   grpc_winsocket* socket;
   grpc_winsocket_callback_info* info;
   GRPC_STATS_INC_SYSCALL_POLL();
-  success =
-      GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
-                                deadline_to_millis_timeout(deadline));
+  success = GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key, &overlapped,
+                                      deadline_to_millis_timeout(deadline));
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
@@ -93,8 +92,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_millis deadline) {
     info->bytes_transferred = 0;
     info->wsa_error = WSA_OPERATION_ABORTED;
   } else {
-    success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
-                                     FALSE, &flags);
+    success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes, FALSE, &flags);
     info->bytes_transferred = bytes;
     info->wsa_error = success ? 0 : WSAGetLastError();
   }
@@ -104,8 +102,7 @@ grpc_iocp_work_status grpc_iocp_work(grpc_millis deadline) {
 }
 
 void grpc_iocp_init(void) {
-  g_iocp =
-      CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, (ULONG_PTR)NULL, 0);
+  g_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, (ULONG_PTR)NULL, 0);
   GPR_ASSERT(g_iocp);
 }
 
@@ -113,8 +110,8 @@ void grpc_iocp_kick(void) {
   BOOL success;
 
   gpr_atm_full_fetch_add(&g_custom_events, 1);
-  success = PostQueuedCompletionStatus(g_iocp, 0, (ULONG_PTR)&g_iocp_kick_token,
-                                       &g_iocp_custom_overlap);
+  success =
+      PostQueuedCompletionStatus(g_iocp, 0, (ULONG_PTR)&g_iocp_kick_token, &g_iocp_custom_overlap);
   GPR_ASSERT(success);
 }
 
@@ -124,8 +121,7 @@ void grpc_iocp_flush(void) {
 
   do {
     work_status = grpc_iocp_work(GRPC_MILLIS_INF_PAST);
-  } while (work_status == GRPC_IOCP_WORK_KICK ||
-           grpc_core::ExecCtx::Get()->Flush());
+  } while (work_status == GRPC_IOCP_WORK_KICK || grpc_core::ExecCtx::Get()->Flush());
 }
 
 void grpc_iocp_shutdown(void) {
@@ -141,8 +137,7 @@ void grpc_iocp_shutdown(void) {
 void grpc_iocp_add_socket(grpc_winsocket* socket) {
   HANDLE ret;
   if (socket->added_to_iocp) return;
-  ret = CreateIoCompletionPort((HANDLE)socket->socket, g_iocp,
-                               (uintptr_t)socket, 0);
+  ret = CreateIoCompletionPort((HANDLE)socket->socket, g_iocp, (uintptr_t)socket, 0);
   if (!ret) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
     gpr_log(GPR_ERROR, "Unable to add socket to iocp: %s", utf8_message);

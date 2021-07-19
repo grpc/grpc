@@ -28,8 +28,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-void grpc_apple_register_read_stream(CFReadStreamRef read_stream,
-                                     dispatch_queue_t dispatch_queue);
+void grpc_apple_register_read_stream(CFReadStreamRef read_stream, dispatch_queue_t dispatch_queue);
 
 void grpc_apple_register_write_stream(CFWriteStreamRef write_stream,
                                       dispatch_queue_t dispatch_queue);

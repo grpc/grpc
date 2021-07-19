@@ -43,8 +43,7 @@ int main(int /*argc*/, char** argv) {
     strcpy(root, ".");
   }
   /* start the server */
-  std::string command =
-      absl::StrCat(root, "/fling_server", gpr_subprocess_binary_extension());
+  std::string command = absl::StrCat(root, "/fling_server", gpr_subprocess_binary_extension());
   args[0] = const_cast<char*>(command.c_str());
   args[1] = const_cast<char*>("--bind");
   std::string joined = grpc_core::JoinHostPort("::", port);
@@ -53,8 +52,7 @@ int main(int /*argc*/, char** argv) {
   svr = gpr_subprocess_create(4, const_cast<const char**>(args));
 
   /* start the client */
-  command =
-      absl::StrCat(root, "/fling_client", gpr_subprocess_binary_extension());
+  command = absl::StrCat(root, "/fling_client", gpr_subprocess_binary_extension());
   args[0] = const_cast<char*>(command.c_str());
   args[1] = const_cast<char*>("--target");
   joined = grpc_core::JoinHostPort("127.0.0.1", port);

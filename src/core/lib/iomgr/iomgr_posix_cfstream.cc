@@ -61,18 +61,14 @@ static void apple_iomgr_platform_init(void) { grpc_pollset_global_init(); }
 
 static void apple_iomgr_platform_flush(void) {}
 
-static void apple_iomgr_platform_shutdown(void) {
-  grpc_pollset_global_shutdown();
-}
+static void apple_iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }
 
 static void apple_iomgr_platform_shutdown_background_closure(void) {}
 
-static bool apple_iomgr_platform_is_any_background_poller_thread(void) {
-  return false;
-}
+static bool apple_iomgr_platform_is_any_background_poller_thread(void) { return false; }
 
-static bool apple_iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* closure, grpc_error_handle error) {
+static bool apple_iomgr_platform_add_closure_to_background_poller(grpc_closure* closure,
+                                                                  grpc_error_handle error) {
   return false;
 }
 
@@ -94,13 +90,12 @@ struct CFStreamEnv {
 CFStreamEnv ParseEnvForCFStream() {
   CFStreamEnv env;
   char* enable_cfstream_str = getenv(grpc_cfstream_env_var);
-  env.enable_cfstream =
-      enable_cfstream_str == nullptr || enable_cfstream_str[0] != '0';
+  env.enable_cfstream = enable_cfstream_str == nullptr || enable_cfstream_str[0] != '0';
   char* enable_cfstream_run_loop_str = getenv(grpc_cfstream_run_loop_env_var);
   // CFStream run-loop is disabled by default. The user has to enable it
   // explicitly with environment variable.
-  env.enable_cfstream_run_loop = enable_cfstream_run_loop_str != nullptr &&
-                                 enable_cfstream_run_loop_str[0] == '1';
+  env.enable_cfstream_run_loop =
+      enable_cfstream_run_loop_str != nullptr && enable_cfstream_run_loop_str[0] == '1';
   return env;
 }
 
@@ -133,26 +128,23 @@ static void iomgr_platform_shutdown(void) {
   MaybeShutdownTcpPosix();
 }
 
-static void iomgr_platform_shutdown_background_closure(void) {
-  grpc_shutdown_background_closure();
-}
+static void iomgr_platform_shutdown_background_closure(void) { grpc_shutdown_background_closure(); }
 
 static bool iomgr_platform_is_any_background_poller_thread(void) {
   return grpc_is_any_background_poller_thread();
 }
 
-static bool iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* closure, grpc_error_handle error) {
+static bool iomgr_platform_add_closure_to_background_poller(grpc_closure* closure,
+                                                            grpc_error_handle error) {
   return grpc_add_closure_to_background_poller(closure, error);
 }
 
-static grpc_iomgr_platform_vtable vtable = {
-    iomgr_platform_init,
-    iomgr_platform_flush,
-    iomgr_platform_shutdown,
-    iomgr_platform_shutdown_background_closure,
-    iomgr_platform_is_any_background_poller_thread,
-    iomgr_platform_add_closure_to_background_poller};
+static grpc_iomgr_platform_vtable vtable = {iomgr_platform_init,
+                                            iomgr_platform_flush,
+                                            iomgr_platform_shutdown,
+                                            iomgr_platform_shutdown_background_closure,
+                                            iomgr_platform_is_any_background_poller_thread,
+                                            iomgr_platform_add_closure_to_background_poller};
 
 void grpc_set_default_iomgr_platform() {
   CFStreamEnv env = ParseEnvForCFStream();
@@ -183,13 +175,12 @@ void grpc_set_default_iomgr_platform() {
 
 bool grpc_iomgr_run_in_background() {
   char* enable_cfstream_str = getenv(grpc_cfstream_env_var);
-  bool enable_cfstream =
-      enable_cfstream_str == nullptr || enable_cfstream_str[0] != '0';
+  bool enable_cfstream = enable_cfstream_str == nullptr || enable_cfstream_str[0] != '0';
   char* enable_cfstream_run_loop_str = getenv(grpc_cfstream_run_loop_env_var);
   // CFStream run-loop is disabled by default. The user has to enable it
   // explicitly with environment variable.
-  bool enable_cfstream_run_loop = enable_cfstream_run_loop_str != nullptr &&
-                                  enable_cfstream_run_loop_str[0] == '1';
+  bool enable_cfstream_run_loop =
+      enable_cfstream_run_loop_str != nullptr && enable_cfstream_run_loop_str[0] == '1';
   if (enable_cfstream && enable_cfstream_run_loop) {
     return false;
   } else {

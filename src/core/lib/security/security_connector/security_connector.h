@@ -44,8 +44,7 @@ typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
 
 #define GRPC_ARG_SECURITY_CONNECTOR "grpc.security_connector"
 
-class grpc_security_connector
-    : public grpc_core::RefCounted<grpc_security_connector> {
+class grpc_security_connector : public grpc_core::RefCounted<grpc_security_connector> {
  public:
   explicit grpc_security_connector(const char* url_scheme)
       : grpc_core::RefCounted<grpc_security_connector>(
@@ -57,15 +56,13 @@ class grpc_security_connector
 
   // Checks the peer. Callee takes ownership of the peer object.
   // When done, sets *auth_context and invokes on_peer_checked.
-  virtual void check_peer(
-      tsi_peer peer, grpc_endpoint* ep,
-      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-      grpc_closure* on_peer_checked) = 0;
+  virtual void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                          grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                          grpc_closure* on_peer_checked) = 0;
 
   // Cancels the pending check_peer() request associated with on_peer_checked.
   // If there is no such request pending, this is a no-op.
-  virtual void cancel_check_peer(grpc_closure* on_peer_checked,
-                                 grpc_error_handle error) = 0;
+  virtual void cancel_check_peer(grpc_closure* on_peer_checked, grpc_error_handle error) = 0;
 
   /* Compares two security connectors. */
   virtual int cmp(const grpc_security_connector* other) const = 0;
@@ -83,8 +80,7 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc);
 grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg);
 
 /* Util to find the connector from channel args. */
-grpc_security_connector* grpc_security_connector_find_in_args(
-    const grpc_channel_args* args);
+grpc_security_connector* grpc_security_connector_find_in_args(const grpc_channel_args* args);
 
 /* --- channel_security_connector object. ---
 
@@ -105,37 +101,27 @@ class grpc_channel_security_connector : public grpc_security_connector {
   /// Returns true if completed synchronously, in which case \a error will
   /// be set to indicate the result.  Otherwise, \a on_call_host_checked
   /// will be invoked when complete.
-  virtual bool check_call_host(absl::string_view host,
-                               grpc_auth_context* auth_context,
-                               grpc_closure* on_call_host_checked,
-                               grpc_error_handle* error) = 0;
+  virtual bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
+                               grpc_closure* on_call_host_checked, grpc_error_handle* error) = 0;
   /// Cancels a pending asynchronous call to
   /// grpc_channel_security_connector_check_call_host() with
   /// \a on_call_host_checked as its callback.
   virtual void cancel_check_call_host(grpc_closure* on_call_host_checked,
                                       grpc_error_handle error) = 0;
   /// Registers handshakers with \a handshake_mgr.
-  virtual void add_handshakers(const grpc_channel_args* args,
-                               grpc_pollset_set* interested_parties,
+  virtual void add_handshakers(const grpc_channel_args* args, grpc_pollset_set* interested_parties,
                                grpc_core::HandshakeManager* handshake_mgr) = 0;
 
-  const grpc_channel_credentials* channel_creds() const {
-    return channel_creds_.get();
-  }
-  grpc_channel_credentials* mutable_channel_creds() {
-    return channel_creds_.get();
-  }
+  const grpc_channel_credentials* channel_creds() const { return channel_creds_.get(); }
+  grpc_channel_credentials* mutable_channel_creds() { return channel_creds_.get(); }
   const grpc_call_credentials* request_metadata_creds() const {
     return request_metadata_creds_.get();
   }
-  grpc_call_credentials* mutable_request_metadata_creds() {
-    return request_metadata_creds_.get();
-  }
+  grpc_call_credentials* mutable_request_metadata_creds() { return request_metadata_creds_.get(); }
 
  protected:
   // Helper methods to be used in subclasses.
-  int channel_security_connector_cmp(
-      const grpc_channel_security_connector* other) const;
+  int channel_security_connector_cmp(const grpc_channel_security_connector* other) const;
 
   // grpc_channel_args* channel_args() const { return channel_args_.get(); }
   //// Should be called as soon as the channel args are not needed to reduce
@@ -155,26 +141,19 @@ class grpc_channel_security_connector : public grpc_security_connector {
 
 class grpc_server_security_connector : public grpc_security_connector {
  public:
-  grpc_server_security_connector(
-      const char* url_scheme,
-      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
+  grpc_server_security_connector(const char* url_scheme,
+                                 grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
   ~grpc_server_security_connector() override;
 
-  virtual void add_handshakers(const grpc_channel_args* args,
-                               grpc_pollset_set* interested_parties,
+  virtual void add_handshakers(const grpc_channel_args* args, grpc_pollset_set* interested_parties,
                                grpc_core::HandshakeManager* handshake_mgr) = 0;
 
-  const grpc_server_credentials* server_creds() const {
-    return server_creds_.get();
-  }
-  grpc_server_credentials* mutable_server_creds() {
-    return server_creds_.get();
-  }
+  const grpc_server_credentials* server_creds() const { return server_creds_.get(); }
+  grpc_server_credentials* mutable_server_creds() { return server_creds_.get(); }
 
  protected:
   // Helper methods to be used in subclasses.
-  int server_security_connector_cmp(
-      const grpc_server_security_connector* other) const;
+  int server_security_connector_cmp(const grpc_server_security_connector* other) const;
 
  private:
   grpc_core::RefCountedPtr<grpc_server_credentials> server_creds_;

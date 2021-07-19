@@ -36,13 +36,11 @@ std::string GetServiceAccountJsonKey();
 
 std::string GetOauth2AccessToken();
 
-void UpdateActions(
-    std::unordered_map<std::string, std::function<bool()>>* actions);
+void UpdateActions(std::unordered_map<std::string, std::function<bool()>>* actions);
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
     const std::string& test_case,
-    std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+    std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators = {});
 
 class InteropClientContextInspector {
@@ -56,8 +54,7 @@ class InteropClientContextInspector {
   }
 
   bool WasCompressed() const {
-    return (grpc_call_test_only_get_message_flags(context_.call_) &
-            GRPC_WRITE_INTERNAL_COMPRESS) ||
+    return (grpc_call_test_only_get_message_flags(context_.call_) & GRPC_WRITE_INTERNAL_COMPRESS) ||
            (grpc_call_test_only_get_message_flags(context_.call_) &
             GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED);
   }
@@ -75,8 +72,7 @@ class AdditionalMetadataInterceptor : public experimental::Interceptor {
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      std::multimap<std::string, std::string>* metadata =
-          methods->GetSendInitialMetadata();
+      std::multimap<std::string, std::string>* metadata = methods->GetSendInitialMetadata();
       for (const auto& entry : additional_metadata_) {
         metadata->insert(entry);
       }

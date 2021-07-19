@@ -28,8 +28,7 @@ namespace grpc_core {
 Rbac::Rbac(Rbac::Action action, std::map<std::string, Policy> policies)
     : action(action), policies(std::move(policies)) {}
 
-Rbac::Rbac(Rbac&& other) noexcept
-    : action(other.action), policies(std::move(other.policies)) {}
+Rbac::Rbac(Rbac&& other) noexcept : action(other.action), policies(std::move(other.policies)) {}
 
 Rbac& Rbac::operator=(Rbac&& other) noexcept {
   action = other.action;
@@ -39,11 +38,10 @@ Rbac& Rbac::operator=(Rbac&& other) noexcept {
 
 std::string Rbac::ToString() const {
   std::vector<std::string> contents;
-  contents.push_back(absl::StrFormat(
-      "Rbac action=%s{", action == Rbac::Action::kAllow ? "Allow" : "Deny"));
+  contents.push_back(
+      absl::StrFormat("Rbac action=%s{", action == Rbac::Action::kAllow ? "Allow" : "Deny"));
   for (const auto& p : policies) {
-    contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}", p.first,
-                                       p.second.ToString()));
+    contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}", p.first, p.second.ToString()));
   }
   contents.push_back("}");
   return absl::StrJoin(contents, "\n");
@@ -57,8 +55,7 @@ Rbac::CidrRange::CidrRange(std::string address_prefix, uint32_t prefix_len)
     : address_prefix(std::move(address_prefix)), prefix_len(prefix_len) {}
 
 Rbac::CidrRange::CidrRange(Rbac::CidrRange&& other) noexcept
-    : address_prefix(std::move(other.address_prefix)),
-      prefix_len(other.prefix_len) {}
+    : address_prefix(std::move(other.address_prefix)), prefix_len(other.prefix_len) {}
 
 Rbac::CidrRange& Rbac::CidrRange::operator=(Rbac::CidrRange&& other) noexcept {
   address_prefix = std::move(other.address_prefix);
@@ -67,37 +64,29 @@ Rbac::CidrRange& Rbac::CidrRange::operator=(Rbac::CidrRange&& other) noexcept {
 }
 
 std::string Rbac::CidrRange::ToString() const {
-  return absl::StrFormat("CidrRange{address_prefix=%s,prefix_len=%d}",
-                         address_prefix, prefix_len);
+  return absl::StrFormat("CidrRange{address_prefix=%s,prefix_len=%d}", address_prefix, prefix_len);
 }
 
 //
 // Permission
 //
 
-Rbac::Permission::Permission(
-    Permission::RuleType type,
-    std::vector<std::unique_ptr<Permission>> permissions)
+Rbac::Permission::Permission(Permission::RuleType type,
+                             std::vector<std::unique_ptr<Permission>> permissions)
     : type(type), permissions(std::move(permissions)) {}
-Rbac::Permission::Permission(Permission::RuleType type, Permission permission)
-    : type(type) {
-  permissions.push_back(
-      absl::make_unique<Rbac::Permission>(std::move(permission)));
+Rbac::Permission::Permission(Permission::RuleType type, Permission permission) : type(type) {
+  permissions.push_back(absl::make_unique<Rbac::Permission>(std::move(permission)));
 }
 Rbac::Permission::Permission(Permission::RuleType type) : type(type) {}
-Rbac::Permission::Permission(Permission::RuleType type,
-                             HeaderMatcher header_matcher)
+Rbac::Permission::Permission(Permission::RuleType type, HeaderMatcher header_matcher)
     : type(type), header_matcher(std::move(header_matcher)) {}
-Rbac::Permission::Permission(Permission::RuleType type,
-                             StringMatcher string_matcher)
+Rbac::Permission::Permission(Permission::RuleType type, StringMatcher string_matcher)
     : type(type), string_matcher(std::move(string_matcher)) {}
 Rbac::Permission::Permission(Permission::RuleType type, CidrRange ip)
     : type(type), ip(std::move(ip)) {}
-Rbac::Permission::Permission(Permission::RuleType type, int port)
-    : type(type), port(port) {}
+Rbac::Permission::Permission(Permission::RuleType type, int port) : type(type), port(port) {}
 
-Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
-    : type(other.type) {
+Rbac::Permission::Permission(Rbac::Permission&& other) noexcept : type(other.type) {
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -121,8 +110,7 @@ Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
   }
 }
 
-Rbac::Permission& Rbac::Permission::operator=(
-    Rbac::Permission&& other) noexcept {
+Rbac::Permission& Rbac::Permission::operator=(Rbac::Permission&& other) noexcept {
   type = other.type;
   switch (type) {
     case RuleType::kAnd:
@@ -179,8 +167,7 @@ std::string Rbac::Permission::ToString() const {
     case RuleType::kDestPort:
       return absl::StrFormat("dest_port=%d", port);
     case RuleType::kReqServerName:
-      return absl::StrFormat("requested_server_name=%s",
-                             string_matcher.ToString());
+      return absl::StrFormat("requested_server_name=%s", string_matcher.ToString());
     default:
       return "";
   }
@@ -193,23 +180,18 @@ std::string Rbac::Permission::ToString() const {
 Rbac::Principal::Principal(Principal::RuleType type,
                            std::vector<std::unique_ptr<Principal>> principals)
     : type(type), principals(std::move(principals)) {}
-Rbac::Principal::Principal(Principal::RuleType type, Principal principal)
-    : type(type) {
-  principals.push_back(
-      absl::make_unique<Rbac::Principal>(std::move(principal)));
+Rbac::Principal::Principal(Principal::RuleType type, Principal principal) : type(type) {
+  principals.push_back(absl::make_unique<Rbac::Principal>(std::move(principal)));
 }
 Rbac::Principal::Principal(Principal::RuleType type) : type(type) {}
-Rbac::Principal::Principal(Principal::RuleType type,
-                           StringMatcher string_matcher)
+Rbac::Principal::Principal(Principal::RuleType type, StringMatcher string_matcher)
     : type(type), string_matcher(std::move(string_matcher)) {}
 Rbac::Principal::Principal(Principal::RuleType type, CidrRange ip)
     : type(type), ip(std::move(ip)) {}
-Rbac::Principal::Principal(Principal::RuleType type,
-                           HeaderMatcher header_matcher)
+Rbac::Principal::Principal(Principal::RuleType type, HeaderMatcher header_matcher)
     : type(type), header_matcher(std::move(header_matcher)) {}
 
-Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
-    : type(other.type) {
+Rbac::Principal::Principal(Rbac::Principal&& other) noexcept : type(other.type) {
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -300,8 +282,7 @@ Rbac::Policy::Policy(Permission permissions, Principal principals)
     : permissions(std::move(permissions)), principals(std::move(principals)) {}
 
 Rbac::Policy::Policy(Rbac::Policy&& other) noexcept
-    : permissions(std::move(other.permissions)),
-      principals(std::move(other.principals)) {}
+    : permissions(std::move(other.permissions)), principals(std::move(other.principals)) {}
 
 Rbac::Policy& Rbac::Policy::operator=(Rbac::Policy&& other) noexcept {
   permissions = std::move(other.permissions);
@@ -310,9 +291,8 @@ Rbac::Policy& Rbac::Policy::operator=(Rbac::Policy&& other) noexcept {
 }
 
 std::string Rbac::Policy::ToString() const {
-  return absl::StrFormat(
-      "  Policy  {\n    Permissions{%s}\n    Principals{%s}\n  }",
-      permissions.ToString(), principals.ToString());
+  return absl::StrFormat("  Policy  {\n    Permissions{%s}\n    Principals{%s}\n  }",
+                         permissions.ToString(), principals.ToString());
 }
 
 }  // namespace grpc_core

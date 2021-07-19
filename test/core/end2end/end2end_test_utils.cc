@@ -22,8 +22,7 @@
 
 #include <grpc/support/log.h>
 
-const char* get_host_override_string(const char* str,
-                                     grpc_end2end_test_config config) {
+const char* get_host_override_string(const char* str, grpc_end2end_test_config config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER) {
     return str;
   } else {
@@ -31,8 +30,7 @@ const char* get_host_override_string(const char* str,
   }
 }
 
-const grpc_slice* get_host_override_slice(const char* str,
-                                          grpc_end2end_test_config config) {
+const grpc_slice* get_host_override_slice(const char* str, grpc_end2end_test_config config) {
   const char* r = get_host_override_string(str, config);
   if (r != nullptr) {
     static grpc_slice ret;

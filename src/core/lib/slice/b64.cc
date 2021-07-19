@@ -32,17 +32,14 @@
 /* --- Constants. --- */
 
 static const int8_t base64_bytes[] = {
-    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
-    -1,   -1,   -1,   -1,   -1,   -1,   -1,   0x3E, -1,   -1,   -1,   0x3F,
-    0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, -1,   -1,
-    -1,   0x7F, -1,   -1,   -1,   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-    0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12,
-    0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, -1,   -1,   -1,   -1,   -1,
-    -1,   0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24,
-    0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30,
-    0x31, 0x32, 0x33, -1,   -1,   -1,   -1,   -1};
+    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+    -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   0x3E, -1,   -1,   -1,   0x3F,
+    0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, -1,   -1,   -1,   0x7F, -1,   -1,
+    -1,   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E,
+    0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, -1,   -1,   -1,   -1,   -1,
+    -1,   0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+    0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32, 0x33, -1,   -1,   -1,   -1,   -1};
 
 static const char base64_url_unsafe_chars[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -56,10 +53,8 @@ static const char base64_url_safe_chars[] =
 
 /* --- base64 functions. --- */
 
-char* grpc_base64_encode(const void* vdata, size_t data_size, int url_safe,
-                         int multiline) {
-  size_t result_projected_size =
-      grpc_base64_estimate_encoded_size(data_size, multiline);
+char* grpc_base64_encode(const void* vdata, size_t data_size, int url_safe, int multiline) {
+  size_t result_projected_size = grpc_base64_estimate_encoded_size(data_size, multiline);
   char* result = static_cast<char*>(gpr_malloc(result_projected_size));
   grpc_base64_encode_core(result, vdata, data_size, url_safe, multiline);
   return result;
@@ -68,19 +63,15 @@ char* grpc_base64_encode(const void* vdata, size_t data_size, int url_safe,
 size_t grpc_base64_estimate_encoded_size(size_t data_size, int multiline) {
   size_t result_projected_size =
       4 * ((data_size + 3) / 3) +
-      2 * (multiline ? (data_size / (3 * GRPC_BASE64_MULTILINE_NUM_BLOCKS))
-                     : 0) +
-      1;
+      2 * (multiline ? (data_size / (3 * GRPC_BASE64_MULTILINE_NUM_BLOCKS)) : 0) + 1;
   return result_projected_size;
 }
 
-void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
-                             int url_safe, int multiline) {
+void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size, int url_safe,
+                             int multiline) {
   const unsigned char* data = static_cast<const unsigned char*>(vdata);
-  const char* base64_chars =
-      url_safe ? base64_url_safe_chars : base64_url_unsafe_chars;
-  const size_t result_projected_size =
-      grpc_base64_estimate_encoded_size(data_size, multiline);
+  const char* base64_chars = url_safe ? base64_url_safe_chars : base64_url_unsafe_chars;
+  const size_t result_projected_size = grpc_base64_estimate_encoded_size(data_size, multiline);
 
   char* current = result;
   size_t num_blocks = 0;
@@ -89,10 +80,8 @@ void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
   /* Encode each block. */
   while (data_size >= 3) {
     *current++ = base64_chars[(data[i] >> 2) & 0x3F];
-    *current++ =
-        base64_chars[((data[i] & 0x03) << 4) | ((data[i + 1] >> 4) & 0x0F)];
-    *current++ =
-        base64_chars[((data[i + 1] & 0x0F) << 2) | ((data[i + 2] >> 6) & 0x03)];
+    *current++ = base64_chars[((data[i] & 0x03) << 4) | ((data[i + 1] >> 4) & 0x0F)];
+    *current++ = base64_chars[((data[i + 1] & 0x0F) << 2) | ((data[i + 2] >> 6) & 0x03)];
     *current++ = base64_chars[data[i + 2] & 0x3F];
 
     data_size -= 3;
@@ -107,8 +96,7 @@ void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
   /* Take care of the tail. */
   if (data_size == 2) {
     *current++ = base64_chars[(data[i] >> 2) & 0x3F];
-    *current++ =
-        base64_chars[((data[i] & 0x03) << 4) | ((data[i + 1] >> 4) & 0x0F)];
+    *current++ = base64_chars[((data[i] & 0x03) << 4) | ((data[i + 1] >> 4) & 0x0F)];
     *current++ = base64_chars[(data[i + 1] & 0x0F) << 2];
     *current++ = GRPC_BASE64_PAD_CHAR;
   } else if (data_size == 1) {
@@ -129,22 +117,20 @@ grpc_slice grpc_base64_decode(const char* b64, int url_safe) {
 
 static void decode_one_char(const unsigned char* codes, unsigned char* result,
                             size_t* result_offset) {
-  uint32_t packed = (static_cast<uint32_t>(codes[0]) << 2) |
-                    (static_cast<uint32_t>(codes[1]) >> 4);
+  uint32_t packed = (static_cast<uint32_t>(codes[0]) << 2) | (static_cast<uint32_t>(codes[1]) >> 4);
   result[(*result_offset)++] = static_cast<unsigned char>(packed);
 }
 
 static void decode_two_chars(const unsigned char* codes, unsigned char* result,
                              size_t* result_offset) {
   uint32_t packed = (static_cast<uint32_t>(codes[0]) << 10) |
-                    (static_cast<uint32_t>(codes[1]) << 4) |
-                    (static_cast<uint32_t>(codes[2]) >> 2);
+                    (static_cast<uint32_t>(codes[1]) << 4) | (static_cast<uint32_t>(codes[2]) >> 2);
   result[(*result_offset)++] = static_cast<unsigned char>(packed >> 8);
   result[(*result_offset)++] = static_cast<unsigned char>(packed);
 }
 
-static int decode_group(const unsigned char* codes, size_t num_codes,
-                        unsigned char* result, size_t* result_offset) {
+static int decode_group(const unsigned char* codes, size_t num_codes, unsigned char* result,
+                        size_t* result_offset) {
   GPR_ASSERT(num_codes <= 4);
 
   /* Short end groups that may not have padding. */
@@ -188,8 +174,7 @@ static int decode_group(const unsigned char* codes, size_t num_codes,
   return 1;
 }
 
-grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
-                                       int url_safe) {
+grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len, int url_safe) {
   grpc_slice result = GRPC_SLICE_MALLOC(b64_len);
   unsigned char* current = GRPC_SLICE_START_PTR(result);
   size_t result_size = 0;
@@ -226,8 +211,7 @@ grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
     }
   }
 
-  if (num_codes != 0 &&
-      !decode_group(codes, num_codes, current, &result_size)) {
+  if (num_codes != 0 && !decode_group(codes, num_codes, current, &result_size)) {
     goto fail;
   }
   GRPC_SLICE_SET_LENGTH(result, result_size);

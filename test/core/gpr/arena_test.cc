@@ -38,11 +38,9 @@ using grpc_core::Arena;
 
 static void test_noop(void) { Arena::Create(1)->Destroy(); }
 
-static void test(const char* name, size_t init_size, const size_t* allocs,
-                 size_t nallocs) {
+static void test(const char* name, size_t init_size, const size_t* allocs, size_t nallocs) {
   std::vector<std::string> parts;
-  parts.push_back(
-      absl::StrFormat("test '%s': %" PRIdPTR " <- {", name, init_size));
+  parts.push_back(absl::StrFormat("test '%s': %" PRIdPTR " <- {", name, init_size));
   for (size_t i = 0; i < nallocs; i++) {
     parts.push_back(absl::StrFormat("%" PRIdPTR ",", allocs[i]));
   }
@@ -101,8 +99,7 @@ static void concurrent_test(void) {
   grpc_core::Thread thds[CONCURRENT_TEST_THREADS];
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    thds[i] =
-        grpc_core::Thread("grpc_concurrent_test", concurrent_test_body, &args);
+    thds[i] = grpc_core::Thread("grpc_concurrent_test", concurrent_test_body, &args);
     thds[i].Start();
   }
 

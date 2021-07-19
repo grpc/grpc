@@ -31,18 +31,16 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
   }
 }
 
-grpc_status_code alts_crypter_process_in_place(
-    alts_crypter* crypter, unsigned char* data, size_t data_allocated_size,
-    size_t data_size, size_t* output_size, char** error_details) {
+grpc_status_code alts_crypter_process_in_place(alts_crypter* crypter, unsigned char* data,
+                                               size_t data_allocated_size, size_t data_size,
+                                               size_t* output_size, char** error_details) {
   if (crypter != nullptr && crypter->vtable != nullptr &&
       crypter->vtable->process_in_place != nullptr) {
-    return crypter->vtable->process_in_place(crypter, data, data_allocated_size,
-                                             data_size, output_size,
-                                             error_details);
+    return crypter->vtable->process_in_place(crypter, data, data_allocated_size, data_size,
+                                             output_size, error_details);
   }
   /* An error occurred. */
-  const char error_msg[] =
-      "crypter or crypter->vtable has not been initialized properly.";
+  const char error_msg[] = "crypter or crypter->vtable has not been initialized properly.";
   maybe_copy_error_msg(error_msg, error_details);
   return GRPC_STATUS_INVALID_ARGUMENT;
 }

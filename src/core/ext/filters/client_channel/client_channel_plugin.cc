@@ -56,8 +56,7 @@ void grpc_client_channel_init(void) {
   grpc_core::GlobalSubchannelPool::Init();
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
-      const_cast<grpc_channel_filter*>(
-          &grpc_core::ClientChannel::kFilterVtable));
+      const_cast<grpc_channel_filter*>(&grpc_core::ClientChannel::kFilterVtable));
   grpc_http_connect_register_handshaker_factory();
   grpc_client_channel_global_init_backup_polling();
 }

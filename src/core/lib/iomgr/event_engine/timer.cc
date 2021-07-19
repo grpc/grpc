@@ -27,11 +27,9 @@ namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
-void timer_init(grpc_timer* timer, grpc_millis deadline,
-                grpc_closure* closure) {
+void timer_init(grpc_timer* timer, grpc_millis deadline, grpc_closure* closure) {
   timer->ee_task_handle = grpc_iomgr_event_engine()->RunAt(
-      grpc_core::ToAbslTime(
-          grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
+      grpc_core::ToAbslTime(grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
       GrpcClosureToCallback(closure, GRPC_ERROR_NONE), {});
 }
 
@@ -41,17 +39,15 @@ void timer_cancel(grpc_timer* timer) {
 }
 
 /* Internal API */
-grpc_timer_check_result timer_check(grpc_millis* /* next */) {
-  return GRPC_TIMERS_NOT_CHECKED;
-}
+grpc_timer_check_result timer_check(grpc_millis* /* next */) { return GRPC_TIMERS_NOT_CHECKED; }
 void timer_list_init() {}
 void timer_list_shutdown(void) {}
 void timer_consume_kick(void) {}
 
 }  // namespace
 
-grpc_timer_vtable grpc_event_engine_timer_vtable = {
-    timer_init,      timer_cancel,        timer_check,
-    timer_list_init, timer_list_shutdown, timer_consume_kick};
+grpc_timer_vtable grpc_event_engine_timer_vtable = {timer_init,          timer_cancel,
+                                                    timer_check,         timer_list_init,
+                                                    timer_list_shutdown, timer_consume_kick};
 
 #endif  // GRPC_USE_EVENT_ENGINE

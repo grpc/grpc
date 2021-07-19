@@ -30,8 +30,8 @@ TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsProvider) {
       "  ]"
       "}";
   grpc::Status status;
-  auto provider = experimental::StaticDataAuthorizationPolicyProvider::Create(
-      authz_policy, &status);
+  auto provider =
+      experimental::StaticDataAuthorizationPolicyProvider::Create(authz_policy, &status);
   ASSERT_NE(provider, nullptr);
   EXPECT_NE(provider->c_provider(), nullptr);
   EXPECT_TRUE(status.ok());
@@ -41,8 +41,8 @@ TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsProvider) {
 TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsErrorStatus) {
   const char* authz_policy = "{}";
   grpc::Status status;
-  auto provider = experimental::StaticDataAuthorizationPolicyProvider::Create(
-      authz_policy, &status);
+  auto provider =
+      experimental::StaticDataAuthorizationPolicyProvider::Create(authz_policy, &status);
   ASSERT_EQ(provider, nullptr);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);
   EXPECT_EQ(status.error_message(), "\"name\" field is not present.");

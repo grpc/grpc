@@ -70,8 +70,7 @@ struct cq_poller_vtable {
   bool can_listen;
   size_t (*size)(void);
   void (*init)(grpc_pollset* pollset, gpr_mu** mu);
-  grpc_error_handle (*kick)(grpc_pollset* pollset,
-                            grpc_pollset_worker* specific_worker);
+  grpc_error_handle (*kick)(grpc_pollset* pollset, grpc_pollset_worker* specific_worker);
   grpc_error_handle (*work)(grpc_pollset* pollset, grpc_pollset_worker** worker,
                             grpc_millis deadline);
   void (*shutdown)(grpc_pollset* pollset, grpc_closure* closure);
@@ -103,8 +102,7 @@ void non_polling_poller_destroy(grpc_pollset* pollset) {
   gpr_mu_destroy(&npp->mu);
 }
 
-grpc_error_handle non_polling_poller_work(grpc_pollset* pollset,
-                                          grpc_pollset_worker** worker,
+grpc_error_handle non_polling_poller_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
                                           grpc_millis deadline) {
   non_polling_poller* npp = reinterpret_cast<non_polling_poller*>(pollset);
   if (npp->shutdown) return GRPC_ERROR_NONE;
@@ -123,10 +121,8 @@ grpc_error_handle non_polling_poller_work(grpc_pollset* pollset,
     w.next->prev = w.prev->next = &w;
   }
   w.kicked = false;
-  gpr_timespec deadline_ts =
-      grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC);
-  while (!npp->shutdown && !w.kicked &&
-         !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts)) {
+  gpr_timespec deadline_ts = grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC);
+  while (!npp->shutdown && !w.kicked && !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts)) {
   }
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (&w == npp->root) {
@@ -145,15 +141,14 @@ grpc_error_handle non_polling_poller_work(grpc_pollset* pollset,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle non_polling_poller_kick(
-    grpc_pollset* pollset, grpc_pollset_worker* specific_worker) {
+grpc_error_handle non_polling_poller_kick(grpc_pollset* pollset,
+                                          grpc_pollset_worker* specific_worker) {
   non_polling_poller* p = reinterpret_cast<non_polling_poller*>(pollset);
   if (specific_worker == nullptr) {
     specific_worker = reinterpret_cast<grpc_pollset_worker*>(p->root);
   }
   if (specific_worker != nullptr) {
-    non_polling_worker* w =
-        reinterpret_cast<non_polling_worker*>(specific_worker);
+    non_polling_worker* w = reinterpret_cast<non_polling_worker*>(specific_worker);
     if (!w->kicked) {
       w->kicked = true;
       gpr_cv_signal(&w->cv);
@@ -181,15 +176,14 @@ void non_polling_poller_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 
 const cq_poller_vtable g_poller_vtable_by_poller_type[] = {
     /* GRPC_CQ_DEFAULT_POLLING */
-    {true, true, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick,
-     grpc_pollset_work, grpc_pollset_shutdown, grpc_pollset_destroy},
+    {true, true, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick, grpc_pollset_work,
+     grpc_pollset_shutdown, grpc_pollset_destroy},
     /* GRPC_CQ_NON_LISTENING */
-    {true, false, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick,
-     grpc_pollset_work, grpc_pollset_shutdown, grpc_pollset_destroy},
+    {true, false, grpc_pollset_size, grpc_pollset_init, grpc_pollset_kick, grpc_pollset_work,
+     grpc_pollset_shutdown, grpc_pollset_destroy},
     /* GRPC_CQ_NON_POLLING */
-    {false, false, non_polling_poller_size, non_polling_poller_init,
-     non_polling_poller_kick, non_polling_poller_work,
-     non_polling_poller_shutdown, non_polling_poller_destroy},
+    {false, false, non_polling_poller_size, non_polling_poller_init, non_polling_poller_kick,
+     non_polling_poller_work, non_polling_poller_shutdown, non_polling_poller_destroy},
 };
 
 }  // namespace
@@ -202,12 +196,10 @@ struct cq_vtable {
   void (*destroy)(void* data);
   bool (*begin_op)(grpc_completion_queue* cq, void* tag);
   void (*end_op)(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
-                 void (*done)(void* done_arg, grpc_cq_completion* storage),
-                 void* done_arg, grpc_cq_completion* storage, bool internal);
-  grpc_event (*next)(grpc_completion_queue* cq, gpr_timespec deadline,
-                     void* reserved);
-  grpc_event (*pluck)(grpc_completion_queue* cq, void* tag,
-                      gpr_timespec deadline, void* reserved);
+                 void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
+                 grpc_cq_completion* storage, bool internal);
+  grpc_event (*next)(grpc_completion_queue* cq, gpr_timespec deadline, void* reserved);
+  grpc_event (*pluck)(grpc_completion_queue* cq, void* tag, gpr_timespec deadline, void* reserved);
 };
 
 namespace {
@@ -223,9 +215,7 @@ class CqEventQueue {
 
   /* Note: The counter is not incremented/decremented atomically with push/pop.
    * The count is only eventually consistent */
-  intptr_t num_items() const {
-    return num_queue_items_.Load(grpc_core::MemoryOrder::RELAXED);
-  }
+  intptr_t num_items() const { return num_queue_items_.Load(grpc_core::MemoryOrder::RELAXED); }
 
   bool Push(grpc_cq_completion* c);
   grpc_cq_completion* Pop();
@@ -274,8 +264,7 @@ struct cq_pluck_data {
   }
 
   ~cq_pluck_data() {
-    GPR_ASSERT(completed_head.next ==
-               reinterpret_cast<uintptr_t>(&completed_head));
+    GPR_ASSERT(completed_head.next == reinterpret_cast<uintptr_t>(&completed_head));
 #ifndef NDEBUG
     if (pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) != 0) {
       gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
@@ -373,34 +362,27 @@ static bool cq_begin_op_for_callback(grpc_completion_queue* cq, void* tag);
 // queue. The done argument is a callback that will be invoked when it is
 // safe to free up that storage. The storage MUST NOT be freed until the
 // done callback is invoked.
-static void cq_end_op_for_next(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
-    void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
-    grpc_cq_completion* storage, bool internal);
+static void cq_end_op_for_next(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+                               void (*done)(void* done_arg, grpc_cq_completion* storage),
+                               void* done_arg, grpc_cq_completion* storage, bool internal);
 
-static void cq_end_op_for_pluck(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
-    void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
-    grpc_cq_completion* storage, bool internal);
+static void cq_end_op_for_pluck(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+                                void (*done)(void* done_arg, grpc_cq_completion* storage),
+                                void* done_arg, grpc_cq_completion* storage, bool internal);
 
-static void cq_end_op_for_callback(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
-    void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
-    grpc_cq_completion* storage, bool internal);
+static void cq_end_op_for_callback(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+                                   void (*done)(void* done_arg, grpc_cq_completion* storage),
+                                   void* done_arg, grpc_cq_completion* storage, bool internal);
 
-static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
-                          void* reserved);
+static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline, void* reserved);
 
-static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
-                           gpr_timespec deadline, void* reserved);
+static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag, gpr_timespec deadline,
+                           void* reserved);
 
 // Note that cq_init_next and cq_init_pluck do not use the shutdown_callback
-static void cq_init_next(void* data,
-                         grpc_completion_queue_functor* shutdown_callback);
-static void cq_init_pluck(void* data,
-                          grpc_completion_queue_functor* shutdown_callback);
-static void cq_init_callback(void* data,
-                             grpc_completion_queue_functor* shutdown_callback);
+static void cq_init_next(void* data, grpc_completion_queue_functor* shutdown_callback);
+static void cq_init_pluck(void* data, grpc_completion_queue_functor* shutdown_callback);
+static void cq_init_callback(void* data, grpc_completion_queue_functor* shutdown_callback);
 static void cq_destroy_next(void* data);
 static void cq_destroy_pluck(void* data);
 static void cq_destroy_callback(void* data);
@@ -408,33 +390,27 @@ static void cq_destroy_callback(void* data);
 /* Completion queue vtables based on the completion-type */
 static const cq_vtable g_cq_vtable[] = {
     /* GRPC_CQ_NEXT */
-    {GRPC_CQ_NEXT, sizeof(cq_next_data), cq_init_next, cq_shutdown_next,
-     cq_destroy_next, cq_begin_op_for_next, cq_end_op_for_next, cq_next,
-     nullptr},
+    {GRPC_CQ_NEXT, sizeof(cq_next_data), cq_init_next, cq_shutdown_next, cq_destroy_next,
+     cq_begin_op_for_next, cq_end_op_for_next, cq_next, nullptr},
     /* GRPC_CQ_PLUCK */
-    {GRPC_CQ_PLUCK, sizeof(cq_pluck_data), cq_init_pluck, cq_shutdown_pluck,
-     cq_destroy_pluck, cq_begin_op_for_pluck, cq_end_op_for_pluck, nullptr,
-     cq_pluck},
+    {GRPC_CQ_PLUCK, sizeof(cq_pluck_data), cq_init_pluck, cq_shutdown_pluck, cq_destroy_pluck,
+     cq_begin_op_for_pluck, cq_end_op_for_pluck, nullptr, cq_pluck},
     /* GRPC_CQ_CALLBACK */
-    {GRPC_CQ_CALLBACK, sizeof(cq_callback_data), cq_init_callback,
-     cq_shutdown_callback, cq_destroy_callback, cq_begin_op_for_callback,
-     cq_end_op_for_callback, nullptr, nullptr},
+    {GRPC_CQ_CALLBACK, sizeof(cq_callback_data), cq_init_callback, cq_shutdown_callback,
+     cq_destroy_callback, cq_begin_op_for_callback, cq_end_op_for_callback, nullptr, nullptr},
 };
 
 #define DATA_FROM_CQ(cq) ((void*)((cq) + 1))
-#define POLLSET_FROM_CQ(cq) \
-  ((grpc_pollset*)((cq)->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
+#define POLLSET_FROM_CQ(cq) ((grpc_pollset*)((cq)->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
 
 grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)     \
-  do {                                                   \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) &&       \
-        (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace) || \
-         (event)->type != GRPC_QUEUE_TIMEOUT)) {         \
-      gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq,      \
-              grpc_event_string(event).c_str());         \
-    }                                                    \
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                                             \
+  do {                                                                                           \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) &&                                               \
+        (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace) || (event)->type != GRPC_QUEUE_TIMEOUT)) { \
+      gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, grpc_event_string(event).c_str());           \
+    }                                                                                            \
   } while (0)
 
 static void on_pollset_shutdown_done(void* arg, grpc_error_handle error);
@@ -445,20 +421,17 @@ void grpc_cq_global_init() {
 }
 
 void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq) {
-  if (reinterpret_cast<grpc_completion_queue*>(gpr_tls_get(&g_cached_cq)) ==
-      nullptr) {
+  if (reinterpret_cast<grpc_completion_queue*>(gpr_tls_get(&g_cached_cq)) == nullptr) {
     gpr_tls_set(&g_cached_event, (intptr_t)0);
     gpr_tls_set(&g_cached_cq, (intptr_t)cq);
   }
 }
 
-int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
-                                                   void** tag, int* ok) {
-  grpc_cq_completion* storage =
-      reinterpret_cast<grpc_cq_completion*>(gpr_tls_get(&g_cached_event));
+int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq, void** tag, int* ok) {
+  grpc_cq_completion* storage = reinterpret_cast<grpc_cq_completion*>(gpr_tls_get(&g_cached_event));
   int ret = 0;
-  if (storage != nullptr && reinterpret_cast<grpc_completion_queue*>(
-                                gpr_tls_get(&g_cached_cq)) == cq) {
+  if (storage != nullptr &&
+      reinterpret_cast<grpc_completion_queue*>(gpr_tls_get(&g_cached_cq)) == cq) {
     *tag = storage->tag;
     grpc_core::ExecCtx exec_ctx;
     *ok = (storage->next & static_cast<uintptr_t>(1)) == 1;
@@ -480,8 +453,7 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
 }
 
 bool CqEventQueue::Push(grpc_cq_completion* c) {
-  queue_.Push(
-      reinterpret_cast<grpc_core::MultiProducerSingleConsumerQueue::Node*>(c));
+  queue_.Push(reinterpret_cast<grpc_core::MultiProducerSingleConsumerQueue::Node*>(c));
   return num_queue_items_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED) == 0;
 }
 
@@ -522,15 +494,13 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
       2, (completion_type, polling_type));
 
   const cq_vtable* vtable = &g_cq_vtable[completion_type];
-  const cq_poller_vtable* poller_vtable =
-      &g_poller_vtable_by_poller_type[polling_type];
+  const cq_poller_vtable* poller_vtable = &g_poller_vtable_by_poller_type[polling_type];
 
   grpc_core::ExecCtx exec_ctx;
   GRPC_STATS_INC_CQS_CREATED();
 
   cq = static_cast<grpc_completion_queue*>(
-      gpr_zalloc(sizeof(grpc_completion_queue) + vtable->data_size +
-                 poller_vtable->size()));
+      gpr_zalloc(sizeof(grpc_completion_queue) + vtable->data_size + poller_vtable->size()));
 
   cq->vtable = vtable;
   cq->poller_vtable = poller_vtable;
@@ -546,8 +516,7 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
   return cq;
 }
 
-static void cq_init_next(void* data,
-                         grpc_completion_queue_functor* /*shutdown_callback*/) {
+static void cq_init_next(void* data, grpc_completion_queue_functor* /*shutdown_callback*/) {
   new (data) cq_next_data();
 }
 
@@ -556,8 +525,7 @@ static void cq_destroy_next(void* data) {
   cqd->~cq_next_data();
 }
 
-static void cq_init_pluck(
-    void* data, grpc_completion_queue_functor* /*shutdown_callback*/) {
+static void cq_init_pluck(void* data, grpc_completion_queue_functor* /*shutdown_callback*/) {
   new (data) cq_pluck_data();
 }
 
@@ -566,8 +534,7 @@ static void cq_destroy_pluck(void* data) {
   cqd->~cq_pluck_data();
 }
 
-static void cq_init_callback(void* data,
-                             grpc_completion_queue_functor* shutdown_callback) {
+static void cq_init_callback(void* data, grpc_completion_queue_functor* shutdown_callback) {
   new (data) cq_callback_data(shutdown_callback);
 }
 
@@ -589,8 +556,8 @@ int grpc_get_cq_poll_num(grpc_completion_queue* cq) {
 }
 
 #ifndef NDEBUG
-void grpc_cq_internal_ref(grpc_completion_queue* cq, const char* reason,
-                          const char* file, int line) {
+void grpc_cq_internal_ref(grpc_completion_queue* cq, const char* reason, const char* file,
+                          int line) {
   grpc_core::DebugLocation debug_location(file, line);
 #else
 void grpc_cq_internal_ref(grpc_completion_queue* cq) {
@@ -606,8 +573,8 @@ static void on_pollset_shutdown_done(void* arg, grpc_error_handle /*error*/) {
 }
 
 #ifndef NDEBUG
-void grpc_cq_internal_unref(grpc_completion_queue* cq, const char* reason,
-                            const char* file, int line) {
+void grpc_cq_internal_unref(grpc_completion_queue* cq, const char* reason, const char* file,
+                            int line) {
   grpc_core::DebugLocation debug_location(file, line);
 #else
 void grpc_cq_internal_unref(grpc_completion_queue* cq) {
@@ -634,8 +601,7 @@ static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {
   for (int i = 0; i < static_cast<int>(cq->outstanding_tag_count); i++) {
     if (cq->outstanding_tags[i] == tag) {
       cq->outstanding_tag_count--;
-      GPR_SWAP(void*, cq->outstanding_tags[i],
-               cq->outstanding_tags[cq->outstanding_tag_count]);
+      GPR_SWAP(void*, cq->outstanding_tags[i], cq->outstanding_tags[cq->outstanding_tag_count]);
       found = 1;
       break;
     }
@@ -648,8 +614,7 @@ static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {
   GPR_ASSERT(found);
 }
 #else
-static void cq_check_tag(grpc_completion_queue* /*cq*/, void* /*tag*/,
-                         bool /*lock_cq*/) {}
+static void cq_check_tag(grpc_completion_queue* /*cq*/, void* /*tag*/, bool /*lock_cq*/) {}
 #endif
 
 static bool cq_begin_op_for_next(grpc_completion_queue* cq, void* /*tag*/) {
@@ -673,8 +638,7 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
   if (cq->outstanding_tag_count == cq->outstanding_tag_capacity) {
     cq->outstanding_tag_capacity = GPR_MAX(4, 2 * cq->outstanding_tag_capacity);
     cq->outstanding_tags = static_cast<void**>(gpr_realloc(
-        cq->outstanding_tags,
-        sizeof(*cq->outstanding_tags) * cq->outstanding_tag_capacity));
+        cq->outstanding_tags, sizeof(*cq->outstanding_tags) * cq->outstanding_tag_capacity));
   }
   cq->outstanding_tags[cq->outstanding_tag_count++] = tag;
   gpr_mu_unlock(cq->mu);
@@ -685,24 +649,20 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
 /* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a
  * completion
  * type of GRPC_CQ_NEXT) */
-static void cq_end_op_for_next(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
-    void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
-    grpc_cq_completion* storage, bool /*internal*/) {
+static void cq_end_op_for_next(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+                               void (*done)(void* done_arg, grpc_cq_completion* storage),
+                               void* done_arg, grpc_cq_completion* storage, bool /*internal*/) {
   GPR_TIMER_SCOPE("cq_end_op_for_next", 0);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
-      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
-       error != GRPC_ERROR_NONE)) {
+      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && error != GRPC_ERROR_NONE)) {
     std::string errmsg = grpc_error_std_string(error);
     GRPC_API_TRACE(
         "cq_end_op_for_next(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
-        error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_INFO, "Operation failed: tag=%p, error=%s", tag,
-              errmsg.c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_INFO, "Operation failed: tag=%p, error=%s", tag, errmsg.c_str());
     }
   }
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
@@ -715,10 +675,8 @@ static void cq_end_op_for_next(
 
   cq_check_tag(cq, tag, true); /* Used in debug builds only */
 
-  if (reinterpret_cast<grpc_completion_queue*>(gpr_tls_get(&g_cached_cq)) ==
-          cq &&
-      reinterpret_cast<grpc_cq_completion*>(gpr_tls_get(&g_cached_event)) ==
-          nullptr) {
+  if (reinterpret_cast<grpc_completion_queue*>(gpr_tls_get(&g_cached_cq)) == cq &&
+      reinterpret_cast<grpc_cq_completion*>(gpr_tls_get(&g_cached_event)) == nullptr) {
     gpr_tls_set(&g_cached_event, (intptr_t)storage);
   } else {
     /* Add the completion to the queue */
@@ -733,18 +691,15 @@ static void cq_end_op_for_next(
       /* Only kick if this is the first item queued */
       if (is_first) {
         gpr_mu_lock(cq->mu);
-        grpc_error_handle kick_error =
-            cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
+        grpc_error_handle kick_error = cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
         gpr_mu_unlock(cq->mu);
 
         if (kick_error != GRPC_ERROR_NONE) {
-          gpr_log(GPR_ERROR, "Kick failed: %s",
-                  grpc_error_std_string(kick_error).c_str());
+          gpr_log(GPR_ERROR, "Kick failed: %s", grpc_error_std_string(kick_error).c_str());
           GRPC_ERROR_UNREF(kick_error);
         }
       }
-      if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) ==
-          1) {
+      if (cqd->pending_events.FetchSub(1, grpc_core::MemoryOrder::ACQ_REL) == 1) {
         GRPC_CQ_INTERNAL_REF(cq, "shutting_down");
         gpr_mu_lock(cq->mu);
         cq_finish_shutdown_next(cq);
@@ -767,35 +722,31 @@ static void cq_end_op_for_next(
 /* Queue a GRPC_OP_COMPLETED operation to a completion queue (with a
  * completion
  * type of GRPC_CQ_PLUCK) */
-static void cq_end_op_for_pluck(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
-    void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
-    grpc_cq_completion* storage, bool /*internal*/) {
+static void cq_end_op_for_pluck(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+                                void (*done)(void* done_arg, grpc_cq_completion* storage),
+                                void* done_arg, grpc_cq_completion* storage, bool /*internal*/) {
   GPR_TIMER_SCOPE("cq_end_op_for_pluck", 0);
 
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
   int is_success = (error == GRPC_ERROR_NONE);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
-      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
-       error != GRPC_ERROR_NONE)) {
+      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && error != GRPC_ERROR_NONE)) {
     std::string errmsg = grpc_error_std_string(error).c_str();
     GRPC_API_TRACE(
         "cq_end_op_for_pluck(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
-        error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag,
-              errmsg.c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg.c_str());
     }
   }
 
   storage->tag = tag;
   storage->done = done;
   storage->done_arg = done_arg;
-  storage->next = reinterpret_cast<uintptr_t>(&cqd->completed_head) |
-                  static_cast<uintptr_t>(is_success);
+  storage->next =
+      reinterpret_cast<uintptr_t>(&cqd->completed_head) | static_cast<uintptr_t>(is_success);
 
   gpr_mu_lock(cq->mu);
   cq_check_tag(cq, tag, false); /* Used in debug builds only */
@@ -818,12 +769,10 @@ static void cq_end_op_for_pluck(
       }
     }
 
-    grpc_error_handle kick_error =
-        cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), pluck_worker);
+    grpc_error_handle kick_error = cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), pluck_worker);
     gpr_mu_unlock(cq->mu);
     if (kick_error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Kick failed: %s",
-              grpc_error_std_string(kick_error).c_str());
+      gpr_log(GPR_ERROR, "Kick failed: %s", grpc_error_std_string(kick_error).c_str());
       GRPC_ERROR_UNREF(kick_error);
     }
   }
@@ -837,26 +786,22 @@ static void functor_callback(void* arg, grpc_error_handle error) {
 }
 
 /* Complete an event on a completion queue of type GRPC_CQ_CALLBACK */
-static void cq_end_op_for_callback(
-    grpc_completion_queue* cq, void* tag, grpc_error_handle error,
-    void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
-    grpc_cq_completion* storage, bool internal) {
+static void cq_end_op_for_callback(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+                                   void (*done)(void* done_arg, grpc_cq_completion* storage),
+                                   void* done_arg, grpc_cq_completion* storage, bool internal) {
   GPR_TIMER_SCOPE("cq_end_op_for_callback", 0);
 
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
-      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
-       error != GRPC_ERROR_NONE)) {
+      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && error != GRPC_ERROR_NONE)) {
     std::string errmsg = grpc_error_std_string(error);
     GRPC_API_TRACE(
         "cq_end_op_for_callback(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
-        error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag,
-              errmsg.c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg.c_str());
     }
   }
 
@@ -877,26 +822,21 @@ static void cq_end_op_for_callback(
   // 3. We are already running in a background poller thread (which always has
   //    an ACEC available at the base of the stack).
   auto* functor = static_cast<grpc_completion_queue_functor*>(tag);
-  if (((internal || functor->inlineable) &&
-       grpc_core::ApplicationCallbackExecCtx::Available()) ||
+  if (((internal || functor->inlineable) && grpc_core::ApplicationCallbackExecCtx::Available()) ||
       grpc_iomgr_is_any_background_poller_thread()) {
-    grpc_core::ApplicationCallbackExecCtx::Enqueue(functor,
-                                                   (error == GRPC_ERROR_NONE));
+    grpc_core::ApplicationCallbackExecCtx::Enqueue(functor, (error == GRPC_ERROR_NONE));
     GRPC_ERROR_UNREF(error);
     return;
   }
 
   // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
-  grpc_core::Executor::Run(
-      GRPC_CLOSURE_CREATE(functor_callback, functor, nullptr), error);
+  grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(functor_callback, functor, nullptr), error);
 }
 
-void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
-                    grpc_error_handle error,
-                    void (*done)(void* done_arg, grpc_cq_completion* storage),
-                    void* done_arg, grpc_cq_completion* storage,
-                    bool internal) {
+void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error_handle error,
+                    void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
+                    grpc_cq_completion* storage, bool internal) {
   cq->vtable->end_op(cq, tag, error, done, done_arg, storage, internal);
 }
 
@@ -910,12 +850,10 @@ struct cq_is_finished_arg {
 };
 class ExecCtxNext : public grpc_core::ExecCtx {
  public:
-  explicit ExecCtxNext(void* arg)
-      : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
+  explicit ExecCtxNext(void* arg) : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
 
   bool CheckReadyToFinish() override {
-    cq_is_finished_arg* a =
-        static_cast<cq_is_finished_arg*>(check_ready_to_finish_arg_);
+    cq_is_finished_arg* a = static_cast<cq_is_finished_arg*>(check_ready_to_finish_arg_);
     grpc_completion_queue* cq = a->cq;
     cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
     GPR_ASSERT(a->stolen_completion == nullptr);
@@ -923,8 +861,7 @@ class ExecCtxNext : public grpc_core::ExecCtx {
     intptr_t current_last_seen_things_queued_ever =
         cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
 
-    if (current_last_seen_things_queued_ever !=
-        a->last_seen_things_queued_ever) {
+    if (current_last_seen_things_queued_ever != a->last_seen_things_queued_ever) {
       a->last_seen_things_queued_ever =
           cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
 
@@ -961,8 +898,7 @@ static void dump_pending_tags(grpc_completion_queue* cq) {
 static void dump_pending_tags(grpc_completion_queue* /*cq*/) {}
 #endif
 
-static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
-                          void* reserved) {
+static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline, void* reserved) {
   GPR_TIMER_SCOPE("grpc_completion_queue_next", 0);
 
   grpc_event ret;
@@ -974,9 +910,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       "deadline=gpr_timespec { tv_sec: %" PRId64
       ", tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5,
-      (cq, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-       reserved));
+      5, (cq, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
 
   dump_pending_tags(cq);
@@ -1042,8 +976,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       break;
     }
 
-    if (!is_finished_arg.first_loop &&
-        grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
+    if (!is_finished_arg.first_loop && grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
       ret.type = GRPC_QUEUE_TIMEOUT;
       ret.success = 0;
       dump_pending_tags(cq);
@@ -1053,13 +986,12 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     /* The main polling work happens in grpc_pollset_work */
     gpr_mu_lock(cq->mu);
     cq->num_polls++;
-    grpc_error_handle err = cq->poller_vtable->work(
-        POLLSET_FROM_CQ(cq), nullptr, iteration_deadline);
+    grpc_error_handle err =
+        cq->poller_vtable->work(POLLSET_FROM_CQ(cq), nullptr, iteration_deadline);
     gpr_mu_unlock(cq->mu);
 
     if (err != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Completion queue next failed: %s",
-              grpc_error_std_string(err).c_str());
+      gpr_log(GPR_ERROR, "Completion queue next failed: %s", grpc_error_std_string(err).c_str());
       GRPC_ERROR_UNREF(err);
       if (err == GRPC_ERROR_CANCELLED) {
         ret.type = GRPC_QUEUE_SHUTDOWN;
@@ -1073,8 +1005,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
     is_finished_arg.first_loop = false;
   }
 
-  if (cqd->queue.num_items() > 0 &&
-      cqd->pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) > 0) {
+  if (cqd->queue.num_items() > 0 && cqd->pending_events.Load(grpc_core::MemoryOrder::ACQUIRE) > 0) {
     gpr_mu_lock(cq->mu);
     cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
     gpr_mu_unlock(cq->mu);
@@ -1130,13 +1061,12 @@ static void cq_shutdown_next(grpc_completion_queue* cq) {
   GRPC_CQ_INTERNAL_UNREF(cq, "shutting_down");
 }
 
-grpc_event grpc_completion_queue_next(grpc_completion_queue* cq,
-                                      gpr_timespec deadline, void* reserved) {
+grpc_event grpc_completion_queue_next(grpc_completion_queue* cq, gpr_timespec deadline,
+                                      void* reserved) {
   return cq->vtable->next(cq, deadline, reserved);
 }
 
-static int add_plucker(grpc_completion_queue* cq, void* tag,
-                       grpc_pollset_worker** worker) {
+static int add_plucker(grpc_completion_queue* cq, void* tag, grpc_pollset_worker** worker) {
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
   if (cqd->num_pluckers == GRPC_MAX_COMPLETION_QUEUE_PLUCKERS) {
     return 0;
@@ -1147,8 +1077,7 @@ static int add_plucker(grpc_completion_queue* cq, void* tag,
   return 1;
 }
 
-static void del_plucker(grpc_completion_queue* cq, void* tag,
-                        grpc_pollset_worker** worker) {
+static void del_plucker(grpc_completion_queue* cq, void* tag, grpc_pollset_worker** worker) {
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
   for (int i = 0; i < cqd->num_pluckers; i++) {
     if (cqd->pluckers[i].tag == tag && cqd->pluckers[i].worker == worker) {
@@ -1162,31 +1091,27 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
 
 class ExecCtxPluck : public grpc_core::ExecCtx {
  public:
-  explicit ExecCtxPluck(void* arg)
-      : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
+  explicit ExecCtxPluck(void* arg) : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
 
   bool CheckReadyToFinish() override {
-    cq_is_finished_arg* a =
-        static_cast<cq_is_finished_arg*>(check_ready_to_finish_arg_);
+    cq_is_finished_arg* a = static_cast<cq_is_finished_arg*>(check_ready_to_finish_arg_);
     grpc_completion_queue* cq = a->cq;
     cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
     GPR_ASSERT(a->stolen_completion == nullptr);
     gpr_atm current_last_seen_things_queued_ever =
         cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
-    if (current_last_seen_things_queued_ever !=
-        a->last_seen_things_queued_ever) {
+    if (current_last_seen_things_queued_ever != a->last_seen_things_queued_ever) {
       gpr_mu_lock(cq->mu);
       a->last_seen_things_queued_ever =
           cqd->things_queued_ever.Load(grpc_core::MemoryOrder::RELAXED);
       grpc_cq_completion* c;
       grpc_cq_completion* prev = &cqd->completed_head;
-      while ((c = reinterpret_cast<grpc_cq_completion*>(
-                  prev->next & ~static_cast<uintptr_t>(1))) !=
+      while ((c = reinterpret_cast<grpc_cq_completion*>(prev->next & ~static_cast<uintptr_t>(1))) !=
              &cqd->completed_head) {
         if (c->tag == a->tag) {
-          prev->next = (prev->next & static_cast<uintptr_t>(1)) |
-                       (c->next & ~static_cast<uintptr_t>(1));
+          prev->next =
+              (prev->next & static_cast<uintptr_t>(1)) | (c->next & ~static_cast<uintptr_t>(1));
           if (c == cqd->completed_tail) {
             cqd->completed_tail = prev;
           }
@@ -1205,8 +1130,8 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
   void* check_ready_to_finish_arg_;
 };
 
-static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
-                           gpr_timespec deadline, void* reserved) {
+static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag, gpr_timespec deadline,
+                           void* reserved) {
   GPR_TIMER_SCOPE("grpc_completion_queue_pluck", 0);
 
   grpc_event ret;
@@ -1222,9 +1147,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
         "deadline=gpr_timespec { tv_sec: %" PRId64
         ", tv_nsec: %d, clock_type: %d }, "
         "reserved=%p)",
-        6,
-        (cq, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
-         reserved));
+        6, (cq, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type, reserved));
   }
   GPR_ASSERT(!reserved);
 
@@ -1253,12 +1176,11 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     prev = &cqd->completed_head;
-    while ((c = reinterpret_cast<grpc_cq_completion*>(
-                prev->next & ~static_cast<uintptr_t>(1))) !=
+    while ((c = reinterpret_cast<grpc_cq_completion*>(prev->next & ~static_cast<uintptr_t>(1))) !=
            &cqd->completed_head) {
       if (c->tag == tag) {
-        prev->next = (prev->next & static_cast<uintptr_t>(1)) |
-                     (c->next & ~static_cast<uintptr_t>(1));
+        prev->next =
+            (prev->next & static_cast<uintptr_t>(1)) | (c->next & ~static_cast<uintptr_t>(1));
         if (c == cqd->completed_tail) {
           cqd->completed_tail = prev;
         }
@@ -1289,8 +1211,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       dump_pending_tags(cq);
       break;
     }
-    if (!is_finished_arg.first_loop &&
-        grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
+    if (!is_finished_arg.first_loop && grpc_core::ExecCtx::Get()->Now() >= deadline_millis) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
       ret.type = GRPC_QUEUE_TIMEOUT;
@@ -1299,13 +1220,11 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
       break;
     }
     cq->num_polls++;
-    grpc_error_handle err =
-        cq->poller_vtable->work(POLLSET_FROM_CQ(cq), &worker, deadline_millis);
+    grpc_error_handle err = cq->poller_vtable->work(POLLSET_FROM_CQ(cq), &worker, deadline_millis);
     if (err != GRPC_ERROR_NONE) {
       del_plucker(cq, tag, &worker);
       gpr_mu_unlock(cq->mu);
-      gpr_log(GPR_ERROR, "Completion queue pluck failed: %s",
-              grpc_error_std_string(err).c_str());
+      gpr_log(GPR_ERROR, "Completion queue pluck failed: %s", grpc_error_std_string(err).c_str());
       GRPC_ERROR_UNREF(err);
       ret.type = GRPC_QUEUE_TIMEOUT;
       ret.success = 0;
@@ -1324,8 +1243,8 @@ done:
   return ret;
 }
 
-grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
-                                       gpr_timespec deadline, void* reserved) {
+grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag, gpr_timespec deadline,
+                                       void* reserved) {
   return cq->vtable->pluck(cq, tag, deadline, reserved);
 }
 
@@ -1379,9 +1298,8 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
 
   // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
-  grpc_core::Executor::Run(
-      GRPC_CLOSURE_CREATE(functor_callback, callback, nullptr),
-      GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(functor_callback, callback, nullptr),
+                           GRPC_ERROR_NONE);
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {
@@ -1433,6 +1351,4 @@ grpc_pollset* grpc_cq_pollset(grpc_completion_queue* cq) {
   return cq->poller_vtable->can_get_pollset ? POLLSET_FROM_CQ(cq) : nullptr;
 }
 
-bool grpc_cq_can_listen(grpc_completion_queue* cq) {
-  return cq->poller_vtable->can_listen;
-}
+bool grpc_cq_can_listen(grpc_completion_queue* cq) { return cq->poller_vtable->can_listen; }

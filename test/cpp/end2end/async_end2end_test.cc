@@ -67,9 +67,7 @@ class Verifier {
  public:
   Verifier() : lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
-  Verifier& Expect(int i, bool expect_ok) {
-    return ExpectUnless(i, expect_ok, false);
-  }
+  Verifier& Expect(int i, bool expect_ok) { return ExpectUnless(i, expect_ok, false); }
   // ExpectUnless sets the expected ok value for a specific tag
   // unless the tag was already marked seen (as a result of ExpectMaybe)
   Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
@@ -99,9 +97,8 @@ class Verifier {
   }
 
   template <typename T>
-  CompletionQueue::NextStatus DoOnceThenAsyncNext(
-      CompletionQueue* cq, void** got_tag, bool* ok, T deadline,
-      std::function<void(void)> lambda) {
+  CompletionQueue::NextStatus DoOnceThenAsyncNext(CompletionQueue* cq, void** got_tag, bool* ok,
+                                                  T deadline, std::function<void(void)> lambda) {
     if (lambda_run_) {
       return cq->AsyncNext(got_tag, ok, deadline);
     } else {
@@ -125,19 +122,16 @@ class Verifier {
   }
 
   // This version of Verify stops after a certain deadline
-  void Verify(CompletionQueue* cq,
-              std::chrono::system_clock::time_point deadline) {
+  void Verify(CompletionQueue* cq, std::chrono::system_clock::time_point deadline) {
     if (expectations_.empty()) {
       bool ok;
       void* got_tag;
-      EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
-                CompletionQueue::TIMEOUT);
+      EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline), CompletionQueue::TIMEOUT);
     } else {
       while (!expectations_.empty()) {
         bool ok;
         void* got_tag;
-        EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
-                  CompletionQueue::GOT_EVENT);
+        EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline), CompletionQueue::GOT_EVENT);
         GotTag(got_tag, ok, false);
       }
     }
@@ -147,14 +141,12 @@ class Verifier {
   // This version of Verify stops after a certain deadline, and uses the
   // DoThenAsyncNext API
   // to call the lambda
-  void Verify(CompletionQueue* cq,
-              std::chrono::system_clock::time_point deadline,
+  void Verify(CompletionQueue* cq, std::chrono::system_clock::time_point deadline,
               const std::function<void(void)>& lambda) {
     if (expectations_.empty()) {
       bool ok;
       void* got_tag;
-      EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
-                CompletionQueue::TIMEOUT);
+      EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda), CompletionQueue::TIMEOUT);
     } else {
       while (!expectations_.empty()) {
         bool ok;
@@ -215,10 +207,8 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
  public:
   void UpdateArguments(ChannelArguments* /*arg*/) override {}
 
-  void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
-    plugins->erase(std::remove_if(plugins->begin(), plugins->end(),
-                                  plugin_has_sync_methods),
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
+    plugins->erase(std::remove_if(plugins->begin(), plugins->end(), plugin_has_sync_methods),
                    plugins->end());
   }
 };
@@ -238,12 +228,10 @@ class TestScenario {
   const std::string message_content;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
-  return out << "TestScenario{inproc=" << (scenario.inproc ? "true" : "false")
-             << ", credentials='" << scenario.credentials_type
-             << ", health_check_service="
-             << (scenario.health_check_service ? "true" : "false")
+static std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
+  return out << "TestScenario{inproc=" << (scenario.inproc ? "true" : "false") << ", credentials='"
+             << scenario.credentials_type
+             << ", health_check_service=" << (scenario.health_check_service ? "true" : "false")
              << "', message_size=" << scenario.message_content.size() << "}";
 }
 
@@ -280,11 +268,9 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void BuildAndStartServer() {
     ServerBuilder builder;
-    auto server_creds = GetCredentialsProvider()->GetServerCredentials(
-        GetParam().credentials_type);
+    auto server_creds = GetCredentialsProvider()->GetServerCredentials(GetParam().credentials_type);
     builder.AddListeningPort(server_address_.str(), server_creds);
-    service_ =
-        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
+    service_ = absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     if (GetParam().health_check_service) {
       builder.RegisterService(&health_check_);
@@ -301,12 +287,12 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void ResetStub() {
     ChannelArguments args;
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
-        !(GetParam().inproc) ? ::grpc::CreateCustomChannel(
-                                   server_address_.str(), channel_creds, args)
-                             : server_->InProcessChannel(args);
+        !(GetParam().inproc)
+            ? ::grpc::CreateCustomChannel(server_address_.str(), channel_creds, args)
+            : server_->InProcessChannel(args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -326,8 +312,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
           stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
-      service_->RequestEcho(&srv_ctx, &recv_request, &response_writer,
-                            cq_.get(), cq_.get(), tag(2));
+      service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(),
+                            tag(2));
 
       response_reader->Finish(&recv_response, &recv_status, tag(4));
 
@@ -380,8 +366,7 @@ TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
   srv_ctx.AsyncNotifyWhenDone(tag(5));
-  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), tag(2));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(), tag(2));
 
   response_reader->Finish(&recv_response, &recv_status, tag(4));
 
@@ -391,9 +376,8 @@ TEST_P(AsyncEnd2endTest, SimpleRpcWithExpectedError) {
   send_response.set_message(recv_request.message());
   response_writer.Finish(
       send_response,
-      Status(
-          static_cast<StatusCode>(recv_request.param().expected_error().code()),
-          recv_request.param().expected_error().error_message()),
+      Status(static_cast<StatusCode>(recv_request.param().expected_error().code()),
+             recv_request.param().expected_error().error_message()),
       tag(3));
   Verifier().Expect(3, true).Expect(4, true).Expect(5, true).Verify(cq_.get());
 
@@ -433,11 +417,10 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   BuildAndStartServer();
   // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
   // reconnect the channel.
-  gpr_sleep_until(gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME),
-      gpr_time_from_millis(
-          300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
-          GPR_TIMESPAN)));
+  gpr_sleep_until(
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_millis(300 * poller_slowdown_factor * grpc_test_slowdown_factor(),
+                                        GPR_TIMESPAN)));
   SendRpc(1);
 }
 
@@ -483,15 +466,13 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
-  std::chrono::system_clock::time_point time_now(
-      std::chrono::system_clock::now());
-  std::chrono::system_clock::time_point time_limit(
-      std::chrono::system_clock::now() + std::chrono::seconds(10));
+  std::chrono::system_clock::time_point time_now(std::chrono::system_clock::now());
+  std::chrono::system_clock::time_point time_limit(std::chrono::system_clock::now() +
+                                                   std::chrono::seconds(10));
   Verifier().Verify(cq_.get(), time_now);
   Verifier().Verify(cq_.get(), time_now);
 
-  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), tag(2));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(), tag(2));
   response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   Verifier().Expect(2, true).Verify(cq_.get(), time_limit);
@@ -499,8 +480,8 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
-  Verifier().Expect(3, true).Expect(4, true).Verify(
-      cq_.get(), std::chrono::system_clock::time_point::max());
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get(),
+                                                    std::chrono::system_clock::time_point::max());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
@@ -524,17 +505,15 @@ TEST_P(AsyncEnd2endTest, DoThenAsyncNextRpc) {
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
 
-  std::chrono::system_clock::time_point time_now(
-      std::chrono::system_clock::now());
-  std::chrono::system_clock::time_point time_limit(
-      std::chrono::system_clock::now() + std::chrono::seconds(10));
+  std::chrono::system_clock::time_point time_now(std::chrono::system_clock::now());
+  std::chrono::system_clock::time_point time_limit(std::chrono::system_clock::now() +
+                                                   std::chrono::seconds(10));
   Verifier().Verify(cq_.get(), time_now);
   Verifier().Verify(cq_.get(), time_now);
 
   auto resp_writer_ptr = &response_writer;
   auto lambda_2 = [&, this, resp_writer_ptr]() {
-    service_->RequestEcho(&srv_ctx, &recv_request, resp_writer_ptr, cq_.get(),
-                          cq_.get(), tag(2));
+    service_->RequestEcho(&srv_ctx, &recv_request, resp_writer_ptr, cq_.get(), cq_.get(), tag(2));
   };
   response_reader->Finish(&recv_response, &recv_status, tag(4));
 
@@ -569,8 +548,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreaming) {
   std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
 
-  service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                                 tag(2));
+  service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(), tag(2));
 
   Verifier().Expect(2, true).Expect(1, true).Verify(cq_.get());
 
@@ -616,8 +594,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
   std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
       stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
 
-  service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                                 tag(2));
+  service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(), tag(2));
 
   cli_stream->Write(send_request, tag(3));
 
@@ -665,8 +642,8 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreaming) {
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
 
-  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
-                                  cq_.get(), cq_.get(), tag(2));
+  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq_.get(), cq_.get(),
+                                  tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -709,8 +686,8 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreamingWithCoalescingApiWAF) {
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
 
-  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
-                                  cq_.get(), cq_.get(), tag(2));
+  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq_.get(), cq_.get(),
+                                  tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -752,8 +729,8 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreamingWithCoalescingApiWL) {
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
 
-  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
-                                  cq_.get(), cq_.get(), tag(2));
+  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq_.get(), cq_.get(),
+                                  tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -793,11 +770,10 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
   ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
   send_request.set_message(GetParam().message_content);
-  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>> cli_stream(
+      stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
-  service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                              tag(2));
+  service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(), tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 
@@ -838,11 +814,10 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
 
   send_request.set_message(GetParam().message_content);
   cli_ctx.set_initial_metadata_corked(true);
-  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>> cli_stream(
+      stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
-  service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                              tag(2));
+  service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(), tag(2));
 
   cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
 
@@ -885,11 +860,10 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
 
   send_request.set_message(GetParam().message_content);
   cli_ctx.set_initial_metadata_corked(true);
-  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-      cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>> cli_stream(
+      stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
-  service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                              tag(2));
+  service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(), tag(2));
 
   cli_stream->WriteLast(send_request, WriteOptions(), tag(3));
 
@@ -944,17 +918,13 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
   response_reader->Finish(&recv_response, &recv_status, tag(4));
 
-  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), tag(2));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(), tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   const auto& client_initial_metadata = srv_ctx.client_metadata();
-  EXPECT_EQ(meta1.second,
-            ToString(client_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(client_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(meta3.second,
-            ToString(client_initial_metadata.find(meta3.first)->second));
+  EXPECT_EQ(meta1.second, ToString(client_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second, ToString(client_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(meta3.second, ToString(client_initial_metadata.find(meta3.first)->second));
   EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
 
   send_response.set_message(recv_request.message());
@@ -986,8 +956,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
   response_reader->ReadInitialMetadata(tag(4));
 
-  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), tag(2));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(), tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
@@ -995,10 +964,8 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   response_writer.SendInitialMetadata(tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   const auto& server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(meta1.second, ToString(server_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second, ToString(server_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
@@ -1028,8 +995,8 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
   cli_stream->ReadInitialMetadata(tag(11));
-  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
-                                  cq_.get(), cq_.get(), tag(2));
+  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq_.get(), cq_.get(),
+                                  tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 
@@ -1038,10 +1005,8 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
   srv_stream.SendInitialMetadata(tag(10));
   Verifier().Expect(10, true).Expect(11, true).Verify(cq_.get());
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(meta1.second, ToString(server_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second, ToString(server_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(3));
@@ -1082,8 +1047,8 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
 
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
       stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
-  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
-                                  cq_.get(), cq_.get(), tag(2));
+  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq_.get(), cq_.get(),
+                                  tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -1098,10 +1063,8 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
   EXPECT_EQ(send_response.message(), recv_response.message());
 
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(meta1.second, ToString(server_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second, ToString(server_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(5));
@@ -1139,8 +1102,7 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
   response_reader->Finish(&recv_response, &recv_status, tag(5));
 
-  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), tag(2));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(), tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   response_writer.SendInitialMetadata(tag(3));
@@ -1156,10 +1118,8 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
   const auto& server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_trailing_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_trailing_metadata.find(meta2.first)->second));
+  EXPECT_EQ(meta1.second, ToString(server_trailing_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second, ToString(server_trailing_metadata.find(meta2.first)->second));
   EXPECT_EQ(static_cast<size_t>(2), server_trailing_metadata.size());
 }
 
@@ -1179,18 +1139,13 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   send_request.set_message(GetParam().message_content);
   std::pair<std::string, std::string> meta1("key1", "val1");
   std::pair<std::string, std::string> meta2(
-      "key2-bin",
-      std::string("\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13));
+      "key2-bin", std::string("\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc", 13));
   std::pair<std::string, std::string> meta3("key3", "val3");
   std::pair<std::string, std::string> meta6(
-      "key4-bin",
-      std::string("\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d",
-                  14));
+      "key4-bin", std::string("\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d", 14));
   std::pair<std::string, std::string> meta5("key5", "val5");
   std::pair<std::string, std::string> meta4(
-      "key6-bin",
-      std::string(
-          "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15));
+      "key6-bin", std::string("\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee", 15));
 
   cli_ctx.AddMetadata(meta1.first, meta1.second);
   cli_ctx.AddMetadata(meta2.first, meta2.second);
@@ -1199,15 +1154,12 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
   response_reader->ReadInitialMetadata(tag(4));
 
-  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), tag(2));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(), tag(2));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   const auto& client_initial_metadata = srv_ctx.client_metadata();
-  EXPECT_EQ(meta1.second,
-            ToString(client_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(client_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(meta1.second, ToString(client_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second, ToString(client_initial_metadata.find(meta2.first)->second));
   EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
@@ -1215,10 +1167,8 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   response_writer.SendInitialMetadata(tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   const auto& server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta3.second,
-            ToString(server_initial_metadata.find(meta3.first)->second));
-  EXPECT_EQ(meta4.second,
-            ToString(server_initial_metadata.find(meta4.first)->second));
+  EXPECT_EQ(meta3.second, ToString(server_initial_metadata.find(meta3.first)->second));
+  EXPECT_EQ(meta4.second, ToString(server_initial_metadata.find(meta4.first)->second));
   EXPECT_GE(server_initial_metadata.size(), static_cast<size_t>(2));
 
   send_response.set_message(recv_request.message());
@@ -1232,10 +1182,8 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
   const auto& server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
-  EXPECT_EQ(meta5.second,
-            ToString(server_trailing_metadata.find(meta5.first)->second));
-  EXPECT_EQ(meta6.second,
-            ToString(server_trailing_metadata.find(meta6.first)->second));
+  EXPECT_EQ(meta5.second, ToString(server_trailing_metadata.find(meta5.first)->second));
+  EXPECT_EQ(meta6.second, ToString(server_trailing_metadata.find(meta6.first)->second));
   EXPECT_GE(server_trailing_metadata.size(), static_cast<size_t>(2));
 }
 
@@ -1259,8 +1207,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   srv_ctx.AsyncNotifyWhenDone(tag(5));
-  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), tag(2));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(), tag(2));
 
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -1292,8 +1239,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
   response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   srv_ctx.AsyncNotifyWhenDone(tag(5));
-  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
-                        cq_.get(), tag(2));
+  service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(), cq_.get(), tag(2));
 
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
@@ -1309,11 +1255,10 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   ChannelArguments args;
-  const auto& channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-      GetParam().credentials_type, &args);
+  const auto& channel_creds =
+      GetCredentialsProvider()->GetChannelCredentials(GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
-      !(GetParam().inproc) ? ::grpc::CreateCustomChannel(server_address_.str(),
-                                                         channel_creds, args)
+      !(GetParam().inproc) ? ::grpc::CreateCustomChannel(server_address_.str(), channel_creds, args)
                            : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
@@ -1357,8 +1302,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
   //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading all
   //   messages from the client (but before sending any status back to the
   //   client)
-  void TestClientStreamingServerCancel(
-      ServerTryCancelRequestPhase server_try_cancel) {
+  void TestClientStreamingServerCancel(ServerTryCancelRequestPhase server_try_cancel) {
     ResetStub();
 
     EchoRequest recv_request;
@@ -1379,8 +1323,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // On the server, request to be notified of 'RequestStream' calls
     // and receive the 'RequestStream' call just made by the client
     srv_ctx.AsyncNotifyWhenDone(tag(11));
-    service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                                   tag(2));
+    service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(), tag(2));
     std::thread t1([&cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
     Verifier().Expect(2, true).Verify(cq_.get());
     t1.join();
@@ -1400,27 +1343,24 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_client_cq_result = false;
     }
 
-    bool ignore_client_cq_result =
-        (server_try_cancel == CANCEL_DURING_PROCESSING) ||
-        (server_try_cancel == CANCEL_BEFORE_PROCESSING);
+    bool ignore_client_cq_result = (server_try_cancel == CANCEL_DURING_PROCESSING) ||
+                                   (server_try_cancel == CANCEL_BEFORE_PROCESSING);
 
-    std::thread cli_thread([&cli_cq, &cli_stream, &expected_client_cq_result,
-                            &ignore_client_cq_result] {
-      EchoRequest send_request;
-      // Client sends 3 messages (tags 3, 4 and 5)
-      for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
-        send_request.set_message("Ping " + std::to_string(tag_idx));
-        cli_stream->Write(send_request, tag(tag_idx));
-        Verifier()
-            .Expect(tag_idx, expected_client_cq_result)
-            .Verify(&cli_cq, ignore_client_cq_result);
-      }
-      cli_stream->WritesDone(tag(6));
-      // Ignore ok on WritesDone since cancel can affect it
-      Verifier()
-          .Expect(6, expected_client_cq_result)
-          .Verify(&cli_cq, ignore_client_cq_result);
-    });
+    std::thread cli_thread(
+        [&cli_cq, &cli_stream, &expected_client_cq_result, &ignore_client_cq_result] {
+          EchoRequest send_request;
+          // Client sends 3 messages (tags 3, 4 and 5)
+          for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
+            send_request.set_message("Ping " + std::to_string(tag_idx));
+            cli_stream->Write(send_request, tag(tag_idx));
+            Verifier()
+                .Expect(tag_idx, expected_client_cq_result)
+                .Verify(&cli_cq, ignore_client_cq_result);
+          }
+          cli_stream->WritesDone(tag(6));
+          // Ignore ok on WritesDone since cancel can affect it
+          Verifier().Expect(6, expected_client_cq_result).Verify(&cli_cq, ignore_client_cq_result);
+        });
 
     bool ignore_cq_result = false;
     bool want_done_tag = false;
@@ -1429,8 +1369,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     auto verif = Verifier();
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd =
-          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
+      server_try_cancel_thd = new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
       // Server will cancel the RPC in a parallel thread while reading the
       // requests from the client. Since the cancellation can happen at anytime,
       // some of the cq results (i.e those until cancellation) might be true but
@@ -1449,8 +1388,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       // Note that we'll add something to the verifier and verify that
       // something was seen, but it might be tag 11 and not what we
       // just added
-      int got_tag = verif.Expect(tag_idx, expected_server_cq_result)
-                        .Next(cq_.get(), ignore_cq_result);
+      int got_tag =
+          verif.Expect(tag_idx, expected_server_cq_result).Next(cq_.get(), ignore_cq_result);
       GPR_ASSERT((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
       if (got_tag == 11) {
         EXPECT_TRUE(srv_ctx.IsCancelled());
@@ -1513,8 +1452,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
   //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after sending all
   //   messages to the client (but before sending any status back to the
   //   client)
-  void TestServerStreamingServerCancel(
-      ServerTryCancelRequestPhase server_try_cancel) {
+  void TestServerStreamingServerCancel(ServerTryCancelRequestPhase server_try_cancel) {
     ResetStub();
 
     EchoRequest send_request;
@@ -1533,8 +1471,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     // On the server, request to be notified of 'ResponseStream' calls and
     // receive the call just made by the client
     srv_ctx.AsyncNotifyWhenDone(tag(11));
-    service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
-                                    cq_.get(), cq_.get(), tag(2));
+    service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq_.get(), cq_.get(),
+                                    tag(2));
 
     std::thread t1([&cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
     Verifier().Expect(2, true).Verify(cq_.get());
@@ -1546,8 +1484,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     bool ignore_cq_result = false;
     bool want_done_tag = false;
     bool expected_client_cq_result = true;
-    bool ignore_client_cq_result =
-        (server_try_cancel != CANCEL_BEFORE_PROCESSING);
+    bool ignore_client_cq_result = (server_try_cancel != CANCEL_BEFORE_PROCESSING);
 
     if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
       srv_ctx.TryCancel();
@@ -1560,25 +1497,24 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       expected_client_cq_result = false;
     }
 
-    std::thread cli_thread([&cli_cq, &cli_stream, &expected_client_cq_result,
-                            &ignore_client_cq_result] {
-      // Client attempts to read the three messages from the server
-      for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
-        EchoResponse recv_response;
-        cli_stream->Read(&recv_response, tag(tag_idx));
-        Verifier()
-            .Expect(tag_idx, expected_client_cq_result)
-            .Verify(&cli_cq, ignore_client_cq_result);
-      }
-    });
+    std::thread cli_thread(
+        [&cli_cq, &cli_stream, &expected_client_cq_result, &ignore_client_cq_result] {
+          // Client attempts to read the three messages from the server
+          for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
+            EchoResponse recv_response;
+            cli_stream->Read(&recv_response, tag(tag_idx));
+            Verifier()
+                .Expect(tag_idx, expected_client_cq_result)
+                .Verify(&cli_cq, ignore_client_cq_result);
+          }
+        });
 
     std::thread* server_try_cancel_thd = nullptr;
 
     auto verif = Verifier();
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd =
-          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
+      server_try_cancel_thd = new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
 
       // Server will cancel the RPC in a parallel thread while writing responses
       // to the client. Since the cancellation can happen at anytime, some of
@@ -1599,8 +1535,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       // Note that we'll add something to the verifier and verify that
       // something was seen, but it might be tag 11 and not what we
       // just added
-      int got_tag = verif.Expect(tag_idx, expected_cq_result)
-                        .Next(cq_.get(), ignore_cq_result);
+      int got_tag = verif.Expect(tag_idx, expected_cq_result).Next(cq_.get(), ignore_cq_result);
       GPR_ASSERT((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
       if (got_tag == 11) {
         EXPECT_TRUE(srv_ctx.IsCancelled());
@@ -1664,8 +1599,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
   //   CANCEL_AFTER PROCESSING: Rpc is cancelled by server after reading all
   //   messages from the client (but before sending any status back to the
   //   client)
-  void TestBidiStreamingServerCancel(
-      ServerTryCancelRequestPhase server_try_cancel) {
+  void TestBidiStreamingServerCancel(ServerTryCancelRequestPhase server_try_cancel) {
     ResetStub();
 
     EchoRequest send_request;
@@ -1678,14 +1612,13 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
 
     // Initiate the call from the client side
-    std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
-        cli_stream(stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
+    std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>> cli_stream(
+        stub_->AsyncBidiStream(&cli_ctx, cq_.get(), tag(1)));
 
     // On the server, request to be notified of the 'BidiStream' call and
     // receive the call just made by the client
     srv_ctx.AsyncNotifyWhenDone(tag(11));
-    service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
-                                tag(2));
+    service_->RequestBidiStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(), tag(2));
     Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 
     auto verif = Verifier();
@@ -1724,8 +1657,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     std::thread* server_try_cancel_thd = nullptr;
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
-      server_try_cancel_thd =
-          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
+      server_try_cancel_thd = new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
 
       // Since server is going to cancel the RPC in a parallel thread, some of
       // the cq results (i.e those until the cancellation) might be true. Since
@@ -1741,10 +1673,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     verif.Expect(4, expected_cq_result);
     got_tag = tag_3_done ? 3 : verif.Next(cq_.get(), ignore_cq_result);
     got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
-    GPR_ASSERT((got_tag == 3) || (got_tag == 4) ||
-               (got_tag == 11 && want_done_tag));
-    GPR_ASSERT((got_tag2 == 3) || (got_tag2 == 4) ||
-               (got_tag2 == 11 && want_done_tag));
+    GPR_ASSERT((got_tag == 3) || (got_tag == 4) || (got_tag == 11 && want_done_tag));
+    GPR_ASSERT((got_tag2 == 3) || (got_tag2 == 4) || (got_tag2 == 11 && want_done_tag));
     // If we get 3 and 4, we don't need to wait for 11, but if
     // we get 11, we should also clear 3 and 4
     if (got_tag + got_tag2 != 7) {
@@ -1762,10 +1692,8 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     verif.Expect(6, expected_cq_result);
     got_tag = verif.Next(cq_.get(), ignore_cq_result);
     got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
-    GPR_ASSERT((got_tag == 5) || (got_tag == 6) ||
-               (got_tag == 11 && want_done_tag));
-    GPR_ASSERT((got_tag2 == 5) || (got_tag2 == 6) ||
-               (got_tag2 == 11 && want_done_tag));
+    GPR_ASSERT((got_tag == 5) || (got_tag == 6) || (got_tag == 11 && want_done_tag));
+    GPR_ASSERT((got_tag2 == 5) || (got_tag2 == 6) || (got_tag2 == 11 && want_done_tag));
     // If we get 5 and 6, we don't need to wait for 11, but if
     // we get 11, we should also clear 5 and 6
     if (got_tag + got_tag2 != 11) {
@@ -1780,8 +1708,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     verif.Expect(7, true);
     // TODO(vjpai): Consider whether the following is too flexible
     // or whether it should just be reset to ignore_cq_result
-    bool ignore_cq_wd_result =
-        ignore_cq_result || (server_try_cancel == CANCEL_BEFORE_PROCESSING);
+    bool ignore_cq_wd_result = ignore_cq_result || (server_try_cancel == CANCEL_BEFORE_PROCESSING);
     got_tag = verif.Next(cq_.get(), ignore_cq_wd_result);
     GPR_ASSERT((got_tag == 7) || (got_tag == 11 && want_done_tag));
     if (got_tag == 11) {
@@ -1873,8 +1800,7 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
   TestBidiStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 
-std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
-                                              bool test_message_size_limit) {
+std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/, bool test_message_size_limit) {
   std::vector<TestScenario> scenarios;
   std::vector<std::string> credentials_types;
   std::vector<std::string> messages;
@@ -1882,8 +1808,8 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the
     // provider. User may create providers that do not have insecure.
-    return GetCredentialsProvider()->GetChannelCredentials(
-               kInsecureCredentialsType, nullptr) != nullptr;
+    return GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType, nullptr) !=
+           nullptr;
   };
 
   if (insec_ok()) {
@@ -1897,8 +1823,7 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
 
   messages.push_back("Hello");
   if (test_message_size_limit) {
-    for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024;
-         k *= 32) {
+    for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024; k *= 32) {
       std::string big_msg;
       for (size_t i = 0; i < k * 1024; ++i) {
         char c = 'a' + (i % 26);
@@ -1910,8 +1835,7 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
       // 4MB message processing with SSL is very slow under msan
       // (causes timeouts) and doesn't really increase the signal from tests.
       // Reserve 100 bytes for other fields of the message proto.
-      messages.push_back(
-          std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
+      messages.push_back(std::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 100, 'a'));
     }
   }
 
@@ -1919,13 +1843,11 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
   // https://github.com/grpc/grpc/issues/11223 is resolved
   for (auto health_check_service : {false}) {
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
-      for (auto cred = credentials_types.begin();
-           cred != credentials_types.end(); ++cred) {
+      for (auto cred = credentials_types.begin(); cred != credentials_types.end(); ++cred) {
         scenarios.emplace_back(false, *cred, health_check_service, *msg);
       }
       if (insec_ok()) {
-        scenarios.emplace_back(true, kInsecureCredentialsType,
-                               health_check_service, *msg);
+        scenarios.emplace_back(true, kInsecureCredentialsType, health_check_service, *msg);
       }
     }
   }
@@ -1934,10 +1856,8 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
 
 INSTANTIATE_TEST_SUITE_P(AsyncEnd2end, AsyncEnd2endTest,
                          ::testing::ValuesIn(CreateTestScenarios(true, true)));
-INSTANTIATE_TEST_SUITE_P(AsyncEnd2endServerTryCancel,
-                         AsyncEnd2endServerTryCancelTest,
-                         ::testing::ValuesIn(CreateTestScenarios(false,
-                                                                 false)));
+INSTANTIATE_TEST_SUITE_P(AsyncEnd2endServerTryCancel, AsyncEnd2endServerTryCancelTest,
+                         ::testing::ValuesIn(CreateTestScenarios(false, false)));
 
 }  // namespace
 }  // namespace testing

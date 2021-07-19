@@ -23,19 +23,15 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
-                                            grpc_error_handle error) {
+EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure, grpc_error_handle error) {
   return [closure, error](absl::Status status) {
-    grpc_error_handle new_error =
-        grpc_error_add_child(error, absl_status_to_grpc_error(status));
+    grpc_error_handle new_error = grpc_error_add_child(error, absl_status_to_grpc_error(status));
 #ifndef NDEBUG
     closure->scheduled = false;
     if (grpc_trace_closure.enabled()) {
-      gpr_log(GPR_DEBUG,
-              "EventEngine: running closure %p: created [%s:%d]: %s [%s:%d]",
-              closure, closure->file_created, closure->line_created,
-              closure->run ? "run" : "scheduled", closure->file_initiated,
-              closure->line_initiated);
+      gpr_log(GPR_DEBUG, "EventEngine: running closure %p: created [%s:%d]: %s [%s:%d]", closure,
+              closure->file_created, closure->line_created, closure->run ? "run" : "scheduled",
+              closure->file_initiated, closure->line_initiated);
     }
 #endif
     closure->cb(closure->cb_arg, new_error);

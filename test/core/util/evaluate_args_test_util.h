@@ -40,27 +40,21 @@ class EvaluateArgsTestUtil {
     auto& storage = metadata_storage_.back();
     ASSERT_EQ(grpc_metadata_batch_add_tail(
                   &metadata_, &storage,
-                  grpc_mdelem_from_slices(
-                      grpc_slice_intern(grpc_slice_from_static_string(key)),
-                      grpc_slice_intern(grpc_slice_from_static_string(value)))),
+                  grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_string(key)),
+                                          grpc_slice_intern(grpc_slice_from_static_string(value)))),
               GRPC_ERROR_NONE);
   }
 
-  void SetLocalEndpoint(absl::string_view local_uri) {
-    endpoint_.SetLocalAddress(local_uri);
-  }
+  void SetLocalEndpoint(absl::string_view local_uri) { endpoint_.SetLocalAddress(local_uri); }
 
-  void SetPeerEndpoint(absl::string_view peer_uri) {
-    endpoint_.SetPeer(peer_uri);
-  }
+  void SetPeerEndpoint(absl::string_view peer_uri) { endpoint_.SetPeer(peer_uri); }
 
   void AddPropertyToAuthContext(const char* name, const char* value) {
     auth_context_.add_cstring_property(name, value);
   }
 
   EvaluateArgs MakeEvaluateArgs() {
-    channel_args_ =
-        new EvaluateArgs::PerChannelArgs(&auth_context_, &endpoint_);
+    channel_args_ = new EvaluateArgs::PerChannelArgs(&auth_context_, &endpoint_);
     return EvaluateArgs(&metadata_, channel_args_);
   }
 

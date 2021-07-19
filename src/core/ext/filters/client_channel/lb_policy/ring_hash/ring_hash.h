@@ -29,8 +29,7 @@ extern const char* kRequestRingHashAttribute;
 
 // Helper Parsing method to parse ring hash policy configs; for example, ring
 // hash size validity.
-void ParseRingHashLbConfig(const Json& json, size_t* min_ring_size,
-                           size_t* max_ring_size,
+void ParseRingHashLbConfig(const Json& json, size_t* min_ring_size, size_t* max_ring_size,
                            std::vector<grpc_error_handle>* error_list);
 }  // namespace grpc_core
 

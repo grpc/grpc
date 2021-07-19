@@ -33,27 +33,20 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            size_t num_ops,
-                                            grpc_channel_args* client_args,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
+                                            size_t num_ops, grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s [%" PRIdPTR " ops]", test_name,
-          config.name, num_ops);
+  gpr_log(GPR_INFO, "Running test: %s/%s [%" PRIdPTR " ops]", test_name, config.name, num_ops);
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -65,8 +58,7 @@ static void drain_cq(grpc_completion_queue* cq) {
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev = grpc_completion_queue_next(
-      f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+  grpc_event ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == tag(1000));
   grpc_server_destroy(f->server);
@@ -89,8 +81,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config /*config*/,
-                                grpc_end2end_test_fixture f, size_t num_ops) {
+static void simple_request_body(grpc_end2end_test_config /*config*/, grpc_end2end_test_fixture f,
+                                size_t num_ops) {
   grpc_call* c;
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
@@ -105,8 +97,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -140,8 +131,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   char* dynamic_string = gpr_strdup("xyz");
-  grpc_call_cancel_with_status(c, GRPC_STATUS_UNIMPLEMENTED, dynamic_string,
-                               nullptr);
+  grpc_call_cancel_with_status(c, GRPC_STATUS_UNIMPLEMENTED, dynamic_string, nullptr);
   // The API of \a description allows for it to be a dynamic/non-const
   // string, test this guarantee.
   gpr_free(dynamic_string);
@@ -161,12 +151,10 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   cq_verifier_destroy(cqv);
 }
 
-static void test_invoke_simple_request(grpc_end2end_test_config config,
-                                       size_t num_ops) {
+static void test_invoke_simple_request(grpc_end2end_test_config config, size_t num_ops) {
   grpc_end2end_test_fixture f;
 
-  f = begin_test(config, "test_invoke_simple_request", num_ops, nullptr,
-                 nullptr);
+  f = begin_test(config, "test_invoke_simple_request", num_ops, nullptr, nullptr);
   simple_request_body(config, f, num_ops);
   end_test(&f);
   config.tear_down_data(&f);

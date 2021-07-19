@@ -28,8 +28,7 @@ namespace grpc_core {
 #define GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_MICROS 10
 
 void GlobalSubchannelPool::Init() {
-  instance_ = new RefCountedPtr<GlobalSubchannelPool>(
-      MakeRefCounted<GlobalSubchannelPool>());
+  instance_ = new RefCountedPtr<GlobalSubchannelPool>(MakeRefCounted<GlobalSubchannelPool>());
 }
 
 void GlobalSubchannelPool::Shutdown() {
@@ -61,8 +60,7 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
-void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
-                                                Subchannel* subchannel) {
+void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key, Subchannel* subchannel) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   // delete only if key hasn't been re-registered to a different subchannel
@@ -72,8 +70,7 @@ void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
   }
 }
 
-RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
-    const SubchannelKey& key) {
+RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(const SubchannelKey& key) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   if (it == subchannel_map_.end()) return nullptr;

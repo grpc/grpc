@@ -42,18 +42,15 @@ using ::grpc::load_reporter::PerBalancerStore;
 class LoadDataStoreTest : public ::testing::Test {
  public:
   LoadDataStoreTest()
-      : kKey1(kLbId1, kLbTag1, kUser1, kClientIp1),
-        kKey2(kLbId2, kLbTag2, kUser2, kClientIp2) {}
+      : kKey1(kLbId1, kLbTag1, kUser1, kClientIp1), kKey2(kLbId2, kLbTag2, kUser2, kClientIp2) {}
 
   // Check whether per_balancer_stores contains a store which was originally
   // created for <hostname, lb_id, and load_key>.
-  bool PerBalancerStoresContains(
-      const LoadDataStore& load_data_store,
-      const std::set<PerBalancerStore*>* per_balancer_stores,
-      const std::string& hostname, const std::string& lb_id,
-      const std::string& load_key) {
-    auto original_per_balancer_store =
-        load_data_store.FindPerBalancerStore(hostname, lb_id);
+  bool PerBalancerStoresContains(const LoadDataStore& load_data_store,
+                                 const std::set<PerBalancerStore*>* per_balancer_stores,
+                                 const std::string& hostname, const std::string& lb_id,
+                                 const std::string& load_key) {
+    auto original_per_balancer_store = load_data_store.FindPerBalancerStore(hostname, lb_id);
     EXPECT_NE(original_per_balancer_store, nullptr);
     EXPECT_EQ(original_per_balancer_store->lb_id(), lb_id);
     EXPECT_EQ(original_per_balancer_store->load_key(), load_key);
@@ -65,9 +62,7 @@ class LoadDataStoreTest : public ::testing::Test {
     return false;
   }
 
-  std::string FormatLbId(size_t index) {
-    return "kLbId" + std::to_string(index);
-  }
+  std::string FormatLbId(size_t index) { return "kLbId" + std::to_string(index); }
 
   const std::string kHostname1 = "kHostname1";
   const std::string kHostname2 = "kHostname2";
@@ -95,8 +90,8 @@ TEST_F(LoadDataStoreTest, AssignToSelf) {
   LoadDataStore load_data_store;
   load_data_store.ReportStreamCreated(kHostname1, kLbId1, kLoadKey1);
   auto assigned_stores = load_data_store.GetAssignedStores(kHostname1, kLbId1);
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_stores,
-                                        kHostname1, kLbId1, kLoadKey1));
+  EXPECT_TRUE(
+      PerBalancerStoresContains(load_data_store, assigned_stores, kHostname1, kLbId1, kLoadKey1));
 }
 
 TEST_F(LoadDataStoreTest, ReassignOrphanStores) {
@@ -107,39 +102,36 @@ TEST_F(LoadDataStoreTest, ReassignOrphanStores) {
   load_data_store.ReportStreamCreated(kHostname2, kLbId4, kLoadKey1);
   // 1. Close the second stream.
   load_data_store.ReportStreamClosed(kHostname1, kLbId2);
-  auto assigned_to_lb_id_1 =
-      load_data_store.GetAssignedStores(kHostname1, kLbId1);
+  auto assigned_to_lb_id_1 = load_data_store.GetAssignedStores(kHostname1, kLbId1);
   // The orphaned store is re-assigned to kLbId1 with the same load key.
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_1,
-                                        kHostname1, kLbId1, kLoadKey1));
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_1,
-                                        kHostname1, kLbId2, kLoadKey1));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_1, kHostname1, kLbId1,
+                                        kLoadKey1));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_1, kHostname1, kLbId2,
+                                        kLoadKey1));
   // 2. Close the first stream.
   load_data_store.ReportStreamClosed(kHostname1, kLbId1);
-  auto assigned_to_lb_id_3 =
-      load_data_store.GetAssignedStores(kHostname1, kLbId3);
+  auto assigned_to_lb_id_3 = load_data_store.GetAssignedStores(kHostname1, kLbId3);
   // The orphaned stores are re-assigned to kLbId3 with the same host,
   // because there isn't any LB with the same load key.
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3,
-                                        kHostname1, kLbId1, kLoadKey1));
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3,
-                                        kHostname1, kLbId2, kLoadKey1));
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3,
-                                        kHostname1, kLbId3, kLoadKey2));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3, kHostname1, kLbId1,
+                                        kLoadKey1));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3, kHostname1, kLbId2,
+                                        kLoadKey1));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3, kHostname1, kLbId3,
+                                        kLoadKey2));
   // 3. Close the third stream.
   load_data_store.ReportStreamClosed(kHostname1, kLbId3);
-  auto assigned_to_lb_id_4 =
-      load_data_store.GetAssignedStores(kHostname2, kLbId4);
+  auto assigned_to_lb_id_4 = load_data_store.GetAssignedStores(kHostname2, kLbId4);
   // There is no active LB for the first host now. kLbId4 is active but
   // it's for the second host, so it wll NOT adopt the orphaned stores.
-  EXPECT_FALSE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4,
-                                         kHostname1, kLbId1, kLoadKey1));
-  EXPECT_FALSE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4,
-                                         kHostname1, kLbId2, kLoadKey1));
-  EXPECT_FALSE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4,
-                                         kHostname1, kLbId3, kLoadKey2));
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4,
-                                        kHostname2, kLbId4, kLoadKey1));
+  EXPECT_FALSE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4, kHostname1, kLbId1,
+                                         kLoadKey1));
+  EXPECT_FALSE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4, kHostname1, kLbId2,
+                                         kLoadKey1));
+  EXPECT_FALSE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4, kHostname1, kLbId3,
+                                         kLoadKey2));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_4, kHostname2, kLbId4,
+                                        kLoadKey1));
 }
 
 TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
@@ -156,10 +148,9 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   // Find which LB is assigned the orphaned store.
   std::string assigned_lb_id = "";
   for (const auto& lb_id : active_lb_ids) {
-    if (PerBalancerStoresContains(
-            load_data_store,
-            load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,
-            orphaned_lb_id, kLoadKey1)) {
+    if (PerBalancerStoresContains(load_data_store,
+                                  load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,
+                                  orphaned_lb_id, kLoadKey1)) {
       assigned_lb_id = lb_id;
       break;
     }
@@ -179,19 +170,17 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
     load_data_store.ReportStreamClosed(kHostname1, lb_id_to_close);
     active_lb_ids.erase(lb_id_to_close);
     EXPECT_TRUE(PerBalancerStoresContains(
-        load_data_store,
-        load_data_store.GetAssignedStores(kHostname1, assigned_lb_id),
-        kHostname1, orphaned_lb_id, kLoadKey1));
+        load_data_store, load_data_store.GetAssignedStores(kHostname1, assigned_lb_id), kHostname1,
+        orphaned_lb_id, kLoadKey1));
   }
   // Close the assigned_lb_id, orphaned_lb_id will be re-assigned again.
   load_data_store.ReportStreamClosed(kHostname1, assigned_lb_id);
   active_lb_ids.erase(assigned_lb_id);
   size_t orphaned_lb_id_occurences = 0;
   for (const auto& lb_id : active_lb_ids) {
-    if (PerBalancerStoresContains(
-            load_data_store,
-            load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,
-            orphaned_lb_id, kLoadKey1)) {
+    if (PerBalancerStoresContains(load_data_store,
+                                  load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,
+                                  orphaned_lb_id, kLoadKey1)) {
       orphaned_lb_id_occurences++;
     }
   }
@@ -203,8 +192,7 @@ TEST_F(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   load_data_store.ReportStreamCreated(kHostname1, kLbId1, kLoadKey1);
   load_data_store.ReportStreamCreated(kHostname2, kLbId2, kLoadKey1);
   auto store_lb_id_1 = load_data_store.FindPerBalancerStore(kHostname1, kLbId1);
-  auto store_invalid_lb_id_1 =
-      load_data_store.FindPerBalancerStore(kHostname1, kInvalidLbId);
+  auto store_invalid_lb_id_1 = load_data_store.FindPerBalancerStore(kHostname1, kInvalidLbId);
   EXPECT_FALSE(store_lb_id_1->IsSuspended());
   EXPECT_FALSE(store_invalid_lb_id_1->IsSuspended());
   // Disconnect all the streams of the first host.
@@ -218,13 +206,12 @@ TEST_F(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   EXPECT_EQ(store_lb_id_1->load_record_map().size(), 0U);
   EXPECT_EQ(store_invalid_lb_id_1->load_record_map().size(), 0U);
   // The stores for different hosts won't mix, even if the load key is the same.
-  auto assigned_to_lb_id_2 =
-      load_data_store.GetAssignedStores(kHostname2, kLbId2);
+  auto assigned_to_lb_id_2 = load_data_store.GetAssignedStores(kHostname2, kLbId2);
   EXPECT_EQ(assigned_to_lb_id_2->size(), 2U);
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_2,
-                                        kHostname2, kLbId2, kLoadKey1));
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_2,
-                                        kHostname2, kInvalidLbId, ""));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_2, kHostname2, kLbId2,
+                                        kLoadKey1));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_2, kHostname2,
+                                        kInvalidLbId, ""));
   // A new stream is created for the first host.
   load_data_store.ReportStreamCreated(kHostname1, kLbId3, kLoadKey2);
   // The stores for the first host are resumed.
@@ -235,29 +222,26 @@ TEST_F(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   EXPECT_EQ(store_lb_id_1->load_record_map().size(), 1U);
   EXPECT_EQ(store_invalid_lb_id_1->load_record_map().size(), 1U);
   // The resumed stores are assigned to the new LB.
-  auto assigned_to_lb_id_3 =
-      load_data_store.GetAssignedStores(kHostname1, kLbId3);
+  auto assigned_to_lb_id_3 = load_data_store.GetAssignedStores(kHostname1, kLbId3);
   EXPECT_EQ(assigned_to_lb_id_3->size(), 3U);
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3,
-                                        kHostname1, kLbId1, kLoadKey1));
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3,
-                                        kHostname1, kInvalidLbId, ""));
-  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3,
-                                        kHostname1, kLbId3, kLoadKey2));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3, kHostname1, kLbId1,
+                                        kLoadKey1));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3, kHostname1,
+                                        kInvalidLbId, ""));
+  EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3, kHostname1, kLbId3,
+                                        kLoadKey2));
 }
 
 TEST_F(LoadDataStoreTest, OneStorePerLbId) {
   LoadDataStore load_data_store;
   EXPECT_EQ(load_data_store.FindPerBalancerStore(kHostname1, kLbId1), nullptr);
-  EXPECT_EQ(load_data_store.FindPerBalancerStore(kHostname1, kInvalidLbId),
-            nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(kHostname1, kInvalidLbId), nullptr);
   EXPECT_EQ(load_data_store.FindPerBalancerStore(kHostname2, kLbId2), nullptr);
   EXPECT_EQ(load_data_store.FindPerBalancerStore(kHostname2, kLbId3), nullptr);
   // Create The first stream.
   load_data_store.ReportStreamCreated(kHostname1, kLbId1, kLoadKey1);
   auto store_lb_id_1 = load_data_store.FindPerBalancerStore(kHostname1, kLbId1);
-  auto store_invalid_lb_id_1 =
-      load_data_store.FindPerBalancerStore(kHostname1, kInvalidLbId);
+  auto store_invalid_lb_id_1 = load_data_store.FindPerBalancerStore(kHostname1, kInvalidLbId);
   // Two stores will be created: one is for the stream; the other one is for
   // kInvalidLbId.
   EXPECT_NE(store_lb_id_1, nullptr);
@@ -268,8 +252,7 @@ TEST_F(LoadDataStoreTest, OneStorePerLbId) {
   // Create the second stream.
   load_data_store.ReportStreamCreated(kHostname2, kLbId3, kLoadKey1);
   auto store_lb_id_3 = load_data_store.FindPerBalancerStore(kHostname2, kLbId3);
-  auto store_invalid_lb_id_2 =
-      load_data_store.FindPerBalancerStore(kHostname2, kInvalidLbId);
+  auto store_invalid_lb_id_2 = load_data_store.FindPerBalancerStore(kHostname2, kInvalidLbId);
   EXPECT_NE(store_lb_id_3, nullptr);
   EXPECT_NE(store_invalid_lb_id_2, nullptr);
   EXPECT_NE(store_lb_id_3, store_invalid_lb_id_2);
@@ -291,8 +274,7 @@ TEST_F(LoadDataStoreTest, ExactlyOnceAssignment) {
   }
   std::set<std::string> reported_lb_ids;
   for (size_t i = num_close; i < num_create; ++i) {
-    for (auto assigned_store :
-         *load_data_store.GetAssignedStores(kHostname1, FormatLbId(i))) {
+    for (auto assigned_store : *load_data_store.GetAssignedStores(kHostname1, FormatLbId(i))) {
       EXPECT_TRUE(reported_lb_ids.insert(assigned_store->lb_id()).second);
     }
   }
@@ -310,18 +292,15 @@ TEST_F(LoadDataStoreTest, UnknownBalancerIdTracking) {
   // Merge data for unknown LB ID.
   LoadRecordValue v2(23);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(kLbId2));
-  load_data_store.MergeRow(
-      kHostname1, LoadRecordKey(kLbId2, kLbTag1, kUser1, kClientIp1), v2);
+  load_data_store.MergeRow(kHostname1, LoadRecordKey(kLbId2, kLbTag1, kUser1, kClientIp1), v2);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(kLbId2));
   LoadRecordValue v3(952);
-  load_data_store.MergeRow(
-      kHostname2, LoadRecordKey(kLbId3, kLbTag1, kUser1, kClientIp1), v3);
+  load_data_store.MergeRow(kHostname2, LoadRecordKey(kLbId3, kLbTag1, kUser1, kClientIp1), v3);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(kLbId3));
   // The data kept for a known LB ID is correct.
   auto store_lb_id_1 = load_data_store.FindPerBalancerStore(kHostname1, kLbId1);
   EXPECT_EQ(store_lb_id_1->load_record_map().size(), 1U);
-  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.start_count(),
-            v1.start_count());
+  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.start_count(), v1.start_count());
   EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), v1.start_count());
   // No PerBalancerStore created for Unknown LB ID.
   EXPECT_EQ(load_data_store.FindPerBalancerStore(kHostname1, kLbId2), nullptr);
@@ -330,21 +309,17 @@ TEST_F(LoadDataStoreTest, UnknownBalancerIdTracking) {
   LoadRecordValue v4(0, v1.start_count());
   load_data_store.MergeRow(kHostname1, kKey1, v4);
   EXPECT_EQ(store_lb_id_1->load_record_map().size(), 1U);
-  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.start_count(),
-            v1.start_count());
-  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.ok_count(),
-            v4.ok_count());
+  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.start_count(), v1.start_count());
+  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.ok_count(), v4.ok_count());
   EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), 0U);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(kLbId1));
   // End all the started RPCs for kLbId2.
   LoadRecordValue v5(0, v2.start_count());
-  load_data_store.MergeRow(
-      kHostname1, LoadRecordKey(kLbId2, kLbTag1, kUser1, kClientIp1), v5);
+  load_data_store.MergeRow(kHostname1, LoadRecordKey(kLbId2, kLbTag1, kUser1, kClientIp1), v5);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(kLbId2));
   // End some of the started RPCs for kLbId3.
   LoadRecordValue v6(0, v3.start_count() / 2);
-  load_data_store.MergeRow(
-      kHostname2, LoadRecordKey(kLbId3, kLbTag1, kUser1, kClientIp1), v6);
+  load_data_store.MergeRow(kHostname2, LoadRecordKey(kLbId3, kLbTag1, kUser1, kClientIp1), v6);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(kLbId3));
 }
 
@@ -385,9 +360,8 @@ TEST_F(PerBalancerStoreTest, Suspend) {
   EXPECT_EQ(1U, per_balancer_store.load_record_map().size());
   // In-progress count is always kept.
   EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
-            v1.start_count() - v1.ok_count() + v2.start_count() -
-                v2.error_count() + v3.start_count() - v3.ok_count() +
-                v4.start_count() - v4.ok_count());
+            v1.start_count() - v1.ok_count() + v2.start_count() - v2.error_count() +
+                v3.start_count() - v3.ok_count() + v4.start_count() - v4.ok_count());
 }
 
 TEST_F(PerBalancerStoreTest, DataAggregation) {
@@ -405,30 +379,25 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
   // The initial state of the store.
   uint64_t num_calls_in_progress = 0;
   EXPECT_FALSE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
-  EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
-            num_calls_in_progress);
+  EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(), num_calls_in_progress);
   // Merge v1 and get report of the number of in-progress calls.
   per_balancer_store.MergeRow(kKey1, v1);
   EXPECT_TRUE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
-            num_calls_in_progress +=
-            (v1.start_count() - v1.ok_count() - v1.error_count()));
+            num_calls_in_progress += (v1.start_count() - v1.ok_count() - v1.error_count()));
   EXPECT_FALSE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   // Merge v2 and get report of the number of in-progress calls.
   per_balancer_store.MergeRow(kKey2, v2);
   EXPECT_TRUE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
-            num_calls_in_progress +=
-            (v2.start_count() - v2.ok_count() - v2.error_count()));
+            num_calls_in_progress += (v2.start_count() - v2.ok_count() - v2.error_count()));
   EXPECT_FALSE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   // Merge v3 and get report of the number of in-progress calls.
   per_balancer_store.MergeRow(kKey1, v3);
   EXPECT_FALSE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
-  EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
-            num_calls_in_progress);
+  EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(), num_calls_in_progress);
   // LoadRecordValue for kKey1 is aggregated correctly.
-  LoadRecordValue value_for_key1 =
-      per_balancer_store.load_record_map().find(kKey1)->second;
+  LoadRecordValue value_for_key1 = per_balancer_store.load_record_map().find(kKey1)->second;
   EXPECT_EQ(value_for_key1.start_count(), v1.start_count() + v3.start_count());
   EXPECT_EQ(value_for_key1.ok_count(), v1.ok_count() + v3.ok_count());
   EXPECT_EQ(value_for_key1.error_count(), v1.error_count() + v3.error_count());
@@ -439,18 +408,15 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
   EXPECT_EQ(value_for_key1.call_metrics().find(kMetric1)->second.num_calls(),
             v1.call_metrics().find(kMetric1)->second.num_calls() +
                 v3.call_metrics().find(kMetric1)->second.num_calls());
-  EXPECT_EQ(
-      value_for_key1.call_metrics().find(kMetric1)->second.total_metric_value(),
-      v1.call_metrics().find(kMetric1)->second.total_metric_value() +
-          v3.call_metrics().find(kMetric1)->second.total_metric_value());
+  EXPECT_EQ(value_for_key1.call_metrics().find(kMetric1)->second.total_metric_value(),
+            v1.call_metrics().find(kMetric1)->second.total_metric_value() +
+                v3.call_metrics().find(kMetric1)->second.total_metric_value());
   EXPECT_EQ(value_for_key1.call_metrics().find(kMetric2)->second.num_calls(),
             v3.call_metrics().find(kMetric2)->second.num_calls());
-  EXPECT_EQ(
-      value_for_key1.call_metrics().find(kMetric2)->second.total_metric_value(),
-      v3.call_metrics().find(kMetric2)->second.total_metric_value());
+  EXPECT_EQ(value_for_key1.call_metrics().find(kMetric2)->second.total_metric_value(),
+            v3.call_metrics().find(kMetric2)->second.total_metric_value());
   // LoadRecordValue for kKey2 is aggregated (trivially) correctly.
-  LoadRecordValue value_for_key2 =
-      per_balancer_store.load_record_map().find(kKey2)->second;
+  LoadRecordValue value_for_key2 = per_balancer_store.load_record_map().find(kKey2)->second;
   EXPECT_EQ(value_for_key2.start_count(), v2.start_count());
   EXPECT_EQ(value_for_key2.ok_count(), v2.ok_count());
   EXPECT_EQ(value_for_key2.error_count(), v2.error_count());
@@ -460,14 +426,12 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
   EXPECT_EQ(value_for_key2.call_metrics().size(), 2U);
   EXPECT_EQ(value_for_key2.call_metrics().find(kMetric1)->second.num_calls(),
             v2.call_metrics().find(kMetric1)->second.num_calls());
-  EXPECT_EQ(
-      value_for_key2.call_metrics().find(kMetric1)->second.total_metric_value(),
-      v2.call_metrics().find(kMetric1)->second.total_metric_value());
+  EXPECT_EQ(value_for_key2.call_metrics().find(kMetric1)->second.total_metric_value(),
+            v2.call_metrics().find(kMetric1)->second.total_metric_value());
   EXPECT_EQ(value_for_key2.call_metrics().find(kMetric2)->second.num_calls(),
             v2.call_metrics().find(kMetric2)->second.num_calls());
-  EXPECT_EQ(
-      value_for_key2.call_metrics().find(kMetric2)->second.total_metric_value(),
-      v2.call_metrics().find(kMetric2)->second.total_metric_value());
+  EXPECT_EQ(value_for_key2.call_metrics().find(kMetric2)->second.total_metric_value(),
+            v2.call_metrics().find(kMetric2)->second.total_metric_value());
 }
 
 }  // namespace

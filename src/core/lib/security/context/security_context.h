@@ -47,16 +47,12 @@ void grpc_auth_property_reset(grpc_auth_property* property);
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
 struct grpc_auth_context
-    : public grpc_core::RefCounted<grpc_auth_context,
-                                   grpc_core::NonPolymorphicRefCount> {
+    : public grpc_core::RefCounted<grpc_auth_context, grpc_core::NonPolymorphicRefCount> {
  public:
-  explicit grpc_auth_context(
-      grpc_core::RefCountedPtr<grpc_auth_context> chained)
-      : grpc_core::RefCounted<grpc_auth_context,
-                              grpc_core::NonPolymorphicRefCount>(
-            GRPC_TRACE_FLAG_ENABLED(grpc_trace_auth_context_refcount)
-                ? "auth_context_refcount"
-                : nullptr),
+  explicit grpc_auth_context(grpc_core::RefCountedPtr<grpc_auth_context> chained)
+      : grpc_core::RefCounted<grpc_auth_context, grpc_core::NonPolymorphicRefCount>(
+            GRPC_TRACE_FLAG_ENABLED(grpc_trace_auth_context_refcount) ? "auth_context_refcount"
+                                                                      : nullptr),
         chained_(std::move(chained)) {
     if (chained_ != nullptr) {
       peer_identity_property_name_ = chained_->peer_identity_property_name_;
@@ -76,15 +72,9 @@ struct grpc_auth_context
   const grpc_auth_context* chained() const { return chained_.get(); }
   const grpc_auth_property_array& properties() const { return properties_; }
 
-  bool is_authenticated() const {
-    return peer_identity_property_name_ != nullptr;
-  }
-  const char* peer_identity_property_name() const {
-    return peer_identity_property_name_;
-  }
-  void set_peer_identity_property_name(const char* name) {
-    peer_identity_property_name_ = name;
-  }
+  bool is_authenticated() const { return peer_identity_property_name_ != nullptr; }
+  const char* peer_identity_property_name() const { return peer_identity_property_name_; }
+  void set_peer_identity_property_name(const char* name) { peer_identity_property_name_ = name; }
 
   void ensure_capacity();
   void add_property(const char* name, const char* value, size_t value_length);
@@ -111,8 +101,7 @@ struct grpc_security_context_extension {
    Internal client-side security context. */
 
 struct grpc_client_security_context {
-  explicit grpc_client_security_context(
-      grpc_core::RefCountedPtr<grpc_call_credentials> creds)
+  explicit grpc_client_security_context(grpc_core::RefCountedPtr<grpc_call_credentials> creds)
       : creds(std::move(creds)) {}
   ~grpc_client_security_context();
 
@@ -121,8 +110,8 @@ struct grpc_client_security_context {
   grpc_security_context_extension extension;
 };
 
-grpc_client_security_context* grpc_client_security_context_create(
-    grpc_core::Arena* arena, grpc_call_credentials* creds);
+grpc_client_security_context* grpc_client_security_context_create(grpc_core::Arena* arena,
+                                                                  grpc_call_credentials* creds);
 void grpc_client_security_context_destroy(void* ctx);
 
 /* --- grpc_server_security_context ---
@@ -137,8 +126,7 @@ struct grpc_server_security_context {
   grpc_security_context_extension extension;
 };
 
-grpc_server_security_context* grpc_server_security_context_create(
-    grpc_core::Arena* arena);
+grpc_server_security_context* grpc_server_security_context_create(grpc_core::Arena* arena);
 void grpc_server_security_context_destroy(void* ctx);
 
 /* --- Channel args for auth context --- */
@@ -146,7 +134,6 @@ void grpc_server_security_context_destroy(void* ctx);
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c);
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);
-grpc_auth_context* grpc_find_auth_context_in_args(
-    const grpc_channel_args* args);
+grpc_auth_context* grpc_find_auth_context_in_args(const grpc_channel_args* args);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H */

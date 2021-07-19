@@ -31,8 +31,7 @@ std::string DescribeServiceList(std::vector<std::string> service_list,
   std::stringstream result;
   for (auto it = service_list.begin(); it != service_list.end(); it++) {
     auto const& service = *it;
-    const grpc::protobuf::ServiceDescriptor* service_desc =
-        desc_pool.FindServiceByName(service);
+    const grpc::protobuf::ServiceDescriptor* service_desc = desc_pool.FindServiceByName(service);
     if (service_desc != nullptr) {
       result << DescribeService(service_desc);
     }
@@ -63,11 +62,10 @@ std::string DescribeService(const grpc::protobuf::ServiceDescriptor* service) {
 
 std::string DescribeMethod(const grpc::protobuf::MethodDescriptor* method) {
   std::stringstream result;
-  result << "  rpc " << method->name()
-         << (method->client_streaming() ? "(stream " : "(")
+  result << "  rpc " << method->name() << (method->client_streaming() ? "(stream " : "(")
          << method->input_type()->full_name() << ") returns "
-         << (method->server_streaming() ? "(stream " : "(")
-         << method->output_type()->full_name() << ") {}\n";
+         << (method->server_streaming() ? "(stream " : "(") << method->output_type()->full_name()
+         << ") {}\n";
   if (method->options().deprecated()) {
     result << " DEPRECATED";
   }

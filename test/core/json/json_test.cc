@@ -72,8 +72,7 @@ void ValidateValue(const Json& actual, const Json& expected) {
   }
 }
 
-void RunSuccessTest(const char* input, const Json& expected,
-                    const char* expected_output) {
+void RunSuccessTest(const char* input, const Json& expected, const char* expected_output) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(input, &error);
@@ -92,22 +91,17 @@ TEST(Json, Whitespace) {
 }
 
 TEST(Json, Utf16) {
-  RunSuccessTest("\"\\u0020\\\\\\u0010\\u000a\\u000D\"", " \\\u0010\n\r",
-                 "\" \\\\\\u0010\\n\\r\"");
+  RunSuccessTest("\"\\u0020\\\\\\u0010\\u000a\\u000D\"", " \\\u0010\n\r", "\" \\\\\\u0010\\n\\r\"");
 }
 
 TEST(Json, Utf8) {
-  RunSuccessTest("\"ßâñć௵⇒\"", "ßâñć௵⇒",
-                 "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
+  RunSuccessTest("\"ßâñć௵⇒\"", "ßâñć௵⇒", "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
   RunSuccessTest("\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"", "ßâñć௵⇒",
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
   // Testing UTF-8 character "𝄞", U+11D1E.
-  RunSuccessTest("\"\xf0\x9d\x84\x9e\"", "\xf0\x9d\x84\x9e",
-                 "\"\\ud834\\udd1e\"");
-  RunSuccessTest("\"\\ud834\\udd1e\"", "\xf0\x9d\x84\x9e",
-                 "\"\\ud834\\udd1e\"");
-  RunSuccessTest("{\"\\ud834\\udd1e\":0}",
-                 Json::Object{{"\xf0\x9d\x84\x9e", 0}},
+  RunSuccessTest("\"\xf0\x9d\x84\x9e\"", "\xf0\x9d\x84\x9e", "\"\\ud834\\udd1e\"");
+  RunSuccessTest("\"\\ud834\\udd1e\"", "\xf0\x9d\x84\x9e", "\"\\ud834\\udd1e\"");
+  RunSuccessTest("{\"\\ud834\\udd1e\":0}", Json::Object{{"\xf0\x9d\x84\x9e", 0}},
                  "{\"\\ud834\\udd1e\":0}");
 }
 

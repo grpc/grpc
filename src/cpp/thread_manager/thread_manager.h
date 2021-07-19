@@ -32,8 +32,8 @@ namespace grpc {
 
 class ThreadManager {
  public:
-  explicit ThreadManager(const char* name, grpc_resource_quota* resource_quota,
-                         int min_pollers, int max_pollers);
+  explicit ThreadManager(const char* name, grpc_resource_quota* resource_quota, int min_pollers,
+                         int max_pollers);
   virtual ~ThreadManager();
 
   // Initializes and Starts the Rpc Manager threads

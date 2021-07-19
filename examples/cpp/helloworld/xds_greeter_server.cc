@@ -37,8 +37,7 @@
 #endif
 
 ABSL_FLAG(int32_t, port, 50051, "Server port for service.");
-ABSL_FLAG(int32_t, maintenance_port, 50052,
-          "Server port for maintenance if --secure is used.");
+ABSL_FLAG(int32_t, maintenance_port, 50052, "Server port for maintenance if --secure is used.");
 ABSL_FLAG(bool, secure, true, "Secure mode");
 
 using grpc::Server;
@@ -51,8 +50,7 @@ using helloworld::HelloRequest;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
-  Status SayHello(ServerContext* context, const HelloRequest* request,
-                  HelloReply* reply) override {
+  Status SayHello(ServerContext* context, const HelloRequest* request, HelloReply* reply) override {
     std::string prefix("Hello ");
     reply->set_message(prefix + request->name());
     return Status::OK;
@@ -75,9 +73,9 @@ void RunServer() {
   if (absl::GetFlag(FLAGS_secure)) {
     // Listen on the given address with XdsServerCredentials and a fallback of
     // InsecureServerCredentials
-    xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                                 grpc::experimental::XdsServerCredentials(
-                                     grpc::InsecureServerCredentials()));
+    xds_builder.AddListeningPort(
+        absl::StrCat("0.0.0.0:", port),
+        grpc::experimental::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
     grpc::AddAdminServices(&builder);
@@ -85,13 +83,11 @@ void RunServer() {
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
                              grpc::InsecureServerCredentials());
     server = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Maintenance server listening on 0.0.0.0:%d",
-            maintenance_port);
+    gpr_log(GPR_INFO, "Maintenance server listening on 0.0.0.0:%d", maintenance_port);
   } else {
     grpc::AddAdminServices(&xds_builder);
     // Listen on the given address without any authentication mechanism.
-    builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                             grpc::InsecureServerCredentials());
+    builder.AddListeningPort(absl::StrCat("0.0.0.0:", port), grpc::InsecureServerCredentials());
     server = xds_builder.BuildAndStart();
     gpr_log(GPR_INFO, "Server listening on 0.0.0.0:%d", port);
   }

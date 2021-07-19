@@ -61,12 +61,11 @@ grpc_slice GrpcLbLoadReportRequestCreate(
     int64_t num_calls_started, int64_t num_calls_finished,
     int64_t num_calls_finished_with_client_failed_to_send,
     int64_t num_calls_finished_known_received,
-    const GrpcLbClientStats::DroppedCallCounts* drop_token_counts,
-    upb_arena* arena);
+    const GrpcLbClientStats::DroppedCallCounts* drop_token_counts, upb_arena* arena);
 
 // Deserialize a grpclb response.
-bool GrpcLbResponseParse(const grpc_slice& serialized_response,
-                         upb_arena* arena, GrpcLbResponse* result);
+bool GrpcLbResponseParse(const grpc_slice& serialized_response, upb_arena* arena,
+                         GrpcLbResponse* result);
 
 }  // namespace grpc_core
 

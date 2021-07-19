@@ -28,13 +28,11 @@ using std::chrono::system_clock;
 
 namespace grpc {
 
-void Timepoint2Timespec(const system_clock::time_point& from,
-                        gpr_timespec* to) {
+void Timepoint2Timespec(const system_clock::time_point& from, gpr_timespec* to) {
   system_clock::duration deadline = from.time_since_epoch();
   seconds secs = duration_cast<seconds>(deadline);
   if (from == system_clock::time_point::max() ||
-      secs.count() >= gpr_inf_future(GPR_CLOCK_REALTIME).tv_sec ||
-      secs.count() < 0) {
+      secs.count() >= gpr_inf_future(GPR_CLOCK_REALTIME).tv_sec || secs.count() < 0) {
     *to = gpr_inf_future(GPR_CLOCK_REALTIME);
     return;
   }
@@ -44,13 +42,11 @@ void Timepoint2Timespec(const system_clock::time_point& from,
   to->clock_type = GPR_CLOCK_REALTIME;
 }
 
-void TimepointHR2Timespec(const high_resolution_clock::time_point& from,
-                          gpr_timespec* to) {
+void TimepointHR2Timespec(const high_resolution_clock::time_point& from, gpr_timespec* to) {
   high_resolution_clock::duration deadline = from.time_since_epoch();
   seconds secs = duration_cast<seconds>(deadline);
   if (from == high_resolution_clock::time_point::max() ||
-      secs.count() >= gpr_inf_future(GPR_CLOCK_REALTIME).tv_sec ||
-      secs.count() < 0) {
+      secs.count() >= gpr_inf_future(GPR_CLOCK_REALTIME).tv_sec || secs.count() < 0) {
     *to = gpr_inf_future(GPR_CLOCK_REALTIME);
     return;
   }
@@ -67,8 +63,7 @@ system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
   t = gpr_convert_clock_type(t, GPR_CLOCK_REALTIME);
   system_clock::time_point tp;
   tp += duration_cast<system_clock::time_point::duration>(seconds(t.tv_sec));
-  tp +=
-      duration_cast<system_clock::time_point::duration>(nanoseconds(t.tv_nsec));
+  tp += duration_cast<system_clock::time_point::duration>(nanoseconds(t.tv_nsec));
   return tp;
 }
 

@@ -103,12 +103,10 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
 
   void UpdateArguments(ChannelArguments* /*arg*/) override {}
 
-  void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
     plugins->clear();
 
-    std::unique_ptr<TestServerBuilderPlugin> plugin(
-        new TestServerBuilderPlugin());
+    std::unique_ptr<TestServerBuilderPlugin> plugin(new TestServerBuilderPlugin());
     if (register_service_) plugin->SetRegisterService();
     plugins->emplace_back(std::move(plugin));
   }
@@ -126,8 +124,7 @@ std::unique_ptr<ServerBuilderPlugin> CreateTestServerBuilderPlugin() {
 // Force AddServerBuilderPlugin() to be called at static initialization time.
 struct StaticTestPluginInitializer {
   StaticTestPluginInitializer() {
-    ::grpc::ServerBuilder::InternalAddPluginFactory(
-        &CreateTestServerBuilderPlugin);
+    ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateTestServerBuilderPlugin);
   }
 } static_plugin_initializer_test_;
 
@@ -149,8 +146,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
       CheckPresent();
     } else {
       // Add ServerBuilder plugin using ServerBuilder::SetOption()
-      builder_->SetOption(std::unique_ptr<ServerBuilderOption>(
-          new InsertPluginServerBuilderOption()));
+      builder_->SetOption(
+          std::unique_ptr<ServerBuilderOption>(new InsertPluginServerBuilderOption()));
     }
   }
 

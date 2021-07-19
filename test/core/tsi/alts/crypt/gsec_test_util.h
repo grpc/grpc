@@ -67,8 +67,7 @@ void gsec_test_copy(const uint8_t* src, uint8_t** des, size_t source_len);
  * - des: a destination buffer.
  * - length: the length of source buffer to be copied from its beginning.
  */
-void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des,
-                                          size_t source_len);
+void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des, size_t source_len);
 
 /**
  * This method compares two grpc_status_code values, and verifies if one string
@@ -81,9 +80,7 @@ void gsec_test_copy_and_alter_random_byte(const uint8_t* src, uint8_t** des,
  *
  * If both checks succeed, the method returns 1 and otherwise, it returns 0.
  */
-int gsec_test_expect_compare_code_and_substr(grpc_status_code status1,
-                                             grpc_status_code status2,
-                                             const char* msg1,
-                                             const char* msg2);
+int gsec_test_expect_compare_code_and_substr(grpc_status_code status1, grpc_status_code status2,
+                                             const char* msg1, const char* msg2);
 
 #endif  // GRPC_TEST_CORE_TSI_ALTS_CRYPT_GSEC_TEST_UTIL_H_ */

@@ -66,9 +66,7 @@ void gpr_event_set(gpr_event* ev, void* value) {
   GPR_ASSERT(value != nullptr);
 }
 
-void* gpr_event_get(gpr_event* ev) {
-  return reinterpret_cast<void*>(gpr_atm_acq_load(&ev->state));
-}
+void* gpr_event_get(gpr_event* ev) { return reinterpret_cast<void*>(gpr_atm_acq_load(&ev->state)); }
 
 void* gpr_event_wait(gpr_event* ev, gpr_timespec abs_deadline) {
   void* result = reinterpret_cast<void*>(gpr_atm_acq_load(&ev->state));
@@ -96,9 +94,7 @@ void gpr_ref_non_zero(gpr_refcount* r) {
 #endif
 }
 
-void gpr_refn(gpr_refcount* r, int n) {
-  gpr_atm_no_barrier_fetch_add(&r->count, n);
-}
+void gpr_refn(gpr_refcount* r, int n) { gpr_atm_no_barrier_fetch_add(&r->count, n); }
 
 int gpr_unref(gpr_refcount* r) {
   gpr_atm prior = gpr_atm_full_fetch_add(&r->count, -1);
@@ -106,13 +102,9 @@ int gpr_unref(gpr_refcount* r) {
   return prior == 1;
 }
 
-int gpr_ref_is_unique(gpr_refcount* r) {
-  return gpr_atm_acq_load(&r->count) == 1;
-}
+int gpr_ref_is_unique(gpr_refcount* r) { return gpr_atm_acq_load(&r->count) == 1; }
 
-void gpr_stats_init(gpr_stats_counter* c, intptr_t n) {
-  gpr_atm_rel_store(&c->value, n);
-}
+void gpr_stats_init(gpr_stats_counter* c, intptr_t n) { gpr_atm_rel_store(&c->value, n); }
 
 void gpr_stats_inc(gpr_stats_counter* c, intptr_t inc) {
   gpr_atm_no_barrier_fetch_add(&c->value, inc);

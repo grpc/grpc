@@ -77,9 +77,8 @@ struct grpc_tls_certificate_distributor
   // @param cert_name The name of the certificates being updated.
   // @param pem_root_certs The content of root certificates.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
-  void SetKeyMaterials(
-      const std::string& cert_name, absl::optional<std::string> pem_root_certs,
-      absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
+  void SetKeyMaterials(const std::string& cert_name, absl::optional<std::string> pem_root_certs,
+                       absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
@@ -123,8 +122,7 @@ struct grpc_tls_certificate_distributor
   // bool_value_1 If the root certificates with the specific name are being
   // watched. bool_value_2 If the identity certificates with the specific name
   // are being watched.
-  void SetWatchStatusCallback(
-      std::function<void(std::string, bool, bool)> callback) {
+  void SetWatchStatusCallback(std::function<void(std::string, bool, bool)> callback) {
     grpc_core::MutexLock lock(&mu_);
     watch_status_callback_ = std::move(callback);
   };
@@ -140,10 +138,9 @@ struct grpc_tls_certificate_distributor
   // @param identity_cert_name The name of the identity certificates that will
   // be watched. If set to absl::nullopt, the identity certificates won't be
   // watched.
-  void WatchTlsCertificates(
-      std::unique_ptr<TlsCertificatesWatcherInterface> watcher,
-      absl::optional<std::string> root_cert_name,
-      absl::optional<std::string> identity_cert_name);
+  void WatchTlsCertificates(std::unique_ptr<TlsCertificatesWatcherInterface> watcher,
+                            absl::optional<std::string> root_cert_name,
+                            absl::optional<std::string> identity_cert_name);
 
   // Cancels a watcher.
   //

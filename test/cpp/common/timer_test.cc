@@ -47,8 +47,7 @@ class TimerTest : public ::testing::Test {
     // Skip test if slowdown factor > 1, or we are
     // using event manager.
 #ifdef GRPC_POSIX_SOCKET_EV
-    if (grpc_test_slowdown_factor() != 1 ||
-        grpc_event_engine_run_in_background()) {
+    if (grpc_test_slowdown_factor() != 1 || grpc_event_engine_run_in_background()) {
 #else
     if (grpc_test_slowdown_factor() != 1) {
 #endif
@@ -165,9 +164,9 @@ TEST_F(TimerTest, CancelSomeTimers) {
 TEST_F(TimerTest, DISABLED_TimerNotCanceled) {
   grpc_core::ExecCtx exec_ctx;
   grpc_timer timer;
-  grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 10000,
-                  GRPC_CLOSURE_CREATE([](void*, grpc_error_handle) {}, nullptr,
-                                      grpc_schedule_on_exec_ctx));
+  grpc_timer_init(
+      &timer, grpc_core::ExecCtx::Get()->Now() + 10000,
+      GRPC_CLOSURE_CREATE([](void*, grpc_error_handle) {}, nullptr, grpc_schedule_on_exec_ctx));
 }
 
 // Enable the following test after

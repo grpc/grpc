@@ -35,29 +35,25 @@ TEST_F(CelAuthorizationEngineTest, CreateEngineSuccessOnePolicy) {
   std::vector<envoy_config_rbac_v3_RBAC*> policies{allow_policy_};
   std::unique_ptr<CelAuthorizationEngine> engine =
       CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
-  EXPECT_NE(engine, nullptr)
-      << "Error: Failed to create CelAuthorizationEngine with one policy.";
+  EXPECT_NE(engine, nullptr) << "Error: Failed to create CelAuthorizationEngine with one policy.";
 }
 
 TEST_F(CelAuthorizationEngineTest, CreateEngineSuccessTwoPolicies) {
   std::vector<envoy_config_rbac_v3_RBAC*> policies{deny_policy_, allow_policy_};
   std::unique_ptr<CelAuthorizationEngine> engine =
       CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
-  EXPECT_NE(engine, nullptr)
-      << "Error: Failed to create CelAuthorizationEngine with two policies.";
+  EXPECT_NE(engine, nullptr) << "Error: Failed to create CelAuthorizationEngine with two policies.";
 }
 
 TEST_F(CelAuthorizationEngineTest, CreateEngineFailNoPolicies) {
   std::vector<envoy_config_rbac_v3_RBAC*> policies{};
   std::unique_ptr<CelAuthorizationEngine> engine =
       CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
-  EXPECT_EQ(engine, nullptr)
-      << "Error: Created CelAuthorizationEngine without policies.";
+  EXPECT_EQ(engine, nullptr) << "Error: Created CelAuthorizationEngine without policies.";
 }
 
 TEST_F(CelAuthorizationEngineTest, CreateEngineFailTooManyPolicies) {
-  std::vector<envoy_config_rbac_v3_RBAC*> policies{deny_policy_, allow_policy_,
-                                                   deny_policy_};
+  std::vector<envoy_config_rbac_v3_RBAC*> policies{deny_policy_, allow_policy_, deny_policy_};
   std::unique_ptr<CelAuthorizationEngine> engine =
       CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
   EXPECT_EQ(engine, nullptr)

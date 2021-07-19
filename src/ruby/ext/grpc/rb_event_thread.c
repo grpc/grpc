@@ -97,8 +97,7 @@ static void* grpc_rb_wait_for_event_no_gil(void* param) {
       gpr_mu_unlock(&event_queue.mu);
       return event;
     }
-    gpr_cv_wait(&event_queue.cv, &event_queue.mu,
-                gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&event_queue.cv, &event_queue.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&event_queue.mu);
   return NULL;
@@ -119,9 +118,8 @@ static VALUE grpc_rb_event_thread(VALUE arg) {
   (void)arg;
   grpc_ruby_init();
   while (true) {
-    event = (grpc_rb_event*)rb_thread_call_without_gvl(
-        grpc_rb_wait_for_event_no_gil, NULL, grpc_rb_event_unblocking_func,
-        NULL);
+    event = (grpc_rb_event*)rb_thread_call_without_gvl(grpc_rb_wait_for_event_no_gil, NULL,
+                                                       grpc_rb_event_unblocking_func, NULL);
     if (event == NULL) {
       // Indicates that the thread needs to shut down
       break;

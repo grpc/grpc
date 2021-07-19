@@ -56,8 +56,7 @@ class CelAuthorizationEngine {
 
   // Users should use the CreateCelAuthorizationEngine factory function
   // instead of calling the CelAuthorizationEngine constructor directly.
-  explicit CelAuthorizationEngine(
-      const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies);
+  explicit CelAuthorizationEngine(const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies);
   // TODO(mywang@google.com): add an Evaluate member function.
 
  private:
@@ -66,13 +65,10 @@ class CelAuthorizationEngine {
     kDeny,
   };
 
-  std::unique_ptr<mock_cel::Activation> CreateActivation(
-      const EvaluateArgs& args);
+  std::unique_ptr<mock_cel::Activation> CreateActivation(const EvaluateArgs& args);
 
-  std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
-      deny_if_matched_;
-  std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
-      allow_if_matched_;
+  std::map<const std::string, const google_api_expr_v1alpha1_Expr*> deny_if_matched_;
+  std::map<const std::string, const google_api_expr_v1alpha1_Expr*> allow_if_matched_;
   upb::Arena arena_;
   absl::flat_hash_set<std::string> envoy_attributes_;
   absl::flat_hash_set<std::string> header_keys_;

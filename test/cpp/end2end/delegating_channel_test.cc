@@ -45,13 +45,10 @@ namespace {
 
 class TestChannel : public experimental::DelegatingChannel {
  public:
-  explicit TestChannel(
-      const std::shared_ptr<ChannelInterface>& delegate_channel)
+  explicit TestChannel(const std::shared_ptr<ChannelInterface>& delegate_channel)
       : experimental::DelegatingChannel(delegate_channel) {}
   // Always returns GRPC_CHANNEL_READY
-  grpc_connectivity_state GetState(bool /*try_to_connect*/) override {
-    return GRPC_CHANNEL_READY;
-  }
+  grpc_connectivity_state GetState(bool /*try_to_connect*/) override { return GRPC_CHANNEL_READY; }
 };
 
 class DelegatingChannelTest : public ::testing::Test {
@@ -74,8 +71,7 @@ class DelegatingChannelTest : public ::testing::Test {
 
 TEST_F(DelegatingChannelTest, SimpleTest) {
   auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
-  std::shared_ptr<TestChannel> test_channel =
-      std::make_shared<TestChannel>(channel);
+  std::shared_ptr<TestChannel> test_channel = std::make_shared<TestChannel>(channel);
   // gRPC channel should be in idle state at this point but our test channel
   // will return ready.
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);

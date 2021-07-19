@@ -24,7 +24,6 @@
 
 #include "src/core/lib/debug/trace.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling"); /* Disabled by default */
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling"); /* Disabled by default */
 
 #endif  // GRPC_WINSOCK_SOCKET

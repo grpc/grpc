@@ -39,8 +39,7 @@ using helloworld::HelloRequest;
 
 class GreeterClient {
  public:
-  GreeterClient(std::shared_ptr<Channel> channel)
-      : stub_(Greeter::NewStub(channel)) {}
+  GreeterClient(std::shared_ptr<Channel> channel) : stub_(Greeter::NewStub(channel)) {}
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
@@ -61,13 +60,12 @@ class GreeterClient {
     std::condition_variable cv;
     bool done = false;
     Status status;
-    stub_->async()->SayHello(&context, &request, &reply,
-                             [&mu, &cv, &done, &status](Status s) {
-                               status = std::move(s);
-                               std::lock_guard<std::mutex> lock(mu);
-                               done = true;
-                               cv.notify_one();
-                             });
+    stub_->async()->SayHello(&context, &request, &reply, [&mu, &cv, &done, &status](Status s) {
+      status = std::move(s);
+      std::lock_guard<std::mutex> lock(mu);
+      done = true;
+      cv.notify_one();
+    });
 
     std::unique_lock<std::mutex> lock(mu);
     while (!done) {
@@ -78,8 +76,7 @@ class GreeterClient {
     if (status.ok()) {
       return reply.message();
     } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
+      std::cout << status.error_code() << ": " << status.error_message() << std::endl;
       return "RPC failed";
     }
   }
@@ -104,8 +101,7 @@ int main(int argc, char** argv) {
       if (arg_val[start_pos] == '=') {
         target_str = arg_val.substr(start_pos + 1);
       } else {
-        std::cout << "The only correct argument syntax is --target="
-                  << std::endl;
+        std::cout << "The only correct argument syntax is --target=" << std::endl;
         return 0;
       }
     } else {
@@ -115,8 +111,7 @@ int main(int argc, char** argv) {
   } else {
     target_str = "localhost:50051";
   }
-  GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+  GreeterClient greeter(grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;

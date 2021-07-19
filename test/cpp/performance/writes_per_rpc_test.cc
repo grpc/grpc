@@ -70,18 +70,15 @@ class EndpointPairFixture {
 
     /* add server endpoint to server_ */
     {
-      const grpc_channel_args* server_args =
-          server_->c_server()->core_server->channel_args();
-      grpc_transport* transport = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
+      const grpc_channel_args* server_args = server_->c_server()->core_server->channel_args();
+      grpc_transport* transport =
+          grpc_create_chttp2_transport(server_args, endpoints.server, false /* is_client */);
 
-      for (grpc_pollset* pollset :
-           server_->c_server()->core_server->pollsets()) {
+      for (grpc_pollset* pollset : server_->c_server()->core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      server_->c_server()->core_server->SetupTransport(transport, nullptr,
-                                                       server_args, nullptr);
+      server_->c_server()->core_server->SetupTransport(transport, nullptr, server_args, nullptr);
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     }
 
@@ -92,17 +89,15 @@ class EndpointPairFixture {
       ApplyCommonChannelArguments(&args);
 
       grpc_channel_args c_args = args.c_channel_args();
-      grpc_transport* transport =
-          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
+      grpc_transport* transport = grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(transport);
-      grpc_channel* channel = grpc_channel_create(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+      grpc_channel* channel =
+          grpc_channel_create("target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
       channel_ = ::grpc::CreateChannelInternal(
           "", channel,
-          std::vector<std::unique_ptr<
-              experimental::ClientInterceptorFactoryInterface>>());
+          std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
     }
   }
 
@@ -171,19 +166,15 @@ static double UnaryPingPong(int request_size, int response_size) {
     ServerEnv() : response_writer(&ctx) {}
   };
   uint8_t server_env_buffer[2 * sizeof(ServerEnv)];
-  ServerEnv* server_env[2] = {
-      reinterpret_cast<ServerEnv*>(server_env_buffer),
-      reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
+  ServerEnv* server_env[2] = {reinterpret_cast<ServerEnv*>(server_env_buffer),
+                              reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
   new (server_env[0]) ServerEnv;
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
-                      &server_env[0]->response_writer, fixture->cq(),
-                      fixture->cq(), tag(0));
+                      &server_env[0]->response_writer, fixture->cq(), fixture->cq(), tag(0));
   service.RequestEcho(&server_env[1]->ctx, &server_env[1]->recv_request,
-                      &server_env[1]->response_writer, fixture->cq(),
-                      fixture->cq(), tag(1));
-  std::unique_ptr<EchoTestService::Stub> stub(
-      EchoTestService::NewStub(fixture->channel()));
+                      &server_env[1]->response_writer, fixture->cq(), fixture->cq(), tag(1));
+  std::unique_ptr<EchoTestService::Stub> stub(EchoTestService::NewStub(fixture->channel()));
   for (int iteration = 0; iteration < kIterations; iteration++) {
     recv_response.Clear();
     ClientContext cli_ctx;
@@ -209,13 +200,12 @@ static double UnaryPingPong(int request_size, int response_size) {
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();
-    service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
-                        fixture->cq(), fixture->cq(), tag(slot));
+    service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer, fixture->cq(),
+                        fixture->cq(), tag(slot));
   }
 
   double writes_per_iteration =
-      static_cast<double>(fixture->writes_performed()) /
-      static_cast<double>(kIterations);
+      static_cast<double>(fixture->writes_performed()) / static_cast<double>(kIterations);
 
   fixture.reset();
   server_env[0]->~ServerEnv();

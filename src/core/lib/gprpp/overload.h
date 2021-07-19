@@ -26,11 +26,9 @@ struct OverloadType;
 // Compose one overload with N more -- use inheritance to leverage using and the
 // empty base class optimization.
 template <typename Case, typename... Cases>
-struct OverloadType<Case, Cases...> : public Case,
-                                      public OverloadType<Cases...> {
+struct OverloadType<Case, Cases...> : public Case, public OverloadType<Cases...> {
   explicit OverloadType(Case&& c, Cases&&... cases)
-      : Case(std::forward<Case>(c)),
-        OverloadType<Cases...>(std::forward<Cases>(cases)...) {}
+      : Case(std::forward<Case>(c)), OverloadType<Cases...>(std::forward<Cases>(cases)...) {}
   using Case::operator();
   using OverloadType<Cases...>::operator();
 };

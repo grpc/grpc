@@ -54,8 +54,7 @@ struct async_connect {
   grpc_channel_args* channel_args;
 };
 
-static void async_connect_unlock_and_cleanup(async_connect* ac,
-                                             grpc_winsocket* socket) {
+static void async_connect_unlock_and_cleanup(async_connect* ac, grpc_winsocket* socket) {
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
@@ -98,9 +97,8 @@ static void on_connect(void* acp, grpc_error_handle error) {
     if (socket != NULL) {
       DWORD transfered_bytes = 0;
       DWORD flags;
-      BOOL wsa_success =
-          WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
-                                 &transfered_bytes, FALSE, &flags);
+      BOOL wsa_success = WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
+                                                &transfered_bytes, FALSE, &flags);
       GPR_ASSERT(transfered_bytes == 0);
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
@@ -123,10 +121,8 @@ static void on_connect(void* acp, grpc_error_handle error) {
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
 static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_millis deadline) {
+                        grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+                        const grpc_resolved_address* addr, grpc_millis deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -147,8 +143,8 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
     addr = &addr6_v4mapped;
   }
 
-  sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                   grpc_get_default_wsa_socket_flags());
+  sock =
+      WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0, grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;
@@ -161,20 +157,17 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
   /* Grab the function pointer for ConnectEx for that specific socket.
      It may change depending on the interface. */
-  status =
-      WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
-               &ConnectEx, sizeof(ConnectEx), &ioctl_num_bytes, NULL, NULL);
+  status = WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid), &ConnectEx,
+                    sizeof(ConnectEx), &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
-    error = GRPC_WSA_ERROR(WSAGetLastError(),
-                           "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)");
+    error = GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)");
     goto failure;
   }
 
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
-  status =
-      bind(sock, (grpc_sockaddr*)&local_address.addr, (int)local_address.len);
+  status = bind(sock, (grpc_sockaddr*)&local_address.addr, (int)local_address.len);
   if (status != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
@@ -182,8 +175,8 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
   socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
-  success = ConnectEx(sock, (grpc_sockaddr*)&addr->addr, (int)addr->len, NULL,
-                      0, NULL, &info->overlapped);
+  success = ConnectEx(sock, (grpc_sockaddr*)&addr->addr, (int)addr->len, NULL, 0, NULL,
+                      &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get
      an IOCP notification, so let's ignore it. */
@@ -215,11 +208,9 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   std::string target_uri = grpc_sockaddr_to_uri(addr);
-  grpc_error_handle final_error =
-      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Failed to connect", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_cpp_string(std::move(target_uri)));
+  grpc_error_handle final_error = grpc_error_set_str(
+      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Failed to connect", &error, 1),
+      GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_cpp_string(std::move(target_uri)));
   GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

@@ -28,8 +28,7 @@
 
 /// If \a status_str is a valid status string, sets \a status to the
 /// corresponding status value and returns true.
-bool grpc_status_code_from_string(const char* status_str,
-                                  grpc_status_code* status);
+bool grpc_status_code_from_string(const char* status_str, grpc_status_code* status);
 
 /// Returns the string form of \a status, or "UNKNOWN" if invalid.
 const char* grpc_status_code_to_string(grpc_status_code status);
@@ -49,9 +48,7 @@ class StatusCodeSet {
 
   void Add(grpc_status_code status) { status_code_mask_ |= (1 << status); }
 
-  bool Contains(grpc_status_code status) const {
-    return status_code_mask_ & (1 << status);
-  }
+  bool Contains(grpc_status_code status) const { return status_code_mask_ & (1 << status); }
 
  private:
   int status_code_mask_ = 0;  // A bitfield of status codes in the set.

@@ -51,8 +51,7 @@ struct thd_info {
 
 thread_local struct thd_info* g_thd_info;
 
-class ThreadInternalsWindows
-    : public grpc_core::internal::ThreadInternalsInterface {
+class ThreadInternalsWindows : public grpc_core::internal::ThreadInternalsInterface {
  public:
   ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success,
                          const grpc_core::Thread::Options& options)
@@ -78,8 +77,7 @@ class ThreadInternalsWindows
 
     if (options.stack_size() != 0) {
       // Windows will round up the given stack_size value to nearest page.
-      handle = CreateThread(nullptr, options.stack_size(), thread_body, info_,
-                            0, nullptr);
+      handle = CreateThread(nullptr, options.stack_size(), thread_body, info_, 0, nullptr);
     } else {
       handle = CreateThread(nullptr, 64 * 1024, thread_body, info_, 0, nullptr);
     }
@@ -151,8 +149,8 @@ class ThreadInternalsWindows
 
 namespace grpc_core {
 
-Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success, const Options& options)
+Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg, bool* success,
+               const Options& options)
     : options_(options) {
   bool outcome = false;
   impl_ = new ThreadInternalsWindows(thd_body, arg, &outcome, options);
@@ -171,8 +169,6 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
 
 }  // namespace grpc_core
 
-gpr_thd_id gpr_thd_currentid(void) {
-  return reinterpret_cast<gpr_thd_id>(g_thd_info);
-}
+gpr_thd_id gpr_thd_currentid(void) { return reinterpret_cast<gpr_thd_id>(g_thd_info); }
 
 #endif /* GPR_WINDOWS */

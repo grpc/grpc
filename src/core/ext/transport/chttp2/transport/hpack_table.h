@@ -49,12 +49,10 @@
 /* hpack decoder table */
 struct grpc_chttp2_hptbl {
   static uint32_t entries_for_bytes(uint32_t bytes) {
-    return (bytes + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) /
-           GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
+    return (bytes + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) / GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   }
   static constexpr uint32_t kInitialCapacity =
-      (GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD -
-       1) /
+      (GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) /
       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   grpc_chttp2_hptbl() {
@@ -87,19 +85,16 @@ struct grpc_chttp2_hptbl {
 };
 
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl);
-void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
-                                     uint32_t max_bytes);
-grpc_error_handle grpc_chttp2_hptbl_set_current_table_size(
-    grpc_chttp2_hptbl* tbl, uint32_t bytes);
+void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl, uint32_t max_bytes);
+grpc_error_handle grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl, uint32_t bytes);
 
 /* lookup a table entry based on its hpack index */
 grpc_mdelem grpc_chttp2_hptbl_lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
                                                    uint32_t tbl_index);
-grpc_mdelem grpc_chttp2_hptbl_lookup_ref_dynamic_index(
-    const grpc_chttp2_hptbl* tbl, uint32_t tbl_index);
+grpc_mdelem grpc_chttp2_hptbl_lookup_ref_dynamic_index(const grpc_chttp2_hptbl* tbl,
+                                                       uint32_t tbl_index);
 template <bool take_ref = false>
-inline grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
-                                            uint32_t index) {
+inline grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl, uint32_t index) {
   /* Static table comes first, just return an entry from it.
      NB: This imposes the constraint that the first
      GRPC_CHTTP2_LAST_STATIC_ENTRY entries in the core static metadata table
@@ -120,16 +115,14 @@ inline grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
 grpc_error_handle grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
                                         grpc_mdelem md) GRPC_MUST_USE_RESULT;
 
-size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
-                                           bool use_true_binary_metadata);
+size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem, bool use_true_binary_metadata);
 
 /* Returns the static hpack table index that corresponds to /a elem. Returns 0
   if /a elem is not statically stored or if it is not in the static hpack
   table */
 inline uintptr_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
-  uintptr_t index =
-      reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md)) -
-      grpc_static_mdelem_table();
+  uintptr_t index = reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md)) -
+                    grpc_static_mdelem_table();
   if (index < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
     return index + 1;  // Hpack static metadata element indices start at 1
   }
@@ -142,7 +135,6 @@ struct grpc_chttp2_hptbl_find_result {
   uint32_t index;
   int has_value;
 };
-grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
-    const grpc_chttp2_hptbl* tbl, grpc_mdelem md);
+grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(const grpc_chttp2_hptbl* tbl, grpc_mdelem md);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_TABLE_H */

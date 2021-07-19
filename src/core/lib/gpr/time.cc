@@ -35,13 +35,9 @@ int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   return cmp;
 }
 
-gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b) {
-  return gpr_time_cmp(a, b) < 0 ? a : b;
-}
+gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b) { return gpr_time_cmp(a, b) < 0 ? a : b; }
 
-gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b) {
-  return gpr_time_cmp(a, b) > 0 ? a : b;
-}
+gpr_timespec gpr_time_max(gpr_timespec a, gpr_timespec b) { return gpr_time_cmp(a, b) > 0 ? a : b; }
 
 gpr_timespec gpr_time_0(gpr_clock_type type) {
   gpr_timespec out;
@@ -67,8 +63,7 @@ gpr_timespec gpr_inf_past(gpr_clock_type type) {
   return out;
 }
 
-static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
-                                                    int64_t units_per_sec,
+static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units, int64_t units_per_sec,
                                                     gpr_clock_type type) {
   gpr_timespec out;
   if (time_in_units == INT64_MAX) {
@@ -79,20 +74,16 @@ static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
     if (time_in_units >= 0) {
       out.tv_sec = time_in_units / units_per_sec;
     } else {
-      out.tv_sec = (-((units_per_sec - 1) - (time_in_units + units_per_sec)) /
-                    units_per_sec) -
-                   1;
+      out.tv_sec = (-((units_per_sec - 1) - (time_in_units + units_per_sec)) / units_per_sec) - 1;
     }
-    out.tv_nsec =
-        static_cast<int32_t>((time_in_units - out.tv_sec * units_per_sec) *
-                             GPR_NS_PER_SEC / units_per_sec);
+    out.tv_nsec = static_cast<int32_t>((time_in_units - out.tv_sec * units_per_sec) *
+                                       GPR_NS_PER_SEC / units_per_sec);
     out.clock_type = type;
   }
   return out;
 }
 
-static gpr_timespec to_seconds_from_above_second_time(int64_t time_in_units,
-                                                      int64_t secs_per_unit,
+static gpr_timespec to_seconds_from_above_second_time(int64_t time_in_units, int64_t secs_per_unit,
                                                       gpr_clock_type type) {
   gpr_timespec out;
   if (time_in_units >= INT64_MAX / secs_per_unit) {
@@ -147,11 +138,9 @@ gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
   }
   if (a.tv_sec == INT64_MAX || a.tv_sec == INT64_MIN) {
     sum = a;
-  } else if (b.tv_sec == INT64_MAX ||
-             (b.tv_sec >= 0 && a.tv_sec >= INT64_MAX - b.tv_sec)) {
+  } else if (b.tv_sec == INT64_MAX || (b.tv_sec >= 0 && a.tv_sec >= INT64_MAX - b.tv_sec)) {
     sum = gpr_inf_future(sum.clock_type);
-  } else if (b.tv_sec == INT64_MIN ||
-             (b.tv_sec <= 0 && a.tv_sec <= INT64_MIN - b.tv_sec)) {
+  } else if (b.tv_sec == INT64_MIN || (b.tv_sec <= 0 && a.tv_sec <= INT64_MIN - b.tv_sec)) {
     sum = gpr_inf_past(sum.clock_type);
   } else {
     sum.tv_sec = a.tv_sec + b.tv_sec;
@@ -184,11 +173,9 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
   }
   if (a.tv_sec == INT64_MAX || a.tv_sec == INT64_MIN) {
     diff = a;
-  } else if (b.tv_sec == INT64_MIN ||
-             (b.tv_sec <= 0 && a.tv_sec >= INT64_MAX + b.tv_sec)) {
+  } else if (b.tv_sec == INT64_MIN || (b.tv_sec <= 0 && a.tv_sec >= INT64_MAX + b.tv_sec)) {
     diff = gpr_inf_future(GPR_CLOCK_REALTIME);
-  } else if (b.tv_sec == INT64_MAX ||
-             (b.tv_sec >= 0 && a.tv_sec <= INT64_MIN + b.tv_sec)) {
+  } else if (b.tv_sec == INT64_MAX || (b.tv_sec >= 0 && a.tv_sec <= INT64_MIN + b.tv_sec)) {
     diff = gpr_inf_past(GPR_CLOCK_REALTIME);
   } else {
     diff.tv_sec = a.tv_sec - b.tv_sec;
@@ -227,8 +214,7 @@ int32_t gpr_time_to_millis(gpr_timespec t) {
        care?) */
     return -2147483647;
   } else {
-    return static_cast<int32_t>(t.tv_sec * GPR_MS_PER_SEC +
-                                t.tv_nsec / GPR_NS_PER_MS);
+    return static_cast<int32_t>(t.tv_sec * GPR_MS_PER_SEC + t.tv_nsec / GPR_NS_PER_MS);
   }
 }
 
@@ -258,6 +244,5 @@ gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type clock_type) {
   // the same input because it relies on `gpr_now` to calculate the difference
   // between two different clocks. Please be careful when you want to use this
   // function in unit tests. (e.g. https://github.com/grpc/grpc/pull/22655)
-  return gpr_time_add(gpr_now(clock_type),
-                      gpr_time_sub(t, gpr_now(t.clock_type)));
+  return gpr_time_add(gpr_now(clock_type), gpr_time_sub(t, gpr_now(t.clock_type)));
 }

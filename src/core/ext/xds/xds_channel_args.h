@@ -20,8 +20,7 @@
 // Specifies channel args for the xDS client.
 // Used only when GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG
 // is set.
-#define GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS \
-  "grpc.xds_client_channel_args"
+#define GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS "grpc.xds_client_channel_args"
 
 // Timeout in milliseconds to wait for a resource to be returned from
 // the xds server before assuming that it does not exist.

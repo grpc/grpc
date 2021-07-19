@@ -27,8 +27,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
-                                              socklen_t size)
+EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address, socklen_t size)
     : size_(size) {
   GPR_ASSERT(size <= sizeof(address_));
   memcpy(&address_, address, size);
@@ -40,8 +39,7 @@ const struct sockaddr* EventEngine::ResolvedAddress::address() const {
 
 socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
 
-std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-DefaultEventEngineFactory() {
+std::shared_ptr<grpc_event_engine::experimental::EventEngine> DefaultEventEngineFactory() {
   // TODO(nnoble): delete when uv-ee is merged
   abort();
 }

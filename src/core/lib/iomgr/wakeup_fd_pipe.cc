@@ -93,8 +93,7 @@ static int pipe_check_availability(void) {
   }
 }
 
-const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
-    pipe_init, pipe_consume, pipe_wakeup, pipe_destroy,
-    pipe_check_availability};
+const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {pipe_init, pipe_consume, pipe_wakeup,
+                                                          pipe_destroy, pipe_check_availability};
 
 #endif /* GPR_POSIX_WAKUP_FD */

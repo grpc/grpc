@@ -36,8 +36,7 @@ class DefaultReactorTestPeer {
  public:
   explicit DefaultReactorTestPeer(CallbackServerContext* ctx)
       : DefaultReactorTestPeer(ctx, [](Status) {}) {}
-  DefaultReactorTestPeer(CallbackServerContext* ctx,
-                         std::function<void(Status)> finish_func)
+  DefaultReactorTestPeer(CallbackServerContext* ctx, std::function<void(Status)> finish_func)
       : ctx_(ctx) {
     ctx->SetupTestDefaultReactor(std::move(finish_func));
   }

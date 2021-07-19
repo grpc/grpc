@@ -43,11 +43,9 @@ namespace load_reporter {
 class CensusViewProvider {
  public:
   // Maps from the view name to the view data.
-  using ViewDataMap =
-      std::unordered_map<std::string, ::opencensus::stats::ViewData>;
+  using ViewDataMap = std::unordered_map<std::string, ::opencensus::stats::ViewData>;
   // Maps from the view name to the view descriptor.
-  using ViewDescriptorMap =
-      std::unordered_map<std::string, ::opencensus::stats::ViewDescriptor>;
+  using ViewDescriptorMap = std::unordered_map<std::string, ::opencensus::stats::ViewDescriptor>;
 
   CensusViewProvider();
   virtual ~CensusViewProvider() = default;
@@ -61,17 +59,15 @@ class CensusViewProvider {
   // with the same tag values in a related view data. Several ViewData's are
   // considered related if their views are based on the measures that are always
   // recorded at the same time.
-  static double GetRelatedViewDataRowDouble(
-      const ViewDataMap& view_data_map, const char* view_name,
-      size_t view_name_len, const std::vector<std::string>& tag_values);
-  static uint64_t GetRelatedViewDataRowInt(
-      const ViewDataMap& view_data_map, const char* view_name,
-      size_t view_name_len, const std::vector<std::string>& tag_values);
+  static double GetRelatedViewDataRowDouble(const ViewDataMap& view_data_map, const char* view_name,
+                                            size_t view_name_len,
+                                            const std::vector<std::string>& tag_values);
+  static uint64_t GetRelatedViewDataRowInt(const ViewDataMap& view_data_map, const char* view_name,
+                                           size_t view_name_len,
+                                           const std::vector<std::string>& tag_values);
 
  protected:
-  const ViewDescriptorMap& view_descriptor_map() const {
-    return view_descriptor_map_;
-  }
+  const ViewDescriptorMap& view_descriptor_map() const { return view_descriptor_map_; }
 
  private:
   ViewDescriptorMap view_descriptor_map_;
@@ -150,23 +146,19 @@ class LoadReporter {
 
   // Wrapper around LoadDataStore::ReportStreamCreated.
   // Thread-safe.
-  void ReportStreamCreated(const std::string& hostname,
-                           const std::string& lb_id,
+  void ReportStreamCreated(const std::string& hostname, const std::string& lb_id,
                            const std::string& load_key);
 
   // Wrapper around LoadDataStore::ReportStreamClosed.
   // Thread-safe.
-  void ReportStreamClosed(const std::string& hostname,
-                          const std::string& lb_id);
+  void ReportStreamClosed(const std::string& hostname, const std::string& lb_id);
 
   // Generates a unique LB ID of length kLbIdLength. Returns an empty string
   // upon failure. Thread-safe.
   std::string GenerateLbId();
 
   // Accessors only for testing.
-  CensusViewProvider* census_view_provider() {
-    return census_view_provider_.get();
-  }
+  CensusViewProvider* census_view_provider() { return census_view_provider_.get(); }
   CpuStatsProvider* cpu_stats_provider() { return cpu_stats_provider_.get(); }
 
  private:
@@ -177,9 +169,9 @@ class LoadReporter {
     uint64_t cpu_usage;
     uint64_t cpu_limit;
 
-    LoadBalancingFeedbackRecord(
-        const std::chrono::system_clock::time_point& end_time, uint64_t rpcs,
-        uint64_t errors, uint64_t cpu_usage, uint64_t cpu_limit)
+    LoadBalancingFeedbackRecord(const std::chrono::system_clock::time_point& end_time,
+                                uint64_t rpcs, uint64_t errors, uint64_t cpu_usage,
+                                uint64_t cpu_limit)
         : end_time(end_time),
           rpcs(rpcs),
           errors(errors),
@@ -189,16 +181,13 @@ class LoadReporter {
 
   // Finds the view data about starting call from the view_data_map and merges
   // the data to the load data store.
-  void ProcessViewDataCallStart(
-      const CensusViewProvider::ViewDataMap& view_data_map);
+  void ProcessViewDataCallStart(const CensusViewProvider::ViewDataMap& view_data_map);
   // Finds the view data about ending call from the view_data_map and merges the
   // data to the load data store.
-  void ProcessViewDataCallEnd(
-      const CensusViewProvider::ViewDataMap& view_data_map);
+  void ProcessViewDataCallEnd(const CensusViewProvider::ViewDataMap& view_data_map);
   // Finds the view data about the customized call metrics from the
   // view_data_map and merges the data to the load data store.
-  void ProcessViewDataOtherCallMetrics(
-      const CensusViewProvider::ViewDataMap& view_data_map);
+  void ProcessViewDataOtherCallMetrics(const CensusViewProvider::ViewDataMap& view_data_map);
 
   bool IsRecordInWindow(const LoadBalancingFeedbackRecord& record,
                         std::chrono::system_clock::time_point now) {
@@ -209,8 +198,7 @@ class LoadReporter {
 
   // Extracts an OrphanedLoadIdentifier from the per-balancer store and attaches
   // it to the load.
-  void AttachOrphanLoadId(::grpc::lb::v1::Load* load,
-                          const PerBalancerStore& per_balancer_store);
+  void AttachOrphanLoadId(::grpc::lb::v1::Load* load, const PerBalancerStore& per_balancer_store);
 
   std::atomic<int64_t> next_lb_id_{0};
   const std::chrono::seconds feedback_sample_window_seconds_;

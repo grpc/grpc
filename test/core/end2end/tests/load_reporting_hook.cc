@@ -54,8 +54,7 @@ typedef struct {
   bool fully_processed;
 } load_reporting_data;
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -68,13 +67,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -87,8 +82,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+                                         grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -110,19 +104,17 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void request_response_with_payload(
-    grpc_end2end_test_config config, grpc_end2end_test_fixture f,
-    const char* method_name, const char* request_msg, const char* response_msg,
-    grpc_metadata* initial_lr_metadata, grpc_metadata* trailing_lr_metadata) {
+static void request_response_with_payload(grpc_end2end_test_config config,
+                                          grpc_end2end_test_fixture f, const char* method_name,
+                                          const char* request_msg, const char* response_msg,
+                                          grpc_metadata* initial_lr_metadata,
+                                          grpc_metadata* trailing_lr_metadata) {
   grpc_slice request_payload_slice = grpc_slice_from_static_string(request_msg);
-  grpc_slice response_payload_slice =
-      grpc_slice_from_static_string(response_msg);
+  grpc_slice response_payload_slice = grpc_slice_from_static_string(response_msg);
   grpc_call* c;
   grpc_call* s;
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+  grpc_byte_buffer* request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_byte_buffer* response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -139,8 +131,8 @@ static void request_response_with_payload(
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string(method_name),
-                               nullptr, deadline, nullptr);
+                               grpc_slice_from_static_string(method_name), nullptr, deadline,
+                               nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -183,13 +175,11 @@ static void request_response_with_payload(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -206,8 +196,7 @@ static void request_response_with_payload(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -235,8 +224,7 @@ static void request_response_with_payload(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
@@ -263,8 +251,7 @@ static void request_response_with_payload(
 }
 
 /* override the default for testing purposes */
-extern void (*g_load_reporting_fn)(
-    const grpc_load_reporting_call_data* call_data);
+extern void (*g_load_reporting_fn)(const grpc_load_reporting_call_data* call_data);
 
 static void test_load_reporting_hook(grpc_end2end_test_config config) {
   /* TODO(dgq): this test is currently a noop until LR is fully defined.
@@ -272,8 +259,7 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
 
   /* Introduce load reporting for the server through its arguments */
   grpc_arg arg = grpc_load_reporting_enable_arg();
-  grpc_channel_args* lr_server_args =
-      grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+  grpc_channel_args* lr_server_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
 
   grpc_end2end_test_fixture f =
       begin_test(config, "test_load_reporting_hook", nullptr, lr_server_args);
@@ -287,17 +273,14 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
 
   initial_lr_metadata.key = GRPC_MDSTR_LB_TOKEN;
   initial_lr_metadata.value = grpc_slice_from_static_string("client-token");
-  memset(&initial_lr_metadata.internal_data, 0,
-         sizeof(initial_lr_metadata.internal_data));
+  memset(&initial_lr_metadata.internal_data, 0, sizeof(initial_lr_metadata.internal_data));
 
   trailing_lr_metadata.key = GRPC_MDSTR_LB_COST_BIN;
   trailing_lr_metadata.value = grpc_slice_from_static_string("server-token");
-  memset(&trailing_lr_metadata.internal_data, 0,
-         sizeof(trailing_lr_metadata.internal_data));
+  memset(&trailing_lr_metadata.internal_data, 0, sizeof(trailing_lr_metadata.internal_data));
 
-  request_response_with_payload(config, f, method_name, request_msg,
-                                response_msg, &initial_lr_metadata,
-                                &trailing_lr_metadata);
+  request_response_with_payload(config, f, method_name, request_msg, response_msg,
+                                &initial_lr_metadata, &trailing_lr_metadata);
   end_test(&f);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -306,8 +289,6 @@ static void test_load_reporting_hook(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-void load_reporting_hook(grpc_end2end_test_config config) {
-  test_load_reporting_hook(config);
-}
+void load_reporting_hook(grpc_end2end_test_config config) { test_load_reporting_hook(config); }
 
 void load_reporting_hook_pre_init(void) {}

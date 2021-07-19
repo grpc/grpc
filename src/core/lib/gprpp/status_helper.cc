@@ -131,8 +131,7 @@ void EncodeUInt32ToBytes(uint32_t v, char* buf) {
 }
 
 uint32_t DecodeUInt32FromBytes(const char* buf) {
-  return buf[0] | (uint32_t(buf[1]) << 8) | (uint32_t(buf[2]) << 16) |
-         (uint32_t(buf[3]) << 24);
+  return buf[0] | (uint32_t(buf[1]) << 8) | (uint32_t(buf[2]) << 16) | (uint32_t(buf[3]) << 24);
 }
 
 std::vector<absl::Status> ParseChildren(absl::Cord children) {
@@ -146,8 +145,7 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
     size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
     cur += sizeof(uint32_t);
     GPR_ASSERT(buf.size() - cur >= msg_size);
-    google_rpc_Status* msg =
-        google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
+    google_rpc_Status* msg = google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
     cur += msg_size;
     result.push_back(internal::StatusFromProto(msg));
   }
@@ -176,14 +174,11 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
 }
 
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
-  status->SetPayload(GetStatusIntPropertyUrl(key),
-                     absl::Cord(std::to_string(value)));
+  status->SetPayload(GetStatusIntPropertyUrl(key), absl::Cord(std::to_string(value)));
 }
 
-absl::optional<intptr_t> StatusGetInt(const absl::Status& status,
-                                      StatusIntProperty key) {
-  absl::optional<absl::Cord> p =
-      status.GetPayload(GetStatusIntPropertyUrl(key));
+absl::optional<intptr_t> StatusGetInt(const absl::Status& status, StatusIntProperty key) {
+  absl::optional<absl::Cord> p = status.GetPayload(GetStatusIntPropertyUrl(key));
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
     intptr_t value;
@@ -200,32 +195,26 @@ absl::optional<intptr_t> StatusGetInt(const absl::Status& status,
   return {};
 }
 
-void StatusSetStr(absl::Status* status, StatusStrProperty key,
-                  absl::string_view value) {
+void StatusSetStr(absl::Status* status, StatusStrProperty key, absl::string_view value) {
   status->SetPayload(GetStatusStrPropertyUrl(key), absl::Cord(value));
 }
 
-absl::optional<std::string> StatusGetStr(const absl::Status& status,
-                                         StatusStrProperty key) {
-  absl::optional<absl::Cord> p =
-      status.GetPayload(GetStatusStrPropertyUrl(key));
+absl::optional<std::string> StatusGetStr(const absl::Status& status, StatusStrProperty key) {
+  absl::optional<absl::Cord> p = status.GetPayload(GetStatusStrPropertyUrl(key));
   if (p.has_value()) {
     return std::string(*p);
   }
   return {};
 }
 
-void StatusSetTime(absl::Status* status, StatusTimeProperty key,
-                   absl::Time time) {
-  status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(absl::string_view(
-                         reinterpret_cast<const char*>(&time), sizeof(time))));
+void StatusSetTime(absl::Status* status, StatusTimeProperty key, absl::Time time) {
+  status->SetPayload(
+      GetStatusTimePropertyUrl(key),
+      absl::Cord(absl::string_view(reinterpret_cast<const char*>(&time), sizeof(time))));
 }
 
-absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
-                                         StatusTimeProperty key) {
-  absl::optional<absl::Cord> p =
-      status.GetPayload(GetStatusTimePropertyUrl(key));
+absl::optional<absl::Time> StatusGetTime(const absl::Status& status, StatusTimeProperty key) {
+  absl::optional<absl::Cord> p = status.GetPayload(GetStatusTimePropertyUrl(key));
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
     if (sv.has_value()) {
@@ -245,8 +234,7 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
   size_t buf_len = 0;
   char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &buf_len);
   // Append (msg-length and msg) to children payload
-  absl::optional<absl::Cord> old_children =
-      status->GetPayload(kChildrenPropertyUrl);
+  absl::optional<absl::Cord> old_children = status->GetPayload(kChildrenPropertyUrl);
   absl::Cord children;
   if (old_children.has_value()) {
     children = *old_children;
@@ -260,8 +248,7 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
 
 std::vector<absl::Status> StatusGetChildren(absl::Status status) {
   absl::optional<absl::Cord> children = status.GetPayload(kChildrenPropertyUrl);
-  return children.has_value() ? ParseChildren(*children)
-                              : std::vector<absl::Status>();
+  return children.has_value() ? ParseChildren(*children) : std::vector<absl::Status>();
 }
 
 std::string StatusToString(const absl::Status& status) {
@@ -275,8 +262,7 @@ std::string StatusToString(const absl::Status& status) {
   }
   std::vector<std::string> kvs;
   absl::optional<absl::Cord> children;
-  status.ForEachPayload([&](absl::string_view type_url,
-                            const absl::Cord& payload) {
+  status.ForEachPayload([&](absl::string_view type_url, const absl::Cord& payload) {
     if (absl::StartsWith(type_url, kTypeUrlPrefix)) {
       type_url.remove_prefix(kTypeUrlPrefix.size());
       if (type_url == kTypeChildrenTag) {
@@ -296,21 +282,18 @@ std::string StatusToString(const absl::Status& status) {
         kvs.push_back(absl::StrCat(type_url, ":", payload_view));
       } else if (absl::StartsWith(type_url, kTypeStrTag)) {
         type_url.remove_prefix(kTypeStrTag.size());
-        kvs.push_back(absl::StrCat(type_url, ":\"",
-                                   absl::CHexEscape(payload_view), "\""));
+        kvs.push_back(absl::StrCat(type_url, ":\"", absl::CHexEscape(payload_view), "\""));
       } else if (absl::StartsWith(type_url, kTypeTimeTag)) {
         type_url.remove_prefix(kTypeTimeTag.size());
-        absl::Time t =
-            *reinterpret_cast<const absl::Time*>(payload_view.data());
+        absl::Time t = *reinterpret_cast<const absl::Time*>(payload_view.data());
         kvs.push_back(absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
       } else {
-        kvs.push_back(absl::StrCat(type_url, ":\"",
-                                   absl::CHexEscape(payload_view), "\""));
+        kvs.push_back(absl::StrCat(type_url, ":\"", absl::CHexEscape(payload_view), "\""));
       }
     } else {
       absl::optional<absl::string_view> payload_view = payload.TryFlat();
-      std::string payload_str = absl::CHexEscape(
-          payload_view.has_value() ? *payload_view : std::string(payload));
+      std::string payload_str =
+          absl::CHexEscape(payload_view.has_value() ? *payload_view : std::string(payload));
       kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
     }
   });
@@ -321,11 +304,9 @@ std::string StatusToString(const absl::Status& status) {
     for (const absl::Status& child_status : children_status) {
       children_text.push_back(StatusToString(child_status));
     }
-    kvs.push_back(
-        absl::StrCat("children:[", absl::StrJoin(children_text, ", "), "]"));
+    kvs.push_back(absl::StrCat("children:[", absl::StrJoin(children_text, ", "), "]"));
   }
-  return kvs.empty() ? head
-                     : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
+  return kvs.empty() ? head : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
 }
 
 namespace internal {
@@ -333,23 +314,18 @@ namespace internal {
 google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
-  google_rpc_Status_set_message(
-      msg, upb_strview_make(status.message().data(), status.message().size()));
-  status.ForEachPayload([&](absl::string_view type_url,
-                            const absl::Cord& payload) {
+  google_rpc_Status_set_message(msg,
+                                upb_strview_make(status.message().data(), status.message().size()));
+  status.ForEachPayload([&](absl::string_view type_url, const absl::Cord& payload) {
     google_protobuf_Any* any = google_rpc_Status_add_details(msg, arena);
-    char* type_url_buf =
-        reinterpret_cast<char*>(upb_arena_malloc(arena, type_url.size()));
+    char* type_url_buf = reinterpret_cast<char*>(upb_arena_malloc(arena, type_url.size()));
     memcpy(type_url_buf, type_url.data(), type_url.size());
-    google_protobuf_Any_set_type_url(
-        any, upb_strview_make(type_url_buf, type_url.size()));
+    google_protobuf_Any_set_type_url(any, upb_strview_make(type_url_buf, type_url.size()));
     absl::optional<absl::string_view> v_view = payload.TryFlat();
     if (v_view.has_value()) {
-      google_protobuf_Any_set_value(
-          any, upb_strview_make(v_view->data(), v_view->size()));
+      google_protobuf_Any_set_value(any, upb_strview_make(v_view->data(), v_view->size()));
     } else {
-      char* buf =
-          reinterpret_cast<char*>(upb_arena_malloc(arena, payload.size()));
+      char* buf = reinterpret_cast<char*>(upb_arena_malloc(arena, payload.size()));
       char* cur = buf;
       for (absl::string_view chunk : payload.Chunks()) {
         memcpy(cur, chunk.data(), chunk.size());
@@ -367,8 +343,7 @@ absl::Status StatusFromProto(google_rpc_Status* msg) {
   absl::Status status(static_cast<absl::StatusCode>(code),
                       absl::string_view(message.data, message.size));
   size_t detail_len;
-  const google_protobuf_Any* const* details =
-      google_rpc_Status_details(msg, &detail_len);
+  const google_protobuf_Any* const* details = google_rpc_Status_details(msg, &detail_len);
   for (size_t i = 0; i < detail_len; i++) {
     upb_strview type_url = google_protobuf_Any_type_url(details[i]);
     upb_strview value = google_protobuf_Any_value(details[i]);

@@ -74,19 +74,16 @@ static void assert_decodes_as(const char* buffer, grpc_millis expected) {
   grpc_millis got;
   uint32_t hash = gpr_murmur_hash3(buffer, strlen(buffer), 0);
   gpr_log(GPR_INFO, "check decoding '%s' (hash=0x%x)", buffer, hash);
-  GPR_ASSERT(1 == grpc_http2_decode_timeout(
-                      grpc_slice_from_static_string(buffer), &got));
+  GPR_ASSERT(1 == grpc_http2_decode_timeout(grpc_slice_from_static_string(buffer), &got));
   if (got != expected) {
-    gpr_log(GPR_ERROR, "got:'%" PRId64 "' != expected:'%" PRId64 "'", got,
-            expected);
+    gpr_log(GPR_ERROR, "got:'%" PRId64 "' != expected:'%" PRId64 "'", got, expected);
     abort();
   }
 }
 
 void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
-  long test_vals[] = {1,       12,       123,       1234,     12345,   123456,
-                      1234567, 12345678, 123456789, 98765432, 9876543, 987654,
-                      98765,   9876,     987,       98,       9};
+  long test_vals[] = {1,        12,      123,    1234,  12345, 123456, 1234567, 12345678, 123456789,
+                      98765432, 9876543, 987654, 98765, 9876,  987,    98,      9};
   for (unsigned i = 0; i < GPR_ARRAY_SIZE(test_vals); i++) {
     std::string input = absl::StrFormat("%ld%c", test_vals[i], ext);
     assert_decodes_as(input.c_str(), answer(test_vals[i]));
@@ -108,9 +105,7 @@ static grpc_millis millis_from_nanos(int64_t x) {
 static grpc_millis millis_from_micros(int64_t x) {
   return static_cast<grpc_millis>(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
 }
-static grpc_millis millis_from_millis(int64_t x) {
-  return static_cast<grpc_millis>(x);
-}
+static grpc_millis millis_from_millis(int64_t x) { return static_cast<grpc_millis>(x); }
 static grpc_millis millis_from_seconds(int64_t x) {
   return static_cast<grpc_millis>(x * GPR_MS_PER_SEC);
 }
@@ -138,8 +133,7 @@ void test_decoding(void) {
 
 static void assert_decoding_fails(const char* s) {
   grpc_millis x;
-  GPR_ASSERT(0 ==
-             grpc_http2_decode_timeout(grpc_slice_from_static_string(s), &x));
+  GPR_ASSERT(0 == grpc_http2_decode_timeout(grpc_slice_from_static_string(s), &x));
 }
 
 void test_decoding_fails(void) {

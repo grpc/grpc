@@ -58,14 +58,10 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
   /// \param block_size How big are the chunks to allocate at a time
   /// \param total_size How many total bytes are required for this proto
   ProtoBufferWriter(ByteBuffer* byte_buffer, int block_size, int total_size)
-      : block_size_(block_size),
-        total_size_(total_size),
-        byte_count_(0),
-        have_backup_(false) {
+      : block_size_(block_size), total_size_(total_size), byte_count_(0), have_backup_(false) {
     GPR_CODEGEN_ASSERT(!byte_buffer->Valid());
     /// Create an empty raw byte buffer and look at its underlying slice buffer
-    grpc_byte_buffer* bp =
-        g_core_codegen_interface->grpc_raw_byte_buffer_create(nullptr, 0);
+    grpc_byte_buffer* bp = g_core_codegen_interface->grpc_raw_byte_buffer_create(nullptr, 0);
     byte_buffer->set_buffer(bp);
     slice_buffer_ = &bp->data.raw.slice_buffer;
   }
@@ -97,12 +93,10 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
     } else {
       // When less than a whole block is needed, only allocate that much.
       // But make sure the allocated slice is not inlined.
-      size_t allocate_length =
-          remain > static_cast<size_t>(block_size_) ? block_size_ : remain;
-      slice_ = g_core_codegen_interface->grpc_slice_malloc(
-          allocate_length > GRPC_SLICE_INLINED_SIZE
-              ? allocate_length
-              : GRPC_SLICE_INLINED_SIZE + 1);
+      size_t allocate_length = remain > static_cast<size_t>(block_size_) ? block_size_ : remain;
+      slice_ = g_core_codegen_interface->grpc_slice_malloc(allocate_length > GRPC_SLICE_INLINED_SIZE
+                                                               ? allocate_length
+                                                               : GRPC_SLICE_INLINED_SIZE + 1);
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
@@ -151,15 +145,14 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
  private:
   // friend for testing purposes only
   friend class internal::ProtoBufferWriterPeer;
-  const int block_size_;  ///< size to alloc for each new \a grpc_slice needed
-  const int total_size_;  ///< byte size of proto being serialized
-  int64_t byte_count_;    ///< bytes written since this object was created
-  grpc_slice_buffer*
-      slice_buffer_;  ///< internal buffer of slices holding the serialized data
-  bool have_backup_;  ///< if we are holding a backup slice or not
-  grpc_slice backup_slice_;  ///< holds space we can still write to, if the
-                             ///< caller has called BackUp
-  grpc_slice slice_;         ///< current slice passed back to the caller
+  const int block_size_;             ///< size to alloc for each new \a grpc_slice needed
+  const int total_size_;             ///< byte size of proto being serialized
+  int64_t byte_count_;               ///< bytes written since this object was created
+  grpc_slice_buffer* slice_buffer_;  ///< internal buffer of slices holding the serialized data
+  bool have_backup_;                 ///< if we are holding a backup slice or not
+  grpc_slice backup_slice_;          ///< holds space we can still write to, if the
+                                     ///< caller has called BackUp
+  grpc_slice slice_;                 ///< current slice passed back to the caller
 };
 
 }  // namespace grpc

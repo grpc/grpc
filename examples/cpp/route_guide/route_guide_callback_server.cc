@@ -70,8 +70,7 @@ float GetDistance(const Point& start, const Point& end) {
   return R * c;
 }
 
-std::string GetFeatureName(const Point& point,
-                           const std::vector<Feature>& feature_list) {
+std::string GetFeatureName(const Point& point, const std::vector<Feature>& feature_list) {
   for (const Feature& f : feature_list) {
     if (f.location().latitude() == point.latitude() &&
         f.location().longitude() == point.longitude()) {
@@ -83,12 +82,9 @@ std::string GetFeatureName(const Point& point,
 
 class RouteGuideImpl final : public RouteGuide::CallbackService {
  public:
-  explicit RouteGuideImpl(const std::string& db) {
-    routeguide::ParseDb(db, &feature_list_);
-  }
+  explicit RouteGuideImpl(const std::string& db) { routeguide::ParseDb(db, &feature_list_); }
 
-  grpc::ServerUnaryReactor* GetFeature(CallbackServerContext* context,
-                                       const Point* point,
+  grpc::ServerUnaryReactor* GetFeature(CallbackServerContext* context, const Point* point,
                                        Feature* feature) override {
     feature->set_name(GetFeatureName(*point, feature_list_));
     feature->mutable_location()->CopyFrom(*point);
@@ -97,21 +93,15 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
     return reactor;
   }
 
-  grpc::ServerWriteReactor<Feature>* ListFeatures(
-      CallbackServerContext* context,
-      const routeguide::Rectangle* rectangle) override {
+  grpc::ServerWriteReactor<Feature>* ListFeatures(CallbackServerContext* context,
+                                                  const routeguide::Rectangle* rectangle) override {
     class Lister : public grpc::ServerWriteReactor<Feature> {
      public:
-      Lister(const routeguide::Rectangle* rectangle,
-             const std::vector<Feature>* feature_list)
-          : left_((std::min)(rectangle->lo().longitude(),
-                             rectangle->hi().longitude())),
-            right_((std::max)(rectangle->lo().longitude(),
-                              rectangle->hi().longitude())),
-            top_((std::max)(rectangle->lo().latitude(),
-                            rectangle->hi().latitude())),
-            bottom_((std::min)(rectangle->lo().latitude(),
-                               rectangle->hi().latitude())),
+      Lister(const routeguide::Rectangle* rectangle, const std::vector<Feature>* feature_list)
+          : left_((std::min)(rectangle->lo().longitude(), rectangle->hi().longitude())),
+            right_((std::max)(rectangle->lo().longitude(), rectangle->hi().longitude())),
+            top_((std::max)(rectangle->lo().latitude(), rectangle->hi().latitude())),
+            bottom_((std::min)(rectangle->lo().latitude(), rectangle->hi().latitude())),
             feature_list_(feature_list),
             next_feature_(feature_list_->begin()) {
         NextWrite();
@@ -124,10 +114,8 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
         while (next_feature_ != feature_list_->end()) {
           const Feature& f = *next_feature_;
           next_feature_++;
-          if (f.location().longitude() >= left_ &&
-              f.location().longitude() <= right_ &&
-              f.location().latitude() >= bottom_ &&
-              f.location().latitude() <= top_) {
+          if (f.location().longitude() >= left_ && f.location().longitude() <= right_ &&
+              f.location().latitude() >= bottom_ && f.location().latitude() <= top_) {
             StartWrite(&f);
             return;
           }
@@ -150,9 +138,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
     class Recorder : public grpc::ServerReadReactor<Point> {
      public:
       Recorder(RouteSummary* summary, const std::vector<Feature>* feature_list)
-          : start_time_(system_clock::now()),
-            summary_(summary),
-            feature_list_(feature_list) {
+          : start_time_(system_clock::now()), summary_(summary), feature_list_(feature_list) {
         StartRead(&point_);
       }
       void OnDone() { delete this; }
@@ -171,8 +157,8 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           summary_->set_point_count(point_count_);
           summary_->set_feature_count(feature_count_);
           summary_->set_distance(static_cast<long>(distance_));
-          auto secs = std::chrono::duration_cast<std::chrono::seconds>(
-              system_clock::now() - start_time_);
+          auto secs =
+              std::chrono::duration_cast<std::chrono::seconds>(system_clock::now() - start_time_);
           summary_->set_elapsed_time(secs.count());
           Finish(Status::OK);
         }

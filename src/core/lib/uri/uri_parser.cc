@@ -52,8 +52,7 @@ std::string PercentDecode(absl::string_view str) {
       continue;
     }
     if (i + 3 >= str.length() ||
-        !absl::CUnescape(absl::StrCat("\\x", str.substr(i + 1, 2)),
-                         &unescaped) ||
+        !absl::CUnescape(absl::StrCat("\\x", str.substr(i + 1, 2)), &unescaped) ||
         unescaped.length() > 1) {
       out += str[i];
     } else {
@@ -70,15 +69,13 @@ bool IsPCharString(absl::string_view str) {
   return (str.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                 "abcdefghijklmnopqrstuvwxyz"
                                 "0123456789"
-                                "?/:@\\-._~!$&'()*+,;=%") ==
-          absl::string_view::npos);
+                                "?/:@\\-._~!$&'()*+,;=%") == absl::string_view::npos);
 }
 
-absl::Status MakeInvalidURIStatus(absl::string_view part_name,
-                                  absl::string_view uri,
+absl::Status MakeInvalidURIStatus(absl::string_view part_name, absl::string_view uri,
                                   absl::string_view extra) {
-  return absl::InvalidArgumentError(absl::StrFormat(
-      "Could not parse '%s' from uri '%s'. %s", part_name, uri, extra));
+  return absl::InvalidArgumentError(
+      absl::StrFormat("Could not parse '%s' from uri '%s'. %s", part_name, uri, extra));
 }
 }  // namespace
 
@@ -94,21 +91,18 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   if (scheme.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                "abcdefghijklmnopqrstuvwxyz"
                                "0123456789+-.") != std::string::npos) {
-    return MakeInvalidURIStatus("scheme", uri_text,
-                                "Scheme contains invalid characters.");
+    return MakeInvalidURIStatus("scheme", uri_text, "Scheme contains invalid characters.");
   }
   if (!isalpha(scheme[0])) {
-    return MakeInvalidURIStatus(
-        "scheme", uri_text,
-        "Scheme must begin with an alpha character [A-Za-z].");
+    return MakeInvalidURIStatus("scheme", uri_text,
+                                "Scheme must begin with an alpha character [A-Za-z].");
   }
   remaining.remove_prefix(scheme.length() + 1);
   // parse authority
   std::string authority;
   if (absl::StartsWith(remaining, "//")) {
     remaining.remove_prefix(2);
-    authority =
-        PercentDecode(remaining.substr(0, remaining.find_first_of("/?#")));
+    authority = PercentDecode(remaining.substr(0, remaining.find_first_of("/?#")));
     remaining.remove_prefix(authority.length());
   }
   // parse path
@@ -133,8 +127,8 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
       const std::pair<absl::string_view, absl::string_view> possible_kv =
           absl::StrSplit(query_param, absl::MaxSplits('=', 1));
       if (possible_kv.first.empty()) continue;
-      query_param_pairs.push_back({PercentDecode(possible_kv.first),
-                                   PercentDecode(possible_kv.second)});
+      query_param_pairs.push_back(
+          {PercentDecode(possible_kv.first), PercentDecode(possible_kv.second)});
     }
     remaining.remove_prefix(tmp_query.length());
   }
@@ -142,13 +136,12 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   if (!remaining.empty() && remaining[0] == '#') {
     remaining.remove_prefix(1);
     if (!IsPCharString(remaining)) {
-      return MakeInvalidURIStatus("fragment", uri_text,
-                                  "Fragment contains invalid characters.");
+      return MakeInvalidURIStatus("fragment", uri_text, "Fragment contains invalid characters.");
     }
     fragment = PercentDecode(remaining);
   }
-  return URI(std::move(scheme), std::move(authority), std::move(path),
-             std::move(query_param_pairs), std::move(fragment));
+  return URI(std::move(scheme), std::move(authority), std::move(path), std::move(query_param_pairs),
+             std::move(fragment));
 }
 
 URI::URI(std::string scheme, std::string authority, std::string path,

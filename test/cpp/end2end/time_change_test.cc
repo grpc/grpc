@@ -141,18 +141,15 @@ class TimeChangeTest : public ::testing::Test {
     }));
     GPR_ASSERT(server_);
     // connect to server and make sure it's reachable.
-    auto channel =
-        grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+    auto channel = grpc::CreateChannel(server_address_, InsecureChannelCredentials());
     GPR_ASSERT(channel);
-    EXPECT_TRUE(channel->WaitForConnected(
-        grpc_timeout_milliseconds_to_deadline(30000)));
+    EXPECT_TRUE(channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(30000)));
   }
 
   static void TearDownTestCase() { server_.reset(); }
 
   void SetUp() override {
-    channel_ =
-        grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_, InsecureChannelCredentials());
     GPR_ASSERT(channel_);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
@@ -187,8 +184,7 @@ TEST_F(TimeChangeTest, TimeJumpForwardBeforeStreamCreated) {
 
   auto channel = GetChannel();
   GPR_ASSERT(channel);
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
 
   // time jumps forward by TIME_OFFSET1 milliseconds
@@ -214,8 +210,7 @@ TEST_F(TimeChangeTest, TimeJumpBackBeforeStreamCreated) {
 
   auto channel = GetChannel();
   GPR_ASSERT(channel);
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
 
   // time jumps back by TIME_OFFSET1 milliseconds
@@ -242,8 +237,7 @@ TEST_F(TimeChangeTest, TimeJumpForwardAfterStreamCreated) {
 
   auto channel = GetChannel();
   GPR_ASSERT(channel);
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
 
   auto stream = stub->BidiStream(&context);
@@ -274,8 +268,7 @@ TEST_F(TimeChangeTest, TimeJumpBackAfterStreamCreated) {
 
   auto channel = GetChannel();
   GPR_ASSERT(channel);
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
 
   auto stream = stub->BidiStream(&context);
@@ -307,8 +300,7 @@ TEST_F(TimeChangeTest, TimeJumpForwardAndBackDuringCall) {
   auto channel = GetChannel();
   GPR_ASSERT(channel);
 
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
   auto stream = stub->BidiStream(&context);
 

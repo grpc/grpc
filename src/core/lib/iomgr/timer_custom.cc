@@ -30,8 +30,7 @@
 
 static grpc_custom_timer_vtable* custom_timer_impl;
 
-void grpc_custom_timer_callback(grpc_custom_timer* t,
-                                grpc_error_handle /*error*/) {
+void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error_handle /*error*/) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
@@ -43,8 +42,7 @@ void grpc_custom_timer_callback(grpc_custom_timer* t,
   gpr_free(t);
 }
 
-static void timer_init(grpc_timer* timer, grpc_millis deadline,
-                       grpc_closure* closure) {
+static void timer_init(grpc_timer* timer, grpc_millis deadline, grpc_closure* closure) {
   uint64_t timeout;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
@@ -70,8 +68,7 @@ static void timer_cancel(grpc_timer* timer) {
   grpc_custom_timer* tw = static_cast<grpc_custom_timer*>(timer->custom_timer);
   if (timer->pending) {
     timer->pending = false;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
-                            GRPC_ERROR_CANCELLED);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_CANCELLED);
     custom_timer_impl->stop(tw);
     gpr_free(tw);
   }
@@ -86,9 +83,9 @@ static void timer_list_shutdown() {}
 
 static void timer_consume_kick(void) {}
 
-static grpc_timer_vtable custom_timer_vtable = {
-    timer_init,      timer_cancel,        timer_check,
-    timer_list_init, timer_list_shutdown, timer_consume_kick};
+static grpc_timer_vtable custom_timer_vtable = {timer_init,          timer_cancel,
+                                                timer_check,         timer_list_init,
+                                                timer_list_shutdown, timer_consume_kick};
 
 void grpc_custom_timer_init(grpc_custom_timer_vtable* impl) {
   custom_timer_impl = impl;

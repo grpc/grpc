@@ -43,8 +43,7 @@ typedef struct grpc_httpcli_context {
 
 struct grpc_httpcli_handshaker {
   const char* default_port;
-  void (*handshake)(void* arg, grpc_endpoint* endpoint, const char* host,
-                    grpc_millis deadline,
+  void (*handshake)(void* arg, grpc_endpoint* endpoint, const char* host, grpc_millis deadline,
                     void (*on_done)(void* arg, grpc_endpoint* endpoint));
 };
 extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;
@@ -79,11 +78,9 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context);
      destroyed once the call returns
    'deadline' contains a deadline for the request (or gpr_inf_future)
    'on_response' is a callback to report results to */
-void grpc_httpcli_get(grpc_httpcli_context* context,
-                      grpc_polling_entity* pollent,
-                      grpc_resource_quota* resource_quota,
-                      const grpc_httpcli_request* request, grpc_millis deadline,
-                      grpc_closure* on_done, grpc_httpcli_response* response);
+void grpc_httpcli_get(grpc_httpcli_context* context, grpc_polling_entity* pollent,
+                      grpc_resource_quota* resource_quota, const grpc_httpcli_request* request,
+                      grpc_millis deadline, grpc_closure* on_done, grpc_httpcli_response* response);
 
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
@@ -99,27 +96,20 @@ void grpc_httpcli_get(grpc_httpcli_context* context,
      lifetime of the request
    'on_response' is a callback to report results to
    Does not support ?var1=val1&var2=val2 in the path. */
-void grpc_httpcli_post(grpc_httpcli_context* context,
-                       grpc_polling_entity* pollent,
-                       grpc_resource_quota* resource_quota,
-                       const grpc_httpcli_request* request,
-                       const char* body_bytes, size_t body_size,
-                       grpc_millis deadline, grpc_closure* on_done,
-                       grpc_httpcli_response* response);
+void grpc_httpcli_post(grpc_httpcli_context* context, grpc_polling_entity* pollent,
+                       grpc_resource_quota* resource_quota, const grpc_httpcli_request* request,
+                       const char* body_bytes, size_t body_size, grpc_millis deadline,
+                       grpc_closure* on_done, grpc_httpcli_response* response);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request,
-                                         grpc_millis deadline,
+typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request, grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
 typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
-                                          const char* body_bytes,
-                                          size_t body_size,
-                                          grpc_millis deadline,
-                                          grpc_closure* on_complete,
+                                          const char* body_bytes, size_t body_size,
+                                          grpc_millis deadline, grpc_closure* on_complete,
                                           grpc_httpcli_response* response);
 
-void grpc_httpcli_set_override(grpc_httpcli_get_override get,
-                               grpc_httpcli_post_override post);
+void grpc_httpcli_set_override(grpc_httpcli_get_override get, grpc_httpcli_post_override post);
 
 #endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_H */

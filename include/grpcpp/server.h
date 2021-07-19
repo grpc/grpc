@@ -99,9 +99,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* c_server();
 
   /// Returns the health check service.
-  HealthCheckServiceInterface* GetHealthCheckService() const {
-    return health_check_service_.get();
-  }
+  HealthCheckServiceInterface* GetHealthCheckService() const { return health_check_service_.get(); }
 
   /// Establish a channel for in-process communication
   std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
@@ -117,8 +115,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     /// interceptors
     std::shared_ptr<Channel> InProcessChannelWithInterceptors(
         const ChannelArguments& args,
-        std::vector<
-            std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
             interceptor_creators);
 
    private:
@@ -148,8 +145,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It is an error to call this method on an already started server.
-  int AddListeningPort(const std::string& addr,
-                       ServerCredentials* creds) override;
+  int AddListeningPort(const std::string& addr, ServerCredentials* creds) override;
 
   /// NOTE: This is *NOT* a public API. The server constructors are supposed to
   /// be used by \a ServerBuilder class only. The constructor will be made
@@ -174,17 +170,14 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
   Server(ChannelArguments* args,
-         std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
-             sync_server_cqs,
+         std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>> sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-         std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>>
-             acceptors,
+         std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>> acceptors,
          grpc_server_config_fetcher* server_config_fetcher = nullptr,
          grpc_resource_quota* server_rq = nullptr,
-         std::vector<
-             std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
-             interceptor_creators = std::vector<std::unique_ptr<
-                 experimental::ServerInterceptorFactoryInterface>>());
+         std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+             interceptor_creators =
+                 std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>());
 
   /// Start the server.
   ///
@@ -198,17 +191,14 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
  protected:
   /// NOTE: This method is not part of the public API for this class.
-  void set_health_check_service(
-      std::unique_ptr<HealthCheckServiceInterface> service) {
+  void set_health_check_service(std::unique_ptr<HealthCheckServiceInterface> service) {
     health_check_service_ = std::move(service);
   }
 
   ContextAllocator* context_allocator() { return context_allocator_.get(); }
 
   /// NOTE: This method is not part of the public API for this class.
-  bool health_check_service_disabled() const {
-    return health_check_service_disabled_;
-  }
+  bool health_check_service_disabled() const { return health_check_service_disabled_; }
 
  private:
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
@@ -242,20 +232,15 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// Server instance.
   void RegisterCallbackGenericService(CallbackGenericService* service) override;
 
-  void RegisterContextAllocator(
-      std::unique_ptr<ContextAllocator> context_allocator) {
+  void RegisterContextAllocator(std::unique_ptr<ContextAllocator> context_allocator) {
     context_allocator_ = std::move(context_allocator);
   }
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override;
+  void PerformOpsOnCall(internal::CallOpSetInterface* ops, internal::Call* call) override;
 
-  void ShutdownInternal(gpr_timespec deadline)
-      ABSL_LOCKS_EXCLUDED(mu_) override;
+  void ShutdownInternal(gpr_timespec deadline) ABSL_LOCKS_EXCLUDED(mu_) override;
 
-  int max_receive_message_size() const override {
-    return max_receive_message_size_;
-  }
+  int max_receive_message_size() const override { return max_receive_message_size_; }
 
   CompletionQueue* CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override;
 
@@ -268,8 +253,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   void UnrefWithPossibleNotify() ABSL_LOCKS_EXCLUDED(mu_);
   void UnrefAndWaitLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>>
-      acceptors_;
+  std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>> acceptors_;
 
   // A vector of interceptor factory objects.
   // This should be destroyed after health_check_service_ and this requirement
@@ -284,8 +268,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// The following completion queues are ONLY used in case of Sync API
   /// i.e. if the server has any services with sync methods. The server uses
   /// these completion queues to poll for new RPCs
-  std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
-      sync_server_cqs_;
+  std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>> sync_server_cqs_;
 
   /// List of \a ThreadManager instances (one for each cq in
   /// the \a sync_server_cqs)
@@ -295,8 +278,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   internal::Mutex mu_;
   bool started_;
   bool shutdown_ ABSL_GUARDED_BY(mu_);
-  bool shutdown_notified_
-      ABSL_GUARDED_BY(mu_);  // Was notify called on the shutdown_cv_
+  bool shutdown_notified_ ABSL_GUARDED_BY(mu_);  // Was notify called on the shutdown_cv_
   internal::CondVar shutdown_done_cv_;
   bool shutdown_done_ ABSL_GUARDED_BY(mu_) = false;
   std::atomic_int shutdown_refs_outstanding_{1};

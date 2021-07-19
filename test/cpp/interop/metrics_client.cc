@@ -33,10 +33,8 @@ int kDeadlineSecs = 10;
 ABSL_FLAG(std::string, metrics_server_address, "localhost:8081",
           "The metrics server addresses in the fomrat <hostname>:<port>");
 // TODO(Capstan): Consider using absl::Duration
-ABSL_FLAG(int32_t, deadline_secs, kDeadlineSecs,
-          "The deadline (in seconds) for RCP call");
-ABSL_FLAG(bool, total_only, false,
-          "If true, this prints only the total value of all gauges");
+ABSL_FLAG(int32_t, deadline_secs, kDeadlineSecs, "The deadline (in seconds) for RCP call");
+ABSL_FLAG(bool, total_only, false, "If true, this prints only the total value of all gauges");
 
 using grpc::testing::EmptyMessage;
 using grpc::testing::GaugeResponse;
@@ -47,8 +45,7 @@ void BlackholeLogger(gpr_log_func_args* /*args*/) {}
 
 // Prints the values of all Gauges (unless total_only is set to 'true' in which
 // case this only prints the sum of all gauge values).
-bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
-                  int deadline_secs) {
+bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only, int deadline_secs) {
   grpc::ClientContext context;
   EmptyMessage message;
 
@@ -57,21 +54,18 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
 
   context.set_deadline(deadline);
 
-  std::unique_ptr<grpc::ClientReader<GaugeResponse>> reader(
-      stub->GetAllGauges(&context, message));
+  std::unique_ptr<grpc::ClientReader<GaugeResponse>> reader(stub->GetAllGauges(&context, message));
 
   GaugeResponse gauge_response;
   long overall_qps = 0;
   while (reader->Read(&gauge_response)) {
     if (gauge_response.value_case() == GaugeResponse::kLongValue) {
       if (!total_only) {
-        std::cout << gauge_response.name() << ": "
-                  << gauge_response.long_value() << std::endl;
+        std::cout << gauge_response.name() << ": " << gauge_response.long_value() << std::endl;
       }
       overall_qps += gauge_response.long_value();
     } else {
-      std::cout << "Gauge '" << gauge_response.name() << "' is not long valued"
-                << std::endl;
+      std::cout << "Gauge '" << gauge_response.name() << "' is not long valued" << std::endl;
     }
   }
 
@@ -93,12 +87,10 @@ int main(int argc, char** argv) {
   // from the grpc library appearing on stdout.
   gpr_set_log_function(BlackholeLogger);
 
-  std::shared_ptr<grpc::Channel> channel(
-      grpc::CreateChannel(absl::GetFlag(FLAGS_metrics_server_address),
-                          grpc::InsecureChannelCredentials()));
+  std::shared_ptr<grpc::Channel> channel(grpc::CreateChannel(
+      absl::GetFlag(FLAGS_metrics_server_address), grpc::InsecureChannelCredentials()));
 
-  if (!PrintMetrics(MetricsService::NewStub(channel),
-                    absl::GetFlag(FLAGS_total_only),
+  if (!PrintMetrics(MetricsService::NewStub(channel), absl::GetFlag(FLAGS_total_only),
                     absl::GetFlag(FLAGS_deadline_secs))) {
     return 1;
   }

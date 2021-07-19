@@ -37,9 +37,7 @@ namespace {
 // SliceBufferByteStream tests
 //
 
-void NotCalledClosure(void* /*arg*/, grpc_error_handle /*error*/) {
-  GPR_ASSERT(false);
-}
+void NotCalledClosure(void* /*arg*/, grpc_error_handle /*error*/) { GPR_ASSERT(false); }
 
 TEST(SliceBufferByteStream, Basic) {
   grpc_core::ExecCtx exec_ctx;
@@ -58,8 +56,7 @@ TEST(SliceBufferByteStream, Basic) {
   grpc_slice_buffer_destroy_internal(&buffer);
   EXPECT_EQ(6U, stream.length());
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr, grpc_schedule_on_exec_ctx);
   // Read each slice.  Note that Next() always returns synchronously.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
     ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
@@ -90,8 +87,7 @@ TEST(SliceBufferByteStream, Shutdown) {
   grpc_slice_buffer_destroy_internal(&buffer);
   EXPECT_EQ(6U, stream.length());
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr, grpc_schedule_on_exec_ctx);
   // Read the first slice.
   ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
   grpc_slice output;
@@ -100,8 +96,7 @@ TEST(SliceBufferByteStream, Shutdown) {
   EXPECT_TRUE(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(output);
   // Now shutdown.
-  grpc_error_handle shutdown_error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown error");
+  grpc_error_handle shutdown_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown error");
   stream.Shutdown(GRPC_ERROR_REF(shutdown_error));
   // After shutdown, the next pull() should return the error.
   ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
@@ -135,8 +130,7 @@ TEST(CachingByteStream, Basic) {
   ByteStreamCache cache((OrphanablePtr<ByteStream>(&underlying_stream)));
   ByteStreamCache::CachingByteStream stream(&cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr, grpc_schedule_on_exec_ctx);
   // Read each slice.  Note that next() always returns synchronously,
   // because the underlying byte stream always does.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
@@ -170,8 +164,7 @@ TEST(CachingByteStream, Reset) {
   ByteStreamCache cache((OrphanablePtr<ByteStream>(&underlying_stream)));
   ByteStreamCache::CachingByteStream stream(&cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr, grpc_schedule_on_exec_ctx);
   // Read one slice.
   ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
   grpc_slice output;
@@ -213,8 +206,7 @@ TEST(CachingByteStream, SharedCache) {
   ByteStreamCache::CachingByteStream stream1(&cache);
   ByteStreamCache::CachingByteStream stream2(&cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr, grpc_schedule_on_exec_ctx);
   // Read one slice from stream1.
   EXPECT_TRUE(stream1.Next(~(size_t)0, &closure));
   grpc_slice output;

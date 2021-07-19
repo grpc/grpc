@@ -42,16 +42,15 @@ class SecureChannelCredentials final : public ChannelCredentials {
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
-  std::shared_ptr<Channel> CreateChannelImpl(
-      const std::string& target, const ChannelArguments& args) override;
+  std::shared_ptr<Channel> CreateChannelImpl(const std::string& target,
+                                             const ChannelArguments& args) override;
 
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
   std::shared_ptr<Channel> CreateChannelWithInterceptors(
       const std::string& target, const ChannelArguments& args,
-      std::vector<std::unique_ptr<
-          ::grpc::experimental::ClientInterceptorFactoryInterface>>
+      std::vector<std::unique_ptr<::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
   grpc_channel_credentials* const c_creds_;
 };
@@ -67,8 +66,7 @@ class SecureCallCredentials final : public CallCredentials {
   bool ApplyToCall(grpc_call* call) override;
   SecureCallCredentials* AsSecureCredentials() override { return this; }
   std::string DebugString() override {
-    return absl::StrCat("SecureCallCredentials{",
-                        std::string(c_creds_->debug_string()), "}");
+    return absl::StrCat("SecureCallCredentials{", std::string(c_creds_->debug_string()), "}");
   }
 
  private:
@@ -77,8 +75,7 @@ class SecureCallCredentials final : public CallCredentials {
 
 namespace internal {
 
-std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
-    grpc_channel_credentials* creds);
+std::shared_ptr<ChannelCredentials> WrapChannelCredentials(grpc_channel_credentials* creds);
 
 }  // namespace internal
 
@@ -87,32 +84,28 @@ namespace experimental {
 // Transforms C++ STS Credentials options to core options. The pointers of the
 // resulting core options point to the memory held by the C++ options so C++
 // options need to be kept alive until after the core credentials creation.
-grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
-    const StsCredentialsOptions& options);
+grpc_sts_credentials_options StsCredentialsCppToCoreOptions(const StsCredentialsOptions& options);
 
 }  // namespace experimental
 
 class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
  public:
   static void Destroy(void* wrapper);
-  static int GetMetadata(
-      void* wrapper, grpc_auth_metadata_context context,
-      grpc_credentials_plugin_metadata_cb cb, void* user_data,
-      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-      size_t* num_creds_md, grpc_status_code* status,
-      const char** error_details);
+  static int GetMetadata(void* wrapper, grpc_auth_metadata_context context,
+                         grpc_credentials_plugin_metadata_cb cb, void* user_data,
+                         grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                         size_t* num_creds_md, grpc_status_code* status,
+                         const char** error_details);
   static char* DebugString(void* wrapper);
 
-  explicit MetadataCredentialsPluginWrapper(
-      std::unique_ptr<MetadataCredentialsPlugin> plugin);
+  explicit MetadataCredentialsPluginWrapper(std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
  private:
-  void InvokePlugin(
-      grpc_auth_metadata_context context,
-      grpc_credentials_plugin_metadata_cb cb, void* user_data,
-      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-      size_t* num_creds_md, grpc_status_code* status_code,
-      const char** error_details);
+  void InvokePlugin(grpc_auth_metadata_context context, grpc_credentials_plugin_metadata_cb cb,
+                    void* user_data,
+                    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+                    size_t* num_creds_md, grpc_status_code* status_code,
+                    const char** error_details);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::unique_ptr<MetadataCredentialsPlugin> plugin_;
 };

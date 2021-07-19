@@ -25,8 +25,7 @@
 #include "absl/flags/flag.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-ABSL_FLAG(bool, enable_log_reporter, true,
-          "Enable reporting of benchmark results through GprLog");
+ABSL_FLAG(bool, enable_log_reporter, true, "Enable reporting of benchmark results through GprLog");
 
 ABSL_FLAG(std::string, scenario_result_file, "",
           "Write JSON benchmark report to the file specified.");
@@ -47,10 +46,8 @@ ABSL_FLAG(std::string, rpc_reporter_server_address, "",
 
 ABSL_FLAG(bool, enable_rpc_reporter, false, "Enable use of RPC reporter");
 
-ABSL_FLAG(
-    std::string, rpc_reporter_credential_type,
-    grpc::testing::kInsecureCredentialsType,
-    "Credential type for communication to the QPS benchmark report server");
+ABSL_FLAG(std::string, rpc_reporter_credential_type, grpc::testing::kInsecureCredentialsType,
+          "Credential type for communication to the QPS benchmark report server");
 
 namespace grpc {
 namespace testing {
@@ -58,12 +55,11 @@ namespace testing {
 static std::shared_ptr<Reporter> InitBenchmarkReporters() {
   auto* composite_reporter = new CompositeReporter;
   if (absl::GetFlag(FLAGS_enable_log_reporter)) {
-    composite_reporter->add(
-        std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
+    composite_reporter->add(std::unique_ptr<Reporter>(new GprLogReporter("LogReporter")));
   }
   if (!absl::GetFlag(FLAGS_scenario_result_file).empty()) {
-    composite_reporter->add(std::unique_ptr<Reporter>(new JsonReporter(
-        "JsonReporter", absl::GetFlag(FLAGS_scenario_result_file))));
+    composite_reporter->add(std::unique_ptr<Reporter>(
+        new JsonReporter("JsonReporter", absl::GetFlag(FLAGS_scenario_result_file))));
   }
   if (absl::GetFlag(FLAGS_enable_rpc_reporter)) {
     ChannelArguments channel_args;
@@ -73,8 +69,7 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
     GPR_ASSERT(!absl::GetFlag(FLAGS_rpc_reporter_server_address).empty());
     composite_reporter->add(std::unique_ptr<Reporter>(new RpcReporter(
         "RpcReporter",
-        grpc::CreateChannel(absl::GetFlag(FLAGS_rpc_reporter_server_address),
-                            channel_creds))));
+        grpc::CreateChannel(absl::GetFlag(FLAGS_rpc_reporter_server_address), channel_creds))));
   }
 
   return std::shared_ptr<Reporter>(composite_reporter);

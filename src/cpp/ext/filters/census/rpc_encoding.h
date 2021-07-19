@@ -60,8 +60,7 @@ class RpcServerStatsEncoding {
       *time = 0;
       return kEncodeDecodeFailure;
     }
-    *time = absl::little_endian::Load64(
-        &buf[kServerElapsedTimeOffset + kFieldIdSize]);
+    *time = absl::little_endian::Load64(&buf[kServerElapsedTimeOffset + kFieldIdSize]);
     return kRpcServerStatsSize;
   }
 
@@ -76,8 +75,7 @@ class RpcServerStatsEncoding {
 
     buf[kVersionIdOffset] = kVersionId;
     buf[kServerElapsedTimeOffset] = kServerElapsedTimeField;
-    absl::little_endian::Store64(&buf[kServerElapsedTimeOffset + kFieldIdSize],
-                                 time);
+    absl::little_endian::Store64(&buf[kServerElapsedTimeOffset + kFieldIdSize], time);
     return kRpcServerStatsSize;
   }
 

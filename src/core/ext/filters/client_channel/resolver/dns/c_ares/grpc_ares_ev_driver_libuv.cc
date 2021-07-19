@@ -43,8 +43,7 @@ void ares_uv_poll_close_cb(uv_handle_t* handle) { delete handle; }
 
 class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
-  GrpcPolledFdLibuv(ares_socket_t as,
-                    std::shared_ptr<WorkSerializer> work_serializer)
+  GrpcPolledFdLibuv(ares_socket_t as, std::shared_ptr<WorkSerializer> work_serializer)
       : name_(absl::StrFormat("c-ares socket: %" PRIdPTR, (intptr_t)as)),
         as_(as),
         work_serializer_(std::move(work_serializer)) {
@@ -79,12 +78,10 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     uv_poll_stop(handle_);
     uv_close(reinterpret_cast<uv_handle_t*>(handle_), ares_uv_poll_close_cb);
     if (read_closure_ != nullptr) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_,
-                              GRPC_ERROR_CANCELLED);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_, GRPC_ERROR_CANCELLED);
     }
     if (write_closure_ != nullptr) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, write_closure_,
-                              GRPC_ERROR_CANCELLED);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, write_closure_, GRPC_ERROR_CANCELLED);
     }
   }
 
@@ -125,14 +122,12 @@ static void ares_uv_poll_cb_locked(AresUvPollCbArg* arg) {
   uv_poll_t* handle = arg_struct->handle;
   int status = arg_struct->status;
   int events = arg_struct->events;
-  GrpcPolledFdLibuv* polled_fd =
-      reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
+  GrpcPolledFdLibuv* polled_fd = reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (status < 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("cares polling error");
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                           grpc_slice_from_static_string(uv_strerror(status)));
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                               grpc_slice_from_static_string(uv_strerror(status)));
   }
   if (events & UV_READABLE) {
     GPR_ASSERT(polled_fd->read_closure_ != nullptr);
@@ -151,18 +146,15 @@ static void ares_uv_poll_cb_locked(AresUvPollCbArg* arg) {
 
 void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
   grpc_core::ExecCtx exec_ctx;
-  GrpcPolledFdLibuv* polled_fd =
-      reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
+  GrpcPolledFdLibuv* polled_fd = reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
   AresUvPollCbArg* arg = new AresUvPollCbArg(handle, status, events);
-  polled_fd->work_serializer_->Run([arg]() { ares_uv_poll_cb_locked(arg); },
-                                   DEBUG_LOCATION);
+  polled_fd->work_serializer_->Run([arg]() { ares_uv_poll_cb_locked(arg); }, DEBUG_LOCATION);
 }
 
 class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
  public:
-  GrpcPolledFd* NewGrpcPolledFdLocked(
-      ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      std::shared_ptr<WorkSerializer> work_serializer) override {
+  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as, grpc_pollset_set* driver_pollset_set,
+                                      std::shared_ptr<WorkSerializer> work_serializer) override {
     return new GrpcPolledFdLibuv(as, std::move(work_serializer));
   }
 

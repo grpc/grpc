@@ -46,21 +46,17 @@
 /** Get the \a n-th bit of \a i */
 #define GPR_BITGET(i, n) (((i) & (1u << (n))) != 0)
 
-#define GPR_INTERNAL_HEXDIGIT_BITCOUNT(x)                        \
-  ((x) - (((x) >> 1) & 0x77777777) - (((x) >> 2) & 0x33333333) - \
-   (((x) >> 3) & 0x11111111))
+#define GPR_INTERNAL_HEXDIGIT_BITCOUNT(x) \
+  ((x) - (((x) >> 1) & 0x77777777) - (((x) >> 2) & 0x33333333) - (((x) >> 3) & 0x11111111))
 
 /** Returns number of bits set in bitset \a i */
-#define GPR_BITCOUNT(i)                          \
-  (((GPR_INTERNAL_HEXDIGIT_BITCOUNT(i) +         \
-     (GPR_INTERNAL_HEXDIGIT_BITCOUNT(i) >> 4)) & \
-    0x0f0f0f0f) %                                \
+#define GPR_BITCOUNT(i)                                                                            \
+  (((GPR_INTERNAL_HEXDIGIT_BITCOUNT(i) + (GPR_INTERNAL_HEXDIGIT_BITCOUNT(i) >> 4)) & 0x0f0f0f0f) % \
    255)
 
 #define GPR_ICMP(a, b) ((a) < (b) ? -1 : ((a) > (b) ? 1 : 0))
 
-#define GPR_HASH_POINTER(x, range)                                         \
-  (((((size_t)(x)) >> 4) ^ (((size_t)(x)) >> 9) ^ (((size_t)(x)) >> 14)) % \
-   (range))
+#define GPR_HASH_POINTER(x, range) \
+  (((((size_t)(x)) >> 4) ^ (((size_t)(x)) >> 9) ^ (((size_t)(x)) >> 14)) % (range))
 
 #endif /* GRPC_CORE_LIB_GPR_USEFUL_H */

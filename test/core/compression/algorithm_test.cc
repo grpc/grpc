@@ -42,10 +42,8 @@ static void test_algorithm_mesh(void) {
     grpc_slice mdstr;
     grpc_mdelem mdelem;
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(
-        grpc_compression_algorithm_name((grpc_compression_algorithm)i, &name));
-    GPR_ASSERT(grpc_compression_algorithm_parse(
-        grpc_slice_from_static_string(name), &parsed));
+    GPR_ASSERT(grpc_compression_algorithm_name((grpc_compression_algorithm)i, &name));
+    GPR_ASSERT(grpc_compression_algorithm_parse(grpc_slice_from_static_string(name), &parsed));
     GPR_ASSERT((int)parsed == i);
     mdstr = grpc_slice_from_copied_string(name);
     GPR_ASSERT(grpc_slice_eq(mdstr, grpc_compression_algorithm_slice(parsed)));
@@ -56,51 +54,41 @@ static void test_algorithm_mesh(void) {
       mdelem = grpc_message_compression_encoding_mdelem(
           grpc_compression_algorithm_to_message_compression_algorithm(parsed));
       grpc_slice value = GRPC_MDVALUE(mdelem);
-      GPR_ASSERT(0 == memcmp(&name[message_prefix_length],
-                             GRPC_SLICE_START_PTR(value),
+      GPR_ASSERT(0 == memcmp(&name[message_prefix_length], GRPC_SLICE_START_PTR(value),
                              GRPC_SLICE_LENGTH(value)));
       GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_GRPC_ENCODING));
     } else {
       mdelem = grpc_stream_compression_encoding_mdelem(
           grpc_compression_algorithm_to_stream_compression_algorithm(parsed));
       grpc_slice value = GRPC_MDVALUE(mdelem);
-      GPR_ASSERT(0 == memcmp(&name[stream_prefix_length],
-                             GRPC_SLICE_START_PTR(value),
+      GPR_ASSERT(0 == memcmp(&name[stream_prefix_length], GRPC_SLICE_START_PTR(value),
                              GRPC_SLICE_LENGTH(value)));
-      GPR_ASSERT(
-          grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_CONTENT_ENCODING));
+      GPR_ASSERT(grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_CONTENT_ENCODING));
     }
     grpc_slice_unref_internal(mdstr);
     GRPC_MDELEM_UNREF(mdelem);
   }
 
   /* test failure */
-  GPR_ASSERT(GRPC_MDISNULL(
-      grpc_compression_encoding_mdelem(GRPC_COMPRESS_ALGORITHMS_COUNT)));
+  GPR_ASSERT(GRPC_MDISNULL(grpc_compression_encoding_mdelem(GRPC_COMPRESS_ALGORITHMS_COUNT)));
 }
 
 static void test_algorithm_failure(void) {
   gpr_log(GPR_DEBUG, "test_algorithm_failure");
   // Test invalid algorithm name
-  grpc_slice mdstr =
-      grpc_slice_from_static_string("this-is-an-invalid-algorithm");
-  GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) ==
-             GRPC_COMPRESS_ALGORITHMS_COUNT);
+  grpc_slice mdstr = grpc_slice_from_static_string("this-is-an-invalid-algorithm");
+  GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) == GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_slice_unref_internal(mdstr);
   // Test invalid algorithm enum entry.
-  GPR_ASSERT(grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT,
-                                             nullptr) == 0);
-  GPR_ASSERT(
-      grpc_compression_algorithm_name(static_cast<grpc_compression_algorithm>(
-                                          GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
-                                      nullptr) == 0);
-  GPR_ASSERT(grpc_slice_eq(
-      grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT),
-      grpc_empty_slice()));
-  GPR_ASSERT(grpc_slice_eq(
-      grpc_compression_algorithm_slice(static_cast<grpc_compression_algorithm>(
-          static_cast<int>(GRPC_COMPRESS_ALGORITHMS_COUNT) + 1)),
-      grpc_empty_slice()));
+  GPR_ASSERT(grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT, nullptr) == 0);
+  GPR_ASSERT(grpc_compression_algorithm_name(
+                 static_cast<grpc_compression_algorithm>(GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
+                 nullptr) == 0);
+  GPR_ASSERT(grpc_slice_eq(grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT),
+                           grpc_empty_slice()));
+  GPR_ASSERT(grpc_slice_eq(grpc_compression_algorithm_slice(static_cast<grpc_compression_algorithm>(
+                               static_cast<int>(GRPC_COMPRESS_ALGORITHMS_COUNT) + 1)),
+                           grpc_empty_slice()));
 }
 
 int main(int argc, char** argv) {

@@ -56,10 +56,7 @@ static bool got_sigint = false;
 class ReconnectServiceImpl : public ReconnectService::Service {
  public:
   explicit ReconnectServiceImpl(int retry_port)
-      : retry_port_(retry_port),
-        serving_(false),
-        server_started_(false),
-        shutdown_(false) {
+      : retry_port_(retry_port), serving_(false), server_started_(false), shutdown_(false) {
     reconnect_server_init(&tcp_server_);
   }
 
@@ -85,8 +82,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     if (server_started_) {
       start_server = false;
     } else {
-      tcp_server_.max_reconnect_backoff_ms =
-          request->max_reconnect_backoff_ms();
+      tcp_server_.max_reconnect_backoff_ms = request->max_reconnect_backoff_ms();
       server_started_ = true;
     }
     lock.unlock();
@@ -115,14 +111,11 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     const double kTransmissionDelay = 100.0;
     const double kBackoffMultiplier = 1.6;
     const double kJitterFactor = 0.2;
-    const int kMaxBackoffMs = tcp_server_.max_reconnect_backoff_ms
-                                  ? tcp_server_.max_reconnect_backoff_ms
-                                  : 120 * 1000;
+    const int kMaxBackoffMs =
+        tcp_server_.max_reconnect_backoff_ms ? tcp_server_.max_reconnect_backoff_ms : 120 * 1000;
     bool passed = true;
-    for (timestamp_list* cur = tcp_server_.head; cur && cur->next;
-         cur = cur->next) {
-      double backoff = gpr_time_to_millis(
-          gpr_time_sub(cur->next->timestamp, cur->timestamp));
+    for (timestamp_list* cur = tcp_server_.head; cur && cur->next; cur = cur->next) {
+      double backoff = gpr_time_to_millis(gpr_time_sub(cur->next->timestamp, cur->timestamp));
       double min_backoff = expected_backoff * (1 - kJitterFactor);
       double max_backoff = expected_backoff * (1 + kJitterFactor);
       if (backoff < min_backoff - kTransmissionDelay ||
@@ -131,8 +124,7 @@ class ReconnectServiceImpl : public ReconnectService::Service {
       }
       response->add_backoff_ms(static_cast<int32_t>(backoff));
       expected_backoff *= kBackoffMultiplier;
-      expected_backoff =
-          expected_backoff > kMaxBackoffMs ? kMaxBackoffMs : expected_backoff;
+      expected_backoff = expected_backoff > kMaxBackoffMs ? kMaxBackoffMs : expected_backoff;
     }
     response->set_passed(passed);
   }
@@ -160,8 +152,7 @@ void RunServer() {
 
   ServerBuilder builder;
   builder.RegisterService(&service);
-  builder.AddListeningPort(server_address.str(),
-                           grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address.str(), grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
   while (!got_sigint) {

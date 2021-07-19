@@ -84,8 +84,7 @@ class BalancerServiceImpl : public LoadBalancer::Service {
     stream->Read(&request);
     while (!shutdown_) {
       stream->Write(BuildRandomResponseForBackends());
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(kServerlistUpdateIntervalMs));
+      std::this_thread::sleep_for(std::chrono::milliseconds(kServerlistUpdateIntervalMs));
     }
     gpr_log(GPR_INFO, "LB[%p]: Finish BalanceLoad.", this);
     return Status::OK;
@@ -104,8 +103,7 @@ class BalancerServiceImpl : public LoadBalancer::Service {
     // Generate a random serverlist with varying size (if N =
     // all_backend_ports_.size(), num_non_drop_entry is in [0, 2N],
     // num_drop_entry is in [0, N]), order, duplicate, and drop rate.
-    size_t num_non_drop_entry =
-        std::rand() % (all_backend_ports_.size() * 2 + 1);
+    size_t num_non_drop_entry = std::rand() % (all_backend_ports_.size() * 2 + 1);
     size_t num_drop_entry = std::rand() % (all_backend_ports_.size() + 1);
     std::vector<int> random_backend_indices;
     for (size_t i = 0; i < num_non_drop_entry; ++i) {
@@ -141,13 +139,12 @@ class ClientChannelStressTest {
     Start();
     // Keep updating resolution for the test duration.
     gpr_log(GPR_INFO, "Start updating resolution.");
-    const auto wait_duration =
-        std::chrono::milliseconds(kResolutionUpdateIntervalMs);
+    const auto wait_duration = std::chrono::milliseconds(kResolutionUpdateIntervalMs);
     std::vector<AddressData> addresses;
     auto start_time = std::chrono::steady_clock::now();
     while (true) {
-      if (std::chrono::duration_cast<std::chrono::seconds>(
-              std::chrono::steady_clock::now() - start_time)
+      if (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() -
+                                                           start_time)
               .count() > kTestDurationSec) {
         break;
       }
@@ -159,8 +156,7 @@ class ClientChannelStressTest {
           addresses.emplace_back(AddressData{balancer_server.port_, ""});
         }
       }
-      std::shuffle(addresses.begin(), addresses.end(),
-                   std::mt19937(std::random_device()()));
+      std::shuffle(addresses.begin(), addresses.end(), std::mt19937(std::random_device()()));
       SetNextResolution(addresses);
       std::this_thread::sleep_for(wait_duration);
     }
@@ -171,8 +167,7 @@ class ClientChannelStressTest {
  private:
   template <typename T>
   struct ServerThread {
-    explicit ServerThread(const std::string& type,
-                          const std::string& server_host, T* service)
+    explicit ServerThread(const std::string& type, const std::string& server_host, T* service)
         : type_(type), service_(service) {
       grpc::internal::Mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
@@ -195,8 +190,7 @@ class ClientChannelStressTest {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      builder.AddListeningPort(server_address.str(),
-                               InsecureServerCredentials());
+      builder.AddListeningPort(server_address.str(), InsecureServerCredentials());
       builder.RegisterService(service_);
       server_ = builder.BuildAndStart();
       cond->Signal();
@@ -230,10 +224,8 @@ class ClientChannelStressTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(
-          addr.balancer_name.c_str());
-      grpc_channel_args* args =
-          grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+      grpc_arg arg = grpc_core::CreateAuthorityOverrideChannelArg(addr.balancer_name.c_str());
+      grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
       addresses.emplace_back(address.addr, address.len, args);
     }
     return addresses;
@@ -277,14 +269,11 @@ class ClientChannelStressTest {
 
   void CreateStub() {
     ChannelArguments args;
-    response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_.get());
+    response_generator_ = grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR, response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
-    channel_ = ::grpc::CreateCustomChannel(uri.str(),
-                                           InsecureChannelCredentials(), args);
+    channel_ = ::grpc::CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -293,15 +282,15 @@ class ClientChannelStressTest {
     std::vector<int> backend_ports;
     for (size_t i = 0; i < kNumBackends; ++i) {
       backends_.emplace_back(new BackendServiceImpl());
-      backend_servers_.emplace_back(ServerThread<BackendServiceImpl>(
-          "backend", server_host_, backends_.back().get()));
+      backend_servers_.emplace_back(
+          ServerThread<BackendServiceImpl>("backend", server_host_, backends_.back().get()));
       backend_ports.push_back(backend_servers_.back().port_);
     }
     // Start the load balancers.
     for (size_t i = 0; i < kNumBalancers; ++i) {
       balancers_.emplace_back(new BalancerServiceImpl(backend_ports));
-      balancer_servers_.emplace_back(ServerThread<BalancerServiceImpl>(
-          "balancer", server_host_, balancers_.back().get()));
+      balancer_servers_.emplace_back(
+          ServerThread<BalancerServiceImpl>("balancer", server_host_, balancers_.back().get()));
     }
     // Start sending RPCs in multiple threads.
     CreateStub();
@@ -334,8 +323,7 @@ class ClientChannelStressTest {
   std::vector<std::unique_ptr<BalancerServiceImpl>> balancers_;
   std::vector<ServerThread<BackendServiceImpl>> backend_servers_;
   std::vector<ServerThread<BalancerServiceImpl>> balancer_servers_;
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator> response_generator_;
   std::vector<std::thread> client_threads_;
 };
 

@@ -28,33 +28,27 @@ namespace experimental {
 /** The C schedule and cancel functions for the server authorization check
  * config. They populate a C server authorization check arg with the result
  * of a C++ server authorization check schedule/cancel API. **/
-int TlsServerAuthorizationCheckConfigCSchedule(
-    void* /*config_user_data*/, grpc_tls_server_authorization_check_arg* arg) {
-  if (arg == nullptr || arg->config == nullptr ||
-      arg->config->context() == nullptr) {
-    gpr_log(GPR_ERROR,
-            "server authorization check arg was not properly initialized");
+int TlsServerAuthorizationCheckConfigCSchedule(void* /*config_user_data*/,
+                                               grpc_tls_server_authorization_check_arg* arg) {
+  if (arg == nullptr || arg->config == nullptr || arg->config->context() == nullptr) {
+    gpr_log(GPR_ERROR, "server authorization check arg was not properly initialized");
     return 1;
   }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg* cpp_arg =
-      new TlsServerAuthorizationCheckArg(arg);
+  TlsServerAuthorizationCheckArg* cpp_arg = new TlsServerAuthorizationCheckArg(arg);
   int schedule_result = cpp_config->Schedule(cpp_arg);
   return schedule_result;
 }
 
-void TlsServerAuthorizationCheckConfigCCancel(
-    void* /*config_user_data*/, grpc_tls_server_authorization_check_arg* arg) {
-  if (arg == nullptr || arg->config == nullptr ||
-      arg->config->context() == nullptr) {
-    gpr_log(GPR_ERROR,
-            "server authorization check arg was not properly initialized");
+void TlsServerAuthorizationCheckConfigCCancel(void* /*config_user_data*/,
+                                              grpc_tls_server_authorization_check_arg* arg) {
+  if (arg == nullptr || arg->config == nullptr || arg->config->context() == nullptr) {
+    gpr_log(GPR_ERROR, "server authorization check arg was not properly initialized");
     return;
   }
   if (arg->context == nullptr) {
-    gpr_log(GPR_ERROR,
-            "server authorization check arg schedule has already completed");
+    gpr_log(GPR_ERROR, "server authorization check arg schedule has already completed");
     return;
   }
   TlsServerAuthorizationCheckConfig* cpp_config =
@@ -66,8 +60,7 @@ void TlsServerAuthorizationCheckConfigCCancel(
 
 void TlsServerAuthorizationCheckArgDestroyContext(void* context) {
   if (context != nullptr) {
-    TlsServerAuthorizationCheckArg* cpp_arg =
-        static_cast<TlsServerAuthorizationCheckArg*>(context);
+    TlsServerAuthorizationCheckArg* cpp_arg = static_cast<TlsServerAuthorizationCheckArg*>(context);
     delete cpp_arg;
   }
 }

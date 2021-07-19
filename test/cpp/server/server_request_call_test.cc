@@ -95,19 +95,17 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       testing::EchoResponse response;
       response.set_message("foobar");
       // A bit of sleep to make sure the deadline elapses.
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                   gpr_time_from_millis(50, GPR_TIMESPAN)));
+      gpr_sleep_until(
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(50, GPR_TIMESPAN)));
       {
         std::lock_guard<std::mutex> lock(mu);
         if (shutting_down) {
-          gpr_log(GPR_INFO,
-                  "shut down while processing call, not calling Finish()");
+          gpr_log(GPR_INFO, "shut down while processing call, not calling Finish()");
           // Continue flushing the CQ.
           continue;
         }
         gpr_log(GPR_INFO, "Finishing request %d", n);
-        responder.Finish(response, grpc::Status::OK,
-                         reinterpret_cast<void*>(2));
+        responder.Finish(response, grpc::Status::OK, reinterpret_cast<void*>(2));
         if (!cq->Next(&tag, &ok)) {
           break;
         }
@@ -116,8 +114,8 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
     }
   });
 
-  auto stub = testing::EchoTestService::NewStub(
-      grpc::CreateChannel(address, InsecureChannelCredentials()));
+  auto stub =
+      testing::EchoTestService::NewStub(grpc::CreateChannel(address, InsecureChannelCredentials()));
 
   for (int i = 0; i < 100; i++) {
     gpr_log(GPR_INFO, "Sending %d.", i);
@@ -135,8 +133,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
     testing::EchoResponse response;
     ::grpc::ClientContext ctx;
     ctx.set_fail_fast(false);
-    ctx.set_deadline(std::chrono::system_clock::now() +
-                     std::chrono::milliseconds(1));
+    ctx.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(1));
     grpc::Status status = stub->Echo(&ctx, request, &response);
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
     gpr_log(GPR_INFO, "Success.");

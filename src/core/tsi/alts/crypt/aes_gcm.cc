@@ -89,15 +89,12 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_max_ciphertext_and_tag_length(
     const gsec_aead_crypter* crypter, size_t plaintext_length,
     size_t* max_ciphertext_and_tag_length, char** error_details) {
   if (max_ciphertext_and_tag_length == nullptr) {
-    aes_gcm_format_errors("max_ciphertext_and_tag_length is nullptr.",
-                          error_details);
+    aes_gcm_format_errors("max_ciphertext_and_tag_length is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
-      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
-          const_cast<gsec_aead_crypter*>(crypter));
-  *max_ciphertext_and_tag_length =
-      plaintext_length + aes_gcm_crypter->tag_length;
+      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(const_cast<gsec_aead_crypter*>(crypter));
+  *max_ciphertext_and_tag_length = plaintext_length + aes_gcm_crypter->tag_length;
   return GRPC_STATUS_OK;
 }
 
@@ -109,63 +106,56 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_max_plaintext_length(
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
-      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
-          const_cast<gsec_aead_crypter*>(crypter));
+      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(const_cast<gsec_aead_crypter*>(crypter));
   if (ciphertext_and_tag_length < aes_gcm_crypter->tag_length) {
     *max_plaintext_length = 0;
-    aes_gcm_format_errors(
-        "ciphertext_and_tag_length is smaller than tag_length.", error_details);
+    aes_gcm_format_errors("ciphertext_and_tag_length is smaller than tag_length.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
-  *max_plaintext_length =
-      ciphertext_and_tag_length - aes_gcm_crypter->tag_length;
+  *max_plaintext_length = ciphertext_and_tag_length - aes_gcm_crypter->tag_length;
   return GRPC_STATUS_OK;
 }
 
-static grpc_status_code gsec_aes_gcm_aead_crypter_nonce_length(
-    const gsec_aead_crypter* crypter, size_t* nonce_length,
-    char** error_details) {
+static grpc_status_code gsec_aes_gcm_aead_crypter_nonce_length(const gsec_aead_crypter* crypter,
+                                                               size_t* nonce_length,
+                                                               char** error_details) {
   if (nonce_length == nullptr) {
     aes_gcm_format_errors("nonce_length is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
-      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
-          const_cast<gsec_aead_crypter*>(crypter));
+      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(const_cast<gsec_aead_crypter*>(crypter));
   *nonce_length = aes_gcm_crypter->nonce_length;
   return GRPC_STATUS_OK;
 }
 
-static grpc_status_code gsec_aes_gcm_aead_crypter_key_length(
-    const gsec_aead_crypter* crypter, size_t* key_length,
-    char** error_details) {
+static grpc_status_code gsec_aes_gcm_aead_crypter_key_length(const gsec_aead_crypter* crypter,
+                                                             size_t* key_length,
+                                                             char** error_details) {
   if (key_length == nullptr) {
     aes_gcm_format_errors("key_length is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
-      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
-          const_cast<gsec_aead_crypter*>(crypter));
+      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(const_cast<gsec_aead_crypter*>(crypter));
   *key_length = aes_gcm_crypter->key_length;
   return GRPC_STATUS_OK;
 }
 
-static grpc_status_code gsec_aes_gcm_aead_crypter_tag_length(
-    const gsec_aead_crypter* crypter, size_t* tag_length,
-    char** error_details) {
+static grpc_status_code gsec_aes_gcm_aead_crypter_tag_length(const gsec_aead_crypter* crypter,
+                                                             size_t* tag_length,
+                                                             char** error_details) {
   if (tag_length == nullptr) {
     aes_gcm_format_errors("tag_length is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
-      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
-          const_cast<gsec_aead_crypter*>(crypter));
+      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(const_cast<gsec_aead_crypter*>(crypter));
   *tag_length = aes_gcm_crypter->tag_length;
   return GRPC_STATUS_OK;
 }
 
-static void aes_gcm_mask_nonce(uint8_t* dst, const uint8_t* nonce,
-                               const uint8_t* mask) {
+static void aes_gcm_mask_nonce(uint8_t* dst, const uint8_t* nonce, const uint8_t* mask) {
   uint64_t mask1;
   uint32_t mask2;
   memcpy(&mask1, mask, sizeof(mask1));
@@ -180,8 +170,7 @@ static void aes_gcm_mask_nonce(uint8_t* dst, const uint8_t* nonce,
   memcpy(dst + sizeof(nonce1), &nonce2, sizeof(nonce2));
 }
 
-static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst,
-                                                const uint8_t* kdf_key,
+static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst, const uint8_t* kdf_key,
                                                 const uint8_t* kdf_counter) {
   unsigned char buf[EVP_MAX_MD_SIZE];
   unsigned char ctr = 1;
@@ -189,8 +178,8 @@ static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst,
   HMAC_CTX hmac;
   HMAC_CTX_init(&hmac);
   if (!HMAC_Init_ex(&hmac, kdf_key, kKdfKeyLen, EVP_sha256(), nullptr) ||
-      !HMAC_Update(&hmac, kdf_counter, kKdfCounterLen) ||
-      !HMAC_Update(&hmac, &ctr, 1) || !HMAC_Final(&hmac, buf, nullptr)) {
+      !HMAC_Update(&hmac, kdf_counter, kKdfCounterLen) || !HMAC_Update(&hmac, &ctr, 1) ||
+      !HMAC_Final(&hmac, buf, nullptr)) {
     HMAC_CTX_cleanup(&hmac);
     return GRPC_STATUS_INTERNAL;
   }
@@ -201,8 +190,8 @@ static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst,
     return GRPC_STATUS_INTERNAL;
   }
   if (!HMAC_Init_ex(hmac, kdf_key, kKdfKeyLen, EVP_sha256(), nullptr) ||
-      !HMAC_Update(hmac, kdf_counter, kKdfCounterLen) ||
-      !HMAC_Update(hmac, &ctr, 1) || !HMAC_Final(hmac, buf, nullptr)) {
+      !HMAC_Update(hmac, kdf_counter, kKdfCounterLen) || !HMAC_Update(hmac, &ctr, 1) ||
+      !HMAC_Final(hmac, buf, nullptr)) {
     HMAC_CTX_free(hmac);
     return GRPC_STATUS_INTERNAL;
   }
@@ -212,29 +201,25 @@ static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst,
   return GRPC_STATUS_OK;
 }
 
-static grpc_status_code aes_gcm_rekey_if_required(
-    gsec_aes_gcm_aead_crypter* aes_gcm_crypter, const uint8_t* nonce,
-    char** error_details) {
+static grpc_status_code aes_gcm_rekey_if_required(gsec_aes_gcm_aead_crypter* aes_gcm_crypter,
+                                                  const uint8_t* nonce, char** error_details) {
   // If rekey_data is nullptr, then rekeying is not supported and not required.
   // If bytes 2-7 of kdf_counter differ from the (per message) nonce, then the
   // encryption key is recomputed from a new kdf_counter to ensure that we don't
   // encrypt more than 2^16 messages per encryption key (in each direction).
   if (aes_gcm_crypter->rekey_data == nullptr ||
-      memcmp(aes_gcm_crypter->rekey_data->kdf_counter,
-             nonce + kKdfCounterOffset, kKdfCounterLen) == 0) {
+      memcmp(aes_gcm_crypter->rekey_data->kdf_counter, nonce + kKdfCounterOffset, kKdfCounterLen) ==
+          0) {
     return GRPC_STATUS_OK;
   }
-  memcpy(aes_gcm_crypter->rekey_data->kdf_counter, nonce + kKdfCounterOffset,
-         kKdfCounterLen);
+  memcpy(aes_gcm_crypter->rekey_data->kdf_counter, nonce + kKdfCounterOffset, kKdfCounterLen);
   uint8_t aead_key[kRekeyAeadKeyLen];
   if (aes_gcm_derive_aead_key(aead_key, aes_gcm_crypter->key,
-                              aes_gcm_crypter->rekey_data->kdf_counter) !=
-      GRPC_STATUS_OK) {
+                              aes_gcm_crypter->rekey_data->kdf_counter) != GRPC_STATUS_OK) {
     aes_gcm_format_errors("Rekeying failed in key derivation.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
-  if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, aead_key,
-                          nullptr)) {
+  if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, aead_key, nullptr)) {
     aes_gcm_format_errors("Rekeying failed in context update.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
@@ -243,9 +228,8 @@ static grpc_status_code aes_gcm_rekey_if_required(
 
 static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
     gsec_aead_crypter* crypter, const uint8_t* nonce, size_t nonce_length,
-    const struct iovec* aad_vec, size_t aad_vec_length,
-    const struct iovec* plaintext_vec, size_t plaintext_vec_length,
-    struct iovec ciphertext_vec, size_t* ciphertext_bytes_written,
+    const struct iovec* aad_vec, size_t aad_vec_length, const struct iovec* plaintext_vec,
+    size_t plaintext_vec_length, struct iovec ciphertext_vec, size_t* ciphertext_bytes_written,
     char** error_details) {
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
       reinterpret_cast<gsec_aes_gcm_aead_crypter*>(crypter);
@@ -259,14 +243,12 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   if (aad_vec_length > 0 && aad_vec == nullptr) {
-    aes_gcm_format_errors("Non-zero aad_vec_length but aad_vec is nullptr.",
-                          error_details);
+    aes_gcm_format_errors("Non-zero aad_vec_length but aad_vec is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   if (plaintext_vec_length > 0 && plaintext_vec == nullptr) {
-    aes_gcm_format_errors(
-        "Non-zero plaintext_vec_length but plaintext_vec is nullptr.",
-        error_details);
+    aes_gcm_format_errors("Non-zero plaintext_vec_length but plaintext_vec is nullptr.",
+                          error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   if (ciphertext_bytes_written == nullptr) {
@@ -275,21 +257,18 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
   }
   *ciphertext_bytes_written = 0;
   // rekey if required
-  if (aes_gcm_rekey_if_required(aes_gcm_crypter, nonce, error_details) !=
-      GRPC_STATUS_OK) {
+  if (aes_gcm_rekey_if_required(aes_gcm_crypter, nonce, error_details) != GRPC_STATUS_OK) {
     return GRPC_STATUS_INTERNAL;
   }
   // mask nonce if required
   const uint8_t* nonce_aead = nonce;
   uint8_t nonce_masked[kAesGcmNonceLength];
   if (aes_gcm_crypter->rekey_data != nullptr) {
-    aes_gcm_mask_nonce(nonce_masked, aes_gcm_crypter->rekey_data->nonce_mask,
-                       nonce);
+    aes_gcm_mask_nonce(nonce_masked, aes_gcm_crypter->rekey_data->nonce_mask, nonce);
     nonce_aead = nonce_masked;
   }
   // init openssl context
-  if (!EVP_EncryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, nullptr,
-                          nonce_aead)) {
+  if (!EVP_EncryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, nullptr, nonce_aead)) {
     aes_gcm_format_errors("Initializing nonce failed", error_details);
     return GRPC_STATUS_INTERNAL;
   }
@@ -306,12 +285,10 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
       aes_gcm_format_errors("aad is nullptr.", error_details);
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
-    if (!EVP_EncryptUpdate(aes_gcm_crypter->ctx, nullptr,
-                           reinterpret_cast<int*>(&aad_bytes_read), aad,
-                           static_cast<int>(aad_length)) ||
+    if (!EVP_EncryptUpdate(aes_gcm_crypter->ctx, nullptr, reinterpret_cast<int*>(&aad_bytes_read),
+                           aad, static_cast<int>(aad_length)) ||
         aad_bytes_read != aad_length) {
-      aes_gcm_format_errors("Setting authenticated associated data failed",
-                            error_details);
+      aes_gcm_format_errors("Setting authenticated associated data failed", error_details);
       return GRPC_STATUS_INTERNAL;
     }
   }
@@ -333,14 +310,13 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
     if (ciphertext_length < plaintext_length) {
-      aes_gcm_format_errors(
-          "ciphertext is not large enough to hold the result.", error_details);
+      aes_gcm_format_errors("ciphertext is not large enough to hold the result.", error_details);
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
     int bytes_written = 0;
     int bytes_to_write = static_cast<int>(plaintext_length);
-    if (!EVP_EncryptUpdate(aes_gcm_crypter->ctx, ciphertext, &bytes_written,
-                           plaintext, bytes_to_write)) {
+    if (!EVP_EncryptUpdate(aes_gcm_crypter->ctx, ciphertext, &bytes_written, plaintext,
+                           bytes_to_write)) {
       aes_gcm_format_errors("Encrypting plaintext failed.", error_details);
       return GRPC_STATUS_INTERNAL;
     }
@@ -352,24 +328,21 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
     ciphertext_length -= bytes_written;
   }
   int bytes_written_temp = 0;
-  if (!EVP_EncryptFinal_ex(aes_gcm_crypter->ctx, nullptr,
-                           &bytes_written_temp)) {
+  if (!EVP_EncryptFinal_ex(aes_gcm_crypter->ctx, nullptr, &bytes_written_temp)) {
     aes_gcm_format_errors("Finalizing encryption failed.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
   if (bytes_written_temp != 0) {
-    aes_gcm_format_errors("Openssl wrote some unexpected bytes.",
-                          error_details);
+    aes_gcm_format_errors("Openssl wrote some unexpected bytes.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
   if (ciphertext_length < kAesGcmTagLength) {
-    aes_gcm_format_errors("ciphertext is too small to hold a tag.",
-                          error_details);
+    aes_gcm_format_errors("ciphertext is too small to hold a tag.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
 
-  if (!EVP_CIPHER_CTX_ctrl(aes_gcm_crypter->ctx, EVP_CTRL_GCM_GET_TAG,
-                           kAesGcmTagLength, ciphertext)) {
+  if (!EVP_CIPHER_CTX_ctrl(aes_gcm_crypter->ctx, EVP_CTRL_GCM_GET_TAG, kAesGcmTagLength,
+                           ciphertext)) {
     aes_gcm_format_errors("Writing tag failed.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
@@ -381,13 +354,11 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
 
 static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
     gsec_aead_crypter* crypter, const uint8_t* nonce, size_t nonce_length,
-    const struct iovec* aad_vec, size_t aad_vec_length,
-    const struct iovec* ciphertext_vec, size_t ciphertext_vec_length,
-    struct iovec plaintext_vec, size_t* plaintext_bytes_written,
+    const struct iovec* aad_vec, size_t aad_vec_length, const struct iovec* ciphertext_vec,
+    size_t ciphertext_vec_length, struct iovec plaintext_vec, size_t* plaintext_bytes_written,
     char** error_details) {
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
-      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
-          const_cast<gsec_aead_crypter*>(crypter));
+      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(const_cast<gsec_aead_crypter*>(crypter));
   if (nonce == nullptr) {
     aes_gcm_format_errors("Nonce buffer is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
@@ -397,14 +368,12 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   if (aad_vec_length > 0 && aad_vec == nullptr) {
-    aes_gcm_format_errors("Non-zero aad_vec_length but aad_vec is nullptr.",
-                          error_details);
+    aes_gcm_format_errors("Non-zero aad_vec_length but aad_vec is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   if (ciphertext_vec_length > 0 && ciphertext_vec == nullptr) {
-    aes_gcm_format_errors(
-        "Non-zero plaintext_vec_length but plaintext_vec is nullptr.",
-        error_details);
+    aes_gcm_format_errors("Non-zero plaintext_vec_length but plaintext_vec is nullptr.",
+                          error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   // Compute the total length so we can ensure we don't pass the tag into
@@ -415,8 +384,7 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
     total_ciphertext_length += ciphertext_vec[i].iov_len;
   }
   if (total_ciphertext_length < kAesGcmTagLength) {
-    aes_gcm_format_errors("ciphertext is too small to hold a tag.",
-                          error_details);
+    aes_gcm_format_errors("ciphertext is too small to hold a tag.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   if (plaintext_bytes_written == nullptr) {
@@ -425,8 +393,7 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
   }
   *plaintext_bytes_written = 0;
   // rekey if required
-  if (aes_gcm_rekey_if_required(aes_gcm_crypter, nonce, error_details) !=
-      GRPC_STATUS_OK) {
+  if (aes_gcm_rekey_if_required(aes_gcm_crypter, nonce, error_details) != GRPC_STATUS_OK) {
     aes_gcm_format_errors("Rekeying failed.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
@@ -434,13 +401,11 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
   const uint8_t* nonce_aead = nonce;
   uint8_t nonce_masked[kAesGcmNonceLength];
   if (aes_gcm_crypter->rekey_data != nullptr) {
-    aes_gcm_mask_nonce(nonce_masked, aes_gcm_crypter->rekey_data->nonce_mask,
-                       nonce);
+    aes_gcm_mask_nonce(nonce_masked, aes_gcm_crypter->rekey_data->nonce_mask, nonce);
     nonce_aead = nonce_masked;
   }
   // init openssl context
-  if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, nullptr,
-                          nonce_aead)) {
+  if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, nullptr, nonce_aead)) {
     aes_gcm_format_errors("Initializing nonce failed.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
@@ -456,12 +421,10 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
       aes_gcm_format_errors("aad is nullptr.", error_details);
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
-    if (!EVP_DecryptUpdate(aes_gcm_crypter->ctx, nullptr,
-                           reinterpret_cast<int*>(&aad_bytes_read), aad,
-                           static_cast<int>(aad_length)) ||
+    if (!EVP_DecryptUpdate(aes_gcm_crypter->ctx, nullptr, reinterpret_cast<int*>(&aad_bytes_read),
+                           aad, static_cast<int>(aad_length)) ||
         aad_bytes_read != aad_length) {
-      aes_gcm_format_errors("Setting authenticated associated data failed.",
-                            error_details);
+      aes_gcm_format_errors("Setting authenticated associated data failed.", error_details);
       return GRPC_STATUS_INTERNAL;
     }
   }
@@ -469,16 +432,12 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
   uint8_t* plaintext = static_cast<uint8_t*>(plaintext_vec.iov_base);
   size_t plaintext_length = plaintext_vec.iov_len;
   if (plaintext_length > 0 && plaintext == nullptr) {
-    aes_gcm_format_errors(
-        "plaintext is nullptr, but plaintext_length is positive.",
-        error_details);
+    aes_gcm_format_errors("plaintext is nullptr, but plaintext_length is positive.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   const uint8_t* ciphertext = nullptr;
   size_t ciphertext_length = 0;
-  for (i = 0;
-       i < ciphertext_vec_length && total_ciphertext_length > kAesGcmTagLength;
-       i++) {
+  for (i = 0; i < ciphertext_vec_length && total_ciphertext_length > kAesGcmTagLength; i++) {
     ciphertext = static_cast<uint8_t*>(ciphertext_vec[i].iov_base);
     ciphertext_length = ciphertext_vec[i].iov_len;
     if (ciphertext == nullptr) {
@@ -496,14 +455,12 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
       bytes_to_write = total_ciphertext_length - kAesGcmTagLength;
     }
     if (plaintext_length < bytes_to_write) {
-      aes_gcm_format_errors(
-          "Not enough plaintext buffer to hold encrypted ciphertext.",
-          error_details);
+      aes_gcm_format_errors("Not enough plaintext buffer to hold encrypted ciphertext.",
+                            error_details);
       return GRPC_STATUS_INVALID_ARGUMENT;
     }
-    if (!EVP_DecryptUpdate(aes_gcm_crypter->ctx, plaintext,
-                           reinterpret_cast<int*>(&bytes_written), ciphertext,
-                           static_cast<int>(bytes_to_write))) {
+    if (!EVP_DecryptUpdate(aes_gcm_crypter->ctx, plaintext, reinterpret_cast<int*>(&bytes_written),
+                           ciphertext, static_cast<int>(bytes_to_write))) {
       aes_gcm_format_errors("Decrypting ciphertext failed.", error_details);
       memset(plaintext_vec.iov_base, 0x00, plaintext_vec.iov_len);
       return GRPC_STATUS_INTERNAL;
@@ -520,9 +477,8 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
     plaintext_length -= bytes_written;
   }
   if (total_ciphertext_length > kAesGcmTagLength) {
-    aes_gcm_format_errors(
-        "Not enough plaintext buffer to hold encrypted ciphertext.",
-        error_details);
+    aes_gcm_format_errors("Not enough plaintext buffer to hold encrypted ciphertext.",
+                          error_details);
     memset(plaintext_vec.iov_base, 0x00, plaintext_vec.iov_len);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
@@ -548,22 +504,20 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
     tag_tmp += ciphertext_length;
     total_ciphertext_length -= ciphertext_length;
   }
-  if (!EVP_CIPHER_CTX_ctrl(aes_gcm_crypter->ctx, EVP_CTRL_GCM_SET_TAG,
-                           kAesGcmTagLength, reinterpret_cast<void*>(tag))) {
+  if (!EVP_CIPHER_CTX_ctrl(aes_gcm_crypter->ctx, EVP_CTRL_GCM_SET_TAG, kAesGcmTagLength,
+                           reinterpret_cast<void*>(tag))) {
     aes_gcm_format_errors("Setting tag failed.", error_details);
     memset(plaintext_vec.iov_base, 0x00, plaintext_vec.iov_len);
     return GRPC_STATUS_INTERNAL;
   }
   int bytes_written_temp = 0;
-  if (!EVP_DecryptFinal_ex(aes_gcm_crypter->ctx, nullptr,
-                           &bytes_written_temp)) {
+  if (!EVP_DecryptFinal_ex(aes_gcm_crypter->ctx, nullptr, &bytes_written_temp)) {
     aes_gcm_format_errors("Checking tag failed.", error_details);
     memset(plaintext_vec.iov_base, 0x00, plaintext_vec.iov_len);
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   if (bytes_written_temp != 0) {
-    aes_gcm_format_errors("Openssl wrote some unexpected bytes.",
-                          error_details);
+    aes_gcm_format_errors("Openssl wrote some unexpected bytes.", error_details);
     memset(plaintext_vec.iov_base, 0x00, plaintext_vec.iov_len);
     return GRPC_STATUS_INTERNAL;
   }
@@ -573,8 +527,7 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
 
 static void gsec_aes_gcm_aead_crypter_destroy(gsec_aead_crypter* crypter) {
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
-      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
-          const_cast<gsec_aead_crypter*>(crypter));
+      reinterpret_cast<gsec_aes_gcm_aead_crypter*>(const_cast<gsec_aead_crypter*>(crypter));
   gpr_free(aes_gcm_crypter->key);
   gpr_free(aes_gcm_crypter->rekey_data);
   EVP_CIPHER_CTX_free(aes_gcm_crypter->ctx);
@@ -590,8 +543,8 @@ static const gsec_aead_crypter_vtable vtable = {
     gsec_aes_gcm_aead_crypter_tag_length,
     gsec_aes_gcm_aead_crypter_destroy};
 
-static grpc_status_code aes_gcm_new_evp_cipher_ctx(
-    gsec_aes_gcm_aead_crypter* aes_gcm_crypter, char** error_details) {
+static grpc_status_code aes_gcm_new_evp_cipher_ctx(gsec_aes_gcm_aead_crypter* aes_gcm_crypter,
+                                                   char** error_details) {
   const EVP_CIPHER* cipher = nullptr;
   bool is_rekey = aes_gcm_crypter->rekey_data != nullptr;
   switch (is_rekey ? kRekeyAeadKeyLen : aes_gcm_crypter->key_length) {
@@ -606,32 +559,27 @@ static grpc_status_code aes_gcm_new_evp_cipher_ctx(
   uint8_t aead_key_rekey[kRekeyAeadKeyLen];
   if (is_rekey) {
     if (aes_gcm_derive_aead_key(aead_key_rekey, aes_gcm_crypter->key,
-                                aes_gcm_crypter->rekey_data->kdf_counter) !=
-        GRPC_STATUS_OK) {
+                                aes_gcm_crypter->rekey_data->kdf_counter) != GRPC_STATUS_OK) {
       aes_gcm_format_errors("Deriving key failed.", error_details);
       return GRPC_STATUS_INTERNAL;
     }
     aead_key = aead_key_rekey;
   }
-  if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, cipher, nullptr, aead_key,
-                          nullptr)) {
+  if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, cipher, nullptr, aead_key, nullptr)) {
     aes_gcm_format_errors("Setting key failed.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
   if (!EVP_CIPHER_CTX_ctrl(aes_gcm_crypter->ctx, EVP_CTRL_GCM_SET_IVLEN,
-                           static_cast<int>(aes_gcm_crypter->nonce_length),
-                           nullptr)) {
+                           static_cast<int>(aes_gcm_crypter->nonce_length), nullptr)) {
     aes_gcm_format_errors("Setting nonce length failed.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
   return GRPC_STATUS_OK;
 }
 
-grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
-                                                  size_t key_length,
-                                                  size_t nonce_length,
-                                                  size_t tag_length, bool rekey,
-                                                  gsec_aead_crypter** crypter,
+grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key, size_t key_length,
+                                                  size_t nonce_length, size_t tag_length,
+                                                  bool rekey, gsec_aead_crypter** crypter,
                                                   char** error_details) {
   if (key == nullptr) {
     aes_gcm_format_errors("key is nullptr.", error_details);
@@ -643,10 +591,8 @@ grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
   }
   *crypter = nullptr;
   if ((rekey && key_length != kAes128GcmRekeyKeyLength) ||
-      (!rekey && key_length != kAes128GcmKeyLength &&
-       key_length != kAes256GcmKeyLength) ||
-      (tag_length != kAesGcmTagLength) ||
-      (nonce_length != kAesGcmNonceLength)) {
+      (!rekey && key_length != kAes128GcmKeyLength && key_length != kAes256GcmKeyLength) ||
+      (tag_length != kAesGcmTagLength) || (nonce_length != kAesGcmNonceLength)) {
     aes_gcm_format_errors(
         "Invalid key and/or nonce and/or tag length are provided at AEAD "
         "crypter instance construction time.",
@@ -654,8 +600,7 @@ grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
-      static_cast<gsec_aes_gcm_aead_crypter*>(
-          gpr_malloc(sizeof(gsec_aes_gcm_aead_crypter)));
+      static_cast<gsec_aes_gcm_aead_crypter*>(gpr_malloc(sizeof(gsec_aes_gcm_aead_crypter)));
   aes_gcm_crypter->crypter.vtable = &vtable;
   aes_gcm_crypter->nonce_length = nonce_length;
   aes_gcm_crypter->tag_length = tag_length;
@@ -663,20 +608,17 @@ grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
     aes_gcm_crypter->key_length = kKdfKeyLen;
     aes_gcm_crypter->rekey_data = static_cast<gsec_aes_gcm_aead_rekey_data*>(
         gpr_malloc(sizeof(gsec_aes_gcm_aead_rekey_data)));
-    memcpy(aes_gcm_crypter->rekey_data->nonce_mask, key + kKdfKeyLen,
-           kAesGcmNonceLength);
+    memcpy(aes_gcm_crypter->rekey_data->nonce_mask, key + kKdfKeyLen, kAesGcmNonceLength);
     // Set kdf_counter to all-zero for initial key derivation.
     memset(aes_gcm_crypter->rekey_data->kdf_counter, 0, kKdfCounterLen);
   } else {
     aes_gcm_crypter->key_length = key_length;
     aes_gcm_crypter->rekey_data = nullptr;
   }
-  aes_gcm_crypter->key =
-      static_cast<uint8_t*>(gpr_malloc(aes_gcm_crypter->key_length));
+  aes_gcm_crypter->key = static_cast<uint8_t*>(gpr_malloc(aes_gcm_crypter->key_length));
   memcpy(aes_gcm_crypter->key, key, aes_gcm_crypter->key_length);
   aes_gcm_crypter->ctx = EVP_CIPHER_CTX_new();
-  grpc_status_code status =
-      aes_gcm_new_evp_cipher_ctx(aes_gcm_crypter, error_details);
+  grpc_status_code status = aes_gcm_new_evp_cipher_ctx(aes_gcm_crypter, error_details);
   if (status != GRPC_STATUS_OK) {
     gsec_aes_gcm_aead_crypter_destroy(&aes_gcm_crypter->crypter);
     gpr_free(aes_gcm_crypter);

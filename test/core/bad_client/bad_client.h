@@ -34,8 +34,7 @@ typedef void (*grpc_bad_client_server_side_validator)(grpc_server* server,
                                                       void* registered_method);
 
 /* Returns false if we need to read more data. */
-typedef bool (*grpc_bad_client_client_stream_validator)(
-    grpc_slice_buffer* incoming, void* arg);
+typedef bool (*grpc_bad_client_client_stream_validator)(grpc_slice_buffer* incoming, void* arg);
 
 struct grpc_bad_client_arg {
   grpc_bad_client_client_stream_validator client_validator;
@@ -58,9 +57,8 @@ struct grpc_bad_client_arg {
  * The flags are only applicable to the last validator in the array. (This can
  * be changed in the future if necessary)
  */
-void grpc_run_bad_client_test(
-    grpc_bad_client_server_side_validator server_validator,
-    grpc_bad_client_arg args[], int num_args, uint32_t flags);
+void grpc_run_bad_client_test(grpc_bad_client_server_side_validator server_validator,
+                              grpc_bad_client_arg args[], int num_args, uint32_t flags);
 
 /* A hack to let old tests work as before. In these tests, instead of an array,
  * the tests provide a single client_validator and payload
@@ -68,16 +66,14 @@ void grpc_run_bad_client_test(
 #define COMBINE1(X, Y) X##Y
 #define COMBINE(X, Y) COMBINE1(X, Y)
 
-#define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload,  \
-                                 flags)                                        \
-  grpc_bad_client_arg COMBINE(bca, __LINE__) = {client_validator, nullptr,     \
-                                                payload, sizeof(payload) - 1}; \
+#define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload, flags) \
+  grpc_bad_client_arg COMBINE(bca, __LINE__) = {client_validator, nullptr, payload,  \
+                                                sizeof(payload) - 1};                \
   grpc_run_bad_client_test(server_validator, &COMBINE(bca, __LINE__), 1, flags)
 
 /* Helper validator functions */
 /* Client side validator for connection preface from server. \a arg is unused */
-bool client_connection_preface_validator(grpc_slice_buffer* incoming,
-                                         void* arg);
+bool client_connection_preface_validator(grpc_slice_buffer* incoming, void* arg);
 
 /* Client side validator for checking if reset stream is present at the end
  * of the buffer. \a arg is unused.
@@ -90,7 +86,6 @@ extern grpc_bad_client_arg connection_preface_arg;
 
 /* Server side verifier function that performs a
  *  single grpc_server_request_call */
-void server_verifier_request_call(grpc_server* server,
-                                  grpc_completion_queue* cq,
+void server_verifier_request_call(grpc_server* server, grpc_completion_queue* cq,
                                   void* registered_method);
 #endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */

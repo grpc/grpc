@@ -76,8 +76,7 @@ class RefCountedPtr {
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
   RefCountedPtr(const RefCountedPtr<Y>& other) {
-    static_assert(std::has_virtual_destructor<T>::value,
-                  "T does not have a virtual dtor");
+    static_assert(std::has_virtual_destructor<T>::value, "T does not have a virtual dtor");
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
     value_ = static_cast<T*>(other.value_);
   }
@@ -93,8 +92,7 @@ class RefCountedPtr {
   }
   template <typename Y>
   RefCountedPtr& operator=(const RefCountedPtr<Y>& other) {
-    static_assert(std::has_virtual_destructor<T>::value,
-                  "T does not have a virtual dtor");
+    static_assert(std::has_virtual_destructor<T>::value, "T does not have a virtual dtor");
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
@@ -113,23 +111,19 @@ class RefCountedPtr {
     if (value_ != nullptr) value_->Unref();
     value_ = value;
   }
-  void reset(const DebugLocation& location, const char* reason,
-             T* value = nullptr) {
+  void reset(const DebugLocation& location, const char* reason, T* value = nullptr) {
     if (value_ != nullptr) value_->Unref(location, reason);
     value_ = value;
   }
   template <typename Y>
   void reset(Y* value = nullptr) {
-    static_assert(std::has_virtual_destructor<T>::value,
-                  "T does not have a virtual dtor");
+    static_assert(std::has_virtual_destructor<T>::value, "T does not have a virtual dtor");
     if (value_ != nullptr) value_->Unref();
     value_ = static_cast<T*>(value);
   }
   template <typename Y>
-  void reset(const DebugLocation& location, const char* reason,
-             Y* value = nullptr) {
-    static_assert(std::has_virtual_destructor<T>::value,
-                  "T does not have a virtual dtor");
+  void reset(const DebugLocation& location, const char* reason, Y* value = nullptr) {
+    static_assert(std::has_virtual_destructor<T>::value, "T does not have a virtual dtor");
     if (value_ != nullptr) value_->Unref(location, reason);
     value_ = static_cast<T*>(value);
   }
@@ -229,8 +223,7 @@ class WeakRefCountedPtr {
   template <typename Y>
   // NOLINTNEXTLINE(google-explicit-constructor)
   WeakRefCountedPtr(const WeakRefCountedPtr<Y>& other) {
-    static_assert(std::has_virtual_destructor<T>::value,
-                  "T does not have a virtual dtor");
+    static_assert(std::has_virtual_destructor<T>::value, "T does not have a virtual dtor");
     if (other.value_ != nullptr) other.value_->IncrementWeakRefCount();
     value_ = static_cast<T*>(other.value_);
   }
@@ -246,8 +239,7 @@ class WeakRefCountedPtr {
   }
   template <typename Y>
   WeakRefCountedPtr& operator=(const WeakRefCountedPtr<Y>& other) {
-    static_assert(std::has_virtual_destructor<T>::value,
-                  "T does not have a virtual dtor");
+    static_assert(std::has_virtual_destructor<T>::value, "T does not have a virtual dtor");
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementWeakRefCount();
@@ -266,23 +258,19 @@ class WeakRefCountedPtr {
     if (value_ != nullptr) value_->WeakUnref();
     value_ = value;
   }
-  void reset(const DebugLocation& location, const char* reason,
-             T* value = nullptr) {
+  void reset(const DebugLocation& location, const char* reason, T* value = nullptr) {
     if (value_ != nullptr) value_->WeakUnref(location, reason);
     value_ = value;
   }
   template <typename Y>
   void reset(Y* value = nullptr) {
-    static_assert(std::has_virtual_destructor<T>::value,
-                  "T does not have a virtual dtor");
+    static_assert(std::has_virtual_destructor<T>::value, "T does not have a virtual dtor");
     if (value_ != nullptr) value_->WeakUnref();
     value_ = static_cast<T*>(value);
   }
   template <typename Y>
-  void reset(const DebugLocation& location, const char* reason,
-             Y* value = nullptr) {
-    static_assert(std::has_virtual_destructor<T>::value,
-                  "T does not have a virtual dtor");
+  void reset(const DebugLocation& location, const char* reason, Y* value = nullptr) {
+    static_assert(std::has_virtual_destructor<T>::value, "T does not have a virtual dtor");
     if (value_ != nullptr) value_->WeakUnref(location, reason);
     value_ = static_cast<T*>(value);
   }

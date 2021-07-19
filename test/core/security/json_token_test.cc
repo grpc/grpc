@@ -80,10 +80,9 @@ static const char test_scope[] = "myperm1 myperm2";
 static const char test_service_url[] = "https://foo.com/foo.v1";
 
 static char* test_json_key_str(const char* bad_part3) {
-  const char* part3 =
-      bad_part3 != nullptr ? bad_part3 : test_json_key_str_part3;
-  size_t result_len = strlen(test_json_key_str_part1) +
-                      strlen(test_json_key_str_part2) + strlen(part3);
+  const char* part3 = bad_part3 != nullptr ? bad_part3 : test_json_key_str_part3;
+  size_t result_len =
+      strlen(test_json_key_str_part1) + strlen(test_json_key_str_part2) + strlen(part3);
   char* result = static_cast<char*>(gpr_malloc(result_len + 1));
   char* current = result;
   strcpy(result, test_json_key_str_part1);
@@ -96,18 +95,14 @@ static char* test_json_key_str(const char* bad_part3) {
 
 static void test_parse_json_key_success(void) {
   char* json_string = test_json_key_str(nullptr);
-  grpc_auth_json_key json_key =
-      grpc_auth_json_key_create_from_string(json_string);
+  grpc_auth_json_key json_key = grpc_auth_json_key_create_from_string(json_string);
   GPR_ASSERT(grpc_auth_json_key_is_valid(&json_key));
-  GPR_ASSERT(json_key.type != nullptr &&
-             strcmp(json_key.type, "service_account") == 0);
+  GPR_ASSERT(json_key.type != nullptr && strcmp(json_key.type, "service_account") == 0);
   GPR_ASSERT(json_key.private_key_id != nullptr &&
-             strcmp(json_key.private_key_id,
-                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
-  GPR_ASSERT(json_key.client_id != nullptr &&
-             strcmp(json_key.client_id,
-                    "777-abaslkan11hlb6nmim3bpspl31ud.apps."
-                    "googleusercontent.com") == 0);
+             strcmp(json_key.private_key_id, "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
+  GPR_ASSERT(json_key.client_id != nullptr && strcmp(json_key.client_id,
+                                                     "777-abaslkan11hlb6nmim3bpspl31ud.apps."
+                                                     "googleusercontent.com") == 0);
   GPR_ASSERT(json_key.client_email != nullptr &&
              strcmp(json_key.client_email,
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
@@ -126,8 +121,7 @@ static void test_parse_json_key_failure_bad_json(void) {
       "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
       "com\", \"type\": \"service_account\" ";
   char* json_string = test_json_key_str(non_closing_part3);
-  grpc_auth_json_key json_key =
-      grpc_auth_json_key_create_from_string(json_string);
+  grpc_auth_json_key json_key = grpc_auth_json_key_create_from_string(json_string);
   GPR_ASSERT(!grpc_auth_json_key_is_valid(&json_key));
   gpr_free(json_string);
   grpc_auth_json_key_destruct(&json_key);
@@ -142,8 +136,7 @@ static void test_parse_json_key_failure_no_type(void) {
       "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
       "com\" }";
   char* json_string = test_json_key_str(no_type_part3);
-  grpc_auth_json_key json_key =
-      grpc_auth_json_key_create_from_string(json_string);
+  grpc_auth_json_key json_key = grpc_auth_json_key_create_from_string(json_string);
   GPR_ASSERT(!grpc_auth_json_key_is_valid(&json_key));
   gpr_free(json_string);
   grpc_auth_json_key_destruct(&json_key);
@@ -157,8 +150,7 @@ static void test_parse_json_key_failure_no_client_id(void) {
       "com\", "
       "\"type\": \"service_account\" }";
   char* json_string = test_json_key_str(no_client_id_part3);
-  grpc_auth_json_key json_key =
-      grpc_auth_json_key_create_from_string(json_string);
+  grpc_auth_json_key json_key = grpc_auth_json_key_create_from_string(json_string);
   GPR_ASSERT(!grpc_auth_json_key_is_valid(&json_key));
   gpr_free(json_string);
   grpc_auth_json_key_destruct(&json_key);
@@ -171,8 +163,7 @@ static void test_parse_json_key_failure_no_client_email(void) {
       "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
       "com\", \"type\": \"service_account\" }";
   char* json_string = test_json_key_str(no_client_email_part3);
-  grpc_auth_json_key json_key =
-      grpc_auth_json_key_create_from_string(json_string);
+  grpc_auth_json_key json_key = grpc_auth_json_key_create_from_string(json_string);
   GPR_ASSERT(!grpc_auth_json_key_is_valid(&json_key));
   gpr_free(json_string);
   grpc_auth_json_key_destruct(&json_key);
@@ -186,8 +177,7 @@ static void test_parse_json_key_failure_no_private_key_id(void) {
       "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
       "com\", \"type\": \"service_account\" }";
   char* json_string = test_json_key_str(no_private_key_id_part3);
-  grpc_auth_json_key json_key =
-      grpc_auth_json_key_create_from_string(json_string);
+  grpc_auth_json_key json_key = grpc_auth_json_key_create_from_string(json_string);
   GPR_ASSERT(!grpc_auth_json_key_is_valid(&json_key));
   gpr_free(json_string);
   grpc_auth_json_key_destruct(&json_key);
@@ -201,8 +191,7 @@ static void test_parse_json_key_failure_no_private_key(void) {
       "com\", \"client_id\": "
       "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
       "com\", \"type\": \"service_account\" }";
-  grpc_auth_json_key json_key =
-      grpc_auth_json_key_create_from_string(no_private_key_json_string);
+  grpc_auth_json_key json_key = grpc_auth_json_key_create_from_string(no_private_key_json_string);
   GPR_ASSERT(!grpc_auth_json_key_is_valid(&json_key));
   grpc_auth_json_key_destruct(&json_key);
 }
@@ -219,8 +208,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
   Json json = Json::Parse(string, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
+    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
   }
   grpc_slice_unref(slice);
@@ -237,8 +225,7 @@ static void check_jwt_header(const Json& header) {
   GPR_ASSERT(strcmp(value.string_value().c_str(), "JWT") == 0);
   value = object["kid"];
   GPR_ASSERT(value.type() == Json::Type::STRING);
-  GPR_ASSERT(strcmp(value.string_value().c_str(),
-                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
+  GPR_ASSERT(strcmp(value.string_value().c_str(), "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
 }
 
 static void check_jwt_claim(const Json& claim, const char* expected_audience,
@@ -281,8 +268,7 @@ static void check_jwt_claim(const Json& claim, const char* expected_audience,
   GPR_ASSERT(parsed_lifetime.tv_sec == grpc_max_auth_token_lifetime().tv_sec);
 }
 
-static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
-                                const char* signed_data,
+static void check_jwt_signature(const char* b64_signature, RSA* rsa_key, const char* signed_data,
                                 size_t signed_data_size) {
   grpc_core::ExecCtx exec_ctx;
 
@@ -297,27 +283,22 @@ static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
   GPR_ASSERT(key != nullptr);
   EVP_PKEY_set1_RSA(key, rsa_key);
 
-  GPR_ASSERT(
-      EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, key) == 1);
-  GPR_ASSERT(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size) ==
-             1);
-  GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig),
-                                   GRPC_SLICE_LENGTH(sig)) == 1);
+  GPR_ASSERT(EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, key) == 1);
+  GPR_ASSERT(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size) == 1);
+  GPR_ASSERT(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig), GRPC_SLICE_LENGTH(sig)) == 1);
 
   grpc_slice_unref_internal(sig);
   if (key != nullptr) EVP_PKEY_free(key);
   if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
 }
 
-static char* service_account_creds_jwt_encode_and_sign(
-    const grpc_auth_json_key* key) {
-  return grpc_jwt_encode_and_sign(key, GRPC_JWT_OAUTH2_AUDIENCE,
-                                  grpc_max_auth_token_lifetime(), test_scope);
+static char* service_account_creds_jwt_encode_and_sign(const grpc_auth_json_key* key) {
+  return grpc_jwt_encode_and_sign(key, GRPC_JWT_OAUTH2_AUDIENCE, grpc_max_auth_token_lifetime(),
+                                  test_scope);
 }
 
 static char* jwt_creds_jwt_encode_and_sign(const grpc_auth_json_key* key) {
-  return grpc_jwt_encode_and_sign(key, test_service_url,
-                                  grpc_max_auth_token_lifetime(), nullptr);
+  return grpc_jwt_encode_and_sign(key, test_service_url, grpc_max_auth_token_lifetime(), nullptr);
 }
 
 static void service_account_creds_check_jwt_claim(const Json& claim) {
@@ -328,27 +309,24 @@ static void jwt_creds_check_jwt_claim(const Json& claim) {
   check_jwt_claim(claim, test_service_url, nullptr);
 }
 
-static void test_jwt_encode_and_sign(
-    char* (*jwt_encode_and_sign_func)(const grpc_auth_json_key*),
-    void (*check_jwt_claim_func)(const Json&)) {
+static void test_jwt_encode_and_sign(char* (*jwt_encode_and_sign_func)(const grpc_auth_json_key*),
+                                     void (*check_jwt_claim_func)(const Json&)) {
   char* json_string = test_json_key_str(nullptr);
-  grpc_auth_json_key json_key =
-      grpc_auth_json_key_create_from_string(json_string);
+  grpc_auth_json_key json_key = grpc_auth_json_key_create_from_string(json_string);
   const char* b64_signature;
   size_t offset = 0;
   char* jwt = jwt_encode_and_sign_func(&json_key);
   const char* dot = strchr(jwt, '.');
   GPR_ASSERT(dot != nullptr);
-  Json parsed_header =
-      parse_json_part_from_jwt(jwt, static_cast<size_t>(dot - jwt));
+  Json parsed_header = parse_json_part_from_jwt(jwt, static_cast<size_t>(dot - jwt));
   GPR_ASSERT(parsed_header.type() == Json::Type::OBJECT);
   check_jwt_header(parsed_header);
   offset = static_cast<size_t>(dot - jwt) + 1;
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot != nullptr);
-  Json parsed_claim = parse_json_part_from_jwt(
-      jwt + offset, static_cast<size_t>(dot - (jwt + offset)));
+  Json parsed_claim =
+      parse_json_part_from_jwt(jwt + offset, static_cast<size_t>(dot - (jwt + offset)));
   GPR_ASSERT(parsed_claim.type() == Json::Type::OBJECT);
   check_jwt_claim_func(parsed_claim);
   offset = static_cast<size_t>(dot - jwt) + 1;
@@ -369,25 +347,21 @@ static void test_service_account_creds_jwt_encode_and_sign(void) {
 }
 
 static void test_jwt_creds_jwt_encode_and_sign(void) {
-  test_jwt_encode_and_sign(jwt_creds_jwt_encode_and_sign,
-                           jwt_creds_check_jwt_claim);
+  test_jwt_encode_and_sign(jwt_creds_jwt_encode_and_sign, jwt_creds_check_jwt_claim);
 }
 
 static void test_parse_refresh_token_success(void) {
   grpc_auth_refresh_token refresh_token =
       grpc_auth_refresh_token_create_from_string(test_refresh_token_str);
   GPR_ASSERT(grpc_auth_refresh_token_is_valid(&refresh_token));
-  GPR_ASSERT(refresh_token.type != nullptr &&
-             (strcmp(refresh_token.type, "authorized_user") == 0));
+  GPR_ASSERT(refresh_token.type != nullptr && (strcmp(refresh_token.type, "authorized_user") == 0));
   GPR_ASSERT(refresh_token.client_id != nullptr &&
-             (strcmp(refresh_token.client_id,
-                     "32555999999.apps.googleusercontent.com") == 0));
+             (strcmp(refresh_token.client_id, "32555999999.apps.googleusercontent.com") == 0));
+  GPR_ASSERT(refresh_token.client_secret != nullptr &&
+             (strcmp(refresh_token.client_secret, "EmssLNjJy1332hD4KFsecret") == 0));
   GPR_ASSERT(
-      refresh_token.client_secret != nullptr &&
-      (strcmp(refresh_token.client_secret, "EmssLNjJy1332hD4KFsecret") == 0));
-  GPR_ASSERT(refresh_token.refresh_token != nullptr &&
-             (strcmp(refresh_token.refresh_token,
-                     "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42") == 0));
+      refresh_token.refresh_token != nullptr &&
+      (strcmp(refresh_token.refresh_token, "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42") == 0));
   grpc_auth_refresh_token_destruct(&refresh_token);
 }
 

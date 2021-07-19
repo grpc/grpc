@@ -31,9 +31,8 @@ void ThreadPoolWorker::Run() {
       gpr_timespec wait_time = gpr_time_0(GPR_TIMESPAN);
       elem = queue_->Get(&wait_time);
       stats_.sleep_time = gpr_time_add(stats_.sleep_time, wait_time);
-      gpr_log(GPR_INFO,
-              "ThreadPool Worker [%s %d] Stats:  sleep_time          %f",
-              thd_name_, index_, gpr_timespec_to_micros(stats_.sleep_time));
+      gpr_log(GPR_INFO, "ThreadPool Worker [%s %d] Stats:  sleep_time          %f", thd_name_,
+              index_, gpr_timespec_to_micros(stats_.sleep_time));
     } else {
       elem = queue_->Get(nullptr);
     }
@@ -54,8 +53,7 @@ void ThreadPool::SharedThreadPoolConstructor() {
   if (num_threads_ <= 0) num_threads_ = 1;
 
   queue_ = new InfLenFIFOQueue();
-  threads_ = static_cast<ThreadPoolWorker**>(
-      gpr_zalloc(num_threads_ * sizeof(ThreadPoolWorker*)));
+  threads_ = static_cast<ThreadPoolWorker**>(gpr_zalloc(num_threads_ * sizeof(ThreadPoolWorker*)));
   for (int i = 0; i < num_threads_; ++i) {
     threads_[i] = new ThreadPoolWorker(thd_name_, queue_, thread_options_, i);
     threads_[i]->Start();
@@ -89,11 +87,8 @@ ThreadPool::ThreadPool(int num_threads, const char* thd_name)
   SharedThreadPoolConstructor();
 }
 
-ThreadPool::ThreadPool(int num_threads, const char* thd_name,
-                       const Thread::Options& thread_options)
-    : num_threads_(num_threads),
-      thd_name_(thd_name),
-      thread_options_(thread_options) {
+ThreadPool::ThreadPool(int num_threads, const char* thd_name, const Thread::Options& thread_options)
+    : num_threads_(num_threads), thd_name_(thd_name), thread_options_(thread_options) {
   if (thread_options_.stack_size() == 0) {
     thread_options_.set_stack_size(DefaultStackSize());
   }
@@ -128,9 +123,7 @@ int ThreadPool::num_pending_closures() const { return queue_->count(); }
 
 int ThreadPool::pool_capacity() const { return num_threads_; }
 
-const Thread::Options& ThreadPool::thread_options() const {
-  return thread_options_;
-}
+const Thread::Options& ThreadPool::thread_options() const { return thread_options_; }
 
 const char* ThreadPool::thread_name() const { return thd_name_; }
 }  // namespace grpc_core

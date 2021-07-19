@@ -35,8 +35,7 @@ namespace grpc {
 
 class Channel;
 
-class DefaultGlobalClientCallbacks final
-    : public ClientContext::GlobalCallbacks {
+class DefaultGlobalClientCallbacks final : public ClientContext::GlobalCallbacks {
  public:
   ~DefaultGlobalClientCallbacks() override {}
   void DefaultConstructor(ClientContext* /*context*/) override {}
@@ -46,8 +45,7 @@ class DefaultGlobalClientCallbacks final
 static internal::GrpcLibraryInitializer g_gli_initializer;
 static DefaultGlobalClientCallbacks* g_default_client_callbacks =
     new DefaultGlobalClientCallbacks();
-static ClientContext::GlobalCallbacks* g_client_callbacks =
-    g_default_client_callbacks;
+static ClientContext::GlobalCallbacks* g_client_callbacks = g_default_client_callbacks;
 
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
@@ -73,8 +71,7 @@ ClientContext::~ClientContext() {
   g_client_callbacks->Destructor(this);
 }
 
-void ClientContext::set_credentials(
-    const std::shared_ptr<CallCredentials>& creds) {
+void ClientContext::set_credentials(const std::shared_ptr<CallCredentials>& creds) {
   creds_ = creds;
   // If call_ is set, we have already created the call, and set the call
   // credentials. This should only be done before we have started the batch
@@ -83,8 +80,7 @@ void ClientContext::set_credentials(
     if (!creds_->ApplyToCall(call_)) {
       SendCancelToInterceptors();
       grpc_call_cancel_with_status(call_, GRPC_STATUS_CANCELLED,
-                                   "Failed to set credentials to rpc.",
-                                   nullptr);
+                                   "Failed to set credentials to rpc.", nullptr);
     }
   }
 }
@@ -103,18 +99,15 @@ std::unique_ptr<ClientContext> ClientContext::FromServerContext(
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromCallbackServerContext(
-    const grpc::CallbackServerContext& server_context,
-    PropagationOptions options) {
+    const grpc::CallbackServerContext& server_context, PropagationOptions options) {
   return FromInternalServerContext(server_context, options);
 }
 
-void ClientContext::AddMetadata(const std::string& meta_key,
-                                const std::string& meta_value) {
+void ClientContext::AddMetadata(const std::string& meta_key, const std::string& meta_value) {
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<Channel>& channel) {
+void ClientContext::set_call(grpc_call* call, const std::shared_ptr<Channel>& channel) {
   internal::MutexLock lock(&mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
@@ -122,8 +115,8 @@ void ClientContext::set_call(grpc_call* call,
   if (creds_ && !creds_->ApplyToCall(call_)) {
     // TODO(yashykt): should interceptors also see this status?
     SendCancelToInterceptors();
-    grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
-                                 "Failed to set credentials to rpc.", nullptr);
+    grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Failed to set credentials to rpc.",
+                                 nullptr);
   }
   if (call_canceled_) {
     SendCancelToInterceptors();
@@ -131,13 +124,11 @@ void ClientContext::set_call(grpc_call* call,
   }
 }
 
-void ClientContext::set_compression_algorithm(
-    grpc_compression_algorithm algorithm) {
+void ClientContext::set_compression_algorithm(grpc_compression_algorithm algorithm) {
   compression_algorithm_ = algorithm;
   const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
-    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
-            algorithm);
+    gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.", algorithm);
     abort();
   }
   GPR_ASSERT(algorithm_name != nullptr);

@@ -21,15 +21,12 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x);
 
-static void test_no_op(void) {
-  grpc_histogram_destroy(grpc_histogram_create(0.01, 60e9));
-}
+static void test_no_op(void) { grpc_histogram_destroy(grpc_histogram_create(0.01, 60e9)); }
 
-static void expect_percentile(grpc_histogram* h, double percentile,
-                              double min_expect, double max_expect) {
+static void expect_percentile(grpc_histogram* h, double percentile, double min_expect,
+                              double max_expect) {
   double got = grpc_histogram_percentile(h, percentile);
-  gpr_log(GPR_INFO, "@%f%%, expect %f <= %f <= %f", percentile, min_expect, got,
-          max_expect);
+  gpr_log(GPR_INFO, "@%f%%, expect %f <= %f <= %f", percentile, min_expect, got, max_expect);
   GPR_ASSERT(min_expect <= got);
   GPR_ASSERT(got <= max_expect);
 }

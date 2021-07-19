@@ -33,14 +33,13 @@ bool MultiProducerSingleConsumerQueue::Push(Node* node) {
   return prev == &stub_;
 }
 
-MultiProducerSingleConsumerQueue::Node*
-MultiProducerSingleConsumerQueue::Pop() {
+MultiProducerSingleConsumerQueue::Node* MultiProducerSingleConsumerQueue::Pop() {
   bool empty;
   return PopAndCheckEnd(&empty);
 }
 
-MultiProducerSingleConsumerQueue::Node*
-MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool* empty) {
+MultiProducerSingleConsumerQueue::Node* MultiProducerSingleConsumerQueue::PopAndCheckEnd(
+    bool* empty) {
   Node* tail = tail_;
   Node* next = tail_->next.Load(MemoryOrder::ACQUIRE);
   if (tail == &stub_) {
@@ -80,12 +79,9 @@ MultiProducerSingleConsumerQueue::PopAndCheckEnd(bool* empty) {
 // LockedMultiProducerSingleConsumerQueue
 //
 
-bool LockedMultiProducerSingleConsumerQueue::Push(Node* node) {
-  return queue_.Push(node);
-}
+bool LockedMultiProducerSingleConsumerQueue::Push(Node* node) { return queue_.Push(node); }
 
-LockedMultiProducerSingleConsumerQueue::Node*
-LockedMultiProducerSingleConsumerQueue::TryPop() {
+LockedMultiProducerSingleConsumerQueue::Node* LockedMultiProducerSingleConsumerQueue::TryPop() {
   if (mu_.TryLock()) {
     Node* node = queue_.Pop();
     mu_.Unlock();
@@ -94,8 +90,7 @@ LockedMultiProducerSingleConsumerQueue::TryPop() {
   return nullptr;
 }
 
-LockedMultiProducerSingleConsumerQueue::Node*
-LockedMultiProducerSingleConsumerQueue::Pop() {
+LockedMultiProducerSingleConsumerQueue::Node* LockedMultiProducerSingleConsumerQueue::Pop() {
   MutexLock lock(&mu_);
   bool empty = false;
   Node* node;

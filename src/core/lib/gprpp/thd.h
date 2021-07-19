@@ -86,8 +86,8 @@ class Thread {
   /// The optional \a success argument indicates whether the thread
   /// is successfully created.
   /// The optional \a options can be used to set the thread detachable.
-  Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-         bool* success = nullptr, const Options& options = Options());
+  Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg, bool* success = nullptr,
+         const Options& options = Options());
 
   /// Move constructor for thread. After this is called, the other thread
   /// no longer represents a living thread object

@@ -21,9 +21,7 @@
 namespace grpc {
 namespace testing {
 
-std::string ToString(const grpc::string_ref& r) {
-  return std::string(r.data(), r.size());
-}
+std::string ToString(const grpc::string_ref& r) { return std::string(r.data(), r.size()); }
 
 }  // namespace testing
 }  // namespace grpc

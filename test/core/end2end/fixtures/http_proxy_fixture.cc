@@ -116,17 +116,14 @@ typedef struct proxy_connection {
   grpc_http_request http_request;
 } proxy_connection;
 
-static void proxy_connection_ref(proxy_connection* conn,
-                                 const char* /*reason*/) {
+static void proxy_connection_ref(proxy_connection* conn, const char* /*reason*/) {
   gpr_ref(&conn->refcount);
 }
 
 // Helper function to destroy the proxy connection.
-static void proxy_connection_unref(proxy_connection* conn,
-                                   const char* /*reason*/) {
+static void proxy_connection_unref(proxy_connection* conn, const char* /*reason*/) {
   if (gpr_unref(&conn->refcount)) {
-    gpr_log(GPR_DEBUG, "endpoints: %p %p", conn->client_endpoint,
-            conn->server_endpoint);
+    gpr_log(GPR_DEBUG, "endpoints: %p %p", conn->client_endpoint, conn->server_endpoint);
     grpc_endpoint_destroy(conn->client_endpoint);
     if (conn->server_endpoint != nullptr) {
       grpc_endpoint_destroy(conn->server_endpoint);
@@ -169,9 +166,8 @@ static void on_server_connect_done_locked(void* arg, grpc_error_handle error);
 static void on_read_request_done_locked(void* arg, grpc_error_handle error);
 
 // Helper function to shut down the proxy connection.
-static void proxy_connection_failed(proxy_connection* conn,
-                                    failure_type failure, const char* prefix,
-                                    grpc_error_handle error) {
+static void proxy_connection_failed(proxy_connection* conn, failure_type failure,
+                                    const char* prefix, grpc_error_handle error) {
   gpr_log(GPR_INFO, "%s: %s", prefix, grpc_error_std_string(error).c_str());
   // Decide whether we should shut down the client and server.
   bool shutdown_client = false;
@@ -196,8 +192,7 @@ static void proxy_connection_failed(proxy_connection* conn,
     grpc_endpoint_shutdown(conn->client_endpoint, GRPC_ERROR_REF(error));
     conn->client_shutdown = true;
   }
-  if (shutdown_server && !conn->server_shutdown &&
-      (conn->server_endpoint != nullptr)) {
+  if (shutdown_server && !conn->server_shutdown && (conn->server_endpoint != nullptr)) {
     grpc_endpoint_shutdown(conn->server_endpoint, GRPC_ERROR_REF(error));
     conn->server_shutdown = true;
   }
@@ -211,8 +206,8 @@ static void on_client_write_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   conn->client_is_writing = false;
   if (error != GRPC_ERROR_NONE) {
-    proxy_connection_failed(conn, CLIENT_WRITE_FAILED,
-                            "HTTP proxy client write", GRPC_ERROR_REF(error));
+    proxy_connection_failed(conn, CLIENT_WRITE_FAILED, "HTTP proxy client write",
+                            GRPC_ERROR_REF(error));
     return;
   }
   // Clear write buffer (the data we just wrote).
@@ -220,8 +215,7 @@ static void on_client_write_done_locked(void* arg, grpc_error_handle error) {
   // If more data was read from the server since we started this write,
   // write that data now.
   if (conn->client_deferred_write_buffer.length > 0) {
-    grpc_slice_buffer_move_into(&conn->client_deferred_write_buffer,
-                                &conn->client_write_buffer);
+    grpc_slice_buffer_move_into(&conn->client_deferred_write_buffer, &conn->client_write_buffer);
     conn->client_is_writing = true;
     GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done, conn,
                       grpc_schedule_on_exec_ctx);
@@ -235,10 +229,8 @@ static void on_client_write_done_locked(void* arg, grpc_error_handle error) {
 
 static void on_client_write_done(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done_locked,
-                    conn, nullptr);
-  conn->proxy->combiner->Run(&conn->on_client_write_done,
-                             GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done_locked, conn, nullptr);
+  conn->proxy->combiner->Run(&conn->on_client_write_done, GRPC_ERROR_REF(error));
 }
 
 // Callback for writing proxy data to the backend server.
@@ -246,8 +238,8 @@ static void on_server_write_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   conn->server_is_writing = false;
   if (error != GRPC_ERROR_NONE) {
-    proxy_connection_failed(conn, SERVER_WRITE_FAILED,
-                            "HTTP proxy server write", GRPC_ERROR_REF(error));
+    proxy_connection_failed(conn, SERVER_WRITE_FAILED, "HTTP proxy server write",
+                            GRPC_ERROR_REF(error));
     return;
   }
   // Clear write buffer (the data we just wrote).
@@ -255,8 +247,7 @@ static void on_server_write_done_locked(void* arg, grpc_error_handle error) {
   // If more data was read from the client since we started this write,
   // write that data now.
   if (conn->server_deferred_write_buffer.length > 0) {
-    grpc_slice_buffer_move_into(&conn->server_deferred_write_buffer,
-                                &conn->server_write_buffer);
+    grpc_slice_buffer_move_into(&conn->server_deferred_write_buffer, &conn->server_write_buffer);
     conn->server_is_writing = true;
     GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done, conn,
                       grpc_schedule_on_exec_ctx);
@@ -270,10 +261,8 @@ static void on_server_write_done_locked(void* arg, grpc_error_handle error) {
 
 static void on_server_write_done(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done_locked,
-                    conn, nullptr);
-  conn->proxy->combiner->Run(&conn->on_server_write_done,
-                             GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done_locked, conn, nullptr);
+  conn->proxy->combiner->Run(&conn->on_server_write_done, GRPC_ERROR_REF(error));
 }
 
 // Callback for reading data from the client, which will be proxied to
@@ -292,11 +281,9 @@ static void on_client_read_done_locked(void* arg, grpc_error_handle error) {
   //
   // Otherwise, move the read data into the write buffer and write it.
   if (conn->server_is_writing) {
-    grpc_slice_buffer_move_into(&conn->client_read_buffer,
-                                &conn->server_deferred_write_buffer);
+    grpc_slice_buffer_move_into(&conn->client_read_buffer, &conn->server_deferred_write_buffer);
   } else {
-    grpc_slice_buffer_move_into(&conn->client_read_buffer,
-                                &conn->server_write_buffer);
+    grpc_slice_buffer_move_into(&conn->client_read_buffer, &conn->server_write_buffer);
     proxy_connection_ref(conn, "client_read");
     conn->server_is_writing = true;
     GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done, conn,
@@ -307,14 +294,13 @@ static void on_client_read_done_locked(void* arg, grpc_error_handle error) {
   // Read more data.
   GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done, conn,
                     grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done, /*urgent=*/false);
+  grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer, &conn->on_client_read_done,
+                     /*urgent=*/false);
 }
 
 static void on_client_read_done(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done_locked,
-                    conn, nullptr);
+  GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done_locked, conn, nullptr);
   conn->proxy->combiner->Run(&conn->on_client_read_done, GRPC_ERROR_REF(error));
 }
 
@@ -334,11 +320,9 @@ static void on_server_read_done_locked(void* arg, grpc_error_handle error) {
   //
   // Otherwise, move the read data into the write buffer and write it.
   if (conn->client_is_writing) {
-    grpc_slice_buffer_move_into(&conn->server_read_buffer,
-                                &conn->client_deferred_write_buffer);
+    grpc_slice_buffer_move_into(&conn->server_read_buffer, &conn->client_deferred_write_buffer);
   } else {
-    grpc_slice_buffer_move_into(&conn->server_read_buffer,
-                                &conn->client_write_buffer);
+    grpc_slice_buffer_move_into(&conn->server_read_buffer, &conn->client_write_buffer);
     proxy_connection_ref(conn, "server_read");
     conn->client_is_writing = true;
     GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done, conn,
@@ -349,14 +333,13 @@ static void on_server_read_done_locked(void* arg, grpc_error_handle error) {
   // Read more data.
   GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done, conn,
                     grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done, /*urgent=*/false);
+  grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer, &conn->on_server_read_done,
+                     /*urgent=*/false);
 }
 
 static void on_server_read_done(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done_locked,
-                    conn, nullptr);
+  GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done_locked, conn, nullptr);
   conn->proxy->combiner->Run(&conn->on_server_read_done, GRPC_ERROR_REF(error));
 }
 
@@ -365,8 +348,7 @@ static void on_write_response_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   conn->client_is_writing = false;
   if (error != GRPC_ERROR_NONE) {
-    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy write response",
-                            GRPC_ERROR_REF(error));
+    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy write response", GRPC_ERROR_REF(error));
     return;
   }
   // Clear write buffer.
@@ -379,20 +361,18 @@ static void on_write_response_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection_unref(conn, "write_response");
   GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done, conn,
                     grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done, /*urgent=*/false);
+  grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer, &conn->on_client_read_done,
+                     /*urgent=*/false);
   GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done, conn,
                     grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done, /*urgent=*/false);
+  grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer, &conn->on_server_read_done,
+                     /*urgent=*/false);
 }
 
 static void on_write_response_done(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  GRPC_CLOSURE_INIT(&conn->on_write_response_done,
-                    on_write_response_done_locked, conn, nullptr);
-  conn->proxy->combiner->Run(&conn->on_write_response_done,
-                             GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_INIT(&conn->on_write_response_done, on_write_response_done_locked, conn, nullptr);
+  conn->proxy->combiner->Run(&conn->on_write_response_done, GRPC_ERROR_REF(error));
 }
 
 // Callback to connect to the backend server specified by the HTTP
@@ -405,15 +385,13 @@ static void on_server_connect_done_locked(void* arg, grpc_error_handle error) {
     // connection failed.  However, for the purposes of this test code,
     // it's fine to pretend this is a client-side error, which will
     // cause the client connection to be dropped.
-    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy server connect",
-                            GRPC_ERROR_REF(error));
+    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy server connect", GRPC_ERROR_REF(error));
     return;
   }
   // We've established a connection, so send back a 200 response code to
   // the client.
   // The write callback inherits our reference to conn.
-  grpc_slice slice =
-      grpc_slice_from_copied_string("HTTP/1.0 200 connected\r\n\r\n");
+  grpc_slice slice = grpc_slice_from_copied_string("HTTP/1.0 200 connected\r\n\r\n");
   grpc_slice_buffer_add(&conn->client_write_buffer, slice);
   conn->client_is_writing = true;
   GRPC_CLOSURE_INIT(&conn->on_write_response_done, on_write_response_done, conn,
@@ -424,10 +402,8 @@ static void on_server_connect_done_locked(void* arg, grpc_error_handle error) {
 
 static void on_server_connect_done(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  GRPC_CLOSURE_INIT(&conn->on_server_connect_done,
-                    on_server_connect_done_locked, conn, nullptr);
-  conn->proxy->combiner->Run(&conn->on_server_connect_done,
-                             GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done_locked, conn, nullptr);
+  conn->proxy->combiner->Run(&conn->on_server_connect_done, GRPC_ERROR_REF(error));
 }
 
 /**
@@ -435,8 +411,7 @@ static void on_server_connect_done(void* arg, grpc_error_handle error) {
  * Basic <base64_encoded_expected_cred>
  * Returns true if it matches, false otherwise
  */
-static bool proxy_auth_header_matches(char* proxy_auth_header_val,
-                                      char* expected_cred) {
+static bool proxy_auth_header_matches(char* proxy_auth_header_val, char* expected_cred) {
   GPR_ASSERT(proxy_auth_header_val != nullptr);
   GPR_ASSERT(expected_cred != nullptr);
   if (strncmp(proxy_auth_header_val, "Basic ", 6) != 0) {
@@ -444,8 +419,7 @@ static bool proxy_auth_header_matches(char* proxy_auth_header_val,
   }
   proxy_auth_header_val += 6;
   grpc_slice decoded_slice = grpc_base64_decode(proxy_auth_header_val, 0);
-  const bool header_matches =
-      grpc_slice_str_cmp(decoded_slice, expected_cred) == 0;
+  const bool header_matches = grpc_slice_str_cmp(decoded_slice, expected_cred) == 0;
   grpc_slice_unref_internal(decoded_slice);
   return header_matches;
 }
@@ -458,18 +432,16 @@ static bool proxy_auth_header_matches(char* proxy_auth_header_val,
 // which will cause the client connection to be dropped.
 static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  gpr_log(GPR_DEBUG, "on_read_request_done: %p %s", conn,
-          grpc_error_std_string(error).c_str());
+  gpr_log(GPR_DEBUG, "on_read_request_done: %p %s", conn, grpc_error_std_string(error).c_str());
   if (error != GRPC_ERROR_NONE) {
-    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
-                            GRPC_ERROR_REF(error));
+    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request", GRPC_ERROR_REF(error));
     return;
   }
   // Read request and feed it to the parser.
   for (size_t i = 0; i < conn->client_read_buffer.count; ++i) {
     if (GRPC_SLICE_LENGTH(conn->client_read_buffer.slices[i]) > 0) {
-      error = grpc_http_parser_parse(
-          &conn->http_parser, conn->client_read_buffer.slices[i], nullptr);
+      error =
+          grpc_http_parser_parse(&conn->http_parser, conn->client_read_buffer.slices[i], nullptr);
       if (error != GRPC_ERROR_NONE) {
         proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy request parse",
                                 GRPC_ERROR_REF(error));
@@ -490,75 +462,63 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   // Make sure we got a CONNECT request.
   if (strcmp(conn->http_request.method, "CONNECT") != 0) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("HTTP proxy got request method ",
-                     conn->http_request.method)
-            .c_str());
-    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
-                            GRPC_ERROR_REF(error));
+        absl::StrCat("HTTP proxy got request method ", conn->http_request.method).c_str());
+    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request", GRPC_ERROR_REF(error));
     GRPC_ERROR_UNREF(error);
     return;
   }
   // If proxy auth is being used, check if the header is present and as expected
-  const grpc_arg* proxy_auth_arg = grpc_channel_args_find(
-      conn->proxy->channel_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
+  const grpc_arg* proxy_auth_arg =
+      grpc_channel_args_find(conn->proxy->channel_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
   char* proxy_auth_str = grpc_channel_arg_get_string(proxy_auth_arg);
   if (proxy_auth_str != nullptr) {
     bool client_authenticated = false;
     for (size_t i = 0; i < conn->http_request.hdr_count; i++) {
       if (strcmp(conn->http_request.hdrs[i].key, "Proxy-Authorization") == 0) {
-        client_authenticated = proxy_auth_header_matches(
-            conn->http_request.hdrs[i].value, proxy_auth_str);
+        client_authenticated =
+            proxy_auth_header_matches(conn->http_request.hdrs[i].value, proxy_auth_str);
         break;
       }
     }
     if (!client_authenticated) {
       const char* msg = "HTTP Connect could not verify authentication";
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(msg);
-      proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
-                              GRPC_ERROR_REF(error));
+      proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request", GRPC_ERROR_REF(error));
       GRPC_ERROR_UNREF(error);
       return;
     }
   }
   // Resolve address.
   grpc_resolved_addresses* resolved_addresses = nullptr;
-  error = grpc_blocking_resolve_address(conn->http_request.path, "80",
-                                        &resolved_addresses);
+  error = grpc_blocking_resolve_address(conn->http_request.path, "80", &resolved_addresses);
   if (error != GRPC_ERROR_NONE) {
-    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup",
-                            GRPC_ERROR_REF(error));
+    proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup", GRPC_ERROR_REF(error));
     GRPC_ERROR_UNREF(error);
     return;
   }
   GPR_ASSERT(resolved_addresses->naddrs >= 1);
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
-  const grpc_millis deadline =
-      grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
+  const grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, nullptr,
-                          &resolved_addresses->addrs[0], deadline);
+  grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint, conn->pollset_set,
+                          nullptr, &resolved_addresses->addrs[0], deadline);
   grpc_resolved_addresses_destroy(resolved_addresses);
 }
 
 static void on_read_request_done(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  GRPC_CLOSURE_INIT(&conn->on_read_request_done, on_read_request_done_locked,
-                    conn, nullptr);
-  conn->proxy->combiner->Run(&conn->on_read_request_done,
-                             GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_INIT(&conn->on_read_request_done, on_read_request_done_locked, conn, nullptr);
+  conn->proxy->combiner->Run(&conn->on_read_request_done, GRPC_ERROR_REF(error));
 }
 
-static void on_accept(void* arg, grpc_endpoint* endpoint,
-                      grpc_pollset* /*accepting_pollset*/,
+static void on_accept(void* arg, grpc_endpoint* endpoint, grpc_pollset* /*accepting_pollset*/,
                       grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
   // Instantiate proxy_connection.
-  proxy_connection* conn =
-      static_cast<proxy_connection*>(gpr_zalloc(sizeof(*conn)));
+  proxy_connection* conn = static_cast<proxy_connection*>(gpr_zalloc(sizeof(*conn)));
   gpr_ref(&proxy->users);
   conn->client_endpoint = endpoint;
   conn->proxy = proxy;
@@ -574,12 +534,11 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   grpc_slice_buffer_init(&conn->server_deferred_write_buffer);
   conn->server_is_writing = false;
   grpc_slice_buffer_init(&conn->server_write_buffer);
-  grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
-                        &conn->http_request);
+  grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST, &conn->http_request);
   GRPC_CLOSURE_INIT(&conn->on_read_request_done, on_read_request_done, conn,
                     grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_read_request_done, /*urgent=*/false);
+  grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer, &conn->on_read_request_done,
+                     /*urgent=*/false);
 }
 
 //
@@ -593,17 +552,15 @@ static void thread_main(void* arg) {
     gpr_ref(&proxy->users);
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(proxy->mu);
-    GRPC_LOG_IF_ERROR(
-        "grpc_pollset_work",
-        grpc_pollset_work(proxy->pollset[0], &worker,
-                          grpc_core::ExecCtx::Get()->Now() + GPR_MS_PER_SEC));
+    GRPC_LOG_IF_ERROR("grpc_pollset_work",
+                      grpc_pollset_work(proxy->pollset[0], &worker,
+                                        grpc_core::ExecCtx::Get()->Now() + GPR_MS_PER_SEC));
     gpr_mu_unlock(proxy->mu);
     grpc_core::ExecCtx::Get()->Flush();
   } while (!gpr_unref(&proxy->users));
 }
 
-grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
-    grpc_channel_args* args) {
+grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   // Construct proxy address.
@@ -612,13 +569,11 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(args);
-  grpc_error_handle error =
-      grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
+  grpc_error_handle error = grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
   grpc_resolved_address resolved_addr;
-  grpc_sockaddr_in* addr =
-      reinterpret_cast<grpc_sockaddr_in*>(resolved_addr.addr);
+  grpc_sockaddr_in* addr = reinterpret_cast<grpc_sockaddr_in*>(resolved_addr.addr);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sin_family = GRPC_AF_INET;
   grpc_sockaddr_set_port(&resolved_addr, proxy_port);
@@ -651,14 +606,12 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   grpc_tcp_server_shutdown_listeners(proxy->server);
   grpc_tcp_server_unref(proxy->server);
   grpc_channel_args_destroy(proxy->channel_args);
-  grpc_pollset_shutdown(proxy->pollset[0],
-                        GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset[0],
-                                            grpc_schedule_on_exec_ctx));
+  grpc_pollset_shutdown(proxy->pollset[0], GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset[0],
+                                                               grpc_schedule_on_exec_ctx));
   GRPC_COMBINER_UNREF(proxy->combiner, "test");
   delete proxy;
 }
 
-const char* grpc_end2end_http_proxy_get_proxy_name(
-    grpc_end2end_http_proxy* proxy) {
+const char* grpc_end2end_http_proxy_get_proxy_name(grpc_end2end_http_proxy* proxy) {
   return proxy->proxy_name.c_str();
 }

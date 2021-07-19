@@ -58,8 +58,8 @@ inline std::string StripProto(std::string filename) {
   return filename;
 }
 
-inline std::string StringReplace(std::string str, const std::string& from,
-                                 const std::string& to, bool replace_all) {
+inline std::string StringReplace(std::string str, const std::string& from, const std::string& to,
+                                 bool replace_all) {
   size_t pos = 0;
 
   do {
@@ -74,13 +74,11 @@ inline std::string StringReplace(std::string str, const std::string& from,
   return str;
 }
 
-inline std::string StringReplace(std::string str, const std::string& from,
-                                 const std::string& to) {
+inline std::string StringReplace(std::string str, const std::string& from, const std::string& to) {
   return StringReplace(str, from, to, true);
 }
 
-inline std::vector<std::string> tokenize(const std::string& input,
-                                         const std::string& delimiters) {
+inline std::vector<std::string> tokenize(const std::string& input, const std::string& delimiters) {
   std::vector<std::string> tokens;
   size_t pos, last_pos = 0;
 
@@ -124,8 +122,8 @@ inline std::string LowerUnderscoreToUpperCamel(std::string str) {
   return result;
 }
 
-inline std::string FileNameInUpperCamel(
-    const grpc::protobuf::FileDescriptor* file, bool include_package_path) {
+inline std::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor* file,
+                                        bool include_package_path) {
   std::vector<std::string> tokens = tokenize(StripProto(file->name()), "/");
   std::string result = "";
   if (include_package_path) {
@@ -137,8 +135,7 @@ inline std::string FileNameInUpperCamel(
   return result;
 }
 
-inline std::string FileNameInUpperCamel(
-    const grpc::protobuf::FileDescriptor* file) {
+inline std::string FileNameInUpperCamel(const grpc::protobuf::FileDescriptor* file) {
   return FileNameInUpperCamel(file, true);
 }
 
@@ -149,8 +146,7 @@ enum MethodType {
   METHODTYPE_BIDI_STREAMING
 };
 
-inline MethodType GetMethodType(
-    const grpc::protobuf::MethodDescriptor* method) {
+inline MethodType GetMethodType(const grpc::protobuf::MethodDescriptor* method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
       return METHODTYPE_BIDI_STREAMING;
@@ -166,8 +162,7 @@ inline MethodType GetMethodType(
   }
 }
 
-inline void Split(const std::string& s, char /*delim*/,
-                  std::vector<std::string>* append_to) {
+inline void Split(const std::string& s, char /*delim*/, std::vector<std::string>* append_to) {
   std::istringstream iss(s);
   std::string piece;
   while (std::getline(iss, piece)) {
@@ -175,11 +170,7 @@ inline void Split(const std::string& s, char /*delim*/,
   }
 }
 
-enum CommentType {
-  COMMENTTYPE_LEADING,
-  COMMENTTYPE_TRAILING,
-  COMMENTTYPE_LEADING_DETACHED
-};
+enum CommentType { COMMENTTYPE_LEADING, COMMENTTYPE_TRAILING, COMMENTTYPE_LEADING_DETACHED };
 
 // Get all the raw comments and append each line without newline to out.
 template <typename DescriptorType>
@@ -190,13 +181,11 @@ inline void GetComment(const DescriptorType* desc, CommentType type,
     return;
   }
   if (type == COMMENTTYPE_LEADING || type == COMMENTTYPE_TRAILING) {
-    const std::string& comments = type == COMMENTTYPE_LEADING
-                                      ? location.leading_comments
-                                      : location.trailing_comments;
+    const std::string& comments =
+        type == COMMENTTYPE_LEADING ? location.leading_comments : location.trailing_comments;
     Split(comments, '\n', out);
   } else if (type == COMMENTTYPE_LEADING_DETACHED) {
-    for (unsigned int i = 0; i < location.leading_detached_comments.size();
-         i++) {
+    for (unsigned int i = 0; i < location.leading_detached_comments.size(); i++) {
       Split(location.leading_detached_comments[i], '\n', out);
       out->push_back("");
     }
@@ -210,8 +199,8 @@ inline void GetComment(const DescriptorType* desc, CommentType type,
 // For file level leading and detached leading comments, we return comments
 // above syntax line. Return nothing for trailing comments.
 template <>
-inline void GetComment(const grpc::protobuf::FileDescriptor* desc,
-                       CommentType type, std::vector<std::string>* out) {
+inline void GetComment(const grpc::protobuf::FileDescriptor* desc, CommentType type,
+                       std::vector<std::string>* out) {
   if (type == COMMENTTYPE_TRAILING) {
     return;
   }
@@ -224,8 +213,7 @@ inline void GetComment(const grpc::protobuf::FileDescriptor* desc,
   if (type == COMMENTTYPE_LEADING) {
     Split(location.leading_comments, '\n', out);
   } else if (type == COMMENTTYPE_LEADING_DETACHED) {
-    for (unsigned int i = 0; i < location.leading_detached_comments.size();
-         i++) {
+    for (unsigned int i = 0; i < location.leading_detached_comments.size(); i++) {
       Split(location.leading_detached_comments[i], '\n', out);
       out->push_back("");
     }
@@ -237,8 +225,8 @@ inline void GetComment(const grpc::protobuf::FileDescriptor* desc,
 
 // Add prefix and newline to each comment line and concatenate them together.
 // Make sure there is a space after the prefix unless the line is empty.
-inline std::string GenerateCommentsWithPrefix(
-    const std::vector<std::string>& in, const std::string& prefix) {
+inline std::string GenerateCommentsWithPrefix(const std::vector<std::string>& in,
+                                              const std::string& prefix) {
   std::ostringstream oss;
   for (auto it = in.begin(); it != in.end(); it++) {
     const std::string& elem = *it;
@@ -258,15 +246,12 @@ inline std::string GetPrefixedComments(const DescriptorType* desc, bool leading,
                                        const std::string& prefix) {
   std::vector<std::string> out;
   if (leading) {
-    grpc_generator::GetComment(
-        desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &out);
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &out);
     std::vector<std::string> leading;
-    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
-                               &leading);
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING, &leading);
     out.insert(out.end(), leading.begin(), leading.end());
   } else {
-    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
-                               &out);
+    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING, &out);
   }
   return GenerateCommentsWithPrefix(out, prefix);
 }

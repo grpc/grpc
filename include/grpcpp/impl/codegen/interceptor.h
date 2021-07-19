@@ -169,8 +169,7 @@ class InterceptorBatchMethods {
   /// Returns a modifiable multimap of the trailing metadata to be sent. Valid
   /// for PRE_SEND_STATUS interceptions. A value of nullptr indicates
   /// that this field is not valid.
-  virtual std::multimap<std::string, std::string>*
-  GetSendTrailingMetadata() = 0;
+  virtual std::multimap<std::string, std::string>* GetSendTrailingMetadata() = 0;
 
   /// Returns a pointer to the modifiable received message. Note that the
   /// message is already deserialized but the type is not set; the interceptor
@@ -182,8 +181,7 @@ class InterceptorBatchMethods {
   /// Returns a modifiable multimap of the received initial metadata.
   /// Valid for PRE_RECV_INITIAL_METADATA and POST_RECV_INITIAL_METADATA
   /// interceptions; nullptr if not valid
-  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
-  GetRecvInitialMetadata() = 0;
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvInitialMetadata() = 0;
 
   /// Returns a modifiable view of the received status on PRE_RECV_STATUS and
   /// POST_RECV_STATUS interceptions; nullptr if not valid.
@@ -191,8 +189,7 @@ class InterceptorBatchMethods {
 
   /// Returns a modifiable multimap of the received trailing metadata on
   /// PRE_RECV_STATUS and POST_RECV_STATUS interceptions; nullptr if not valid
-  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
-  GetRecvTrailingMetadata() = 0;
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvTrailingMetadata() = 0;
 
   /// Gets an intercepted channel. When a call is started on this interceptor,
   /// only interceptors after the current interceptor are created from the

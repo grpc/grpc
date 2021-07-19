@@ -93,8 +93,7 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
   if (done) {
     CFStreamConnectCleanup(connect);
   } else {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
@@ -128,10 +127,9 @@ static void OnOpen(void* arg, grpc_error_handle error) {
         CFRelease(stream_error);
       }
       if (error == GRPC_ERROR_NONE) {
-        *endpoint = grpc_cfstream_endpoint_create(
-            connect->read_stream, connect->write_stream,
-            connect->addr_name.c_str(), connect->resource_quota,
-            connect->stream_handle);
+        *endpoint = grpc_cfstream_endpoint_create(connect->read_stream, connect->write_stream,
+                                                  connect->addr_name.c_str(),
+                                                  connect->resource_quota, connect->stream_handle);
       }
     } else {
       GRPC_ERROR_REF(error);
@@ -141,14 +139,12 @@ static void OnOpen(void* arg, grpc_error_handle error) {
   }
 }
 
-static void ParseResolvedAddress(const grpc_resolved_address* addr,
-                                 CFStringRef* host, int* port) {
+static void ParseResolvedAddress(const grpc_resolved_address* addr, CFStringRef* host, int* port) {
   std::string host_port = grpc_sockaddr_to_string(addr, true);
   std::string host_string;
   std::string port_string;
   grpc_core::SplitHostPort(host_port, &host_string, &port_string);
-  *host = CFStringCreateWithCString(NULL, host_string.c_str(),
-                                    kCFStringEncodingUTF8);
+  *host = CFStringCreateWithCString(NULL, host_string.c_str(), kCFStringEncodingUTF8);
   *port = grpc_sockaddr_get_port(addr);
 }
 
@@ -167,8 +163,8 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   gpr_mu_init(&connect->mu);
 
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
-            connect, connect->addr_name.c_str());
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting", connect,
+            connect->addr_name.c_str());
   }
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
@@ -189,18 +185,15 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   CFStringRef host;
   int port;
   ParseResolvedAddress(resolved_addr, &host, &port);
-  CFStreamCreatePairWithSocketToHost(NULL, host, port, &read_stream,
-                                     &write_stream);
+  CFStreamCreatePairWithSocketToHost(NULL, host, port, &read_stream, &write_stream);
   CFRelease(host);
   connect->read_stream = read_stream;
   connect->write_stream = write_stream;
-  connect->stream_handle =
-      CFStreamHandle::CreateStreamHandle(read_stream, write_stream);
+  connect->stream_handle = CFStreamHandle::CreateStreamHandle(read_stream, write_stream);
   GRPC_CLOSURE_INIT(&connect->on_open, OnOpen, static_cast<void*>(connect),
                     grpc_schedule_on_exec_ctx);
   connect->stream_handle->NotifyOnOpen(&connect->on_open);
-  GRPC_CLOSURE_INIT(&connect->on_alarm, OnAlarm, connect,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&connect->on_alarm, OnAlarm, connect, grpc_schedule_on_exec_ctx);
   gpr_mu_lock(&connect->mu);
   CFReadStreamOpen(read_stream);
   CFWriteStreamOpen(write_stream);

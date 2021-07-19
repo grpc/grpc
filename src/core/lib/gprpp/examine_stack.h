@@ -34,8 +34,7 @@ typedef std::string (*gpr_current_stack_trace_func)();
 gpr_current_stack_trace_func GetCurrentStackTraceProvider();
 
 // Sets current_stack_trace_provider which provides a current-stack trace.
-void SetCurrentStackTraceProvider(
-    gpr_current_stack_trace_func current_stack_trace_provider);
+void SetCurrentStackTraceProvider(gpr_current_stack_trace_func current_stack_trace_provider);
 
 // Returns the current stack trace as a string via current_stack_trace_provider
 // If current_stack_trace_provider is not set, it returns absl::nullopt.

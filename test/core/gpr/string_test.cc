@@ -44,8 +44,7 @@ static void test_strdup(void) {
   GPR_ASSERT(nullptr == gpr_strdup(nullptr));
 }
 
-static void expect_dump(const char* buf, size_t len, uint32_t flags,
-                        const char* result) {
+static void expect_dump(const char* buf, size_t len, uint32_t flags, const char* result) {
   char* got = gpr_dump(buf, len, flags);
   GPR_ASSERT(0 == strcmp(got, result));
   gpr_free(got);
@@ -56,8 +55,7 @@ static void test_dump(void) {
   expect_dump("\x01", 1, GPR_DUMP_HEX, "01");
   expect_dump("\x01", 1, GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
   expect_dump("\x01\x02", 2, GPR_DUMP_HEX, "01 02");
-  expect_dump("\x01\x23\x45\x67\x89\xab\xcd\xef", 8, GPR_DUMP_HEX,
-              "01 23 45 67 89 ab cd ef");
+  expect_dump("\x01\x23\x45\x67\x89\xab\xcd\xef", 8, GPR_DUMP_HEX, "01 23 45 67 89 ab cd ef");
   expect_dump("ab", 2, GPR_DUMP_HEX | GPR_DUMP_ASCII, "61 62 'ab'");
 }
 

@@ -30,20 +30,15 @@ namespace grpc_core {
 // initialization. This policy will be translated to Envoy RBAC policies and
 // used to initialize allow and deny AuthorizationEngine objects. This provider
 // will return the same authorization engines everytime.
-class StaticDataAuthorizationPolicyProvider
-    : public grpc_authorization_policy_provider {
+class StaticDataAuthorizationPolicyProvider : public grpc_authorization_policy_provider {
  public:
-  static absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
-  Create(absl::string_view authz_policy);
+  static absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>> Create(
+      absl::string_view authz_policy);
 
   explicit StaticDataAuthorizationPolicyProvider(RbacPolicies policies);
 
-  RefCountedPtr<AuthorizationEngine> allow_engine() const override {
-    return allow_engine_;
-  }
-  RefCountedPtr<AuthorizationEngine> deny_engine() const override {
-    return deny_engine_;
-  }
+  RefCountedPtr<AuthorizationEngine> allow_engine() const override { return allow_engine_; }
+  RefCountedPtr<AuthorizationEngine> deny_engine() const override { return deny_engine_; }
 
   void Orphan() override {}
 

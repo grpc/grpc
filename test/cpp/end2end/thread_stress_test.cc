@@ -86,8 +86,7 @@ class CommonStressTest {
   virtual void SetUpStart(ServerBuilder* builder, Service* service) = 0;
   void SetUpStartCommon(ServerBuilder* builder, Service* service) {
     builder->RegisterService(service);
-    builder->SetMaxMessageSize(
-        kMaxMessageSize_);  // For testing max message size.
+    builder->SetMaxMessageSize(kMaxMessageSize_);  // For testing max message size.
   }
   void SetUpEnd(ServerBuilder* builder) { server_ = builder->BuildAndStart(); }
   void TearDownStart() { server_->Shutdown(); }
@@ -101,8 +100,8 @@ template <class Service>
 class CommonStressTestInsecure : public CommonStressTest<Service> {
  public:
   void ResetStub() override {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), InsecureChannelCredentials());
+    std::shared_ptr<Channel> channel =
+        grpc::CreateChannel(server_address_.str(), InsecureChannelCredentials());
     this->stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
   bool AllowExhaustion() override { return false; }
@@ -112,8 +111,7 @@ class CommonStressTestInsecure : public CommonStressTest<Service> {
     int port = grpc_pick_unused_port_or_die();
     this->server_address_ << "localhost:" << port;
     // Setup server
-    builder->AddListeningPort(server_address_.str(),
-                              InsecureServerCredentials());
+    builder->AddListeningPort(server_address_.str(), InsecureServerCredentials());
     this->SetUpStartCommon(builder, service);
   }
 
@@ -188,8 +186,7 @@ class CommonStressTestAsyncServer : public BaseClass {
       RefreshContext(i);
     }
     for (int i = 0; i < kNumAsyncServerThreads; i++) {
-      server_threads_.emplace_back(&CommonStressTestAsyncServer::ProcessRpcs,
-                                   this);
+      server_threads_.emplace_back(&CommonStressTestAsyncServer::ProcessRpcs, this);
     }
   }
   void TearDown() override {
@@ -223,8 +220,7 @@ class CommonStressTestAsyncServer : public BaseClass {
             contexts_[i].state = Context::DONE;
             EchoResponse send_response;
             send_response.set_message(contexts_[i].recv_request.message());
-            contexts_[i].response_writer->Finish(send_response, Status::OK,
-                                                 tag);
+            contexts_[i].response_writer->Finish(send_response, Status::OK, tag);
             break;
           }
           case Context::DONE:
@@ -240,18 +236,15 @@ class CommonStressTestAsyncServer : public BaseClass {
       contexts_[i].state = Context::READY;
       contexts_[i].srv_ctx.reset(new ServerContext);
       contexts_[i].response_writer.reset(
-          new grpc::ServerAsyncResponseWriter<EchoResponse>(
-              contexts_[i].srv_ctx.get()));
-      service_.RequestEcho(contexts_[i].srv_ctx.get(),
-                           &contexts_[i].recv_request,
-                           contexts_[i].response_writer.get(), cq_.get(),
-                           cq_.get(), reinterpret_cast<void*>(i));
+          new grpc::ServerAsyncResponseWriter<EchoResponse>(contexts_[i].srv_ctx.get()));
+      service_.RequestEcho(contexts_[i].srv_ctx.get(), &contexts_[i].recv_request,
+                           contexts_[i].response_writer.get(), cq_.get(), cq_.get(),
+                           reinterpret_cast<void*>(i));
     }
   }
   struct Context {
     std::unique_ptr<ServerContext> srv_ctx;
-    std::unique_ptr<grpc::ServerAsyncResponseWriter<EchoResponse>>
-        response_writer;
+    std::unique_ptr<grpc::ServerAsyncResponseWriter<EchoResponse>> response_writer;
     EchoRequest recv_request;
     enum { READY, DONE } state;
   };
@@ -274,8 +267,8 @@ class End2endTest : public ::testing::Test {
   Common common_;
 };
 
-static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
-                    bool allow_exhaustion, gpr_atm* errors) {
+static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs, bool allow_exhaustion,
+                    gpr_atm* errors) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
@@ -283,13 +276,10 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
   for (int i = 0; i < num_rpcs; ++i) {
     ClientContext context;
     Status s = stub->Echo(&context, request, &response);
-    EXPECT_TRUE(s.ok() || (allow_exhaustion &&
-                           s.error_code() == StatusCode::RESOURCE_EXHAUSTED));
+    EXPECT_TRUE(s.ok() || (allow_exhaustion && s.error_code() == StatusCode::RESOURCE_EXHAUSTED));
     if (!s.ok()) {
-      if (!(allow_exhaustion &&
-            s.error_code() == StatusCode::RESOURCE_EXHAUSTED)) {
-        gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(),
-                s.error_message().c_str());
+      if (!(allow_exhaustion && s.error_code() == StatusCode::RESOURCE_EXHAUSTED)) {
+        gpr_log(GPR_ERROR, "RPC error: %d: %s", s.error_code(), s.error_message().c_str());
       }
       gpr_atm_no_barrier_fetch_add(errors, static_cast<gpr_atm>(1));
     } else {
@@ -301,12 +291,11 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
 typedef ::testing::Types<
     CommonStressTestSyncServer<CommonStressTestInsecure<TestServiceImpl>>,
     CommonStressTestSyncServer<CommonStressTestInproc<TestServiceImpl, false>>,
-    CommonStressTestSyncServerLowThreadCount<
-        CommonStressTestInproc<TestServiceImpl, true>>,
+    CommonStressTestSyncServerLowThreadCount<CommonStressTestInproc<TestServiceImpl, true>>,
     CommonStressTestAsyncServer<
         CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>,
-    CommonStressTestAsyncServer<CommonStressTestInproc<
-        grpc::testing::EchoTestService::AsyncService, false>>>
+    CommonStressTestAsyncServer<
+        CommonStressTestInproc<grpc::testing::EchoTestService::AsyncService, false>>>
     CommonTypes;
 TYPED_TEST_SUITE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {
@@ -367,8 +356,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
       AsyncClientCall* call = new AsyncClientCall;
       EchoRequest request;
       request.set_message("Hello: " + std::to_string(i));
-      call->response_reader =
-          common_.GetStub()->AsyncEcho(&call->context, request, &cq_);
+      call->response_reader = common_.GetStub()->AsyncEcho(&call->context, request, &cq_);
       call->response_reader->Finish(&call->response, &call->status, call);
 
       grpc::internal::MutexLock l(&mu_);
@@ -412,13 +400,11 @@ TYPED_TEST(AsyncClientEnd2endTest, ThreadStress) {
   std::vector<std::thread> send_threads, completion_threads;
   for (int i = 0; i < kNumAsyncReceiveThreads; ++i) {
     completion_threads.emplace_back(
-        &AsyncClientEnd2endTest_ThreadStress_Test<TypeParam>::AsyncCompleteRpc,
-        this);
+        &AsyncClientEnd2endTest_ThreadStress_Test<TypeParam>::AsyncCompleteRpc, this);
   }
   for (int i = 0; i < kNumAsyncSendThreads; ++i) {
-    send_threads.emplace_back(
-        &AsyncClientEnd2endTest_ThreadStress_Test<TypeParam>::AsyncSendRpc,
-        this, kNumRpcs);
+    send_threads.emplace_back(&AsyncClientEnd2endTest_ThreadStress_Test<TypeParam>::AsyncSendRpc,
+                              this, kNumRpcs);
   }
   for (int i = 0; i < kNumAsyncSendThreads; ++i) {
     send_threads[i].join();

@@ -95,18 +95,16 @@ TEST(AlarmTest, CallbackRegularExpiry) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(1),
-            [c](bool ok) {
-              EXPECT_TRUE(ok);
-              std::lock_guard<std::mutex> l(c->mu);
-              c->completed = true;
-              c->cv.notify_one();
-            });
+  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(1), [c](bool ok) {
+    EXPECT_TRUE(ok);
+    std::lock_guard<std::mutex> l(c->mu);
+    c->completed = true;
+    c->cv.notify_one();
+  });
 
   std::unique_lock<std::mutex> l(c->mu);
-  EXPECT_TRUE(c->cv.wait_until(
-      l, std::chrono::system_clock::now() + std::chrono::seconds(10),
-      [c] { return c->completed; }));
+  EXPECT_TRUE(c->cv.wait_until(l, std::chrono::system_clock::now() + std::chrono::seconds(10),
+                               [c] { return c->completed; }));
 }
 
 TEST(AlarmTest, CallbackZeroExpiry) {
@@ -121,27 +119,24 @@ TEST(AlarmTest, CallbackZeroExpiry) {
   });
 
   std::unique_lock<std::mutex> l(c->mu);
-  EXPECT_TRUE(c->cv.wait_until(
-      l, std::chrono::system_clock::now() + std::chrono::seconds(10),
-      [c] { return c->completed; }));
+  EXPECT_TRUE(c->cv.wait_until(l, std::chrono::system_clock::now() + std::chrono::seconds(10),
+                               [c] { return c->completed; }));
 }
 
 TEST(AlarmTest, CallbackNegativeExpiry) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(-1),
-            [c](bool ok) {
-              EXPECT_TRUE(ok);
-              std::lock_guard<std::mutex> l(c->mu);
-              c->completed = true;
-              c->cv.notify_one();
-            });
+  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(-1), [c](bool ok) {
+    EXPECT_TRUE(ok);
+    std::lock_guard<std::mutex> l(c->mu);
+    c->completed = true;
+    c->cv.notify_one();
+  });
 
   std::unique_lock<std::mutex> l(c->mu);
-  EXPECT_TRUE(c->cv.wait_until(
-      l, std::chrono::system_clock::now() + std::chrono::seconds(10),
-      [c] { return c->completed; }));
+  EXPECT_TRUE(c->cv.wait_until(l, std::chrono::system_clock::now() + std::chrono::seconds(10),
+                               [c] { return c->completed; }));
 }
 
 TEST(AlarmTest, MultithreadedRegularExpiry) {
@@ -152,13 +147,11 @@ TEST(AlarmTest, MultithreadedRegularExpiry) {
   CompletionQueue::NextStatus status;
   Alarm alarm;
 
-  std::thread t1([&alarm, &cq, &junk] {
-    alarm.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk);
-  });
+  std::thread t1(
+      [&alarm, &cq, &junk] { alarm.Set(&cq, grpc_timeout_seconds_to_deadline(1), junk); });
 
   std::thread t2([&cq, &ok, &output_tag, &status] {
-    status =
-        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+    status = cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
   });
 
   t1.join();
@@ -287,38 +280,34 @@ TEST(AlarmTest, CallbackCancellation) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
-            [c](bool ok) {
-              EXPECT_FALSE(ok);
-              std::lock_guard<std::mutex> l(c->mu);
-              c->completed = true;
-              c->cv.notify_one();
-            });
+  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10), [c](bool ok) {
+    EXPECT_FALSE(ok);
+    std::lock_guard<std::mutex> l(c->mu);
+    c->completed = true;
+    c->cv.notify_one();
+  });
   alarm.Cancel();
 
   std::unique_lock<std::mutex> l(c->mu);
-  EXPECT_TRUE(c->cv.wait_until(
-      l, std::chrono::system_clock::now() + std::chrono::seconds(1),
-      [c] { return c->completed; }));
+  EXPECT_TRUE(c->cv.wait_until(l, std::chrono::system_clock::now() + std::chrono::seconds(1),
+                               [c] { return c->completed; }));
 }
 
 TEST(AlarmTest, CallbackCancellationLocked) {
   Alarm alarm;
 
   auto c = std::make_shared<Completion>();
-  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
-            [c](bool ok) {
-              EXPECT_FALSE(ok);
-              std::lock_guard<std::mutex> l(c->mu);
-              c->completed = true;
-              c->cv.notify_one();
-            });
+  alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10), [c](bool ok) {
+    EXPECT_FALSE(ok);
+    std::lock_guard<std::mutex> l(c->mu);
+    c->completed = true;
+    c->cv.notify_one();
+  });
   std::unique_lock<std::mutex> l(c->mu);
   alarm.Cancel();
 
-  EXPECT_TRUE(c->cv.wait_until(
-      l, std::chrono::system_clock::now() + std::chrono::seconds(1),
-      [c] { return c->completed; }));
+  EXPECT_TRUE(c->cv.wait_until(l, std::chrono::system_clock::now() + std::chrono::seconds(1),
+                               [c] { return c->completed; }));
 }
 
 TEST(AlarmTest, SetDestruction) {
@@ -343,19 +332,17 @@ TEST(AlarmTest, CallbackSetDestruction) {
   auto c = std::make_shared<Completion>();
   {
     Alarm alarm;
-    alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
-              [c](bool ok) {
-                EXPECT_FALSE(ok);
-                std::lock_guard<std::mutex> l(c->mu);
-                c->completed = true;
-                c->cv.notify_one();
-              });
+    alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10), [c](bool ok) {
+      EXPECT_FALSE(ok);
+      std::lock_guard<std::mutex> l(c->mu);
+      c->completed = true;
+      c->cv.notify_one();
+    });
   }
 
   std::unique_lock<std::mutex> l(c->mu);
-  EXPECT_TRUE(c->cv.wait_until(
-      l, std::chrono::system_clock::now() + std::chrono::seconds(1),
-      [c] { return c->completed; }));
+  EXPECT_TRUE(c->cv.wait_until(l, std::chrono::system_clock::now() + std::chrono::seconds(1),
+                               [c] { return c->completed; }));
 }
 
 TEST(AlarmTest, UnsetDestruction) {

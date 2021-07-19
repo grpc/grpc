@@ -66,8 +66,8 @@ class EvaluateArgs {
   // If the key is present more than once in the batch, constructs a
   // comma-concatenated string of all values in concatenated_value and returns a
   // string_view of that string.
-  absl::optional<absl::string_view> GetHeaderValue(
-      absl::string_view key, std::string* concatenated_value) const;
+  absl::optional<absl::string_view> GetHeaderValue(absl::string_view key,
+                                                   std::string* concatenated_value) const;
 
   grpc_resolved_address GetLocalAddress() const;
   absl::string_view GetLocalAddressString() const;

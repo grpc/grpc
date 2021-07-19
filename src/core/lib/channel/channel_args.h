@@ -38,23 +38,23 @@ grpc_channel_args* grpc_channel_args_normalize(const grpc_channel_args* src);
 /** Copy the arguments in \a src and append \a to_add. If \a to_add is NULL, it
  * is equivalent to calling \a grpc_channel_args_copy. */
 grpc_channel_args* grpc_channel_args_copy_and_add(const grpc_channel_args* src,
-                                                  const grpc_arg* to_add,
-                                                  size_t num_to_add);
+                                                  const grpc_arg* to_add, size_t num_to_add);
 
 /** Copies the arguments in \a src except for those whose keys are in
     \a to_remove. */
-grpc_channel_args* grpc_channel_args_copy_and_remove(
-    const grpc_channel_args* src, const char** to_remove, size_t num_to_remove);
+grpc_channel_args* grpc_channel_args_copy_and_remove(const grpc_channel_args* src,
+                                                     const char** to_remove, size_t num_to_remove);
 
 /** Copies the arguments from \a src except for those whose keys are in
     \a to_remove and appends the arguments in \a to_add. */
-grpc_channel_args* grpc_channel_args_copy_and_add_and_remove(
-    const grpc_channel_args* src, const char** to_remove, size_t num_to_remove,
-    const grpc_arg* to_add, size_t num_to_add);
+grpc_channel_args* grpc_channel_args_copy_and_add_and_remove(const grpc_channel_args* src,
+                                                             const char** to_remove,
+                                                             size_t num_to_remove,
+                                                             const grpc_arg* to_add,
+                                                             size_t num_to_add);
 
 /** Perform the union of \a a and \a b, prioritizing \a a entries */
-grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a,
-                                           const grpc_channel_args* b);
+grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a, const grpc_channel_args* b);
 
 /** Destroy arguments created by \a grpc_channel_args_copy */
 void grpc_channel_args_destroy(grpc_channel_args* a);
@@ -62,12 +62,10 @@ inline void grpc_channel_args_destroy(const grpc_channel_args* a) {
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(a));
 }
 
-int grpc_channel_args_compare(const grpc_channel_args* a,
-                              const grpc_channel_args* b);
+int grpc_channel_args_compare(const grpc_channel_args* a, const grpc_channel_args* b);
 
 /** Returns the value of argument \a name from \a args, or NULL if not found. */
-const grpc_arg* grpc_channel_args_find(const grpc_channel_args* args,
-                                       const char* name);
+const grpc_arg* grpc_channel_args_find(const grpc_channel_args* args, const char* name);
 
 bool grpc_channel_args_want_minimal_stack(const grpc_channel_args* args);
 
@@ -78,12 +76,10 @@ typedef struct grpc_integer_options {
 } grpc_integer_options;
 
 /** Returns the value of \a arg, subject to the constraints in \a options. */
-int grpc_channel_arg_get_integer(const grpc_arg* arg,
-                                 const grpc_integer_options options);
+int grpc_channel_arg_get_integer(const grpc_arg* arg, const grpc_integer_options options);
 /** Similar to the above, but needs to find the arg from \a args by the name
  * first. */
-int grpc_channel_args_find_integer(const grpc_channel_args* args,
-                                   const char* name,
+int grpc_channel_args_find_integer(const grpc_channel_args* args, const char* name,
                                    const grpc_integer_options options);
 
 /** Returns the value of \a arg if \a arg is of type GRPC_ARG_STRING.
@@ -92,19 +88,17 @@ int grpc_channel_args_find_integer(const grpc_channel_args* args,
 char* grpc_channel_arg_get_string(const grpc_arg* arg);
 /** Similar to the above, but needs to find the arg from \a args by the name
  * first. */
-char* grpc_channel_args_find_string(const grpc_channel_args* args,
-                                    const char* name);
+char* grpc_channel_args_find_string(const grpc_channel_args* args, const char* name);
 /** If \a arg is of type GRPC_ARG_INTEGER, returns true if it's non-zero.
  * Returns \a default_value if \a arg is of other types. */
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
 /** Similar to the above, but needs to find the arg from \a args by the name
  * first. */
-bool grpc_channel_args_find_bool(const grpc_channel_args* args,
-                                 const char* name, bool default_value);
+bool grpc_channel_args_find_bool(const grpc_channel_args* args, const char* name,
+                                 bool default_value);
 
 template <typename T>
-T* grpc_channel_args_find_pointer(const grpc_channel_args* args,
-                                  const char* name) {
+T* grpc_channel_args_find_pointer(const grpc_channel_args* args, const char* name) {
   const grpc_arg* arg = grpc_channel_args_find(args, name);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
   return static_cast<T*>(arg->value.pointer.p);
@@ -121,8 +115,7 @@ std::string grpc_channel_args_string(const grpc_channel_args* args);
 
 // Takes ownership of the old_args
 typedef grpc_channel_args* (*grpc_channel_args_client_channel_creation_mutator)(
-    const char* target, grpc_channel_args* old_args,
-    grpc_channel_stack_type type);
+    const char* target, grpc_channel_args* old_args, grpc_channel_stack_type type);
 
 // Should be called only once globaly before grpc is init'ed.
 void grpc_channel_args_set_client_channel_creation_mutator(

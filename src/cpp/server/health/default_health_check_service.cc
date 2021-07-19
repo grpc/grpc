@@ -42,8 +42,7 @@ DefaultHealthCheckService::DefaultHealthCheckService() {
   services_map_[""].SetServingStatus(SERVING);
 }
 
-void DefaultHealthCheckService::SetServingStatus(
-    const std::string& service_name, bool serving) {
+void DefaultHealthCheckService::SetServingStatus(const std::string& service_name, bool serving) {
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_) {
     // Set to NOT_SERVING in case service_name is not in the map.
@@ -76,8 +75,7 @@ void DefaultHealthCheckService::Shutdown() {
   }
 }
 
-DefaultHealthCheckService::ServingStatus
-DefaultHealthCheckService::GetServingStatus(
+DefaultHealthCheckService::ServingStatus DefaultHealthCheckService::GetServingStatus(
     const std::string& service_name) const {
   grpc_core::MutexLock lock(&mu_);
   auto it = services_map_.find(service_name);
@@ -89,8 +87,7 @@ DefaultHealthCheckService::GetServingStatus(
 }
 
 void DefaultHealthCheckService::RegisterCallHandler(
-    const std::string& service_name,
-    std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
+    const std::string& service_name, std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
   grpc_core::MutexLock lock(&mu_);
   ServiceData& service_data = services_map_[service_name];
   service_data.AddCallHandler(handler /* copies ref */);
@@ -111,8 +108,7 @@ void DefaultHealthCheckService::UnregisterCallHandler(
   }
 }
 
-DefaultHealthCheckService::HealthCheckServiceImpl*
-DefaultHealthCheckService::GetHealthCheckService(
+DefaultHealthCheckService::HealthCheckServiceImpl* DefaultHealthCheckService::GetHealthCheckService(
     std::unique_ptr<ServerCompletionQueue> cq) {
   GPR_ASSERT(impl_ == nullptr);
   impl_ = absl::make_unique<HealthCheckServiceImpl>(this, std::move(cq));
@@ -123,8 +119,7 @@ DefaultHealthCheckService::GetHealthCheckService(
 // DefaultHealthCheckService::ServiceData
 //
 
-void DefaultHealthCheckService::ServiceData::SetServingStatus(
-    ServingStatus status) {
+void DefaultHealthCheckService::ServiceData::SetServingStatus(ServingStatus status) {
   status_ = status;
   for (auto& call_handler : call_handlers_) {
     call_handler->SendHealth(call_handler /* copies ref */, status);
@@ -151,18 +146,16 @@ const char kHealthWatchMethodName[] = "/grpc.health.v1.Health/Watch";
 }  // namespace
 
 DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
-    DefaultHealthCheckService* database,
-    std::unique_ptr<ServerCompletionQueue> cq)
+    DefaultHealthCheckService* database, std::unique_ptr<ServerCompletionQueue> cq)
     : database_(database), cq_(std::move(cq)) {
   // Add Check() method.
-  AddMethod(new internal::RpcServiceMethod(
-      kHealthCheckMethodName, internal::RpcMethod::NORMAL_RPC, nullptr));
+  AddMethod(new internal::RpcServiceMethod(kHealthCheckMethodName, internal::RpcMethod::NORMAL_RPC,
+                                           nullptr));
   // Add Watch() method.
-  AddMethod(new internal::RpcServiceMethod(
-      kHealthWatchMethodName, internal::RpcMethod::SERVER_STREAMING, nullptr));
+  AddMethod(new internal::RpcServiceMethod(kHealthWatchMethodName,
+                                           internal::RpcMethod::SERVER_STREAMING, nullptr));
   // Create serving thread.
-  thread_ = absl::make_unique<::grpc_core::Thread>("grpc_health_check_service",
-                                                   Serve, this);
+  thread_ = absl::make_unique<::grpc_core::Thread>("grpc_health_check_service", Serve, this);
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {
@@ -200,8 +193,8 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
   }
 }
 
-bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
-    const ByteBuffer& request, std::string* service_name) {
+bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(const ByteBuffer& request,
+                                                                      std::string* service_name) {
   std::vector<Slice> slices;
   if (!request.Dump(&slices).ok()) return false;
   uint8_t* request_bytes = nullptr;
@@ -218,17 +211,15 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
     }
   }
   upb::Arena arena;
-  grpc_health_v1_HealthCheckRequest* request_struct =
-      grpc_health_v1_HealthCheckRequest_parse(
-          reinterpret_cast<char*>(request_bytes), request_size, arena.ptr());
+  grpc_health_v1_HealthCheckRequest* request_struct = grpc_health_v1_HealthCheckRequest_parse(
+      reinterpret_cast<char*>(request_bytes), request_size, arena.ptr());
   if (slices.size() > 1) {
     gpr_free(request_bytes);
   }
   if (request_struct == nullptr) {
     return false;
   }
-  upb_strview service =
-      grpc_health_v1_HealthCheckRequest_service(request_struct);
+  upb_strview service = grpc_health_v1_HealthCheckRequest_service(request_struct);
   if (service.size > MAX_SERVICE_NAME_LENGTH) {
     return false;
   }
@@ -236,19 +227,18 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
   return true;
 }
 
-bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
-    ServingStatus status, ByteBuffer* response) {
+bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(ServingStatus status,
+                                                                       ByteBuffer* response) {
   upb::Arena arena;
   grpc_health_v1_HealthCheckResponse* response_struct =
       grpc_health_v1_HealthCheckResponse_new(arena.ptr());
   grpc_health_v1_HealthCheckResponse_set_status(
-      response_struct,
-      status == NOT_FOUND ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
-      : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
-                          : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
+      response_struct, status == NOT_FOUND ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
+                       : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
+                                           : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
   size_t buf_length;
-  char* buf = grpc_health_v1_HealthCheckResponse_serialize(
-      response_struct, arena.ptr(), &buf_length);
+  char* buf =
+      grpc_health_v1_HealthCheckResponse_serialize(response_struct, arena.ptr(), &buf_length);
   if (buf == nullptr) {
     return false;
   }
@@ -263,34 +253,29 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
 // DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler
 //
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
-    CreateAndStart(ServerCompletionQueue* cq,
-                   DefaultHealthCheckService* database,
-                   HealthCheckServiceImpl* service) {
-  std::shared_ptr<CallHandler> self =
-      std::make_shared<CheckCallHandler>(cq, database, service);
+void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::CreateAndStart(
+    ServerCompletionQueue* cq, DefaultHealthCheckService* database,
+    HealthCheckServiceImpl* service) {
+  std::shared_ptr<CallHandler> self = std::make_shared<CheckCallHandler>(cq, database, service);
   CheckCallHandler* handler = static_cast<CheckCallHandler*>(self.get());
   {
     grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
     // Request a Check() call.
-    handler->next_ =
-        CallableTag(std::bind(&CheckCallHandler::OnCallReceived, handler,
-                              std::placeholders::_1, std::placeholders::_2),
-                    std::move(self));
-    service->RequestAsyncUnary(0, &handler->ctx_, &handler->request_,
-                               &handler->writer_, cq, cq, &handler->next_);
+    handler->next_ = CallableTag(std::bind(&CheckCallHandler::OnCallReceived, handler,
+                                           std::placeholders::_1, std::placeholders::_2),
+                                 std::move(self));
+    service->RequestAsyncUnary(0, &handler->ctx_, &handler->request_, &handler->writer_, cq, cq,
+                               &handler->next_);
   }
 }
 
-DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
-    CheckCallHandler(ServerCompletionQueue* cq,
-                     DefaultHealthCheckService* database,
-                     HealthCheckServiceImpl* service)
+DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::CheckCallHandler(
+    ServerCompletionQueue* cq, DefaultHealthCheckService* database, HealthCheckServiceImpl* service)
     : cq_(cq), database_(database), service_(service), writer_(&ctx_) {}
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
-    OnCallReceived(std::shared_ptr<CallHandler> self, bool ok) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::OnCallReceived(
+    std::shared_ptr<CallHandler> self, bool ok) {
   if (!ok) {
     // The value of ok being false means that the server is shutting down.
     return;
@@ -299,8 +284,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
   // instance will deallocate itself when it's done.
   CreateAndStart(cq_, database_, service_);
   // Process request.
-  gpr_log(GPR_DEBUG, "[HCS %p] Health check started for handler %p", service_,
-          this);
+  gpr_log(GPR_DEBUG, "[HCS %p] Health check started for handler %p", service_, this);
   std::string service_name;
   grpc::Status status = Status::OK;
   ByteBuffer response;
@@ -318,10 +302,9 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
   {
     grpc_core::MutexLock lock(&service_->cq_shutdown_mu_);
     if (!service_->shutdown_) {
-      next_ =
-          CallableTag(std::bind(&CheckCallHandler::OnFinishDone, this,
-                                std::placeholders::_1, std::placeholders::_2),
-                      std::move(self));
+      next_ = CallableTag(std::bind(&CheckCallHandler::OnFinishDone, this, std::placeholders::_1,
+                                    std::placeholders::_2),
+                          std::move(self));
       if (status.ok()) {
         writer_.Finish(response, status, &next_);
       } else {
@@ -331,11 +314,10 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
   }
 }
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
-    OnFinishDone(std::shared_ptr<CallHandler> self, bool ok) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::OnFinishDone(
+    std::shared_ptr<CallHandler> self, bool ok) {
   if (ok) {
-    gpr_log(GPR_DEBUG, "[HCS %p] Health check call finished for handler %p",
-            service_, this);
+    gpr_log(GPR_DEBUG, "[HCS %p] Health check call finished for handler %p", service_, this);
   }
   self.reset();  // To appease clang-tidy.
 }
@@ -344,41 +326,35 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
 // DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler
 //
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    CreateAndStart(ServerCompletionQueue* cq,
-                   DefaultHealthCheckService* database,
-                   HealthCheckServiceImpl* service) {
-  std::shared_ptr<CallHandler> self =
-      std::make_shared<WatchCallHandler>(cq, database, service);
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::CreateAndStart(
+    ServerCompletionQueue* cq, DefaultHealthCheckService* database,
+    HealthCheckServiceImpl* service) {
+  std::shared_ptr<CallHandler> self = std::make_shared<WatchCallHandler>(cq, database, service);
   WatchCallHandler* handler = static_cast<WatchCallHandler*>(self.get());
   {
     grpc_core::MutexLock lock(&service->cq_shutdown_mu_);
     if (service->shutdown_) return;
     // Request AsyncNotifyWhenDone().
     handler->on_done_notified_ =
-        CallableTag(std::bind(&WatchCallHandler::OnDoneNotified, handler,
-                              std::placeholders::_1, std::placeholders::_2),
+        CallableTag(std::bind(&WatchCallHandler::OnDoneNotified, handler, std::placeholders::_1,
+                              std::placeholders::_2),
                     self /* copies ref */);
     handler->ctx_.AsyncNotifyWhenDone(&handler->on_done_notified_);
     // Request a Watch() call.
-    handler->next_ =
-        CallableTag(std::bind(&WatchCallHandler::OnCallReceived, handler,
-                              std::placeholders::_1, std::placeholders::_2),
-                    std::move(self));
-    service->RequestAsyncServerStreaming(1, &handler->ctx_, &handler->request_,
-                                         &handler->stream_, cq, cq,
-                                         &handler->next_);
+    handler->next_ = CallableTag(std::bind(&WatchCallHandler::OnCallReceived, handler,
+                                           std::placeholders::_1, std::placeholders::_2),
+                                 std::move(self));
+    service->RequestAsyncServerStreaming(1, &handler->ctx_, &handler->request_, &handler->stream_,
+                                         cq, cq, &handler->next_);
   }
 }
 
-DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    WatchCallHandler(ServerCompletionQueue* cq,
-                     DefaultHealthCheckService* database,
-                     HealthCheckServiceImpl* service)
+DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::WatchCallHandler(
+    ServerCompletionQueue* cq, DefaultHealthCheckService* database, HealthCheckServiceImpl* service)
     : cq_(cq), database_(database), service_(service), stream_(&ctx_) {}
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    OnCallReceived(std::shared_ptr<CallHandler> self, bool ok) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::OnCallReceived(
+    std::shared_ptr<CallHandler> self, bool ok) {
   if (!ok) {
     // Server shutting down.
     //
@@ -394,19 +370,17 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
   CreateAndStart(cq_, database_, service_);
   // Parse request.
   if (!service_->DecodeRequest(request_, &service_name_)) {
-    SendFinish(std::move(self),
-               Status(StatusCode::INVALID_ARGUMENT, "could not parse request"));
+    SendFinish(std::move(self), Status(StatusCode::INVALID_ARGUMENT, "could not parse request"));
     return;
   }
   // Register the call for updates to the service.
-  gpr_log(GPR_DEBUG,
-          "[HCS %p] Health watch started for service \"%s\" (handler: %p)",
-          service_, service_name_.c_str(), this);
+  gpr_log(GPR_DEBUG, "[HCS %p] Health watch started for service \"%s\" (handler: %p)", service_,
+          service_name_.c_str(), this);
   database_->RegisterCallHandler(service_name_, std::move(self));
 }
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    SendHealth(std::shared_ptr<CallHandler> self, ServingStatus status) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::SendHealth(
+    std::shared_ptr<CallHandler> self, ServingStatus status) {
   grpc_core::MutexLock lock(&send_mu_);
   // If there's already a send in flight, cache the new status, and
   // we'll start a new send for it when the one in flight completes.
@@ -418,8 +392,8 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
   SendHealthLocked(std::move(self), status);
 }
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    SendHealthLocked(std::shared_ptr<CallHandler> self, ServingStatus status) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::SendHealthLocked(
+    std::shared_ptr<CallHandler> self, ServingStatus status) {
   send_in_flight_ = true;
   // Construct response.
   ByteBuffer response;
@@ -431,18 +405,17 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     return;
   }
   if (!success) {
-    SendFinishLocked(std::move(self),
-                     Status(StatusCode::INTERNAL, "could not encode response"));
+    SendFinishLocked(std::move(self), Status(StatusCode::INTERNAL, "could not encode response"));
     return;
   }
-  next_ = CallableTag(std::bind(&WatchCallHandler::OnSendHealthDone, this,
-                                std::placeholders::_1, std::placeholders::_2),
+  next_ = CallableTag(std::bind(&WatchCallHandler::OnSendHealthDone, this, std::placeholders::_1,
+                                std::placeholders::_2),
                       std::move(self));
   stream_.Write(response, &next_);
 }
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    OnSendHealthDone(std::shared_ptr<CallHandler> self, bool ok) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::OnSendHealthDone(
+    std::shared_ptr<CallHandler> self, bool ok) {
   if (!ok) {
     SendFinish(std::move(self), Status::CANCELLED);
     return;
@@ -458,26 +431,25 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
   }
 }
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    SendFinish(std::shared_ptr<CallHandler> self, const Status& status) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::SendFinish(
+    std::shared_ptr<CallHandler> self, const Status& status) {
   if (finish_called_) return;
   grpc_core::MutexLock cq_lock(&service_->cq_shutdown_mu_);
   if (service_->shutdown_) return;
   SendFinishLocked(std::move(self), status);
 }
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    SendFinishLocked(std::shared_ptr<CallHandler> self, const Status& status) {
-  on_finish_done_ =
-      CallableTag(std::bind(&WatchCallHandler::OnFinishDone, this,
-                            std::placeholders::_1, std::placeholders::_2),
-                  std::move(self));
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::SendFinishLocked(
+    std::shared_ptr<CallHandler> self, const Status& status) {
+  on_finish_done_ = CallableTag(std::bind(&WatchCallHandler::OnFinishDone, this,
+                                          std::placeholders::_1, std::placeholders::_2),
+                                std::move(self));
   stream_.Finish(status, &on_finish_done_);
   finish_called_ = true;
 }
 
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    OnFinishDone(std::shared_ptr<CallHandler> self, bool ok) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::OnFinishDone(
+    std::shared_ptr<CallHandler> self, bool ok) {
   if (ok) {
     gpr_log(GPR_DEBUG,
             "[HCS %p] Health watch call finished (service_name: \"%s\", "
@@ -490,8 +462,8 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
 // TODO(roth): This method currently assumes that there will be only one
 // thread polling the cq and invoking the corresponding callbacks.  If
 // that changes, we will need to add synchronization here.
-void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
-    OnDoneNotified(std::shared_ptr<CallHandler> self, bool ok) {
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::OnDoneNotified(
+    std::shared_ptr<CallHandler> self, bool ok) {
   GPR_ASSERT(ok);
   gpr_log(GPR_DEBUG,
           "[HCS %p] Health watch call is notified done (handler: %p, "

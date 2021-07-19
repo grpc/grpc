@@ -68,11 +68,9 @@ static void register_sighandler() {
 
 static void LogStatus(int status, const char* label) {
   if (WIFEXITED(status)) {
-    gpr_log(GPR_INFO, "%s: subprocess exited with status %d", label,
-            WEXITSTATUS(status));
+    gpr_log(GPR_INFO, "%s: subprocess exited with status %d", label, WEXITSTATUS(status));
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_INFO, "%s: subprocess terminated with signal %d", label,
-            WTERMSIG(status));
+    gpr_log(GPR_INFO, "%s: subprocess terminated with signal %d", label, WTERMSIG(status));
   } else {
     gpr_log(GPR_INFO, "%s: unknown subprocess status: %d", label, status);
   }

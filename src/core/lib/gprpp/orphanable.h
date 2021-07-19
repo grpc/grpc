@@ -85,8 +85,7 @@ class InternallyRefCounted : public Orphanable {
   friend class RefCountedPtr;
 
   // Note: Tracing is a no-op on non-debug builds.
-  explicit InternallyRefCounted(const char* trace = nullptr,
-                                intptr_t initial_refcount = 1)
+  explicit InternallyRefCounted(const char* trace = nullptr, intptr_t initial_refcount = 1)
       : refs_(initial_refcount, trace) {}
   ~InternallyRefCounted() override = default;
 
@@ -94,8 +93,7 @@ class InternallyRefCounted : public Orphanable {
     IncrementRefCount();
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
-  RefCountedPtr<Child> Ref(const DebugLocation& location,
-                           const char* reason) GRPC_MUST_USE_RESULT {
+  RefCountedPtr<Child> Ref(const DebugLocation& location, const char* reason) GRPC_MUST_USE_RESULT {
     IncrementRefCount(location, reason);
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }

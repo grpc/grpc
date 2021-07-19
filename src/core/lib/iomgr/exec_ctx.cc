@@ -34,10 +34,9 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (grpc_trace_closure.enabled()) {
-    gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
-            closure, closure->file_created, closure->line_created,
-            closure->run ? "run" : "scheduled", closure->file_initiated,
-            closure->line_initiated);
+    gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]", closure,
+            closure->file_created, closure->line_created, closure->run ? "run" : "scheduled",
+            closure->file_initiated, closure->line_initiated);
   }
 #endif
   closure->cb(closure->cb_arg, error);
@@ -50,12 +49,10 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
 }
 
 static void exec_ctx_sched(grpc_closure* closure, grpc_error_handle error) {
-#if defined(GRPC_USE_EVENT_ENGINE) && \
-    defined(GRPC_EVENT_ENGINE_REPLACE_EXEC_CTX)
+#if defined(GRPC_USE_EVENT_ENGINE) && defined(GRPC_EVENT_ENGINE_REPLACE_EXEC_CTX)
   grpc_iomgr_event_engine()->Run(GrpcClosureToCallback(closure, error), {});
 #else
-  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
-                           error);
+  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure, error);
 #endif
 }
 
@@ -79,8 +76,7 @@ static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
 static grpc_millis timespan_to_millis_round_up(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
-             static_cast<double>(GPR_NS_PER_SEC - 1) /
-                 static_cast<double>(GPR_NS_PER_SEC);
+             static_cast<double>(GPR_NS_PER_SEC - 1) / static_cast<double>(GPR_NS_PER_SEC);
   if (x < 0) return 0;
   if (x > static_cast<double>(GRPC_MILLIS_INF_FUTURE)) {
     return GRPC_MILLIS_INF_FUTURE;
@@ -92,8 +88,7 @@ static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
   return timespan_to_millis_round_up(gpr_time_sub(ts, g_start_time));
 }
 
-gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
-                                     gpr_clock_type clock_type) {
+gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock_type) {
   // special-case infinities as grpc_millis can be 32bit on some platforms
   // while gpr_time_from_millis always takes an int64_t.
   if (millis == GRPC_MILLIS_INF_FUTURE) {
@@ -111,23 +106,19 @@ gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
 }
 
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts) {
-  return timespec_to_millis_round_down(
-      gpr_convert_clock_type(ts, g_start_time.clock_type));
+  return timespec_to_millis_round_down(gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
-  return timespec_to_millis_round_up(
-      gpr_convert_clock_type(ts, g_start_time.clock_type));
+  return timespec_to_millis_round_up(gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
-  return timespan_to_millis_round_down(
-      gpr_cycle_counter_sub(cycles, g_start_cycle));
+  return timespan_to_millis_round_down(gpr_cycle_counter_sub(cycles, g_start_cycle));
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
-  return timespan_to_millis_round_up(
-      gpr_cycle_counter_sub(cycles, g_start_cycle));
+  return timespan_to_millis_round_up(gpr_cycle_counter_sub(cycles, g_start_cycle));
 }
 
 namespace grpc_core {
@@ -181,8 +172,7 @@ grpc_millis ExecCtx::Now() {
   return now_;
 }
 
-void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
-                  grpc_error_handle error) {
+void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure, grpc_error_handle error) {
   (void)location;
   if (closure == nullptr) {
     GRPC_ERROR_UNREF(error);
@@ -193,9 +183,8 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
     gpr_log(GPR_ERROR,
             "Closure already scheduled. (closure: %p, created: [%s:%d], "
             "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
-            closure, closure->file_created, closure->line_created,
-            closure->file_initiated, closure->line_initiated, location.file(),
-            location.line());
+            closure, closure->file_created, closure->line_created, closure->file_initiated,
+            closure->line_initiated, location.file(), location.line());
     abort();
   }
   closure->scheduled = true;
@@ -217,8 +206,8 @@ void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
       gpr_log(GPR_ERROR,
               "Closure already scheduled. (closure: %p, created: [%s:%d], "
               "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
-              c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated, location.file(), location.line());
+              c, c->file_created, c->line_created, c->file_initiated, c->line_initiated,
+              location.file(), location.line());
       abort();
     }
     c->scheduled = true;

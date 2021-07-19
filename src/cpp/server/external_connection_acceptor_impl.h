@@ -35,15 +35,13 @@ namespace internal {
 class ExternalConnectionAcceptorImpl
     : public std::enable_shared_from_this<ExternalConnectionAcceptorImpl> {
  public:
-  ExternalConnectionAcceptorImpl(
-      const std::string& name,
-      ServerBuilder::experimental_type::ExternalConnectionType type,
-      std::shared_ptr<ServerCredentials> creds);
+  ExternalConnectionAcceptorImpl(const std::string& name,
+                                 ServerBuilder::experimental_type::ExternalConnectionType type,
+                                 std::shared_ptr<ServerCredentials> creds);
   // Should only be called once.
   std::unique_ptr<experimental::ExternalConnectionAcceptor> GetAcceptor();
 
-  void HandleNewConnection(
-      experimental::ExternalConnectionAcceptor::NewConnectionParameters* p);
+  void HandleNewConnection(experimental::ExternalConnectionAcceptor::NewConnectionParameters* p);
 
   void Shutdown();
 

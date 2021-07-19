@@ -73,8 +73,7 @@ class ByteStream : public Orphanable {
   void set_flags(uint32_t flags) { flags_ = flags; }
 
  protected:
-  ByteStream(uint32_t length, uint32_t flags)
-      : length_(length), flags_(flags) {}
+  ByteStream(uint32_t length, uint32_t flags) : length_(length), flags_(flags) {}
 
  private:
   const uint32_t length_;

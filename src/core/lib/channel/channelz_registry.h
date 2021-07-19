@@ -43,13 +43,9 @@ class ChannelzRegistry {
   // To be called in grpc_shutdown();
   static void Shutdown();
 
-  static void Register(BaseNode* node) {
-    return Default()->InternalRegister(node);
-  }
+  static void Register(BaseNode* node) { return Default()->InternalRegister(node); }
   static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
-  static RefCountedPtr<BaseNode> Get(intptr_t uuid) {
-    return Default()->InternalGet(uuid);
-  }
+  static RefCountedPtr<BaseNode> Get(intptr_t uuid) { return Default()->InternalGet(uuid); }
 
   // Returns the allocated JSON string that represents the proto
   // GetTopChannelsResponse as per channelz.proto.

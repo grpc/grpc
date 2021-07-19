@@ -50,14 +50,12 @@ using grpc_core::Json;
 // Auth Refresh Token.
 //
 
-int grpc_auth_refresh_token_is_valid(
-    const grpc_auth_refresh_token* refresh_token) {
+int grpc_auth_refresh_token_is_valid(const grpc_auth_refresh_token* refresh_token) {
   return (refresh_token != nullptr) &&
          strcmp(refresh_token->type, GRPC_AUTH_JSON_TYPE_INVALID) != 0;
 }
 
-grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
-    const Json& json) {
+grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(const Json& json) {
   grpc_auth_refresh_token result;
   const char* prop_value;
   int success = 0;
@@ -72,17 +70,14 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
 
   prop_value = grpc_json_get_string_property(json, "type", &error);
   GRPC_LOG_IF_ERROR("Parsing refresh token", error);
-  if (prop_value == nullptr ||
-      strcmp(prop_value, GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER) != 0) {
+  if (prop_value == nullptr || strcmp(prop_value, GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER) != 0) {
     goto end;
   }
   result.type = GRPC_AUTH_JSON_TYPE_AUTHORIZED_USER;
 
-  if (!grpc_copy_json_string_property(json, "client_secret",
-                                      &result.client_secret) ||
+  if (!grpc_copy_json_string_property(json, "client_secret", &result.client_secret) ||
       !grpc_copy_json_string_property(json, "client_id", &result.client_id) ||
-      !grpc_copy_json_string_property(json, "refresh_token",
-                                      &result.refresh_token)) {
+      !grpc_copy_json_string_property(json, "refresh_token", &result.refresh_token)) {
     goto end;
   }
   success = 1;
@@ -92,13 +87,11 @@ end:
   return result;
 }
 
-grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
-    const char* json_string) {
+grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(const char* json_string) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_string, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parsing failed: %s",
-            grpc_error_std_string(error).c_str());
+    gpr_log(GPR_ERROR, "JSON parsing failed: %s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
   }
   return grpc_auth_refresh_token_create_from_json(json);
@@ -125,18 +118,15 @@ void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token) {
 // Oauth2 Token Fetcher credentials.
 //
 
-grpc_oauth2_token_fetcher_credentials::
-    ~grpc_oauth2_token_fetcher_credentials() {
+grpc_oauth2_token_fetcher_credentials::~grpc_oauth2_token_fetcher_credentials() {
   GRPC_MDELEM_UNREF(access_token_md_);
   gpr_mu_destroy(&mu_);
   grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
   grpc_httpcli_context_destroy(&httpcli_context_);
 }
 
-grpc_credentials_status
-grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const grpc_http_response* response, grpc_mdelem* token_md,
-    grpc_millis* token_lifetime) {
+grpc_credentials_status grpc_oauth2_token_fetcher_credentials_parse_server_response(
+    const grpc_http_response* response, grpc_mdelem* token_md, grpc_millis* token_lifetime) {
   char* null_terminated_body = nullptr;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
   Json json;
@@ -148,15 +138,13 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
   }
 
   if (response->body_length > 0) {
-    null_terminated_body =
-        static_cast<char*>(gpr_malloc(response->body_length + 1));
+    null_terminated_body = static_cast<char*>(gpr_malloc(response->body_length + 1));
     null_terminated_body[response->body_length] = '\0';
     memcpy(null_terminated_body, response->body, response->body_length);
   }
 
   if (response->status != 200) {
-    gpr_log(GPR_ERROR, "Call to http server ended with error %d [%s].",
-            response->status,
+    gpr_log(GPR_ERROR, "Call to http server ended with error %d [%s].", response->status,
             null_terminated_body != nullptr ? null_terminated_body : "");
     status = GRPC_CREDENTIALS_ERROR;
     goto end;
@@ -168,8 +156,8 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     grpc_error_handle error = GRPC_ERROR_NONE;
     json = Json::Parse(null_terminated_body, &error);
     if (error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
-              null_terminated_body, grpc_error_std_string(error).c_str());
+      gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s", null_terminated_body,
+              grpc_error_std_string(error).c_str());
       GRPC_ERROR_UNREF(error);
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
@@ -180,24 +168,21 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
       goto end;
     }
     it = json.object_value().find("access_token");
-    if (it == json.object_value().end() ||
-        it->second.type() != Json::Type::STRING) {
+    if (it == json.object_value().end() || it->second.type() != Json::Type::STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid access_token in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
     access_token = it->second.string_value().c_str();
     it = json.object_value().find("token_type");
-    if (it == json.object_value().end() ||
-        it->second.type() != Json::Type::STRING) {
+    if (it == json.object_value().end() || it->second.type() != Json::Type::STRING) {
       gpr_log(GPR_ERROR, "Missing or invalid token_type in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
     token_type = it->second.string_value().c_str();
     it = json.object_value().find("expires_in");
-    if (it == json.object_value().end() ||
-        it->second.type() != Json::Type::NUMBER) {
+    if (it == json.object_value().end() || it->second.type() != Json::Type::NUMBER) {
       gpr_log(GPR_ERROR, "Missing or invalid expires_in in JSON.");
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
@@ -207,8 +192,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     if (!GRPC_MDISNULL(*token_md)) GRPC_MDELEM_UNREF(*token_md);
     *token_md = grpc_mdelem_from_slices(
         grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
-        grpc_slice_from_cpp_string(
-            absl::StrCat(token_type, " ", access_token)));
+        grpc_slice_from_cpp_string(absl::StrCat(token_type, " ", access_token)));
     status = GRPC_CREDENTIALS_OK;
   }
 
@@ -221,34 +205,30 @@ end:
   return status;
 }
 
-static void on_oauth2_token_fetcher_http_response(void* user_data,
-                                                  grpc_error_handle error) {
+static void on_oauth2_token_fetcher_http_response(void* user_data, grpc_error_handle error) {
   GRPC_LOG_IF_ERROR("oauth_fetch", GRPC_ERROR_REF(error));
-  grpc_credentials_metadata_request* r =
-      static_cast<grpc_credentials_metadata_request*>(user_data);
+  grpc_credentials_metadata_request* r = static_cast<grpc_credentials_metadata_request*>(user_data);
   grpc_oauth2_token_fetcher_credentials* c =
       reinterpret_cast<grpc_oauth2_token_fetcher_credentials*>(r->creds.get());
   c->on_http_response(r, error);
 }
 
-void grpc_oauth2_token_fetcher_credentials::on_http_response(
-    grpc_credentials_metadata_request* r, grpc_error_handle error) {
+void grpc_oauth2_token_fetcher_credentials::on_http_response(grpc_credentials_metadata_request* r,
+                                                             grpc_error_handle error) {
   grpc_mdelem access_token_md = GRPC_MDNULL;
   grpc_millis token_lifetime = 0;
   grpc_credentials_status status =
-      error == GRPC_ERROR_NONE
-          ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                &r->response, &access_token_md, &token_lifetime)
-          : GRPC_CREDENTIALS_ERROR;
+      error == GRPC_ERROR_NONE ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                                     &r->response, &access_token_md, &token_lifetime)
+                               : GRPC_CREDENTIALS_ERROR;
   // Update cache and grab list of pending requests.
   gpr_mu_lock(&mu_);
   token_fetch_pending_ = false;
   access_token_md_ = GRPC_MDELEM_REF(access_token_md);
-  token_expiration_ =
-      status == GRPC_CREDENTIALS_OK
-          ? gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_millis(token_lifetime, GPR_TIMESPAN))
-          : gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  token_expiration_ = status == GRPC_CREDENTIALS_OK
+                          ? gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                         gpr_time_from_millis(token_lifetime, GPR_TIMESPAN))
+                          : gpr_inf_past(GPR_CLOCK_MONOTONIC);
   grpc_oauth2_pending_get_request_metadata* pending_request = pending_requests_;
   pending_requests_ = nullptr;
   gpr_mu_unlock(&mu_);
@@ -256,16 +236,14 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   while (pending_request != nullptr) {
     grpc_error_handle new_error = GRPC_ERROR_NONE;
     if (status == GRPC_CREDENTIALS_OK) {
-      grpc_credentials_mdelem_array_add(pending_request->md_array,
-                                        access_token_md);
+      grpc_credentials_mdelem_array_add(pending_request->md_array, access_token_md);
     } else {
       new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
     }
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                            pending_request->on_request_metadata, new_error);
-    grpc_polling_entity_del_from_pollset_set(
-        pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, pending_request->on_request_metadata, new_error);
+    grpc_polling_entity_del_from_pollset_set(pending_request->pollent,
+                                             grpc_polling_entity_pollset_set(&pollent_));
     grpc_oauth2_pending_get_request_metadata* prev = pending_request;
     pending_request = pending_request->next;
     gpr_free(prev);
@@ -280,15 +258,13 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
     grpc_error_handle* /*error*/) {
   // Check if we can use the cached token.
-  grpc_millis refresh_threshold =
-      GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
+  grpc_millis refresh_threshold = GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
   grpc_mdelem cached_access_token_md = GRPC_MDNULL;
   gpr_mu_lock(&mu_);
   if (!GRPC_MDISNULL(access_token_md_) &&
-      gpr_time_cmp(
-          gpr_time_sub(token_expiration_, gpr_now(GPR_CLOCK_MONOTONIC)),
-          gpr_time_from_seconds(GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS,
-                                GPR_TIMESPAN)) > 0) {
+      gpr_time_cmp(gpr_time_sub(token_expiration_, gpr_now(GPR_CLOCK_MONOTONIC)),
+                   gpr_time_from_seconds(GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN)) >
+          0) {
     cached_access_token_md = GRPC_MDELEM_REF(access_token_md_);
   }
   if (!GRPC_MDISNULL(cached_access_token_md)) {
@@ -300,13 +276,11 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
   // Couldn't get the token from the cache.
   // Add request to pending_requests_ and start a new fetch if needed.
   grpc_oauth2_pending_get_request_metadata* pending_request =
-      static_cast<grpc_oauth2_pending_get_request_metadata*>(
-          gpr_malloc(sizeof(*pending_request)));
+      static_cast<grpc_oauth2_pending_get_request_metadata*>(gpr_malloc(sizeof(*pending_request)));
   pending_request->md_array = md_array;
   pending_request->on_request_metadata = on_request_metadata;
   pending_request->pollent = pollent;
-  grpc_polling_entity_add_to_pollset_set(
-      pollent, grpc_polling_entity_pollset_set(&pollent_));
+  grpc_polling_entity_add_to_pollset_set(pollent, grpc_polling_entity_pollset_set(&pollent_));
   pending_request->next = pending_requests_;
   pending_requests_ = pending_request;
   bool start_fetch = false;
@@ -317,9 +291,8 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
   gpr_mu_unlock(&mu_);
   if (start_fetch) {
     Ref().release();
-    fetch_oauth2(grpc_credentials_metadata_request_create(this->Ref()),
-                 &httpcli_context_, &pollent_,
-                 on_oauth2_token_fetcher_http_response,
+    fetch_oauth2(grpc_credentials_metadata_request_create(this->Ref()), &httpcli_context_,
+                 &pollent_, on_oauth2_token_fetcher_http_response,
                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
   }
   return false;
@@ -339,8 +312,7 @@ void grpc_oauth2_token_fetcher_credentials::cancel_get_request_metadata(
         pending_requests_ = pending_request->next;
       }
       // Invoke the callback immediately with an error.
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                              pending_request->on_request_metadata,
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, pending_request->on_request_metadata,
                               GRPC_ERROR_REF(error));
       gpr_free(pending_request);
       break;
@@ -355,8 +327,7 @@ void grpc_oauth2_token_fetcher_credentials::cancel_get_request_metadata(
 grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()
     : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2),
       token_expiration_(gpr_inf_past(GPR_CLOCK_MONOTONIC)),
-      pollent_(grpc_polling_entity_create_from_pollset_set(
-          grpc_pollset_set_create())) {
+      pollent_(grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create())) {
   gpr_mu_init(&mu_);
   grpc_httpcli_context_init(&httpcli_context_);
 }
@@ -371,43 +342,36 @@ std::string grpc_oauth2_token_fetcher_credentials::debug_string() {
 
 namespace {
 
-class grpc_compute_engine_token_fetcher_credentials
-    : public grpc_oauth2_token_fetcher_credentials {
+class grpc_compute_engine_token_fetcher_credentials : public grpc_oauth2_token_fetcher_credentials {
  public:
   grpc_compute_engine_token_fetcher_credentials() = default;
   ~grpc_compute_engine_token_fetcher_credentials() override = default;
 
  protected:
   void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
-                    grpc_httpcli_context* http_context,
-                    grpc_polling_entity* pollent,
-                    grpc_iomgr_cb_func response_cb,
-                    grpc_millis deadline) override {
-    grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
-                               const_cast<char*>("Google")};
+                    grpc_httpcli_context* http_context, grpc_polling_entity* pollent,
+                    grpc_iomgr_cb_func response_cb, grpc_millis deadline) override {
+    grpc_http_header header = {const_cast<char*>("Metadata-Flavor"), const_cast<char*>("Google")};
     grpc_httpcli_request request;
     memset(&request, 0, sizeof(grpc_httpcli_request));
     request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST);
-    request.http.path =
-        const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
+    request.http.path = const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
     request.http.hdr_count = 1;
     request.http.hdrs = &header;
     /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("oauth2_credentials");
+    grpc_resource_quota* resource_quota = grpc_resource_quota_create("oauth2_credentials");
     grpc_httpcli_get(http_context, pollent, resource_quota, &request, deadline,
-                     GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb,
-                                       metadata_req, grpc_schedule_on_exec_ctx),
+                     GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
+                                       grpc_schedule_on_exec_ctx),
                      &metadata_req->response);
     grpc_resource_quota_unref_internal(resource_quota);
   }
 
   std::string debug_string() override {
-    return absl::StrFormat(
-        "GoogleComputeEngineTokenFetcherCredentials{%s}",
-        grpc_oauth2_token_fetcher_credentials::debug_string());
+    return absl::StrFormat("GoogleComputeEngineTokenFetcherCredentials{%s}",
+                           grpc_oauth2_token_fetcher_credentials::debug_string());
   }
 
  private:
@@ -416,36 +380,29 @@ class grpc_compute_engine_token_fetcher_credentials
 
 }  // namespace
 
-grpc_call_credentials* grpc_google_compute_engine_credentials_create(
-    void* reserved) {
-  GRPC_API_TRACE("grpc_compute_engine_credentials_create(reserved=%p)", 1,
-                 (reserved));
+grpc_call_credentials* grpc_google_compute_engine_credentials_create(void* reserved) {
+  GRPC_API_TRACE("grpc_compute_engine_credentials_create(reserved=%p)", 1, (reserved));
   GPR_ASSERT(reserved == nullptr);
-  return grpc_core::MakeRefCounted<
-             grpc_compute_engine_token_fetcher_credentials>()
-      .release();
+  return grpc_core::MakeRefCounted<grpc_compute_engine_token_fetcher_credentials>().release();
 }
 
 //
 // Google Refresh Token credentials.
 //
 
-grpc_google_refresh_token_credentials::
-    ~grpc_google_refresh_token_credentials() {
+grpc_google_refresh_token_credentials::~grpc_google_refresh_token_credentials() {
   grpc_auth_refresh_token_destruct(&refresh_token_);
 }
 
 void grpc_google_refresh_token_credentials::fetch_oauth2(
-    grpc_credentials_metadata_request* metadata_req,
-    grpc_httpcli_context* httpcli_context, grpc_polling_entity* pollent,
-    grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
-  grpc_http_header header = {
-      const_cast<char*>("Content-Type"),
-      const_cast<char*>("application/x-www-form-urlencoded")};
+    grpc_credentials_metadata_request* metadata_req, grpc_httpcli_context* httpcli_context,
+    grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb, grpc_millis deadline) {
+  grpc_http_header header = {const_cast<char*>("Content-Type"),
+                             const_cast<char*>("application/x-www-form-urlencoded")};
   grpc_httpcli_request request;
-  std::string body = absl::StrFormat(
-      GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING, refresh_token_.client_id,
-      refresh_token_.client_secret, refresh_token_.refresh_token);
+  std::string body =
+      absl::StrFormat(GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING, refresh_token_.client_id,
+                      refresh_token_.client_secret, refresh_token_.refresh_token);
   memset(&request, 0, sizeof(grpc_httpcli_request));
   request.host = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST);
   request.http.path = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH);
@@ -455,12 +412,11 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("oauth2_credentials_refresh");
-  grpc_httpcli_post(httpcli_context, pollent, resource_quota, &request,
-                    body.c_str(), body.size(), deadline,
-                    GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb,
-                                      metadata_req, grpc_schedule_on_exec_ctx),
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create("oauth2_credentials_refresh");
+  grpc_httpcli_post(httpcli_context, pollent, resource_quota, &request, body.c_str(), body.size(),
+                    deadline,
+                    GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
+                                      grpc_schedule_on_exec_ctx),
                     &metadata_req->response);
   grpc_resource_quota_unref_internal(resource_quota);
 }
@@ -476,18 +432,15 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
     gpr_log(GPR_ERROR, "Invalid input for refresh token credentials creation");
     return nullptr;
   }
-  return grpc_core::MakeRefCounted<grpc_google_refresh_token_credentials>(
-      refresh_token);
+  return grpc_core::MakeRefCounted<grpc_google_refresh_token_credentials>(refresh_token);
 }
 
 std::string grpc_google_refresh_token_credentials::debug_string() {
-  return absl::StrFormat("GoogleRefreshToken{ClientID:%s,%s}",
-                         refresh_token_.client_id,
+  return absl::StrFormat("GoogleRefreshToken{ClientID:%s,%s}", refresh_token_.client_id,
                          grpc_oauth2_token_fetcher_credentials::debug_string());
 }
 
-static std::string create_loggable_refresh_token(
-    grpc_auth_refresh_token* token) {
+static std::string create_loggable_refresh_token(grpc_auth_refresh_token* token) {
   if (strcmp(token->type, GRPC_AUTH_JSON_TYPE_INVALID) == 0) {
     return "<Invalid json token>";
   }
@@ -497,10 +450,9 @@ static std::string create_loggable_refresh_token(
       token->type, token->client_id);
 }
 
-grpc_call_credentials* grpc_google_refresh_token_credentials_create(
-    const char* json_refresh_token, void* reserved) {
-  grpc_auth_refresh_token token =
-      grpc_auth_refresh_token_create_from_string(json_refresh_token);
+grpc_call_credentials* grpc_google_refresh_token_credentials_create(const char* json_refresh_token,
+                                                                    void* reserved) {
+  grpc_auth_refresh_token token = grpc_auth_refresh_token_create_from_string(json_refresh_token);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {
     gpr_log(GPR_INFO,
             "grpc_refresh_token_credentials_create(json_refresh_token=%s, "
@@ -508,8 +460,7 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
             create_loggable_refresh_token(&token).c_str(), reserved);
   }
   GPR_ASSERT(reserved == nullptr);
-  return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
-      .release();
+  return grpc_refresh_token_credentials_create_from_auth_refresh_token(token).release();
 }
 
 //
@@ -520,8 +471,7 @@ namespace grpc_core {
 
 namespace {
 
-void MaybeAddToBody(const char* field_name, const char* field,
-                    std::vector<std::string>* body) {
+void MaybeAddToBody(const char* field_name, const char* field, std::vector<std::string>* body) {
   if (field == nullptr || strlen(field) == 0) return;
   body->push_back(absl::StrFormat("&%s=%s", field_name, field));
 }
@@ -536,11 +486,9 @@ grpc_error_handle LoadTokenFile(const char* path, gpr_slice* token) {
   return err;
 }
 
-class StsTokenFetcherCredentials
-    : public grpc_oauth2_token_fetcher_credentials {
+class StsTokenFetcherCredentials : public grpc_oauth2_token_fetcher_credentials {
  public:
-  StsTokenFetcherCredentials(URI sts_url,
-                             const grpc_sts_credentials_options* options)
+  StsTokenFetcherCredentials(URI sts_url, const grpc_sts_credentials_options* options)
       : sts_url_(std::move(sts_url)),
         resource_(gpr_strdup(options->resource)),
         audience_(gpr_strdup(options->audience)),
@@ -552,18 +500,15 @@ class StsTokenFetcherCredentials
         actor_token_type_(gpr_strdup(options->actor_token_type)) {}
 
   std::string debug_string() override {
-    return absl::StrFormat(
-        "StsTokenFetcherCredentials{Path:%s,Authority:%s,%s}", sts_url_.path(),
-        sts_url_.authority(),
-        grpc_oauth2_token_fetcher_credentials::debug_string());
+    return absl::StrFormat("StsTokenFetcherCredentials{Path:%s,Authority:%s,%s}", sts_url_.path(),
+                           sts_url_.authority(),
+                           grpc_oauth2_token_fetcher_credentials::debug_string());
   }
 
  private:
   void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
-                    grpc_httpcli_context* http_context,
-                    grpc_polling_entity* pollent,
-                    grpc_iomgr_cb_func response_cb,
-                    grpc_millis deadline) override {
+                    grpc_httpcli_context* http_context, grpc_polling_entity* pollent,
+                    grpc_iomgr_cb_func response_cb, grpc_millis deadline) override {
     char* body = nullptr;
     size_t body_length = 0;
     grpc_error_handle err = FillBody(&body, &body_length);
@@ -572,29 +517,24 @@ class StsTokenFetcherCredentials
       GRPC_ERROR_UNREF(err);
       return;
     }
-    grpc_http_header header = {
-        const_cast<char*>("Content-Type"),
-        const_cast<char*>("application/x-www-form-urlencoded")};
+    grpc_http_header header = {const_cast<char*>("Content-Type"),
+                               const_cast<char*>("application/x-www-form-urlencoded")};
     grpc_httpcli_request request;
     memset(&request, 0, sizeof(grpc_httpcli_request));
     request.host = const_cast<char*>(sts_url_.authority().c_str());
     request.http.path = const_cast<char*>(sts_url_.path().c_str());
     request.http.hdr_count = 1;
     request.http.hdrs = &header;
-    request.handshaker = (sts_url_.scheme() == "https")
-                             ? &grpc_httpcli_ssl
-                             : &grpc_httpcli_plaintext;
+    request.handshaker =
+        (sts_url_.scheme() == "https") ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
     /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    grpc_resource_quota* resource_quota =
-        grpc_resource_quota_create("oauth2_credentials_refresh");
-    grpc_httpcli_post(
-        http_context, pollent, resource_quota, &request, body, body_length,
-        deadline,
-        GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
-                          grpc_schedule_on_exec_ctx),
-        &metadata_req->response);
+    grpc_resource_quota* resource_quota = grpc_resource_quota_create("oauth2_credentials_refresh");
+    grpc_httpcli_post(http_context, pollent, resource_quota, &request, body, body_length, deadline,
+                      GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
+                                        grpc_schedule_on_exec_ctx),
+                      &metadata_req->response);
     grpc_resource_quota_unref_internal(resource_quota);
     gpr_free(body);
   }
@@ -606,8 +546,7 @@ class StsTokenFetcherCredentials
     grpc_slice actor_token = grpc_empty_slice();
     grpc_error_handle err = GRPC_ERROR_NONE;
 
-    auto cleanup = [&body, &body_length, &body_parts, &subject_token,
-                    &actor_token, &err]() {
+    auto cleanup = [&body, &body_length, &body_parts, &subject_token, &actor_token, &err]() {
       if (err == GRPC_ERROR_NONE) {
         std::string body_str = absl::StrJoin(body_parts, "");
         *body = gpr_strdup(body_str.c_str());
@@ -620,22 +559,19 @@ class StsTokenFetcherCredentials
 
     err = LoadTokenFile(subject_token_path_.get(), &subject_token);
     if (err != GRPC_ERROR_NONE) return cleanup();
-    body_parts.push_back(absl::StrFormat(
-        GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)),
-        subject_token_type_.get()));
+    body_parts.push_back(
+        absl::StrFormat(GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
+                        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)),
+                        subject_token_type_.get()));
     MaybeAddToBody("resource", resource_.get(), &body_parts);
     MaybeAddToBody("audience", audience_.get(), &body_parts);
     MaybeAddToBody("scope", scope_.get(), &body_parts);
-    MaybeAddToBody("requested_token_type", requested_token_type_.get(),
-                   &body_parts);
+    MaybeAddToBody("requested_token_type", requested_token_type_.get(), &body_parts);
     if ((actor_token_path_ != nullptr) && *actor_token_path_ != '\0') {
       err = LoadTokenFile(actor_token_path_.get(), &actor_token);
       if (err != GRPC_ERROR_NONE) return cleanup();
-      MaybeAddToBody(
-          "actor_token",
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)),
-          &body_parts);
+      MaybeAddToBody("actor_token",
+                     reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)), &body_parts);
       MaybeAddToBody("actor_token_type", actor_token_type_.get(), &body_parts);
     }
     return cleanup();
@@ -655,57 +591,50 @@ class StsTokenFetcherCredentials
 
 }  // namespace
 
-absl::StatusOr<URI> ValidateStsCredentialsOptions(
-    const grpc_sts_credentials_options* options) {
+absl::StatusOr<URI> ValidateStsCredentialsOptions(const grpc_sts_credentials_options* options) {
   absl::InlinedVector<grpc_error_handle, 3> error_list;
-  absl::StatusOr<URI> sts_url =
-      URI::Parse(options->token_exchange_service_uri == nullptr
-                     ? ""
-                     : options->token_exchange_service_uri);
+  absl::StatusOr<URI> sts_url = URI::Parse(
+      options->token_exchange_service_uri == nullptr ? "" : options->token_exchange_service_uri);
   if (!sts_url.ok()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat("Invalid or missing STS endpoint URL. Error: %s",
                         sts_url.status().ToString())
             .c_str()));
   } else if (sts_url->scheme() != "https" && sts_url->scheme() != "http") {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid URI scheme, must be https to http."));
+    error_list.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid URI scheme, must be https to http."));
   }
-  if (options->subject_token_path == nullptr ||
-      strlen(options->subject_token_path) == 0) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "subject_token needs to be specified"));
+  if (options->subject_token_path == nullptr || strlen(options->subject_token_path) == 0) {
+    error_list.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("subject_token needs to be specified"));
   }
-  if (options->subject_token_type == nullptr ||
-      strlen(options->subject_token_type) == 0) {
-    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "subject_token_type needs to be specified"));
+  if (options->subject_token_type == nullptr || strlen(options->subject_token_type) == 0) {
+    error_list.push_back(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("subject_token_type needs to be specified"));
   }
   if (error_list.empty()) {
     return sts_url;
   }
-  auto grpc_error_vec = GRPC_ERROR_CREATE_FROM_VECTOR(
-      "Invalid STS Credentials Options", &error_list);
-  auto retval =
-      absl::InvalidArgumentError(grpc_error_std_string(grpc_error_vec));
+  auto grpc_error_vec =
+      GRPC_ERROR_CREATE_FROM_VECTOR("Invalid STS Credentials Options", &error_list);
+  auto retval = absl::InvalidArgumentError(grpc_error_std_string(grpc_error_vec));
   GRPC_ERROR_UNREF(grpc_error_vec);
   return retval;
 }
 
 }  // namespace grpc_core
 
-grpc_call_credentials* grpc_sts_credentials_create(
-    const grpc_sts_credentials_options* options, void* reserved) {
+grpc_call_credentials* grpc_sts_credentials_create(const grpc_sts_credentials_options* options,
+                                                   void* reserved) {
   GPR_ASSERT(reserved == nullptr);
-  absl::StatusOr<grpc_core::URI> sts_url =
-      grpc_core::ValidateStsCredentialsOptions(options);
+  absl::StatusOr<grpc_core::URI> sts_url = grpc_core::ValidateStsCredentialsOptions(options);
   if (!sts_url.ok()) {
     gpr_log(GPR_ERROR, "STS Credentials creation failed. Error: %s.",
             sts_url.status().ToString().c_str());
     return nullptr;
   }
-  return grpc_core::MakeRefCounted<grpc_core::StsTokenFetcherCredentials>(
-             std::move(*sts_url), options)
+  return grpc_core::MakeRefCounted<grpc_core::StsTokenFetcherCredentials>(std::move(*sts_url),
+                                                                          options)
       .release();
 }
 
@@ -717,10 +646,11 @@ grpc_access_token_credentials::~grpc_access_token_credentials() {
   GRPC_MDELEM_UNREF(access_token_md_);
 }
 
-bool grpc_access_token_credentials::get_request_metadata(
-    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
-    grpc_credentials_mdelem_array* md_array,
-    grpc_closure* /*on_request_metadata*/, grpc_error_handle* /*error*/) {
+bool grpc_access_token_credentials::get_request_metadata(grpc_polling_entity* /*pollent*/,
+                                                         grpc_auth_metadata_context /*context*/,
+                                                         grpc_credentials_mdelem_array* md_array,
+                                                         grpc_closure* /*on_request_metadata*/,
+                                                         grpc_error_handle* /*error*/) {
   grpc_credentials_mdelem_array_add(md_array, access_token_md_);
   return true;
 }
@@ -730,13 +660,12 @@ void grpc_access_token_credentials::cancel_get_request_metadata(
   GRPC_ERROR_UNREF(error);
 }
 
-grpc_access_token_credentials::grpc_access_token_credentials(
-    const char* access_token)
+grpc_access_token_credentials::grpc_access_token_credentials(const char* access_token)
     : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) {
   grpc_core::ExecCtx exec_ctx;
-  access_token_md_ = grpc_mdelem_from_slices(
-      grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
-      grpc_slice_from_cpp_string(absl::StrCat("Bearer ", access_token)));
+  access_token_md_ =
+      grpc_mdelem_from_slices(grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
+                              grpc_slice_from_cpp_string(absl::StrCat("Bearer ", access_token)));
 }
 
 std::string grpc_access_token_credentials::debug_string() {
@@ -745,13 +674,12 @@ std::string grpc_access_token_credentials::debug_string() {
                          access_token_present ? "present" : "absent");
 }
 
-grpc_call_credentials* grpc_access_token_credentials_create(
-    const char* access_token, void* reserved) {
+grpc_call_credentials* grpc_access_token_credentials_create(const char* access_token,
+                                                            void* reserved) {
   GRPC_API_TRACE(
       "grpc_access_token_credentials_create(access_token=<redacted>, "
       "reserved=%p)",
       1, (reserved));
   GPR_ASSERT(reserved == nullptr);
-  return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token)
-      .release();
+  return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token).release();
 }

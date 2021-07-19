@@ -40,10 +40,9 @@ extern "C" {
    GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline
    propagation. Doing so gives flexibility in the future to define new
    propagation types that are default inherited or not. */
-#define GRPC_PROPAGATE_DEFAULTS                                                \
-  ((uint32_t)((                                                                \
-      0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_STATS_CONTEXT | \
-      GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT | GRPC_PROPAGATE_CANCELLATION)))
+#define GRPC_PROPAGATE_DEFAULTS                                                         \
+  ((uint32_t)((0xffff | GRPC_PROPAGATE_DEADLINE | GRPC_PROPAGATE_CENSUS_STATS_CONTEXT | \
+               GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT | GRPC_PROPAGATE_CANCELLATION)))
 
 #ifdef __cplusplus
 }

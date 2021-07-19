@@ -137,9 +137,7 @@ class ByteBuffer final {
   /// bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable.
   /// This is not a deep copy; it is a referencing and its performance
   /// is size-independent.
-  void Duplicate() {
-    buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buffer_);
-  }
+  void Duplicate() { buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buffer_); }
 
   /// Forget underlying byte buffer without destroying
   /// Use this only for un-owned byte buffers
@@ -147,9 +145,7 @@ class ByteBuffer final {
 
   /// Buffer size in bytes.
   size_t Length() const {
-    return buffer_ == nullptr
-               ? 0
-               : g_core_codegen_interface->grpc_byte_buffer_length(buffer_);
+    return buffer_ == nullptr ? 0 : g_core_codegen_interface->grpc_byte_buffer_length(buffer_);
   }
 
   /// Swap the state of *this and *other.
@@ -170,8 +166,7 @@ class ByteBuffer final {
   friend class internal::CallOpRecvMessage;
   friend class internal::CallOpGenericRecvMessage;
   template <class RequestType>
-  friend void* internal::UnaryDeserializeHelper(grpc_byte_buffer*,
-                                                ::grpc::Status*, RequestType*);
+  friend void* internal::UnaryDeserializeHelper(grpc_byte_buffer*, ::grpc::Status*, RequestType*);
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::ServerStreamingHandler;
   template <class RequestType, class ResponseType>
@@ -203,8 +198,7 @@ class ByteBuffer final {
   class ByteBufferPointer {
    public:
     /* NOLINTNEXTLINE(google-explicit-constructor) */
-    ByteBufferPointer(const ByteBuffer* b)
-        : bbuf_(const_cast<ByteBuffer*>(b)) {}
+    ByteBufferPointer(const ByteBuffer* b) : bbuf_(const_cast<ByteBuffer*>(b)) {}
     /* NOLINTNEXTLINE(google-explicit-constructor) */
     operator ByteBuffer*() { return bbuf_; }
     /* NOLINTNEXTLINE(google-explicit-constructor) */
@@ -225,8 +219,7 @@ class SerializationTraits<ByteBuffer, void> {
     dest->set_buffer(byte_buffer->buffer_);
     return Status::OK;
   }
-  static Status Serialize(const ByteBuffer& source, ByteBuffer* buffer,
-                          bool* own_buffer) {
+  static Status Serialize(const ByteBuffer& source, ByteBuffer* buffer, bool* own_buffer) {
     *buffer = source;
     *own_buffer = true;
     return g_core_codegen_interface->ok();

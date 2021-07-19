@@ -44,8 +44,7 @@ GPR_GLOBAL_CONFIG_DEFINE_STRING(
     "This is a comma-separated list of engines, which are tried in priority "
     "order first -> last.")
 
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling"); /* Disabled by default */
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling"); /* Disabled by default */
 
 /* Traces fd create/close operations */
 grpc_core::DebugOnlyTraceFlag grpc_fd_trace(false, "fd_trace");
@@ -67,9 +66,7 @@ grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 #ifndef GPR_AIX
 grpc_poll_function_type grpc_poll_function = poll;
 #else
-int aix_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
-  return poll(fds, nfds, timeout);
-}
+int aix_poll(struct pollfd fds[], nfds_t nfds, int timeout) { return poll(fds, nfds, timeout); }
 grpc_poll_function_type grpc_poll_function = aix_poll;
 #endif  // GPR_AIX
 
@@ -78,8 +75,7 @@ grpc_wakeup_fd grpc_global_wakeup_fd;
 static const grpc_event_engine_vtable* g_event_engine = nullptr;
 static const char* g_poll_strategy_name = nullptr;
 
-typedef const grpc_event_engine_vtable* (*event_engine_factory_fn)(
-    bool explicit_request);
+typedef const grpc_event_engine_vtable* (*event_engine_factory_fn)(bool explicit_request);
 
 struct event_engine_factory {
   const char* name;
@@ -167,8 +163,7 @@ static bool is(const char* want, const char* have) {
 static void try_engine(const char* engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
     if (g_factories[i].factory != nullptr && is(engine, g_factories[i].name)) {
-      if ((g_event_engine = g_factories[i].factory(
-               0 == strcmp(engine, g_factories[i].name)))) {
+      if ((g_event_engine = g_factories[i].factory(0 == strcmp(engine, g_factories[i].name)))) {
         g_poll_strategy_name = g_factories[i].name;
         gpr_log(GPR_DEBUG, "Using polling engine: %s", g_factories[i].name);
         return;
@@ -178,11 +173,9 @@ static void try_engine(const char* engine) {
 }
 
 /* Call this before calling grpc_event_engine_init() */
-void grpc_register_event_engine_factory(const char* name,
-                                        event_engine_factory_fn factory,
+void grpc_register_event_engine_factory(const char* name, event_engine_factory_fn factory,
                                         bool add_at_head) {
-  const char* custom_match =
-      add_at_head ? ENGINE_HEAD_CUSTOM : ENGINE_TAIL_CUSTOM;
+  const char* custom_match = add_at_head ? ENGINE_HEAD_CUSTOM : ENGINE_TAIL_CUSTOM;
 
   // Overwrite an existing registration if already registered
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
@@ -226,8 +219,7 @@ void grpc_event_engine_init(void) {
   gpr_free(strings);
 
   if (g_event_engine == nullptr) {
-    gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
-            value.get());
+    gpr_log(GPR_ERROR, "No event engine could be initialized from %s", value.get());
     abort();
   }
 }
@@ -253,18 +245,14 @@ bool grpc_event_engine_run_in_background(void) {
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
   GRPC_FD_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
-  return g_event_engine->fd_create(
-      fd, name, track_err && grpc_event_engine_can_track_errors());
+  return g_event_engine->fd_create(fd, name, track_err && grpc_event_engine_can_track_errors());
 }
 
-int grpc_fd_wrapped_fd(grpc_fd* fd) {
-  return g_event_engine->fd_wrapped_fd(fd);
-}
+int grpc_fd_wrapped_fd(grpc_fd* fd) { return g_event_engine->fd_wrapped_fd(fd); }
 
-void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                    const char* reason) {
-  GRPC_POLLING_API_TRACE("fd_orphan(%d, %p, %p, %s)", grpc_fd_wrapped_fd(fd),
-                         on_done, release_fd, reason);
+void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd, const char* reason) {
+  GRPC_POLLING_API_TRACE("fd_orphan(%d, %p, %p, %s)", grpc_fd_wrapped_fd(fd), on_done, release_fd,
+                         reason);
   GRPC_FD_TRACE("grpc_fd_orphan, fd:%d closed", grpc_fd_wrapped_fd(fd));
 
   g_event_engine->fd_orphan(fd, on_done, release_fd, reason);
@@ -276,9 +264,7 @@ void grpc_fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
   g_event_engine->fd_shutdown(fd, why);
 }
 
-bool grpc_fd_is_shutdown(grpc_fd* fd) {
-  return g_event_engine->fd_is_shutdown(fd);
-}
+bool grpc_fd_is_shutdown(grpc_fd* fd) { return g_event_engine->fd_is_shutdown(fd); }
 
 void grpc_fd_notify_on_read(grpc_fd* fd, grpc_closure* closure) {
   g_event_engine->fd_notify_on_read(fd, closure);
@@ -315,38 +301,31 @@ static void pollset_destroy(grpc_pollset* pollset) {
   g_event_engine->pollset_destroy(pollset);
 }
 
-static grpc_error_handle pollset_work(grpc_pollset* pollset,
-                                      grpc_pollset_worker** worker,
+static grpc_error_handle pollset_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
                                       grpc_millis deadline) {
-  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") begin", pollset,
-                         deadline);
-  grpc_error_handle err =
-      g_event_engine->pollset_work(pollset, worker, deadline);
-  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") end", pollset,
-                         deadline);
+  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") begin", pollset, deadline);
+  grpc_error_handle err = g_event_engine->pollset_work(pollset, worker, deadline);
+  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") end", pollset, deadline);
   return err;
 }
 
-static grpc_error_handle pollset_kick(grpc_pollset* pollset,
-                                      grpc_pollset_worker* specific_worker) {
+static grpc_error_handle pollset_kick(grpc_pollset* pollset, grpc_pollset_worker* specific_worker) {
   GRPC_POLLING_API_TRACE("pollset_kick(%p, %p)", pollset, specific_worker);
   return g_event_engine->pollset_kick(pollset, specific_worker);
 }
 
 void grpc_pollset_add_fd(grpc_pollset* pollset, struct grpc_fd* fd) {
-  GRPC_POLLING_API_TRACE("pollset_add_fd(%p, %d)", pollset,
-                         grpc_fd_wrapped_fd(fd));
+  GRPC_POLLING_API_TRACE("pollset_add_fd(%p, %d)", pollset, grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_add_fd(pollset, fd);
 }
 
 void pollset_global_init() {}
 void pollset_global_shutdown() {}
 
-grpc_pollset_vtable grpc_posix_pollset_vtable = {
-    pollset_global_init, pollset_global_shutdown,
-    pollset_init,        pollset_shutdown,
-    pollset_destroy,     pollset_work,
-    pollset_kick,        pollset_size};
+grpc_pollset_vtable grpc_posix_pollset_vtable = {pollset_global_init, pollset_global_shutdown,
+                                                 pollset_init,        pollset_shutdown,
+                                                 pollset_destroy,     pollset_work,
+                                                 pollset_kick,        pollset_size};
 
 static grpc_pollset_set* pollset_set_create(void) {
   grpc_pollset_set* pss = g_event_engine->pollset_set_create();
@@ -359,46 +338,37 @@ static void pollset_set_destroy(grpc_pollset_set* pollset_set) {
   g_event_engine->pollset_set_destroy(pollset_set);
 }
 
-static void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
-                                    grpc_pollset* pollset) {
-  GRPC_POLLING_API_TRACE("pollset_set_add_pollset(%p, %p)", pollset_set,
-                         pollset);
+static void pollset_set_add_pollset(grpc_pollset_set* pollset_set, grpc_pollset* pollset) {
+  GRPC_POLLING_API_TRACE("pollset_set_add_pollset(%p, %p)", pollset_set, pollset);
   g_event_engine->pollset_set_add_pollset(pollset_set, pollset);
 }
 
-static void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
-                                    grpc_pollset* pollset) {
-  GRPC_POLLING_API_TRACE("pollset_set_del_pollset(%p, %p)", pollset_set,
-                         pollset);
+static void pollset_set_del_pollset(grpc_pollset_set* pollset_set, grpc_pollset* pollset) {
+  GRPC_POLLING_API_TRACE("pollset_set_del_pollset(%p, %p)", pollset_set, pollset);
   g_event_engine->pollset_set_del_pollset(pollset_set, pollset);
 }
 
-static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
-                                        grpc_pollset_set* item) {
+static void pollset_set_add_pollset_set(grpc_pollset_set* bag, grpc_pollset_set* item) {
   GRPC_POLLING_API_TRACE("pollset_set_add_pollset_set(%p, %p)", bag, item);
   g_event_engine->pollset_set_add_pollset_set(bag, item);
 }
 
-static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                        grpc_pollset_set* item) {
+static void pollset_set_del_pollset_set(grpc_pollset_set* bag, grpc_pollset_set* item) {
   GRPC_POLLING_API_TRACE("pollset_set_del_pollset_set(%p, %p)", bag, item);
   g_event_engine->pollset_set_del_pollset_set(bag, item);
 }
 
 grpc_pollset_set_vtable grpc_posix_pollset_set_vtable = {
-    pollset_set_create,          pollset_set_destroy,
-    pollset_set_add_pollset,     pollset_set_del_pollset,
-    pollset_set_add_pollset_set, pollset_set_del_pollset_set};
+    pollset_set_create,      pollset_set_destroy,         pollset_set_add_pollset,
+    pollset_set_del_pollset, pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
 void grpc_pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
-  GRPC_POLLING_API_TRACE("pollset_set_add_fd(%p, %d)", pollset_set,
-                         grpc_fd_wrapped_fd(fd));
+  GRPC_POLLING_API_TRACE("pollset_set_add_fd(%p, %d)", pollset_set, grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_set_add_fd(pollset_set, fd);
 }
 
 void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
-  GRPC_POLLING_API_TRACE("pollset_set_del_fd(%p, %d)", pollset_set,
-                         grpc_fd_wrapped_fd(fd));
+  GRPC_POLLING_API_TRACE("pollset_set_del_fd(%p, %d)", pollset_set, grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
 }
 
@@ -406,13 +376,10 @@ bool grpc_is_any_background_poller_thread(void) {
   return g_event_engine->is_any_background_poller_thread();
 }
 
-bool grpc_add_closure_to_background_poller(grpc_closure* closure,
-                                           grpc_error_handle error) {
+bool grpc_add_closure_to_background_poller(grpc_closure* closure, grpc_error_handle error) {
   return g_event_engine->add_closure_to_background_poller(closure, error);
 }
 
-void grpc_shutdown_background_closure(void) {
-  g_event_engine->shutdown_background_closure();
-}
+void grpc_shutdown_background_closure(void) { g_event_engine->shutdown_background_closure(); }
 
 #endif  // GRPC_POSIX_SOCKET_EV

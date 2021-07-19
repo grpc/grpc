@@ -58,19 +58,15 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     ServerEnv() : response_writer(&ctx) {}
   };
   uint8_t server_env_buffer[2 * sizeof(ServerEnv)];
-  ServerEnv* server_env[2] = {
-      reinterpret_cast<ServerEnv*>(server_env_buffer),
-      reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
+  ServerEnv* server_env[2] = {reinterpret_cast<ServerEnv*>(server_env_buffer),
+                              reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
   new (server_env[0]) ServerEnv;
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
-                      &server_env[0]->response_writer, fixture->cq(),
-                      fixture->cq(), tag(0));
+                      &server_env[0]->response_writer, fixture->cq(), fixture->cq(), tag(0));
   service.RequestEcho(&server_env[1]->ctx, &server_env[1]->recv_request,
-                      &server_env[1]->response_writer, fixture->cq(),
-                      fixture->cq(), tag(1));
-  std::unique_ptr<EchoTestService::Stub> stub(
-      EchoTestService::NewStub(fixture->channel()));
+                      &server_env[1]->response_writer, fixture->cq(), fixture->cq(), tag(1));
+  std::unique_ptr<EchoTestService::Stub> stub(EchoTestService::NewStub(fixture->channel()));
   for (auto _ : state) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     recv_response.Clear();
@@ -99,8 +95,8 @@ static void BM_UnaryPingPong(benchmark::State& state) {
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();
-    service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
-                        fixture->cq(), fixture->cq(), tag(slot));
+    service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer, fixture->cq(),
+                        fixture->cq(), tag(slot));
   }
   fixture->Finish(state);
   fixture.reset();

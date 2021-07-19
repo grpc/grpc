@@ -44,16 +44,13 @@ size_t ServiceConfigParser::RegisterParser(std::unique_ptr<Parser> parser) {
   return g_registered_parsers->size() - 1;
 }
 
-ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
-                                           const Json& json,
-                                           grpc_error_handle* error) {
+ServiceConfigParser::ParsedConfigVector ServiceConfigParser::ParseGlobalParameters(
+    const grpc_channel_args* args, const Json& json, grpc_error_handle* error) {
   ParsedConfigVector parsed_global_configs;
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
     grpc_error_handle parser_error = GRPC_ERROR_NONE;
-    auto parsed_config = (*g_registered_parsers)[i]->ParseGlobalParams(
-        args, json, &parser_error);
+    auto parsed_config = (*g_registered_parsers)[i]->ParseGlobalParams(args, json, &parser_error);
     if (parser_error != GRPC_ERROR_NONE) {
       error_list.push_back(parser_error);
     }
@@ -65,16 +62,14 @@ ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
   return parsed_global_configs;
 }
 
-ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
-                                              const Json& json,
-                                              grpc_error_handle* error) {
+ServiceConfigParser::ParsedConfigVector ServiceConfigParser::ParsePerMethodParameters(
+    const grpc_channel_args* args, const Json& json, grpc_error_handle* error) {
   ParsedConfigVector parsed_method_configs;
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
     grpc_error_handle parser_error = GRPC_ERROR_NONE;
-    auto parsed_config = (*g_registered_parsers)[i]->ParsePerMethodParams(
-        args, json, &parser_error);
+    auto parsed_config =
+        (*g_registered_parsers)[i]->ParsePerMethodParams(args, json, &parser_error);
     if (parser_error != GRPC_ERROR_NONE) {
       error_list.push_back(parser_error);
     }

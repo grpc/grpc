@@ -82,14 +82,12 @@ static int get_max_accept_queue_size(void) {
 
 static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
                                               const grpc_resolved_address* addr,
-                                              unsigned port_index,
-                                              unsigned fd_index,
+                                              unsigned port_index, unsigned fd_index,
                                               grpc_tcp_listener** listener) {
   grpc_tcp_listener* sp = nullptr;
   int port = -1;
 
-  grpc_error_handle err =
-      grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
+  grpc_error_handle err = grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(port > 0);
     std::string addr_str = grpc_sockaddr_to_string(addr, true);
@@ -124,30 +122,26 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
 
 /* If successful, add a listener to s for addr, set *dsmode for the socket, and
    return the *listener. */
-grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
-                                           const grpc_resolved_address* addr,
-                                           unsigned port_index,
-                                           unsigned fd_index,
+grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s, const grpc_resolved_address* addr,
+                                           unsigned port_index, unsigned fd_index,
                                            grpc_dualstack_mode* dsmode,
                                            grpc_tcp_listener** listener) {
   grpc_resolved_address addr4_copy;
   int fd;
-  grpc_error_handle err =
-      grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, dsmode, &fd);
+  grpc_error_handle err = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, dsmode, &fd);
   if (err != GRPC_ERROR_NONE) {
     return err;
   }
-  if (*dsmode == GRPC_DSMODE_IPV4 &&
-      grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
+  if (*dsmode == GRPC_DSMODE_IPV4 && grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
     addr = &addr4_copy;
   }
   return add_socket_to_server(s, fd, addr, port_index, fd_index, listener);
 }
 
 /* Prepare a recently-created socket for listening. */
-grpc_error_handle grpc_tcp_server_prepare_socket(
-    grpc_tcp_server* s, int fd, const grpc_resolved_address* addr,
-    bool so_reuseport, int* port) {
+grpc_error_handle grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
+                                                 const grpc_resolved_address* addr,
+                                                 bool so_reuseport, int* port) {
   grpc_resolved_address sockname_temp;
   grpc_error_handle err = GRPC_ERROR_NONE;
 
@@ -175,19 +169,16 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
     if (err != GRPC_ERROR_NONE) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
-    err = grpc_set_socket_tcp_user_timeout(fd, s->channel_args,
-                                           false /* is_client */);
+    err = grpc_set_socket_tcp_user_timeout(fd, s->channel_args, false /* is_client */);
     if (err != GRPC_ERROR_NONE) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_LISTENER_USAGE,
-                                          s->channel_args);
+  err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_LISTENER_USAGE, s->channel_args);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
-           addr->len) < 0) {
+  if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)), addr->len) < 0) {
     err = GRPC_OS_ERROR(errno, "bind");
     goto error;
   }
@@ -199,8 +190,8 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
 
   sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
-                  &sockname_temp.len) < 0) {
+  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr), &sockname_temp.len) <
+      0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     goto error;
   }
@@ -213,10 +204,9 @@ error:
   if (fd >= 0) {
     close(fd);
   }
-  grpc_error_handle ret =
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Unable to configure socket", &err, 1),
-                         GRPC_ERROR_INT_FD, fd);
+  grpc_error_handle ret = grpc_error_set_int(
+      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Unable to configure socket", &err, 1),
+      GRPC_ERROR_INT_FD, fd);
   GRPC_ERROR_UNREF(err);
   return ret;
 }

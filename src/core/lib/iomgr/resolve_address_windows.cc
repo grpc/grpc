@@ -54,9 +54,9 @@ struct request {
   grpc_closure* on_done;
   grpc_resolved_addresses** addresses;
 };
-static grpc_error_handle windows_blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+static grpc_error_handle windows_blocking_resolve_address(const char* name,
+                                                          const char* default_port,
+                                                          grpc_resolved_addresses** addresses) {
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
@@ -97,14 +97,13 @@ static grpc_error_handle windows_blocking_resolve_address(
   }
 
   /* Success path: set addrs non-NULL, fill it in */
-  (*addresses) =
-      (grpc_resolved_addresses*)gpr_malloc(sizeof(grpc_resolved_addresses));
+  (*addresses) = (grpc_resolved_addresses*)gpr_malloc(sizeof(grpc_resolved_addresses));
   (*addresses)->naddrs = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     (*addresses)->naddrs++;
   }
-  (*addresses)->addrs = (grpc_resolved_address*)gpr_malloc(
-      sizeof(grpc_resolved_address) * (*addresses)->naddrs);
+  (*addresses)->addrs =
+      (grpc_resolved_address*)gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs);
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
@@ -124,8 +123,7 @@ done:
 static void do_request_thread(void* rp, grpc_error_handle error) {
   request* r = (request*)rp;
   if (error == GRPC_ERROR_NONE) {
-    error =
-        grpc_blocking_resolve_address(r->name, r->default_port, r->addresses);
+    error = grpc_blocking_resolve_address(r->name, r->default_port, r->addresses);
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -136,8 +134,7 @@ static void do_request_thread(void* rp, grpc_error_handle error) {
 }
 
 static void windows_resolve_address(const char* name, const char* default_port,
-                                    grpc_pollset_set* interested_parties,
-                                    grpc_closure* on_done,
+                                    grpc_pollset_set* interested_parties, grpc_closure* on_done,
                                     grpc_resolved_addresses** addresses) {
   request* r = (request*)gpr_malloc(sizeof(request));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r, nullptr);
@@ -145,10 +142,9 @@ static void windows_resolve_address(const char* name, const char* default_port,
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;
   r->addresses = addresses;
-  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
-                           grpc_core::ExecutorType::RESOLVER);
+  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE, grpc_core::ExecutorType::RESOLVER);
 }
 
-grpc_address_resolver_vtable grpc_windows_resolver_vtable = {
-    windows_resolve_address, windows_blocking_resolve_address};
+grpc_address_resolver_vtable grpc_windows_resolver_vtable = {windows_resolve_address,
+                                                             windows_blocking_resolve_address};
 #endif

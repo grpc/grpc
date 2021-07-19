@@ -37,10 +37,8 @@ extern grpc_core::TraceFlag grpc_api_trace;
 #define GRPC_API_TRACE_UNWRAP6(a, b, c, d, e, f) , a, b, c, d, e, f
 #define GRPC_API_TRACE_UNWRAP7(a, b, c, d, e, f, g) , a, b, c, d, e, f, g
 #define GRPC_API_TRACE_UNWRAP8(a, b, c, d, e, f, g, h) , a, b, c, d, e, f, g, h
-#define GRPC_API_TRACE_UNWRAP9(a, b, c, d, e, f, g, h, i) \
-  , a, b, c, d, e, f, g, h, i
-#define GRPC_API_TRACE_UNWRAP10(a, b, c, d, e, f, g, h, i, j) \
-  , a, b, c, d, e, f, g, h, i, j
+#define GRPC_API_TRACE_UNWRAP9(a, b, c, d, e, f, g, h, i) , a, b, c, d, e, f, g, h, i
+#define GRPC_API_TRACE_UNWRAP10(a, b, c, d, e, f, g, h, i, j) , a, b, c, d, e, f, g, h, i, j
 
 /* Due to the limitations of C89's preprocessor, the arity of the var-arg list
    'nargs' must be specified. */

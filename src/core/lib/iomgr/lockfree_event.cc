@@ -84,8 +84,7 @@ void LockfreeEvent::DestroyEvent() {
     /* we CAS in a shutdown, no error value here. If this event is interacted
        with post-deletion (see the note in the constructor) we want the bit
        pattern to prevent error retention in a deleted object */
-  } while (!gpr_atm_no_barrier_cas(&state_, curr,
-                                   kShutdownBit /* shutdown, no error */));
+  } while (!gpr_atm_no_barrier_cas(&state_, curr, kShutdownBit /* shutdown, no error */));
 }
 
 void LockfreeEvent::NotifyOn(grpc_closure* closure) {
@@ -96,9 +95,8 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
      * referencing it. */
     gpr_atm curr = gpr_atm_acq_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG,
-              "LockfreeEvent::NotifyOn: %p curr=%" PRIxPTR " closure=%p", this,
-              curr, closure);
+      gpr_log(GPR_DEBUG, "LockfreeEvent::NotifyOn: %p curr=%" PRIxPTR " closure=%p", this, curr,
+              closure);
     }
     switch (curr) {
       case kClosureNotReady: {
@@ -109,8 +107,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
 
            The release itself pairs with the acquire half of a set_ready full
            barrier. */
-        if (gpr_atm_rel_cas(&state_, kClosureNotReady,
-                            reinterpret_cast<gpr_atm>(closure))) {
+        if (gpr_atm_rel_cas(&state_, kClosureNotReady, reinterpret_cast<gpr_atm>(closure))) {
           return; /* Successful. Return */
         }
 
@@ -141,9 +138,9 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
         if ((curr & kShutdownBit) > 0) {
           grpc_error_handle shutdown_err =
               reinterpret_cast<grpc_error_handle>(curr & ~kShutdownBit);
-          ExecCtx::Run(DEBUG_LOCATION, closure,
-                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "FD Shutdown", &shutdown_err, 1));
+          ExecCtx::Run(
+              DEBUG_LOCATION, closure,
+              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("FD Shutdown", &shutdown_err, 1));
           return;
         }
 
@@ -165,9 +162,8 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG,
-              "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s",
-              &state_, curr, grpc_error_std_string(shutdown_error).c_str());
+      gpr_log(GPR_DEBUG, "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s", &state_, curr,
+              grpc_error_std_string(shutdown_error).c_str());
     }
     switch (curr) {
       case kClosureReady:
@@ -194,9 +190,9 @@ bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
            happens-after on that edge), and a release to pair with anything
            loading the shutdown state. */
         if (gpr_atm_full_cas(&state_, curr, new_state)) {
-          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
-                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                           "FD Shutdown", &shutdown_error, 1));
+          ExecCtx::Run(
+              DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
+              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("FD Shutdown", &shutdown_error, 1));
           return true;
         }
 
@@ -215,8 +211,7 @@ void LockfreeEvent::SetReady() {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG, "LockfreeEvent::SetReady: %p curr=%" PRIxPTR, &state_,
-              curr);
+      gpr_log(GPR_DEBUG, "LockfreeEvent::SetReady: %p curr=%" PRIxPTR, &state_, curr);
     }
 
     switch (curr) {
@@ -244,8 +239,7 @@ void LockfreeEvent::SetReady() {
            spurious set_ready; release pairs with this or the acquire in
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
-          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
-                       GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr), GRPC_ERROR_NONE);
           return;
         }
         /* else the state changed again (only possible by either a racing

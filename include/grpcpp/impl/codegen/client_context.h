@@ -244,8 +244,7 @@ class ClientContext {
   /// ClientReaderInterface::WaitForInitialMetadata().
   ///
   /// \return A multimap of initial metadata key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>&
-  GetServerInitialMetadata() const {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
     return *recv_initial_metadata_.map();
   }
@@ -256,8 +255,7 @@ class ClientContext {
   /// \warning This method is only callable once the stream has finished.
   ///
   /// \return A multimap of metadata trailing key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>&
-  GetServerTrailingMetadata() const {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
     return *trailing_metadata_.map();
   }
@@ -345,9 +343,7 @@ class ClientContext {
   /// Return the compression algorithm the client call will request be used.
   /// Note that the gRPC runtime may decide to ignore this request, for example,
   /// due to resource constraints.
-  grpc_compression_algorithm compression_algorithm() const {
-    return compression_algorithm_;
-  }
+  grpc_compression_algorithm compression_algorithm() const { return compression_algorithm_; }
 
   /// Set \a algorithm to be the compression algorithm used for the client call.
   ///
@@ -364,9 +360,7 @@ class ClientContext {
   ///
   /// \param corked The flag indicating whether the initial metadata is to be
   /// corked or not.
-  void set_initial_metadata_corked(bool corked) {
-    initial_metadata_corked_ = corked;
-  }
+  void set_initial_metadata_corked(bool corked) { initial_metadata_corked_ = corked; }
 
   /// Return the peer uri in a string.
   /// It is only valid to call this during the lifetime of the client call.
@@ -467,17 +461,15 @@ class ClientContext {
   }
 
   grpc_call* call() const { return call_; }
-  void set_call(grpc_call* call,
-                const std::shared_ptr<::grpc::Channel>& channel);
+  void set_call(grpc_call* call, const std::shared_ptr<::grpc::Channel>& channel);
 
   grpc::experimental::ClientRpcInfo* set_client_rpc_info(
-      const char* method, const char* suffix_for_stats,
-      grpc::internal::RpcMethod::RpcType type, grpc::ChannelInterface* channel,
-      const std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>& creators,
+      const char* method, const char* suffix_for_stats, grpc::internal::RpcMethod::RpcType type,
+      grpc::ChannelInterface* channel,
+      const std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>&
+          creators,
       size_t interceptor_pos) {
-    rpc_info_ = grpc::experimental::ClientRpcInfo(this, type, method,
-                                                  suffix_for_stats, channel);
+    rpc_info_ = grpc::experimental::ClientRpcInfo(this, type, method, suffix_for_stats, channel);
     rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }
@@ -486,9 +478,8 @@ class ClientContext {
     return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
            (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
            (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0) |
-           (wait_for_ready_explicitly_set_
-                ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
-                : 0) |
+           (wait_for_ready_explicitly_set_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
+                                           : 0) |
            (initial_metadata_corked_ ? GRPC_INITIAL_METADATA_CORKED : 0);
   }
 
@@ -497,8 +488,7 @@ class ClientContext {
   void SendCancelToInterceptors();
 
   static std::unique_ptr<ClientContext> FromInternalServerContext(
-      const grpc::ServerContextBase& server_context,
-      PropagationOptions options);
+      const grpc::ServerContextBase& server_context, PropagationOptions options);
 
   bool initial_metadata_received_;
   bool wait_for_ready_;

@@ -39,8 +39,7 @@ class CelExpression {
 
   // Evaluates expression and returns value.
   // activation contains bindings from parameter names to values
-  virtual absl::StatusOr<CelValue> Evaluate(
-      const BaseActivation& activation) const = 0;
+  virtual absl::StatusOr<CelValue> Evaluate(const BaseActivation& activation) const = 0;
 };
 
 // Base class for Expression Builder implementations

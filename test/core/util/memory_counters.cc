@@ -37,8 +37,7 @@ static bool g_memory_counter_enabled;
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 /* hide these from the microbenchmark atomic stats */
-#define NO_BARRIER_FETCH_ADD(x, sz) \
-  __atomic_fetch_add((x), (sz), __ATOMIC_RELAXED)
+#define NO_BARRIER_FETCH_ADD(x, sz) __atomic_fetch_add((x), (sz), __ATOMIC_RELAXED)
 #define NO_BARRIER_LOAD(x) __atomic_load_n((x), __ATOMIC_RELAXED)
 #else
 #define NO_BARRIER_FETCH_ADD(x, sz) gpr_atm_no_barrier_fetch_add(x, sz)
@@ -70,8 +69,7 @@ void* __wrap_malloc(size_t size) {
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  void* ptr =
-      __real_malloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  void* ptr = __real_malloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
   *static_cast<size_t*>(ptr) = size;
   return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
@@ -82,8 +80,7 @@ void* __wrap_calloc(size_t size) {
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  void* ptr =
-      __real_calloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  void* ptr = __real_calloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
   *static_cast<size_t*>(ptr) = size;
   return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
@@ -96,26 +93,20 @@ void* __wrap_realloc(void* ptr, size_t size) {
     __wrap_free(ptr);
     return nullptr;
   }
-  void* rptr =
-      static_cast<char*>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  void* rptr = static_cast<char*>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
-                       -*static_cast<gpr_atm*>(rptr));
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -*static_cast<gpr_atm*>(rptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  void* new_ptr =
-      __real_realloc(rptr, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  void* new_ptr = __real_realloc(rptr, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
   *static_cast<size_t*>(new_ptr) = size;
-  return static_cast<char*>(new_ptr) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  return static_cast<char*>(new_ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
 void __wrap_free(void* ptr) {
   if (ptr == nullptr) return;
-  void* rptr =
-      static_cast<char*>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
-                       -*static_cast<gpr_atm*>(rptr));
+  void* rptr = static_cast<char*>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -*static_cast<gpr_atm*>(rptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
   __real_free(rptr);
 }
@@ -131,14 +122,10 @@ void grpc_memory_counters_destroy() { g_memory_counter_enabled = false; }
 
 struct grpc_memory_counters grpc_memory_counters_snapshot() {
   struct grpc_memory_counters counters;
-  counters.total_size_relative =
-      NO_BARRIER_LOAD(&g_memory_counters.total_size_relative);
-  counters.total_size_absolute =
-      NO_BARRIER_LOAD(&g_memory_counters.total_size_absolute);
-  counters.total_allocs_relative =
-      NO_BARRIER_LOAD(&g_memory_counters.total_allocs_relative);
-  counters.total_allocs_absolute =
-      NO_BARRIER_LOAD(&g_memory_counters.total_allocs_absolute);
+  counters.total_size_relative = NO_BARRIER_LOAD(&g_memory_counters.total_size_relative);
+  counters.total_size_absolute = NO_BARRIER_LOAD(&g_memory_counters.total_size_absolute);
+  counters.total_allocs_relative = NO_BARRIER_LOAD(&g_memory_counters.total_allocs_relative);
+  counters.total_allocs_absolute = NO_BARRIER_LOAD(&g_memory_counters.total_allocs_absolute);
   return counters;
 }
 

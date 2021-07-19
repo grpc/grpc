@@ -30,8 +30,7 @@ namespace grpc_core {
 // https://github.com/grpc/grpc-java/blob/ca12e7a339add0ef48202fb72434b9dc0df41756/xds/src/main/java/io/grpc/xds/internal/sds/trust/SdsX509TrustManager.java#L62
 bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
                                   const std::string& matcher) {
-  if (subject_alternative_name.empty() ||
-      absl::StartsWith(subject_alternative_name, ".")) {
+  if (subject_alternative_name.empty() || absl::StartsWith(subject_alternative_name, ".")) {
     // Illegal pattern/domain name
     return false;
   }
@@ -45,10 +44,9 @@ bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
   // they should be treated as absolute. At the same time, any
   // subject_alternative_name presented to this method should also be treated as
   // absolute for the purposes of matching to the server certificate.
-  std::string normalized_san =
-      absl::EndsWith(subject_alternative_name, ".")
-          ? std::string(subject_alternative_name)
-          : absl::StrCat(subject_alternative_name, ".");
+  std::string normalized_san = absl::EndsWith(subject_alternative_name, ".")
+                                   ? std::string(subject_alternative_name)
+                                   : absl::StrCat(subject_alternative_name, ".");
   std::string normalized_matcher =
       absl::EndsWith(matcher, ".") ? matcher : absl::StrCat(matcher, ".");
   absl::AsciiStrToLower(&normalized_san);
@@ -84,12 +82,10 @@ bool VerifySubjectAlternativeName(absl::string_view subject_alternative_name,
   int suffix_start_index = normalized_matcher.length() - suffix.length();
   // Asterisk matching across domain labels is not permitted.
   return suffix_start_index <= 0 /* should not happen */ ||
-         normalized_matcher.find_last_of('.', suffix_start_index - 1) ==
-             std::string::npos;
+         normalized_matcher.find_last_of('.', suffix_start_index - 1) == std::string::npos;
 }
 
-absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
-                                       const char* property_name) {
+absl::string_view GetAuthPropertyValue(grpc_auth_context* context, const char* property_name) {
   grpc_auth_property_iterator it =
       grpc_auth_context_find_properties_by_name(context, property_name);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);

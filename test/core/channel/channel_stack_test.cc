@@ -39,8 +39,8 @@ static grpc_error_handle channel_init_func(grpc_channel_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle call_init_func(
-    grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
+static grpc_error_handle call_init_func(grpc_call_element* elem,
+                                        const grpc_call_element_args* /*args*/) {
   ++*static_cast<int*>(elem->channel_data);
   *static_cast<int*>(elem->call_data) = 0;
   return GRPC_ERROR_NONE;
@@ -48,19 +48,16 @@ static grpc_error_handle call_init_func(
 
 static void channel_destroy_func(grpc_channel_element* /*elem*/) {}
 
-static void call_destroy_func(grpc_call_element* elem,
-                              const grpc_call_final_info* /*final_info*/,
+static void call_destroy_func(grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
                               grpc_closure* /*ignored*/) {
   ++*static_cast<int*>(elem->channel_data);
 }
 
-static void call_func(grpc_call_element* elem,
-                      grpc_transport_stream_op_batch* /*op*/) {
+static void call_func(grpc_call_element* elem, grpc_transport_stream_op_batch* /*op*/) {
   ++*static_cast<int*>(elem->call_data);
 }
 
-static void channel_func(grpc_channel_element* elem,
-                         grpc_transport_op* /*op*/) {
+static void channel_func(grpc_channel_element* elem, grpc_transport_op* /*op*/) {
   ++*static_cast<int*>(elem->channel_data);
 }
 
@@ -75,18 +72,17 @@ static void free_call(void* arg, grpc_error_handle /*error*/) {
 }
 
 static void test_create_channel_stack(void) {
-  const grpc_channel_filter filter = {
-      call_func,
-      channel_func,
-      sizeof(int),
-      call_init_func,
-      grpc_call_stack_ignore_set_pollset_or_pollset_set,
-      call_destroy_func,
-      sizeof(int),
-      channel_init_func,
-      channel_destroy_func,
-      grpc_channel_next_get_info,
-      "some_test_filter"};
+  const grpc_channel_filter filter = {call_func,
+                                      channel_func,
+                                      sizeof(int),
+                                      call_init_func,
+                                      grpc_call_stack_ignore_set_pollset_or_pollset_set,
+                                      call_destroy_func,
+                                      sizeof(int),
+                                      channel_init_func,
+                                      channel_destroy_func,
+                                      grpc_channel_next_get_info,
+                                      "some_test_filter"};
   const grpc_channel_filter* filters = &filter;
   grpc_channel_stack* channel_stack;
   grpc_call_stack* call_stack;
@@ -106,17 +102,16 @@ static void test_create_channel_stack(void) {
   chan_args.num_args = 1;
   chan_args.args = &arg;
 
-  channel_stack = static_cast<grpc_channel_stack*>(
-      gpr_malloc(grpc_channel_stack_size(&filters, 1)));
-  grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
-                          &chan_args, nullptr, "test", channel_stack);
+  channel_stack =
+      static_cast<grpc_channel_stack*>(gpr_malloc(grpc_channel_stack_size(&filters, 1)));
+  grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1, &chan_args, nullptr, "test",
+                          channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = static_cast<int*>(channel_elem->channel_data);
   GPR_ASSERT(*channel_data == 0);
 
-  call_stack =
-      static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
+  call_stack = static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
   const grpc_call_element_args args = {
       call_stack,              /* call_stack */
       nullptr,                 /* server_transport_data */
@@ -127,8 +122,7 @@ static void test_create_channel_stack(void) {
       nullptr,                 /* arena */
       nullptr,                 /* call_combiner */
   };
-  grpc_error_handle error =
-      grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
+  grpc_error_handle error = grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);

@@ -44,8 +44,7 @@ typedef struct {
 static void on_metadata_response(void* arg, grpc_error_handle error) {
   synchronizer* sync = static_cast<synchronizer*>(arg);
   if (error != GRPC_ERROR_NONE) {
-    fprintf(stderr, "Fetching token failed: %s\n",
-            grpc_error_std_string(error).c_str());
+    fprintf(stderr, "Fetching token failed: %s\n", grpc_error_std_string(error).c_str());
     fflush(stderr);
   } else {
     char* token;
@@ -56,9 +55,8 @@ static void on_metadata_response(void* arg, grpc_error_handle error) {
   }
   gpr_mu_lock(sync->mu);
   sync->is_done = true;
-  GRPC_LOG_IF_ERROR(
-      "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), nullptr));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -72,8 +70,7 @@ int main(int argc, char** argv) {
   gpr_cmdline* cl = gpr_cmdline_create("print_google_default_creds_token");
   grpc_pollset* pollset = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  gpr_cmdline_add_string(cl, "service_url",
-                         "Service URL for the token request.", &service_url);
+  gpr_cmdline_add_string(cl, "service_url", "Service URL for the token request.", &service_url);
   gpr_cmdline_parse(cl, argc, argv);
   memset(&context, 0, sizeof(context));
   context.service_url = service_url;
@@ -99,8 +96,8 @@ int main(int argc, char** argv) {
   error = GRPC_ERROR_NONE;
   if (reinterpret_cast<grpc_composite_channel_credentials*>(creds)
           ->mutable_call_creds()
-          ->get_request_metadata(&sync.pops, context, &sync.md_array,
-                                 &sync.on_request_metadata, &error)) {
+          ->get_request_metadata(&sync.pops, context, &sync.md_array, &sync.on_request_metadata,
+                                 &error)) {
     // Synchronous response.  Invoke callback directly.
     on_metadata_response(&sync, error);
     GRPC_ERROR_UNREF(error);
@@ -109,10 +106,9 @@ int main(int argc, char** argv) {
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker* worker = nullptr;
-    if (!GRPC_LOG_IF_ERROR(
-            "pollset_work",
-            grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,
-                              GRPC_MILLIS_INF_FUTURE)))
+    if (!GRPC_LOG_IF_ERROR("pollset_work",
+                           grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,
+                                             GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
     grpc_core::ExecCtx::Get()->Flush();

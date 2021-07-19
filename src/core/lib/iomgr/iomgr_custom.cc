@@ -41,28 +41,23 @@ static void iomgr_platform_init(void) {
 static void iomgr_platform_flush(void) {}
 static void iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }
 static void iomgr_platform_shutdown_background_closure(void) {}
-static bool iomgr_platform_is_any_background_poller_thread(void) {
-  return false;
-}
-static bool iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* /*closure*/, grpc_error_handle /*error*/) {
+static bool iomgr_platform_is_any_background_poller_thread(void) { return false; }
+static bool iomgr_platform_add_closure_to_background_poller(grpc_closure* /*closure*/,
+                                                            grpc_error_handle /*error*/) {
   return false;
 }
 
 bool g_custom_iomgr_enabled = false;
 
-static grpc_iomgr_platform_vtable vtable = {
-    iomgr_platform_init,
-    iomgr_platform_flush,
-    iomgr_platform_shutdown,
-    iomgr_platform_shutdown_background_closure,
-    iomgr_platform_is_any_background_poller_thread,
-    iomgr_platform_add_closure_to_background_poller};
+static grpc_iomgr_platform_vtable vtable = {iomgr_platform_init,
+                                            iomgr_platform_flush,
+                                            iomgr_platform_shutdown,
+                                            iomgr_platform_shutdown_background_closure,
+                                            iomgr_platform_is_any_background_poller_thread,
+                                            iomgr_platform_add_closure_to_background_poller};
 
-void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
-                            grpc_custom_resolver_vtable* resolver,
-                            grpc_custom_timer_vtable* timer,
-                            grpc_custom_poller_vtable* poller) {
+void grpc_custom_iomgr_init(grpc_socket_vtable* socket, grpc_custom_resolver_vtable* resolver,
+                            grpc_custom_timer_vtable* timer, grpc_custom_poller_vtable* poller) {
   g_custom_iomgr_enabled = true;
   grpc_custom_endpoint_init(socket);
   grpc_custom_timer_init(timer);
@@ -73,7 +68,5 @@ void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
 }
 
 #ifdef GRPC_CUSTOM_SOCKET
-grpc_iomgr_platform_vtable* grpc_default_iomgr_platform_vtable() {
-  return &vtable;
-}
+grpc_iomgr_platform_vtable* grpc_default_iomgr_platform_vtable() { return &vtable; }
 #endif

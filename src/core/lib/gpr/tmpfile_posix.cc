@@ -45,14 +45,14 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
 
   fd = mkstemp(filename_template);
   if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for filename_template %s with error %s.",
-            filename_template, strerror(errno));
+    gpr_log(GPR_ERROR, "mkstemp failed for filename_template %s with error %s.", filename_template,
+            strerror(errno));
     goto end;
   }
   result = fdopen(fd, "w+");
   if (result == nullptr) {
-    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            filename_template, fd, strerror(errno));
+    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).", filename_template, fd,
+            strerror(errno));
     unlink(filename_template);
     close(fd);
     goto end;

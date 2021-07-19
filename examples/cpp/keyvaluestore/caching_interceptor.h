@@ -34,17 +34,14 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
  public:
   CachingInterceptor(grpc::experimental::ClientRpcInfo* info) {}
 
-  void Intercept(
-      ::grpc::experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(::grpc::experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
-            grpc::experimental::InterceptionHookPoints::
-                PRE_SEND_INITIAL_METADATA)) {
+            grpc::experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       // Hijack all calls
       hijack = true;
       // Create a stream on which this interceptor can make requests
-      stub_ = keyvaluestore::KeyValueStore::NewStub(
-          methods->GetInterceptedChannel());
+      stub_ = keyvaluestore::KeyValueStore::NewStub(methods->GetInterceptedChannel());
       stream_ = stub_->GetValues(&context_);
     }
     if (methods->QueryInterceptionHookPoint(
@@ -63,8 +60,7 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
         auto* buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
         GPR_ASSERT(
-            grpc::SerializationTraits<keyvaluestore::Request>::Deserialize(
-                &copied_buffer, &req_msg)
+            grpc::SerializationTraits<keyvaluestore::Request>::Deserialize(&copied_buffer, &req_msg)
                 .ok());
         requested_key = req_msg.key();
       }
@@ -117,15 +113,13 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
  private:
   grpc::ClientContext context_;
   std::unique_ptr<keyvaluestore::KeyValueStore::Stub> stub_;
-  std::unique_ptr<
-      grpc::ClientReaderWriter<keyvaluestore::Request, keyvaluestore::Response>>
+  std::unique_ptr<grpc::ClientReaderWriter<keyvaluestore::Request, keyvaluestore::Response>>
       stream_;
   std::map<std::string, std::string> cached_map_;
   std::string response_;
 };
 
-class CachingInterceptorFactory
-    : public grpc::experimental::ClientInterceptorFactoryInterface {
+class CachingInterceptorFactory : public grpc::experimental::ClientInterceptorFactoryInterface {
  public:
   grpc::experimental::Interceptor* CreateClientInterceptor(
       grpc::experimental::ClientRpcInfo* info) override {

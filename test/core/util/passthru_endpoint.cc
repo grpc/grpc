@@ -57,14 +57,13 @@ struct passthru_endpoint {
   half server;
 };
 
-static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool /*urgent*/) {
+static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+                    bool /*urgent*/) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, cb,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
+                            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Already shutdown"));
   } else if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
@@ -80,8 +79,8 @@ static half* other_half(half* h) {
   return &h->parent->client;
 }
 
-static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* /*arg*/) {
+static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+                     void* /*arg*/) {
   half* m = other_half(reinterpret_cast<half*>(ep));
   gpr_mu_lock(&m->parent->mu);
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -96,38 +95,32 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     m->on_read = nullptr;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
-      grpc_slice_buffer_add(&m->read_buffer,
-                            grpc_slice_copy(slices->slices[i]));
+      grpc_slice_buffer_add(&m->read_buffer, grpc_slice_copy(slices->slices[i]));
     }
   }
   gpr_mu_unlock(&m->parent->mu);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
 }
 
-static void me_add_to_pollset(grpc_endpoint* /*ep*/,
-                              grpc_pollset* /*pollset*/) {}
+static void me_add_to_pollset(grpc_endpoint* /*ep*/, grpc_pollset* /*pollset*/) {}
 
-static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
-                                  grpc_pollset_set* /*pollset*/) {}
+static void me_add_to_pollset_set(grpc_endpoint* /*ep*/, grpc_pollset_set* /*pollset*/) {}
 
-static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
-                                       grpc_pollset_set* /*pollset*/) {}
+static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/, grpc_pollset_set* /*pollset*/) {}
 
 static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   m->parent->shutdown = true;
   if (m->on_read) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
+                            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   m = other_half(m);
   if (m->on_read) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
+                            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->parent->mu);
@@ -154,16 +147,14 @@ static void me_destroy(grpc_endpoint* ep) {
 
 static absl::string_view me_get_peer(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
-  return (reinterpret_cast<half*>(ep)) == &p->client
-             ? "fake:mock_client_endpoint"
-             : "fake:mock_server_endpoint";
+  return (reinterpret_cast<half*>(ep)) == &p->client ? "fake:mock_client_endpoint"
+                                                     : "fake:mock_server_endpoint";
 }
 
 static absl::string_view me_get_local_address(grpc_endpoint* ep) {
   passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
-  return (reinterpret_cast<half*>(ep)) == &p->client
-             ? "fake:mock_client_endpoint"
-             : "fake:mock_server_endpoint";
+  return (reinterpret_cast<half*>(ep)) == &p->client ? "fake:mock_client_endpoint"
+                                                     : "fake:mock_server_endpoint";
 }
 
 static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
@@ -190,24 +181,20 @@ static const grpc_endpoint_vtable vtable = {
     me_can_track_err,
 };
 
-static void half_init(half* m, passthru_endpoint* parent,
-                      grpc_resource_quota* resource_quota,
+static void half_init(half* m, passthru_endpoint* parent, grpc_resource_quota* resource_quota,
                       const char* half_name) {
   m->base.vtable = &vtable;
   m->parent = parent;
   grpc_slice_buffer_init(&m->read_buffer);
   m->on_read = nullptr;
-  std::string name =
-      absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
+  std::string name = absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
   m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
 }
 
-void grpc_passthru_endpoint_create(grpc_endpoint** client,
-                                   grpc_endpoint** server,
+void grpc_passthru_endpoint_create(grpc_endpoint** client, grpc_endpoint** server,
                                    grpc_resource_quota* resource_quota,
                                    grpc_passthru_endpoint_stats* stats) {
-  passthru_endpoint* m =
-      static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
+  passthru_endpoint* m = static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
   m->halves = 2;
   m->shutdown = false;
   if (stats == nullptr) {
@@ -225,8 +212,7 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create() {
   grpc_passthru_endpoint_stats* stats =
-      static_cast<grpc_passthru_endpoint_stats*>(
-          gpr_malloc(sizeof(grpc_passthru_endpoint_stats)));
+      static_cast<grpc_passthru_endpoint_stats*>(gpr_malloc(sizeof(grpc_passthru_endpoint_stats)));
   memset(stats, 0, sizeof(*stats));
   gpr_ref_init(&stats->refs, 1);
   return stats;

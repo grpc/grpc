@@ -43,9 +43,7 @@ class LockfreeEvent {
   void DestroyEvent();
 
   // Returns true if fd has been shutdown, false otherwise.
-  bool IsShutdown() const {
-    return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
-  }
+  bool IsShutdown() const { return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0; }
 
   // Schedules \a closure when the event is received (see SetReady()) or the
   // shutdown state has been set. Note that the event may have already been

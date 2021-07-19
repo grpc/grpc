@@ -54,8 +54,7 @@ struct grpc_socket_mutator_vtable {
   void (*destroy)(grpc_socket_mutator* mutator);
   /** Mutates the socket options of the fd in \a info - if set takes preference
    * to mutate_fd */
-  bool (*mutate_fd_2)(const grpc_mutate_socket_info* info,
-                      grpc_socket_mutator* mutator);
+  bool (*mutate_fd_2)(const grpc_mutate_socket_info* info, grpc_socket_mutator* mutator);
 };
 
 /** The Socket Mutator interface allows changes on socket options */
@@ -72,8 +71,7 @@ void grpc_socket_mutator_init(grpc_socket_mutator* mutator,
 grpc_arg grpc_socket_mutator_to_arg(grpc_socket_mutator* mutator);
 
 /** Perform the file descriptor mutation operation of \a mutator on \a fd */
-bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
-                                   grpc_fd_usage usage);
+bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd, grpc_fd_usage usage);
 
 /** Compare if \a a and \a b are the same mutator or have same settings */
 int grpc_socket_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b);

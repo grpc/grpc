@@ -37,8 +37,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -69,19 +68,15 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_arg client_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_arg server_a[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
+          const_cast<char*>(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
           300000 /* 5 minutes */),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), MAX_PING_STRIKES),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES),
+                                      MAX_PING_STRIKES),
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
@@ -103,8 +98,7 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -136,13 +130,11 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -182,8 +174,7 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -220,20 +211,16 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
   grpc_arg client_a[] = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA),
-          MAX_PING_STRIKES),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA),
+                                      MAX_PING_STRIKES),
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_arg server_a[] = {
       grpc_channel_arg_integer_create(
-          const_cast<char*>(
-              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
+          const_cast<char*>(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
           300000 /* 5 minutes */),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), MAX_PING_STRIKES),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES),
+                                      MAX_PING_STRIKES),
+      grpc_channel_arg_integer_create(const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
@@ -255,8 +242,7 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -288,13 +274,11 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -331,8 +315,7 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);

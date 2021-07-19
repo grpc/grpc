@@ -41,9 +41,7 @@ class Atomic {
  public:
   explicit Atomic(T val = T()) : storage_(val) {}
 
-  T Load(MemoryOrder order) const {
-    return storage_.load(static_cast<std::memory_order>(order));
-  }
+  T Load(MemoryOrder order) const { return storage_.load(static_cast<std::memory_order>(order)); }
 
   void Store(T val, MemoryOrder order) {
     storage_.store(val, static_cast<std::memory_order>(order));
@@ -53,15 +51,13 @@ class Atomic {
     return storage_.exchange(desired, static_cast<std::memory_order>(order));
   }
 
-  bool CompareExchangeWeak(T* expected, T desired, MemoryOrder success,
-                           MemoryOrder failure) {
-    return GPR_ATM_INC_CAS_THEN(storage_.compare_exchange_weak(
-        *expected, desired, static_cast<std::memory_order>(success),
-        static_cast<std::memory_order>(failure)));
+  bool CompareExchangeWeak(T* expected, T desired, MemoryOrder success, MemoryOrder failure) {
+    return GPR_ATM_INC_CAS_THEN(
+        storage_.compare_exchange_weak(*expected, desired, static_cast<std::memory_order>(success),
+                                       static_cast<std::memory_order>(failure)));
   }
 
-  bool CompareExchangeStrong(T* expected, T desired, MemoryOrder success,
-                             MemoryOrder failure) {
+  bool CompareExchangeStrong(T* expected, T desired, MemoryOrder success, MemoryOrder failure) {
     return GPR_ATM_INC_CAS_THEN(storage_.compare_exchange_strong(
         *expected, desired, static_cast<std::memory_order>(success),
         static_cast<std::memory_order>(failure)));
@@ -69,14 +65,14 @@ class Atomic {
 
   template <typename Arg>
   T FetchAdd(Arg arg, MemoryOrder order = MemoryOrder::SEQ_CST) {
-    return GPR_ATM_INC_ADD_THEN(storage_.fetch_add(
-        static_cast<Arg>(arg), static_cast<std::memory_order>(order)));
+    return GPR_ATM_INC_ADD_THEN(
+        storage_.fetch_add(static_cast<Arg>(arg), static_cast<std::memory_order>(order)));
   }
 
   template <typename Arg>
   T FetchSub(Arg arg, MemoryOrder order = MemoryOrder::SEQ_CST) {
-    return GPR_ATM_INC_ADD_THEN(storage_.fetch_sub(
-        static_cast<Arg>(arg), static_cast<std::memory_order>(order)));
+    return GPR_ATM_INC_ADD_THEN(
+        storage_.fetch_sub(static_cast<Arg>(arg), static_cast<std::memory_order>(order)));
   }
 
   // Atomically increment a counter only if the counter value is not zero.
@@ -90,8 +86,7 @@ class Atomic {
       if (count == 0) {
         return false;
       }
-    } while (!CompareExchangeWeak(&count, count + 1, MemoryOrder::ACQ_REL,
-                                  MemoryOrder::ACQUIRE));
+    } while (!CompareExchangeWeak(&count, count + 1, MemoryOrder::ACQ_REL, MemoryOrder::ACQUIRE));
     return true;
   }
 

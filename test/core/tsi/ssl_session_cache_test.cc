@@ -44,8 +44,8 @@ class SessionTracker {
   ~SessionTracker() { SSL_CTX_free(ssl_context_); }
 
   tsi::SslSessionPtr NewSession(long id) {
-    static int ex_data_id = SSL_SESSION_get_ex_new_index(
-        0, nullptr, nullptr, nullptr, DestroyExData);
+    static int ex_data_id =
+        SSL_SESSION_get_ex_new_index(0, nullptr, nullptr, nullptr, DestroyExData);
     GPR_ASSERT(ex_data_id != -1);
     // OpenSSL and different version of BoringSSL don't agree on API
     // so try both.
@@ -57,23 +57,19 @@ class SessionTracker {
     return session;
   }
 
-  bool IsAlive(long id) const {
-    return alive_sessions_.find(id) != alive_sessions_.end();
-  }
+  bool IsAlive(long id) const { return alive_sessions_.find(id) != alive_sessions_.end(); }
 
   size_t AliveCount() const { return alive_sessions_.size(); }
 
  private:
-  tsi::SslSessionPtr NewSessionInternal(SSL_SESSION* (*cb)()) {
-    return tsi::SslSessionPtr(cb());
-  }
+  tsi::SslSessionPtr NewSessionInternal(SSL_SESSION* (*cb)()) { return tsi::SslSessionPtr(cb()); }
 
   tsi::SslSessionPtr NewSessionInternal(SSL_SESSION* (*cb)(const SSL_CTX*)) {
     return tsi::SslSessionPtr(cb(ssl_context_));
   }
 
-  static void DestroyExData(void* /*parent*/, void* ptr, CRYPTO_EX_DATA* /*ad*/,
-                            int /*index*/, long /*argl*/, void* /*argp*/) {
+  static void DestroyExData(void* /*parent*/, void* ptr, CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+                            long /*argl*/, void* /*argp*/) {
     SessionExDataId* data = static_cast<SessionExDataId*>(ptr);
     data->tracker->alive_sessions_.erase(data->id);
     delete data;
@@ -98,8 +94,7 @@ TEST(SslSessionCacheTest, InitialState) {
 TEST(SslSessionCacheTest, LruCache) {
   SessionTracker tracker;
   {
-    RefCountedPtr<tsi::SslSessionLRUCache> cache =
-        tsi::SslSessionLRUCache::Create(3);
+    RefCountedPtr<tsi::SslSessionLRUCache> cache = tsi::SslSessionLRUCache::Create(3);
     tsi::SslSessionPtr sess2 = tracker.NewSession(2);
     SSL_SESSION* sess2_ptr = sess2.get();
     cache->Put("first.dropbox.com", std::move(sess2));

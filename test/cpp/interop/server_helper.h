@@ -78,10 +78,8 @@ void RunServer(const std::shared_ptr<ServerCredentials>& creds, int port,
 ///
 /// \param creds The credentials associated with the server.
 /// \param server_options List of options to set when building the server.
-void RunServer(
-    const std::shared_ptr<ServerCredentials>& creds,
-    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
-        server_options);
+void RunServer(const std::shared_ptr<ServerCredentials>& creds,
+               std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>> server_options);
 
 /// Run gRPC interop server.
 ///
@@ -93,8 +91,7 @@ void RunServer(
 void RunServer(
     const std::shared_ptr<ServerCredentials>& creds, const int port,
     ServerStartedCondition* server_started_condition,
-    std::unique_ptr<std::vector<std::unique_ptr<grpc::ServerBuilderOption>>>
-        server_options);
+    std::unique_ptr<std::vector<std::unique_ptr<grpc::ServerBuilderOption>>> server_options);
 
 }  // namespace interop
 }  // namespace testing

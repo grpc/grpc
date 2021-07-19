@@ -36,9 +36,7 @@
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
-static gpr_timespec test_deadline(void) {
-  return grpc_timeout_seconds_to_deadline(100);
-}
+static gpr_timespec test_deadline(void) { return grpc_timeout_seconds_to_deadline(100); }
 
 typedef struct args_struct {
   gpr_event ev;
@@ -67,8 +65,7 @@ void args_finish(args_struct* args) {
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure do_nothing_cb;
-  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&do_nothing_cb, do_nothing, nullptr, grpc_schedule_on_exec_ctx);
   gpr_mu_lock(args->mu);
   grpc_pollset_shutdown(args->pollset, &do_nothing_cb);
   gpr_mu_unlock(args->mu);
@@ -79,8 +76,7 @@ void args_finish(args_struct* args) {
 }
 
 static grpc_millis n_sec_deadline(int seconds) {
-  return grpc_timespec_to_millis_round_up(
-      grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
@@ -98,9 +94,8 @@ static void poll_pollset_until_request_done(args_struct* args) {
       gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
       GPR_ASSERT(time_left >= 0);
       grpc_pollset_worker* worker = nullptr;
-      GRPC_LOG_IF_ERROR(
-          "pollset_work",
-          grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
+      GRPC_LOG_IF_ERROR("pollset_work",
+                        grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
     }
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
@@ -155,10 +150,9 @@ static void test_localhost(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
-      "localhost:1", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  grpc_resolve_address("localhost:1", nullptr, args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -168,10 +162,9 @@ static void test_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
-      "localhost", "1", args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  grpc_resolve_address("localhost", "1", args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -181,24 +174,23 @@ static void test_localhost_result_has_ipv6_first(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address("localhost:1", nullptr, args.pollset_set,
-                       GRPC_CLOSURE_CREATE(must_succeed_with_ipv6_first, &args,
-                                           grpc_schedule_on_exec_ctx),
-                       &args.addrs);
+  grpc_resolve_address(
+      "localhost:1", nullptr, args.pollset_set,
+      GRPC_CLOSURE_CREATE(must_succeed_with_ipv6_first, &args, grpc_schedule_on_exec_ctx),
+      &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
 }
 
-static void test_localhost_result_has_ipv4_first_when_ipv6_isnt_available(
-    void) {
+static void test_localhost_result_has_ipv4_first_when_ipv6_isnt_available(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address("localhost:1", nullptr, args.pollset_set,
-                       GRPC_CLOSURE_CREATE(must_succeed_with_ipv4_first, &args,
-                                           grpc_schedule_on_exec_ctx),
-                       &args.addrs);
+  grpc_resolve_address(
+      "localhost:1", nullptr, args.pollset_set,
+      GRPC_CLOSURE_CREATE(must_succeed_with_ipv4_first, &args, grpc_schedule_on_exec_ctx),
+      &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -208,10 +200,9 @@ static void test_non_numeric_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
-      "localhost", "https", args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  grpc_resolve_address("localhost", "https", args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -221,10 +212,9 @@ static void test_missing_default_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
-      "localhost", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  grpc_resolve_address("localhost", nullptr, args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -234,10 +224,9 @@ static void test_ipv6_with_port(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
-  grpc_resolve_address(
-      "[2001:db8::1]:1", nullptr, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  grpc_resolve_address("[2001:db8::1]:1", nullptr, args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -254,10 +243,9 @@ static void test_ipv6_without_port(void) {
     grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
-    grpc_resolve_address(
-        kCases[i], "80", args.pollset_set,
-        GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-        &args.addrs);
+    grpc_resolve_address(kCases[i], "80", args.pollset_set,
+                         GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
+                         &args.addrs);
     grpc_core::ExecCtx::Get()->Flush();
     poll_pollset_until_request_done(&args);
     args_finish(&args);
@@ -274,10 +262,9 @@ static void test_invalid_ip_addresses(void) {
     grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
-    grpc_resolve_address(
-        kCases[i], nullptr, args.pollset_set,
-        GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
-        &args.addrs);
+    grpc_resolve_address(kCases[i], nullptr, args.pollset_set,
+                         GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
+                         &args.addrs);
     grpc_core::ExecCtx::Get()->Flush();
     poll_pollset_until_request_done(&args);
     args_finish(&args);
@@ -293,10 +280,9 @@ static void test_unparseable_hostports(void) {
     grpc_core::ExecCtx exec_ctx;
     args_struct args;
     args_init(&args);
-    grpc_resolve_address(
-        kCases[i], "1", args.pollset_set,
-        GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
-        &args.addrs);
+    grpc_resolve_address(kCases[i], "1", args.pollset_set,
+                         GRPC_CLOSURE_CREATE(must_fail, &args, grpc_schedule_on_exec_ctx),
+                         &args.addrs);
     grpc_core::ExecCtx::Get()->Flush();
     poll_pollset_until_request_done(&args);
     args_finish(&args);
@@ -308,13 +294,11 @@ typedef struct mock_ipv6_disabled_source_addr_factory {
 } mock_ipv6_disabled_source_addr_factory;
 
 static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
-    address_sorting_source_addr_factory* /*factory*/,
-    const address_sorting_address* dest_addr,
+    address_sorting_source_addr_factory* /*factory*/, const address_sorting_address* dest_addr,
     address_sorting_address* source_addr) {
   // Mock lack of IPv6. For IPv4, set the source addr to be the same
   // as the destination; tests won't actually connect on the result anyways.
-  if (address_sorting_abstract_get_family(dest_addr) ==
-      ADDRESS_SORTING_AF_INET6) {
+  if (address_sorting_abstract_get_family(dest_addr) == ADDRESS_SORTING_AF_INET6) {
     return false;
   }
   memcpy(source_addr->addr, &dest_addr->addr, dest_addr->len);
@@ -322,39 +306,33 @@ static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
   return true;
 }
 
-void mock_ipv6_disabled_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* factory) {
+void mock_ipv6_disabled_source_addr_factory_destroy(address_sorting_source_addr_factory* factory) {
   mock_ipv6_disabled_source_addr_factory* f =
       reinterpret_cast<mock_ipv6_disabled_source_addr_factory*>(factory);
   gpr_free(f);
 }
 
-const address_sorting_source_addr_factory_vtable
-    kMockIpv6DisabledSourceAddrFactoryVtable = {
-        mock_ipv6_disabled_source_addr_factory_get_source_addr,
-        mock_ipv6_disabled_source_addr_factory_destroy,
+const address_sorting_source_addr_factory_vtable kMockIpv6DisabledSourceAddrFactoryVtable = {
+    mock_ipv6_disabled_source_addr_factory_get_source_addr,
+    mock_ipv6_disabled_source_addr_factory_destroy,
 };
 
 int main(int argc, char** argv) {
   // First set the resolver type based off of --resolver
   const char* resolver_type = nullptr;
   gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
-  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
-                         &resolver_type);
+  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)", &resolver_type);
   // In case that there are more than one argument on the command line,
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  grpc_core::UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            resolver.get());
+    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s", resolver.get());
   }
   if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
-  } else if (resolver_type != nullptr &&
-             gpr_stricmp(resolver_type, "ares") == 0) {
+  } else if (resolver_type != nullptr && gpr_stricmp(resolver_type, "ares") == 0) {
 #ifndef GRPC_UV
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
 #endif

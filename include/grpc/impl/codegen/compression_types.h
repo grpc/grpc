@@ -27,8 +27,7 @@ extern "C" {
 
 /** To be used as initial metadata key for the request of a concrete compression
  * algorithm */
-#define GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
-  "grpc-internal-encoding-request"
+#define GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY "grpc-internal-encoding-request"
 
 /** To be used in channel arguments.
  *
@@ -36,8 +35,7 @@ extern "C" {
  * \{ */
 /** Default compression algorithm for the channel.
  * Its value is an int from the \a grpc_compression_algorithm enum. */
-#define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
-  "grpc.default_compression_algorithm"
+#define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM "grpc.default_compression_algorithm"
 /** Default compression level for the channel.
  * Its value is an int from the \a grpc_compression_level enum. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.default_compression_level"

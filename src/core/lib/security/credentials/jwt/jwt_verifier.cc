@@ -46,8 +46,7 @@ using grpc_core::Json;
 
 /* --- Utils. --- */
 
-const char* grpc_jwt_verifier_status_to_string(
-    grpc_jwt_verifier_status status) {
+const char* grpc_jwt_verifier_status_to_string(grpc_jwt_verifier_status status) {
   switch (status) {
     case GRPC_JWT_VERIFIER_OK:
       return "OK";
@@ -90,8 +89,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(string, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            grpc_error_std_string(error).c_str());
+    gpr_log(GPR_ERROR, "JSON parse error: %s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     json = Json();  // JSON null
   }
@@ -150,8 +148,7 @@ static jose_header* jose_header_from_json(Json json) {
      https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
    */
   alg_value = it->second.string_value().c_str();
-  if (it->second.type() != Json::Type::STRING ||
-      strncmp(alg_value, "RS", 2) != 0 ||
+  if (it->second.type() != Json::Type::STRING || strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
     gpr_log(GPR_ERROR, "Invalid alg field");
     goto error;
@@ -238,8 +235,7 @@ gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims* claims) {
 }
 
 grpc_jwt_claims* grpc_jwt_claims_from_json(Json json) {
-  grpc_jwt_claims* claims =
-      static_cast<grpc_jwt_claims*>(gpr_zalloc(sizeof(grpc_jwt_claims)));
+  grpc_jwt_claims* claims = static_cast<grpc_jwt_claims*>(gpr_zalloc(sizeof(grpc_jwt_claims)));
   claims->json.Init(std::move(json));
   claims->iat = gpr_inf_past(GPR_CLOCK_REALTIME);
   claims->nbf = gpr_inf_past(GPR_CLOCK_REALTIME);
@@ -290,14 +286,12 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
 
   GPR_ASSERT(claims != nullptr);
 
-  skewed_now =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
+  skewed_now = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
   if (gpr_time_cmp(skewed_now, claims->nbf) < 0) {
     gpr_log(GPR_ERROR, "JWT is not valid yet.");
     return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
   }
-  skewed_now =
-      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
+  skewed_now = gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
   if (gpr_time_cmp(skewed_now, claims->exp) > 0) {
     gpr_log(GPR_ERROR, "JWT is expired.");
     return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
@@ -306,10 +300,9 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
   /* This should be probably up to the upper layer to decide but let's harcode
      the 99% use case here for email issuers, where the JWT must be self
      issued. */
-  if (grpc_jwt_issuer_email_domain(claims->iss) != nullptr &&
-      claims->sub != nullptr && strcmp(claims->iss, claims->sub) != 0) {
-    gpr_log(GPR_ERROR,
-            "Email issuer (%s) cannot assert another subject (%s) than itself.",
+  if (grpc_jwt_issuer_email_domain(claims->iss) != nullptr && claims->sub != nullptr &&
+      strcmp(claims->iss, claims->sub) != 0) {
+    gpr_log(GPR_ERROR, "Email issuer (%s) cannot assert another subject (%s) than itself.",
             claims->iss, claims->sub);
     return GRPC_JWT_VERIFIER_BAD_SUBJECT;
   }
@@ -321,8 +314,7 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
   }
   if (!audience_ok) {
     gpr_log(GPR_ERROR, "Audience mismatch: expected %s and found %s.",
-            audience == nullptr ? "NULL" : audience,
-            claims->aud == nullptr ? "NULL" : claims->aud);
+            audience == nullptr ? "NULL" : audience, claims->aud == nullptr ? "NULL" : claims->aud);
     return GRPC_JWT_VERIFIER_BAD_AUDIENCE;
   }
   return GRPC_JWT_VERIFIER_OK;
@@ -349,15 +341,14 @@ struct verifier_cb_ctx {
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
 };
 /* Takes ownership of the header, claims and signature. */
-static verifier_cb_ctx* verifier_cb_ctx_create(
-    grpc_jwt_verifier* verifier, grpc_pollset* pollset, jose_header* header,
-    grpc_jwt_claims* claims, const char* audience, const grpc_slice& signature,
-    const char* signed_jwt, size_t signed_jwt_len, void* user_data,
-    grpc_jwt_verification_done_cb cb) {
+static verifier_cb_ctx* verifier_cb_ctx_create(grpc_jwt_verifier* verifier, grpc_pollset* pollset,
+                                               jose_header* header, grpc_jwt_claims* claims,
+                                               const char* audience, const grpc_slice& signature,
+                                               const char* signed_jwt, size_t signed_jwt_len,
+                                               void* user_data, grpc_jwt_verification_done_cb cb) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  verifier_cb_ctx* ctx =
-      static_cast<verifier_cb_ctx*>(gpr_zalloc(sizeof(verifier_cb_ctx)));
+  verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(gpr_zalloc(sizeof(verifier_cb_ctx)));
   ctx->verifier = verifier;
   ctx->pollent = grpc_polling_entity_create_from_pollset(pollset);
   ctx->header = header;
@@ -409,13 +400,11 @@ static Json json_from_http(const grpc_httpcli_response* response) {
     return Json();  // JSON null
   }
   if (response->status != 200) {
-    gpr_log(GPR_ERROR, "Call to http server failed with error %d.",
-            response->status);
+    gpr_log(GPR_ERROR, "Call to http server failed with error %d.", response->status);
     return Json();  // JSON null
   }
   grpc_error_handle error = GRPC_ERROR_NONE;
-  Json json = Json::Parse(
-      absl::string_view(response->body, response->body_length), &error);
+  Json json = Json::Parse(absl::string_view(response->body, response->body_length), &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null
@@ -464,8 +453,7 @@ static BIGNUM* bignum_from_base64(const char* b64) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
     return nullptr;
   }
-  result = BN_bin2bn(GRPC_SLICE_START_PTR(bin),
-                     TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), nullptr);
+  result = BN_bin2bn(GRPC_SLICE_START_PTR(bin), TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), nullptr);
   grpc_slice_unref_internal(bin);
   return result;
 }
@@ -561,8 +549,7 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
     return extract_pkey_from_x509(cur->string_value().c_str());
   }
   if (jwt_keys->type() != Json::Type::ARRAY) {
-    gpr_log(GPR_ERROR,
-            "Unexpected value type of keys property in jwks key set.");
+    gpr_log(GPR_ERROR, "Unexpected value type of keys property in jwks key set.");
     return nullptr;
   }
   /* Key format is specified in:
@@ -584,19 +571,17 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
     if (it != jkey.object_value().end()) {
       kty = validate_string_field(it->second, "kty");
     }
-    if (alg != nullptr && kid != nullptr && kty != nullptr &&
-        strcmp(kid, header_kid) == 0 && strcmp(alg, header_alg) == 0) {
+    if (alg != nullptr && kid != nullptr && kty != nullptr && strcmp(kid, header_kid) == 0 &&
+        strcmp(alg, header_alg) == 0) {
       return pkey_from_jwk(jkey, kty);
     }
   }
-  gpr_log(GPR_ERROR,
-          "Could not find matching key in key set for kid=%s and alg=%s",
-          header_kid, header_alg);
+  gpr_log(GPR_ERROR, "Could not find matching key in key set for kid=%s and alg=%s", header_kid,
+          header_alg);
   return nullptr;
 }
 
-static int verify_jwt_signature(EVP_PKEY* key, const char* alg,
-                                const grpc_slice& signature,
+static int verify_jwt_signature(EVP_PKEY* key, const char* alg, const grpc_slice& signature,
                                 const grpc_slice& signed_data) {
   EVP_MD_CTX* md_ctx = EVP_MD_CTX_create();
   const EVP_MD* md = evp_md_from_alg(alg);
@@ -639,17 +624,14 @@ static void on_keys_retrieved(void* user_data, grpc_error_handle /*error*/) {
     status = GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     goto end;
   }
-  verification_key =
-      find_verification_key(json, ctx->header->alg, ctx->header->kid);
+  verification_key = find_verification_key(json, ctx->header->alg, ctx->header->kid);
   if (verification_key == nullptr) {
-    gpr_log(GPR_ERROR, "Could not find verification key with kid %s.",
-            ctx->header->kid);
+    gpr_log(GPR_ERROR, "Could not find verification key with kid %s.", ctx->header->kid);
     status = GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     goto end;
   }
 
-  if (!verify_jwt_signature(verification_key, ctx->header->alg, ctx->signature,
-                            ctx->signed_data)) {
+  if (!verify_jwt_signature(verification_key, ctx->header->alg, ctx->signature, ctx->signed_data)) {
     status = GRPC_JWT_VERIFIER_BAD_SIGNATURE;
     goto end;
   }
@@ -667,8 +649,7 @@ end:
   verifier_cb_ctx_destroy(ctx);
 }
 
-static void on_openid_config_retrieved(void* user_data,
-                                       grpc_error_handle /*error*/) {
+static void on_openid_config_retrieved(void* user_data, grpc_error_handle /*error*/) {
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   const grpc_http_response* response = &ctx->responses[HTTP_RESPONSE_OPENID];
   Json json = json_from_http(response);
@@ -704,11 +685,10 @@ static void on_openid_config_retrieved(void* user_data,
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   resource_quota = grpc_resource_quota_create("jwt_verifier");
-  grpc_httpcli_get(
-      &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
-      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
-      GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
-      &ctx->responses[HTTP_RESPONSE_KEYS]);
+  grpc_httpcli_get(&ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
+                   grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
+                   GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
+                   &ctx->responses[HTTP_RESPONSE_KEYS]);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_free(req.host);
   return;
@@ -718,8 +698,7 @@ error:
   verifier_cb_ctx_destroy(ctx);
 }
 
-static email_key_mapping* verifier_get_mapping(grpc_jwt_verifier* v,
-                                               const char* email_domain) {
+static email_key_mapping* verifier_get_mapping(grpc_jwt_verifier* v, const char* email_domain) {
   size_t i;
   if (v->mappings == nullptr) return nullptr;
   for (i = 0; i < v->num_mappings; i++) {
@@ -774,8 +753,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   req.handshaker = &grpc_httpcli_ssl;
   http_response_index rsp_idx;
 
-  GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
-             ctx->claims != nullptr);
+  GPR_ASSERT(ctx != nullptr && ctx->header != nullptr && ctx->claims != nullptr);
   iss = ctx->claims->iss;
   if (ctx->header->kid == nullptr) {
     gpr_log(GPR_ERROR, "Missing kid in jose header.");
@@ -808,8 +786,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       *(path_prefix++) = '\0';
       gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
     }
-    http_cb =
-        GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
+    http_cb = GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_KEYS;
   } else {
     req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
@@ -818,11 +795,9 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       req.http.path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
     } else {
       *(path_prefix++) = 0;
-      gpr_asprintf(&req.http.path, "/%s%s", path_prefix,
-                   GRPC_OPENID_CONFIG_URL_SUFFIX);
+      gpr_asprintf(&req.http.path, "/%s%s", path_prefix, GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
-    http_cb = GRPC_CLOSURE_CREATE(on_openid_config_retrieved, ctx,
-                                  grpc_schedule_on_exec_ctx);
+    http_cb = GRPC_CLOSURE_CREATE(on_openid_config_retrieved, ctx, grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_OPENID;
   }
 
@@ -830,10 +805,9 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   resource_quota = grpc_resource_quota_create("jwt_verifier");
-  grpc_httpcli_get(
-      &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
-      grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
-      &ctx->responses[rsp_idx]);
+  grpc_httpcli_get(&ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
+                   grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
+                   &ctx->responses[rsp_idx]);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_free(req.host);
   gpr_free(req.http.path);
@@ -844,10 +818,8 @@ error:
   verifier_cb_ctx_destroy(ctx);
 }
 
-void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
-                              grpc_pollset* pollset, const char* jwt,
-                              const char* audience,
-                              grpc_jwt_verification_done_cb cb,
+void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier, grpc_pollset* pollset, const char* jwt,
+                              const char* audience, grpc_jwt_verification_done_cb cb,
                               void* user_data) {
   const char* dot = nullptr;
   jose_header* header = nullptr;
@@ -857,8 +829,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   const char* cur = jwt;
   Json json;
 
-  GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr &&
-             cb != nullptr);
+  GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr && cb != nullptr);
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));
@@ -878,9 +849,8 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   cur = dot + 1;
   signature = grpc_base64_decode(cur, 1);
   if (GRPC_SLICE_IS_EMPTY(signature)) goto error;
-  retrieve_key_and_verify(
-      verifier_cb_ctx_create(verifier, pollset, header, claims, audience,
-                             signature, jwt, signed_jwt_len, user_data, cb));
+  retrieve_key_and_verify(verifier_cb_ctx_create(verifier, pollset, header, claims, audience,
+                                                 signature, jwt, signed_jwt_len, user_data, cb));
   return;
 
 error:
@@ -890,10 +860,8 @@ error:
 }
 
 grpc_jwt_verifier* grpc_jwt_verifier_create(
-    const grpc_jwt_verifier_email_domain_key_url_mapping* mappings,
-    size_t num_mappings) {
-  grpc_jwt_verifier* v =
-      static_cast<grpc_jwt_verifier*>(gpr_zalloc(sizeof(grpc_jwt_verifier)));
+    const grpc_jwt_verifier_email_domain_key_url_mapping* mappings, size_t num_mappings) {
+  grpc_jwt_verifier* v = static_cast<grpc_jwt_verifier*>(gpr_zalloc(sizeof(grpc_jwt_verifier)));
   grpc_httpcli_context_init(&v->http_ctx);
 
   /* We know at least of one mapping. */
@@ -906,8 +874,7 @@ grpc_jwt_verifier* grpc_jwt_verifier_create(
   if (mappings != nullptr) {
     size_t i;
     for (i = 0; i < num_mappings; i++) {
-      verifier_put_mapping(v, mappings[i].email_domain,
-                           mappings[i].key_url_prefix);
+      verifier_put_mapping(v, mappings[i].email_domain, mappings[i].key_url_prefix);
     }
   }
   return v;

@@ -79,39 +79,31 @@ class ServerRpcInfo {
   ServerContextBase* server_context() { return ctx_; }
 
  private:
-  static_assert(Type::UNARY ==
-                    static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
+  static_assert(Type::UNARY == static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
                 "violated expectation about Type enum");
-  static_assert(Type::CLIENT_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
+  static_assert(Type::CLIENT_STREAMING == static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
                 "violated expectation about Type enum");
-  static_assert(Type::SERVER_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
+  static_assert(Type::SERVER_STREAMING == static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
                 "violated expectation about Type enum");
-  static_assert(Type::BIDI_STREAMING ==
-                    static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
+  static_assert(Type::BIDI_STREAMING == static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
                 "violated expectation about Type enum");
 
-  ServerRpcInfo(ServerContextBase* ctx, const char* method,
-                internal::RpcMethod::RpcType type)
+  ServerRpcInfo(ServerContextBase* ctx, const char* method, internal::RpcMethod::RpcType type)
       : ctx_(ctx), method_(method), type_(static_cast<Type>(type)) {}
 
   // Runs interceptor at pos \a pos.
-  void RunInterceptor(
-      experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
+  void RunInterceptor(experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
     GPR_CODEGEN_ASSERT(pos < interceptors_.size());
     interceptors_[pos]->Intercept(interceptor_methods);
   }
 
   void RegisterInterceptors(
-      const std::vector<
-          std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
+      const std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
           creators) {
     for (const auto& creator : creators) {
       auto* interceptor = creator->CreateServerInterceptor(this);
       if (interceptor != nullptr) {
-        interceptors_.push_back(
-            std::unique_ptr<experimental::Interceptor>(interceptor));
+        interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(interceptor));
       }
     }
   }

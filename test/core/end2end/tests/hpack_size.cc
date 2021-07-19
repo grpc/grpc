@@ -38,54 +38,38 @@
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 const char* hobbits[][2] = {
-    {"Adaldrida", "Brandybuck"}, {"Adamanta", "Took"},
-    {"Adalgrim", "Took"},        {"Adelard", "Took"},
-    {"Amaranth", "Brandybuck"},  {"Andwise", "Roper"},
-    {"Angelica", "Baggins"},     {"Asphodel", "Burrows"},
-    {"Balbo", "Baggins"},        {"Bandobras", "Took"},
-    {"Belba", "Bolger"},         {"Bell", "Gamgee"},
-    {"Belladonna", "Baggins"},   {"Berylla", "Baggins"},
-    {"Bilbo", "Baggins"},        {"Bilbo", "Gardner"},
-    {"Bill", "Butcher"},         {"Bingo", "Baggins"},
-    {"Bodo", "Proudfoot"},       {"Bowman", "Cotton"},
-    {"Bungo", "Baggins"},        {"Camellia", "Sackville"},
-    {"Carl", "Cotton"},          {"Celandine", "Brandybuck"},
-    {"Chica", "Baggins"},        {"Daddy", "Twofoot"},
-    {"Daisy", "Boffin"},         {"Diamond", "Took"},
-    {"Dinodas", "Brandybuck"},   {"Doderic", "Brandybuck"},
-    {"Dodinas", "Brandybuck"},   {"Donnamira", "Boffin"},
-    {"Dora", "Baggins"},         {"Drogo", "Baggins"},
-    {"Dudo", "Baggins"},         {"Eglantine", "Took"},
-    {"Elanor", "Fairbairn"},     {"Elfstan", "Fairbairn"},
-    {"Esmeralda", "Brandybuck"}, {"Estella", "Brandybuck"},
-    {"Everard", "Took"},         {"Falco", "Chubb-Baggins"},
-    {"Faramir", "Took"},         {"Farmer", "Maggot"},
-    {"Fastolph", "Bolger"},      {"Ferdibrand", "Took"},
-    {"Ferdinand", "Took"},       {"Ferumbras", "Took"},
-    {"Ferumbras", "Took"},       {"Filibert", "Bolger"},
-    {"Firiel", "Fairbairn"},     {"Flambard", "Took"},
-    {"Folco", "Boffin"},         {"Fortinbras", "Took"},
-    {"Fortinbras", "Took"},      {"Fosco", "Baggins"},
-    {"Fredegar", "Bolger"},      {"Frodo", "Baggins"},
-    {"Frodo", "Gardner"},        {"Gerontius", "Took"},
-    {"Gilly", "Baggins"},        {"Goldilocks", "Took"},
-    {"Gorbadoc", "Brandybuck"},  {"Gorbulas", "Brandybuck"},
-    {"Gorhendad", "Brandybuck"}, {"Gormadoc", "Brandybuck"},
-    {"Griffo", "Boffin"},        {"Halfast", "Gamgee"},
-    {"Halfred", "Gamgee"},       {"Halfred", "Greenhand"},
-    {"Hanna", "Brandybuck"},     {"Hamfast", "Gamgee"},
-    {"Hamfast", "Gardner"},      {"Hamson", "Gamgee"},
-    {"Harding", "Gardner"},      {"Hilda", "Brandybuck"},
-    {"Hildibrand", "Took"},      {"Hildifons", "Took"},
-    {"Hildigard", "Took"},       {"Hildigrim", "Took"},
-    {"Hob", "Gammidge"},         {"Hob", "Hayward"},
-    {"Hobson", "Gamgee"},        {"Holfast", "Gardner"},
-    {"Holman", "Cotton"},        {"Holman", "Greenhand"},
-    {"Hugo", "Boffin"},          {"Hugo", "Bracegirdle"},
-    {"Ilberic", "Brandybuck"},   {"Isembard", "Took"},
-    {"Isembold", "Took"},        {"Isengar", "Took"},
-    {"Isengrim", "Took"},        {"Isengrim", "Took"},
-    {"Isumbras", "Took"},        {"Isumbras", "Took"},
+    {"Adaldrida", "Brandybuck"}, {"Adamanta", "Took"},        {"Adalgrim", "Took"},
+    {"Adelard", "Took"},         {"Amaranth", "Brandybuck"},  {"Andwise", "Roper"},
+    {"Angelica", "Baggins"},     {"Asphodel", "Burrows"},     {"Balbo", "Baggins"},
+    {"Bandobras", "Took"},       {"Belba", "Bolger"},         {"Bell", "Gamgee"},
+    {"Belladonna", "Baggins"},   {"Berylla", "Baggins"},      {"Bilbo", "Baggins"},
+    {"Bilbo", "Gardner"},        {"Bill", "Butcher"},         {"Bingo", "Baggins"},
+    {"Bodo", "Proudfoot"},       {"Bowman", "Cotton"},        {"Bungo", "Baggins"},
+    {"Camellia", "Sackville"},   {"Carl", "Cotton"},          {"Celandine", "Brandybuck"},
+    {"Chica", "Baggins"},        {"Daddy", "Twofoot"},        {"Daisy", "Boffin"},
+    {"Diamond", "Took"},         {"Dinodas", "Brandybuck"},   {"Doderic", "Brandybuck"},
+    {"Dodinas", "Brandybuck"},   {"Donnamira", "Boffin"},     {"Dora", "Baggins"},
+    {"Drogo", "Baggins"},        {"Dudo", "Baggins"},         {"Eglantine", "Took"},
+    {"Elanor", "Fairbairn"},     {"Elfstan", "Fairbairn"},    {"Esmeralda", "Brandybuck"},
+    {"Estella", "Brandybuck"},   {"Everard", "Took"},         {"Falco", "Chubb-Baggins"},
+    {"Faramir", "Took"},         {"Farmer", "Maggot"},        {"Fastolph", "Bolger"},
+    {"Ferdibrand", "Took"},      {"Ferdinand", "Took"},       {"Ferumbras", "Took"},
+    {"Ferumbras", "Took"},       {"Filibert", "Bolger"},      {"Firiel", "Fairbairn"},
+    {"Flambard", "Took"},        {"Folco", "Boffin"},         {"Fortinbras", "Took"},
+    {"Fortinbras", "Took"},      {"Fosco", "Baggins"},        {"Fredegar", "Bolger"},
+    {"Frodo", "Baggins"},        {"Frodo", "Gardner"},        {"Gerontius", "Took"},
+    {"Gilly", "Baggins"},        {"Goldilocks", "Took"},      {"Gorbadoc", "Brandybuck"},
+    {"Gorbulas", "Brandybuck"},  {"Gorhendad", "Brandybuck"}, {"Gormadoc", "Brandybuck"},
+    {"Griffo", "Boffin"},        {"Halfast", "Gamgee"},       {"Halfred", "Gamgee"},
+    {"Halfred", "Greenhand"},    {"Hanna", "Brandybuck"},     {"Hamfast", "Gamgee"},
+    {"Hamfast", "Gardner"},      {"Hamson", "Gamgee"},        {"Harding", "Gardner"},
+    {"Hilda", "Brandybuck"},     {"Hildibrand", "Took"},      {"Hildifons", "Took"},
+    {"Hildigard", "Took"},       {"Hildigrim", "Took"},       {"Hob", "Gammidge"},
+    {"Hob", "Hayward"},          {"Hobson", "Gamgee"},        {"Holfast", "Gardner"},
+    {"Holman", "Cotton"},        {"Holman", "Greenhand"},     {"Hugo", "Boffin"},
+    {"Hugo", "Bracegirdle"},     {"Ilberic", "Brandybuck"},   {"Isembard", "Took"},
+    {"Isembold", "Took"},        {"Isengar", "Took"},         {"Isengrim", "Took"},
+    {"Isengrim", "Took"},        {"Isumbras", "Took"},        {"Isumbras", "Took"},
     {"Jolly", "Cotton"},
     /*
     {"Lalia", "Took"},
@@ -174,11 +158,9 @@ const char* hobbits[][2] = {
     {"Wiseman", "Gamwich"}*/
 };
 
-const char* dragons[] = {"Ancalagon", "Glaurung", "Scatha",
-                         "Smaug the Magnificent"};
+const char* dragons[] = {"Ancalagon", "Glaurung", "Scatha", "Smaug the Magnificent"};
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
+static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config, const char* test_name,
                                             grpc_channel_args* client_args,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
@@ -189,13 +171,9 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   return f;
 }
 
-static gpr_timespec n_seconds_from_now(int n) {
-  return grpc_timeout_seconds_to_deadline(n);
-}
+static gpr_timespec n_seconds_from_now(int n) { return grpc_timeout_seconds_to_deadline(n); }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec five_seconds_from_now(void) { return n_seconds_from_now(5); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -208,8 +186,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+                                         grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -231,8 +208,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config /*config*/,
-                                grpc_end2end_test_fixture f, size_t index) {
+static void simple_request_body(grpc_end2end_test_config /*config*/, grpc_end2end_test_fixture f,
+                                size_t index) {
   grpc_call* c;
   grpc_call* s;
   cq_verifier* cqv = cq_verifier_create(f.cq);
@@ -250,19 +227,17 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   memset(extra_metadata, 0, sizeof(extra_metadata));
   extra_metadata[0].key = grpc_slice_from_static_string("hobbit-first-name");
-  extra_metadata[0].value = grpc_slice_from_static_string(
-      hobbits[index % GPR_ARRAY_SIZE(hobbits)][0]);
+  extra_metadata[0].value =
+      grpc_slice_from_static_string(hobbits[index % GPR_ARRAY_SIZE(hobbits)][0]);
   extra_metadata[1].key = grpc_slice_from_static_string("hobbit-second-name");
-  extra_metadata[1].value = grpc_slice_from_static_string(
-      hobbits[index % GPR_ARRAY_SIZE(hobbits)][1]);
+  extra_metadata[1].value =
+      grpc_slice_from_static_string(hobbits[index % GPR_ARRAY_SIZE(hobbits)][1]);
   extra_metadata[2].key = grpc_slice_from_static_string("dragon");
-  extra_metadata[2].value =
-      grpc_slice_from_static_string(dragons[index % GPR_ARRAY_SIZE(dragons)]);
+  extra_metadata[2].value = grpc_slice_from_static_string(dragons[index % GPR_ARRAY_SIZE(dragons)]);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+                               grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -294,13 +269,11 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details, &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -325,8 +298,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -350,8 +322,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   cq_verifier_destroy(cqv);
 }
 
-static void test_size(grpc_end2end_test_config config, int encode_size,
-                      int decode_size) {
+static void test_size(grpc_end2end_test_config config, int encode_size, int decode_size) {
   size_t i;
   grpc_end2end_test_fixture f;
   grpc_arg server_arg;
@@ -371,10 +342,8 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
   client_args.num_args = 1;
   client_args.args = &client_arg;
 
-  std::string name =
-      absl::StrFormat("test_size:e=%d:d=%d", encode_size, decode_size);
-  f = begin_test(config, name.c_str(),
-                 encode_size != 4096 ? &client_args : nullptr,
+  std::string name = absl::StrFormat("test_size:e=%d:d=%d", encode_size, decode_size);
+  f = begin_test(config, name.c_str(), encode_size != 4096 ? &client_args : nullptr,
                  decode_size != 4096 ? &server_args : nullptr);
   for (i = 0; i < 4 * GPR_ARRAY_SIZE(hobbits); i++) {
     simple_request_body(config, f, i);
@@ -384,8 +353,7 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
 }
 
 void hpack_size(grpc_end2end_test_config config) {
-  static const int interesting_sizes[] = {4096, 0,     100,
-                                          1000, 32768, 4 * 1024 * 1024};
+  static const int interesting_sizes[] = {4096, 0, 100, 1000, 32768, 4 * 1024 * 1024};
   size_t i, j;
 
   for (i = 0; i < GPR_ARRAY_SIZE(interesting_sizes); i++) {
