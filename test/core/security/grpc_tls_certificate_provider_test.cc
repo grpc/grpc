@@ -530,10 +530,10 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, SuccessfulKeyCertMatch) {
-  absl::StatusOr<bool> status = PrivateKeyAndCertificateMatch(
+  absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
       private_key_2_, /*cert_chain=*/cert_chain_2_ + cert_chain_);
-  ASSERT_TRUE(status.ok());
-  EXPECT_TRUE(*status);
+  ASSERT_TRUE(matched_or.ok());
+  EXPECT_TRUE(*matched_or);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {

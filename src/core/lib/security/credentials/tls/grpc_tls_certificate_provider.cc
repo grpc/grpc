@@ -487,14 +487,12 @@ absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
 }
 
 absl::Status IsKeyCertPairsListValid(const PemKeyCertPairList& pair_list) {
-  if (!pair_list.empty()) {
-    for (size_t i = 0; i < pair_list.size(); ++i) {
+  for (size_t i = 0; i < pair_list.size(); ++i) {
     absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
         pair_list[i].private_key(), pair_list[i].cert_chain());
     if (!(matched_or.ok() && *matched_or)) {
       return matched_or.status();
     }
-  }
   }
   return absl::OkStatus();
 }
