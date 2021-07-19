@@ -601,9 +601,9 @@ typedef unsigned __int64 uint64_t;
 
 #ifndef GPR_NO_UNIQUE_ADDRESS
 #if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)
-#define GRPC_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
-#define GRPC_NO_UNIQUE_ADDRESS
+#define GPR_NO_UNIQUE_ADDRESS
 #endif
 #endif /* GPR_NO_UNIQUE_ADDRESS */
 
