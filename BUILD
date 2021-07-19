@@ -1296,6 +1296,7 @@ grpc_cc_library(
         "grpc_deadline_filter",
         "grpc_health_upb",
         "grpc_trace",
+        "match",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",

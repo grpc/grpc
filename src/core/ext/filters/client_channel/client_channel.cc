@@ -61,6 +61,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -1700,9 +1701,10 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
     MutexLock lock(&data_plane_mu_);
     result = picker_->Pick(LoadBalancingPolicy::PickArgs());
   }
-  return result.Handle<grpc_error_handle>(
+  return Match(
+      result.result,
       // Complete pick.
-      [op](LoadBalancingPolicy::PickResult::Complete& complete_pick)
+      [op](const LoadBalancingPolicy::PickResult::Complete& complete_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::work_serializer_) {
             SubchannelWrapper* subchannel =
                 static_cast<SubchannelWrapper*>(complete_pick.subchannel.get());
@@ -1713,15 +1715,15 @@ grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
             return GRPC_ERROR_NONE;
           },
       // Queue pick.
-      [](LoadBalancingPolicy::PickResult::Queue& /*queue_pick*/) {
+      [](const LoadBalancingPolicy::PickResult::Queue& /*queue_pick*/) {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB picker queued call");
       },
       // Fail pick.
-      [](LoadBalancingPolicy::PickResult::Fail& fail_pick) {
+      [](const LoadBalancingPolicy::PickResult::Fail& fail_pick) {
         return absl_status_to_grpc_error(fail_pick.status);
       },
       // Drop pick.
-      [](LoadBalancingPolicy::PickResult::Drop& drop_pick) {
+      [](const LoadBalancingPolicy::PickResult::Drop& drop_pick) {
         return absl_status_to_grpc_error(drop_pick.status);
       });
 }
@@ -3001,28 +3003,29 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
   Metadata initial_metadata(this, initial_metadata_batch);
   pick_args.initial_metadata = &initial_metadata;
   auto result = chand_->picker_->Pick(pick_args);
-  return result.Handle<bool>(
+  return MatchMutable(
+      &result.result,
       // CompletePick
-      [this](LoadBalancingPolicy::PickResult::Complete& complete_pick)
+      [this](LoadBalancingPolicy::PickResult::Complete* complete_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
               gpr_log(GPR_INFO,
                       "chand=%p lb_call=%p: LB pick succeeded: subchannel=%p",
-                      chand_, this, complete_pick.subchannel.get());
+                      chand_, this, complete_pick->subchannel.get());
             }
-            GPR_ASSERT(complete_pick.subchannel != nullptr);
+            GPR_ASSERT(complete_pick->subchannel != nullptr);
             // Grab a ref to the connected subchannel while we're still
             // holding the data plane mutex.
             connected_subchannel_ = chand_->GetConnectedSubchannelInDataPlane(
-                complete_pick.subchannel.get());
+                complete_pick->subchannel.get());
             GPR_ASSERT(connected_subchannel_ != nullptr);
             lb_recv_trailing_metadata_ready_ =
-                std::move(complete_pick.recv_trailing_metadata_ready);
+                std::move(complete_pick->recv_trailing_metadata_ready);
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
           },
       // QueuePick
-      [this](LoadBalancingPolicy::PickResult::Queue& /*queue_pick*/)
+      [this](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick queued", chand_,
@@ -3033,11 +3036,11 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
           },
       // FailPick
       [this, send_initial_metadata_flags,
-       &error](LoadBalancingPolicy::PickResult::Fail& fail_pick)
+       &error](LoadBalancingPolicy::PickResult::Fail* fail_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick failed: %s",
-                      chand_, this, fail_pick.status.ToString().c_str());
+                      chand_, this, fail_pick->status.ToString().c_str());
             }
             // If we're shutting down, fail all RPCs.
             grpc_error_handle disconnect_error = chand_->disconnect_error();
@@ -3051,7 +3054,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             if ((send_initial_metadata_flags &
                  GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
               grpc_error_handle lb_error =
-                  absl_status_to_grpc_error(fail_pick.status);
+                  absl_status_to_grpc_error(fail_pick->status);
               *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                   "Failed to pick subchannel", &lb_error, 1);
               GRPC_ERROR_UNREF(lb_error);
@@ -3064,14 +3067,14 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
             return false;
           },
       // DropPick
-      [this, &error](LoadBalancingPolicy::PickResult::Drop& drop_pick)
+      [this, &error](LoadBalancingPolicy::PickResult::Drop* drop_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
               gpr_log(GPR_INFO, "chand=%p lb_call=%p: LB pick dropped: %s",
-                      chand_, this, drop_pick.status.ToString().c_str());
+                      chand_, this, drop_pick->status.ToString().c_str());
             }
             *error =
-                grpc_error_set_int(absl_status_to_grpc_error(drop_pick.status),
+                grpc_error_set_int(absl_status_to_grpc_error(drop_pick->status),
                                    GRPC_ERROR_INT_LB_POLICY_DROP, 1);
             MaybeRemoveCallFromLbQueuedCallsLocked();
             return true;
