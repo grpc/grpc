@@ -423,6 +423,7 @@ class XdsApi {
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;
+    uint32_t max_retries = 3;
 
     bool operator==(const CdsUpdate& other) const {
       return cluster_type == other.cluster_type &&
@@ -435,7 +436,8 @@ class XdsApi {
              lb_policy == other.lb_policy &&
              min_ring_size == other.min_ring_size &&
              max_ring_size == other.max_ring_size &&
-             max_concurrent_requests == other.max_concurrent_requests;
+             max_concurrent_requests == other.max_concurrent_requests &&
+             max_retries == other.max_retries;
     }
 
     std::string ToString() const;

@@ -684,7 +684,7 @@ grpc_error_handle CdsLb::UpdateXdsMaxRetriesMap(
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   }
   xds_max_retries_map->DebugPrint();
-  if (xds_max_retries_map->Update(cluster_name, 1001)) {
+  if (xds_max_retries_map->Update(cluster_name, cluster_data.max_retries)) {
     gpr_log(GPR_INFO, "donna updated in CDS");
   } else {
     gpr_log(GPR_INFO, "donna unable to update in CDS");

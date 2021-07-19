@@ -731,6 +731,7 @@ std::string XdsApi::CdsUpdate::ToString() const {
   }
   contents.push_back(
       absl::StrFormat("max_concurrent_requests=%d", max_concurrent_requests));
+  contents.push_back(absl::StrFormat("max_retries=%d", max_retries));
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -3138,6 +3139,13 @@ grpc_error_handle CdsResponseParse(
           if (max_requests != nullptr) {
             cds_update.max_concurrent_requests =
                 google_protobuf_UInt32Value_value(max_requests);
+          }
+          const google_protobuf_UInt32Value* max_retries =
+              envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_retries(
+                  threshold);
+          if (max_retries != nullptr) {
+            cds_update.max_retries =
+                google_protobuf_UInt32Value_value(max_retries);
           }
           break;
         }
