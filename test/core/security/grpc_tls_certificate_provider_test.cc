@@ -543,7 +543,6 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
   EXPECT_FALSE(*status);
 }
 
-// TODO: Add cases with invalid cert chain
 TEST_F(GrpcTlsCertificateProviderTest, DataWatcherCertificateProviderCreation) {
   DataWatcherCertificateProvider provider(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
