@@ -77,8 +77,7 @@ class SliceAllocatorFactory {
   ~SliceAllocatorFactory();
 
   /// On Endpoint creation, call \a CreateSliceAllocator with the name of the
-  /// endpoint peer (a URI string, most likely). Note: \a peer_name must outlive
-  /// the Endpoint.
+  /// endpoint peer (a URI string, most likely).
   SliceAllocator CreateSliceAllocator(absl::string_view peer_name);
 
  private:

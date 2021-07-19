@@ -805,6 +805,8 @@ grpc_resource_user* grpc_resource_user_create(
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     resource_user->links[i].next = resource_user->links[i].prev = nullptr;
   }
+  // TODO(hork): the RU should own a copy of the name. See Craig's comments on
+  // the EventEngine gRFC for justification.
   if (name != nullptr) {
     resource_user->name = name;
   } else {
