@@ -1569,9 +1569,9 @@ grpc_error_handle HPackParser::Parse() {
     grpc_slice_unref_internal(slice);
   }
   queued_slices_.clear();
-  if (error != GRPC_ERROR_NONE && state_ != &HPackParser::parse_begin) {
+  if (error == GRPC_ERROR_NONE && state_ != &HPackParser::parse_begin) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-		            "end of header frame not aligned with a hpack record boundary");
+        "end of header frame not aligned with a hpack record boundary");
   }
   return error;
 }
