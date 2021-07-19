@@ -34,9 +34,7 @@ class grpc_service_account_jwt_access_credentials
     : public grpc_call_credentials {
  public:
   grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
-                                              gpr_timespec token_lifetime,
-                                              std::string user_provided_scope,
-                                              bool clear_audience);
+                                              gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
@@ -50,9 +48,7 @@ class grpc_service_account_jwt_access_credentials
 
   const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
   const grpc_auth_json_key& key() const { return key_; }
-  const std::string& user_provided_scope() const {
-    return user_provided_scope_;
-  }
+
   std::string debug_string() override {
     return absl::StrFormat(
         "JWTAccessCredentials{ExpirationTime:%s}",
@@ -74,15 +70,12 @@ class grpc_service_account_jwt_access_credentials
 
   grpc_auth_json_key key_;
   gpr_timespec jwt_lifetime_;
-  std::string user_provided_scope_;
-  bool clear_audience_;
 };
 
 // Private constructor for jwt credentials from an already parsed json key.
 // Takes ownership of the key.
 grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-    grpc_auth_json_key key, gpr_timespec token_lifetime,
-    std::string user_provided_scope, bool clear_audience);
+    grpc_auth_json_key key, gpr_timespec token_lifetime);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H */

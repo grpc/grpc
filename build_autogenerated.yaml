@@ -4381,6 +4381,16 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: binder_smoke_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/binder/binder_smoke_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: bm_alarm
   build: test
   language: c++
@@ -5757,6 +5767,18 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: match_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/overload.h
+  src:
+  - test/core/gprpp/match_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
 - name: matchers_test
   gtest: true
   build: test
@@ -5880,6 +5902,16 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: overload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/overload.h
+  src:
+  - test/core/gprpp/overload_test.cc
+  deps: []
+  uses_polling: false
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c++

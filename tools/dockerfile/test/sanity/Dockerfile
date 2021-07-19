@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM debian:bullseye
-  
+
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -49,7 +49,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 # Install Python 3.7 from source (and installed as a default python3)
 # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
-                                 libnss3-dev libssl-dev libreadline-dev libffi-dev
+                                 libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
 RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && \
     tar -xf Python-3.7.9.tar.xz && \
     cd Python-3.7.9 && \
