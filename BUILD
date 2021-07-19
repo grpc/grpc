@@ -31,7 +31,7 @@ package(
 
 load(
     "//bazel:bobs-rpc_build_system.bzl",
-    "bobs-rpc_cc_library",
+    "bobs_rpc_cc_library",
     "bobs-rpc_generate_one_off_targets",
     "bobs-rpc_upb_proto_library",
     "python_config_settings",
@@ -294,7 +294,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/bobs-rpcpp/support/validate_service_config.h",
 ]
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "gpr",
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -305,7 +305,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_unsecure",
     srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
@@ -326,7 +326,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc",
     srcs = [
         "src/core/lib/surface/init.cc",
@@ -366,7 +366,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
     external_deps = [
@@ -376,7 +376,7 @@ bobs-rpc_cc_library(
     visibility = ["@bobs-rpc:public"],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++",
     hdrs = [
         "src/cpp/client/secure_credentials.h",
@@ -402,7 +402,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_internals",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
@@ -445,7 +445,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_xds_client",
     srcs = [
         "src/cpp/client/xds_credentials.cc",
@@ -462,7 +462,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_xds_server",
     srcs = [
         "src/cpp/server/xds_server_credentials.cc",
@@ -480,7 +480,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_unsecure",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
@@ -500,7 +500,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_error_details",
     srcs = [
         "src/cpp/util/error_details.cc",
@@ -517,7 +517,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_alts",
     srcs = [
         "src/cpp/common/alts_context.cc",
@@ -542,7 +542,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_csharp_ext",
     srcs = [
         "src/csharp/ext/bobs-rpc_csharp_ext.c",
@@ -554,7 +554,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "census",
     srcs = [
         "src/core/ext/filters/census/bobs-rpc_context.cc",
@@ -570,7 +570,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_internal_hdrs_only",
     hdrs = [
         "include/bobs-rpcpp/impl/codegen/sync.h",
@@ -584,7 +584,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -692,7 +692,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "gpr_codegen",
     language = "c++",
     public_hdrs = [
@@ -715,7 +715,7 @@ bobs-rpc_cc_library(
     visibility = ["@bobs-rpc:public"],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_trace",
     srcs = ["src/core/lib/debug/trace.cc"],
     hdrs = ["src/core/lib/debug/trace.h"],
@@ -728,7 +728,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "atomic",
     language = "c++",
     public_hdrs = [
@@ -739,20 +739,20 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "debug_location",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],
     visibility = ["@bobs-rpc:debug_location"],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "overload",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/overload.h"],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "match",
     external_deps = [
         "absl/types:variant",
@@ -762,7 +762,7 @@ bobs-rpc_cc_library(
     deps = ["overload"],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
@@ -776,7 +776,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
@@ -789,7 +789,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "dual_ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/dual_ref_counted.h"],
@@ -803,7 +803,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "ref_counted_ptr",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted_ptr.h"],
@@ -813,7 +813,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_base_c",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1165,7 +1165,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_base",
     srcs = [
         "src/core/lib/surface/lame_client.cc",
@@ -1179,7 +1179,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_common",
     language = "c++",
     deps = [
@@ -1209,7 +1209,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backend_metric.cc",
@@ -1303,7 +1303,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_client_idle_filter",
     srcs = [
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
@@ -1315,7 +1315,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_max_age_filter",
     srcs = [
         "src/core/ext/filters/max_age/max_age_filter.cc",
@@ -1330,7 +1330,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_deadline_filter",
     srcs = [
         "src/core/ext/filters/deadline/deadline_filter.cc",
@@ -1345,7 +1345,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_client_authority_filter",
     srcs = [
         "src/core/ext/filters/http/client_authority_filter.cc",
@@ -1360,7 +1360,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_message_size_filter",
     srcs = [
         "src/core/ext/filters/message_size/message_size_filter.cc",
@@ -1380,7 +1380,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_fault_injection_filter",
     srcs = [
         "src/core/ext/filters/fault_injection/fault_injection_filter.cc",
@@ -1399,7 +1399,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_http_filters",
     srcs = [
         "src/core/ext/filters/http/client/http_client_filter.cc",
@@ -1427,7 +1427,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_workaround_cronet_compression_filter",
     srcs = [
         "src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc",
@@ -1443,7 +1443,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_codegen",
     language = "c++",
     public_hdrs = [
@@ -1462,7 +1462,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_bobs-rpclb_balancer_addresses",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/bobs-rpclb_balancer_addresses.cc",
@@ -1479,7 +1479,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_bobs-rpclb",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/client_load_reporting_filter.cc",
@@ -1517,7 +1517,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_bobs-rpclb_secure",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/bobs-rpclb/client_load_reporting_filter.cc",
@@ -1556,7 +1556,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_xds_client",
     srcs = [
         "src/core/ext/xds/certificate_provider_registry.cc",
@@ -1623,7 +1623,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_xds_server_config_fetcher",
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
@@ -1639,7 +1639,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_google_mesh_ca_certificate_provider_factory",
     srcs = [
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc",
@@ -1658,7 +1658,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_cds",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
@@ -1677,7 +1677,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_xds_channel_args",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
@@ -1685,7 +1685,7 @@ bobs-rpc_cc_library(
     language = "c++",
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_xds_common",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
@@ -1699,7 +1699,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_xds_cluster_resolver",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_resolver.cc",
@@ -1724,7 +1724,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_xds_cluster_impl",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc",
@@ -1745,7 +1745,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_xds_cluster_manager",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
@@ -1766,7 +1766,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_address_filtering",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/address_filtering.cc",
@@ -1785,7 +1785,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_subchannel_list",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
@@ -1798,7 +1798,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_pick_first",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
@@ -1812,7 +1812,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_ring_hash",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc",
@@ -1835,7 +1835,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_round_robin",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
@@ -1851,7 +1851,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_priority",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/priority/priority.cc",
@@ -1871,7 +1871,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_policy_weighted_target",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
@@ -1891,7 +1891,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "lb_server_load_reporting_filter",
     srcs = [
         "src/core/ext/filters/load_reporting/server_load_reporting_filter.cc",
@@ -1916,7 +1916,7 @@ bobs-rpc_cc_library(
     alwayslink = 1,
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "lb_load_data_store",
     srcs = [
         "src/cpp/server/load_reporter/load_data_store.cc",
@@ -1934,7 +1934,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "lb_server_load_reporting_service_server_builder_plugin",
     srcs = [
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.cc",
@@ -1950,7 +1950,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpcpp_server_load_reporting",
     srcs = [
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.cc",
@@ -1968,7 +1968,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "lb_load_reporter_service",
     srcs = [
         "src/cpp/server/load_reporter/load_reporter_async_service_impl.cc",
@@ -1984,7 +1984,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "lb_get_cpu_stats",
     srcs = [
         "src/cpp/server/load_reporter/get_cpu_stats_linux.cc",
@@ -2002,7 +2002,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "lb_load_reporter",
     srcs = [
         "src/cpp/server/load_reporter/load_reporter.cc",
@@ -2025,7 +2025,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_resolver_dns_selection",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
@@ -2040,7 +2040,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_resolver_dns_native",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
@@ -2057,7 +2057,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_resolver_dns_ares",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
@@ -2092,7 +2092,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_resolver_sockaddr",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
@@ -2108,7 +2108,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_resolver_fake",
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
@@ -2124,7 +2124,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_resolver_xds_header",
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
@@ -2132,7 +2132,7 @@ bobs-rpc_cc_library(
     language = "c++",
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_resolver_xds",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
@@ -2152,7 +2152,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_resolver_c2p",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
@@ -2167,7 +2167,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
@@ -2294,7 +2294,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_mock_cel",
     hdrs = [
         "src/core/lib/security/authorization/mock_cel/activation.h",
@@ -2312,7 +2312,7 @@ bobs-rpc_cc_library(
 )
 
 # This target depends on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_matchers",
     srcs = [
         "src/core/lib/matchers/matchers.cc",
@@ -2334,7 +2334,7 @@ bobs-rpc_cc_library(
 )
 
 # This target pulls in a dependency on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_rbac_engine",
     srcs = [
         "src/core/lib/security/authorization/bobs-rpc_authorization_engine.cc",
@@ -2360,7 +2360,7 @@ bobs-rpc_cc_library(
 )
 
 # This target pulls in a dependency on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_authorization_provider",
     srcs = [
         "src/core/lib/security/authorization/bobs-rpc_authorization_policy_provider.cc",
@@ -2384,7 +2384,7 @@ bobs-rpc_cc_library(
 )
 
 # This target pulls in a dependency on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_authorization_provider",
     srcs = [
         "src/cpp/server/authorization_policy_provider.cc",
@@ -2403,7 +2403,7 @@ bobs-rpc_cc_library(
 )
 
 # This target pulls in a dependency on RE2 and should not be linked into bobs-rpc by default for binary-size reasons.
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_cel_engine",
     srcs = [
         "src/core/lib/security/authorization/cel_authorization_engine.cc",
@@ -2426,7 +2426,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
@@ -2491,7 +2491,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_chttp2_alpn",
     srcs = [
         "src/core/ext/transport/chttp2/alpn/alpn.cc",
@@ -2505,7 +2505,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_chttp2_client_connector",
     srcs = [
         "src/core/ext/transport/chttp2/client/authority.cc",
@@ -2524,7 +2524,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_chttp2_client_insecure",
     srcs = [
         "src/core/ext/transport/chttp2/client/insecure/channel_create.cc",
@@ -2540,7 +2540,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_chttp2_client_secure",
     srcs = [
         "src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc",
@@ -2556,7 +2556,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_chttp2_server",
     srcs = [
         "src/core/ext/transport/chttp2/server/chttp2_server.cc",
@@ -2580,7 +2580,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_chttp2_server_insecure",
     srcs = [
         "src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc",
@@ -2598,7 +2598,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_chttp2_server_secure",
     srcs = [
         "src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc",
@@ -2617,7 +2617,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_transport_inproc",
     srcs = [
         "src/core/ext/transport/inproc/inproc_plugin.cc",
@@ -2634,7 +2634,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "tsi_interface",
     srcs = [
         "src/core/tsi/transport_security.cc",
@@ -2651,7 +2651,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "alts_frame_protector",
     srcs = [
         "src/core/tsi/alts/crypt/aes_gcm.cc",
@@ -2697,7 +2697,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "alts_util",
     srcs = [
         "src/core/lib/security/credentials/alts/check_gcp_environment.cc",
@@ -2727,7 +2727,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
@@ -2774,7 +2774,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_base",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
@@ -2803,7 +2803,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_base_unsecure",
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
@@ -2832,7 +2832,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_codegen_base",
     language = "c++",
     public_hdrs = [
@@ -2919,7 +2919,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_codegen_base_src",
     srcs = [
         "src/cpp/codegen/codegen_init.cc",
@@ -2930,7 +2930,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_codegen_proto",
     external_deps = [
         "protobuf_headers",
@@ -2949,7 +2949,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_config_proto",
     external_deps = [
         "protobuf_headers",
@@ -2962,7 +2962,7 @@ bobs-rpc_cc_library(
     visibility = ["@bobs-rpc:public"],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_reflection",
     srcs = [
         "src/cpp/ext/proto_server_reflection.cc",
@@ -2984,7 +2984,7 @@ bobs-rpc_cc_library(
     alwayslink = 1,
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpcpp_channelz",
     srcs = [
         "src/cpp/server/channelz/channelz_service.cc",
@@ -3006,7 +3006,7 @@ bobs-rpc_cc_library(
     alwayslink = 1,
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpcpp_csds",
     srcs = [
         "src/cpp/server/csds/csds.cc",
@@ -3026,7 +3026,7 @@ bobs-rpc_cc_library(
     alwayslink = 1,
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",
@@ -3055,7 +3055,7 @@ bobs-rpc_cc_library(
     alwayslink = 1,
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_test",
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
@@ -3080,7 +3080,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_server_backward_compatibility",
     srcs = [
         "src/core/ext/filters/workarounds/workaround_utils.cc",
@@ -3095,7 +3095,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc++_core_stats",
     srcs = [
         "src/cpp/util/core_stats.cc",
@@ -3111,7 +3111,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_opencensus_plugin",
     srcs = [
         "src/cpp/ext/filters/census/channel_filter.cc",
@@ -3173,7 +3173,7 @@ bobs-rpc_cc_library(
 #     deps = ["@envoy_api//envoy/api/v2:cds_export"],
 # )
 
-# bobs-rpc_cc_library(
+# bobs_rpc_cc_library(
 #    name = "envoy_lrs_upb",
 #    external_deps = [
 #        "upb_lib",
@@ -3186,7 +3186,7 @@ bobs-rpc_cc_library(
 #    ],
 # )
 
-# bobs-rpc_cc_library(
+# bobs_rpc_cc_library(
 #    name = "envoy_ads_upb",
 #    external_deps = [
 #        "upb_lib",
@@ -3198,7 +3198,7 @@ bobs-rpc_cc_library(
 #    ],
 # )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "envoy_ads_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c",
@@ -3299,7 +3299,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "envoy_ads_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c",
@@ -3401,7 +3401,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "envoy_annotations_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c",
@@ -3422,7 +3422,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "envoy_annotations_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c",
@@ -3446,7 +3446,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "envoy_core_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/config/core/v3/address.upb.c",
@@ -3494,7 +3494,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "envoy_core_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/config/core/v3/address.upbdefs.c",
@@ -3544,7 +3544,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "envoy_type_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c",
@@ -3592,7 +3592,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "envoy_type_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c",
@@ -3641,7 +3641,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "proto_gen_validate_upb",
     srcs = [
         "src/core/ext/upb-generated/validate/validate.upb.c",
@@ -3660,7 +3660,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "proto_gen_validate_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/validate/validate.upbdefs.c",
@@ -3688,7 +3688,7 @@ bobs-rpc_cc_library(
 #     deps = ["@envoy_api//udpa/data/orca/v1:orca_load_report"]
 # )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "udpa_orca_upb",
     srcs = [
         "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
@@ -3707,7 +3707,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "udpa_annotations_upb",
     srcs = [
         "src/core/ext/upb-generated/udpa/annotations/migrate.upb.c",
@@ -3735,7 +3735,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "udpa_annotations_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c",
@@ -3765,7 +3765,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "xds_core_upb",
     srcs = [
         "src/core/ext/upb-generated/xds/core/v3/authority.upb.c",
@@ -3796,7 +3796,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "xds_core_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c",
@@ -3830,7 +3830,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "udpa_type_upb",
     srcs = [
         "src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c",
@@ -3850,7 +3850,7 @@ bobs-rpc_cc_library(
     ],
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "udpa_type_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c",
@@ -3878,7 +3878,7 @@ bobs-rpc_cc_library(
 #     deps = ["//src/proto/bobs-rpc/health/v1:health_proto_descriptor"],
 # )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_health_upb",
     srcs = [
         "src/core/ext/upb-generated/src/proto/bobs-rpc/health/v1/health.upb.c",
@@ -3895,7 +3895,7 @@ bobs-rpc_cc_library(
 )
 
 # Once upb code-gen issue is resolved, remove this.
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "google_api_upb",
     srcs = [
         "src/core/ext/upb-generated/google/api/annotations.upb.c",
@@ -3931,7 +3931,7 @@ bobs-rpc_cc_library(
     language = "c++",
 )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "google_api_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c",
@@ -3974,7 +3974,7 @@ bobs-rpc_cc_library(
 #     deps = ["//src/proto/bobs-rpc/lb/v1:load_balancer_proto_descriptor"],
 # )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "bobs-rpc_lb_upb",
     srcs = [
         "src/core/ext/upb-generated/src/proto/bobs-rpc/lb/v1/load_balancer.upb.c",
@@ -3999,7 +3999,7 @@ bobs-rpc_cc_library(
 #     deps = ["//third_party/istio/security/proto/providers/google:meshca_proto"],
 # )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "meshca_upb",
     srcs = [
         "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c",
@@ -4022,7 +4022,7 @@ bobs-rpc_cc_library(
 #     deps = ["//src/proto/bobs-rpc/gcp:alts_handshaker_proto"],
 # )
 
-bobs-rpc_cc_library(
+bobs_rpc_cc_library(
     name = "alts_upb",
     srcs = [
         "src/core/ext/upb-generated/src/proto/bobs-rpc/gcp/altscontext.upb.c",
