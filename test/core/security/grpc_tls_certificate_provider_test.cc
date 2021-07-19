@@ -543,6 +543,7 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
   EXPECT_FALSE(*status);
 }
 
+// TODO: Add cases with invalid cert chain
 TEST_F(GrpcTlsCertificateProviderTest, DataWatcherCertificateProviderCreation) {
   DataWatcherCertificateProvider provider(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
@@ -568,6 +569,18 @@ TEST_F(GrpcTlsCertificateProviderTest, DataWatcherCertificateProviderCreation) {
       ::testing::ElementsAre(CredentialInfo(
           "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
+       DataWatcherCertificateProviderCreationWithInvalidIdentityCerts) {
+  DataWatcherCertificateProvider provider(
+      root_cert_, MakeCertKeyPairs(private_key_2_.c_str(),
+                                   (cert_chain_ + cert_chain_2_).c_str()));
+  WatcherState* watcher_state_1 =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(root_cert_, {})));
+  CancelWatch(watcher_state_1);
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
