@@ -2733,6 +2733,10 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
       call_attempt_tracer_->RecordSendInitialMetadata(
           batch->payload->send_initial_metadata.send_initial_metadata,
           batch->payload->send_initial_metadata.send_initial_metadata_flags);
+      original_send_initial_metadata_on_complete_ = batch->on_complete;
+      GRPC_CLOSURE_INIT(&send_initial_metadata_on_complete_,
+                        SendInitialMetadataOnComplete, this, nullptr);
+      batch->on_complete = &send_initial_metadata_on_complete_;
     }
     if (batch->send_message) {
       call_attempt_tracer_->RecordSendMessage(
@@ -2849,6 +2853,15 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     GRPC_CALL_COMBINER_STOP(call_combiner_,
                             "batch does not include send_initial_metadata");
   }
+}
+
+void ClientChannel::LoadBalancedCall::SendInitialMetadataOnComplete(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<LoadBalancedCall*>(arg);
+  self->call_attempt_tracer_->RecordOnDoneSendInitialMetadata();
+  Closure::Run(DEBUG_LOCATION,
+               self->original_send_initial_metadata_on_complete_,
+               GRPC_ERROR_REF(error));
 }
 
 void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(

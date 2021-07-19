@@ -443,6 +443,7 @@ class ClientChannel::LoadBalancedCall
   // Resumes all pending batches on subchannel_call_.
   void PendingBatchesResume();
 
+  static void SendInitialMetadataOnComplete(void* arg, grpc_error_handle error);
   static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
   static void RecvMessageReady(void* arg, grpc_error_handle error);
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
@@ -498,6 +499,10 @@ class ClientChannel::LoadBalancedCall
       lb_recv_trailing_metadata_ready_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
+
+  // For intercepting send_initial_metadata on_complete.
+  grpc_closure send_initial_metadata_on_complete_;
+  grpc_closure* original_send_initial_metadata_on_complete_ = nullptr;
 
   // For intercepting recv_initial_metadata_ready.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
