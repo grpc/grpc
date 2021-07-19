@@ -28,10 +28,8 @@ namespace grpc {
 
 class OpenCensusCallTracer : public grpc_core::CallTracer {
  public:
-  class OpenCensusCallAttemptTracer
-      : public grpc_core::CallTracer::CallAttemptTracer {
+  class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
-    ~OpenCensusCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /* send_initial_metadata */,
         uint32_t /* flags */) override {}
@@ -41,7 +39,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordSendMessage(
         const grpc_core::ByteStream& /* send_message */) override {}
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /* recv_initial_metadata */, uint32_t* /* flags */,
+        grpc_metadata_batch* /* recv_initial_metadata */, uint32_t /* flags */,
         gpr_atm* /* peer_string */) override {}
     void RecordReceivedMessage(
         const grpc_core::ByteStream& /* recv_message */) override {}
@@ -57,7 +55,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     CensusContext context_;
   };
 
-  OpenCensusCallAttemptTracer* RecordNewAttempt(
+  OpenCensusCallAttemptTracer* StartNewAttempt(
       bool /* is_transparent_retry */) override {
     return nullptr;
   }
