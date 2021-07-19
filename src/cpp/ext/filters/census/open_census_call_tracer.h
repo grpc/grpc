@@ -33,7 +33,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /* send_initial_metadata */,
         uint32_t /* flags */) override {}
-    void RecordOnDoneSendInitialMetadata(gpr_atm* /* peer_string */) override {}
+    void RecordOnDoneSendInitialMetadata() override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /* send_trailing_metadata */) override {}
     void RecordSendMessage(
