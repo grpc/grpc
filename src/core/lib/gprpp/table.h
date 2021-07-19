@@ -34,7 +34,7 @@ struct Elements<T, Ts...> : Elements<Ts...> {
   union U {
     U() {}
     ~U() {}
-    [[no_unique_address]] T x;
+    GPR_NO_UNIQUE_ADDRESS T x;
   };
   U u;
 };
@@ -376,9 +376,9 @@ class Table {
   }
 
   // Bit field indicating which elements are set.
-  [[no_unique_address]] PresentBits present_bits_;
+  GPR_NO_UNIQUE_ADDRESS PresentBits present_bits_;
   // The memory to store the elements themselves.
-  [[no_unique_address]] Elements elements_;
+  GPR_NO_UNIQUE_ADDRESS Elements elements_;
 };
 
 }  // namespace grpc_core
