@@ -34,6 +34,7 @@ argp.add_argument('-o',
 argp.add_argument('-s', '--skips', default=0, action='store_const', const=1)
 argp.add_argument('-a', '--ancient', default=0, action='store_const', const=1)
 argp.add_argument('--precommit', default=False, action='store_true')
+argp.add_argument('--fix', default=False, action='store_true')
 args = argp.parse_args()
 
 # open the license text
@@ -44,7 +45,7 @@ with open('NOTICE.txt') as f:
 # key is the file extension, value is a format string
 # that given a line of license text, returns what should
 # be in the file
-LICENSE_PREFIX = {
+LICENSE_PREFIX_RE = {
     '.bat': r'@rem\s*',
     '.c': r'\s*(?://|\*)\s*',
     '.cc': r'\s*(?://|\*)\s*',
@@ -67,6 +68,31 @@ LICENSE_PREFIX = {
     'Makefile': r'#\s*',
     'Dockerfile': r'#\s*',
     'BUILD': r'#\s*',
+}
+
+LICENSE_PREFIX_TEXT = {
+    '.bat': (None, '@rem', None),
+    '.c': (None, '//', None),
+    '.cc': (None, '//', None),
+    '.h': (None, '//', None),
+    '.m': ('/**', ' *', ' */'),
+    '.mm': ('/**', ' *', ' */'),
+    '.php': ('/**', ' *', ' */'),
+    '.js': ('/**', ' *', ' */'),
+    '.py': (None, '#', None),
+    '.pyx': (None, '#', None),
+    '.pxd': (None, '#', None),
+    '.pxi': (None, '#', None),
+    '.rb': (None, '#', None),
+    '.sh': (None, '#', None),
+    '.proto': (None, '//', None),
+    '.cs': (None, '//', None),
+    '.mak': (None, '#', None),
+    '.bazel': (None, '#', None),
+    '.bzl': (None, '#', None),
+    'Makefile': (None, '#', None),
+    'Dockerfile': (None, '#', None),
+    'BUILD': (None, '#', None),
 }
 
 _EXEMPT = frozenset((
@@ -105,10 +131,22 @@ _EXEMPT = frozenset((
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'
 RE_LICENSE = dict(
-    (k, r'\n'.join(LICENSE_PREFIX[k] +
+    (k, r'\n'.join(LICENSE_PREFIX_RE[k] +
                    (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
                    for line in LICENSE_NOTICE))
-    for k, v in LICENSE_PREFIX.items())
+    for k, v in LICENSE_PREFIX_RE.items())
+
+import datetime
+YEAR = datetime.datetime.now().year
+
+LICENSE_YEAR = f'Copyright {YEAR} gRPC authors.'
+LICENSE_TEXT = dict((k, '\n'.join(
+    ([LICENSE_PREFIX_TEXT[k][0]] if LICENSE_PREFIX_TEXT[k][0] else []) + [
+        LICENSE_PREFIX_TEXT[k][1] + ' ' +
+        (LICENSE_YEAR if re.search(RE_YEAR, line) else line)
+        for line in LICENSE_NOTICE
+    ] + ([LICENSE_PREFIX_TEXT[k][2]] if LICENSE_PREFIX_TEXT[k][2] else [])))
+                    for k, v in LICENSE_PREFIX_TEXT.items())
 
 if args.precommit:
     FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
@@ -116,7 +154,6 @@ else:
     FILE_LIST_COMMAND = 'git ls-tree -r --name-only -r HEAD | ' \
                         'grep -v ^third_party/ |' \
                         'grep -v "\(ares_config.h\|ares_build.h\)"'
-
 
 def load(name):
     with open(name) as f:
@@ -160,8 +197,10 @@ for filename in filename_list:
     base = os.path.basename(filename)
     if ext in RE_LICENSE:
         re_license = RE_LICENSE[ext]
+        license_text = LICENSE_TEXT[ext]
     elif base in RE_LICENSE:
         re_license = RE_LICENSE[base]
+        license_text = LICENSE_TEXT[base]
     else:
         log(args.skips, 'skip', filename)
         continue
@@ -173,7 +212,12 @@ for filename in filename_list:
     if m:
         pass
     elif 'DO NOT EDIT' not in text:
-        log(1, 'copyright missing', filename)
+        if args.fix:
+            text = license_text + '\n\n' + text
+            open(filename, 'w').write(text)
+            log(1, 'copyright missing (fixed)', filename)
+        else:
+            log(1, 'copyright missing', filename)
         ok = False
 
 sys.exit(0 if ok else 1)
