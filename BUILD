@@ -4042,7 +4042,7 @@ bobs-rpc_cc_library(
     language = "c++",
 )
 
-bobs-rpc_generate_one_off_targets()
+bobs_rpc_generate_one_off_targets()
 
 filegroup(
     name = "root_certificates",
