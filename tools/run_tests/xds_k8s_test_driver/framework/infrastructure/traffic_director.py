@@ -14,7 +14,7 @@
 import functools
 import logging
 import random
-from typing import Any, List, Optional, Set
+from typing import Any, Iterable, List, Optional, Set
 
 from framework import xds_flags
 from framework.infrastructure import gcp
@@ -411,6 +411,72 @@ class TrafficDirectorManager:
         logger.info('Deleting Firewall Rule "%s"', name)
         self.compute.delete_firewall_rule(name)
         self.firewall_rule = None
+
+
+class TrafficDirectorAppNetManager(TrafficDirectorManager):
+
+    GRPC_ROUTE_NAME = "grpc-route"
+
+    def __init__(self,
+                 gcp_api_manager: gcp.api.GcpApiManager,
+                 project: str,
+                 *,
+                 resource_prefix: str,
+                 resource_suffix: Optional[str] = None,
+                 network: str = 'default'):
+        super().__init__(gcp_api_manager,
+                         project,
+                         resource_prefix=resource_prefix,
+                         resource_suffix=resource_suffix,
+                         network=network)
+
+        # API
+        self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
+
+        # Managed resources
+        self.grpc_route: Optional[_NetworkSecurityV1Alpha1.GrpcRoute] = None
+
+    def create_grpc_route(self, hosts: Iterable[str]) -> GcpResource:
+        body = {
+            "hostnames": list(hosts),
+            "rules": [
+                {
+                    "action": {
+                        "destination": {
+                                "serviceName": self.backend_service.name
+                        }
+                    }
+                }
+            ],
+        }
+        name = self.make_resource_name(self.GRPC_ROUTE_NAME)
+        resource = self.netsvc.create_grpc_route(name, body)
+        self.grpc_route = self.netsvc.get_grpc_route(name)
+        logger.debug("Loaded GrpcRoute: %s", self.grpc_route)
+        return resource
+
+
+    def create_grpc_route_with_content(self, body: Any) -> GcpResource:
+        name = self.make_resource_name(self.GRPC_ROUTE_NAME)
+        resource = self.netsvc.create_grpc_route(name, body)
+        self.grpc_route = self.netsvc.get_grpc_route(name)
+        logger.debug("Loaded GrpcRoute: %s", self.grpc_route)
+        return resource
+
+    def delete_grpc_route(self, force=False):
+        if force:
+            name = self.make_resource_name(self.GRPC_ROUTE_NAME)
+        elif self.grpc_route:
+            name = self.grpc_route.name
+        else:
+            return
+        logger.info('Deleting GrpcRoute %s', name)
+        self.netsvc.delete_grpc_route(name)
+        self.grpc_route = None
+
+    def cleanup(self, *, force=False):
+        self.delete_grpc_route(force=force)
+        super().cleanup(force=force)
 
 
 class TrafficDirectorSecureManager(TrafficDirectorManager):

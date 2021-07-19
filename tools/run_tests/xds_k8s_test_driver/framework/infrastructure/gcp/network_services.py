@@ -11,9 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# TODO: This may not be acceptable due to requirements on interpreter version.
+from __future__ import annotations
+
 import dataclasses
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 
 from google.rpc import code_pb2
 import tenacity
@@ -25,6 +29,106 @@ logger = logging.getLogger(__name__)
 
 class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
+    GRPC_ROUTES = 'grpcRoutes'
+
+    @dataclasses.dataclass(frozen=True)
+    class GrpcRoute:
+
+        @dataclasses.dataclass(frozen=True)
+        class MethodMatch:
+            type: Optional[str]
+            grpc_service: Optional[str]
+            grpc_method: Optional[str]
+            case_sensitive: Optional[bool]
+
+            @staticmethod
+            def from_dict(d: dict) -> MethodMatch:
+                return MethodMatch(
+                    type=d.get("type"),
+                    grpc_service=d.get("grpcService"),
+                    grpc_method=d.get("grpcMethod"),
+                    case_sensitive=d.get("caseSensitive"),
+                )
+
+        @dataclasses.dataclass(frozen=True)
+        class HeaderMatch:
+            type: Optional[str]
+            key: str
+            value: str
+
+            @staticmethod
+            def from_dict(d: dict) -> HeaderMatch:
+                return NetworkServicesV1Alpha1.HeaderMatch(
+                    type=d.get("type"),
+                    key=d["key"],
+                    value=d["value"],
+                )
+
+
+        @dataclasses.dataclass(frozen=True)
+        class RouteMatch:
+            method: Optional[MethodMatch]
+            headers: Tuple[HeaderMatch]
+
+            @staticmethod
+            def from_dict(d: dict) -> RouteMatch:
+                return RouteMatch(
+                    method=NetworkServicesV1Alpha1.MethodMatch.from_dict(d["method"]) if "method" in d else None,
+                    headers=tuple(NetworkServicesV1Alpha1.HeaderMatch.from_dict(h) for h in d["headers"]) if "headers" in d else (),
+                )
+
+        @dataclasses.dataclass(frozen=True)
+        class Destination:
+            service_name: str
+            weight: Optional[int]
+
+            @staticmethod
+            def from_dict(d: dict) -> Destination:
+                return NetworkServicesV1Alpha1.Destination(
+                    service_name=d["serviceName"],
+                    weight=d.get("weight"),
+                )
+
+        @dataclasses.dataclass(frozen=True)
+        class RouteAction:
+            destination: Optional[Destination]
+            drop: Optional[int]
+
+            @staticmethod
+            def from_dict(d: dict) -> RouteAction:
+                return NetworkServicesV1Alpha1.RouteAction(
+                    destination=NetworkServicesV1Alpha1.Destination.from_dict(d["destination"]) if "destination" in d else None,
+                    drop=d.get("drop"),
+                )
+
+
+        @dataclasses.dataclass(frozen=True)
+        class RouteRule:
+            match: Optional[RouteMatch]
+            action: RouteAction
+
+            @staticmethod
+            def from_dict(d: dict) -> RouteRule:
+                return NetworkServicesV1Alpha1.RouteRule(
+                    match=NetworkServicesV1Alpha1.RouteMatch.from_dict(d["match"]) if "match" in d else "",
+                    action=NetworkServicesV1Alpha1.RouteAction.from_dict(d["action"]),
+                )
+
+
+        name: str
+        url: str
+        hostnames: Tuple[str]
+        rules: Tuple[RouteRule]
+
+        @staticmethod
+        def from_dict(name: str, d: dict) -> RouteRule:
+            print("********* GrpcRoute.from_dict: {}".format(d))
+            return NetworkServicesV1Alpha1.GrpcRoute(
+                name=name,
+                url=d["name"],
+                hostnames=tuple(d["hostnames"]),
+                rules=tuple(d["rules"]),
+            )
 
     @dataclasses.dataclass(frozen=True)
     class EndpointConfigSelector:
@@ -89,6 +193,26 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             before_sleep=tenacity.before_sleep_log(logger, logging.DEBUG),
             reraise=True)
         retryer(super()._execute, *args, **kwargs)
+
+    def create_grpc_route(self, name: str, body: dict):
+        return self._create_resource(
+                # TODO: I have no idea how this works.
+                self._api_locations.grpcRoutes(),
+                body,
+                grpcRouteId=name)
+
+    def get_grpc_route(self, name: str) -> GrpcRoute:
+        result = self._get_resource(
+            collection=self._api_locations.grpcRoutes(),
+            full_name=self.resource_full_name(name,
+                                              self.GRPC_ROUTES))
+        return self.GrpcRoute.from_dict(name, result)
+
+    def delete_grpc_route(self, name: str) -> None:
+        return self._delete_resource(
+            collection=self._api_locations.grpcRoutes(),
+            full_name=self.resource_full_name(name,
+                                              self.GRPC_ROUTES))
 
     @staticmethod
     def _operation_internal_error(exception):
