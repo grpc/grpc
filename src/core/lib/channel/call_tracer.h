@@ -74,7 +74,8 @@ class CallTracer {
 
   // Records a new attempt for the associated call. \a transparent denotes
   // whether the attempt is being made as a transparent retry or as a
-  // non-transparent retry/heding attempt. The `CallTracer` object retains
+  // non-transparent retry/heding attempt. (There will be atleast one attempt
+  // even if the call is not being retried.) The `CallTracer` object retains
   // ownership to the newly created `CallAttemptTracer` object. RecordEnd()
   // serves as an indication that the call stack is done with all API calls, and
   // the tracer library is free to destroy it after that.
