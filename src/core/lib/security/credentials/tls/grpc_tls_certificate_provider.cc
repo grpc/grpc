@@ -490,11 +490,11 @@ absl::Status IsKeyCertPairsListValid(const PemKeyCertPairList& pair_list) {
   for (size_t i = 0; i < pair_list.size(); ++i) {
     absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
         pair_list[i].private_key(), pair_list[i].cert_chain());
-    if (!(matched_or.ok() && *matched_or)) {
-      if (matched_or.ok() && !(*matched_or)) {
-        return absl::InvalidArgumentError("Invalid Key-Cert pair.");
-      }
+    if (!matched_or.ok()) {
       return matched_or.status();
+    }
+    if (!*matched_or) {
+      return absl::InvalidArgumentError("Invalid Key-Cert pair.");
     }
   }
   return absl::OkStatus();
