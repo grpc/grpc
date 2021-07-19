@@ -2562,7 +2562,7 @@ CallTracer::CallAttemptTracer* GetCallAttemptTracer(
   auto* call_tracer =
       static_cast<CallTracer*>(context[GRPC_CONTEXT_CALL_TRACER].value);
   if (call_tracer == nullptr) return nullptr;
-  return call_tracer->RecordNewAttempt(is_transparent_retry);
+  return call_tracer->StartNewAttempt(is_transparent_retry);
 }
 
 }  // namespace
@@ -2722,8 +2722,13 @@ void ClientChannel::LoadBalancedCall::PendingBatchesResume() {
 
 void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  // Record send ops in tracer.
+  // Handle call tracing.
   if (call_attempt_tracer_ != nullptr) {
+    // Record send ops in tracer.
+    if (batch->cancel_stream) {
+      call_attempt_tracer_->RecordCancel(
+          GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error));
+    }
     if (batch->send_initial_metadata) {
       call_attempt_tracer_->RecordSendInitialMetadata(
           batch->payload->send_initial_metadata.send_initial_metadata,
@@ -2731,7 +2736,7 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     }
     if (batch->send_message) {
       call_attempt_tracer_->RecordSendMessage(
-          batch->payload->send_message.send_message.get());
+          *batch->payload->send_message.send_message);
     }
     if (batch->send_trailing_metadata) {
       call_attempt_tracer_->RecordSendTrailingMetadata(
@@ -2859,8 +2864,7 @@ void ClientChannel::LoadBalancedCall::RecvInitialMetadataReady(
 void ClientChannel::LoadBalancedCall::RecvMessageReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
-  self->call_attempt_tracer_->RecordReceivedMessage(
-      self->recv_message_->get());
+  self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
   Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,
                GRPC_ERROR_REF(error));
 }
@@ -2869,7 +2873,7 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
   // Notify the call tracer about trailing metadata.
-  if (self->call_attempt_tracer_ != nullptr) {
+  if (self->call_attempt_tracer_ != nullptr && error == GRPC_ERROR_NONE) {
     self->call_attempt_tracer_->RecordReceivedTrailingMetadata(
         self->recv_trailing_metadata_);
   }

@@ -28,27 +28,22 @@ namespace grpc {
 
 class OpenCensusCallTracer : public grpc_core::CallTracer {
  public:
-  class OpenCensusCallAttemptTracer
-      : public grpc_core::CallTracer::CallAttemptTracer {
+  class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
-    ~OpenCensusCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /* send_initial_metadata */,
         uint32_t /* flags */) override {}
-    void RecordOnDoneSendInitialMetadata(gpr_atm* /* peer_string */) override {}
+    void RecordOnDoneSendInitialMetadata() override {}
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /* send_trailing_metadata */) override {}
-    void RecordSendMessage(
-        const grpc_core::ByteStream* /* send_message */) override {}
+    void RecordSendMessage(const ByteStream& /* send_message */) override {}
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /* recv_initial_metadata */, uint32_t /* flags */,
         gpr_atm* /* peer_string */) override {}
-    void RecordReceivedMessage(
-        const grpc_core::ByteStream* /* recv_message */) override {}
+    void RecordReceivedMessage(const ByteStream& /* recv_message */) override {}
     void RecordReceivedTrailingMetadata(
         grpc_metadata_batch* /* recv_trailing_metadata */) override {}
     void RecordCancel(grpc_error_handle /* cancel_error */) override {}
-    void RecordAnnotation(absl::string_view /* annotation */) override {}
     void RecordEnd(const grpc_call_final_info& /* final_info */) override {}
 
     CensusContext* context() { return &context_; }
@@ -57,11 +52,10 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     CensusContext context_;
   };
 
-  OpenCensusCallAttemptTracer* RecordNewAttempt(
+  OpenCensusCallAttemptTracer* StartNewAttempt(
       bool /* is_transparent_retry */) override {
     return nullptr;
   }
-  void RecordAnnotation(absl::string_view /* annotation */) override {}
 
   CensusContext* context() { return &context_; }
 
