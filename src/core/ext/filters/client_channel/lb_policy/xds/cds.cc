@@ -146,6 +146,9 @@ class CdsLb : public LoadBalancingPolicy {
   grpc_error_handle UpdateXdsCertificateProvider(
       const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data);
 
+  grpc_error_handle UpdateXdsMaxRetriesMap(
+      const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data);
+
   void CancelClusterDataWatch(absl::string_view cluster_name,
                               XdsClient::ClusterWatcherInterface* watcher,
                               bool delay_unsubscription = false);
@@ -441,6 +444,11 @@ void CdsLb::OnClusterChanged(const std::string& name,
   if (error != GRPC_ERROR_NONE) {
     return OnError(name, error);
   }
+  // Take care of setting max_retries.
+  error = UpdateXdsMaxRetriesMap(name, it->second.update.value());
+  if (error != GRPC_ERROR_NONE) {
+    return OnError(name, error);
+  }
   // Scan the map starting from the root cluster to generate the list of
   // discovery mechanisms. If we don't have some of the data we need (i.e., we
   // just started up and not all watchers have returned data yet), then don't
@@ -662,6 +670,25 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
           .default_validation_context.match_subject_alt_names;
   xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
       cluster_name, match_subject_alt_names);
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error_handle CdsLb::UpdateXdsMaxRetriesMap(
+    const std::string& cluster_name, const XdsApi::CdsUpdate& cluster_data) {
+  RefCountedPtr<XdsMaxRetriesMap> xds_max_retries_map =
+      XdsMaxRetriesMap::GetFromChannelArgs(args_);
+  if (xds_max_retries_map == nullptr) {
+    return grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("xds max retries map not provided").c_str()),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  }
+  xds_max_retries_map->DebugPrint();
+  if (xds_max_retries_map->Update(cluster_name, 1001)) {
+    gpr_log(GPR_INFO, "donna updated in CDS");
+  } else {
+    gpr_log(GPR_INFO, "donna unable to update in CDS");
+  }
   return GRPC_ERROR_NONE;
 }
 

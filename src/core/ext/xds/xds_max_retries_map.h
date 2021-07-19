@@ -31,10 +31,10 @@ namespace grpc_core {
 class XdsMaxRetriesMap : public RefCounted<XdsMaxRetriesMap> {
  public:
   XdsMaxRetriesMap() {}
-  void XdsMaxRetriesMapAdd(const std::string cluster, uint32_t max_retries) {
+  void Add(const std::string cluster, uint32_t max_retries) {
     cluster_max_retries_map_[cluster] = max_retries;
   }
-  bool XdsMaxRetriesMapUpdate(const std::string cluster, uint32_t max_retries) {
+  bool Update(const std::string cluster, uint32_t max_retries) {
     auto iter = cluster_max_retries_map_.find(cluster);
     if (iter == cluster_max_retries_map_.end()) return false;
     iter->second = max_retries;
@@ -43,6 +43,12 @@ class XdsMaxRetriesMap : public RefCounted<XdsMaxRetriesMap> {
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsMaxRetriesMap> GetFromChannelArgs(
       const grpc_channel_args* args);
+  void DebugPrint() const {
+    for (const auto entry : cluster_max_retries_map_) {
+      gpr_log(GPR_INFO, "donna cluster %s and max %d", entry.first.c_str(),
+              entry.second);
+    }
+  }
 
  private:
   std::map<std::string, uint32_t> cluster_max_retries_map_;

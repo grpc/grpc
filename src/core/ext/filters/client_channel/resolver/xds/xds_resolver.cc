@@ -268,6 +268,7 @@ class XdsResolver : public Resolver {
 
   grpc_error_handle CreateServiceConfig(
       RefCountedPtr<ServiceConfig>* service_config);
+  void CreateClusterMaxRetriesMap();
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
 
@@ -290,7 +291,7 @@ class XdsResolver : public Resolver {
   XdsApi::RdsUpdate::VirtualHost current_virtual_host_;
 
   ClusterState::ClusterStateMap cluster_state_map_;
-  std::map<std::string, uint32_t> cluster_max_retries_map_;
+  RefCountedPtr<XdsMaxRetriesMap> cluster_max_retries_map_;
 };
 
 //
@@ -924,6 +925,13 @@ grpc_error_handle XdsResolver::CreateServiceConfig(
   return error;
 }
 
+void XdsResolver::CreateClusterMaxRetriesMap() {
+  cluster_max_retries_map_ = MakeRefCounted<XdsMaxRetriesMap>();
+  for (const auto& cluster : cluster_state_map_) {
+    cluster_max_retries_map_->Add(cluster.first, 3);
+  }
+}
+
 void XdsResolver::GenerateResult() {
   if (current_virtual_host_.routes.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
@@ -944,9 +952,11 @@ void XdsResolver::GenerateResult() {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
             result.service_config->json_string().c_str());
   }
+  CreateClusterMaxRetriesMap();
   grpc_arg new_args[] = {
       xds_client_->MakeChannelArg(),
       config_selector->MakeChannelArg(),
+      cluster_max_retries_map_->MakeChannelArg(),
   };
   result.args =
       grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
