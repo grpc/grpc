@@ -11,6 +11,9 @@
 # Uncomment to ensure the allow health check firewall exists before test case runs
 # --ensure_firewall
 
+# Use predictable resource suffix to simplify debugging
+--resource_suffix=dev
+
 # The name of kube context to use. See `gcloud container clusters get-credentials` and `kubectl config`
 --kube_context=context_name
 

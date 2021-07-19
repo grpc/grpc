@@ -58,6 +58,8 @@ _SECURITY = flags.DEFINE_enum('security',
                               help='Show info for a security setup')
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
+# Running outside of a test suite, so require explicit resource_suffix.
+flags.mark_flag_as_required("resource_suffix")
 
 # Type aliases
 _Channel = grpc_channelz.Channel
@@ -174,9 +176,13 @@ def main(argv):
 
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
 
+    # Resource names.
+    resource_prefix: str = xds_flags.RESOURCE_PREFIX.value
+    resource_suffix: str = xds_flags.RESOURCE_SUFFIX.value
+
     # Server
     server_name = xds_flags.SERVER_NAME.value
-    server_namespace = xds_flags.NAMESPACE.value
+    server_namespace = resource_prefix
     server_k8s_ns = k8s.KubernetesNamespace(k8s_api_manager, server_namespace)
     server_pod_ip = get_deployment_pod_ips(server_k8s_ns, server_name)[0]
     test_server: _XdsTestServer = _XdsTestServer(
@@ -188,7 +194,7 @@ def main(argv):
 
     # Client
     client_name = xds_flags.CLIENT_NAME.value
-    client_namespace = xds_flags.NAMESPACE.value
+    client_namespace = resource_prefix
     client_k8s_ns = k8s.KubernetesNamespace(k8s_api_manager, client_namespace)
     client_pod_ip = get_deployment_pod_ips(client_k8s_ns, client_name)[0]
     test_client: _XdsTestClient = _XdsTestClient(
