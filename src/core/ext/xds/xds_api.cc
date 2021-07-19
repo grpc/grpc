@@ -137,8 +137,8 @@ bool XdsSecurityEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO(donnadionne): Check to see if retrt policy is enabled, this will be
-// removed once ring hash policy is fully integration-tested and enabled by
+// TODO(donnadionne): Check to see if retry policy is enabled, this will be
+// removed once retry functionality is fully integration-tested and enabled by
 // default.
 bool XdsRetryEnabled() {
   char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
@@ -1574,15 +1574,18 @@ grpc_error_handle ParseTypedPerFilterConfig(
   return GRPC_ERROR_NONE;
 }
 
-void DurationParse(const google_protobuf_Duration* proto_duration,
-                   XdsApi::Duration* duration) {
-  duration->seconds = google_protobuf_Duration_seconds(proto_duration);
-  duration->nanos = google_protobuf_Duration_nanos(proto_duration);
+XdsApi::Duration DurationParse(const google_protobuf_Duration* proto_duration) {
+  XdsApi::Duration duration;
+  duration.seconds = google_protobuf_Duration_seconds(proto_duration);
+  duration.nanos = google_protobuf_Duration_nanos(proto_duration);
+  return duration;
 }
 
 grpc_error_handle RetryPolicyParse(
+    const EncodingContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy,
     XdsApi::Route::RetryPolicy* retry) {
+  std::vector<grpc_error_handle> errors;
   auto retry_on = UpbStringToStdString(
       envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
   std::vector<absl::string_view> codes = absl::StrSplit(retry_on, ',');
@@ -1598,67 +1601,66 @@ grpc_error_handle RetryPolicyParse(
     } else if (code == "unavailable") {
       retry->retry_on.Add(GRPC_STATUS_UNAVAILABLE);
     } else {
-      gpr_log(GPR_DEBUG, "Unsupported retry_on policy.");
-    }
-  }
-  const google_protobuf_UInt32Value* num_retries =
-      envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
-  if (num_retries != nullptr) {
-    auto num_retries_value = google_protobuf_UInt32Value_value(num_retries);
-    if (num_retries_value == 0) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          "RouteAction RetryPolicy num_retries set to invalid value 0.");
-    } else {
-      retry->num_retries = num_retries_value;
-    }
-  } else {
-    retry->num_retries = 1;
-  }
-  const envoy_config_route_v3_RetryPolicy_RetryBackOff* backoff =
-      envoy_config_route_v3_RetryPolicy_retry_back_off(retry_policy);
-  if (backoff != nullptr) {
-    const google_protobuf_Duration* base_interval =
-        envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
-    if (base_interval == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          "RouteAction RetryPolicy RetryBackoff missing base interval.");
-    } else {
-      XdsApi::Duration base;
-      DurationParse(base_interval, &base);
-      retry->retry_back_off.base_interval = base;
-    }
-    const google_protobuf_Duration* max_interval =
-        envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
-    XdsApi::Duration max;
-    if (max_interval != nullptr) {
-      DurationParse(max_interval, &max);
-    } else {
-      // if max interval is not set, it is 10x the base, if the value in nanos
-      // can yield another second, adjust the value in seconds accordingly.
-      max.seconds = retry->retry_back_off.base_interval.seconds * 10;
-      max.nanos = retry->retry_back_off.base_interval.nanos * 10;
-      if (max.nanos > 1000000000) {
-        max.seconds += max.nanos / 1000000000;
-        max.nanos = max.nanos % 1000000000;
+      if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+          gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
+        gpr_log(GPR_INFO, "Unsupported retry_on policy %s.",
+                std::string(code).c_str());
       }
     }
-    retry->retry_back_off.max_interval = max;
-  } else {
-    retry->retry_back_off.base_interval.seconds = 0;
-    retry->retry_back_off.base_interval.nanos = 25000000;
-    retry->retry_back_off.max_interval.seconds = 0;
-    retry->retry_back_off.max_interval.nanos = 250000000;
   }
-  const google_protobuf_Duration* per_try_timeout =
-      envoy_config_route_v3_RetryPolicy_per_try_timeout(retry_policy);
-  if (per_try_timeout != nullptr) {
-    // TODO(donnadionne): what to do if we cannot support any policy from
-    // retry_on?
-    XdsApi::Duration per_try;
-    DurationParse(per_try_timeout, &per_try);
-    retry->per_try_timeout = per_try;
+  // Until we add support for per_try_timeout, if retry_on is empty, we do not
+  // need to look at any retry policy.
+  if (!retry->retry_on.Empty()) {
+    const google_protobuf_UInt32Value* num_retries =
+        envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
+    if (num_retries != nullptr) {
+      uint32_t num_retries_value =
+          google_protobuf_UInt32Value_value(num_retries);
+      if (num_retries_value == 0) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            "RouteAction RetryPolicy num_retries set to invalid value 0."));
+      } else {
+        retry->num_retries = num_retries_value;
+      }
+    } else {
+      retry->num_retries = 1;
+    }
+    const envoy_config_route_v3_RetryPolicy_RetryBackOff* backoff =
+        envoy_config_route_v3_RetryPolicy_retry_back_off(retry_policy);
+    if (backoff != nullptr) {
+      const google_protobuf_Duration* base_interval =
+          envoy_config_route_v3_RetryPolicy_RetryBackOff_base_interval(backoff);
+      if (base_interval == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            "RouteAction RetryPolicy RetryBackoff missing base interval."));
+      } else {
+        retry->retry_back_off.base_interval = DurationParse(base_interval);
+      }
+      const google_protobuf_Duration* max_interval =
+          envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
+      XdsApi::Duration max;
+      if (max_interval != nullptr) {
+        max = DurationParse(max_interval);
+      } else {
+        // if max interval is not set, it is 10x the base, if the value in nanos
+        // can yield another second, adjust the value in seconds accordingly.
+        max.seconds = retry->retry_back_off.base_interval.seconds * 10;
+        max.nanos = retry->retry_back_off.base_interval.nanos * 10;
+        if (max.nanos > 1000000000) {
+          max.seconds += max.nanos / 1000000000;
+          max.nanos = max.nanos % 1000000000;
+        }
+      }
+      retry->retry_back_off.max_interval = max;
+    } else {
+      retry->retry_back_off.base_interval.seconds = 0;
+      retry->retry_back_off.base_interval.nanos = 25000000;
+      retry->retry_back_off.max_interval.seconds = 0;
+      retry->retry_back_off.max_interval.nanos = 250000000;
+    }
   }
-  return GRPC_ERROR_NONE;
+  if (errors.empty()) return GRPC_ERROR_NONE;
+  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing retry policy", &errors);
 }
 
 grpc_error_handle RouteActionParse(const EncodingContext& context,
@@ -1754,9 +1756,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
                 max_stream_duration);
       }
       if (duration != nullptr) {
-        XdsApi::Duration duration_in_route;
-        DurationParse(duration, &duration_in_route);
-        route->max_stream_duration = duration_in_route;
+        route->max_stream_duration = DurationParse(duration);
       }
     }
   }
@@ -1843,7 +1843,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
         envoy_config_route_v3_RouteAction_retry_policy(route_action);
     if (retry_policy != nullptr) {
       XdsApi::Route::RetryPolicy retry;
-      grpc_error_handle error = RetryPolicyParse(retry_policy, &retry);
+      grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
       if (error != GRPC_ERROR_NONE) return error;
       route->retry_policy = retry;
     }
@@ -1900,7 +1900,7 @@ grpc_error_handle RouteConfigParse(
     if (XdsRetryEnabled()) {
       if (retry_policy != nullptr) {
         grpc_error_handle error =
-            RetryPolicyParse(retry_policy, &virtual_host_retry_policy);
+            RetryPolicyParse(context, retry_policy, &virtual_host_retry_policy);
         if (error != GRPC_ERROR_NONE) return error;
       }
     }
@@ -2099,8 +2099,8 @@ grpc_error_handle HttpConnectionManagerParse(
     const google_protobuf_Duration* duration =
         envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
     if (duration != nullptr) {
-      DurationParse(duration,
-                    &http_connection_manager->http_max_stream_duration);
+      http_connection_manager->http_max_stream_duration =
+          DurationParse(duration);
     }
   }
   // Parse filters.

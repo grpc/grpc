@@ -5668,6 +5668,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
+/*
 TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   const size_t kNumRetries = 3;
@@ -5706,6 +5707,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
+*/
 
 TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");

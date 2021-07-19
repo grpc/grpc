@@ -213,8 +213,6 @@ class XdsResolver : public Resolver {
       return filters_;
     }
 
-    bool GetRetryEnabled() { return retry_enabled_; }
-
     grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) override;
 
    private:
@@ -511,24 +509,20 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
                           route.retry_policy->per_try_timeout->nanos));
     }
     std::vector<std::string> code_parts;
-    if (!route.retry_policy->retry_on.Empty()) {
-      if (route.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
-        code_parts.push_back("        \"CANCELLED\"");
-      }
-      if (route.retry_policy->retry_on.Contains(
-              GRPC_STATUS_DEADLINE_EXCEEDED)) {
-        code_parts.push_back("        \"DEADLINE_EXCEEDED\"");
-      }
-      if (route.retry_policy->retry_on.Contains(GRPC_STATUS_INTERNAL)) {
-        code_parts.push_back("        \"INTERNAL\"");
-      }
-      if (route.retry_policy->retry_on.Contains(
-              GRPC_STATUS_RESOURCE_EXHAUSTED)) {
-        code_parts.push_back("        \"RESOURCE_EXHAUSTED\"");
-      }
-      if (route.retry_policy->retry_on.Contains(GRPC_STATUS_UNAVAILABLE)) {
-        code_parts.push_back("        \"UNAVAILABLE\"");
-      }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
+      code_parts.push_back("        \"CANCELLED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_DEADLINE_EXCEEDED)) {
+      code_parts.push_back("        \"DEADLINE_EXCEEDED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_INTERNAL)) {
+      code_parts.push_back("        \"INTERNAL\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_RESOURCE_EXHAUSTED)) {
+      code_parts.push_back("        \"RESOURCE_EXHAUSTED\"");
+    }
+    if (route.retry_policy->retry_on.Contains(GRPC_STATUS_UNAVAILABLE)) {
+      code_parts.push_back("        \"UNAVAILABLE\"");
     }
     retry_parts.push_back(
         absl::StrFormat("      \"retryableStatusCodes\": [\n %s ]\n",
@@ -610,20 +604,20 @@ grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
     grpc_channel_args* args) {
   // The max number of args to add is 2 so far; when more args need to be added
   // we will increase the size of args_to_add accordingly;
-  grpc_arg args_to_add[2];
+  absl::InlinedVector<grpc_arg, 2> args_to_add;
   size_t num_of_args_to_add = 0;
   if (filter_error_ != GRPC_ERROR_NONE) {
-    args_to_add[num_of_args_to_add] = MakeLameClientErrorArg(filter_error_);
+    args_to_add.emplace_back(MakeLameClientErrorArg(filter_error_));
     ++num_of_args_to_add;
   }
   if (retry_enabled_) {
-    args_to_add[num_of_args_to_add] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1);
+    args_to_add.emplace_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1));
     ++num_of_args_to_add;
   }
   if (num_of_args_to_add == 0) return args;
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, args_to_add, num_of_args_to_add);
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      args, args_to_add.data(), num_of_args_to_add);
   grpc_channel_args_destroy(args);
   return new_args;
 }
