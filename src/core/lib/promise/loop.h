@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_LOOP_H
 #define GRPC_CORE_LIB_PROMISE_LOOP_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "absl/types/variant.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 
@@ -70,8 +72,8 @@ class Loop {
   }
 
  private:
-  [[no_unique_address]] Factory factory_;
-  [[no_unique_address]] union { [[no_unique_address]] Promise promise_; };
+  GPR_NO_UNIQUE_ADDRESS Factory factory_;
+  GPR_NO_UNIQUE_ADDRESS union { GPR_NO_UNIQUE_ADDRESS Promise promise_; };
 };
 
 }  // namespace promise_detail

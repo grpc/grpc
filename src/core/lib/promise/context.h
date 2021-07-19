@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_CONTEXT_H
 #define GRPC_CORE_LIB_PROMISE_CONTEXT_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <utility>
 
 namespace grpc_core {

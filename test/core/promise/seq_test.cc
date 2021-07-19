@@ -74,7 +74,7 @@ TEST(PromiseTest, SaneSizes) {
         x.YesItIsUnused();
         return 1;
       },
-      [](int i) {
+      [](int) {
         auto y = Big();
         return [y]() {
           y.YesItIsUnused();

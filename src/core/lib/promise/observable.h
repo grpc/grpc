@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
 #define GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <limits>
 #include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"
@@ -44,7 +46,8 @@ namespace promise_detail {
 template <typename T>
 class ObservableState {
  public:
-  explicit ObservableState(absl::optional<T> value) : value_(std::move(value)) {}
+  explicit ObservableState(absl::optional<T> value)
+      : value_(std::move(value)) {}
 
   // Publish that we're closed.
   void Close() {

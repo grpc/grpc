@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_RACE_H
 #define GRPC_CORE_LIB_PROMISE_RACE_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <tuple>
 #include "src/core/lib/promise/poll.h"
 
@@ -63,7 +65,7 @@ class Race<Promise> {
   Promise promise_;
 };
 
-}  // namespace race_detail
+}  // namespace promise_detail
 
 /// Run all the promises, return the first result that's available.
 /// If two results are simultaneously available, bias towards the first result

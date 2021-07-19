@@ -130,21 +130,66 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  class ClusterState
-      : public RefCounted<ClusterState, PolymorphicRefCount, kUnrefNoDelete> {
+  // An entry in the map of clusters that need to be present in the LB
+  // policy config.  The map holds a weak ref.  One strong ref is held by
+  // the ConfigSelector, and another is held by each call assigned to
+  // the cluster by the ConfigSelector.  The ref for each call is held
+  // until the call is committed.  When the strong refs go away, we hop
+  // back into the WorkSerializer to remove the entry from the map.
+  class ClusterState : public DualRefCounted<ClusterState> {
    public:
     using ClusterStateMap =
-        std::map<std::string, std::unique_ptr<ClusterState>>;
+        std::map<std::string, WeakRefCountedPtr<ClusterState>>;
 
-    ClusterState(const std::string& cluster_name,
-                 ClusterStateMap* cluster_state_map)
-        : it_(cluster_state_map
-                  ->emplace(cluster_name, std::unique_ptr<ClusterState>(this))
+    ClusterState(RefCountedPtr<XdsResolver> resolver,
+                 const std::string& cluster_name)
+        : resolver_(std::move(resolver)),
+          it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
                   .first) {}
+
+    void Orphan() override {
+      auto* resolver = resolver_.release();
+      resolver->work_serializer_->Run(
+          [resolver]() {
+            resolver->MaybeRemoveUnusedClusters();
+            resolver->Unref();
+          },
+          DEBUG_LOCATION);
+    }
+
     const std::string& cluster() const { return it_->first; }
 
    private:
+    RefCountedPtr<XdsResolver> resolver_;
     ClusterStateMap::iterator it_;
+  };
+
+  // Call dispatch controller, created for each call handled by the
+  // ConfigSelector.  Holds a ref to the ClusterState object until the
+  // call is committed.
+  class XdsCallDispatchController
+      : public ConfigSelector::CallDispatchController {
+   public:
+    explicit XdsCallDispatchController(
+        RefCountedPtr<ClusterState> cluster_state)
+        : cluster_state_(std::move(cluster_state)) {}
+
+    bool ShouldRetry() override {
+      // TODO(donnadionne): Implement the retry circuit breaker here.
+      return true;
+    }
+
+    void Commit() override {
+      // TODO(donnadionne): If ShouldRetry() was called previously,
+      // decrement the retry circuit breaker counter.
+      cluster_state_.reset();
+    }
+
+   private:
+    // Note: The XdsCallDispatchController object is never actually destroyed,
+    // so do not add any data members that require destruction unless you have
+    // some other way to clean them up.
+    RefCountedPtr<ClusterState> cluster_state_;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -525,8 +570,7 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (clusters_.find(name) == clusters_.end()) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
-      auto new_cluster_state =
-          MakeRefCounted<ClusterState>(name, &resolver_->cluster_state_map_);
+      auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
       clusters_[it->second->cluster()] = it->second->Ref();
@@ -641,10 +685,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
-    XdsResolver* resolver =
-        static_cast<XdsResolver*>(resolver_->Ref().release());
-    ClusterState* cluster_state = it->second->Ref().release();
-    // Generate a hash
+    // Generate a hash.
     absl::optional<uint64_t> hash;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;
@@ -653,8 +694,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
-          new_hash =
-              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
+          new_hash = static_cast<uint64_t>(
+              reinterpret_cast<uintptr_t>(resolver_.get()));
           break;
         default:
           GPR_ASSERT(0);
@@ -694,15 +735,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     memcpy(hash_value, hash_string.c_str(), hash_string.size());
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
-    call_config.on_call_committed = [resolver, cluster_state]() {
-      cluster_state->Unref();
-      resolver->work_serializer_->Run(
-          [resolver]() {
-            resolver->MaybeRemoveUnusedClusters();
-            resolver->Unref();
-          },
-          DEBUG_LOCATION);
-    };
+    call_config.call_dispatch_controller =
+        args.arena->New<XdsCallDispatchController>(it->second->Ref());
     return call_config;
   }
   return CallConfig();

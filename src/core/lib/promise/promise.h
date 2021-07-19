@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_PROMISE_H
 #define GRPC_CORE_LIB_PROMISE_PROMISE_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <functional>
 #include "absl/types/optional.h"
 #include "src/core/lib/promise/detail/promise_like.h"

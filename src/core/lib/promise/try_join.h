@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 #define GRPC_CORE_LIB_PROMISE_TRY_JOIN_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/detail/status.h"
 
@@ -32,7 +34,7 @@ T IntoResult(absl::StatusOr<T>* status) {
 // g()->Poll<StatusOr<B>>, h()->Poll<StatusOr<C>>. If one of those should be a
 // Status instead, we need a placeholder type to return, and this is it.
 struct Empty {};
-inline Empty IntoResult(absl::Status* status) { return Empty{}; }
+inline Empty IntoResult(absl::Status*) { return Empty{}; }
 
 // Traits object to pass to BasicJoin
 struct TryJoinTraits {

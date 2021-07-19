@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_PIPE_H
 #define GRPC_CORE_LIB_PROMISE_PIPE_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -47,6 +49,9 @@ class Promise {
  public:
   virtual Poll<bool> Step(T* output) = 0;
   virtual void Stop() = 0;
+
+ protected:
+  inline virtual ~Promise() = default;
 };
 
 struct alignas(alignof(void*)) Scratch {
@@ -63,6 +68,7 @@ class FilterInterface {
   virtual void UpdateReceiver(PipeReceiver<T>* receiver) = 0;
 
  protected:
+  inline virtual ~FilterInterface() {}
   static void SetReceiverIndex(PipeReceiver<T>* receiver, int idx,
                                FilterInterface* p);
   char AllocIndex(PipeReceiver<T>* receiver);
@@ -404,7 +410,7 @@ class Next {
     receiver_->next_ = this;
   }
   PipeReceiver<T>* receiver_;
-  int next_filter_ = 0;
+  size_t next_filter_ = 0;
   Promise<T>* current_promise_ = nullptr;
   Scratch scratch_;
 };
@@ -450,14 +456,14 @@ class Filter final : private FilterInterface<T> {
  private:
   static constexpr char kTombstoneIndex = -1;
   struct Active {
-    [[no_unique_address]] PipeReceiver<T>* receiver;
-    [[no_unique_address]] promise_detail::PromiseFactory<T, F> factory;
+    GPR_NO_UNIQUE_ADDRESS PipeReceiver<T>* receiver;
+    GPR_NO_UNIQUE_ADDRESS promise_detail::PromiseFactory<T, F> factory;
   };
   union {
-    [[no_unique_address]] Active active_;
-    [[no_unique_address]] absl::Status done_;
+    GPR_NO_UNIQUE_ADDRESS Active active_;
+    GPR_NO_UNIQUE_ADDRESS absl::Status done_;
   };
-  [[no_unique_address]] char index_;
+  GPR_NO_UNIQUE_ADDRESS char index_;
 
   class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
     using PF = typename promise_detail::PromiseFactory<T, F>::Promise;

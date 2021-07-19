@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_GPRPP_CONSTRUCT_DESTRUCT_H
 #define GRPC_CORE_LIB_GPRPP_CONSTRUCT_DESTRUCT_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <utility>
 
 namespace grpc_core {

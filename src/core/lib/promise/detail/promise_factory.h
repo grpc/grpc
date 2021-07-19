@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -102,8 +104,8 @@ class PromiseFactory<A, F,
     Result operator()() { return f_(arg_); }
 
    private:
-    [[no_unique_address]] F f_;
-    [[no_unique_address]] Arg arg_;
+    GPR_NO_UNIQUE_ADDRESS F f_;
+    GPR_NO_UNIQUE_ADDRESS Arg arg_;
   };
 
  public:
@@ -117,7 +119,7 @@ class PromiseFactory<A, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 };
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory(A) -> Promise<T>
@@ -128,12 +130,12 @@ class PromiseFactory<A, F,
  public:
   using Promise = PromiseLike<F>;
   using Arg = A;
-  Promise Once(Arg arg) { return std::move(f_); }
-  Promise Repeated(Arg arg) { return f_; }
+  Promise Once(Arg) { return std::move(f_); }
+  Promise Repeated(Arg) { return f_; }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] PromiseLike<F> f_;
+  GPR_NO_UNIQUE_ADDRESS PromiseLike<F> f_;
 };
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
@@ -148,7 +150,7 @@ class PromiseFactory<void, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] PromiseLike<F> f_;
+  GPR_NO_UNIQUE_ADDRESS PromiseLike<F> f_;
 };
 
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
@@ -163,7 +165,7 @@ class PromiseFactory<A, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 };
 
 // Given a callable() -> Promise<T>, promote it to a
@@ -173,12 +175,12 @@ class PromiseFactory<A, F, absl::enable_if_t<IsVoidCallable<ResultOf<F()>>()>> {
  public:
   using Arg = A;
   using Promise = PromiseLike<decltype(std::declval<F>()())>;
-  Promise Once(Arg arg) { return Promise(f_()); }
-  Promise Repeated(Arg arg) { return Promise(f_()); }
+  Promise Once(Arg) { return Promise(f_()); }
+  Promise Repeated(Arg) { return Promise(f_()); }
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 };
 
 // Given a callable() -> Promise<T>, name it a PromiseFactory and use it.
@@ -193,7 +195,7 @@ class PromiseFactory<void, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 };
 
 }  // namespace promise_detail

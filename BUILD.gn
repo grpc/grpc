@@ -169,6 +169,7 @@ config("grpc_config") {
         "src/core/lib/gprpp/arena.cc",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
+        "src/core/lib/gprpp/construct_destruct.h",
         "src/core/lib/gprpp/debug_location.h",
         "src/core/lib/gprpp/examine_stack.cc",
         "src/core/lib/gprpp/examine_stack.h",

@@ -15,13 +15,15 @@
 #ifndef GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <functional>
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -33,6 +35,9 @@ class Wakeable {
   virtual void Wakeup() = 0;
   // Drop this wakeable without waking up the underlying activity.
   virtual void Drop() = 0;
+
+ protected:
+  inline virtual ~Wakeable() {}
 };
 
 // An owning reference to a Wakeable.
@@ -389,15 +394,15 @@ class PromiseActivity final
   union PromiseHolder {
     PromiseHolder() {}
     ~PromiseHolder() {}
-    [[no_unique_address]] Promise promise;
+    GPR_NO_UNIQUE_ADDRESS Promise promise;
   };
-  [[no_unique_address]] PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu_);
+  GPR_NO_UNIQUE_ADDRESS PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu_);
   // Schedule callbacks on some external executor.
-  [[no_unique_address]] CallbackScheduler callback_scheduler_;
+  GPR_NO_UNIQUE_ADDRESS CallbackScheduler callback_scheduler_;
   // Callback on completion of the promise.
-  [[no_unique_address]] OnDone on_done_;
+  GPR_NO_UNIQUE_ADDRESS OnDone on_done_;
   // Has execution completed?
-  [[no_unique_address]] bool done_ ABSL_GUARDED_BY(mu_) = false;
+  GPR_NO_UNIQUE_ADDRESS bool done_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 }  // namespace promise_detail

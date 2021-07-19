@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_LATCH_H
 #define GRPC_CORE_LIB_PROMISE_LATCH_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"

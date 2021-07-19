@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_TRY_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_TRY_SEQ_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <tuple>
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
@@ -61,7 +63,7 @@ struct TrySeqTraits<absl::Status> {
   using UnwrappedType = void;
   using WrappedType = absl::Status;
   template <typename Next>
-  static auto CallFactory(Next* next, absl::Status&& status)
+  static auto CallFactory(Next* next, absl::Status&&)
       -> decltype(next->Once()) {
     return next->Once();
   }
