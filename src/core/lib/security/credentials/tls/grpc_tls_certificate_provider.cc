@@ -205,18 +205,26 @@ void FileWatcherCertificateProvider::ForceUpdate() {
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
+      bool reload;
       for (int i = 0; i < pem_key_cert_pairs->size(); i++) {
         key_cert_catch = PrivateKeyAndCertificateMatch(
           pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
-        if (!(key_cert_catch.ok() && *key_cert_catch)) {
+        reload = key_cert_catch.ok() && *key_cert_catch;
+        if (!reload) {
           gpr_log(GPR_ERROR,
-                  "Certificate-key match result: %s",
-                  key_cert_catch.status().ToString().c_str());
+                  "Certificate-key match status result: %s, bool result: %d",
+                  key_cert_catch.status().ToString().c_str(), key_cert_catch.value());
+//          gpr_log(GPR_ERROR,
+//                  "Certificate old: %s",
+//                  pem_key_cert_pairs_.at(i).cert_chain().c_str());
+          gpr_log(GPR_ERROR,
+                  "Certificate new: %s",
+                  pem_key_cert_pairs->at(i).cert_chain().c_str());
           break;
         }
       }
       //in case of a match, update the credentials.
-      if (key_cert_catch.ok() && *key_cert_catch){
+      if (reload){
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
       }
     } else {
