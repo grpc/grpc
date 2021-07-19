@@ -46,7 +46,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordReceivedTrailingMetadata(
         grpc_metadata_batch* /* recv_trailing_metadata */) override {}
     void RecordCancel(grpc_error_handle /* cancel_error */) override {}
-    void RecordAnnotation(absl::string_view /* annotation */) override {}
     void RecordEnd(const grpc_call_final_info& /* final_info */) override {}
 
     CensusContext* context() { return &context_; }
@@ -59,7 +58,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
       bool /* is_transparent_retry */) override {
     return nullptr;
   }
-  void RecordAnnotation(absl::string_view /* annotation */) override {}
 
   CensusContext* context() { return &context_; }
 
