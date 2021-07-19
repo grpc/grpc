@@ -137,6 +137,7 @@ RE_LICENSE = dict(
     for k, v in LICENSE_PREFIX_RE.items())
 
 import datetime
+
 YEAR = datetime.datetime.now().year
 
 LICENSE_YEAR = f'Copyright {YEAR} gRPC authors.'
@@ -154,6 +155,7 @@ else:
     FILE_LIST_COMMAND = 'git ls-tree -r --name-only -r HEAD | ' \
                         'grep -v ^third_party/ |' \
                         'grep -v "\(ares_config.h\|ares_build.h\)"'
+
 
 def load(name):
     with open(name) as f:
