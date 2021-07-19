@@ -16,6 +16,8 @@
 
 #include "test/core/util/tls_utils.h"
 
+#include "openssl/ssl.h"
+
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -91,7 +93,11 @@ absl::Status CheckPrivateKeyFormat(absl::string_view private_key) {
     default:
       gpr_log(GPR_ERROR, "Key type currently not supported.");
   }
-  return absl::OkStatus();
+  OwnedOpenSslConnectionConfig connection_config(TLS_method());
+  return SSL_CTX_use_PrivateKey(connection_config.get_config(),
+                                private_evp_pkey.get_private_key())
+             ? absl::OkStatus()
+             : absl::InvalidArgumentError("Invalid private key.");
 }
 
 absl::Status CheckCertChainFormat(absl::string_view cert_chain) {
@@ -105,10 +111,19 @@ absl::Status CheckCertChainFormat(absl::string_view cert_chain) {
   if (num_certs == 0) {
     return absl::InvalidArgumentError(bad_format_string);
   }
+  OwnedOpenSslConnectionConfig connection_config(TLS_method());
   for (int i = 0; i < num_certs; i++) {
     X509_INFO* cert_info = sk_X509_INFO_value(cert_stack.get_stack(), i);
-    if (cert_info->x509 == nullptr) {
-      return absl::InvalidArgumentError(bad_format_string);
+    if (i == 0) {
+      if (!SSL_CTX_use_certificate(connection_config.get_config(),
+                                   cert_info->x509)) {
+        return absl::InvalidArgumentError(bad_format_string);
+      }
+    } else {
+      if (!SSL_CTX_add1_chain_cert(connection_config.get_config(),
+                                   cert_info->x509)) {
+        return absl::InvalidArgumentError(bad_format_string);
+      }
     }
   }
   return absl::OkStatus();
