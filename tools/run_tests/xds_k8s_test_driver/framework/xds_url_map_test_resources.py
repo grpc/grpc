@@ -266,11 +266,10 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
     @functools.lru_cache(None)
     def default_backend_service(self) -> str:
         """Returns default backend service URL."""
-        self.td.load_backend_service()
-        return self.td.backend_service.url
+        return self.td.make_resource_name(self.td.BACKEND_SERVICE_NAME)
 
     @functools.lru_cache(None)
     def alternative_backend_service(self) -> str:
         """Returns alternative backend service URL."""
-        self.td.load_alternative_backend_service()
-        return self.td.alternative_backend_service.url
+        return self.td.make_resource_name(
+            self.td.ALTERNATIVE_BACKEND_SERVICE_NAME)
