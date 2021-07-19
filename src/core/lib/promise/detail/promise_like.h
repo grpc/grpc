@@ -64,7 +64,7 @@ template <typename F>
 class PromiseLike<F, typename absl::enable_if_t<PollTraits<decltype(
                          std::declval<F>()())>::is_poll()>> {
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 
  public:
   explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}
@@ -76,7 +76,7 @@ template <typename F>
 class PromiseLike<F, typename absl::enable_if_t<!PollTraits<decltype(
                          std::declval<F>()())>::is_poll()>> {
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 
  public:
   explicit PromiseLike(F&& f) : f_(std::forward<F>(f)) {}

@@ -99,12 +99,12 @@ struct SeqState {
   // Storage for either the current promise or the prior state.
   union {
     // If we're in the prior state.
-    [[no_unique_address]] PriorState prior;
+    GPR_NO_UNIQUE_ADDRESS PriorState prior;
     // The callables representing our promise.
-    [[no_unique_address]] typename Types::Promise current_promise;
+    GPR_NO_UNIQUE_ADDRESS typename Types::Promise current_promise;
   };
   // Storage for the next promise factory.
-  [[no_unique_address]] typename Types::Next next_factory;
+  GPR_NO_UNIQUE_ADDRESS typename Types::Next next_factory;
 };
 
 // Partial specialization of SeqState above for the first state - it has no
@@ -143,8 +143,8 @@ struct SeqState<Traits, 0, Fs...> {
       Traits,
       PromiseLike<typename std::tuple_element<0, std::tuple<Fs...>>::type>,
       typename std::tuple_element<1, std::tuple<Fs...>>::type>;
-  [[no_unique_address]] typename Types::Promise current_promise;
-  [[no_unique_address]] typename Types::Next next_factory;
+  GPR_NO_UNIQUE_ADDRESS typename Types::Promise current_promise;
+  GPR_NO_UNIQUE_ADDRESS typename Types::Next next_factory;
 };
 
 template <template <typename> class Traits, char I, typename... Fs, typename T>
@@ -196,8 +196,8 @@ class BasicSeq {
   // the penultimate state.
   using FinalPromise = typename PenultimateState::Types::Next::Promise;
   union {
-    [[no_unique_address]] PenultimateState penultimate_state_;
-    [[no_unique_address]] FinalPromise final_promise_;
+    GPR_NO_UNIQUE_ADDRESS PenultimateState penultimate_state_;
+    GPR_NO_UNIQUE_ADDRESS FinalPromise final_promise_;
   };
   using FinalPromiseResult = typename FinalPromise::Result;
   using Result = typename Traits<FinalPromiseResult>::WrappedType;

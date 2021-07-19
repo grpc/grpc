@@ -38,8 +38,8 @@ class Capture {
   }
 
  private:
-  [[no_unique_address]] F f_;
-  [[no_unique_address]] std::tuple<Captures...> captures_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
+  GPR_NO_UNIQUE_ADDRESS std::tuple<Captures...> captures_;
 };
 
 }  // namespace detail

@@ -456,14 +456,14 @@ class Filter final : private FilterInterface<T> {
  private:
   static constexpr char kTombstoneIndex = -1;
   struct Active {
-    [[no_unique_address]] PipeReceiver<T>* receiver;
-    [[no_unique_address]] promise_detail::PromiseFactory<T, F> factory;
+    GPR_NO_UNIQUE_ADDRESS PipeReceiver<T>* receiver;
+    GPR_NO_UNIQUE_ADDRESS promise_detail::PromiseFactory<T, F> factory;
   };
   union {
-    [[no_unique_address]] Active active_;
-    [[no_unique_address]] absl::Status done_;
+    GPR_NO_UNIQUE_ADDRESS Active active_;
+    GPR_NO_UNIQUE_ADDRESS absl::Status done_;
   };
-  [[no_unique_address]] char index_;
+  GPR_NO_UNIQUE_ADDRESS char index_;
 
   class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
     using PF = typename promise_detail::PromiseFactory<T, F>::Promise;

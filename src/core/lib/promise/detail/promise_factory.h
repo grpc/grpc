@@ -104,8 +104,8 @@ class PromiseFactory<A, F,
     Result operator()() { return f_(arg_); }
 
    private:
-    [[no_unique_address]] F f_;
-    [[no_unique_address]] Arg arg_;
+    GPR_NO_UNIQUE_ADDRESS F f_;
+    GPR_NO_UNIQUE_ADDRESS Arg arg_;
   };
 
  public:
@@ -119,7 +119,7 @@ class PromiseFactory<A, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 };
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory(A) -> Promise<T>
@@ -135,7 +135,7 @@ class PromiseFactory<A, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] PromiseLike<F> f_;
+  GPR_NO_UNIQUE_ADDRESS PromiseLike<F> f_;
 };
 
 // Promote a callable() -> T|Poll<T> to a PromiseFactory() -> Promise<T>
@@ -150,7 +150,7 @@ class PromiseFactory<void, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] PromiseLike<F> f_;
+  GPR_NO_UNIQUE_ADDRESS PromiseLike<F> f_;
 };
 
 // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
@@ -165,7 +165,7 @@ class PromiseFactory<A, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 };
 
 // Given a callable() -> Promise<T>, promote it to a
@@ -180,7 +180,7 @@ class PromiseFactory<A, F, absl::enable_if_t<IsVoidCallable<ResultOf<F()>>()>> {
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 };
 
 // Given a callable() -> Promise<T>, name it a PromiseFactory and use it.
@@ -195,7 +195,7 @@ class PromiseFactory<void, F,
   explicit PromiseFactory(F f) : f_(std::move(f)) {}
 
  private:
-  [[no_unique_address]] F f_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
 };
 
 }  // namespace promise_detail

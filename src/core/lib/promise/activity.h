@@ -394,15 +394,15 @@ class PromiseActivity final
   union PromiseHolder {
     PromiseHolder() {}
     ~PromiseHolder() {}
-    [[no_unique_address]] Promise promise;
+    GPR_NO_UNIQUE_ADDRESS Promise promise;
   };
-  [[no_unique_address]] PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu_);
+  GPR_NO_UNIQUE_ADDRESS PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu_);
   // Schedule callbacks on some external executor.
-  [[no_unique_address]] CallbackScheduler callback_scheduler_;
+  GPR_NO_UNIQUE_ADDRESS CallbackScheduler callback_scheduler_;
   // Callback on completion of the promise.
-  [[no_unique_address]] OnDone on_done_;
+  GPR_NO_UNIQUE_ADDRESS OnDone on_done_;
   // Has execution completed?
-  [[no_unique_address]] bool done_ ABSL_GUARDED_BY(mu_) = false;
+  GPR_NO_UNIQUE_ADDRESS bool done_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 }  // namespace promise_detail

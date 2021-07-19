@@ -38,12 +38,12 @@ union Fused {
   // Wrap the functor in a PromiseLike to handle immediately returning functors
   // and the like.
   using Promise = PromiseLike<F>;
-  [[no_unique_address]] Promise f;
+  GPR_NO_UNIQUE_ADDRESS Promise f;
   // Compute the result type: We take the result of the promise, and pass it via
   // our traits, so that, for example, TryJoin and take a StatusOr<T> and just
   // store a T.
   using Result = typename Traits::template ResultType<typename Promise::Result>;
-  [[no_unique_address]] Result result;
+  GPR_NO_UNIQUE_ADDRESS Result result;
 };
 
 // A join gets composed of joints... these are just wrappers around a Fused for
@@ -54,7 +54,7 @@ struct Joint : public Joint<Traits, I + 1, Fs...> {
   using F = typename std::tuple_element<I, std::tuple<Fs...>>::type;
   // Generate the Fused type for this functor.
   using Fsd = Fused<Traits, F>;
-  [[no_unique_address]] Fsd fused;
+  GPR_NO_UNIQUE_ADDRESS Fsd fused;
   // Figure out what kind of bitmask will be used by the outer join.
   using Bits = BitSet<sizeof...(Fs)>;
   // Initialize from a tuple of pointers to Fs
@@ -128,11 +128,11 @@ class BasicJoin {
   static constexpr size_t N = sizeof...(Fs);
   // Bitset: if a bit is 0, that joint is still in promise state. If it's 1,
   // then the joint has a result.
-  [[no_unique_address]] BitSet<N> state_;
+  GPR_NO_UNIQUE_ADDRESS BitSet<N> state_;
   // The actual joints, wrapped in an anonymous union to give us control of
   // construction/destruction.
   union {
-    [[no_unique_address]] Joint<Traits, 0, Fs...> joints_;
+    GPR_NO_UNIQUE_ADDRESS Joint<Traits, 0, Fs...> joints_;
   };
 
   // Access joint index I
