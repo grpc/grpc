@@ -33,8 +33,8 @@ argp.add_argument('-o',
                   choices=['list', 'details'])
 argp.add_argument('-s', '--skips', default=0, action='store_const', const=1)
 argp.add_argument('-a', '--ancient', default=0, action='store_const', const=1)
-argp.add_argument('--precommit', default=False, action='store_true')
-argp.add_argument('--fix', default=False, action='store_true')
+argp.add_argument('--precommit', action='store_true')
+argp.add_argument('--fix', action='store_true')
 args = argp.parse_args()
 
 # open the license text
@@ -70,6 +70,12 @@ LICENSE_PREFIX_RE = {
     'BUILD': r'#\s*',
 }
 
+# The key is the file extension, while the value is a tuple of fields
+# (header, prefix, footer).
+# For example, for javascript multi-line comments, the header will be '/*', the
+# prefix will be '*' and the footer will be '*/'.
+# If header and footer are irrelevant for a specific file extension, they are
+# set to None.
 LICENSE_PREFIX_TEXT = {
     '.bat': (None, '@rem', None),
     '.c': (None, '//', None),
@@ -136,18 +142,27 @@ RE_LICENSE = dict(
                    for line in LICENSE_NOTICE))
     for k, v in LICENSE_PREFIX_RE.items())
 
-import datetime
-
 YEAR = datetime.datetime.now().year
 
 LICENSE_YEAR = f'Copyright {YEAR} gRPC authors.'
-LICENSE_TEXT = dict((k, '\n'.join(
-    ([LICENSE_PREFIX_TEXT[k][0]] if LICENSE_PREFIX_TEXT[k][0] else []) + [
-        LICENSE_PREFIX_TEXT[k][1] + ' ' +
-        (LICENSE_YEAR if re.search(RE_YEAR, line) else line)
-        for line in LICENSE_NOTICE
-    ] + ([LICENSE_PREFIX_TEXT[k][2]] if LICENSE_PREFIX_TEXT[k][2] else [])))
-                    for k, v in LICENSE_PREFIX_TEXT.items())
+
+
+def join_license_text(header, prefix, footer, notice):
+    text = (header + '\n') if header else ""
+    text += '\n'.join(prefix + ' ' +
+                      (LICENSE_YEAR if re.search(RE_YEAR, line) else line)
+                      for line in LICENSE_NOTICE)
+    text += '\n'
+    if footer:
+        text += footer + '\n'
+    return text
+
+
+LICENSE_TEXT = dict(
+    (k,
+     join_license_text(LICENSE_PREFIX_TEXT[k][0], LICENSE_PREFIX_TEXT[k][1],
+                       LICENSE_PREFIX_TEXT[k][2], LICENSE_NOTICE))
+    for k, v in LICENSE_PREFIX_TEXT.items())
 
 if args.precommit:
     FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
@@ -215,11 +230,16 @@ for filename in filename_list:
         pass
     elif 'DO NOT EDIT' not in text:
         if args.fix:
-            text = license_text + '\n\n' + text
+            text = license_text + '\n' + text
             open(filename, 'w').write(text)
             log(1, 'copyright missing (fixed)', filename)
         else:
             log(1, 'copyright missing', filename)
         ok = False
+
+if not ok and not args.fix:
+    print(
+        'You may use following command to automatically fix copyright headers:')
+    print('    tools/distrib/check_copyright.py --fix')
 
 sys.exit(0 if ok else 1)
