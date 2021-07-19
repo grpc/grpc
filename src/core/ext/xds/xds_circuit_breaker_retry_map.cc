@@ -18,20 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
-#include <string>
-
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-
 #include "src/core/ext/xds/xds_circuit_breaker_retry_map.h"
-
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 XdsCircuitBreakerRetryMap* g_retry_map = nullptr;
