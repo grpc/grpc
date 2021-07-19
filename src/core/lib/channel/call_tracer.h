@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CALL_TRACER_H
 #define GRPC_CORE_LIB_CHANNEL_CALL_TRACER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_stack.h"
