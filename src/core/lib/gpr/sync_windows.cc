@@ -60,7 +60,8 @@ int gpr_mu_trylock(gpr_mu* mu) {
 
 void gpr_cv_init(gpr_cv* cv) { InitializeConditionVariable(cv); }
 
-void gpr_cv_destroy(gpr_cv* cv) { /* Condition variables don't need destruction in Win32. */ }
+void gpr_cv_destroy(gpr_cv* cv) { /* Condition variables don't need destruction in Win32. */
+}
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   int timeout = 0;

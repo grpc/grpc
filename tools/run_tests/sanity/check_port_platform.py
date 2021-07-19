@@ -65,8 +65,21 @@ all_bad_files = []
 all_bad_files += check_port_platform_inclusion(os.path.join('src', 'core'))
 all_bad_files += check_port_platform_inclusion(os.path.join('include', 'grpc'))
 
-if len(all_bad_files) > 0:
-    for f in all_bad_files:
-        print((('port_platform.h is not the first included header or there '
-                'is not a blank line following its inclusion in %s') % f))
-    sys.exit(1)
+if sys.argv[1:] == ['--fix']:
+    for path in all_bad_files:
+        text = ''
+        found = False
+        with open(path) as f:
+            for l in f.readlines():
+                if not found and '#include' in l:
+                    text += '#include <grpc/impl/codegen/port_platform.h>\n\n'
+                    found = True
+                text += l
+        with open(path, 'w') as f:
+            f.write(text)
+else:
+    if len(all_bad_files) > 0:
+        for f in all_bad_files:
+            print((('port_platform.h is not the first included header or there '
+                    'is not a blank line following its inclusion in %s') % f))
+        sys.exit(1)
