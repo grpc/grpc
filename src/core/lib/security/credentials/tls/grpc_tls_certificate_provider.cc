@@ -198,18 +198,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       root_certificate_ = "";
     }
   }
-  absl::StatusOr<bool> keyCertMatch = false;
-  //check whether the present credentials are valid.
-  if (!pem_key_cert_pairs_.empty()) {
-    for (int i = 0; i < pem_key_cert_pairs_.size(); i++) {
-      keyCertMatch =
-          PrivateKeyAndCertificateMatch(pem_key_cert_pairs_.at(i).private_key(),
-                                        pem_key_cert_pairs_.at(i).cert_chain());
-      if (!(keyCertMatch.ok() && *keyCertMatch)) {
-        break;
-      }
-    }
-  }
+  absl::StatusOr<bool> key_cert_catch = false;
   const bool identity_cert_changed =
       (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
       (pem_key_cert_pairs.has_value() &&
@@ -217,17 +206,17 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
       for (int i = 0; i < pem_key_cert_pairs->size(); i++) {
-        keyCertMatch = PrivateKeyAndCertificateMatch(
+        key_cert_catch = PrivateKeyAndCertificateMatch(
           pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
-        if (!(keyCertMatch.ok() && *keyCertMatch)) {
+        if (!(key_cert_catch.ok() && *key_cert_catch)) {
           gpr_log(GPR_ERROR,
                   "Certificate-key match result: %s",
-                  keyCertMatch.status().ToString().c_str());
+                  key_cert_catch.status().ToString().c_str());
           break;
         }
       }
       //in case of a match, update the credentials.
-      if (keyCertMatch.ok() && *keyCertMatch){
+      if (key_cert_catch.ok() && *key_cert_catch){
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
       }
     } else {
