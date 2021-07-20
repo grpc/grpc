@@ -193,7 +193,7 @@ class EventEngine {
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
       const EndpointConfig& args,
-      SliceAllocatorFactory slice_allocator_factory) = 0;
+      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
   /// \a Connect may return an error status immediately if there was a failure
@@ -210,7 +210,7 @@ class EventEngine {
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
                                const EndpointConfig& args,
-                               SliceAllocator slice_allocator,
+                               std::unique_ptr<SliceAllocator> slice_allocator,
                                absl::Time deadline) = 0;
 
   /// The DNSResolver that provides asynchronous resolution.
