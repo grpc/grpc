@@ -5546,7 +5546,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on(
-      "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
@@ -5557,10 +5558,30 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   max_interval->set_seconds(0);
   max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
-  // Ensure we retried the correct number of times on a supported status.
+  // Ensure we retried the correct number of times on all supported status.
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::CANCELLED),
+      StatusCode::CANCELLED);
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
   CheckRpcSendFailure(
       1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
       StatusCode::DEADLINE_EXCEEDED);
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::INTERNAL),
+      StatusCode::INTERNAL);
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::RESOURCE_EXHAUSTED),
+      StatusCode::RESOURCE_EXHAUSTED);
+  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE),
+      StatusCode::UNAVAILABLE);
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   // Ensure we don't retry on an unsupported status.
@@ -5673,6 +5694,65 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
       ::testing::HasSubstr(
           "RouteAction RetryPolicy num_retries set to invalid value 0."));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyDisabled) {
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  auto base_interval =
+      retry_policy->mutable_retry_back_off()->mutable_base_interval();
+  base_interval->set_seconds(0);
+  base_interval->set_nanos(25000000);
+  auto max_interval =
+      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  max_interval->set_seconds(0);
+  max_interval->set_nanos(250000000);
+  SetRouteConfiguration(0, new_route_config);
+  // Ensure we don't retry on supported statuses.
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::CANCELLED),
+      StatusCode::CANCELLED);
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
+      StatusCode::DEADLINE_EXCEEDED);
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::INTERNAL),
+      StatusCode::INTERNAL);
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::RESOURCE_EXHAUSTED),
+      StatusCode::RESOURCE_EXHAUSTED);
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE),
+      StatusCode::UNAVAILABLE);
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
+  ResetBackendCounters();
+  // Ensure we don't retry on an unsupported status.
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::UNAUTHENTICATED),
+      StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
