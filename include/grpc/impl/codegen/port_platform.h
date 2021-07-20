@@ -27,13 +27,6 @@
  *  - some syscalls to be made directly
  */
 
-// [[deprecated]] attribute is only available since C++14
-#if __cplusplus >= 201402L
-#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
-#else
-#define GRPC_DEPRECATED(reason)
-#endif  // __cplusplus >= 201402L
-
 /*
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
  */
@@ -573,6 +566,14 @@ typedef unsigned __int64 uint64_t;
 #define CENSUSAPI GRPCAPI
 #endif
 
+#ifndef GPR_HAS_CPP_ATTRIBUTE
+#ifdef __has_cpp_attribute
+#define GPR_HAS_CPP_ATTRIBUTE(a) __has_cpp_attribute(a)
+#else
+#define GPR_HAS_CPP_ATTRIBUTE(a) 0
+#endif
+#endif /* GPR_HAS_CPP_ATTRIBUTE */
+
 #ifndef GPR_HAS_ATTRIBUTE
 #ifdef __has_attribute
 #define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
@@ -597,6 +598,22 @@ typedef unsigned __int64 uint64_t;
 #define GPR_ATTRIBUTE_NOINLINE
 #endif
 #endif /* GPR_ATTRIBUTE_NOINLINE */
+
+#ifndef GPR_NO_UNIQUE_ADDRESS
+#if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)
+#define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#else
+#define GPR_NO_UNIQUE_ADDRESS
+#endif
+#endif /* GPR_NO_UNIQUE_ADDRESS */
+
+#ifndef GRPC_DEPRECATED
+#if GPR_HAS_CPP_ATTRIBUTE(deprecated)
+#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
+#else
+#define GRPC_DEPRECATED(reason)
+#endif
+#endif /* GRPC_DEPRECATED */
 
 #ifndef GPR_ATTRIBUTE_WEAK
 /* Attribute weak is broken on LLVM/windows:

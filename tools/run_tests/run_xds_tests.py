@@ -3102,6 +3102,8 @@ else:
     if not args.only_stable_gcp_apis:
         alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
+test_results = {}
+failed_tests = []
 try:
     gcp = GcpState(compute, alpha_compute, args.project_id, args.project_num)
     gcp_suffix = args.gcp_suffix
@@ -3220,8 +3222,6 @@ try:
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
-        test_results = {}
-        failed_tests = []
         for test_case in args.test_case:
             if test_case in _V3_TEST_CASES and not args.xds_v3_support:
                 logger.info('skipping test %s due to missing v3 support',
