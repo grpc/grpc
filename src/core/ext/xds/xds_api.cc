@@ -1598,15 +1598,15 @@ grpc_error_handle RetryPolicyParse(
     } else if (code == "unavailable") {
       retry_to_return.retry_on.Add(GRPC_STATUS_UNAVAILABLE);
     } else {
-      if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
-          gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
+      if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
         gpr_log(GPR_INFO, "Unsupported retry_on policy %s.",
                 std::string(code).c_str());
       }
     }
   }
-  // Until we add support for per_try_timeout, if retry_on is empty, we do not
-  // need to look at any retry policy.
+  // TODO(donnadionne): when we add support for per_try_timeout, we will need to
+  // return a policy if per_try_timeout is set even if retry_on specified no
+  // supported policies.
   if (retry_to_return.retry_on.Empty()) return GRPC_ERROR_NONE;
   const google_protobuf_UInt32Value* num_retries =
       envoy_config_route_v3_RetryPolicy_num_retries(retry_policy);
@@ -1656,7 +1656,7 @@ grpc_error_handle RetryPolicyParse(
     retry_to_return.retry_back_off.max_interval.nanos = 250000000;
   }
   if (errors.empty()) {
-    *retry = std::move(retry_to_return);
+    *retry = retry_to_return;
     return GRPC_ERROR_NONE;
   } else {
     return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing retry policy",
@@ -1843,7 +1843,7 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_RouteAction_retry_policy(route_action);
     if (retry_policy != nullptr) {
-      absl::optional<XdsApi::Route::RetryPolicy> retry = absl::nullopt;
+      absl::optional<XdsApi::Route::RetryPolicy> retry;
       grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
       if (error != GRPC_ERROR_NONE) return error;
       route->retry_policy = retry;
@@ -1895,8 +1895,7 @@ grpc_error_handle RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
     }
     // Parse retry policy.
-    absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy =
-        absl::nullopt;
+    absl::optional<XdsApi::Route::RetryPolicy> virtual_host_retry_policy;
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (XdsRetryEnabled()) {
