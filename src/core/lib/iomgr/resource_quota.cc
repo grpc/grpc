@@ -990,17 +990,15 @@ void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user) {
 
 void grpc_resource_user_slice_allocator_init(
     grpc_resource_user_slice_allocator* slice_allocator,
-    grpc_resource_user* resource_user, grpc_iomgr_cb_func cb, void* p) {
+    grpc_resource_user* resource_user) {
   GRPC_CLOSURE_INIT(&slice_allocator->on_allocated, ru_allocated_slices,
                     slice_allocator, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&slice_allocator->on_done, cb, p,
-                    grpc_schedule_on_exec_ctx);
   slice_allocator->resource_user = resource_user;
 }
 
 bool grpc_resource_user_alloc_slices(
     grpc_resource_user_slice_allocator* slice_allocator, size_t length,
-    size_t count, grpc_slice_buffer* dest) {
+    size_t count, grpc_slice_buffer* dest, grpc_iomgr_cb_func cb, void* p) {
   if (GPR_UNLIKELY(
           gpr_atm_no_barrier_load(&slice_allocator->resource_user->shutdown))) {
     grpc_core::ExecCtx::Run(
@@ -1008,6 +1006,8 @@ bool grpc_resource_user_alloc_slices(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource user shutdown"));
     return false;
   }
+  GRPC_CLOSURE_INIT(&slice_allocator->on_done, cb, p,
+                    grpc_schedule_on_exec_ctx);
   slice_allocator->length = length;
   slice_allocator->count = count;
   slice_allocator->dest = dest;

@@ -263,9 +263,9 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
   ep_impl->read_slices = slices;
   grpc_slice_buffer_reset_and_unref_internal(slices);
   EP_REF(ep_impl, "read");
-  if (grpc_resource_user_alloc_slices(&ep_impl->slice_allocator,
-                                      GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
-                                      ep_impl->read_slices)) {
+  if (grpc_resource_user_alloc_slices(
+          &ep_impl->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
+          ep_impl->read_slices, CFStreamReadAllocationDone, ep_impl)) {
     ep_impl->stream_sync->NotifyOnRead(&ep_impl->read_action);
   }
 }
@@ -385,8 +385,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
   grpc_resource_user_ref(resource_user);
   ep_impl->resource_user = resource_user;
   grpc_resource_user_slice_allocator_init(&ep_impl->slice_allocator,
-                                          ep_impl->resource_user,
-                                          CFStreamReadAllocationDone, ep_impl);
+                                          ep_impl->resource_user);
 
   return &ep_impl->base;
 }

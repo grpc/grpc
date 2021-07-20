@@ -164,7 +164,7 @@ typedef struct grpc_resource_user_slice_allocator {
    When an allocation is completed, calls \a cb with arg \p. */
 void grpc_resource_user_slice_allocator_init(
     grpc_resource_user_slice_allocator* slice_allocator,
-    grpc_resource_user* resource_user, grpc_iomgr_cb_func cb, void* p);
+    grpc_resource_user* resource_user);
 
 /* Allocate \a count slices of length \a length into \a dest. Only one request
    can be outstanding at a time.
@@ -172,6 +172,7 @@ void grpc_resource_user_slice_allocator_init(
    the \a slice_allocator->on_allocated callback will not be called. */
 bool grpc_resource_user_alloc_slices(
     grpc_resource_user_slice_allocator* slice_allocator, size_t length,
-    size_t count, grpc_slice_buffer* dest) GRPC_MUST_USE_RESULT;
+    size_t count, grpc_slice_buffer* dest, grpc_iomgr_cb_func cb,
+    void* p) GRPC_MUST_USE_RESULT;
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

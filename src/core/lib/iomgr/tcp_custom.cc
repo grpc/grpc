@@ -203,9 +203,9 @@ static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   tcp->read_slices = read_slices;
   grpc_slice_buffer_reset_and_unref_internal(read_slices);
   TCP_REF(tcp, "read");
-  if (grpc_resource_user_alloc_slices(&tcp->slice_allocator,
-                                      GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
-                                      tcp->read_slices)) {
+  if (grpc_resource_user_alloc_slices(
+          &tcp->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
+          tcp->read_slices, tcp_read_allocation_done, tcp)) {
     tcp_read_allocation_done(tcp, GRPC_ERROR_NONE);
   }
 }
@@ -375,8 +375,8 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
   }
   tcp->shutting_down = false;
   tcp->resource_user = resource_user;
-  grpc_resource_user_slice_allocator_init(
-      &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
+  grpc_resource_user_slice_allocator_init(&tcp->slice_allocator,
+                                          tcp->resource_user);
 
   return &tcp->base;
 }

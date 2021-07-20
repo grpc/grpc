@@ -872,9 +872,9 @@ static void tcp_continue_read(grpc_tcp* tcp) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
     }
-    if (GPR_UNLIKELY(!grpc_resource_user_alloc_slices(&tcp->slice_allocator,
-                                                      target_read_size, 1,
-                                                      tcp->incoming_buffer))) {
+    if (GPR_UNLIKELY(!grpc_resource_user_alloc_slices(
+            &tcp->slice_allocator, target_read_size, 1, tcp->incoming_buffer,
+            tcp_read_allocation_done, tcp))) {
       // Wait for allocation.
       return;
     }
@@ -1791,8 +1791,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  grpc_resource_user_slice_allocator_init(
-      &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
+  grpc_resource_user_slice_allocator_init(&tcp->slice_allocator,
+                                          tcp->resource_user);
   gpr_mu_init(&tcp->tb_mu);
   tcp->tb_head = nullptr;
   GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
