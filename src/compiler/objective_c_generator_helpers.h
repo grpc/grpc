@@ -37,7 +37,7 @@ inline string MessageHeaderName(const FileDescriptor* file) {
 
 inline string ServiceClassName(const ServiceDescriptor* service) {
   const FileDescriptor* file = service->file();
-  string prefix = file->options().objc_class_prefix();
+  string prefix = google::protobuf::compiler::objectivec::FileClassPrefix(file);
   return prefix + service->name();
 }
 

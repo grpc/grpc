@@ -487,6 +487,7 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
+  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
@@ -1013,6 +1014,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
+  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -1248,7 +1250,6 @@ libs:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/slice_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -1696,6 +1697,7 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
+  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
   - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
@@ -1956,6 +1958,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
+  - src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2008,7 +2011,6 @@ libs:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/slice_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -4381,6 +4383,16 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: binder_smoke_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/binder/binder_smoke_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: bm_alarm
   build: test
   language: c++
@@ -5757,6 +5769,18 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: match_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/overload.h
+  src:
+  - test/core/gprpp/match_test.cc
+  deps:
+  - absl/types:variant
+  uses_polling: false
 - name: matchers_test
   gtest: true
   build: test
@@ -5880,6 +5904,16 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: overload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/overload.h
+  src:
+  - test/core/gprpp/overload_test.cc
+  deps: []
+  uses_polling: false
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c++

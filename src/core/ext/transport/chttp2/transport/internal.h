@@ -394,7 +394,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_server_ping_recv_state ping_recv_state;
 
   /** parser for headers */
-  grpc_chttp2_hpack_parser hpack_parser;
+  grpc_core::HPackParser hpack_parser;
   /** simple one shot parsers */
   union {
     grpc_chttp2_window_update_parser window_update;

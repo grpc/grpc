@@ -80,7 +80,7 @@ class EventEngine {
   using Callback = std::function<void(absl::Status)>;
   /// A callback handle, used to cancel a callback.
   struct TaskHandle {
-    intptr_t key;
+    intptr_t keys[2];
   };
   /// A thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
@@ -127,10 +127,8 @@ class EventEngine {
     ///
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
-    /// DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED on
-    /// endpoint shutdown.
-    virtual void Read(Callback on_read, SliceBuffer* buffer,
-                      absl::Time deadline) = 0;
+    /// CANCELLED on endpoint shutdown.
+    virtual void Read(Callback on_read, SliceBuffer* buffer) = 0;
     /// Write data out on the connection.
     ///
     /// \a on_writable is called when the connection is ready for more data. The
@@ -140,15 +138,13 @@ class EventEngine {
     ///
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
-    /// receive DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED
-    /// on endpoint shutdown.
-    virtual void Write(Callback on_writable, SliceBuffer* data,
-                       absl::Time deadline) = 0;
+    /// receive CANCELLED on endpoint shutdown.
+    virtual void Write(Callback on_writable, SliceBuffer* data) = 0;
     /// These methods return an address in the format described in DNSResolver.
     /// The returned values are owned by the Endpoint and are expected to remain
     /// valid for the life of the Endpoint.
-    virtual const ResolvedAddress* GetPeerAddress() const = 0;
-    virtual const ResolvedAddress* GetLocalAddress() const = 0;
+    virtual const ResolvedAddress& GetPeerAddress() const = 0;
+    virtual const ResolvedAddress& GetLocalAddress() const = 0;
   };
 
   /// Called when a new connection is established.
@@ -197,7 +193,7 @@ class EventEngine {
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
       const EndpointConfig& args,
-      SliceAllocatorFactory slice_allocator_factory) = 0;
+      std::unique_ptr<SliceAllocatorFactory> slice_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
   ///
   /// \a Connect may return an error status immediately if there was a failure
@@ -214,7 +210,7 @@ class EventEngine {
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
                                const EndpointConfig& args,
-                               SliceAllocator slice_allocator,
+                               std::unique_ptr<SliceAllocator> slice_allocator,
                                absl::Time deadline) = 0;
 
   /// The DNSResolver that provides asynchronous resolution.
@@ -222,7 +218,7 @@ class EventEngine {
    public:
     /// A task handle for DNS Resolution requests.
     struct LookupTaskHandle {
-      intptr_t key;
+      intptr_t key[2];
     };
     /// A DNS SRV record type.
     struct SRVRecord {
