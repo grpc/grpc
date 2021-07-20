@@ -5544,8 +5544,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
-  route1->mutable_route()->set_cluster(kDefaultClusterName);
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on(
       "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
@@ -5573,58 +5571,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
-/*
-TEST_P(LdsRdsTest, XdsRetryPolicyPerTryTimeout) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
-  const size_t kNumRetries = 1;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct route config to set retry policy.
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
-  route1->mutable_route()->set_cluster(kDefaultClusterName);
-  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
-  retry_policy->set_retry_on(
-      "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
-  retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto per_try_timeout = retry_policy->mutable_per_try_timeout();
-  per_try_timeout->set_seconds(1);
-  per_try_timeout->set_nanos(0);
-  auto base_interval =
-      retry_policy->mutable_retry_back_off()->mutable_base_interval();
-  base_interval->set_seconds(0);
-  base_interval->set_nanos(25000000);
-  auto max_interval =
-      retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(0);
-  max_interval->set_nanos(250000000);
-  SetRouteConfiguration(0, new_route_config);
-  // Ensure we retried the correct number of times on a supported status and
-  // that we timed out according to per try timeout.
-  grpc_millis t0 = NowFromCycleCounter();
-  grpc_millis t1 = t0 + (kNumRetries + 1) * 1000;
-  grpc_millis t2 = t0 + (kNumRetries + 2) * 1000;
-  CheckRpcSendFailure(1,
-                      RpcOptions()
-                          .set_wait_for_ready(true)
-                          .set_timeout_ms((kNumRetries + 3) * 1000)
-                          //.set_skip_cancelled_check(true)
-                          .set_server_sleep_us((kNumRetries + 4) * 1000 * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
-  t0 = NowFromCycleCounter();
-  EXPECT_GE(t0, t1);
-  EXPECT_LT(t0, t2);
-  EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
-}
-*/
-
 TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   const size_t kNumRetries = 3;
@@ -5650,9 +5596,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
       retry_policy->mutable_retry_back_off()->mutable_max_interval();
   max_interval->set_seconds(0);
   max_interval->set_nanos(250000000);
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
-  route1->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
   // Ensure we retried the correct number of times on a supported status.
   CheckRpcSendFailure(
@@ -5675,11 +5618,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
-  route1->mutable_route()->set_cluster(kDefaultClusterName);
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
-  // deadline-exceeded is mistyped as deadline_exceeded
-  retry_policy->set_retry_on("deadline_exceeded");
+  retry_policy->set_retry_on("5xx");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
@@ -5710,8 +5650,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
-  route1->mutable_route()->set_cluster(kDefaultClusterName);
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on("deadline-exceeded");
   // Setting num_retries to zero is not valid.
@@ -5749,8 +5687,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
   // Construct route config to set retry policy.
   RouteConfiguration new_route_config = default_route_config_;
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo");
-  route1->mutable_route()->set_cluster(kDefaultClusterName);
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on("deadline-exceeded");
   // Setting num_retries to zero is not valid.
