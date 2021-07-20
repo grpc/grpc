@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,11 +26,13 @@
 namespace grpc {
 namespace internal {
 namespace {
-// The actual type to return to user. It co-owns the internal impl object with
-// the server.
-class AcceptorWrapper : public experimental::ExternalConnectionAcceptor {
+// The actual type to return to user. It co-owns the internal impl
+// object with the server.
+class AcceptorWrapper
+    : public experimental::ExternalConnectionAcceptor {
  public:
-  explicit AcceptorWrapper(std::shared_ptr<ExternalConnectionAcceptorImpl> impl)
+  explicit AcceptorWrapper(
+      std::shared_ptr<ExternalConnectionAcceptorImpl> impl)
       : impl_(std::move(impl)) {}
   void HandleNewConnection(NewConnectionParameters* p) override {
     impl_->HandleNewConnection(p);
@@ -46,8 +48,8 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
-  GPR_ASSERT(type ==
-             ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
+  GPR_ASSERT(type == ServerBuilder::experimental_type::
+                         ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
@@ -60,14 +62,15 @@ ExternalConnectionAcceptorImpl::GetAcceptor() {
 }
 
 void ExternalConnectionAcceptorImpl::HandleNewConnection(
-    experimental::ExternalConnectionAcceptor::NewConnectionParameters* p) {
+    experimental::ExternalConnectionAcceptor::NewConnectionParameters*
+        p) {
   grpc_core::MutexLock lock(&mu_);
   if (shutdown_ || !started_) {
     // TODO(yangg) clean up.
-    gpr_log(
-        GPR_ERROR,
-        "NOT handling external connection with fd %d, started %d, shutdown %d",
-        p->fd, started_, shutdown_);
+    gpr_log(GPR_ERROR,
+            "NOT handling external connection with fd %d, started %d, "
+            "shutdown %d",
+            p->fd, started_, shutdown_);
     return;
   }
   if (handler_) {
@@ -88,7 +91,8 @@ void ExternalConnectionAcceptorImpl::Start() {
   started_ = true;
 }
 
-void ExternalConnectionAcceptorImpl::SetToChannelArgs(ChannelArguments* args) {
+void ExternalConnectionAcceptorImpl::SetToChannelArgs(
+    ChannelArguments* args) {
   args->SetPointer(name_.c_str(), &handler_);
 }
 

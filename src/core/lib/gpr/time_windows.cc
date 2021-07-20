@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -59,7 +59,8 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
       diff = timestamp.QuadPart - g_start_time.QuadPart;
       now_dbl = (double)diff * g_time_scale;
       now_tv.tv_sec = (int64_t)now_dbl;
-      now_tv.tv_nsec = (int32_t)((now_dbl - (double)now_tv.tv_sec) * 1e9);
+      now_tv.tv_nsec =
+          (int32_t)((now_dbl - (double)now_tv.tv_sec) * 1e9);
       break;
     case GPR_TIMESPAN:
       abort();
@@ -80,8 +81,8 @@ void gpr_sleep_until(gpr_timespec until) {
   int64_t sleep_millis;
 
   for (;;) {
-    /* We could simplify by using clock_nanosleep instead, but it might be
-     * slightly less portable. */
+    /* We could simplify by using clock_nanosleep instead, but it might
+     * be slightly less portable. */
     now = gpr_now(until.clock_type);
     if (gpr_time_cmp(until, now) <= 0) {
       return;

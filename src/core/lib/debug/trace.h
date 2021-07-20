@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,8 +28,8 @@
 
 GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
 
-// TODO(veblush): Remove this deprecated function once codes depending on this
-// function are updated in the internal repo.
+// TODO(veblush): Remove this deprecated function once codes depending
+// on this function are updated in the internal repo.
 void grpc_tracer_init(const char* env_var_name);
 
 void grpc_tracer_init();
@@ -61,20 +61,22 @@ void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
 class TraceFlag {
  public:
   TraceFlag(bool default_enabled, const char* name);
-  // TraceFlag needs to be trivially destructible since it is used as global
-  // variable.
+  // TraceFlag needs to be trivially destructible since it is used as
+  // global variable.
   ~TraceFlag() = default;
 
   const char* name() const { return name_; }
 
-// Use the symbol GRPC_USE_TRACERS to determine if tracers will be enabled in
-// opt builds (tracers are always on in dbg builds). The default in OSS is for
-// tracers to be on since we support binary distributions of gRPC for the
-// wrapped language (wr don't want to force recompilation to get tracing).
-// Internally, however, for performance reasons, we compile them out by
-// default, since internal build systems make recompiling trivial.
+// Use the symbol GRPC_USE_TRACERS to determine if tracers will be
+// enabled in opt builds (tracers are always on in dbg builds). The
+// default in OSS is for tracers to be on since we support binary
+// distributions of gRPC for the wrapped language (wr don't want to
+// force recompilation to get tracing). Internally, however, for
+// performance reasons, we compile them out by default, since internal
+// build systems make recompiling trivial.
 //
-// Prefer GRPC_TRACE_FLAG_ENABLED() macro instead of using enabled() directly.
+// Prefer GRPC_TRACE_FLAG_ENABLED() macro instead of using enabled()
+// directly.
 #define GRPC_USE_TRACERS  // tracers on by default in OSS
 #if defined(GRPC_USE_TRACERS) || !defined(NDEBUG)
   bool enabled() {
@@ -89,7 +91,8 @@ class TraceFlag {
 #endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
  private:
-  friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);
+  friend void grpc_core::testing::grpc_tracer_enable_flag(
+      TraceFlag* flag);
   friend class TraceFlagList;
 
   void set_enabled(bool enabled) {
@@ -116,8 +119,8 @@ typedef TraceFlag DebugOnlyTraceFlag;
 #else
 class DebugOnlyTraceFlag {
  public:
-  constexpr DebugOnlyTraceFlag(bool /*default_enabled*/, const char* /*name*/) {
-  }
+  constexpr DebugOnlyTraceFlag(bool /*default_enabled*/,
+                               const char* /*name*/) {}
   constexpr bool enabled() const { return false; }
   constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
 

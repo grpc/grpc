@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -72,13 +72,15 @@ BENCHMARK(BM_SliceReIntern);
 static void BM_SliceInternStaticMetadata(benchmark::State& state) {
   TrackCounters track_counters;
   for (auto _ : state) {
-    benchmark::DoNotOptimize(grpc_core::ManagedMemorySlice(&GRPC_MDSTR_GZIP));
+    benchmark::DoNotOptimize(
+        grpc_core::ManagedMemorySlice(&GRPC_MDSTR_GZIP));
   }
   track_counters.Finish(state);
 }
 BENCHMARK(BM_SliceInternStaticMetadata);
 
-static void BM_SliceInternEqualToStaticMetadata(benchmark::State& state) {
+static void BM_SliceInternEqualToStaticMetadata(
+    benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExternallyManagedSlice slice("gzip");
   for (auto _ : state) {
@@ -199,7 +201,8 @@ static void BM_MetadataFromInternedKeyWithBackingStore(
 }
 BENCHMARK(BM_MetadataFromInternedKeyWithBackingStore);
 
-static void BM_MetadataFromStaticMetadataStrings(benchmark::State& state) {
+static void BM_MetadataFromStaticMetadataStrings(
+    benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
@@ -216,8 +219,8 @@ static void BM_MetadataFromStaticMetadataStringsNotIndexed(
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_MDELEM_UNREF(
-        grpc_mdelem_create(GRPC_MDSTR_STATUS, GRPC_MDSTR_GZIP, nullptr));
+    GRPC_MDELEM_UNREF(grpc_mdelem_create(GRPC_MDSTR_STATUS,
+                                         GRPC_MDSTR_GZIP, nullptr));
   }
 
   track_counters.Finish(state);
@@ -228,10 +231,10 @@ static void BM_MetadataRefUnrefExternal(benchmark::State& state) {
   TrackCounters track_counters;
   char backing_store[sizeof(grpc_mdelem_data)];
   grpc_core::ExecCtx exec_ctx;
-  grpc_mdelem el =
-      grpc_mdelem_create(grpc_core::ExternallyManagedSlice("a"),
-                         grpc_core::ExternallyManagedSlice("b"),
-                         reinterpret_cast<grpc_mdelem_data*>(backing_store));
+  grpc_mdelem el = grpc_mdelem_create(
+      grpc_core::ExternallyManagedSlice("a"),
+      grpc_core::ExternallyManagedSlice("b"),
+      reinterpret_cast<grpc_mdelem_data*>(backing_store));
   for (auto _ : state) {
     GRPC_MDELEM_UNREF(GRPC_MDELEM_REF(el));
   }
@@ -263,9 +266,9 @@ BENCHMARK(BM_MetadataRefUnrefInterned);
 static void BM_MetadataRefUnrefAllocated(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  grpc_mdelem el =
-      grpc_mdelem_create(grpc_core::ExternallyManagedSlice("a"),
-                         grpc_core::ExternallyManagedSlice("b"), nullptr);
+  grpc_mdelem el = grpc_mdelem_create(
+      grpc_core::ExternallyManagedSlice("a"),
+      grpc_core::ExternallyManagedSlice("b"), nullptr);
   for (auto _ : state) {
     GRPC_MDELEM_UNREF(GRPC_MDELEM_REF(el));
   }
@@ -289,8 +292,8 @@ static void BM_MetadataRefUnrefStatic(benchmark::State& state) {
 }
 BENCHMARK(BM_MetadataRefUnrefStatic);
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

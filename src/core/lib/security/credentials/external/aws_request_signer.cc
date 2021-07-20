@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 #include <grpc/support/port_platform.h>
 
@@ -36,7 +36,8 @@ const char kAlgorithm[] = "AWS4-HMAC-SHA256";
 const char kDateFormat[] = "%a, %d %b %E4Y %H:%M:%S %Z";
 const char kXAmzDateFormat[] = "%Y%m%dT%H%M%SZ";
 
-void SHA256(const std::string& str, unsigned char out[SHA256_DIGEST_LENGTH]) {
+void SHA256(const std::string& str,
+            unsigned char out[SHA256_DIGEST_LENGTH]) {
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
   SHA256_Update(&sha256, str.c_str(), str.size());
@@ -55,17 +56,17 @@ std::string HMAC(const std::string& key, const std::string& msg) {
   unsigned int len;
   unsigned char digest[EVP_MAX_MD_SIZE];
   HMAC(EVP_sha256(), key.c_str(), key.length(),
-       reinterpret_cast<const unsigned char*>(msg.c_str()), msg.length(),
-       digest, &len);
+       reinterpret_cast<const unsigned char*>(msg.c_str()),
+       msg.length(), digest, &len);
   return std::string(digest, digest + len);
 }
 
 }  // namespace
 
 AwsRequestSigner::AwsRequestSigner(
-    std::string access_key_id, std::string secret_access_key, std::string token,
-    std::string method, std::string url, std::string region,
-    std::string request_payload,
+    std::string access_key_id, std::string secret_access_key,
+    std::string token, std::string method, std::string url,
+    std::string region, std::string request_payload,
     std::map<std::string, std::string> additional_headers,
     grpc_error_handle* error)
     : access_key_id_(std::move(access_key_id)),
@@ -93,18 +94,20 @@ AwsRequestSigner::AwsRequestSigner(
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(err_str.c_str());
       return;
     }
-    static_request_date_ =
-        absl::FormatTime(kXAmzDateFormat, request_date, absl::UTCTimeZone());
+    static_request_date_ = absl::FormatTime(
+        kXAmzDateFormat, request_date, absl::UTCTimeZone());
   }
   absl::StatusOr<URI> tmp_url = URI::Parse(url);
   if (!tmp_url.ok()) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid Aws request url.");
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid Aws request url.");
     return;
   }
   url_ = tmp_url.value();
 }
 
-std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
+std::map<std::string, std::string>
+AwsRequestSigner::GetSignedRequestHeaders() {
   std::string request_date_full;
   if (!static_request_date_.empty()) {
     if (!request_headers_.empty()) {
@@ -113,8 +116,8 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
     request_date_full = static_request_date_;
   } else {
     absl::Time request_date = absl::Now();
-    request_date_full =
-        absl::FormatTime(kXAmzDateFormat, request_date, absl::UTCTimeZone());
+    request_date_full = absl::FormatTime(kXAmzDateFormat, request_date,
+                                         absl::UTCTimeZone());
   }
   std::string request_date_short = request_date_full.substr(0, 8);
   // TASK 1: Create a canonical request for Signature Version 4
@@ -130,7 +133,8 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   // 3. CanonicalQueryString
   std::vector<std::string> query_vector;
   for (const URI::QueryParam& query_kv : url_.query_parameter_pairs()) {
-    query_vector.emplace_back(absl::StrCat(query_kv.key, "=", query_kv.value));
+    query_vector.emplace_back(
+        absl::StrCat(query_kv.key, "=", query_kv.value));
   }
   std::string query = absl::StrJoin(query_vector, "&");
   canonical_request_vector.emplace_back(query);
@@ -156,7 +160,8 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
     canonical_headers_vector.emplace_back(header.second);
     canonical_headers_vector.emplace_back("\n");
   }
-  std::string canonical_headers = absl::StrJoin(canonical_headers_vector, "");
+  std::string canonical_headers =
+      absl::StrJoin(canonical_headers_vector, "");
   canonical_request_vector.emplace_back(canonical_headers);
   canonical_request_vector.emplace_back("\n");
   // 5. SignedHeaders
@@ -164,13 +169,15 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   for (const auto& header : request_headers_) {
     signed_headers_vector.emplace_back(header.first);
   }
-  std::string signed_headers = absl::StrJoin(signed_headers_vector, ";");
+  std::string signed_headers =
+      absl::StrJoin(signed_headers_vector, ";");
   canonical_request_vector.emplace_back(signed_headers);
   canonical_request_vector.emplace_back("\n");
   // 6. RequestPayload
   std::string hashed_request_payload = SHA256Hex(request_payload_);
   canonical_request_vector.emplace_back(hashed_request_payload);
-  std::string canonical_request = absl::StrJoin(canonical_request_vector, "");
+  std::string canonical_request =
+      absl::StrJoin(canonical_request_vector, "");
   // TASK 2: Create a string to sign for Signature Version 4
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
   std::vector<absl::string_view> string_to_sign_vector;
@@ -184,8 +191,9 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   std::pair<absl::string_view, absl::string_view> host_parts =
       absl::StrSplit(url_.authority(), absl::MaxSplits('.', 1));
   std::string service_name(host_parts.first);
-  std::string credential_scope = absl::StrFormat(
-      "%s/%s/%s/aws4_request", request_date_short, region_, service_name);
+  std::string credential_scope =
+      absl::StrFormat("%s/%s/%s/aws4_request", request_date_short,
+                      region_, service_name);
   string_to_sign_vector.emplace_back(credential_scope);
   string_to_sign_vector.emplace_back("\n");
   // 4. HashedCanonicalRequest
@@ -195,7 +203,8 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   // TASK 3: Task 3: Calculate the signature for AWS Signature Version 4
   // https://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
   // 1. Derive your signing key.
-  std::string date = HMAC("AWS4" + secret_access_key_, request_date_short);
+  std::string date =
+      HMAC("AWS4" + secret_access_key_, request_date_short);
   std::string region = HMAC(date, region_);
   std::string service = HMAC(region, service_name);
   std::string signing = HMAC(service, "aws4_request");

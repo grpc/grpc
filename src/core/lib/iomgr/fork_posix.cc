@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,8 +40,8 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 /*
- * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
- *       AROUND VERY SPECIFIC USE CASES.
+ * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO
+ * WORK AROUND VERY SPECIFIC USE CASES.
  */
 
 namespace {
@@ -51,8 +51,8 @@ bool registered_handlers = false;
 
 void grpc_prefork() {
   skipped_handler = true;
-  // This  may be called after core shuts down, so verify initialized before
-  // instantiating an ExecCtx.
+  // This  may be called after core shuts down, so verify initialized
+  // before instantiating an ExecCtx.
   if (!grpc_is_initialized()) {
     return;
   }
@@ -68,12 +68,14 @@ void grpc_prefork() {
       (strcmp(poll_strategy_name, "epoll1") != 0 &&
        strcmp(poll_strategy_name, "poll") != 0)) {
     gpr_log(GPR_INFO,
-            "Fork support is only compatible with the epoll1 and poll polling "
+            "Fork support is only compatible with the epoll1 and poll "
+            "polling "
             "strategies");
   }
   if (!grpc_core::Fork::BlockExecCtx()) {
     gpr_log(GPR_INFO,
-            "Other threads are currently calling into gRPC, skipping fork() "
+            "Other threads are currently calling into gRPC, skipping "
+            "fork() "
             "handlers");
     return;
   }
@@ -110,7 +112,8 @@ void grpc_postfork_child() {
 void grpc_fork_handlers_auto_register() {
   if (grpc_core::Fork::Enabled() & !registered_handlers) {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-    pthread_atfork(grpc_prefork, grpc_postfork_parent, grpc_postfork_child);
+    pthread_atfork(grpc_prefork, grpc_postfork_parent,
+                   grpc_postfork_child);
     registered_handlers = true;
 #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   }

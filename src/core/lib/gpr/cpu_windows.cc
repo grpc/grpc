@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,6 +28,8 @@ unsigned gpr_cpu_num_cores(void) {
   return si.dwNumberOfProcessors;
 }
 
-unsigned gpr_cpu_current_cpu(void) { return GetCurrentProcessorNumber(); }
+unsigned gpr_cpu_current_cpu(void) {
+  return GetCurrentProcessorNumber();
+}
 
 #endif /* GPR_WINDOWS */

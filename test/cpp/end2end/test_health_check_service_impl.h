@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #ifndef GRPC_TEST_CPP_END2END_TEST_HEALTH_CHECK_SERVICE_IMPL_H
@@ -29,16 +29,17 @@
 namespace grpc {
 namespace testing {
 
-// A sample sync implementation of the health checking service. This does the
-// same thing as the default one.
+// A sample sync implementation of the health checking service. This
+// does the same thing as the default one.
 class HealthCheckServiceImpl : public health::v1::Health::Service {
  public:
   Status Check(ServerContext* context,
                const health::v1::HealthCheckRequest* request,
                health::v1::HealthCheckResponse* response) override;
-  Status Watch(ServerContext* context,
-               const health::v1::HealthCheckRequest* request,
-               ServerWriter<health::v1::HealthCheckResponse>* writer) override;
+  Status Watch(
+      ServerContext* context,
+      const health::v1::HealthCheckRequest* request,
+      ServerWriter<health::v1::HealthCheckResponse>* writer) override;
   void SetStatus(const std::string& service_name,
                  health::v1::HealthCheckResponse::ServingStatus status);
   void SetAll(health::v1::HealthCheckResponse::ServingStatus status);
@@ -48,7 +49,8 @@ class HealthCheckServiceImpl : public health::v1::Health::Service {
  private:
   std::mutex mu_;
   bool shutdown_ = false;
-  std::map<const std::string, health::v1::HealthCheckResponse::ServingStatus>
+  std::map<const std::string,
+           health::v1::HealthCheckResponse::ServingStatus>
       status_map_;
 };
 

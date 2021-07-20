@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,7 +30,8 @@ inline std::string GetPHPServiceClassname(
     const grpc::protobuf::ServiceDescriptor* service,
     const std::string& class_suffix, bool is_server) {
   return service->name() +
-         (class_suffix == "" ? (is_server ? "" : "Client") : class_suffix) +
+         (class_suffix == "" ? (is_server ? "" : "Client")
+                             : class_suffix) +
          (is_server ? "Stub" : "");
 }
 
@@ -61,16 +62,19 @@ inline std::string GetPHPServiceFilename(
     }
   }
   return oss.str() + "/" +
-         GetPHPServiceClassname(service, class_suffix, is_server) + ".php";
+         GetPHPServiceClassname(service, class_suffix, is_server) +
+         ".php";
 }
 
-// Get leading or trailing comments in a string. Comment lines start with "// ".
-// Leading detached comments are put in front of leading comments.
+// Get leading or trailing comments in a string. Comment lines start
+// with "// ". Leading detached comments are put in front of leading
+// comments.
 template <typename DescriptorType>
 inline std::string GetPHPComments(const DescriptorType* desc,
                                   std::string prefix) {
-  return ReplaceAll(grpc_generator::GetPrefixedComments(desc, true, prefix),
-                    "*/", "&#42;/");
+  return ReplaceAll(
+      grpc_generator::GetPrefixedComments(desc, true, prefix), "*/",
+      "&#42;/");
 }
 
 }  // namespace grpc_php_generator

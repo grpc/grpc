@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -56,11 +56,13 @@ grpc_error_handle grpc_chttp2_incoming_metadata_buffer_replace_or_add(
 }
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
-    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_millis deadline) {
+    grpc_chttp2_incoming_metadata_buffer* buffer,
+    grpc_millis deadline) {
   buffer->batch.deadline = deadline;
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_metadata_batch* batch) {
+    grpc_chttp2_incoming_metadata_buffer* buffer,
+    grpc_metadata_batch* batch) {
   grpc_metadata_batch_move(&buffer->batch, batch);
 }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,7 +29,8 @@
 
 namespace grpc_generator {
 
-inline bool StripSuffix(std::string* filename, const std::string& suffix) {
+inline bool StripSuffix(std::string* filename,
+                        const std::string& suffix) {
   if (filename->length() >= suffix.length()) {
     size_t suffix_pos = filename->length() - suffix.length();
     if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
@@ -58,8 +59,10 @@ inline std::string StripProto(std::string filename) {
   return filename;
 }
 
-inline std::string StringReplace(std::string str, const std::string& from,
-                                 const std::string& to, bool replace_all) {
+inline std::string StringReplace(std::string str,
+                                 const std::string& from,
+                                 const std::string& to,
+                                 bool replace_all) {
   size_t pos = 0;
 
   do {
@@ -74,13 +77,14 @@ inline std::string StringReplace(std::string str, const std::string& from,
   return str;
 }
 
-inline std::string StringReplace(std::string str, const std::string& from,
+inline std::string StringReplace(std::string str,
+                                 const std::string& from,
                                  const std::string& to) {
   return StringReplace(str, from, to, true);
 }
 
-inline std::vector<std::string> tokenize(const std::string& input,
-                                         const std::string& delimiters) {
+inline std::vector<std::string> tokenize(
+    const std::string& input, const std::string& delimiters) {
   std::vector<std::string> tokens;
   size_t pos, last_pos = 0;
 
@@ -125,8 +129,10 @@ inline std::string LowerUnderscoreToUpperCamel(std::string str) {
 }
 
 inline std::string FileNameInUpperCamel(
-    const grpc::protobuf::FileDescriptor* file, bool include_package_path) {
-  std::vector<std::string> tokens = tokenize(StripProto(file->name()), "/");
+    const grpc::protobuf::FileDescriptor* file,
+    bool include_package_path) {
+  std::vector<std::string> tokens =
+      tokenize(StripProto(file->name()), "/");
   std::string result = "";
   if (include_package_path) {
     for (unsigned int i = 0; i < tokens.size() - 1; i++) {
@@ -195,8 +201,8 @@ inline void GetComment(const DescriptorType* desc, CommentType type,
                                       : location.trailing_comments;
     Split(comments, '\n', out);
   } else if (type == COMMENTTYPE_LEADING_DETACHED) {
-    for (unsigned int i = 0; i < location.leading_detached_comments.size();
-         i++) {
+    for (unsigned int i = 0;
+         i < location.leading_detached_comments.size(); i++) {
       Split(location.leading_detached_comments[i], '\n', out);
       out->push_back("");
     }
@@ -207,25 +213,27 @@ inline void GetComment(const DescriptorType* desc, CommentType type,
 }
 
 // Each raw comment line without newline is appended to out.
-// For file level leading and detached leading comments, we return comments
-// above syntax line. Return nothing for trailing comments.
+// For file level leading and detached leading comments, we return
+// comments above syntax line. Return nothing for trailing comments.
 template <>
 inline void GetComment(const grpc::protobuf::FileDescriptor* desc,
-                       CommentType type, std::vector<std::string>* out) {
+                       CommentType type,
+                       std::vector<std::string>* out) {
   if (type == COMMENTTYPE_TRAILING) {
     return;
   }
   grpc::protobuf::SourceLocation location;
   std::vector<int> path;
-  path.push_back(grpc::protobuf::FileDescriptorProto::kSyntaxFieldNumber);
+  path.push_back(
+      grpc::protobuf::FileDescriptorProto::kSyntaxFieldNumber);
   if (!desc->GetSourceLocation(path, &location)) {
     return;
   }
   if (type == COMMENTTYPE_LEADING) {
     Split(location.leading_comments, '\n', out);
   } else if (type == COMMENTTYPE_LEADING_DETACHED) {
-    for (unsigned int i = 0; i < location.leading_detached_comments.size();
-         i++) {
+    for (unsigned int i = 0;
+         i < location.leading_detached_comments.size(); i++) {
       Split(location.leading_detached_comments[i], '\n', out);
       out->push_back("");
     }
@@ -235,8 +243,9 @@ inline void GetComment(const grpc::protobuf::FileDescriptor* desc,
   }
 }
 
-// Add prefix and newline to each comment line and concatenate them together.
-// Make sure there is a space after the prefix unless the line is empty.
+// Add prefix and newline to each comment line and concatenate them
+// together. Make sure there is a space after the prefix unless the line
+// is empty.
 inline std::string GenerateCommentsWithPrefix(
     const std::vector<std::string>& in, const std::string& prefix) {
   std::ostringstream oss;
@@ -254,19 +263,20 @@ inline std::string GenerateCommentsWithPrefix(
 }
 
 template <typename DescriptorType>
-inline std::string GetPrefixedComments(const DescriptorType* desc, bool leading,
+inline std::string GetPrefixedComments(const DescriptorType* desc,
+                                       bool leading,
                                        const std::string& prefix) {
   std::vector<std::string> out;
   if (leading) {
     grpc_generator::GetComment(
         desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &out);
     std::vector<std::string> leading;
-    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
-                               &leading);
+    grpc_generator::GetComment(
+        desc, grpc_generator::COMMENTTYPE_LEADING, &leading);
     out.insert(out.end(), leading.begin(), leading.end());
   } else {
-    grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
-                               &out);
+    grpc_generator::GetComment(
+        desc, grpc_generator::COMMENTTYPE_TRAILING, &out);
   }
   return GenerateCommentsWithPrefix(out, prefix);
 }

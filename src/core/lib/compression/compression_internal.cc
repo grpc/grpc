@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,8 +46,8 @@ grpc_message_compression_algorithm_from_slice(const grpc_slice& str) {
   return GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT;
 }
 
-grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
-    const grpc_slice& str) {
+grpc_stream_compression_algorithm
+grpc_stream_compression_algorithm_from_slice(const grpc_slice& str) {
   if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_STREAM_COMPRESS_NONE;
   }
@@ -85,8 +85,8 @@ grpc_mdelem grpc_stream_compression_encoding_mdelem(
   return GRPC_MDNULL;
 }
 
-/* Interfaces performing transformation between compression algorithms and
- * levels. */
+/* Interfaces performing transformation between compression algorithms
+ * and levels. */
 grpc_message_compression_algorithm
 grpc_compression_algorithm_to_message_compression_algorithm(
     grpc_compression_algorithm algo) {
@@ -127,7 +127,8 @@ uint32_t grpc_compression_bitset_from_message_stream_compression_bitset(
     uint32_t message_bitset, uint32_t stream_bitset) {
   uint32_t offset_stream_bitset =
       (stream_bitset & 1u) |
-      ((stream_bitset & (~1u)) << (GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT - 1));
+      ((stream_bitset & (~1u))
+       << (GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT - 1));
   return message_bitset | offset_stream_bitset;
 }
 
@@ -176,8 +177,8 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
 int grpc_message_compression_algorithm_name(
     grpc_message_compression_algorithm algorithm, const char** name) {
   GRPC_API_TRACE(
-      "grpc_message_compression_algorithm_name(algorithm=%d, name=%p)", 2,
-      ((int)algorithm, name));
+      "grpc_message_compression_algorithm_name(algorithm=%d, name=%p)",
+      2, ((int)algorithm, name));
   switch (algorithm) {
     case GRPC_MESSAGE_COMPRESS_NONE:
       *name = "identity";
@@ -196,10 +197,12 @@ int grpc_message_compression_algorithm_name(
 
 /* TODO(dgq): Add the ability to specify parameters to the individual
  * compression algorithms */
-grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
+grpc_message_compression_algorithm
+grpc_message_compression_algorithm_for_level(
     grpc_compression_level level, uint32_t accepted_encodings) {
-  GRPC_API_TRACE("grpc_message_compression_algorithm_for_level(level=%d)", 1,
-                 ((int)level));
+  GRPC_API_TRACE(
+      "grpc_message_compression_algorithm_for_level(level=%d)", 1,
+      ((int)level));
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
     gpr_log(GPR_ERROR, "Unknown message compression level %d.",
             static_cast<int>(level));
@@ -214,14 +217,14 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
 
   GPR_ASSERT(level > 0);
 
-  /* Establish a "ranking" or compression algorithms in increasing order of
-   * compression.
-   * This is simplistic and we will probably want to introduce other dimensions
-   * in the future (cpu/memory cost, etc). */
+  /* Establish a "ranking" or compression algorithms in increasing order
+   * of compression. This is simplistic and we will probably want to
+   * introduce other dimensions in the future (cpu/memory cost, etc). */
   const grpc_message_compression_algorithm algos_ranking[] = {
       GRPC_MESSAGE_COMPRESS_GZIP, GRPC_MESSAGE_COMPRESS_DEFLATE};
 
-  /* intersect algos_ranking with the supported ones keeping the ranked order */
+  /* intersect algos_ranking with the supported ones keeping the ranked
+   * order */
   grpc_message_compression_algorithm
       sorted_supported_algos[GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT];
   size_t algos_supported_idx = 0;

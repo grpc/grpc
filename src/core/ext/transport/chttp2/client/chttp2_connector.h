@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,7 +32,8 @@ class Chttp2Connector : public SubchannelConnector {
   Chttp2Connector();
   ~Chttp2Connector() override;
 
-  void Connect(const Args& args, Result* result, grpc_closure* notify) override;
+  void Connect(const Args& args, Result* result,
+               grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override;
 
  private:
@@ -42,15 +43,16 @@ class Chttp2Connector : public SubchannelConnector {
   static void OnReceiveSettings(void* arg, grpc_error_handle error);
   static void OnTimeout(void* arg, grpc_error_handle error);
 
-  // We cannot invoke notify_ until both OnTimeout() and OnReceiveSettings()
-  // have been called since that is an indicator to the upper layer that we are
-  // done with the connection attempt. So, the notification process is broken
-  // into two steps. 1) Either OnTimeout() or OnReceiveSettings() gets invoked
-  // first. Whichever gets invoked, calls MaybeNotify() to set the result and
-  // triggers the other callback to be invoked. 2) When the other callback is
+  // We cannot invoke notify_ until both OnTimeout() and
+  // OnReceiveSettings() have been called since that is an indicator to
+  // the upper layer that we are done with the connection attempt. So,
+  // the notification process is broken into two steps. 1) Either
+  // OnTimeout() or OnReceiveSettings() gets invoked first. Whichever
+  // gets invoked, calls MaybeNotify() to set the result and triggers
+  // the other callback to be invoked. 2) When the other callback is
   // invoked, we call MaybeNotify() again to actually invoke the notify_
-  // callback. Note that this only happens if the handshake is done and the
-  // connector is waiting on the SETTINGS frame.
+  // callback. Note that this only happens if the handshake is done and
+  // the connector is waiting on the SETTINGS frame.
   void MaybeNotify(grpc_error_handle error);
 
   Mutex mu_;

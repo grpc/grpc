@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,10 +41,10 @@ uint64_t GetAndResetCounter(Atomic<uint64_t>* from) {
 // XdsClusterDropStats
 //
 
-XdsClusterDropStats::XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
-                                         absl::string_view lrs_server_name,
-                                         absl::string_view cluster_name,
-                                         absl::string_view eds_service_name)
+XdsClusterDropStats::XdsClusterDropStats(
+    RefCountedPtr<XdsClient> xds_client,
+    absl::string_view lrs_server_name, absl::string_view cluster_name,
+    absl::string_view eds_service_name)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
                      ? "XdsClusterDropStats"
                      : nullptr),
@@ -53,8 +53,10 @@ XdsClusterDropStats::XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
       cluster_name_(cluster_name),
       eds_service_name_(eds_service_name) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] created drop stats %p for {%s, %s, %s}",
-            xds_client_.get(), this, std::string(lrs_server_name_).c_str(),
+    gpr_log(GPR_INFO,
+            "[xds_client %p] created drop stats %p for {%s, %s, %s}",
+            xds_client_.get(), this,
+            std::string(lrs_server_name_).c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str());
   }
@@ -64,7 +66,8 @@ XdsClusterDropStats::~XdsClusterDropStats() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] destroying drop stats %p for {%s, %s, %s}",
-            xds_client_.get(), this, std::string(lrs_server_name_).c_str(),
+            xds_client_.get(), this,
+            std::string(lrs_server_name_).c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str());
   }
@@ -73,9 +76,11 @@ XdsClusterDropStats::~XdsClusterDropStats() {
   xds_client_.reset(DEBUG_LOCATION, "DropStats");
 }
 
-XdsClusterDropStats::Snapshot XdsClusterDropStats::GetSnapshotAndReset() {
+XdsClusterDropStats::Snapshot
+XdsClusterDropStats::GetSnapshotAndReset() {
   Snapshot snapshot;
-  snapshot.uncategorized_drops = GetAndResetCounter(&uncategorized_drops_);
+  snapshot.uncategorized_drops =
+      GetAndResetCounter(&uncategorized_drops_);
   MutexLock lock(&mu_);
   snapshot.categorized_drops = std::move(categorized_drops_);
   return snapshot;
@@ -95,8 +100,9 @@ void XdsClusterDropStats::AddCallDropped(const std::string& category) {
 //
 
 XdsClusterLocalityStats::XdsClusterLocalityStats(
-    RefCountedPtr<XdsClient> xds_client, absl::string_view lrs_server_name,
-    absl::string_view cluster_name, absl::string_view eds_service_name,
+    RefCountedPtr<XdsClient> xds_client,
+    absl::string_view lrs_server_name, absl::string_view cluster_name,
+    absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> name)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
                      ? "XdsClusterLocalityStats"
@@ -108,8 +114,10 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
       name_(std::move(name)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_client %p] created locality stats %p for {%s, %s, %s, %s}",
-            xds_client_.get(), this, std::string(lrs_server_name_).c_str(),
+            "[xds_client %p] created locality stats %p for {%s, %s, "
+            "%s, %s}",
+            xds_client_.get(), this,
+            std::string(lrs_server_name_).c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str(),
             name_->AsHumanReadableString().c_str());
@@ -119,26 +127,29 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
 XdsClusterLocalityStats::~XdsClusterLocalityStats() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_client %p] destroying locality stats %p for {%s, %s, %s, %s}",
-            xds_client_.get(), this, std::string(lrs_server_name_).c_str(),
+            "[xds_client %p] destroying locality stats %p for {%s, %s, "
+            "%s, %s}",
+            xds_client_.get(), this,
+            std::string(lrs_server_name_).c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str(),
             name_->AsHumanReadableString().c_str());
   }
-  xds_client_->RemoveClusterLocalityStats(lrs_server_name_, cluster_name_,
-                                          eds_service_name_, name_, this);
+  xds_client_->RemoveClusterLocalityStats(
+      lrs_server_name_, cluster_name_, eds_service_name_, name_, this);
   xds_client_.reset(DEBUG_LOCATION, "LocalityStats");
 }
 
 XdsClusterLocalityStats::Snapshot
 XdsClusterLocalityStats::GetSnapshotAndReset() {
-  Snapshot snapshot = {GetAndResetCounter(&total_successful_requests_),
-                       // Don't reset total_requests_in_progress because it's
-                       // not related to a single reporting interval.
-                       total_requests_in_progress_.Load(MemoryOrder::RELAXED),
-                       GetAndResetCounter(&total_error_requests_),
-                       GetAndResetCounter(&total_issued_requests_),
-                       {}};
+  Snapshot snapshot = {
+      GetAndResetCounter(&total_successful_requests_),
+      // Don't reset total_requests_in_progress because it's
+      // not related to a single reporting interval.
+      total_requests_in_progress_.Load(MemoryOrder::RELAXED),
+      GetAndResetCounter(&total_error_requests_),
+      GetAndResetCounter(&total_issued_requests_),
+      {}};
   MutexLock lock(&backend_metrics_mu_);
   snapshot.backend_metrics = std::move(backend_metrics_);
   return snapshot;

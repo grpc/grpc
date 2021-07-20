@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,7 +39,8 @@ grpc_polling_entity grpc_polling_entity_create_from_pollset(
   return pollent;
 }
 
-grpc_pollset* grpc_polling_entity_pollset(grpc_polling_entity* pollent) {
+grpc_pollset* grpc_polling_entity_pollset(
+    grpc_polling_entity* pollent) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
     return pollent->pollent.pollset;
   }
@@ -58,25 +59,27 @@ bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent) {
   return pollent->tag == GRPC_POLLS_NONE;
 }
 
-void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
-                                            grpc_pollset_set* pss_dst) {
+void grpc_polling_entity_add_to_pollset_set(
+    grpc_polling_entity* pollent, grpc_pollset_set* pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
-    // CFStream does not use file destriptors. When CFStream is used, the fd
-    // pollset is possible to be null.
+    // CFStream does not use file destriptors. When CFStream is used,
+    // the fd pollset is possible to be null.
     if (pollent->pollent.pollset != nullptr) {
       grpc_pollset_set_add_pollset(pss_dst, pollent->pollent.pollset);
     }
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
-    grpc_pollset_set_add_pollset_set(pss_dst, pollent->pollent.pollset_set);
+    grpc_pollset_set_add_pollset_set(pss_dst,
+                                     pollent->pollent.pollset_set);
   } else {
-    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'", pollent->tag);
+    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'",
+            pollent->tag);
     abort();
   }
 }
 
-void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
-                                              grpc_pollset_set* pss_dst) {
+void grpc_polling_entity_del_from_pollset_set(
+    grpc_polling_entity* pollent, grpc_pollset_set* pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
 #ifdef GRPC_CFSTREAM
     if (pollent->pollent.pollset != nullptr) {
@@ -88,9 +91,11 @@ void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
 #endif
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
-    grpc_pollset_set_del_pollset_set(pss_dst, pollent->pollent.pollset_set);
+    grpc_pollset_set_del_pollset_set(pss_dst,
+                                     pollent->pollent.pollset_set);
   } else {
-    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'", pollent->tag);
+    gpr_log(GPR_ERROR, "Invalid grpc_polling_entity tag '%d'",
+            pollent->tag);
     abort();
   }
 }

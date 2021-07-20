@@ -10,10 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *is % allowed in string
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ *implied. See the License for the specific language governing
+ *permissions and limitations under the License. is % allowed in string
  */
 
 #include <grpc/support/log.h>
@@ -30,8 +29,9 @@
 
 int kDeadlineSecs = 10;
 
-ABSL_FLAG(std::string, metrics_server_address, "localhost:8081",
-          "The metrics server addresses in the fomrat <hostname>:<port>");
+ABSL_FLAG(
+    std::string, metrics_server_address, "localhost:8081",
+    "The metrics server addresses in the fomrat <hostname>:<port>");
 // TODO(Capstan): Consider using absl::Duration
 ABSL_FLAG(int32_t, deadline_secs, kDeadlineSecs,
           "The deadline (in seconds) for RCP call");
@@ -45,15 +45,16 @@ using grpc::testing::MetricsService;
 // Do not log anything
 void BlackholeLogger(gpr_log_func_args* /*args*/) {}
 
-// Prints the values of all Gauges (unless total_only is set to 'true' in which
-// case this only prints the sum of all gauge values).
-bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
-                  int deadline_secs) {
+// Prints the values of all Gauges (unless total_only is set to 'true'
+// in which case this only prints the sum of all gauge values).
+bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub,
+                  bool total_only, int deadline_secs) {
   grpc::ClientContext context;
   EmptyMessage message;
 
   std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::seconds(deadline_secs);
+      std::chrono::system_clock::now() +
+      std::chrono::seconds(deadline_secs);
 
   context.set_deadline(deadline);
 
@@ -70,8 +71,8 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
       }
       overall_qps += gauge_response.long_value();
     } else {
-      std::cout << "Gauge '" << gauge_response.name() << "' is not long valued"
-                << std::endl;
+      std::cout << "Gauge '" << gauge_response.name()
+                << "' is not long valued" << std::endl;
     }
   }
 
@@ -79,7 +80,8 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
 
   const grpc::Status status = reader->Finish();
   if (!status.ok()) {
-    std::cout << "Error in getting metrics from the client" << std::endl;
+    std::cout << "Error in getting metrics from the client"
+              << std::endl;
   }
 
   return status.ok();
@@ -88,9 +90,9 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  // The output of metrics client is in some cases programmatically parsed (for
-  // example by the stress test framework). So, we do not want any of the log
-  // from the grpc library appearing on stdout.
+  // The output of metrics client is in some cases programmatically
+  // parsed (for example by the stress test framework). So, we do not
+  // want any of the log from the grpc library appearing on stdout.
   gpr_set_log_function(BlackholeLogger);
 
   std::shared_ptr<grpc::Channel> channel(

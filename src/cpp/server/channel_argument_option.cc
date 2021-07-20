@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
     const std::string name_;
     const std::string value_;
   };
-  return std::unique_ptr<ServerBuilderOption>(new StringOption(name, value));
+  return std::unique_ptr<ServerBuilderOption>(
+      new StringOption(name, value));
 }
 
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
@@ -59,7 +60,8 @@ std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
     const std::string name_;
     const int value_;
   };
-  return std::unique_ptr<ServerBuilderOption>(new IntOption(name, value));
+  return std::unique_ptr<ServerBuilderOption>(
+      new IntOption(name, value));
 }
 
 }  // namespace grpc

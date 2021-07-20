@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,11 +26,14 @@
 void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq);
 
 /**
- * Makes the implementation of CompletionQueue#pluck available in other files
+ * Makes the implementation of CompletionQueue#pluck available in other
+ * files
  *
- * This avoids having code that holds the GIL repeated at multiple sites.
+ * This avoids having code that holds the GIL repeated at multiple
+ * sites.
  */
-grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
-                                     gpr_timespec deadline, void* reserved);
+grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue,
+                                     void* tag, gpr_timespec deadline,
+                                     void* reserved);
 
 #endif /* GRPC_RB_COMPLETION_QUEUE_H_ */

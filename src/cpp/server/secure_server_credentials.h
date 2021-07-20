@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ class AuthMetadataProcessorAyncWrapper final {
 
   static void Process(void* wrapper, grpc_auth_context* context,
                       const grpc_metadata* md, size_t num_md,
-                      grpc_process_auth_metadata_done_cb cb, void* user_data);
+                      grpc_process_auth_metadata_done_cb cb,
+                      void* user_data);
 
   explicit AuthMetadataProcessorAyncWrapper(
       const std::shared_ptr<AuthMetadataProcessor>& processor)
@@ -49,8 +50,9 @@ class AuthMetadataProcessorAyncWrapper final {
   }
 
  private:
-  void InvokeProcessor(grpc_auth_context* context, const grpc_metadata* md,
-                       size_t num_md, grpc_process_auth_metadata_done_cb cb,
+  void InvokeProcessor(grpc_auth_context* context,
+                       const grpc_metadata* md, size_t num_md,
+                       grpc_process_auth_metadata_done_cb cb,
                        void* user_data);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::shared_ptr<AuthMetadataProcessor> processor_;
@@ -64,15 +66,19 @@ class SecureServerCredentials final : public ServerCredentials {
     grpc_server_credentials_release(creds_);
   }
 
-  int AddPortToServer(const std::string& addr, grpc_server* server) override;
+  int AddPortToServer(const std::string& addr,
+                      grpc_server* server) override;
 
   void SetAuthMetadataProcessor(
-      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) override;
+      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor)
+      override;
 
   grpc_server_credentials* c_creds() { return creds_; }
 
  private:
-  SecureServerCredentials* AsSecureServerCredentials() override { return this; }
+  SecureServerCredentials* AsSecureServerCredentials() override {
+    return this;
+  }
 
   grpc_server_credentials* creds_;
   std::unique_ptr<grpc::AuthMetadataProcessorAyncWrapper> processor_;

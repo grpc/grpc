@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,20 +32,23 @@
  */
 #ifndef GPR_ABSEIL_SYNC
 #if defined(__APPLE__)
-// This is disabled on Apple platforms because macos/grpc_basictests_c_cpp
-// fails with this. https://github.com/grpc/grpc/issues/23661
+// This is disabled on Apple platforms because
+// macos/grpc_basictests_c_cpp fails with this.
+// https://github.com/grpc/grpc/issues/23661
 #else
 #define GPR_ABSEIL_SYNC 1
 #endif
 #endif  // GPR_ABSEIL_SYNC
 
 /*
- * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
+ * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for
+ * grpc_error_handle
  */
 // #define GRPC_ERROR_IS_ABSEIL_STATUS 1
 
 /* Get windows.h included everywhere (we need it) */
-#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || \
+    defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED
 #define WIN32_LEAN_AND_MEAN
@@ -84,7 +87,8 @@
    things.  */
 
 #if !defined(GPR_NO_AUTODETECT_PLATFORM)
-#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || \
+    defined(WIN32)
 #if defined(_WIN64) || defined(WIN64)
 #define GPR_ARCH_64 1
 #else
@@ -403,7 +407,8 @@
 /*
  * For backward compatibility mode, reset _FORTIFY_SOURCE to prevent
  * a library from having non-standard symbols such as __asprintf_chk.
- * This helps non-glibc systems such as alpine using musl to find symbols.
+ * This helps non-glibc systems such as alpine using musl to find
+ * symbols.
  */
 #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
 #undef _FORTIFY_SOURCE
@@ -447,13 +452,10 @@ typedef unsigned __int64 uint64_t;
 /* Type of cycle clock implementation */
 #ifdef GPR_LINUX
 /* Disable cycle clock by default.
-   TODO(soheil): enable when we support fallback for unstable cycle clocks.
-#if defined(__i386__)
-#define GPR_CYCLE_COUNTER_RDTSC_32 1
-#elif defined(__x86_64__) || defined(__amd64__)
-#define GPR_CYCLE_COUNTER_RDTSC_64 1
-#else
-#define GPR_CYCLE_COUNTER_FALLBACK 1
+   TODO(soheil): enable when we support fallback for unstable cycle
+clocks. #if defined(__i386__) #define GPR_CYCLE_COUNTER_RDTSC_32 1 #elif
+defined(__x86_64__) || defined(__amd64__) #define
+GPR_CYCLE_COUNTER_RDTSC_64 1 #else #define GPR_CYCLE_COUNTER_FALLBACK 1
 #endif
 */
 #define GPR_CYCLE_COUNTER_FALLBACK 1
@@ -467,8 +469,8 @@ typedef unsigned __int64 uint64_t;
 #define GPR_CACHELINE_SIZE_LOG 6
 #endif
 #ifndef GPR_CACHELINE_SIZE_LOG
-/* A reasonable default guess. Note that overestimates tend to waste more
-   space, while underestimates tend to waste more time. */
+/* A reasonable default guess. Note that overestimates tend to waste
+   more space, while underestimates tend to waste more time. */
 #define GPR_CACHELINE_SIZE_LOG 6
 #endif /* GPR_CACHELINE_SIZE_LOG */
 #endif /* GPR_CACHELINE_SIZE_LOG */
@@ -492,20 +494,22 @@ typedef unsigned __int64 uint64_t;
 #error Must define exactly one of GPR_ARCH_32, GPR_ARCH_64
 #endif
 
-#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) + defined(GPR_WINDOWS) + \
-        defined(GPR_CPU_IPHONE) + defined(GPR_CPU_CUSTOM) !=                 \
+#if defined(GPR_CPU_LINUX) + defined(GPR_CPU_POSIX) +    \
+        defined(GPR_WINDOWS) + defined(GPR_CPU_IPHONE) + \
+        defined(GPR_CPU_CUSTOM) !=                       \
     1
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
 #endif
 
-#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \
-        defined(GPR_STDCPP_TLS) + defined(GPR_CUSTOM_TLS) !=                  \
+#if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) +           \
+        defined(GPR_PTHREAD_TLS) + defined(GPR_STDCPP_TLS) + \
+        defined(GPR_CUSTOM_TLS) !=                           \
     1
 #error Must define exactly one of GPR_MSVC_TLS, GPR_GCC_TLS, GPR_PTHREAD_TLS, GPR_STDCPP_TLS, GPR_CUSTOM_TLS
 #endif
 
-/* maximum alignment needed for any type on this platform, rounded up to a
-   power of two */
+/* maximum alignment needed for any type on this platform, rounded up to
+   a power of two */
 #define GPR_MAX_ALIGNMENT 16
 
 #ifndef GRPC_ARES
@@ -591,7 +595,8 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_HAS_FEATURE */
 
 #ifndef GPR_ATTRIBUTE_NOINLINE
-#if GPR_HAS_ATTRIBUTE(noinline) || (defined(__GNUC__) && !defined(__clang__))
+#if GPR_HAS_ATTRIBUTE(noinline) || \
+    (defined(__GNUC__) && !defined(__clang__))
 #define GPR_ATTRIBUTE_NOINLINE __attribute__((noinline))
 #define GPR_HAS_ATTRIBUTE_NOINLINE 1
 #else
@@ -618,7 +623,8 @@ typedef unsigned __int64 uint64_t;
 #ifndef GPR_ATTRIBUTE_WEAK
 /* Attribute weak is broken on LLVM/windows:
  * https://bugs.llvm.org/show_bug.cgi?id=37598 */
-#if (GPR_HAS_ATTRIBUTE(weak) || (defined(__GNUC__) && !defined(__clang__))) && \
+#if (GPR_HAS_ATTRIBUTE(weak) ||                     \
+     (defined(__GNUC__) && !defined(__clang__))) && \
     !(defined(__llvm__) && defined(_WIN32))
 #define GPR_ATTRIBUTE_WEAK __attribute__((weak))
 #define GPR_HAS_ATTRIBUTE_WEAK 1
@@ -636,7 +642,8 @@ typedef unsigned __int64 uint64_t;
 #endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
 #endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
 
-/* GRPC_TSAN_ENABLED will be defined, when compiled with thread sanitizer. */
+/* GRPC_TSAN_ENABLED will be defined, when compiled with thread
+ * sanitizer. */
 #ifndef GRPC_TSAN_SUPPRESSED
 #if defined(__SANITIZE_THREAD__)
 #define GRPC_TSAN_ENABLED
@@ -645,7 +652,8 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 
-/* GRPC_ASAN_ENABLED will be defined, when compiled with address sanitizer. */
+/* GRPC_ASAN_ENABLED will be defined, when compiled with address
+ * sanitizer. */
 #ifndef GRPC_ASAN_SUPPRESSED
 #if defined(__SANITIZE_ADDRESS__)
 #define GRPC_ASAN_ENABLED
@@ -654,7 +662,8 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 
-/* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */
+/* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or
+ * not */
 #ifndef GRPC_ALLOW_EXCEPTIONS
 #ifdef GPR_WINDOWS
 #if defined(_MSC_VER) && defined(_CPPUNWIND)
@@ -673,8 +682,9 @@ typedef unsigned __int64 uint64_t;
 #endif /* __GPR_WINDOWS */
 #endif /* GRPC_ALLOW_EXCEPTIONS */
 
-/* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the
- * most likely. Ideally, also collect performance numbers to justify the claim.
+/* Use GPR_LIKELY only in cases where you are sure that a certain
+ * outcome is the most likely. Ideally, also collect performance numbers
+ * to justify the claim.
  */
 #ifdef __GNUC__
 #define GPR_LIKELY(x) __builtin_expect((x), 1)
@@ -688,13 +698,14 @@ typedef unsigned __int64 uint64_t;
 #define __STDC_FORMAT_MACROS
 #endif
 
-/* Selectively enable EventEngine on specific platforms. This default can be
- * overridden using the GRPC_USE_EVENT_ENGINE compiler flag.
+/* Selectively enable EventEngine on specific platforms. This default
+ * can be overridden using the GRPC_USE_EVENT_ENGINE compiler flag.
  */
 #ifndef GRPC_USE_EVENT_ENGINE
 /* Not enabled by default on any platforms yet. (2021.06) */
 #elif GRPC_USE_EVENT_ENGINE == 0
-/* Building with `-DGRPC_USE_EVENT_ENGINE=0` will override the default. */
+/* Building with `-DGRPC_USE_EVENT_ENGINE=0` will override the default.
+ */
 #undef GRPC_USE_EVENT_ENGINE
 #endif /* GRPC_USE_EVENT_ENGINE */
 

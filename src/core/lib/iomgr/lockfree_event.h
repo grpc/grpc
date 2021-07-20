@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,9 +36,10 @@ class LockfreeEvent {
   LockfreeEvent(const LockfreeEvent&) = delete;
   LockfreeEvent& operator=(const LockfreeEvent&) = delete;
 
-  // These methods are used to initialize and destroy the internal state. These
-  // cannot be done in constructor and destructor because SetReady may be called
-  // when the event is destroyed and put in a freelist.
+  // These methods are used to initialize and destroy the internal
+  // state. These cannot be done in constructor and destructor because
+  // SetReady may be called when the event is destroyed and put in a
+  // freelist.
   void InitEvent();
   void DestroyEvent();
 
@@ -47,22 +48,27 @@ class LockfreeEvent {
     return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
   }
 
-  // Schedules \a closure when the event is received (see SetReady()) or the
-  // shutdown state has been set. Note that the event may have already been
-  // received, in which case the closure would be scheduled immediately.
-  // If the shutdown state has already been set, then \a closure is scheduled
-  // with the shutdown error.
+  // Schedules \a closure when the event is received (see SetReady()) or
+  // the shutdown state has been set. Note that the event may have
+  // already been received, in which case the closure would be scheduled
+  // immediately. If the shutdown state has already been set, then \a
+  // closure is scheduled with the shutdown error.
   void NotifyOn(grpc_closure* closure);
 
-  // Sets the shutdown state. If a closure had been provided by NotifyOn and has
-  // not yet been scheduled, it will be scheduled with \a shutdown_error.
+  // Sets the shutdown state. If a closure had been provided by NotifyOn
+  // and has not yet been scheduled, it will be scheduled with \a
+  // shutdown_error.
   bool SetShutdown(grpc_error_handle shutdown_error);
 
   // Signals that the event has been received.
   void SetReady();
 
  private:
-  enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
+  enum State {
+    kClosureNotReady = 0,
+    kClosureReady = 2,
+    kShutdownBit = 1
+  };
 
   gpr_atm state_;
 };

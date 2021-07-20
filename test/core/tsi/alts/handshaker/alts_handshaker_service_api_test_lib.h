@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,10 +23,10 @@
 #include "src/proto/grpc/gcp/handshaker.upb.h"
 
 /**
- * The first part of this file contains function signatures for de-serializing
- * ALTS handshake requests and setting/serializing ALTS handshake responses,
- * which simulate the behaviour of grpc server that runs ALTS handshaker
- * service.
+ * The first part of this file contains function signatures for
+ * de-serializing ALTS handshake requests and setting/serializing ALTS
+ * handshake responses, which simulate the behaviour of grpc server that
+ * runs ALTS handshaker service.
  */
 
 /* This method sets peer_rpc_versions for ALTS handshaker response. */
@@ -35,12 +35,13 @@ bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
     uint32_t max_minor, uint32_t min_major, uint32_t min_minor);
 
 /* This method de-serializes ALTS handshaker request. */
-grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
-                                                       upb_arena* arena);
+grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(
+    grpc_slice slice, upb_arena* arena);
 
 /* This method checks equality of two ALTS handshaker responses. */
-bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
-                                     const grpc_gcp_HandshakerResp* r_resp);
+bool grpc_gcp_handshaker_resp_equals(
+    const grpc_gcp_HandshakerResp* l_resp,
+    const grpc_gcp_HandshakerResp* r_resp);
 
 /* This method checks equality of two handshaker response results. */
 bool grpc_gcp_handshaker_resp_result_equals(

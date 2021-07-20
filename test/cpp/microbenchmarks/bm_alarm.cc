@@ -10,13 +10,14 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
-/* This benchmark exists to ensure that immediately-firing alarms are fast */
+/* This benchmark exists to ensure that immediately-firing alarms are
+ * fast */
 
 #include <benchmark/benchmark.h>
 #include <grpc/grpc.h>
@@ -48,8 +49,8 @@ BENCHMARK(BM_Alarm_Tag_Immediate);
 }  // namespace testing
 }  // namespace grpc
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

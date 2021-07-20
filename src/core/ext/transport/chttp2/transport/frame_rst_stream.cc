@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,8 +31,8 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
-                                         grpc_transport_one_way_stats* stats) {
+grpc_slice grpc_chttp2_rst_stream_create(
+    uint32_t id, uint32_t code, grpc_transport_one_way_stats* stats) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   if (stats != nullptr) stats->framing_bytes += frame_size;
@@ -69,22 +69,21 @@ void grpc_chttp2_add_rst_stream_to_next_write(
 }
 
 grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
-    grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags) {
+    grpc_chttp2_rst_stream_parser* parser, uint32_t length,
+    uint8_t flags) {
   if (length != 4) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("invalid rst_stream: length=%d, flags=%02x", length,
-                        flags)
+        absl::StrFormat("invalid rst_stream: length=%d, flags=%02x",
+                        length, flags)
             .c_str());
   }
   parser->byte = 0;
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
-                                                      grpc_chttp2_transport* t,
-                                                      grpc_chttp2_stream* s,
-                                                      const grpc_slice& slice,
-                                                      int is_last) {
+grpc_error_handle grpc_chttp2_rst_stream_parser_parse(
+    void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    const grpc_slice& slice, int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
@@ -100,12 +99,14 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
 
   if (p->byte == 4) {
     GPR_ASSERT(is_last);
-    uint32_t reason = ((static_cast<uint32_t>(p->reason_bytes[0])) << 24) |
-                      ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
-                      ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
-                      ((static_cast<uint32_t>(p->reason_bytes[3])));
+    uint32_t reason =
+        ((static_cast<uint32_t>(p->reason_bytes[0])) << 24) |
+        ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
+        ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
+        ((static_cast<uint32_t>(p->reason_bytes[3])));
     grpc_error_handle error = GRPC_ERROR_NONE;
-    if (reason != GRPC_HTTP2_NO_ERROR || s->metadata_buffer[1].size == 0) {
+    if (reason != GRPC_HTTP2_NO_ERROR ||
+        s->metadata_buffer[1].size == 0) {
       error = grpc_error_set_int(
           grpc_error_set_str(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),

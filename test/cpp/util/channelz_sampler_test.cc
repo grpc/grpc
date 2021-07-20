@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <stdlib.h>
@@ -63,7 +63,8 @@ std::string sampling_interval_seconds = "3";
 std::string output_json("output.json");
 
 // Creata an echo server
-class EchoServerImpl final : public grpc::testing::TestService::Service {
+class EchoServerImpl final
+    : public grpc::testing::TestService::Service {
   Status EmptyCall(::grpc::ServerContext* /*context*/,
                    const grpc::testing::Empty* /*request*/,
                    grpc::testing::Empty* /*response*/) override {
@@ -131,7 +132,8 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   std::thread client_thread_2(RunClient, "2", &done_ev2);
   // Run the channelz sampler
   grpc::SubProcess* test_driver = new grpc::SubProcess(
-      {g_root + "/channelz_sampler", "--server_address=" + server_address,
+      {g_root + "/channelz_sampler",
+       "--server_address=" + server_address,
        "--custom_credentials_type=" + custom_credentials_type,
        "--sampling_times=" + sampling_times,
        "--sampling_interval_seconds=" + sampling_interval_seconds,
@@ -145,12 +147,14 @@ TEST(ChannelzSamplerTest, SimpleTest) {
       GPR_ASSERT(0);  // log the line number of the assertion failure
     }
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
+    gpr_log(GPR_ERROR,
+            "Channelz sampler test test-runner ended from signal %d",
             WTERMSIG(status));
     GPR_ASSERT(0);
   } else {
     gpr_log(GPR_ERROR,
-            "Channelz sampler test test-runner ended with unknown status %d",
+            "Channelz sampler test test-runner ended with unknown "
+            "status %d",
             status);
     GPR_ASSERT(0);
   }

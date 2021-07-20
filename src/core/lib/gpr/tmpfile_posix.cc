@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,13 +45,15 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
 
   fd = mkstemp(filename_template);
   if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for filename_template %s with error %s.",
+    gpr_log(GPR_ERROR,
+            "mkstemp failed for filename_template %s with error %s.",
             filename_template, strerror(errno));
     goto end;
   }
   result = fdopen(fd, "w+");
   if (result == nullptr) {
-    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
+    gpr_log(GPR_ERROR,
+            "Could not open file %s from fd %d (error = %s).",
             filename_template, fd, strerror(errno));
     unlink(filename_template);
     close(fd);

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,8 +42,9 @@ namespace {
 constexpr double kMetricValue = 3.1415;
 constexpr char kMetricName[] = "METRIC_PI";
 
-// Different messages result in different response statuses. For simplicity in
-// computing request bytes, the message sizes should be the same.
+// Different messages result in different response statuses. For
+// simplicity in computing request bytes, the message sizes should be
+// the same.
 const char kOkMessage[] = "hello";
 const char kServerErrorMessage[] = "sverr";
 const char kClientErrorMessage[] = "clerr";
@@ -58,7 +59,8 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       return Status(StatusCode::UNKNOWN, "Server error requested");
     }
     if (request->message() == kClientErrorMessage) {
-      return Status(StatusCode::FAILED_PRECONDITION, "Client error requested");
+      return Status(StatusCode::FAILED_PRECONDITION,
+                    "Client error requested");
     }
     response->set_message(request->message());
     ::grpc::load_reporter::experimental::AddLoadReportingCost(
@@ -74,14 +76,15 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
         "localhost:" + std::to_string(grpc_pick_unused_port_or_die());
     server_ =
         ServerBuilder()
-            .AddListeningPort(server_address_, InsecureServerCredentials())
+            .AddListeningPort(server_address_,
+                              InsecureServerCredentials())
             .RegisterService(&echo_service_)
             .SetOption(std::unique_ptr<::grpc::ServerBuilderOption>(
                 new ::grpc::load_reporter::experimental::
                     LoadReportingServiceServerBuilderOption()))
             .BuildAndStart();
-    server_thread_ =
-        std::thread(&ServerLoadReportingEnd2endTest::RunServerLoop, this);
+    server_thread_ = std::thread(
+        &ServerLoadReportingEnd2endTest::RunServerLoop, this);
   }
 
   void RunServerLoop() { server_->Wait(); }
@@ -91,14 +94,17 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
     server_thread_.join();
   }
 
-  void ClientMakeEchoCalls(const std::string& lb_id, const std::string& lb_tag,
-                           const std::string& message, size_t num_requests) {
-    auto stub = EchoTestService::NewStub(
-        grpc::CreateChannel(server_address_, InsecureChannelCredentials()));
+  void ClientMakeEchoCalls(const std::string& lb_id,
+                           const std::string& lb_tag,
+                           const std::string& message,
+                           size_t num_requests) {
+    auto stub = EchoTestService::NewStub(grpc::CreateChannel(
+        server_address_, InsecureChannelCredentials()));
     std::string lb_token = lb_id + lb_tag;
     for (size_t i = 0; i < num_requests; ++i) {
       ClientContext ctx;
-      if (!lb_token.empty()) ctx.AddMetadata(GRPC_LB_TOKEN_MD_KEY, lb_token);
+      if (!lb_token.empty())
+        ctx.AddMetadata(GRPC_LB_TOKEN_MD_KEY, lb_token);
       EchoRequest request;
       EchoResponse response;
       request.set_message(message);
@@ -123,8 +129,8 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
 TEST_F(ServerLoadReportingEnd2endTest, NoCall) {}
 
 TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
-  auto channel =
-      grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel = grpc::CreateChannel(server_address_,
+                                     InsecureChannelCredentials());
   auto stub = ::grpc::lb::v1::LoadReporter::NewStub(channel);
   ClientContext ctx;
   auto stream = stub->ReportLoad(&ctx);
@@ -139,8 +145,10 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   gpr_log(GPR_INFO, "Initial request sent.");
   ::grpc::lb::v1::LoadReportResponse response;
   stream->Read(&response);
-  const std::string& lb_id = response.initial_response().load_balancer_id();
-  gpr_log(GPR_INFO, "Initial response received (lb_id: %s).", lb_id.c_str());
+  const std::string& lb_id =
+      response.initial_response().load_balancer_id();
+  gpr_log(GPR_INFO, "Initial response received (lb_id: %s).",
+          lb_id.c_str());
   ClientMakeEchoCalls(lb_id, "LB_TAG", kOkMessage, 1);
   while (true) {
     stream->Read(&response);
@@ -148,8 +156,8 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
       ASSERT_EQ(response.load().size(), 3);
       for (const auto& load : response.load()) {
         if (load.in_progress_report_case()) {
-          // The special load record that reports the number of in-progress
-          // calls.
+          // The special load record that reports the number of
+          // in-progress calls.
           ASSERT_EQ(load.num_calls_in_progress(), 1);
         } else if (load.orphaned_load_case()) {
           // The call from the balancer doesn't have any valid LB token.
@@ -165,8 +173,11 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
           ASSERT_GE(load.total_bytes_received(), sizeof(kOkMessage));
           ASSERT_GE(load.total_bytes_sent(), sizeof(kOkMessage));
           ASSERT_EQ(load.metric_data().size(), 1);
-          ASSERT_EQ(load.metric_data().Get(0).metric_name(), kMetricName);
-          ASSERT_EQ(load.metric_data().Get(0).num_calls_finished_with_metric(),
+          ASSERT_EQ(load.metric_data().Get(0).metric_name(),
+                    kMetricName);
+          ASSERT_EQ(load.metric_data()
+                        .Get(0)
+                        .num_calls_finished_with_metric(),
                     1);
           ASSERT_EQ(load.metric_data().Get(0).total_metric_value(),
                     kMetricValue);

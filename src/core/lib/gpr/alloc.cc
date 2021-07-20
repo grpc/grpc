@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -63,7 +63,8 @@ void* gpr_realloc(void* p, size_t size) {
 }
 
 void* gpr_malloc_aligned(size_t size, size_t alignment) {
-  GPR_ASSERT(((alignment - 1) & alignment) == 0);  // Must be power of 2.
+  GPR_ASSERT(((alignment - 1) & alignment) ==
+             0);  // Must be power of 2.
   size_t extra = alignment - 1 + sizeof(void*);
   void* p = gpr_malloc(size + extra);
   void** ret = reinterpret_cast<void**>(
@@ -72,4 +73,6 @@ void* gpr_malloc_aligned(size_t size, size_t alignment) {
   return ret;
 }
 
-void gpr_free_aligned(void* ptr) { gpr_free((static_cast<void**>(ptr))[-1]); }
+void gpr_free_aligned(void* ptr) {
+  gpr_free((static_cast<void**>(ptr))[-1]);
+}

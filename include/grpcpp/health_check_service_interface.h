@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,8 +26,8 @@ namespace grpc {
 const char kHealthCheckServiceInterfaceArg[] =
     "grpc.health_check_service_interface";
 
-/// The gRPC server uses this interface to expose the health checking service
-/// without depending on protobuf.
+/// The gRPC server uses this interface to expose the health checking
+/// service without depending on protobuf.
 class HealthCheckServiceInterface {
  public:
   virtual ~HealthCheckServiceInterface() {}
@@ -43,9 +43,9 @@ class HealthCheckServiceInterface {
   virtual void Shutdown() {}
 };
 
-/// Enable/disable the default health checking service. This applies to all C++
-/// servers created afterwards. For each server, user can override the default
-/// with a HealthCheckServiceServerBuilderOption.
+/// Enable/disable the default health checking service. This applies to
+/// all C++ servers created afterwards. For each server, user can
+/// override the default with a HealthCheckServiceServerBuilderOption.
 /// NOT thread safe.
 void EnableDefaultHealthCheckService(bool enable);
 

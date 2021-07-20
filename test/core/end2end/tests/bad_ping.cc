@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,8 +37,8 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
+    ev = grpc_completion_queue_next(
+        cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -79,7 +79,8 @@ static void test_bad_ping(grpc_end2end_test_config config) {
               GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
           300000 /* 5 minutes */),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), MAX_PING_STRIKES),
+          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES),
+          MAX_PING_STRIKES),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
@@ -102,9 +103,10 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -125,33 +127,35 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
   // Send too many pings to the server to trigger the punishment:
-  // The first ping will let server mark its last_recv time. Afterwards, each
-  // ping will trigger a ping strike, and we need at least MAX_PING_STRIKES
-  // strikes to trigger the punishment. So (MAX_PING_STRIKES + 2) pings are
-  // needed here.
+  // The first ping will let server mark its last_recv time. Afterwards,
+  // each ping will trigger a ping strike, and we need at least
+  // MAX_PING_STRIKES strikes to trigger the punishment. So
+  // (MAX_PING_STRIKES + 2) pings are needed here.
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
     grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
@@ -182,8 +186,8 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -195,8 +199,8 @@ static void test_bad_ping(grpc_end2end_test_config config) {
 
   grpc_call_unref(s);
 
-  // The connection should be closed immediately after the misbehaved pings,
-  // the in-progress RPC should fail.
+  // The connection should be closed immediately after the misbehaved
+  // pings, the in-progress RPC should fail.
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   GPR_ASSERT(was_cancelled == 1);
@@ -212,13 +216,14 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-// Try sending more pings than server allows, but server should be fine because
-// max_pings_without_data should limit pings sent out on wire.
+// Try sending more pings than server allows, but server should be fine
+// because max_pings_without_data should limit pings sent out on wire.
 static void test_pings_without_data(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
-  // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
-  // so that the transport will throttle the excess pings.
+  // Only allow MAX_PING_STRIKES pings without data
+  // (DATA/HEADERS/WINDOW_UPDATE) so that the transport will throttle
+  // the excess pings.
   grpc_arg client_a[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA),
@@ -231,7 +236,8 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
               GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
           300000 /* 5 minutes */),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), MAX_PING_STRIKES),
+          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES),
+          MAX_PING_STRIKES),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
@@ -254,9 +260,10 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   grpc_slice details;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -277,31 +284,34 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  // Send too many pings to the server similar to the previous test case.
-  // However, since we set the MAX_PINGS_WITHOUT_DATA at the client side, only
-  // MAX_PING_STRIKES will actually be sent and the rpc will still succeed.
+  // Send too many pings to the server similar to the previous test
+  // case. However, since we set the MAX_PINGS_WITHOUT_DATA at the
+  // client side, only MAX_PING_STRIKES will actually be sent and the
+  // rpc will still succeed.
   int i;
   for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
     grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
@@ -331,8 +341,8 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -367,7 +377,8 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
 }
 
 void bad_ping(grpc_end2end_test_config config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
+  GPR_ASSERT(config.feature_mask &
+             FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_bad_ping(config);
   test_pings_without_data(config);
 }

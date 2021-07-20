@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,17 +33,20 @@ namespace grpc {
 namespace internal {
 
 class ExternalConnectionAcceptorImpl
-    : public std::enable_shared_from_this<ExternalConnectionAcceptorImpl> {
+    : public std::enable_shared_from_this<
+          ExternalConnectionAcceptorImpl> {
  public:
   ExternalConnectionAcceptorImpl(
       const std::string& name,
       ServerBuilder::experimental_type::ExternalConnectionType type,
       std::shared_ptr<ServerCredentials> creds);
   // Should only be called once.
-  std::unique_ptr<experimental::ExternalConnectionAcceptor> GetAcceptor();
+  std::unique_ptr<experimental::ExternalConnectionAcceptor>
+  GetAcceptor();
 
   void HandleNewConnection(
-      experimental::ExternalConnectionAcceptor::NewConnectionParameters* p);
+      experimental::ExternalConnectionAcceptor::NewConnectionParameters*
+          p);
 
   void Shutdown();
 

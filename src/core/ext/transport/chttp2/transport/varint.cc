@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,7 +34,8 @@ uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value) {
   }
 }
 
-void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value, uint8_t* target,
+void grpc_chttp2_hpack_write_varint_tail(uint32_t tail_value,
+                                         uint8_t* target,
                                          uint32_t tail_length) {
   switch (tail_length) {
     case 5:

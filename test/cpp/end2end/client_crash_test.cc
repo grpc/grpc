@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -50,7 +50,8 @@ class CrashTest : public ::testing::Test {
  protected:
   CrashTest() {}
 
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> CreateServerAndStub() {
+  std::unique_ptr<grpc::testing::EchoTestService::Stub>
+  CreateServerAndStub() {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
@@ -88,7 +89,8 @@ TEST_F(CrashTest, KillBeforeWrite) {
   KillServer();
 
   request.set_message("You should be dead");
-  // This may succeed or fail depending on the state of the TCP connection
+  // This may succeed or fail depending on the state of the TCP
+  // connection
   stream->Write(request);
   // But the read will definitely fail
   EXPECT_FALSE(stream->Read(&response));
@@ -138,7 +140,8 @@ int main(int argc, char** argv) {
 
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  // Order seems to matter on these tests: run three times to eliminate that
+  // Order seems to matter on these tests: run three times to eliminate
+  // that
   for (int i = 0; i < 3; i++) {
     if (RUN_ALL_TESTS() != 0) {
       return 1;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -66,9 +66,10 @@ system_clock::time_point Timespec2Timepoint(gpr_timespec t) {
   }
   t = gpr_convert_clock_type(t, GPR_CLOCK_REALTIME);
   system_clock::time_point tp;
-  tp += duration_cast<system_clock::time_point::duration>(seconds(t.tv_sec));
-  tp +=
-      duration_cast<system_clock::time_point::duration>(nanoseconds(t.tv_nsec));
+  tp += duration_cast<system_clock::time_point::duration>(
+      seconds(t.tv_sec));
+  tp += duration_cast<system_clock::time_point::duration>(
+      nanoseconds(t.tv_nsec));
   return tp;
 }
 

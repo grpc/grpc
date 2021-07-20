@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,7 +28,8 @@ struct grpc_byte_buffer;
 struct grpc_byte_buffer_reader {
   struct grpc_byte_buffer* buffer_in;
   struct grpc_byte_buffer* buffer_out;
-  /** Different current objects correspond to different types of byte buffers */
+  /** Different current objects correspond to different types of byte
+   * buffers */
   union grpc_byte_buffer_reader_current {
     /** Index into a slice buffer's array of slices */
     unsigned index;

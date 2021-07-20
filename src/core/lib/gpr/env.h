@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,12 +26,13 @@
 /* Env utility functions */
 
 /* Gets the environment variable value with the specified name.
-   Returns a newly allocated string. It is the responsibility of the caller to
-   gpr_free the return value if not NULL (which means that the environment
-   variable exists). */
+   Returns a newly allocated string. It is the responsibility of the
+   caller to gpr_free the return value if not NULL (which means that the
+   environment variable exists). */
 char* gpr_getenv(const char* name);
 
-/* Sets the environment with the specified name to the specified value. */
+/* Sets the environment with the specified name to the specified value.
+ */
 void gpr_setenv(const char* name, const char* value);
 
 /* Deletes the variable name from the environment. */

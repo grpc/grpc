@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,9 +28,9 @@ extern "C" {
 #endif
 
 /** malloc.
- * If size==0, always returns NULL. Otherwise this function never returns NULL.
- * The pointer returned is suitably aligned for any kind of variable it could
- * contain.
+ * If size==0, always returns NULL. Otherwise this function never
+ * returns NULL. The pointer returned is suitably aligned for any kind
+ * of variable it could contain.
  */
 GPRAPI void* gpr_malloc(size_t size);
 /** like malloc, but zero all bytes before returning them */

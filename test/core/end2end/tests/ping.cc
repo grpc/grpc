@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,14 +42,16 @@ static void test_ping(grpc_end2end_test_config config,
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS),
+          1)};
   grpc_arg server_a[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(
               GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
           0),
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS),
+          1)};
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
 
@@ -62,14 +64,15 @@ static void test_ping(grpc_end2end_test_config config,
   /* check that we're still in idle, and start connecting */
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
              GRPC_CHANNEL_IDLE);
-  /* we'll go through some set of transitions (some might be missed), until
-     READY is reached */
+  /* we'll go through some set of transitions (some might be missed),
+     until READY is reached */
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state,
-        gpr_time_add(grpc_timeout_seconds_to_deadline(3),
-                     gpr_time_from_millis(min_time_between_pings_ms * PING_NUM,
-                                          GPR_TIMESPAN)),
+        gpr_time_add(
+            grpc_timeout_seconds_to_deadline(3),
+            gpr_time_from_millis(min_time_between_pings_ms * PING_NUM,
+                                 GPR_TIMESPAN)),
         f.cq, tag(99));
     CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
     cq_verify(cqv);
@@ -104,7 +107,8 @@ static void test_ping(grpc_end2end_test_config config,
 }
 
 void ping(grpc_end2end_test_config config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
+  GPR_ASSERT(config.feature_mask &
+             FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_ping(config, 0);
   test_ping(config, 100);
 }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,13 +46,14 @@ static std::string g_root;
 
 static gpr_mu g_mu;
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
-gpr_timespec (*gpr_now_impl_orig)(gpr_clock_type clock_type) = gpr_now_impl;
+gpr_timespec (*gpr_now_impl_orig)(gpr_clock_type clock_type) =
+    gpr_now_impl;
 static int g_time_shift_sec = 0;
 static int g_time_shift_nsec = 0;
 static gpr_timespec now_impl(gpr_clock_type clock) {
   auto ts = gpr_now_impl_orig(clock);
-  // We only manipulate the realtime clock to simulate changes in wall-clock
-  // time
+  // We only manipulate the realtime clock to simulate changes in
+  // wall-clock time
   if (clock != GPR_CLOCK_REALTIME) {
     return ts;
   }
@@ -97,7 +98,8 @@ namespace {
 // gpr_now() is called with invalid clock_type
 TEST(TimespecTest, GprNowInvalidClockType) {
   // initialize to some junk value
-  gpr_clock_type invalid_clock_type = static_cast<gpr_clock_type>(32641);
+  gpr_clock_type invalid_clock_type =
+      static_cast<gpr_clock_type>(32641);
   EXPECT_DEATH(gpr_now(invalid_clock_type), ".*");
 }
 
@@ -110,8 +112,8 @@ TEST(TimespecTest, GprTimeAddNegativeNs) {
 
 // Subtract timespan with negative nanoseconds
 TEST(TimespecTest, GprTimeSubNegativeNs) {
-  // Nanoseconds must always be positive. Negative timestamps are represented by
-  // (negative seconds, positive nanoseconds)
+  // Nanoseconds must always be positive. Negative timestamps are
+  // represented by (negative seconds, positive nanoseconds)
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec bad_ts = {1, -1000, GPR_TIMESPAN};
   EXPECT_DEATH(gpr_time_sub(now, bad_ts), ".*");
@@ -141,8 +143,8 @@ class TimeChangeTest : public ::testing::Test {
     }));
     GPR_ASSERT(server_);
     // connect to server and make sure it's reachable.
-    auto channel =
-        grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+    auto channel = grpc::CreateChannel(server_address_,
+                                       InsecureChannelCredentials());
     GPR_ASSERT(channel);
     EXPECT_TRUE(channel->WaitForConnected(
         grpc_timeout_milliseconds_to_deadline(30000)));
@@ -151,8 +153,8 @@ class TimeChangeTest : public ::testing::Test {
   static void TearDownTestCase() { server_.reset(); }
 
   void SetUp() override {
-    channel_ =
-        grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(server_address_,
+                                   InsecureChannelCredentials());
     GPR_ASSERT(channel_);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
@@ -187,8 +189,8 @@ TEST_F(TimeChangeTest, TimeJumpForwardBeforeStreamCreated) {
 
   auto channel = GetChannel();
   GPR_ASSERT(channel);
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
 
   // time jumps forward by TIME_OFFSET1 milliseconds
@@ -214,8 +216,8 @@ TEST_F(TimeChangeTest, TimeJumpBackBeforeStreamCreated) {
 
   auto channel = GetChannel();
   GPR_ASSERT(channel);
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
 
   // time jumps back by TIME_OFFSET1 milliseconds
@@ -242,8 +244,8 @@ TEST_F(TimeChangeTest, TimeJumpForwardAfterStreamCreated) {
 
   auto channel = GetChannel();
   GPR_ASSERT(channel);
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
 
   auto stream = stub->BidiStream(&context);
@@ -274,8 +276,8 @@ TEST_F(TimeChangeTest, TimeJumpBackAfterStreamCreated) {
 
   auto channel = GetChannel();
   GPR_ASSERT(channel);
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
 
   auto stream = stub->BidiStream(&context);
@@ -307,8 +309,8 @@ TEST_F(TimeChangeTest, TimeJumpForwardAndBackDuringCall) {
   auto channel = GetChannel();
   GPR_ASSERT(channel);
 
-  EXPECT_TRUE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(5000)));
+  EXPECT_TRUE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(5000)));
   auto stub = CreateStub();
   auto stream = stub->BidiStream(&context);
 

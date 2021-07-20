@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,20 +62,23 @@ class TlsChannelSecurityConnector final
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error_handle error) override {
-    // TODO(ZhenLian): call verifier->cancel() once the verifier is ready.
+    // TODO(ZhenLian): call verifier->cancel() once the verifier is
+    // ready.
     GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other_sc) const override;
 
-  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
+  bool check_call_host(absl::string_view host,
+                       grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error_handle* error) override;
 
   void cancel_check_call_host(grpc_closure* on_call_host_checked,
                               grpc_error_handle error) override;
 
-  tsi_ssl_client_handshaker_factory* ClientHandshakerFactoryForTesting() {
+  tsi_ssl_client_handshaker_factory*
+  ClientHandshakerFactoryForTesting() {
     MutexLock lock(&mu_);
     return client_handshaker_factory_;
   };
@@ -94,8 +97,9 @@ class TlsChannelSecurityConnector final
   // A watcher that watches certificate updates from
   // grpc_tls_certificate_distributor. It will never outlive
   // |security_connector_|.
-  class TlsChannelCertificateWatcher : public grpc_tls_certificate_distributor::
-                                           TlsCertificatesWatcherInterface {
+  class TlsChannelCertificateWatcher
+      : public grpc_tls_certificate_distributor::
+            TlsCertificatesWatcherInterface {
    public:
     explicit TlsChannelCertificateWatcher(
         TlsChannelSecurityConnector* security_connector)
@@ -115,8 +119,8 @@ class TlsChannelSecurityConnector final
   grpc_security_status UpdateHandshakerFactoryLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  // gRPC-provided callback executed by application, which servers to bring the
-  // control back to gRPC core.
+  // gRPC-provided callback executed by application, which servers to
+  // bring the control back to gRPC core.
   static void ServerAuthorizationCheckDone(
       grpc_tls_server_authorization_check_arg* arg);
 
@@ -124,11 +128,13 @@ class TlsChannelSecurityConnector final
   static grpc_error_handle ProcessServerAuthorizationCheckResult(
       grpc_tls_server_authorization_check_arg* arg);
 
-  // A util function to create a server authorization check arg instance.
+  // A util function to create a server authorization check arg
+  // instance.
   static grpc_tls_server_authorization_check_arg*
   ServerAuthorizationCheckArgCreate(void* user_data);
 
-  // A util function to destroy a server authorization check arg instance.
+  // A util function to destroy a server authorization check arg
+  // instance.
   static void ServerAuthorizationCheckArgDestroy(
       grpc_tls_server_authorization_check_arg* arg);
 
@@ -143,14 +149,17 @@ class TlsChannelSecurityConnector final
   Mutex mu_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_
       ABSL_GUARDED_BY(mu_) = nullptr;
-  tsi_ssl_session_cache* ssl_session_cache_ ABSL_GUARDED_BY(mu_) = nullptr;
-  absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
+  tsi_ssl_session_cache* ssl_session_cache_ ABSL_GUARDED_BY(mu_) =
+      nullptr;
+  absl::optional<absl::string_view> pem_root_certs_
+      ABSL_GUARDED_BY(mu_);
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
 };
 
 // Server security connector using TLS as transport security protocol.
-class TlsServerSecurityConnector final : public grpc_server_security_connector {
+class TlsServerSecurityConnector final
+    : public grpc_server_security_connector {
  public:
   // static factory method to create a TLS server security connector.
   static RefCountedPtr<grpc_server_security_connector>
@@ -173,13 +182,15 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error_handle error) override {
-    // TODO(ZhenLian): call verifier->cancel() once the verifier is ready.
+    // TODO(ZhenLian): call verifier->cancel() once the verifier is
+    // ready.
     GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other) const override;
 
-  tsi_ssl_server_handshaker_factory* ServerHandshakerFactoryForTesting() {
+  tsi_ssl_server_handshaker_factory*
+  ServerHandshakerFactoryForTesting() {
     MutexLock lock(&mu_);
     return server_handshaker_factory_;
   };
@@ -189,7 +200,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     return pem_root_certs_;
   }
 
-  const absl::optional<PemKeyCertPairList>& KeyCertPairListForTesting() {
+  const absl::optional<PemKeyCertPairList>&
+  KeyCertPairListForTesting() {
     MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
   }
@@ -198,8 +210,9 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   // A watcher that watches certificate updates from
   // grpc_tls_certificate_distributor. It will never outlive
   // |security_connector_|.
-  class TlsServerCertificateWatcher : public grpc_tls_certificate_distributor::
-                                          TlsCertificatesWatcherInterface {
+  class TlsServerCertificateWatcher
+      : public grpc_tls_certificate_distributor::
+            TlsCertificatesWatcherInterface {
    public:
     explicit TlsServerCertificateWatcher(
         TlsServerSecurityConnector* security_connector)
@@ -226,17 +239,20 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   Mutex mu_;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_
       ABSL_GUARDED_BY(mu_) = nullptr;
-  absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
+  absl::optional<absl::string_view> pem_root_certs_
+      ABSL_GUARDED_BY(mu_);
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
 };
 
-// ---- Functions below are exposed for testing only -----------------------
+// ---- Functions below are exposed for testing only
+// -----------------------
 namespace internal {
 
-// TlsCheckHostName checks if |peer_name| matches the identity information
-// contained in |peer|. This is AKA hostname check.
-grpc_error_handle TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
+// TlsCheckHostName checks if |peer_name| matches the identity
+// information contained in |peer|. This is AKA hostname check.
+grpc_error_handle TlsCheckHostName(const char* peer_name,
+                                   const tsi_peer* peer);
 
 }  // namespace internal
 

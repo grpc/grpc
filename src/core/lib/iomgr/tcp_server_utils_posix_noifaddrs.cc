@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,10 +24,9 @@
 
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
-grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
-                                                      unsigned port_index,
-                                                      int requested_port,
-                                                      int* out_port) {
+grpc_error_handle grpc_tcp_server_add_all_local_addrs(
+    grpc_tcp_server* s, unsigned port_index, int requested_port,
+    int* out_port) {
   return GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ifaddrs available");
 }
 

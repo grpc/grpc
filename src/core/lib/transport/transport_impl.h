@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,8 +24,8 @@
 #include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_transport_vtable {
-  /* Memory required for a single stream element - this is allocated by upper
-     layers and initialized by the transport */
+  /* Memory required for a single stream element - this is allocated by
+     upper layers and initialized by the transport */
   size_t sizeof_stream; /* = sizeof(transport stream) */
 
   /* name of this transport implementation */
@@ -33,8 +33,8 @@ typedef struct grpc_transport_vtable {
 
   /* implementation of grpc_transport_init_stream */
   int (*init_stream)(grpc_transport* self, grpc_stream* stream,
-                     grpc_stream_refcount* refcount, const void* server_data,
-                     grpc_core::Arena* arena);
+                     grpc_stream_refcount* refcount,
+                     const void* server_data, grpc_core::Arena* arena);
 
   /* implementation of grpc_transport_set_pollset */
   void (*set_pollset)(grpc_transport* self, grpc_stream* stream,

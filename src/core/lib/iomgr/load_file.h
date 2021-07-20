@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,9 +27,10 @@
 
 #include "src/core/lib/iomgr/error.h"
 
-/* Loads the content of a file into a slice. add_null_terminator will add
-   a NULL terminator if non-zero. */
-grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
+/* Loads the content of a file into a slice. add_null_terminator will
+   add a NULL terminator if non-zero. */
+grpc_error_handle grpc_load_file(const char* filename,
+                                 int add_null_terminator,
                                  grpc_slice* output);
 
 #endif /* GRPC_CORE_LIB_IOMGR_LOAD_FILE_H */

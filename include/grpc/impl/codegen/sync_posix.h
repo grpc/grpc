@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,11 +26,11 @@
 #include <pthread.h>
 
 #ifdef GRPC_ASAN_ENABLED
-/* The member |leak_checker| is used to check whether there is a memory leak
- * caused by upper layer logic that's missing the |gpr_xx_destroy| call
- * to the object before freeing it.
- * This issue was reported at https://github.com/grpc/grpc/issues/17563
- * and discussed at https://github.com/grpc/grpc/pull/17586
+/* The member |leak_checker| is used to check whether there is a memory
+ * leak caused by upper layer logic that's missing the |gpr_xx_destroy|
+ * call to the object before freeing it. This issue was reported at
+ * https://github.com/grpc/grpc/issues/17563 and discussed at
+ * https://github.com/grpc/grpc/pull/17586
  */
 typedef struct {
   pthread_mutex_t mutex;

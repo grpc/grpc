@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,19 +35,20 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
 extern bool g_flow_control_enabled;
 
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
-    grpc_resource_user* resource_user = nullptr);
+    const grpc_channel_args* channel_args, grpc_endpoint* ep,
+    bool is_client, grpc_resource_user* resource_user = nullptr);
 
 grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
 grpc_chttp2_transport_get_socket_node(grpc_transport* transport);
 
 /// Takes ownership of \a read_buffer, which (if non-NULL) contains
-/// leftover bytes previously read from the endpoint (e.g., by handshakers).
-/// If non-null, \a notify_on_receive_settings will be scheduled when
-/// HTTP/2 settings are received from the peer.
+/// leftover bytes previously read from the endpoint (e.g., by
+/// handshakers). If non-null, \a notify_on_receive_settings will be
+/// scheduled when HTTP/2 settings are received from the peer.
 void grpc_chttp2_transport_start_reading(
     grpc_transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close);
+    grpc_closure* notify_on_receive_settings,
+    grpc_closure* notify_on_close);
 
 namespace grpc_core {
 typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();
@@ -60,4 +61,5 @@ void TestOnlySetGlobalHttp2TransportDestructCallback(
     TestOnlyGlobalHttp2TransportDestructCallback callback);
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H \
+        */

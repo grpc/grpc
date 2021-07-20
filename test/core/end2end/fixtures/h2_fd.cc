@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,12 +46,15 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) ==
+             GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) ==
+             GRPC_ERROR_NONE);
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/,
+    grpc_channel_args* /*server_args*/) {
   sp_fixture_data* fixture_data =
       static_cast<sp_fixture_data*>(gpr_malloc(sizeof(*fixture_data)));
 
@@ -66,8 +69,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   return f;
 }
 
-static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
-                                          grpc_channel_args* client_args) {
+static void chttp2_init_client_socketpair(
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
   grpc_core::ExecCtx exec_ctx;
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
 
@@ -77,8 +80,8 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
   GPR_ASSERT(f->client);
 }
 
-static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
-                                          grpc_channel_args* server_args) {
+static void chttp2_init_server_socketpair(
+    grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
   grpc_core::ExecCtx exec_ctx;
   sp_fixture_data* sfd = static_cast<sp_fixture_data*>(f->fixture_data);
   GPR_ASSERT(!f->server);
@@ -87,7 +90,8 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
 
-  grpc_server_add_insecure_channel_from_fd(f->server, nullptr, sfd->fd_pair[1]);
+  grpc_server_add_insecure_channel_from_fd(f->server, nullptr,
+                                           sfd->fd_pair[1]);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {

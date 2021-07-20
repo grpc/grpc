@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,8 +46,8 @@ void test_transport_op(grpc_channel* channel) {
   grpc_core::ExecCtx exec_ctx;
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->start_connectivity_watch = grpc_core::MakeOrphanable<Watcher>();
-  grpc_channel_element* elem =
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
+  grpc_channel_element* elem = grpc_channel_stack_element(
+      grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(elem, op);
 
   GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, nullptr,
@@ -90,10 +90,10 @@ int main(int argc, char** argv) {
   cq = grpc_completion_queue_create_for_next(nullptr);
 
   grpc_slice host = grpc_slice_from_static_string("anywhere");
-  call =
-      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/Foo"), &host,
-                               grpc_timeout_seconds_to_deadline(100), nullptr);
+  call = grpc_channel_create_call(
+      chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/Foo"), &host,
+      grpc_timeout_seconds_to_deadline(100), nullptr);
   GPR_ASSERT(call);
   cqv = cq_verifier_create(cq);
 
@@ -105,12 +105,13 @@ int main(int argc, char** argv) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(1), nullptr);
+  error = grpc_call_start_batch(
+      call, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */
@@ -120,14 +121,15 @@ int main(int argc, char** argv) {
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops),
-                                tag(2), nullptr);
+  error = grpc_call_start_batch(
+      call, ops, static_cast<size_t>(op - ops), tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */

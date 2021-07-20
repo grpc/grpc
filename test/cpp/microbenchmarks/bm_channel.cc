@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,7 +42,8 @@ class InsecureChannelFixture : public ChannelDestroyerFixture {
  public:
   InsecureChannelFixture() {}
   void Init() override {
-    channel_ = grpc_insecure_channel_create("localhost:1234", nullptr, nullptr);
+    channel_ = grpc_insecure_channel_create("localhost:1234", nullptr,
+                                            nullptr);
   }
 };
 
@@ -57,8 +58,8 @@ class LameChannelFixture : public ChannelDestroyerFixture {
 
 template <class Fixture>
 static void BM_InsecureChannelCreateDestroy(benchmark::State& state) {
-  // In order to test if channel creation time is affected by the number of
-  // already existing channels, we create some initial channels here.
+  // In order to test if channel creation time is affected by the number
+  // of already existing channels, we create some initial channels here.
   Fixture initial_channels[512];
   for (int i = 0; i < state.range(0); i++) {
     initial_channels[i].Init();
@@ -68,15 +69,16 @@ static void BM_InsecureChannelCreateDestroy(benchmark::State& state) {
     channel.Init();
   }
 }
-BENCHMARK_TEMPLATE(BM_InsecureChannelCreateDestroy, InsecureChannelFixture)
+BENCHMARK_TEMPLATE(BM_InsecureChannelCreateDestroy,
+                   InsecureChannelFixture)
     ->Range(0, 512);
 ;
 BENCHMARK_TEMPLATE(BM_InsecureChannelCreateDestroy, LameChannelFixture)
     ->Range(0, 512);
 ;
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

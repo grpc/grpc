@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -55,33 +55,38 @@ FakeNonResponsiveDNSServer::FakeNonResponsiveDNSServer(int port) {
   (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
   if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),
            sizeof(addr)) != 0) {
-    gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d", port);
+    gpr_log(GPR_DEBUG, "Failed to bind UDP ipv6 socket to [::1]:%d",
+            port);
     abort();
   }
 #ifdef GPR_WINDOWS
   char val = 1;
-  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
-      SOCKET_ERROR) {
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val,
+                 sizeof(val)) == SOCKET_ERROR) {
     gpr_log(GPR_DEBUG,
-            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d",
+            port);
     abort();
   }
 #else
   int val = 1;
-  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
-      0) {
+  if (setsockopt(tcp_socket_, SOL_SOCKET, SO_REUSEADDR, &val,
+                 sizeof(val)) != 0) {
     gpr_log(GPR_DEBUG,
-            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d", port);
+            "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d",
+            port);
     abort();
   }
 #endif
   if (bind(tcp_socket_, reinterpret_cast<const sockaddr*>(&addr),
            sizeof(addr)) != 0) {
-    gpr_log(GPR_DEBUG, "Failed to bind TCP ipv6 socket to [::1]:%d", port);
+    gpr_log(GPR_DEBUG, "Failed to bind TCP ipv6 socket to [::1]:%d",
+            port);
     abort();
   }
   if (listen(tcp_socket_, 100)) {
-    gpr_log(GPR_DEBUG, "Failed to listen on TCP ipv6 socket to [::1]:%d", port);
+    gpr_log(GPR_DEBUG,
+            "Failed to listen on TCP ipv6 socket to [::1]:%d", port);
     abort();
   }
 }

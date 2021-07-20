@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,8 +37,9 @@ class grpc_google_iam_credentials : public grpc_call_credentials {
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  void cancel_get_request_metadata(
+      grpc_credentials_mdelem_array* md_array,
+      grpc_error_handle error) override;
   std::string debug_string() override { return debug_string_; }
 
  private:

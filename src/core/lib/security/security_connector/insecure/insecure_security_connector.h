@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -31,8 +31,8 @@ extern const char kInsecureTransportSecurityType[];
 
 // Exposed for testing purposes only.
 // Create an auth context which is necessary to pass the santiy check in
-// client_auth_filter that verifies if the peer's auth context is obtained
-// during handshakes.
+// client_auth_filter that verifies if the peer's auth context is
+// obtained during handshakes.
 RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext();
 
 class InsecureChannelSecurityConnector
@@ -40,25 +40,29 @@ class InsecureChannelSecurityConnector
  public:
   InsecureChannelSecurityConnector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds)
-      : grpc_channel_security_connector(/* url_scheme */ nullptr,
-                                        std::move(channel_creds),
-                                        std::move(request_metadata_creds)) {}
+      grpc_core::RefCountedPtr<grpc_call_credentials>
+          request_metadata_creds)
+      : grpc_channel_security_connector(
+            /* url_scheme */ nullptr, std::move(channel_creds),
+            std::move(request_metadata_creds)) {}
 
-  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
+  bool check_call_host(absl::string_view host,
+                       grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error_handle* error) override;
 
   void cancel_check_call_host(grpc_closure* on_call_host_checked,
                               grpc_error_handle error) override;
 
-  void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* /* interested_parties */,
-                       grpc_core::HandshakeManager* handshake_manager) override;
+  void add_handshakers(
+      const grpc_channel_args* args,
+      grpc_pollset_set* /* interested_parties */,
+      grpc_core::HandshakeManager* handshake_manager) override;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override;
+  void check_peer(
+      tsi_peer peer, grpc_endpoint* ep,
+      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+      grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error_handle error) override {
@@ -68,20 +72,23 @@ class InsecureChannelSecurityConnector
   int cmp(const grpc_security_connector* other_sc) const override;
 };
 
-class InsecureServerSecurityConnector : public grpc_server_security_connector {
+class InsecureServerSecurityConnector
+    : public grpc_server_security_connector {
  public:
   explicit InsecureServerSecurityConnector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(nullptr /* url_scheme */,
                                        std::move(server_creds)) {}
 
-  void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* /* interested_parties */,
-                       grpc_core::HandshakeManager* handshake_manager) override;
+  void add_handshakers(
+      const grpc_channel_args* args,
+      grpc_pollset_set* /* interested_parties */,
+      grpc_core::HandshakeManager* handshake_manager) override;
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override;
+  void check_peer(
+      tsi_peer peer, grpc_endpoint* ep,
+      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+      grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error_handle error) override {

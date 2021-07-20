@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
@@ -50,7 +50,8 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
       &address.address, address.address_str.c_str(), address.port);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6. Error: %s",
-            address.address_str.c_str(), grpc_error_std_string(error).c_str());
+            address.address_str.c_str(),
+            grpc_error_std_string(error).c_str());
   }
   GRPC_ERROR_UNREF(error);
   return address;
@@ -58,20 +59,23 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
 
 }  // namespace
 
-EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
-                                             grpc_endpoint* endpoint) {
+EvaluateArgs::PerChannelArgs::PerChannelArgs(
+    grpc_auth_context* auth_context, grpc_endpoint* endpoint) {
   if (auth_context != nullptr) {
     transport_security_type = GetAuthPropertyValue(
         auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
-    spiffe_id =
-        GetAuthPropertyValue(auth_context, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
-    uri_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_URI_PROPERTY_NAME);
-    dns_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_DNS_PROPERTY_NAME);
+    spiffe_id = GetAuthPropertyValue(auth_context,
+                                     GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
+    uri_sans =
+        GetAuthPropertyArray(auth_context, GRPC_PEER_URI_PROPERTY_NAME);
+    dns_sans =
+        GetAuthPropertyArray(auth_context, GRPC_PEER_DNS_PROPERTY_NAME);
     common_name =
         GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
   }
   if (endpoint != nullptr) {
-    local_address = ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
+    local_address =
+        ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
     peer_address = ParseEndpointUri(grpc_endpoint_get_peer(endpoint));
   }
 }
@@ -106,8 +110,8 @@ absl::string_view EvaluateArgs::GetMethod() const {
   return method;
 }
 
-std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
-    const {
+std::multimap<absl::string_view, absl::string_view>
+EvaluateArgs::GetHeaders() const {
   std::multimap<absl::string_view, absl::string_view> headers;
   if (metadata_ == nullptr) {
     return headers;
@@ -126,7 +130,8 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   if (metadata_ == nullptr) {
     return absl::nullopt;
   }
-  return grpc_metadata_batch_get_value(metadata_, key, concatenated_value);
+  return grpc_metadata_batch_get_value(metadata_, key,
+                                       concatenated_value);
 }
 
 grpc_resolved_address EvaluateArgs::GetLocalAddress() const {

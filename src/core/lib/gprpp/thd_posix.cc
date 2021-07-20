@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -50,8 +50,8 @@ struct thd_arg {
 };
 
 size_t RoundUpToPageSize(size_t size) {
-  // TODO(yunjiaw): Change this variable (page_size) to a function-level static
-  // when possible
+  // TODO(yunjiaw): Change this variable (page_size) to a function-level
+  // static when possible
   size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
   return (size + page_size - 1) & ~(page_size - 1);
 }
@@ -64,15 +64,16 @@ size_t MinValidStackSize(size_t request_size) {
     request_size = min_stacksize;
   }
 
-  // On some systems, pthread_attr_setstacksize() can fail if stacksize is
-  // not a multiple of the system page size.
+  // On some systems, pthread_attr_setstacksize() can fail if stacksize
+  // is not a multiple of the system page size.
   return RoundUpToPageSize(request_size);
 }
 
 class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
  public:
-  ThreadInternalsPosix(const char* thd_name, void (*thd_body)(void* arg),
-                       void* arg, bool* success, const Thread::Options& options)
+  ThreadInternalsPosix(const char* thd_name,
+                       void (*thd_body)(void* arg), void* arg,
+                       bool* success, const Thread::Options& options)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
@@ -93,11 +94,11 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 
     GPR_ASSERT(pthread_attr_init(&attr) == 0);
     if (options.joinable()) {
-      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
-                 0);
+      GPR_ASSERT(pthread_attr_setdetachstate(
+                     &attr, PTHREAD_CREATE_JOINABLE) == 0);
     } else {
-      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
-                 0);
+      GPR_ASSERT(pthread_attr_setdetachstate(
+                     &attr, PTHREAD_CREATE_DETACHED) == 0);
     }
 
     if (options.stack_size() != 0) {
@@ -105,50 +106,52 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
       GPR_ASSERT(pthread_attr_setstacksize(&attr, stack_size) == 0);
     }
 
-    *success = (pthread_create(
-                    &pthread_id_, &attr,
-                    [](void* v) -> void* {
-                      thd_arg arg = *static_cast<thd_arg*>(v);
-                      free(v);
-                      if (arg.name != nullptr) {
+    *success =
+        (pthread_create(
+             &pthread_id_, &attr,
+             [](void* v) -> void* {
+               thd_arg arg = *static_cast<thd_arg*>(v);
+               free(v);
+               if (arg.name != nullptr) {
 #if GPR_APPLE_PTHREAD_NAME
-                        /* Apple supports 64 characters, and will
-                         * truncate if it's longer. */
-                        pthread_setname_np(arg.name);
+                 /* Apple supports 64 characters, and will
+                  * truncate if it's longer. */
+                 pthread_setname_np(arg.name);
 #elif GPR_LINUX_PTHREAD_NAME
-                        /* Linux supports 16 characters max, and will
-                         * error if it's longer. */
-                        char buf[16];
-                        size_t buf_len = GPR_ARRAY_SIZE(buf) - 1;
-                        strncpy(buf, arg.name, buf_len);
-                        buf[buf_len] = '\0';
-                        pthread_setname_np(pthread_self(), buf);
+                 /* Linux supports 16 characters max, and will
+                  * error if it's longer. */
+                 char buf[16];
+                 size_t buf_len = GPR_ARRAY_SIZE(buf) - 1;
+                 strncpy(buf, arg.name, buf_len);
+                 buf[buf_len] = '\0';
+                 pthread_setname_np(pthread_self(), buf);
 #endif  // GPR_APPLE_PTHREAD_NAME
-                      }
+               }
 
-                      gpr_mu_lock(&arg.thread->mu_);
-                      while (!arg.thread->started_) {
-                        gpr_cv_wait(&arg.thread->ready_, &arg.thread->mu_,
-                                    gpr_inf_future(GPR_CLOCK_MONOTONIC));
-                      }
-                      gpr_mu_unlock(&arg.thread->mu_);
+               gpr_mu_lock(&arg.thread->mu_);
+               while (!arg.thread->started_) {
+                 gpr_cv_wait(&arg.thread->ready_, &arg.thread->mu_,
+                             gpr_inf_future(GPR_CLOCK_MONOTONIC));
+               }
+               gpr_mu_unlock(&arg.thread->mu_);
 
-                      if (!arg.joinable) {
-                        delete arg.thread;
-                      }
+               if (!arg.joinable) {
+                 delete arg.thread;
+               }
 
-                      (*arg.body)(arg.arg);
-                      if (arg.tracked) {
-                        Fork::DecThreadCount();
-                      }
-                      return nullptr;
-                    },
-                    info) == 0);
+               (*arg.body)(arg.arg);
+               if (arg.tracked) {
+                 Fork::DecThreadCount();
+               }
+               return nullptr;
+             },
+             info) == 0);
 
     GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
 
     if (!(*success)) {
-      /* don't use gpr_free, as this was allocated using malloc (see above) */
+      /* don't use gpr_free, as this was allocated using malloc (see
+       * above) */
       free(info);
       if (options.tracked()) {
         Fork::DecThreadCount();
@@ -179,11 +182,12 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 
 }  // namespace
 
-Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success, const Options& options)
+Thread::Thread(const char* thd_name, void (*thd_body)(void* arg),
+               void* arg, bool* success, const Options& options)
     : options_(options) {
   bool outcome = false;
-  impl_ = new ThreadInternalsPosix(thd_name, thd_body, arg, &outcome, options);
+  impl_ = new ThreadInternalsPosix(thd_name, thd_body, arg, &outcome,
+                                   options);
   if (outcome) {
     state_ = ALIVE;
   } else {
@@ -198,11 +202,12 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
 }
 }  // namespace grpc_core
 
-// The following is in the external namespace as it is exposed as C89 API
+// The following is in the external namespace as it is exposed as C89
+// API
 gpr_thd_id gpr_thd_currentid(void) {
-  // Use C-style casting because Linux and OSX have different definitions
-  // of pthread_t so that a single C++ cast doesn't handle it.
-  // NOLINTNEXTLINE(google-readability-casting)
+  // Use C-style casting because Linux and OSX have different
+  // definitions of pthread_t so that a single C++ cast doesn't handle
+  // it. NOLINTNEXTLINE(google-readability-casting)
   return (gpr_thd_id)pthread_self();
 }
 

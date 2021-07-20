@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -54,7 +54,8 @@ namespace testing {
 std::string GetServiceAccountJsonKey() {
   static std::string json_key;
   if (json_key.empty()) {
-    std::ifstream json_key_file(absl::GetFlag(FLAGS_service_account_key_file));
+    std::ifstream json_key_file(
+        absl::GetFlag(FLAGS_service_account_key_file));
     std::stringstream key_stream;
     key_stream << json_key_file.rdbuf();
     json_key = key_stream.str();
@@ -63,7 +64,8 @@ std::string GetServiceAccountJsonKey() {
 }
 
 std::string GetOauth2AccessToken() {
-  std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
+  std::shared_ptr<CallCredentials> creds =
+      GoogleComputeEngineCredentials();
   SecureCallCredentials* secure_creds =
       dynamic_cast<SecureCallCredentials*>(creds.get());
   GPR_ASSERT(secure_creds != nullptr);
@@ -76,13 +78,13 @@ std::string GetOauth2AccessToken() {
   return access_token;
 }
 
-void UpdateActions(
-    std::unordered_map<std::string, std::function<bool()>>* /*actions*/) {}
+void UpdateActions(std::unordered_map<
+                   std::string, std::function<bool()>>* /*actions*/) {}
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
     const std::string& test_case,
-    std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+    std::vector<std::unique_ptr<
+        experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
   std::string server_uri = absl::GetFlag(FLAGS_server_host);
   int32_t port = absl::GetFlag(FLAGS_server_port);
@@ -101,8 +103,8 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     creds = absl::GetFlag(FLAGS_custom_credentials_type) ==
                     "google_default_credentials"
                 ? nullptr
-                : ServiceAccountJWTAccessCredentials(json_key,
-                                                     token_lifetime.count());
+                : ServiceAccountJWTAccessCredentials(
+                      json_key, token_lifetime.count());
   } else if (test_case == "oauth2_auth_token") {
     creds = absl::GetFlag(FLAGS_custom_credentials_type) ==
                     "google_default_credentials"
@@ -122,18 +124,19 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
         absl::GetFlag(FLAGS_use_alts)
             ? ALTS
             : (absl::GetFlag(FLAGS_use_tls) ? TLS : INSECURE);
-    return CreateTestChannel(server_uri,
-                             absl::GetFlag(FLAGS_server_host_override),
-                             security_type, !absl::GetFlag(FLAGS_use_test_ca),
-                             creds, std::move(interceptor_creators));
+    return CreateTestChannel(
+        server_uri, absl::GetFlag(FLAGS_server_host_override),
+        security_type, !absl::GetFlag(FLAGS_use_test_ca), creds,
+        std::move(interceptor_creators));
   } else {
     if (interceptor_creators.empty()) {
       return CreateTestChannel(
-          server_uri, absl::GetFlag(FLAGS_custom_credentials_type), creds);
+          server_uri, absl::GetFlag(FLAGS_custom_credentials_type),
+          creds);
     } else {
-      return CreateTestChannel(server_uri,
-                               absl::GetFlag(FLAGS_custom_credentials_type),
-                               creds, std::move(interceptor_creators));
+      return CreateTestChannel(
+          server_uri, absl::GetFlag(FLAGS_custom_credentials_type),
+          creds, std::move(interceptor_creators));
     }
   }
 }

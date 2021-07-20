@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -53,7 +53,9 @@ TEST(RefCountedPtr, ExplicitConstructorEmpty) {
   RefCountedPtr<Foo> foo(nullptr);
 }
 
-TEST(RefCountedPtr, ExplicitConstructor) { RefCountedPtr<Foo> foo(new Foo()); }
+TEST(RefCountedPtr, ExplicitConstructor) {
+  RefCountedPtr<Foo> foo(new Foo());
+}
 
 TEST(RefCountedPtr, MoveConstructor) {
   RefCountedPtr<Foo> foo(new Foo());
@@ -277,7 +279,9 @@ class Bar : public DualRefCounted<Bar> {
   bool shutting_down_ = false;
 };
 
-TEST(WeakRefCountedPtr, DefaultConstructor) { WeakRefCountedPtr<Bar> bar; }
+TEST(WeakRefCountedPtr, DefaultConstructor) {
+  WeakRefCountedPtr<Bar> bar;
+}
 
 TEST(WeakRefCountedPtr, ExplicitConstructorEmpty) {
   WeakRefCountedPtr<Bar> bar(nullptr);
@@ -433,7 +437,8 @@ class BarWithTracing : public DualRefCounted<BarWithTracing> {
 TEST(WeakRefCountedPtr, RefCountedWithTracing) {
   RefCountedPtr<BarWithTracing> bar_strong(new BarWithTracing());
   WeakRefCountedPtr<BarWithTracing> bar = bar_strong->WeakRef();
-  WeakRefCountedPtr<BarWithTracing> bar2 = bar->WeakRef(DEBUG_LOCATION, "bar");
+  WeakRefCountedPtr<BarWithTracing> bar2 =
+      bar->WeakRef(DEBUG_LOCATION, "bar");
   bar2.release();
   bar->WeakUnref(DEBUG_LOCATION, "bar");
 }
@@ -496,7 +501,8 @@ void FunctionTakingWeakBaseClass(WeakRefCountedPtr<WeakBaseClass> p) {
   p.reset();  // To appease clang-tidy.
 }
 
-TEST(WeakRefCountedPtr, CanPassWeakSubclassToFunctionExpectingWeakBaseClass) {
+TEST(WeakRefCountedPtr,
+     CanPassWeakSubclassToFunctionExpectingWeakBaseClass) {
   RefCountedPtr<WeakSubclass> strong(new WeakSubclass());
   WeakRefCountedPtr<WeakSubclass> p = strong->WeakRef();
   FunctionTakingWeakBaseClass(p);
@@ -506,7 +512,8 @@ void FunctionTakingWeakSubclass(WeakRefCountedPtr<WeakSubclass> p) {
   p.reset();  // To appease clang-tidy.
 }
 
-TEST(WeakRefCountedPtr, CanPassWeakSubclassToFunctionExpectingWeakSubclass) {
+TEST(WeakRefCountedPtr,
+     CanPassWeakSubclassToFunctionExpectingWeakSubclass) {
   RefCountedPtr<WeakSubclass> strong(new WeakSubclass());
   WeakRefCountedPtr<WeakSubclass> p = strong->WeakRef();
   FunctionTakingWeakSubclass(p);

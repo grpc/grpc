@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_URL_EXTERNAL_ACCOUNT_CREDENTIALS_H
@@ -23,7 +23,8 @@
 
 namespace grpc_core {
 
-class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
+class UrlExternalAccountCredentials final
+    : public ExternalAccountCredentials {
  public:
   static RefCountedPtr<UrlExternalAccountCredentials> Create(
       Options options, std::vector<std::string> scopes,
@@ -38,7 +39,8 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
 
-  static void OnRetrieveSubjectToken(void* arg, grpc_error_handle error);
+  static void OnRetrieveSubjectToken(void* arg,
+                                     grpc_error_handle error);
   void OnRetrieveSubjectTokenInternal(grpc_error_handle error);
 
   void FinishRetrieveSubjectToken(std::string subject_token,

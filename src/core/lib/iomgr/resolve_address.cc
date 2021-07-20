@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <grpc/support/port_platform.h>
@@ -39,7 +39,8 @@ void grpc_resolve_address(const char* addr, const char* default_port,
       addr, default_port, interested_parties, on_done, addresses);
 }
 
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
+void grpc_resolved_addresses_destroy(
+    grpc_resolved_addresses* addresses) {
   if (addresses != nullptr) {
     gpr_free(addresses->addrs);
   }
@@ -49,6 +50,6 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
 grpc_error_handle grpc_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
-  return grpc_resolve_address_impl->blocking_resolve_address(name, default_port,
-                                                             addresses);
+  return grpc_resolve_address_impl->blocking_resolve_address(
+      name, default_port, addresses);
 }

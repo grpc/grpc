@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
@@ -39,7 +39,8 @@ int ProviderArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 
 // Wrapper API declared in grpc.h
 
-const grpc_arg_pointer_vtable* grpc_authorization_policy_provider_arg_vtable() {
+const grpc_arg_pointer_vtable*
+grpc_authorization_policy_provider_arg_vtable() {
   static const grpc_arg_pointer_vtable vtable = {
       ProviderArgCopy, ProviderArgDestroy, ProviderArgCmp};
   return &vtable;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,12 +38,13 @@ typedef struct grpc_tcp_listener {
   grpc_closure read_closure;
   grpc_closure destroyed_closure;
   struct grpc_tcp_listener* next;
-  /* sibling is a linked list of all listeners for a given port. add_port and
-     clone_port place all new listeners in the same sibling list. A member of
-     the 'sibling' list is also a member of the 'next' list. The head of each
-     sibling list has is_sibling==0, and subsequent members of sibling lists
-     have is_sibling==1. is_sibling allows separate sibling lists to be
-     identified while iterating through 'next'. */
+  /* sibling is a linked list of all listeners for a given port.
+     add_port and clone_port place all new listeners in the same sibling
+     list. A member of the 'sibling' list is also a member of the 'next'
+     list. The head of each sibling list has is_sibling==0, and
+     subsequent members of sibling lists have is_sibling==1. is_sibling
+     allows separate sibling lists to be identified while iterating
+     through 'next'. */
   struct grpc_tcp_listener* sibling;
   int is_sibling;
 } grpc_tcp_listener;
@@ -82,8 +83,8 @@ struct grpc_tcp_server {
   /* shutdown callback */
   grpc_closure* shutdown_complete;
 
-  /* all pollsets interested in new connections. The object pointed at is not
-   * owned by this struct */
+  /* all pollsets interested in new connections. The object pointed at
+   * is not owned by this struct */
   const std::vector<grpc_pollset*>* pollsets;
 
   /* next pollset to assign a channel to */
@@ -96,24 +97,21 @@ struct grpc_tcp_server {
   grpc_core::TcpServerFdHandler* fd_handler;
 };
 
-/* If successful, add a listener to \a s for \a addr, set \a dsmode for the
-   socket, and return the \a listener. */
-grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
-                                           const grpc_resolved_address* addr,
-                                           unsigned port_index,
-                                           unsigned fd_index,
-                                           grpc_dualstack_mode* dsmode,
-                                           grpc_tcp_listener** listener);
+/* If successful, add a listener to \a s for \a addr, set \a dsmode for
+   the socket, and return the \a listener. */
+grpc_error_handle grpc_tcp_server_add_addr(
+    grpc_tcp_server* s, const grpc_resolved_address* addr,
+    unsigned port_index, unsigned fd_index, grpc_dualstack_mode* dsmode,
+    grpc_tcp_listener** listener);
 
-/* Get all addresses assigned to network interfaces on the machine and create a
-   listener for each. requested_port is the port to use for every listener, or 0
-   to select one random port that will be used for every listener. Set *out_port
-   to the port selected. Return GRPC_ERROR_NONE only if all listeners were
-   added. */
-grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
-                                                      unsigned port_index,
-                                                      int requested_port,
-                                                      int* out_port);
+/* Get all addresses assigned to network interfaces on the machine and
+   create a listener for each. requested_port is the port to use for
+   every listener, or 0 to select one random port that will be used for
+   every listener. Set *out_port to the port selected. Return
+   GRPC_ERROR_NONE only if all listeners were added. */
+grpc_error_handle grpc_tcp_server_add_all_local_addrs(
+    grpc_tcp_server* s, unsigned port_index, int requested_port,
+    int* out_port);
 
 /* Prepare a recently-created socket for listening. */
 grpc_error_handle grpc_tcp_server_prepare_socket(

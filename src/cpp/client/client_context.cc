@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -77,8 +77,8 @@ void ClientContext::set_credentials(
     const std::shared_ptr<CallCredentials>& creds) {
   creds_ = creds;
   // If call_ is set, we have already created the call, and set the call
-  // credentials. This should only be done before we have started the batch
-  // for sending initial metadata.
+  // credentials. This should only be done before we have started the
+  // batch for sending initial metadata.
   if (creds_ != nullptr && call_ != nullptr) {
     if (!creds_->ApplyToCall(call_)) {
       SendCancelToInterceptors();
@@ -90,7 +90,8 @@ void ClientContext::set_credentials(
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromInternalServerContext(
-    const grpc::ServerContextBase& context, PropagationOptions options) {
+    const grpc::ServerContextBase& context,
+    PropagationOptions options) {
   std::unique_ptr<ClientContext> ctx(new ClientContext);
   ctx->propagate_from_call_ = context.call_.call;
   ctx->propagation_options_ = options;
@@ -98,7 +99,8 @@ std::unique_ptr<ClientContext> ClientContext::FromInternalServerContext(
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
-    const grpc::ServerContextBase& server_context, PropagationOptions options) {
+    const grpc::ServerContextBase& server_context,
+    PropagationOptions options) {
   return FromInternalServerContext(server_context, options);
 }
 
@@ -123,7 +125,8 @@ void ClientContext::set_call(grpc_call* call,
     // TODO(yashykt): should interceptors also see this status?
     SendCancelToInterceptors();
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
-                                 "Failed to set credentials to rpc.", nullptr);
+                                 "Failed to set credentials to rpc.",
+                                 nullptr);
   }
   if (call_canceled_) {
     SendCancelToInterceptors();
@@ -141,7 +144,8 @@ void ClientContext::set_compression_algorithm(
     abort();
   }
   GPR_ASSERT(algorithm_name != nullptr);
-  AddMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
+  AddMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+              algorithm_name);
 }
 
 void ClientContext::TryCancel() {
@@ -171,7 +175,8 @@ std::string ClientContext::peer() const {
   return peer;
 }
 
-void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
+void ClientContext::SetGlobalCallbacks(
+    GlobalCallbacks* client_callbacks) {
   GPR_ASSERT(g_client_callbacks == g_default_client_callbacks);
   GPR_ASSERT(client_callbacks != nullptr);
   GPR_ASSERT(client_callbacks != g_default_client_callbacks);

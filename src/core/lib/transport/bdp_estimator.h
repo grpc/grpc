@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,35 +43,37 @@ class BdpEstimator {
   int64_t EstimateBdp() const { return estimate_; }
   double EstimateBandwidth() const { return bw_est_; }
 
-  void AddIncomingBytes(int64_t num_bytes) { accumulator_ += num_bytes; }
+  void AddIncomingBytes(int64_t num_bytes) {
+    accumulator_ += num_bytes;
+  }
 
   // Schedule a ping: call in response to receiving a true from
-  // grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
-  // transport (but not necessarily started)
+  // grpc_bdp_estimator_add_incoming_bytes once a ping has been
+  // scheduled by a transport (but not necessarily started)
   void SchedulePing() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64, name_,
-              accumulator_, estimate_);
+      gpr_log(GPR_INFO, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64,
+              name_, accumulator_, estimate_);
     }
     GPR_ASSERT(ping_state_ == PingState::UNSCHEDULED);
     ping_state_ = PingState::SCHEDULED;
     accumulator_ = 0;
   }
 
-  // Start a ping: call after calling grpc_bdp_estimator_schedule_ping and
-  // once
-  // the ping is on the wire
+  // Start a ping: call after calling grpc_bdp_estimator_schedule_ping
+  // and once the ping is on the wire
   void StartPing() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64, name_,
-              accumulator_, estimate_);
+      gpr_log(GPR_INFO, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64,
+              name_, accumulator_, estimate_);
     }
     GPR_ASSERT(ping_state_ == PingState::SCHEDULED);
     ping_state_ = PingState::STARTED;
     ping_start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   }
 
-  // Completes a previously started ping, returns when to schedule the next one
+  // Completes a previously started ping, returns when to schedule the
+  // next one
   grpc_millis CompletePing();
 
   int64_t accumulator() { return accumulator_; }

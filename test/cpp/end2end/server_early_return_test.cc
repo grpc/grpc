@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,10 +41,12 @@ namespace testing {
 namespace {
 
 const char kServerReturnStatusCode[] = "server_return_status_code";
-const char kServerDelayBeforeReturnUs[] = "server_delay_before_return_us";
+const char kServerDelayBeforeReturnUs[] =
+    "server_delay_before_return_us";
 const char kServerReturnAfterNReads[] = "server_return_after_n_reads";
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl
+    : public ::grpc::testing::EchoTestService::Service {
  public:
   // Unused methods are not implemented.
 
@@ -65,11 +67,13 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
     response->set_message("response msg");
 
-    gpr_sleep_until(gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC),
-        gpr_time_from_micros(server_delay_before_return_us, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_micros(server_delay_before_return_us,
+                                          GPR_TIMESPAN)));
 
-    return Status(static_cast<StatusCode>(server_return_status_code), "");
+    return Status(static_cast<StatusCode>(server_return_status_code),
+                  "");
   }
 
   Status BidiStream(
@@ -90,11 +94,13 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
       EXPECT_TRUE(stream->Write(response));
     }
 
-    gpr_sleep_until(gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC),
-        gpr_time_from_micros(server_delay_before_return_us, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_micros(server_delay_before_return_us,
+                                          GPR_TIMESPAN)));
 
-    return Status(static_cast<StatusCode>(server_return_status_code), "");
+    return Status(static_cast<StatusCode>(server_return_status_code),
+                  "");
   }
 
   int GetIntValueFromMetadata(ServerContext* context, const char* key,
@@ -134,9 +140,9 @@ class ServerEarlyReturnTest : public ::testing::Test {
     }
   }
 
-  // Client sends 20 requests and the server returns after reading 10 requests.
-  // If return_cancel is true, server returns CANCELLED status. Otherwise it
-  // returns OK.
+  // Client sends 20 requests and the server returns after reading 10
+  // requests. If return_cancel is true, server returns CANCELLED
+  // status. Otherwise it returns OK.
   void DoBidiStream(bool return_cancelled) {
     EchoRequest request;
     EchoResponse response;
@@ -212,11 +218,17 @@ class ServerEarlyReturnTest : public ::testing::Test {
   int picked_port_;
 };
 
-TEST_F(ServerEarlyReturnTest, BidiStreamEarlyOk) { DoBidiStream(false); }
+TEST_F(ServerEarlyReturnTest, BidiStreamEarlyOk) {
+  DoBidiStream(false);
+}
 
-TEST_F(ServerEarlyReturnTest, BidiStreamEarlyCancel) { DoBidiStream(true); }
+TEST_F(ServerEarlyReturnTest, BidiStreamEarlyCancel) {
+  DoBidiStream(true);
+}
 
-TEST_F(ServerEarlyReturnTest, RequestStreamEarlyOK) { DoRequestStream(false); }
+TEST_F(ServerEarlyReturnTest, RequestStreamEarlyOK) {
+  DoRequestStream(false);
+}
 TEST_F(ServerEarlyReturnTest, RequestStreamEarlyCancel) {
   DoRequestStream(true);
 }

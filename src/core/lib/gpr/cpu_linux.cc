@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ static int ncpus = 0;
 static void init_num_cpus() {
 #ifndef GPR_MUSL_LIBC_COMPAT
   if (sched_getcpu() < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
+    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n",
+            strerror(errno));
     ncpus = 1;
     return;
   }
@@ -68,7 +69,8 @@ unsigned gpr_cpu_current_cpu(void) {
   }
   int cpu = sched_getcpu();
   if (cpu < 0) {
-    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n", strerror(errno));
+    gpr_log(GPR_ERROR, "Error determining current CPU: %s\n",
+            strerror(errno));
     return 0;
   }
   if (static_cast<unsigned>(cpu) >= gpr_cpu_num_cores()) {

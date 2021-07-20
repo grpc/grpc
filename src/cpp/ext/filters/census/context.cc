@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,7 +29,8 @@ using ::opencensus::tags::TagMap;
 using ::opencensus::trace::Span;
 using ::opencensus::trace::SpanContext;
 
-void GenerateServerContext(absl::string_view tracing, absl::string_view method,
+void GenerateServerContext(absl::string_view tracing,
+                           absl::string_view method,
                            CensusContext* context) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
@@ -43,7 +44,8 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view method,
   new (context) CensusContext(method, TagMap{});
 }
 
-void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
+void GenerateClientContext(absl::string_view method,
+                           CensusContext* ctxt,
                            CensusContext* parent_ctxt) {
   // Destruct the current CensusContext to free the Span memory before
   // overwriting it below.
@@ -67,8 +69,9 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
   new (ctxt) CensusContext(method, tags);
 }
 
-size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
-                             char* tracing_buf, size_t tracing_buf_size) {
+size_t TraceContextSerialize(
+    const ::opencensus::trace::SpanContext& context, char* tracing_buf,
+    size_t tracing_buf_size) {
   if (tracing_buf_size <
       opencensus::trace::propagation::kGrpcTraceBinHeaderLen) {
     return 0;
@@ -78,20 +81,23 @@ size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
   return opencensus::trace::propagation::kGrpcTraceBinHeaderLen;
 }
 
-size_t StatsContextSerialize(size_t /*max_tags_len*/, grpc_slice* /*tags*/) {
-  // TODO(unknown): Add implementation. Waiting on stats tagging to be added.
+size_t StatsContextSerialize(size_t /*max_tags_len*/,
+                             grpc_slice* /*tags*/) {
+  // TODO(unknown): Add implementation. Waiting on stats tagging to be
+  // added.
   return 0;
 }
 
 size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf,
                             size_t buf_size) {
-  return RpcServerStatsEncoding::Encode(server_elapsed_time, buf, buf_size);
+  return RpcServerStatsEncoding::Encode(server_elapsed_time, buf,
+                                        buf_size);
 }
 
 size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
                               uint64_t* server_elapsed_time) {
-  return RpcServerStatsEncoding::Decode(absl::string_view(buf, buf_size),
-                                        server_elapsed_time);
+  return RpcServerStatsEncoding::Decode(
+      absl::string_view(buf, buf_size), server_elapsed_time);
 }
 
 uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info) {
@@ -147,8 +153,8 @@ absl::string_view StatusCodeToString(grpc_status_code code) {
     case GRPC_STATUS_DATA_LOSS:
       return "DATA_LOSS";
     default:
-      // gRPC wants users of this enum to include a default branch so that
-      // adding values is not a breaking change.
+      // gRPC wants users of this enum to include a default branch so
+      // that adding values is not a breaking change.
       return "UNKNOWN_STATUS";
   }
 }

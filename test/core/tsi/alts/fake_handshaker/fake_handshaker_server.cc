@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
@@ -45,22 +45,23 @@ constexpr char kWrongStateError[] = "Wrong handshake state.";
 namespace grpc {
 namespace gcp {
 
-// FakeHandshakeService implements a fake handshaker service using a fake key
-// exchange protocol. The fake key exchange protocol is a 3-message protocol:
+// FakeHandshakeService implements a fake handshaker service using a
+// fake key exchange protocol. The fake key exchange protocol is a
+// 3-message protocol:
 // - Client first sends ClientInit message to Server.
 // - Server then sends ServerInitAndFinished message back to Client.
 // - Client finally sends ClientFinished message to Server.
-// This fake handshaker service is intended for ALTS integration testing without
-// relying on real ALTS handshaker service inside GCE.
-// It is thread-safe.
+// This fake handshaker service is intended for ALTS integration testing
+// without relying on real ALTS handshaker service inside GCE. It is
+// thread-safe.
 class FakeHandshakerService : public HandshakerService::Service {
  public:
   explicit FakeHandshakerService(int expected_max_concurrent_rpcs)
       : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
 
-  Status DoHandshake(
-      ServerContext* /*server_context*/,
-      ServerReaderWriter<HandshakerResp, HandshakerReq>* stream) override {
+  Status DoHandshake(ServerContext* /*server_context*/,
+                     ServerReaderWriter<HandshakerResp, HandshakerReq>*
+                         stream) override {
     ConcurrentRpcsCheck concurrent_rpcs_check(this);
     Status status;
     HandshakerContext context;
@@ -78,12 +79,13 @@ class FakeHandshakerService : public HandshakerService::Service {
   }
 
  private:
-  // HandshakeState is used by fake handshaker server to keep track of client's
-  // handshake status. In the beginning of a handshake, the state is INITIAL.
-  // If start_client or start_server request is called, the state becomes at
-  // least STARTED. When the handshaker server produces the first fame, the
-  // state becomes SENT. After the handshaker server processes the final frame
-  // from the peer, the state becomes COMPLETED.
+  // HandshakeState is used by fake handshaker server to keep track of
+  // client's handshake status. In the beginning of a handshake, the
+  // state is INITIAL. If start_client or start_server request is
+  // called, the state becomes at least STARTED. When the handshaker
+  // server produces the first fame, the state becomes SENT. After the
+  // handshaker server processes the final frame from the peer, the
+  // state becomes COMPLETED.
   enum HandshakeState { INITIAL, STARTED, SENT, COMPLETED };
 
   struct HandshakerContext {
@@ -98,10 +100,12 @@ class FakeHandshakerService : public HandshakerService::Service {
     response->Clear();
     if (request.has_client_start()) {
       gpr_log(GPR_DEBUG, "Process client start request.");
-      return ProcessClientStart(context, request.client_start(), response);
+      return ProcessClientStart(context, request.client_start(),
+                                response);
     } else if (request.has_server_start()) {
       gpr_log(GPR_DEBUG, "Process server start request.");
-      return ProcessServerStart(context, request.server_start(), response);
+      return ProcessServerStart(context, request.server_start(),
+                                response);
     } else if (request.has_next()) {
       gpr_log(GPR_DEBUG, "Process next request.");
       return ProcessNext(context, request.next(), response);
@@ -178,7 +182,8 @@ class FakeHandshakerService : public HandshakerService::Service {
     if (context->is_client) {
       // Processes next request on client side.
       if (context->state != SENT) {
-        return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
+        return Status(StatusCode::FAILED_PRECONDITION,
+                      kWrongStateError);
       }
       if (request.in_bytes() != kServerFrame) {
         return Status(StatusCode::UNKNOWN, kInvalidFrameError);
@@ -197,8 +202,9 @@ class FakeHandshakerService : public HandshakerService::Service {
         response->set_bytes_consumed(strlen(kClientInitFrame));
         context->state = SENT;
       } else if (current_state == SENT) {
-        // Client finish frame may be sent along with the first payload from the
-        // client, handshaker only consumes the client finish frame.
+        // Client finish frame may be sent along with the first payload
+        // from the client, handshaker only consumes the client finish
+        // frame.
         if (request.in_bytes().substr(0, strlen(kClientFinishFrame)) !=
             kClientFinishFrame) {
           return Status(StatusCode::UNKNOWN, kInvalidFrameError);
@@ -206,7 +212,8 @@ class FakeHandshakerService : public HandshakerService::Service {
         response->set_bytes_consumed(strlen(kClientFinishFrame));
         context->state = COMPLETED;
       } else {
-        return Status(StatusCode::FAILED_PRECONDITION, kWrongStateError);
+        return Status(StatusCode::FAILED_PRECONDITION,
+                      kWrongStateError);
       }
     }
     // At this point, processing next request succeeded.
@@ -232,15 +239,25 @@ class FakeHandshakerService : public HandshakerService::Service {
     HandshakerResult result;
     result.set_application_protocol("grpc");
     result.set_record_protocol("ALTSRP_GCM_AES128_REKEY");
-    result.mutable_peer_identity()->set_service_account("peer_identity");
-    result.mutable_local_identity()->set_service_account("local_identity");
+    result.mutable_peer_identity()->set_service_account(
+        "peer_identity");
+    result.mutable_local_identity()->set_service_account(
+        "local_identity");
     string key(1024, '\0');
     result.set_key_data(key);
     result.set_max_frame_size(16384);
-    result.mutable_peer_rpc_versions()->mutable_max_rpc_version()->set_major(2);
-    result.mutable_peer_rpc_versions()->mutable_max_rpc_version()->set_minor(1);
-    result.mutable_peer_rpc_versions()->mutable_min_rpc_version()->set_major(2);
-    result.mutable_peer_rpc_versions()->mutable_min_rpc_version()->set_minor(1);
+    result.mutable_peer_rpc_versions()
+        ->mutable_max_rpc_version()
+        ->set_major(2);
+    result.mutable_peer_rpc_versions()
+        ->mutable_max_rpc_version()
+        ->set_minor(1);
+    result.mutable_peer_rpc_versions()
+        ->mutable_min_rpc_version()
+        ->set_major(2);
+    result.mutable_peer_rpc_versions()
+        ->mutable_min_rpc_version()
+        ->set_minor(1);
     return result;
   }
 
@@ -283,7 +300,8 @@ class FakeHandshakerService : public HandshakerService::Service {
 std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
     int expected_max_concurrent_rpcs) {
   return std::unique_ptr<grpc::Service>{
-      new grpc::gcp::FakeHandshakerService(expected_max_concurrent_rpcs)};
+      new grpc::gcp::FakeHandshakerService(
+          expected_max_concurrent_rpcs)};
 }
 
 }  // namespace gcp

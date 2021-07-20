@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,10 +24,11 @@
 #include <grpc/slice.h>
 #include "src/core/lib/http/httpcli.h"
 
-grpc_slice grpc_httpcli_format_get_request(const grpc_httpcli_request* request);
-grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
-                                            const char* body_bytes,
-                                            size_t body_size);
+grpc_slice grpc_httpcli_format_get_request(
+    const grpc_httpcli_request* request);
+grpc_slice grpc_httpcli_format_post_request(
+    const grpc_httpcli_request* request, const char* body_bytes,
+    size_t body_size);
 grpc_slice grpc_httpcli_format_connect_request(
     const grpc_httpcli_request* request);
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,20 +37,21 @@ class CallOpSetInterface : public CompletionQueueTag {
   /// upwards.
   virtual void FillOps(internal::Call* call) = 0;
 
-  /// Get the tag to be used at the core completion queue. Generally, the
-  /// value of core_cq_tag will be "this". However, it can be overridden if we
-  /// want core to process the tag differently (e.g., as a core callback)
+  /// Get the tag to be used at the core completion queue. Generally,
+  /// the value of core_cq_tag will be "this". However, it can be
+  /// overridden if we want core to process the tag differently (e.g.,
+  /// as a core callback)
   virtual void* core_cq_tag() = 0;
 
-  // This will be called while interceptors are run if the RPC is a hijacked
-  // RPC. This should set hijacking state for each of the ops.
+  // This will be called while interceptors are run if the RPC is a
+  // hijacked RPC. This should set hijacking state for each of the ops.
   virtual void SetHijackingState() = 0;
 
   // Should be called after interceptors are done running
   virtual void ContinueFillOpsAfterInterception() = 0;
 
-  // Should be called after interceptors are done running on the finalize result
-  // path
+  // Should be called after interceptors are done running on the
+  // finalize result path
   virtual void ContinueFinalizeResultAfterInterception() = 0;
 };
 }  // namespace internal

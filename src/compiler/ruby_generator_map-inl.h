@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,12 +33,14 @@ using std::vector;
 
 namespace grpc_ruby_generator {
 
-// Converts an initializer list of the form { key0, value0, key1, value1, ... }
-// into a map of key* to value*. Is merely a readability helper for later code.
+// Converts an initializer list of the form { key0, value0, key1,
+// value1, ... } into a map of key* to value*. Is merely a readability
+// helper for later code.
 inline std::map<std::string, std::string> ListToDict(
     const initializer_list<std::string>& values) {
   if (values.size() % 2 != 0) {
-    std::cerr << "Not every 'key' has a value in `values`." << std::endl;
+    std::cerr << "Not every 'key' has a value in `values`."
+              << std::endl;
   }
   std::map<std::string, std::string> value_map;
   auto value_iter = values.begin();

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,8 +57,8 @@ BENCHMARK(BM_CreateDestroyCpp2);
 static void BM_CreateDestroyCore(benchmark::State& state) {
   TrackCounters track_counters;
   for (auto _ : state) {
-    // TODO(sreek): Templatize this benchmark and pass completion type and
-    // polling type as parameters
+    // TODO(sreek): Templatize this benchmark and pass completion type
+    // and polling type as parameters
     grpc_completion_queue_destroy(
         grpc_completion_queue_create_for_next(nullptr));
   }
@@ -66,8 +66,8 @@ static void BM_CreateDestroyCore(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateDestroyCore);
 
-static void DoneWithCompletionOnStack(void* /*arg*/,
-                                      grpc_cq_completion* /*completion*/) {}
+static void DoneWithCompletionOnStack(
+    void* /*arg*/, grpc_cq_completion* /*completion*/) {}
 
 static void DoneWithCompletionOnHeap(void* /*arg*/,
                                      grpc_cq_completion* completion) {
@@ -90,8 +90,8 @@ static void BM_Pass1Cpp(benchmark::State& state) {
     PhonyTag phony_tag;
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(c_cq, &phony_tag));
-    grpc_cq_end_op(c_cq, &phony_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
-                   nullptr, &completion);
+    grpc_cq_end_op(c_cq, &phony_tag, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnStack, nullptr, &completion);
 
     void* tag;
     bool ok;
@@ -103,15 +103,17 @@ BENCHMARK(BM_Pass1Cpp);
 
 static void BM_Pass1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO(sreek): Templatize this benchmark and pass polling_type as a param
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a
+  // param
+  grpc_completion_queue* cq =
+      grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   for (auto _ : state) {
     grpc_cq_completion completion;
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, nullptr));
-    grpc_cq_end_op(cq, nullptr, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
-                   nullptr, &completion);
+    grpc_cq_end_op(cq, nullptr, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnStack, nullptr, &completion);
 
     grpc_completion_queue_next(cq, deadline, nullptr);
   }
@@ -122,15 +124,17 @@ BENCHMARK(BM_Pass1Core);
 
 static void BM_Pluck1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO(sreek): Templatize this benchmark and pass polling_type as a param
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(nullptr);
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a
+  // param
+  grpc_completion_queue* cq =
+      grpc_completion_queue_create_for_pluck(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   for (auto _ : state) {
     grpc_cq_completion completion;
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, nullptr));
-    grpc_cq_end_op(cq, nullptr, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
-                   nullptr, &completion);
+    grpc_cq_end_op(cq, nullptr, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnStack, nullptr, &completion);
 
     grpc_completion_queue_pluck(cq, nullptr, deadline, nullptr);
   }
@@ -141,8 +145,10 @@ BENCHMARK(BM_Pluck1Core);
 
 static void BM_EmptyCore(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO(sreek): Templatize this benchmark and pass polling_type as a param
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a
+  // param
+  grpc_completion_queue* cq =
+      grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   for (auto _ : state) {
     grpc_completion_queue_next(cq, deadline, nullptr);
@@ -210,13 +216,14 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   gpr_cv_init(&shutdown_cv);
   bool got_shutdown = false;
   ShutdownCallback shutdown_cb(&got_shutdown);
-  // This test with stack-allocated completions only works for non-polling or
-  // EM-polling callback core CQs because otherwise the callback could execute
-  // on  another thread after the stack objects here go out of scope. An
-  // alternative would be to synchronize between the benchmark loop and the
-  // callback, but then it would be measuring the overhead of synchronization
-  // rather than the overhead of the completion queue.
-  // For generality, test here with non-polling.
+  // This test with stack-allocated completions only works for
+  // non-polling or EM-polling callback core CQs because otherwise the
+  // callback could execute on  another thread after the stack objects
+  // here go out of scope. An alternative would be to synchronize
+  // between the benchmark loop and the callback, but then it would be
+  // measuring the overhead of synchronization rather than the overhead
+  // of the completion queue. For generality, test here with
+  // non-polling.
   grpc_completion_queue_attributes attr;
   attr.version = 2;
   attr.cq_completion_type = GRPC_CQ_CALLBACK;
@@ -229,8 +236,8 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion completion;
     GPR_ASSERT(grpc_cq_begin_op(cc, &tag_cb));
-    grpc_cq_end_op(cc, &tag_cb, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
-                   nullptr, &completion);
+    grpc_cq_end_op(cc, &tag_cb, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnStack, nullptr, &completion);
   }
   shutdown_and_destroy(cc);
 
@@ -245,7 +252,8 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   gpr_mu_lock(&shutdown_mu);
   while (!got_shutdown) {
     // Wait for the shutdown callback to complete.
-    gpr_cv_wait(&shutdown_cv, &shutdown_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&shutdown_cv, &shutdown_mu,
+                gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&shutdown_mu);
 
@@ -257,7 +265,8 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   gpr_cv_destroy(&shutdown_cv);
   gpr_mu_destroy(&shutdown_mu);
 }
-static void BM_Callback_CQ_Pass1CoreHeapCompletion(benchmark::State& state) {
+static void BM_Callback_CQ_Pass1CoreHeapCompletion(
+    benchmark::State& state) {
   TrackCounters track_counters;
   int iteration = 0, current_iterations = 0;
   TagCallback tag_cb(&iteration);
@@ -274,8 +283,8 @@ static void BM_Callback_CQ_Pass1CoreHeapCompletion(benchmark::State& state) {
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion* completion = new grpc_cq_completion;
     GPR_ASSERT(grpc_cq_begin_op(cc, &tag_cb));
-    grpc_cq_end_op(cc, &tag_cb, GRPC_ERROR_NONE, DoneWithCompletionOnHeap,
-                   nullptr, completion);
+    grpc_cq_end_op(cc, &tag_cb, GRPC_ERROR_NONE,
+                   DoneWithCompletionOnHeap, nullptr, completion);
   }
   shutdown_and_destroy(cc);
 
@@ -290,7 +299,8 @@ static void BM_Callback_CQ_Pass1CoreHeapCompletion(benchmark::State& state) {
   gpr_mu_lock(&shutdown_mu);
   while (!got_shutdown) {
     // Wait for the shutdown callback to complete.
-    gpr_cv_wait(&shutdown_cv, &shutdown_mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+    gpr_cv_wait(&shutdown_cv, &shutdown_mu,
+                gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&shutdown_mu);
 
@@ -308,8 +318,8 @@ BENCHMARK(BM_Callback_CQ_Pass1CoreHeapCompletion);
 }  // namespace testing
 }  // namespace grpc
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,9 +43,9 @@ typedef struct target_service_account {
 } target_service_account;
 
 /**
- * Main struct for ALTS client credentials options. The options contain a
- * a list of target service accounts (if specified) used for secure naming
- * check.
+ * Main struct for ALTS client credentials options. The options contain
+ * a a list of target service accounts (if specified) used for secure
+ * naming check.
  */
 typedef struct grpc_alts_credentials_client_options {
   grpc_alts_credentials_options base;
@@ -53,20 +53,22 @@ typedef struct grpc_alts_credentials_client_options {
 } grpc_alts_credentials_client_options;
 
 /**
- * Main struct for ALTS server credentials options. The options currently
- * do not contain any server-specific fields.
+ * Main struct for ALTS server credentials options. The options
+ * currently do not contain any server-specific fields.
  */
 typedef struct grpc_alts_credentials_server_options {
   grpc_alts_credentials_options base;
 } grpc_alts_credentials_server_options;
 
 /**
- * This method performs a deep copy on grpc_alts_credentials_options instance.
+ * This method performs a deep copy on grpc_alts_credentials_options
+ * instance.
  *
- * - options: a grpc_alts_credentials_options instance that needs to be copied.
+ * - options: a grpc_alts_credentials_options instance that needs to be
+ * copied.
  *
- * It returns a new grpc_alts_credentials_options instance on success and NULL
- * on failure.
+ * It returns a new grpc_alts_credentials_options instance on success
+ * and NULL on failure.
  */
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options);

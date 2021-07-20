@@ -10,14 +10,15 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include "src/core/lib/iomgr/port.h"
 
-/* This test only relevant on linux systems where epoll() is available */
+/* This test only relevant on linux systems where epoll() is available
+ */
 #if defined(GRPC_LINUX_EPOLL_CREATE1) && defined(GRPC_LINUX_EVENTFD)
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 
@@ -44,8 +45,8 @@ static void test_pollable_owner_fd() {
   gpr_mu* mu;
 
   // == Create two grpc_fds ==
-  // All we need is two file descriptors. Doesn't matter what type. We use
-  // eventfd type here for the purpose of this test
+  // All we need is two file descriptors. Doesn't matter what type. We
+  // use eventfd type here for the purpose of this test
   ev_fd1 = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   ev_fd2 = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (ev_fd1 < 0 || ev_fd2 < 0) {
@@ -71,10 +72,11 @@ static void test_pollable_owner_fd() {
 
   // = Add fd2 to pollset ==
   //
-  // Before https://github.com/grpc/grpc/issues/15760, the following line caused
-  // unexpected behavior (The previous grpc_pollset_add_fd(ps, grpc_fd1) created
-  // an underlying structure in epollex that held a reference to grpc_fd1 which
-  // was being accessed here even after grpc_fd_orphan(grpc_fd1) was called
+  // Before https://github.com/grpc/grpc/issues/15760, the following
+  // line caused unexpected behavior (The previous
+  // grpc_pollset_add_fd(ps, grpc_fd1) created an underlying structure
+  // in epollex that held a reference to grpc_fd1 which was being
+  // accessed here even after grpc_fd_orphan(grpc_fd1) was called
   grpc_pollset_add_fd(ps, grpc_fd2);
   grpc_core::ExecCtx::Get()->Flush();
 
@@ -97,19 +99,22 @@ int main(int argc, char** argv) {
   {
     grpc_core::ExecCtx exec_ctx;
     poll_strategy = grpc_get_poll_strategy_name();
-    if (poll_strategy != nullptr && strcmp(poll_strategy, "epollex") == 0) {
+    if (poll_strategy != nullptr &&
+        strcmp(poll_strategy, "epollex") == 0) {
       test_pollable_owner_fd();
     } else {
-      gpr_log(GPR_INFO,
-              "Skipping the test. The test is only relevant for 'epollex' "
-              "strategy. and the current strategy is: '%s'",
-              poll_strategy);
+      gpr_log(
+          GPR_INFO,
+          "Skipping the test. The test is only relevant for 'epollex' "
+          "strategy. and the current strategy is: '%s'",
+          poll_strategy);
     }
   }
 
   grpc_shutdown();
   return 0;
 }
-#else /* defined(GRPC_LINUX_EPOLL_CREATE1) && defined(GRPC_LINUX_EVENTFD) */
+#else /* defined(GRPC_LINUX_EPOLL_CREATE1) && \
+         defined(GRPC_LINUX_EVENTFD) */
 int main(int /*argc*/, char** /*argv*/) { return 0; }
 #endif

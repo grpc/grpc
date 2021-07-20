@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,14 +26,16 @@
 
 namespace grpc_core {
 
-typedef void (*GlobalConfigEnvErrorFunctionType)(const char* error_message);
+typedef void (*GlobalConfigEnvErrorFunctionType)(
+    const char* error_message);
 
 /*
- * Set global_config_env_error_function which is called when config system
- * encounters errors such as parsing error. What the default function does
- * is logging error message.
+ * Set global_config_env_error_function which is called when config
+ * system encounters errors such as parsing error. What the default
+ * function does is logging error message.
  */
-void SetGlobalConfigEnvErrorFunction(GlobalConfigEnvErrorFunctionType func);
+void SetGlobalConfigEnvErrorFunction(
+    GlobalConfigEnvErrorFunctionType func);
 
 // Base class for all classes to access environment variables.
 class GlobalConfigEnv {
@@ -96,36 +98,42 @@ class GlobalConfigEnvString : public GlobalConfigEnv {
 
 }  // namespace grpc_core
 
-// Macros for defining global config instances using environment variables.
-// This defines a GlobalConfig*Type* instance with arguments for
-// mutable variable name and default value.
-// Mutable name (g_env_str_##name) is here for having an array
-// for the canonical name without dynamic allocation.
-// `help` argument is ignored for this implementation.
+// Macros for defining global config instances using environment
+// variables. This defines a GlobalConfig*Type* instance with arguments
+// for mutable variable name and default value. Mutable name
+// (g_env_str_##name) is here for having an array for the canonical name
+// without dynamic allocation. `help` argument is ignored for this
+// implementation.
 
-#define GPR_GLOBAL_CONFIG_DEFINE_BOOL(name, default_value, help)         \
-  static char g_env_str_##name[] = #name;                                \
-  static ::grpc_core::GlobalConfigEnvBool g_env_##name(g_env_str_##name, \
-                                                       default_value);   \
-  bool gpr_global_config_get_##name() { return g_env_##name.Get(); }     \
-  void gpr_global_config_set_##name(bool value) { g_env_##name.Set(value); }
+#define GPR_GLOBAL_CONFIG_DEFINE_BOOL(name, default_value, help)     \
+  static char g_env_str_##name[] = #name;                            \
+  static ::grpc_core::GlobalConfigEnvBool g_env_##name(              \
+      g_env_str_##name, default_value);                              \
+  bool gpr_global_config_get_##name() { return g_env_##name.Get(); } \
+  void gpr_global_config_set_##name(bool value) {                    \
+    g_env_##name.Set(value);                                         \
+  }
 
-#define GPR_GLOBAL_CONFIG_DEFINE_INT32(name, default_value, help)         \
-  static char g_env_str_##name[] = #name;                                 \
-  static ::grpc_core::GlobalConfigEnvInt32 g_env_##name(g_env_str_##name, \
-                                                        default_value);   \
-  int32_t gpr_global_config_get_##name() { return g_env_##name.Get(); }   \
-  void gpr_global_config_set_##name(int32_t value) { g_env_##name.Set(value); }
+#define GPR_GLOBAL_CONFIG_DEFINE_INT32(name, default_value, help) \
+  static char g_env_str_##name[] = #name;                         \
+  static ::grpc_core::GlobalConfigEnvInt32 g_env_##name(          \
+      g_env_str_##name, default_value);                           \
+  int32_t gpr_global_config_get_##name() {                        \
+    return g_env_##name.Get();                                    \
+  }                                                               \
+  void gpr_global_config_set_##name(int32_t value) {              \
+    g_env_##name.Set(value);                                      \
+  }
 
-#define GPR_GLOBAL_CONFIG_DEFINE_STRING(name, default_value, help)         \
-  static char g_env_str_##name[] = #name;                                  \
-  static ::grpc_core::GlobalConfigEnvString g_env_##name(g_env_str_##name, \
-                                                         default_value);   \
-  ::grpc_core::UniquePtr<char> gpr_global_config_get_##name() {            \
-    return g_env_##name.Get();                                             \
-  }                                                                        \
-  void gpr_global_config_set_##name(const char* value) {                   \
-    g_env_##name.Set(value);                                               \
+#define GPR_GLOBAL_CONFIG_DEFINE_STRING(name, default_value, help) \
+  static char g_env_str_##name[] = #name;                          \
+  static ::grpc_core::GlobalConfigEnvString g_env_##name(          \
+      g_env_str_##name, default_value);                            \
+  ::grpc_core::UniquePtr<char> gpr_global_config_get_##name() {    \
+    return g_env_##name.Get();                                     \
+  }                                                                \
+  void gpr_global_config_set_##name(const char* value) {           \
+    g_env_##name.Set(value);                                       \
   }
 
 #endif /* GRPC_CORE_LIB_GPRPP_GLOBAL_CONFIG_ENV_H */

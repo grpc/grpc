@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_RESULT_PARSING_H
@@ -42,8 +42,10 @@ class ClientChannelGlobalParsedConfig
       std::string parsed_deprecated_lb_policy,
       absl::optional<std::string> health_check_service_name)
       : parsed_lb_config_(std::move(parsed_lb_config)),
-        parsed_deprecated_lb_policy_(std::move(parsed_deprecated_lb_policy)),
-        health_check_service_name_(std::move(health_check_service_name)) {}
+        parsed_deprecated_lb_policy_(
+            std::move(parsed_deprecated_lb_policy)),
+        health_check_service_name_(
+            std::move(health_check_service_name)) {}
 
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config() const {
     return parsed_lb_config_;
@@ -66,28 +68,32 @@ class ClientChannelGlobalParsedConfig
 class ClientChannelMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
-  ClientChannelMethodParsedConfig(grpc_millis timeout,
-                                  const absl::optional<bool>& wait_for_ready)
+  ClientChannelMethodParsedConfig(
+      grpc_millis timeout, const absl::optional<bool>& wait_for_ready)
       : timeout_(timeout), wait_for_ready_(wait_for_ready) {}
 
   grpc_millis timeout() const { return timeout_; }
 
-  absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
+  absl::optional<bool> wait_for_ready() const {
+    return wait_for_ready_;
+  }
 
  private:
   grpc_millis timeout_ = 0;
   absl::optional<bool> wait_for_ready_;
 };
 
-class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
+class ClientChannelServiceConfigParser
+    : public ServiceConfigParser::Parser {
  public:
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const grpc_channel_args* /*args*/, const Json& json,
       grpc_error_handle* error) override;
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* /*args*/, const Json& json,
-      grpc_error_handle* error) override;
+  std::unique_ptr<ServiceConfigParser::ParsedConfig>
+  ParsePerMethodParams(const grpc_channel_args* /*args*/,
+                       const Json& json,
+                       grpc_error_handle* error) override;
 
   static size_t ParserIndex();
   static void Register();

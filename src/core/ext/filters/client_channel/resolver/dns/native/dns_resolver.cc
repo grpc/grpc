@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -109,13 +109,15 @@ NativeDnsResolver::NativeDnsResolver(ResolverArgs args)
           {1000 * 30, 0, INT_MAX})),
       backoff_(
           BackOff::Options()
-              .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
-                                   1000)
+              .set_initial_backoff(
+                  GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
               .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
+              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS *
+                               1000)) {
   if (args.pollset_set != nullptr) {
-    grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
+    grpc_pollset_set_add_pollset_set(interested_parties_,
+                                     args.pollset_set);
   }
 }
 
@@ -146,14 +148,17 @@ void NativeDnsResolver::ShutdownLocked() {
   }
 }
 
-void NativeDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
+void NativeDnsResolver::OnNextResolution(void* arg,
+                                         grpc_error_handle error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
-  r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
-                           DEBUG_LOCATION);
+  r->work_serializer_->Run(
+      [r, error]() { r->OnNextResolutionLocked(error); },
+      DEBUG_LOCATION);
 }
 
-void NativeDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
+void NativeDnsResolver::OnNextResolutionLocked(
+    grpc_error_handle error) {
   have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !resolving_) {
     StartResolvingLocked();
@@ -194,11 +199,11 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
             grpc_error_std_string(error).c_str());
     // Return transient error.
-    std::string error_message =
-        absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
+    std::string error_message = absl::StrCat(
+        "DNS resolution failed for service: ", name_to_resolve_);
     result_handler_->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(error_message.c_str(),
-                                                         &error, 1),
+        GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
+            error_message.c_str(), &error, 1),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     // Set up for retry.
     // InvalidateNow to avoid getting stuck re-initializing this timer
@@ -210,25 +215,28 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     GPR_ASSERT(!have_next_resolution_timer_);
     have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the
-    // new closure API is done, find a way to track this ref with the timer
-    // callback as part of the type system.
+    // new closure API is done, find a way to track this ref with the
+    // timer callback as part of the type system.
     Ref(DEBUG_LOCATION, "next_resolution_timer").release();
     if (timeout > 0) {
-      gpr_log(GPR_DEBUG, "retrying in %" PRId64 " milliseconds", timeout);
+      gpr_log(GPR_DEBUG, "retrying in %" PRId64 " milliseconds",
+              timeout);
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
-    GRPC_CLOSURE_INIT(&on_next_resolution_, NativeDnsResolver::OnNextResolution,
-                      this, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
+    GRPC_CLOSURE_INIT(&on_next_resolution_,
+                      NativeDnsResolver::OnNextResolution, this,
+                      grpc_schedule_on_exec_ctx);
+    grpc_timer_init(&next_resolution_timer_, next_try,
+                    &on_next_resolution_);
   }
   Unref(DEBUG_LOCATION, "dns-resolving");
   GRPC_ERROR_UNREF(error);
 }
 
 void NativeDnsResolver::MaybeStartResolvingLocked() {
-  // If there is an existing timer, the time it fires is the earliest time we
-  // can start the next resolution.
+  // If there is an existing timer, the time it fires is the earliest
+  // time we can start the next resolution.
   if (have_next_resolution_timer_) return;
   if (last_resolution_timestamp_ >= 0) {
     // InvalidateNow to avoid getting stuck re-initializing this timer
@@ -248,8 +256,8 @@ void NativeDnsResolver::MaybeStartResolvingLocked() {
               last_resolution_ago, ms_until_next_resolution);
       have_next_resolution_timer_ = true;
       // TODO(roth): We currently deal with this ref manually.  Once the
-      // new closure API is done, find a way to track this ref with the timer
-      // callback as part of the type system.
+      // new closure API is done, find a way to track this ref with the
+      // timer callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
       GRPC_CLOSURE_INIT(&on_next_resolution_,
                         NativeDnsResolver::OnNextResolution, this,
@@ -266,8 +274,8 @@ void NativeDnsResolver::MaybeStartResolvingLocked() {
 void NativeDnsResolver::StartResolvingLocked() {
   gpr_log(GPR_DEBUG, "Start resolving.");
   // TODO(roth): We currently deal with this ref manually.  Once the
-  // new closure API is done, find a way to track this ref with the timer
-  // callback as part of the type system.
+  // new closure API is done, find a way to track this ref with the
+  // timer callback as part of the type system.
   Ref(DEBUG_LOCATION, "dns-resolving").release();
   GPR_ASSERT(!resolving_);
   resolving_ = true;
@@ -293,7 +301,8 @@ class NativeDnsResolverFactory : public ResolverFactory {
     return true;
   }
 
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      ResolverArgs args) const override {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<NativeDnsResolver>(std::move(args));
   }

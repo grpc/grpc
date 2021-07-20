@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,6 +28,7 @@ void grpc_register_security_filters(void) {}
 
 void grpc_security_init(void) {
   gpr_log(GPR_DEBUG,
-          "Using insecure gRPC build. Security handshakers will not be invoked "
+          "Using insecure gRPC build. Security handshakers will not be "
+          "invoked "
           "even if secure credentials are used.");
 }

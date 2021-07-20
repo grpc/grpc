@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,7 +31,8 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
   }
 }
 
-grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
+grpc_status_code alts_counter_create(bool is_client,
+                                     size_t counter_size,
                                      size_t overflow_size,
                                      alts_counter** crypter_counter,
                                      char** error_details) {
@@ -86,7 +87,8 @@ grpc_status_code alts_counter_increment(alts_counter* crypter_counter,
     }
   }
   /**
-   * If the lower overflow_size bytes are all zero, the counter has overflowed.
+   * If the lower overflow_size bytes are all zero, the counter has
+   * overflowed.
    */
   if (i == crypter_counter->overflow_size) {
     *is_overflow = true;

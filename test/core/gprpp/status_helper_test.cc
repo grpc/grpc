@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include "src/core/lib/gprpp/status_helper.h"
@@ -35,10 +35,13 @@ TEST(StatusUtilTest, CreateStatus) {
   EXPECT_EQ(absl::StatusCode::kUnknown, s.code());
   EXPECT_EQ("Test", s.message());
 #ifndef NDEBUG
-  EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::kFile).has_value());
-  EXPECT_EQ(true, StatusGetInt(s, StatusIntProperty::kFileLine).has_value());
+  EXPECT_EQ(true,
+            StatusGetStr(s, StatusStrProperty::kFile).has_value());
+  EXPECT_EQ(true,
+            StatusGetInt(s, StatusIntProperty::kFileLine).has_value());
 #endif
-  EXPECT_EQ(true, StatusGetTime(s, StatusTimeProperty::kCreated).has_value());
+  EXPECT_EQ(true,
+            StatusGetTime(s, StatusTimeProperty::kCreated).has_value());
   EXPECT_THAT(StatusGetChildren(s),
               ::testing::ElementsAre(absl::CancelledError()));
 }
@@ -86,7 +89,8 @@ TEST(StatusUtilTest, AddAndGetChildren) {
   absl::Status child2 = absl::DeadlineExceededError("Message2");
   StatusAddChild(&s, child1);
   StatusAddChild(&s, child2);
-  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre(child1, child2));
+  EXPECT_THAT(StatusGetChildren(s),
+              ::testing::ElementsAre(child1, child2));
 }
 
 TEST(StatusUtilTest, ToAndFromProto) {
@@ -127,8 +131,8 @@ TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
 
 TEST(StatusUtilTest, ErrorWithTimePropertyToString) {
   absl::Status s = absl::CancelledError("Message");
-  absl::Time t = absl::FromCivil(absl::CivilSecond(2021, 4, 29, 8, 56, 30),
-                                 absl::LocalTimeZone());
+  absl::Time t = absl::FromCivil(
+      absl::CivilSecond(2021, 4, 29, 8, 56, 30), absl::LocalTimeZone());
   StatusSetTime(&s, StatusTimeProperty::kCreated, t);
   EXPECT_EQ(StatusToString(s),
             absl::StrCat("CANCELLED:Message {created_time:\"",
@@ -146,7 +150,8 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   std::string t = StatusToString(s);
   EXPECT_EQ(
       "CANCELLED:Message {errno:2021, children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {os_error:\"value\"}]}",
+      "ABORTED:Message1, ALREADY_EXISTS:Message2 "
+      "{os_error:\"value\"}]}",
       t);
 }
 

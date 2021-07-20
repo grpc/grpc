@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,7 +29,8 @@
 
 // Get leading or trailing comments in a string.
 template <typename DescriptorType>
-inline std::string GetCommentsHelper(const DescriptorType* desc, bool leading,
+inline std::string GetCommentsHelper(const DescriptorType* desc,
+                                     bool leading,
                                      const std::string& prefix) {
   return grpc_generator::GetPrefixedComments(desc, leading, prefix);
 }
@@ -61,8 +62,8 @@ class ProtoBufMethod : public grpc_generator::Method {
       bool generate_in_pb2_grpc, std::string import_prefix,
       const std::vector<std::string>& prefixes_to_filter) const final {
     return grpc_python_generator::GetModuleAndMessagePath(
-        method_->input_type(), str, generator_file_name, generate_in_pb2_grpc,
-        import_prefix, prefixes_to_filter);
+        method_->input_type(), str, generator_file_name,
+        generate_in_pb2_grpc, import_prefix, prefixes_to_filter);
   }
 
   bool get_module_and_message_path_output(
@@ -70,8 +71,8 @@ class ProtoBufMethod : public grpc_generator::Method {
       bool generate_in_pb2_grpc, std::string import_prefix,
       const std::vector<std::string>& prefixes_to_filter) const final {
     return grpc_python_generator::GetModuleAndMessagePath(
-        method_->output_type(), str, generator_file_name, generate_in_pb2_grpc,
-        import_prefix, prefixes_to_filter);
+        method_->output_type(), str, generator_file_name,
+        generate_in_pb2_grpc, import_prefix, prefixes_to_filter);
   }
 
   bool NoStreaming() const {
@@ -153,7 +154,8 @@ class ProtoBufPrinter : public grpc_generator::Printer {
 
 class ProtoBufFile : public grpc_generator::File {
  public:
-  ProtoBufFile(const grpc::protobuf::FileDescriptor* file) : file_(file) {}
+  ProtoBufFile(const grpc::protobuf::FileDescriptor* file)
+      : file_(file) {}
 
   std::string filename() const { return file_->name(); }
   std::string filename_without_ext() const {
@@ -175,7 +177,8 @@ class ProtoBufFile : public grpc_generator::File {
 
   std::unique_ptr<grpc_generator::Printer> CreatePrinter(
       std::string* str) const {
-    return std::unique_ptr<grpc_generator::Printer>(new ProtoBufPrinter(str));
+    return std::unique_ptr<grpc_generator::Printer>(
+        new ProtoBufPrinter(str));
   }
 
   std::string GetLeadingComments(const std::string prefix) const {

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,20 +42,23 @@
 
 namespace grpc_core {
 
-class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
+class HealthCheckClient
+    : public InternallyRefCounted<HealthCheckClient> {
  public:
-  HealthCheckClient(std::string service_name,
-                    RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-                    grpc_pollset_set* interested_parties,
-                    RefCountedPtr<channelz::SubchannelNode> channelz_node,
-                    RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
+  HealthCheckClient(
+      std::string service_name,
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel,
+      grpc_pollset_set* interested_parties,
+      RefCountedPtr<channelz::SubchannelNode> channelz_node,
+      RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
   ~HealthCheckClient() override;
 
   void Orphan() override;
 
  private:
-  // Contains a call to the backend and all the data related to the call.
+  // Contains a call to the backend and all the data related to the
+  // call.
   class CallState : public Orphanable {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
@@ -64,21 +67,25 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
 
     void Orphan() override;
 
-    void StartCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthCheckClient::mu_);
+    void StartCall()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthCheckClient::mu_);
 
    private:
     void Cancel();
 
     void StartBatch(grpc_transport_stream_op_batch* batch);
-    static void StartBatchInCallCombiner(void* arg, grpc_error_handle error);
+    static void StartBatchInCallCombiner(void* arg,
+                                         grpc_error_handle error);
 
     void CallEndedLocked(bool retry)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(health_check_client_->mu_);
 
     static void OnComplete(void* arg, grpc_error_handle error);
-    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
+    static void RecvInitialMetadataReady(void* arg,
+                                         grpc_error_handle error);
     static void RecvMessageReady(void* arg, grpc_error_handle error);
-    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+    static void RecvTrailingMetadataReady(void* arg,
+                                          grpc_error_handle error);
     static void StartCancel(void* arg, grpc_error_handle error);
     static void OnCancelComplete(void* arg, grpc_error_handle error);
 
@@ -87,7 +94,8 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_error_handle PullSliceFromRecvMessage();
     void DoneReadingRecvMessage(grpc_error_handle error);
 
-    static void AfterCallStackDestruction(void* arg, grpc_error_handle error);
+    static void AfterCallStackDestruction(void* arg,
+                                          grpc_error_handle error);
 
     RefCountedPtr<HealthCheckClient> health_check_client_;
     grpc_polling_entity pollent_;
@@ -146,8 +154,10 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void OnRetryTimer(void* arg, grpc_error_handle error);
 
-  void SetHealthStatus(grpc_connectivity_state state, const char* reason);
-  void SetHealthStatusLocked(grpc_connectivity_state state, const char* reason)
+  void SetHealthStatus(grpc_connectivity_state state,
+                       const char* reason);
+  void SetHealthStatusLocked(grpc_connectivity_state state,
+                             const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::string service_name_;
@@ -160,8 +170,8 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
       ABSL_GUARDED_BY(mu_);
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 
-  // The data associated with the current health check call.  It holds a ref
-  // to this HealthCheckClient object.
+  // The data associated with the current health check call.  It holds a
+  // ref to this HealthCheckClient object.
   OrphanablePtr<CallState> call_state_ ABSL_GUARDED_BY(mu_);
 
   // Call retry state.
@@ -173,4 +183,5 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HEALTH_HEALTH_CHECK_CLIENT_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HEALTH_HEALTH_CHECK_CLIENT_H \
+        */

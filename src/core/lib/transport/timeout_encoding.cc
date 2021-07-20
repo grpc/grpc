@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,7 +29,8 @@ static int64_t round_up(int64_t x, int64_t divisor) {
   return (x / divisor + (x % divisor != 0)) * divisor;
 }
 
-/* round an integer up to the next value with three significant figures */
+/* round an integer up to the next value with three significant figures
+ */
 static int64_t round_up_to_three_sig_figs(int64_t x) {
   if (x < 1000) return x;
   if (x < 10000) return round_up(x, 10);
@@ -86,8 +87,8 @@ void grpc_http2_encode_timeout(grpc_millis timeout, char* buffer) {
   } else if (timeout >= kMaxTimeout) {
     enc_huge(buffer);
   } else {
-    enc_seconds(buffer,
-                timeout / GPR_MS_PER_SEC + (timeout % GPR_MS_PER_SEC != 0));
+    enc_seconds(buffer, timeout / GPR_MS_PER_SEC +
+                            (timeout % GPR_MS_PER_SEC != 0));
   }
 }
 
@@ -96,7 +97,8 @@ static int is_all_whitespace(const char* p, const char* end) {
   return p == end;
 }
 
-int grpc_http2_decode_timeout(const grpc_slice& text, grpc_millis* timeout) {
+int grpc_http2_decode_timeout(const grpc_slice& text,
+                              grpc_millis* timeout) {
   grpc_millis x = 0;
   const uint8_t* p = GRPC_SLICE_START_PTR(text);
   const uint8_t* end = GRPC_SLICE_END_PTR(text);
@@ -106,9 +108,11 @@ int grpc_http2_decode_timeout(const grpc_slice& text, grpc_millis* timeout) {
   }
   /* decode numeric part */
   for (; p != end && *p >= '0' && *p <= '9'; p++) {
-    int32_t digit = static_cast<int32_t>(*p - static_cast<uint8_t>('0'));
+    int32_t digit =
+        static_cast<int32_t>(*p - static_cast<uint8_t>('0'));
     have_digit = 1;
-    /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
+    /* spec allows max. 8 digits, but we allow values up to
+     * 1,000,000,000 */
     if (x >= (100 * 1000 * 1000)) {
       if (x != (100 * 1000 * 1000) || digit != 0) {
         *timeout = GRPC_MILLIS_INF_FUTURE;

@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -30,12 +30,14 @@
 namespace {
 struct call_data {
   // Receive closures are chained: we inject this closure as the
-  // recv_initial_metadata_ready up-call on transport_stream_op, and remember to
-  // call our next_recv_initial_metadata_ready member after handling it.
+  // recv_initial_metadata_ready up-call on transport_stream_op, and
+  // remember to call our next_recv_initial_metadata_ready member after
+  // handling it.
   grpc_closure recv_initial_metadata_ready;
   // Used by recv_initial_metadata_ready.
   grpc_metadata_batch* recv_initial_metadata;
-  // Original recv_initial_metadata_ready callback, invoked after our own.
+  // Original recv_initial_metadata_ready callback, invoked after our
+  // own.
   grpc_closure* next_recv_initial_metadata_ready;
 
   // Marks whether the workaround is active
@@ -62,9 +64,10 @@ static void recv_initial_metadata_ready(void* user_data,
   if (GRPC_ERROR_NONE == error) {
     grpc_mdelem md;
     if (get_user_agent_mdelem(calld->recv_initial_metadata, &md)) {
-      grpc_workaround_user_agent_md* user_agent_md = grpc_parse_user_agent(md);
-      if (user_agent_md
-              ->workaround_active[GRPC_WORKAROUND_ID_CRONET_COMPRESSION]) {
+      grpc_workaround_user_agent_md* user_agent_md =
+          grpc_parse_user_agent(md);
+      if (user_agent_md->workaround_active
+              [GRPC_WORKAROUND_ID_CRONET_COMPRESSION]) {
         calld->workaround_active = true;
       }
     }
@@ -92,8 +95,8 @@ static void cronet_compression_start_transport_stream_op_batch(
   }
 
   if (op->send_message) {
-    /* Send message happens after client's user-agent (initial metadata) is
-     * received, so workaround_active must be set already */
+    /* Send message happens after client's user-agent (initial metadata)
+     * is received, so workaround_active must be set already */
     if (calld->workaround_active) {
       op->payload->send_message.send_message->set_flags(
           op->payload->send_message.send_message->flags() |
@@ -119,12 +122,14 @@ static grpc_error_handle cronet_compression_init_call_elem(
 
 // Destructor for call_data.
 static void cronet_compression_destroy_call_elem(
-    grpc_call_element* /*elem*/, const grpc_call_final_info* /*final_info*/,
+    grpc_call_element* /*elem*/,
+    const grpc_call_final_info* /*final_info*/,
     grpc_closure* /*ignored*/) {}
 
 // Constructor for channel_data.
 static grpc_error_handle cronet_compression_init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+    grpc_channel_element* /*elem*/,
+    grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -135,7 +140,8 @@ static void cronet_compression_destroy_channel_elem(
 // Parse the user agent
 static bool parse_user_agent(grpc_mdelem md) {
   const char grpc_objc_specifier[] = "grpc-objc/";
-  const size_t grpc_objc_specifier_len = sizeof(grpc_objc_specifier) - 1;
+  const size_t grpc_objc_specifier_len =
+      sizeof(grpc_objc_specifier) - 1;
   const char cronet_specifier[] = "cronet_http";
   const size_t cronet_specifier_len = sizeof(cronet_specifier) - 1;
 
@@ -148,11 +154,13 @@ static bool parse_user_agent(grpc_mdelem md) {
   char* head = strtok(user_agent_str, " ");
   while (head != nullptr) {
     if (!grpc_objc_specifier_seen &&
-        0 == strncmp(head, grpc_objc_specifier, grpc_objc_specifier_len)) {
+        0 == strncmp(head, grpc_objc_specifier,
+                     grpc_objc_specifier_len)) {
       major_version_str = head + grpc_objc_specifier_len;
       grpc_objc_specifier_seen = true;
     } else if (grpc_objc_specifier_seen &&
-               0 == strncmp(head, cronet_specifier, cronet_specifier_len)) {
+               0 == strncmp(head, cronet_specifier,
+                            cronet_specifier_len)) {
       cronet_specifier_seen = true;
       break;
     }
@@ -168,7 +176,8 @@ static bool parse_user_agent(grpc_mdelem md) {
 
   gpr_free(user_agent_str);
   return (grpc_objc_specifier_seen && cronet_specifier_seen &&
-          (major_version < 1 || (major_version == 1 && minor_version <= 3)));
+          (major_version < 1 ||
+           (major_version == 1 && minor_version <= 3)));
 }
 
 const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
@@ -197,7 +206,8 @@ static bool register_workaround_cronet_compression(
     return true;
   }
   return grpc_channel_stack_builder_prepend_filter(
-      builder, &grpc_workaround_cronet_compression_filter, nullptr, nullptr);
+      builder, &grpc_workaround_cronet_compression_filter, nullptr,
+      nullptr);
 }
 
 void grpc_workaround_cronet_compression_filter_init(void) {

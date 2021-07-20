@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -29,14 +29,15 @@
 
 namespace grpc_core {
 
-absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
+absl::Status GetFileModificationTime(const char* filename,
+                                     time_t* timestamp) {
   GPR_ASSERT(filename != nullptr);
   GPR_ASSERT(timestamp != nullptr);
   struct stat buf;
   if (stat(filename, &buf) != 0) {
     const char* error_msg = strerror(errno);
-    gpr_log(GPR_ERROR, "stat failed for filename %s with error %s.", filename,
-            error_msg);
+    gpr_log(GPR_ERROR, "stat failed for filename %s with error %s.",
+            filename, error_msg);
     return absl::Status(absl::StatusCode::kInternal, error_msg);
   }
   // Last file/directory modification time.

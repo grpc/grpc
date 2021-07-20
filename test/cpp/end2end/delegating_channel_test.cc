@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,7 +60,8 @@ class DelegatingChannelTest : public ::testing::Test {
     int port = grpc_pick_unused_port_or_die();
     ServerBuilder builder;
     server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.AddListeningPort(server_address_,
+                             InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
@@ -73,11 +74,12 @@ class DelegatingChannelTest : public ::testing::Test {
 };
 
 TEST_F(DelegatingChannelTest, SimpleTest) {
-  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  auto channel =
+      CreateChannel(server_address_, InsecureChannelCredentials());
   std::shared_ptr<TestChannel> test_channel =
       std::make_shared<TestChannel>(channel);
-  // gRPC channel should be in idle state at this point but our test channel
-  // will return ready.
+  // gRPC channel should be in idle state at this point but our test
+  // channel will return ready.
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   EXPECT_EQ(test_channel->GetState(false), GRPC_CHANNEL_READY);
   auto stub = grpc::testing::EchoTestService::NewStub(test_channel);

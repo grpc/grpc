@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -74,7 +74,8 @@ static void LogStatus(int status, const char* label) {
     gpr_log(GPR_INFO, "%s: subprocess terminated with signal %d", label,
             WTERMSIG(status));
   } else {
-    gpr_log(GPR_INFO, "%s: unknown subprocess status: %d", label, status);
+    gpr_log(GPR_INFO, "%s: unknown subprocess status: %d", label,
+            status);
   }
 }
 
@@ -89,12 +90,13 @@ int main(int argc, char** argv) {
 
   for (int i = 0; i < kNumWorkers; i++) {
     const auto driver_port = grpc_pick_unused_port_or_die();
-    // ServerPort can be used or not later depending on the type of worker
-    // but we like to issue all ports required here to avoid port conflict.
+    // ServerPort can be used or not later depending on the type of
+    // worker but we like to issue all ports required here to avoid port
+    // conflict.
     const auto server_port = grpc_pick_unused_port_or_die();
-    std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
-                                     as_string(driver_port), "-server_port",
-                                     as_string(server_port)};
+    std::vector<std::string> args = {
+        bin_dir + "/qps_worker", "-driver_port", as_string(driver_port),
+        "-server_port", as_string(server_port)};
     g_workers[i] = new SubProcess(args);
     if (!first) env << ",";
     env << "localhost:" << driver_port;

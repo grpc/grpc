@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -69,8 +69,8 @@ bool grpc_gcp_rpc_protocol_versions_set_min(
     uint32_t min_minor);
 
 /**
- * This method serializes an rpc protocol version and returns serialized rpc
- * versions in grpc slice.
+ * This method serializes an rpc protocol version and returns serialized
+ * rpc versions in grpc slice.
  *
  * - versions: an rpc protocol versions instance.
  * - slice: grpc slice where the serialized result will be written.
@@ -81,8 +81,8 @@ bool grpc_gcp_rpc_protocol_versions_encode(
     const grpc_gcp_rpc_protocol_versions* versions, grpc_slice* slice);
 
 /**
- * This method serializes an rpc protocol version and returns serialized rpc
- * versions in grpc slice.
+ * This method serializes an rpc protocol version and returns serialized
+ * rpc versions in grpc slice.
  *
  * - versions: an rpc protocol versions instance.
  * - arena: upb arena.
@@ -95,12 +95,12 @@ bool grpc_gcp_rpc_protocol_versions_encode(
     grpc_slice* slice);
 
 /**
- * This method de-serializes input in grpc slice form and stores the result
- * in rpc protocol versions.
+ * This method de-serializes input in grpc slice form and stores the
+ * result in rpc protocol versions.
  *
  * - slice: a data stream containing a serialized rpc protocol version.
- * - versions: an rpc protocol version instance used to hold de-serialized
- *   result.
+ * - versions: an rpc protocol version instance used to hold
+ * de-serialized result.
  *
  * The method returns true on success and false otherwise.
  */
@@ -108,7 +108,8 @@ bool grpc_gcp_rpc_protocol_versions_decode(
     const grpc_slice& slice, grpc_gcp_rpc_protocol_versions* versions);
 
 /**
- * Assigns value of upb RpcProtocolVersions to grpc_gcp_rpc_protocol_versions.
+ * Assigns value of upb RpcProtocolVersions to
+ * grpc_gcp_rpc_protocol_versions.
  */
 void grpc_gcp_rpc_protocol_versions_assign_from_upb(
     grpc_gcp_rpc_protocol_versions* versions,
@@ -136,16 +137,16 @@ bool grpc_gcp_rpc_protocol_versions_copy(
     grpc_gcp_rpc_protocol_versions* dst);
 
 /**
- * This method performs a version check between local and peer rpc protocol
- * versions.
+ * This method performs a version check between local and peer rpc
+ * protocol versions.
  *
  * - local_versions: local rpc protocol versions instance.
  * - peer_versions: peer rpc protocol versions instance.
- * - highest_common_version: an output parameter that will store the highest
- *   common rpc protocol version both parties agreed on.
+ * - highest_common_version: an output parameter that will store the
+ * highest common rpc protocol version both parties agreed on.
  *
- * The method returns true if the check passes which means both parties agreed
- * on a common rpc protocol to use, and false otherwise.
+ * The method returns true if the check passes which means both parties
+ * agreed on a common rpc protocol to use, and false otherwise.
  */
 bool grpc_gcp_rpc_protocol_versions_check(
     const grpc_gcp_rpc_protocol_versions* local_versions,
@@ -168,4 +169,5 @@ int grpc_gcp_rpc_protocol_version_compare(
 }  // namespace internal
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H */
+#endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H \
+        */

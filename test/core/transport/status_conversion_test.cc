@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,11 +36,14 @@
 static void test_grpc_status_to_http2_error() {
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OK, GRPC_HTTP2_NO_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_CANCELLED, GRPC_HTTP2_CANCEL);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNKNOWN, GRPC_HTTP2_INTERNAL_ERROR);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNKNOWN,
+                             GRPC_HTTP2_INTERNAL_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_INVALID_ARGUMENT,
                              GRPC_HTTP2_INTERNAL_ERROR);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DEADLINE_EXCEEDED, GRPC_HTTP2_CANCEL);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_NOT_FOUND, GRPC_HTTP2_INTERNAL_ERROR);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DEADLINE_EXCEEDED,
+                             GRPC_HTTP2_CANCEL);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_NOT_FOUND,
+                             GRPC_HTTP2_INTERNAL_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_ALREADY_EXISTS,
                              GRPC_HTTP2_INTERNAL_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_PERMISSION_DENIED,
@@ -51,15 +54,18 @@ static void test_grpc_status_to_http2_error() {
                              GRPC_HTTP2_ENHANCE_YOUR_CALM);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_FAILED_PRECONDITION,
                              GRPC_HTTP2_INTERNAL_ERROR);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_ABORTED, GRPC_HTTP2_INTERNAL_ERROR);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_ABORTED,
+                             GRPC_HTTP2_INTERNAL_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OUT_OF_RANGE,
                              GRPC_HTTP2_INTERNAL_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNIMPLEMENTED,
                              GRPC_HTTP2_INTERNAL_ERROR);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_INTERNAL, GRPC_HTTP2_INTERNAL_ERROR);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_INTERNAL,
+                             GRPC_HTTP2_INTERNAL_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNAVAILABLE,
                              GRPC_HTTP2_REFUSED_STREAM);
-  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DATA_LOSS, GRPC_HTTP2_INTERNAL_ERROR);
+  GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DATA_LOSS,
+                             GRPC_HTTP2_INTERNAL_ERROR);
 }
 
 static void test_grpc_status_to_http2_status() {
@@ -90,25 +96,27 @@ static void test_http2_error_to_grpc_status() {
                              GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INTERNAL_ERROR, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FLOW_CONTROL_ERROR, before_deadline,
-                             GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_SETTINGS_TIMEOUT, before_deadline,
-                             GRPC_STATUS_INTERNAL);
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FLOW_CONTROL_ERROR,
+                             before_deadline, GRPC_STATUS_INTERNAL);
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_SETTINGS_TIMEOUT,
+                             before_deadline, GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_STREAM_CLOSED, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FRAME_SIZE_ERROR, before_deadline,
-                             GRPC_STATUS_INTERNAL);
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FRAME_SIZE_ERROR,
+                             before_deadline, GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_REFUSED_STREAM, before_deadline,
                              GRPC_STATUS_UNAVAILABLE);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CANCEL, before_deadline,
                              GRPC_STATUS_CANCELLED);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_COMPRESSION_ERROR, before_deadline,
-                             GRPC_STATUS_INTERNAL);
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_COMPRESSION_ERROR,
+                             before_deadline, GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CONNECT_ERROR, before_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_ENHANCE_YOUR_CALM, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_ENHANCE_YOUR_CALM,
+                             before_deadline,
                              GRPC_STATUS_RESOURCE_EXHAUSTED);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY, before_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY,
+                             before_deadline,
                              GRPC_STATUS_PERMISSION_DENIED);
 
   const grpc_millis after_deadline = 0;
@@ -118,30 +126,32 @@ static void test_http2_error_to_grpc_status() {
                              GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INTERNAL_ERROR, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FLOW_CONTROL_ERROR, after_deadline,
-                             GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_SETTINGS_TIMEOUT, after_deadline,
-                             GRPC_STATUS_INTERNAL);
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FLOW_CONTROL_ERROR,
+                             after_deadline, GRPC_STATUS_INTERNAL);
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_SETTINGS_TIMEOUT,
+                             after_deadline, GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_STREAM_CLOSED, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FRAME_SIZE_ERROR, after_deadline,
-                             GRPC_STATUS_INTERNAL);
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_FRAME_SIZE_ERROR,
+                             after_deadline, GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_REFUSED_STREAM, after_deadline,
                              GRPC_STATUS_UNAVAILABLE);
-  // We only have millisecond granularity in our timing code. This sleeps for 5
-  // millis to ensure that the status conversion code will pick up the fact
-  // that the deadline has expired.
+  // We only have millisecond granularity in our timing code. This
+  // sleeps for 5 millis to ensure that the status conversion code will
+  // pick up the fact that the deadline has expired.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(5, GPR_TIMESPAN)));
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CANCEL, after_deadline,
                              GRPC_STATUS_DEADLINE_EXCEEDED);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_COMPRESSION_ERROR, after_deadline,
-                             GRPC_STATUS_INTERNAL);
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_COMPRESSION_ERROR,
+                             after_deadline, GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_CONNECT_ERROR, after_deadline,
                              GRPC_STATUS_INTERNAL);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_ENHANCE_YOUR_CALM, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_ENHANCE_YOUR_CALM,
+                             after_deadline,
                              GRPC_STATUS_RESOURCE_EXHAUSTED);
-  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY, after_deadline,
+  HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY,
+                             after_deadline,
                              GRPC_STATUS_PERMISSION_DENIED);
 }
 

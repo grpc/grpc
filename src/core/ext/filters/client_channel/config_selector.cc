@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -37,7 +37,8 @@ void ConfigSelectorArgDestroy(void* p) {
 int ConfigSelectorArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {
-    ConfigSelectorArgCopy, ConfigSelectorArgDestroy, ConfigSelectorArgCmp};
+    ConfigSelectorArgCopy, ConfigSelectorArgDestroy,
+    ConfigSelectorArgCmp};
 
 }  // namespace
 
@@ -50,8 +51,8 @@ grpc_arg ConfigSelector::MakeChannelArg() const {
 RefCountedPtr<ConfigSelector> ConfigSelector::GetFromChannelArgs(
     const grpc_channel_args& args) {
   ConfigSelector* config_selector =
-      grpc_channel_args_find_pointer<ConfigSelector>(&args,
-                                                     GRPC_ARG_CONFIG_SELECTOR);
+      grpc_channel_args_find_pointer<ConfigSelector>(
+          &args, GRPC_ARG_CONFIG_SELECTOR);
   return config_selector != nullptr ? config_selector->Ref() : nullptr;
 }
 

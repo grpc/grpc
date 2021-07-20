@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,13 +29,14 @@ extern "C" {
 
 #include "src/core/lib/gprpp/ref_counted.h"
 
-// The main purpose of code here is to provide means to cache SSL sessions
-// in a way that they can be shared between connections.
+// The main purpose of code here is to provide means to cache SSL
+// sessions in a way that they can be shared between connections.
 //
-// SSL_SESSION stands for single instance of session and is not generally safe
-// to share between SSL contexts with different lifetimes. It happens because
-// not all SSL implementations guarantee immutability of SSL_SESSION object.
-// See SSL_SESSION documentation in BoringSSL and OpenSSL for more details.
+// SSL_SESSION stands for single instance of session and is not
+// generally safe to share between SSL contexts with different
+// lifetimes. It happens because not all SSL implementations guarantee
+// immutability of SSL_SESSION object. See SSL_SESSION documentation in
+// BoringSSL and OpenSSL for more details.
 
 namespace tsi {
 
@@ -45,9 +46,10 @@ struct SslSessionDeleter {
 
 typedef std::unique_ptr<SSL_SESSION, SslSessionDeleter> SslSessionPtr;
 
-/// SslCachedSession is an immutable thread-safe storage for single session
-/// representation. It provides means to share SSL session data (e.g. TLS
-/// ticket) between encrypted connections regardless of SSL context lifetime.
+/// SslCachedSession is an immutable thread-safe storage for single
+/// session representation. It provides means to share SSL session data
+/// (e.g. TLS ticket) between encrypted connections regardless of SSL
+/// context lifetime.
 class SslCachedSession {
  public:
   // Not copyable nor movable.
@@ -55,7 +57,8 @@ class SslCachedSession {
   SslCachedSession& operator=(const SslCachedSession&) = delete;
 
   /// Create single cached instance of \a session.
-  static std::unique_ptr<SslCachedSession> Create(SslSessionPtr session);
+  static std::unique_ptr<SslCachedSession> Create(
+      SslSessionPtr session);
 
   virtual ~SslCachedSession() = default;
 

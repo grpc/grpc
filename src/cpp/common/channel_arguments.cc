@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <grpcpp/support/channel_arguments.h>
@@ -31,7 +31,8 @@ namespace grpc {
 
 ChannelArguments::ChannelArguments() {
   // This will be ignored if used on the server side.
-  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + grpc::Version());
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING,
+            "grpc-c++/" + grpc::Version());
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
@@ -58,7 +59,8 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
         break;
       case GRPC_ARG_POINTER:
         ap.value.pointer = a.value.pointer;
-        ap.value.pointer.p = a.value.pointer.vtable->copy(ap.value.pointer.p);
+        ap.value.pointer.p =
+            a.value.pointer.vtable->copy(ap.value.pointer.p);
         break;
     }
     args_.push_back(ap);
@@ -112,10 +114,10 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   }
 }
 
-// Note: a second call to this will add in front the result of the first call.
-// An example is calling this on a copy of ChannelArguments which already has a
-// prefix. The user can build up a prefix string by calling this multiple times,
-// each with more significant identifier.
+// Note: a second call to this will add in front the result of the first
+// call. An example is calling this on a copy of ChannelArguments which
+// already has a prefix. The user can build up a prefix string by
+// calling this multiple times, each with more significant identifier.
 void ChannelArguments::SetUserAgentPrefix(
     const std::string& user_agent_prefix) {
   if (user_agent_prefix.empty()) {
@@ -207,7 +209,8 @@ void ChannelArguments::SetString(const std::string& key,
   args_.push_back(arg);
 }
 
-void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
+void ChannelArguments::SetChannelArgs(
+    grpc_channel_args* channel_args) const {
   channel_args->num_args = args_.size();
   if (channel_args->num_args > 0) {
     channel_args->args = const_cast<grpc_arg*>(&args_[0]);

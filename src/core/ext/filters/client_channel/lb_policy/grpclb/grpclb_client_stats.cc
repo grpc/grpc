@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,14 +36,16 @@ void GrpcLbClientStats::AddCallStarted() {
 }
 
 void GrpcLbClientStats::AddCallFinished(
-    bool finished_with_client_failed_to_send, bool finished_known_received) {
+    bool finished_with_client_failed_to_send,
+    bool finished_known_received) {
   gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
   if (finished_with_client_failed_to_send) {
-    gpr_atm_full_fetch_add(&num_calls_finished_with_client_failed_to_send_,
-                           (gpr_atm)1);
+    gpr_atm_full_fetch_add(
+        &num_calls_finished_with_client_failed_to_send_, (gpr_atm)1);
   }
   if (finished_known_received) {
-    gpr_atm_full_fetch_add(&num_calls_finished_known_received_, (gpr_atm)1);
+    gpr_atm_full_fetch_add(&num_calls_finished_known_received_,
+                           (gpr_atm)1);
   }
 }
 
@@ -82,8 +84,9 @@ void GrpcLbClientStats::Get(
     std::unique_ptr<DroppedCallCounts>* drop_token_counts) {
   AtomicGetAndResetCounter(num_calls_started, &num_calls_started_);
   AtomicGetAndResetCounter(num_calls_finished, &num_calls_finished_);
-  AtomicGetAndResetCounter(num_calls_finished_with_client_failed_to_send,
-                           &num_calls_finished_with_client_failed_to_send_);
+  AtomicGetAndResetCounter(
+      num_calls_finished_with_client_failed_to_send,
+      &num_calls_finished_with_client_failed_to_send_);
   AtomicGetAndResetCounter(num_calls_finished_known_received,
                            &num_calls_finished_known_received_);
   MutexLock lock(&drop_count_mu_);

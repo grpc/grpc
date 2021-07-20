@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,7 +47,8 @@ static void BM_Arena_ManyAlloc(benchmark::State& state) {
   }
   a->Destroy();
 }
-BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
+BENCHMARK(BM_Arena_ManyAlloc)
+    ->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
 
 static void BM_Arena_Batch(benchmark::State& state) {
   for (auto _ : state) {
@@ -60,8 +61,8 @@ static void BM_Arena_Batch(benchmark::State& state) {
 }
 BENCHMARK(BM_Arena_Batch)->Ranges({{1, 64 * 1024}, {1, 64}, {1, 1024}});
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

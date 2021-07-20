@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONFIG_SELECTOR_H
@@ -51,8 +51,8 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
    public:
     virtual ~CallDispatchController() = default;
 
-    // Called by the channel to decide if it should retry the call upon a
-    // failure.
+    // Called by the channel to decide if it should retry the call upon
+    // a failure.
     virtual bool ShouldRetry() = 0;
 
     // Called by the channel when no more LB picks will be performed for
@@ -71,11 +71,13 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     grpc_error_handle error = GRPC_ERROR_NONE;
     // The per-method parsed configs that will be passed to
     // ServiceConfigCallData.
-    const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
+    const ServiceConfigParser::ParsedConfigVector* method_configs =
+        nullptr;
     // A ref to the service config that contains method_configs, held by
     // the call to ensure that method_configs lives long enough.
     RefCountedPtr<ServiceConfig> service_config;
-    // Call attributes that will be accessible to LB policy implementations.
+    // Call attributes that will be accessible to LB policy
+    // implementations.
     CallAttributes call_attributes;
     // Call dispatch controller.
     CallDispatchController* call_dispatch_controller = nullptr;
@@ -89,19 +91,24 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   // subclasses can be free to safely down-cast the argument.
   virtual bool Equals(const ConfigSelector* other) const = 0;
 
-  static bool Equals(const ConfigSelector* cs1, const ConfigSelector* cs2) {
+  static bool Equals(const ConfigSelector* cs1,
+                     const ConfigSelector* cs2) {
     if (cs1 == nullptr) return cs2 == nullptr;
     if (cs2 == nullptr) return false;
     if (strcmp(cs1->name(), cs2->name()) != 0) return false;
     return cs1->Equals(cs2);
   }
 
-  // The channel will call this when the resolver returns a new ConfigSelector
-  // to determine what set of dynamic filters will be configured.
-  virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
+  // The channel will call this when the resolver returns a new
+  // ConfigSelector to determine what set of dynamic filters will be
+  // configured.
+  virtual std::vector<const grpc_channel_filter*> GetFilters() {
+    return {};
+  }
   // Modifies channel args to be passed to the dynamic filter stack.
   // Takes ownership of argument.  Caller takes ownership of result.
-  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) {
+  virtual grpc_channel_args* ModifyChannelArgs(
+      grpc_channel_args* args) {
     return args;
   }
 
@@ -112,10 +119,12 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
       const grpc_channel_args& args);
 };
 
-// Default ConfigSelector that gets the MethodConfig from the service config.
+// Default ConfigSelector that gets the MethodConfig from the service
+// config.
 class DefaultConfigSelector : public ConfigSelector {
  public:
-  explicit DefaultConfigSelector(RefCountedPtr<ServiceConfig> service_config)
+  explicit DefaultConfigSelector(
+      RefCountedPtr<ServiceConfig> service_config)
       : service_config_(std::move(service_config)) {
     // The client channel code ensures that this will never be null.
     // If neither the resolver nor the client application provide a
@@ -127,7 +136,9 @@ class DefaultConfigSelector : public ConfigSelector {
 
   // Only comparing the ConfigSelector itself, not the underlying
   // service config, so we always return true.
-  bool Equals(const ConfigSelector* /*other*/) const override { return true; }
+  bool Equals(const ConfigSelector* /*other*/) const override {
+    return true;
+  }
 
   CallConfig GetCallConfig(GetCallConfigArgs args) override {
     CallConfig call_config;

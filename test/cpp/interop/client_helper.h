@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,18 +41,20 @@ void UpdateActions(
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
     const std::string& test_case,
-    std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+    std::vector<std::unique_ptr<
+        experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators = {});
 
 class InteropClientContextInspector {
  public:
-  explicit InteropClientContextInspector(const ::grpc::ClientContext& context)
+  explicit InteropClientContextInspector(
+      const ::grpc::ClientContext& context)
       : context_(context) {}
 
   // Inspector methods, able to peek inside ClientContext, follow.
   grpc_compression_algorithm GetCallCompressionAlgorithm() const {
-    return grpc_call_test_only_get_compression_algorithm(context_.call_);
+    return grpc_call_test_only_get_compression_algorithm(
+        context_.call_);
   }
 
   bool WasCompressed() const {
@@ -72,9 +74,11 @@ class AdditionalMetadataInterceptor : public experimental::Interceptor {
       std::multimap<std::string, std::string> additional_metadata)
       : additional_metadata_(std::move(additional_metadata)) {}
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
       std::multimap<std::string, std::string>* metadata =
           methods->GetSendInitialMetadata();
       for (const auto& entry : additional_metadata_) {

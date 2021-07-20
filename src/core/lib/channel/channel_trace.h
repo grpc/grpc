@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,8 +36,8 @@ size_t GetSizeofTraceEvent(void);
 
 class BaseNode;
 
-// Object used to hold live data for a channel. This data is exposed via the
-// channelz service:
+// Object used to hold live data for a channel. This data is exposed via
+// the channelz service:
 // https://github.com/grpc/proposal/blob/master/A14-channelz.md
 class ChannelTrace {
  public:
@@ -54,26 +54,27 @@ class ChannelTrace {
   // Adds a new trace event to the tracing object
   //
   // NOTE: each ChannelTrace tracks the memory used by its list of trace
-  // events, so adding an event with a large amount of data could cause other
-  // trace event to be evicted. If a single trace is larger than the limit, it
-  // will cause all events to be evicted. The limit is set with the arg:
-  // GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE.
+  // events, so adding an event with a large amount of data could cause
+  // other trace event to be evicted. If a single trace is larger than
+  // the limit, it will cause all events to be evicted. The limit is set
+  // with the arg: GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE.
   //
-  // TODO(ncteisen): as this call is used more and more throughout the gRPC
-  // stack, determine if it makes more sense to accept a char* instead of a
-  // slice.
+  // TODO(ncteisen): as this call is used more and more throughout the
+  // gRPC stack, determine if it makes more sense to accept a char*
+  // instead of a slice.
   void AddTraceEvent(Severity severity, const grpc_slice& data);
 
-  // Adds a new trace event to the tracing object. This trace event refers to a
-  // an event that concerns a different channelz entity. For example, if this
-  // channel has created a new subchannel, then it would record that with
-  // a TraceEvent referencing the new subchannel.
+  // Adds a new trace event to the tracing object. This trace event
+  // refers to a an event that concerns a different channelz entity. For
+  // example, if this channel has created a new subchannel, then it
+  // would record that with a TraceEvent referencing the new subchannel.
   //
   // NOTE: see the note in the method above.
   //
   // TODO(ncteisen): see the todo in the method above.
-  void AddTraceEventWithReference(Severity severity, const grpc_slice& data,
-                                  RefCountedPtr<BaseNode> referenced_entity);
+  void AddTraceEventWithReference(
+      Severity severity, const grpc_slice& data,
+      RefCountedPtr<BaseNode> referenced_entity);
 
   // Creates and returns the raw Json object, so a parent channelz
   // object may incorporate the json before rendering.
@@ -82,8 +83,8 @@ class ChannelTrace {
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
 
-  // Private class to encapsulate all the data and bookkeeping needed for a
-  // a trace event.
+  // Private class to encapsulate all the data and bookkeeping needed
+  // for a a trace event.
   class TraceEvent {
    public:
     // Constructor for a TraceEvent that references a channel.
@@ -96,8 +97,8 @@ class ChannelTrace {
 
     ~TraceEvent();
 
-    // Renders the data inside of this TraceEvent into a json object. This is
-    // used by the ChannelTrace, when it is rendering itself.
+    // Renders the data inside of this TraceEvent into a json object.
+    // This is used by the ChannelTrace, when it is rendering itself.
     Json RenderTraceEvent() const;
 
     // set and get for the next_ pointer.
@@ -111,7 +112,8 @@ class ChannelTrace {
     grpc_slice data_;
     gpr_timespec timestamp_;
     TraceEvent* next_;
-    // the tracer object for the (sub)channel that this trace event refers to.
+    // the tracer object for the (sub)channel that this trace event
+    // refers to.
     RefCountedPtr<BaseNode> referenced_entity_;
     size_t memory_usage_;
   };  // TraceEvent

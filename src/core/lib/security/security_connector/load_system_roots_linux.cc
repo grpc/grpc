@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,12 +52,14 @@ namespace grpc_core {
 namespace {
 
 const char* kLinuxCertFiles[] = {
-    "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt",
-    "/etc/ssl/ca-bundle.pem", "/etc/pki/tls/cacert.pem",
+    "/etc/ssl/certs/ca-certificates.crt",
+    "/etc/pki/tls/certs/ca-bundle.crt", "/etc/ssl/ca-bundle.pem",
+    "/etc/pki/tls/cacert.pem",
     "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"};
 const char* kLinuxCertDirectories[] = {
-    "/etc/ssl/certs", "/system/etc/security/cacerts", "/usr/local/share/certs",
-    "/etc/pki/tls/certs", "/etc/openssl/certs"};
+    "/etc/ssl/certs", "/system/etc/security/cacerts",
+    "/usr/local/share/certs", "/etc/pki/tls/certs",
+    "/etc/openssl/certs"};
 
 grpc_slice GetSystemRootCerts() {
   grpc_slice valid_bundle_slice = grpc_empty_slice();
@@ -77,10 +79,11 @@ grpc_slice GetSystemRootCerts() {
 }  // namespace
 
 void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, char* path_buffer) {
+                         const char* file_entry_name,
+                         char* path_buffer) {
   if (valid_file_dir != nullptr && file_entry_name != nullptr) {
-    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
-                            file_entry_name);
+    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s",
+                            valid_file_dir, file_entry_name);
     if (path_len == 0) {
       gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
               file_entry_name);
@@ -108,12 +111,14 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     struct stat dir_entry_stat;
     const char* file_entry_name = directory_entry->d_name;
     FileData file_data;
-    GetAbsoluteFilePath(certs_directory, file_entry_name, file_data.path);
+    GetAbsoluteFilePath(certs_directory, file_entry_name,
+                        file_data.path);
     int stat_return = stat(file_data.path, &dir_entry_stat);
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
       // no subdirectories.
       if (stat_return == -1) {
-        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
+        gpr_log(GPR_ERROR, "failed to get status for file: %s",
+                file_data.path);
       }
       continue;
     }
@@ -122,19 +127,21 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     roots_filenames.push_back(file_data);
   }
   closedir(ca_directory);
-  char* bundle_string = static_cast<char*>(gpr_zalloc(total_bundle_size + 1));
+  char* bundle_string =
+      static_cast<char*>(gpr_zalloc(total_bundle_size + 1));
   size_t bytes_read = 0;
   for (size_t i = 0; i < roots_filenames.size(); i++) {
     int file_descriptor = open(roots_filenames[i].path, O_RDONLY);
     if (file_descriptor != -1) {
       // Read file into bundle.
       size_t cert_file_size = roots_filenames[i].size;
-      int read_ret =
-          read(file_descriptor, bundle_string + bytes_read, cert_file_size);
+      int read_ret = read(file_descriptor, bundle_string + bytes_read,
+                          cert_file_size);
       if (read_ret != -1) {
         bytes_read += read_ret;
       } else {
-        gpr_log(GPR_ERROR, "failed to read file: %s", roots_filenames[i].path);
+        gpr_log(GPR_ERROR, "failed to read file: %s",
+                roots_filenames[i].path);
       }
     }
   }

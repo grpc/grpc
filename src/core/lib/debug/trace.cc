@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,7 +29,8 @@
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_trace, "",
-    "A comma separated list of tracers that provide additional insight into "
+    "A comma separated list of tracers that provide additional insight "
+    "into "
     "how gRPC C core is processing requests via debug logs.");
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
@@ -83,7 +84,8 @@ void TraceFlagList::LogAllTracers() {
 }
 
 // Flags register themselves on the list during construction
-TraceFlag::TraceFlag(bool default_enabled, const char* name) : name_(name) {
+TraceFlag::TraceFlag(bool default_enabled, const char* name)
+    : name_(name) {
   static_assert(std::is_trivially_destructible<TraceFlag>::value,
                 "TraceFlag needs to be trivially destructible.");
   set_enabled(default_enabled);
@@ -92,7 +94,8 @@ TraceFlag::TraceFlag(bool default_enabled, const char* name) : name_(name) {
 
 }  // namespace grpc_core
 
-static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
+static void add(const char* beg, const char* end, char*** ss,
+                size_t* ns) {
   size_t n = *ns;
   size_t np = n + 1;
   char* s;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,14 +27,15 @@
    The type  gpr_once            provides for one-time initialization.
 
    The type gpr_event            provides one-time-setting, reading, and
-                                 waiting of a void*, with memory barriers.
+                                 waiting of a void*, with memory
+   barriers.
 
    The type gpr_refcount         provides an object reference counter,
-                                 with memory barriers suitable to control
-                                 object lifetimes.
+                                 with memory barriers suitable to
+   control object lifetimes.
 
-   The type gpr_stats_counter    provides an atomic statistics counter. It
-                                 provides no memory barriers.
+   The type gpr_stats_counter    provides an atomic statistics counter.
+   It provides no memory barriers.
  */
 
 #ifdef __cplusplus

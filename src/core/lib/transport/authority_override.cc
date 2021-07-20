@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -31,7 +31,8 @@ grpc_arg CreateAuthorityOverrideChannelArg(const char* authority) {
       const_cast<char*>(authority));
 }
 
-absl::string_view FindAuthorityOverrideInArgs(const grpc_channel_args* args) {
+absl::string_view FindAuthorityOverrideInArgs(
+    const grpc_channel_args* args) {
   const char* found =
       grpc_channel_args_find_string(args, GRPC_ARG_AUTHORITY_OVERRIDE);
   return found == nullptr ? "" : found;

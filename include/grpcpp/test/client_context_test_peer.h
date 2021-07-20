@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,13 +26,16 @@
 namespace grpc {
 namespace testing {
 
-/// A test-only class to access private members and methods of ClientContext.
+/// A test-only class to access private members and methods of
+/// ClientContext.
 class ClientContextTestPeer {
  public:
-  explicit ClientContextTestPeer(ClientContext* const ctx) : ctx_(ctx) {}
+  explicit ClientContextTestPeer(ClientContext* const ctx)
+      : ctx_(ctx) {}
 
   /// Inject metadata to the ClientContext for the test. The test peer
-  /// must be alive when a ClientContext::GetServerInitialMetadata is called.
+  /// must be alive when a ClientContext::GetServerInitialMetadata is
+  /// called.
   void AddServerInitialMetadata(const std::string& key,
                                 const std::string& value) {
     server_initial_metadata_storage_.insert(
@@ -43,17 +46,20 @@ class ClientContextTestPeer {
       ctx_->recv_initial_metadata_.map()->insert(
           std::pair<grpc::string_ref, grpc::string_ref>(
               item.first.c_str(),
-              grpc::string_ref(item.second.data(), item.second.size())));
+              grpc::string_ref(item.second.data(),
+                               item.second.size())));
     }
   }
 
-  std::multimap<std::string, std::string> GetSendInitialMetadata() const {
+  std::multimap<std::string, std::string> GetSendInitialMetadata()
+      const {
     return ctx_->send_initial_metadata_;
   }
 
  private:
   ClientContext* const ctx_;  // not owned
-  std::multimap<std::string, std::string> server_initial_metadata_storage_;
+  std::multimap<std::string, std::string>
+      server_initial_metadata_storage_;
 };
 
 }  // namespace testing

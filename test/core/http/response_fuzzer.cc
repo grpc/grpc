@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,13 +27,15 @@
 bool squelch = true;
 bool leak_check = true;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data,
+                                      size_t size) {
   grpc_http_parser parser;
   grpc_http_response response;
   grpc_init();
   response = {};
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
-  grpc_slice slice = grpc_slice_from_copied_buffer((const char*)data, size);
+  grpc_slice slice =
+      grpc_slice_from_copied_buffer((const char*)data, size);
   GRPC_ERROR_UNREF(grpc_http_parser_parse(&parser, slice, nullptr));
   GRPC_ERROR_UNREF(grpc_http_parser_eof(&parser));
   grpc_slice_unref(slice);

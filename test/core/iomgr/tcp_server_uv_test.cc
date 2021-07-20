@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -67,39 +67,45 @@ static void on_connect_result_init(on_connect_result* result) {
   result->fd_index = 0;
 }
 
-static void on_connect_result_set(on_connect_result* result,
-                                  const grpc_tcp_server_acceptor* acceptor) {
+static void on_connect_result_set(
+    on_connect_result* result,
+    const grpc_tcp_server_acceptor* acceptor) {
   result->server = grpc_tcp_server_ref(acceptor->from_server);
   result->port_index = acceptor->port_index;
   result->fd_index = acceptor->fd_index;
 }
 
-static void server_weak_ref_shutdown(void* arg, grpc_error_handle error) {
+static void server_weak_ref_shutdown(void* arg,
+                                     grpc_error_handle error) {
   server_weak_ref* weak_ref = static_cast<server_weak_ref*>(arg);
   weak_ref->server = NULL;
 }
 
 static void server_weak_ref_init(server_weak_ref* weak_ref) {
   weak_ref->server = NULL;
-  GRPC_CLOSURE_INIT(&weak_ref->server_shutdown, server_weak_ref_shutdown,
-                    weak_ref, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&weak_ref->server_shutdown,
+                    server_weak_ref_shutdown, weak_ref,
+                    grpc_schedule_on_exec_ctx);
 }
 
 /* Make weak_ref->server_shutdown a shutdown_starting cb on server.
    grpc_tcp_server promises that the server object will live until
-   weak_ref->server_shutdown has returned. A strong ref on grpc_tcp_server
-   should be held until server_weak_ref_set() returns to avoid a race where the
+   weak_ref->server_shutdown has returned. A strong ref on
+   grpc_tcp_server should be held until server_weak_ref_set() returns to
+   avoid a race where the
    server is deleted before the shutdown_starting cb is added. */
 static void server_weak_ref_set(server_weak_ref* weak_ref,
                                 grpc_tcp_server* server) {
-  grpc_tcp_server_shutdown_starting_add(server, &weak_ref->server_shutdown);
+  grpc_tcp_server_shutdown_starting_add(server,
+                                        &weak_ref->server_shutdown);
   weak_ref->server = server;
 }
 
-static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* pollset,
+static void on_connect(void* arg, grpc_endpoint* tcp,
+                       grpc_pollset* pollset,
                        grpc_tcp_server_acceptor* acceptor) {
-  grpc_endpoint_shutdown(tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  grpc_endpoint_shutdown(
+      tcp, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);
 
   on_connect_result temp_result;
@@ -109,8 +115,8 @@ static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* pollset,
   gpr_mu_lock(g_mu);
   g_result = temp_result;
   g_nconnects++;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -181,7 +187,8 @@ static void connect_cb(uv_connect_t* req, int status) {
 
 static void close_cb(uv_handle_t* handle) { gpr_free(handle); }
 
-static void tcp_connect(const struct sockaddr* remote, socklen_t remote_len,
+static void tcp_connect(const struct sockaddr* remote,
+                        socklen_t remote_len,
                         on_connect_result* result) {
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
   uv_tcp_t* client_handle =
@@ -195,7 +202,8 @@ static void tcp_connect(const struct sockaddr* remote, socklen_t remote_len,
   on_connect_result_init(&g_result);
   GPR_ASSERT(uv_tcp_init(uv_default_loop(), client_handle) == 0);
   gpr_log(GPR_DEBUG, "start connect");
-  GPR_ASSERT(uv_tcp_connect(req, client_handle, remote, connect_cb) == 0);
+  GPR_ASSERT(uv_tcp_connect(req, client_handle, remote, connect_cb) ==
+             0);
   gpr_log(GPR_DEBUG, "wait");
   while (g_nconnects == nconnects_before &&
          gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
@@ -221,7 +229,8 @@ static void test_connect(unsigned n) {
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
   grpc_resolved_address resolved_addr1;
-  struct sockaddr_storage* addr = (struct sockaddr_storage*)resolved_addr.addr;
+  struct sockaddr_storage* addr =
+      (struct sockaddr_storage*)resolved_addr.addr;
   struct sockaddr_storage* addr1 =
       (struct sockaddr_storage*)resolved_addr1.addr;
   int svr_port;
@@ -241,9 +250,10 @@ static void test_connect(unsigned n) {
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_tcp_server_add_port(s, &resolved_addr, &svr_port));
   GPR_ASSERT(svr_port > 0);
-  GPR_ASSERT((uv_ip6_addr("::", svr_port, (struct sockaddr_in6*)addr)) == 0);
-  /* Cannot use wildcard (port==0), because add_port() will try to reuse the
-     same port as a previous add_port(). */
+  GPR_ASSERT(
+      (uv_ip6_addr("::", svr_port, (struct sockaddr_in6*)addr)) == 0);
+  /* Cannot use wildcard (port==0), because add_port() will try to reuse
+     the same port as a previous add_port(). */
   svr1_port = grpc_pick_unused_port_or_die();
   grpc_sockaddr_set_port(&resolved_addr1, svr1_port);
   GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr1, &svr_port) ==
@@ -252,12 +262,14 @@ static void test_connect(unsigned n) {
 
   grpc_tcp_server_start(s, &g_pollset, 1, on_connect, NULL);
 
-  GPR_ASSERT(uv_ip6_addr("::", svr_port, (struct sockaddr_in6*)addr1) == 0);
+  GPR_ASSERT(uv_ip6_addr("::", svr_port, (struct sockaddr_in6*)addr1) ==
+             0);
 
   for (i = 0; i < n; i++) {
     on_connect_result result;
     on_connect_result_init(&result);
-    tcp_connect((struct sockaddr*)addr, (socklen_t)resolved_addr.len, &result);
+    tcp_connect((struct sockaddr*)addr, (socklen_t)resolved_addr.len,
+                &result);
     GPR_ASSERT(result.port_index == 0);
     GPR_ASSERT(result.server == s);
     if (weak_ref.server == NULL) {
@@ -292,7 +304,8 @@ int main(int argc, char** argv) {
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
-    g_pollset = static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));
+    g_pollset =
+        static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
 
     test_no_op();

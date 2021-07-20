@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -98,7 +98,8 @@ size_t grpc_stats_histo_count(const grpc_stats_data* stats,
 
 static double threshold_for_count_below(const gpr_atm* bucket_counts,
                                         const int* bucket_boundaries,
-                                        int num_buckets, double count_below) {
+                                        int num_buckets,
+                                        double count_below) {
   double count_so_far;
   double lower_bound;
   double upper_bound;
@@ -114,22 +115,25 @@ static double threshold_for_count_below(const gpr_atm* bucket_counts,
     }
   }
   if (count_so_far == count_below) {
-    /* this bucket hits the threshold exactly... we should be midway through
-       any run of zero values following the bucket */
-    for (upper_idx = lower_idx + 1; upper_idx < num_buckets; upper_idx++) {
+    /* this bucket hits the threshold exactly... we should be midway
+       through any run of zero values following the bucket */
+    for (upper_idx = lower_idx + 1; upper_idx < num_buckets;
+         upper_idx++) {
       if (bucket_counts[upper_idx]) {
         break;
       }
     }
-    return (bucket_boundaries[lower_idx] + bucket_boundaries[upper_idx]) / 2.0;
+    return (bucket_boundaries[lower_idx] +
+            bucket_boundaries[upper_idx]) /
+           2.0;
   } else {
-    /* treat values as uniform throughout the bucket, and find where this value
-       should lie */
+    /* treat values as uniform throughout the bucket, and find where
+       this value should lie */
     lower_bound = bucket_boundaries[lower_idx];
     upper_bound = bucket_boundaries[lower_idx + 1];
-    return upper_bound - (upper_bound - lower_bound) *
-                             (count_so_far - count_below) /
-                             static_cast<double>(bucket_counts[lower_idx]);
+    return upper_bound -
+           (upper_bound - lower_bound) * (count_so_far - count_below) /
+               static_cast<double>(bucket_counts[lower_idx]);
   }
 }
 
@@ -149,21 +153,24 @@ std::string grpc_stats_data_as_json(const grpc_stats_data* data) {
   std::vector<std::string> parts;
   parts.push_back("{");
   for (size_t i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-    parts.push_back(absl::StrFormat(
-        "\"%s\": %" PRIdPTR, grpc_stats_counter_name[i], data->counters[i]));
+    parts.push_back(absl::StrFormat("\"%s\": %" PRIdPTR,
+                                    grpc_stats_counter_name[i],
+                                    data->counters[i]));
   }
   for (size_t i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
-    parts.push_back(absl::StrFormat("\"%s\": [", grpc_stats_histogram_name[i]));
-    for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
-      parts.push_back(
-          absl::StrFormat("%s%" PRIdPTR, j == 0 ? "" : ",",
-                          data->histograms[grpc_stats_histo_start[i] + j]));
-    }
     parts.push_back(
-        absl::StrFormat("], \"%s_bkt\": [", grpc_stats_histogram_name[i]));
+        absl::StrFormat("\"%s\": [", grpc_stats_histogram_name[i]));
     for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
       parts.push_back(absl::StrFormat(
-          "%s%d", j == 0 ? "" : ",", grpc_stats_histo_bucket_boundaries[i][j]));
+          "%s%" PRIdPTR, j == 0 ? "" : ",",
+          data->histograms[grpc_stats_histo_start[i] + j]));
+    }
+    parts.push_back(absl::StrFormat("], \"%s_bkt\": [",
+                                    grpc_stats_histogram_name[i]));
+    for (int j = 0; j < grpc_stats_histo_buckets[i]; j++) {
+      parts.push_back(
+          absl::StrFormat("%s%d", j == 0 ? "" : ",",
+                          grpc_stats_histo_bucket_boundaries[i][j]));
     }
     parts.push_back("]");
   }

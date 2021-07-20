@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,13 +23,15 @@
 
 namespace grpc {
 
-void ChannelArguments::SetSslTargetNameOverride(const std::string& name) {
+void ChannelArguments::SetSslTargetNameOverride(
+    const std::string& name) {
   SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
 }
 
 std::string ChannelArguments::GetSslTargetNameOverride() const {
   for (unsigned int i = 0; i < args_.size(); i++) {
-    if (std::string(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == args_[i].key) {
+    if (std::string(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) ==
+        args_[i].key) {
       return args_[i].value.string;
     }
   }

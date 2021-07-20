@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,8 +57,8 @@ static void BM_ClosureInitAgainstExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_closure c;
   for (auto _ : state) {
-    benchmark::DoNotOptimize(
-        GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx));
+    benchmark::DoNotOptimize(GRPC_CLOSURE_INIT(
+        &c, DoNothing, nullptr, grpc_schedule_on_exec_ctx));
   }
   track_counters.Finish(state);
 }
@@ -98,7 +98,8 @@ static void BM_ClosureCreateAndRun(benchmark::State& state) {
   for (auto _ : state) {
     grpc_core::Closure::Run(
         DEBUG_LOCATION,
-        GRPC_CLOSURE_CREATE(DoNothing, nullptr, grpc_schedule_on_exec_ctx),
+        GRPC_CLOSURE_CREATE(DoNothing, nullptr,
+                            grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
 
@@ -113,7 +114,8 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
   for (auto _ : state) {
     grpc_core::Closure::Run(
         DEBUG_LOCATION,
-        GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx),
+        GRPC_CLOSURE_INIT(&c, DoNothing, nullptr,
+                          grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
 
@@ -347,8 +349,8 @@ static void BM_ClosureSched4OnTwoCombiners(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureSched4OnTwoCombiners);
 
-// Helper that continuously reschedules the same closure against something until
-// the benchmark is complete
+// Helper that continuously reschedules the same closure against
+// something until the benchmark is complete
 class Rescheduler {
  public:
   explicit Rescheduler(benchmark::State& state) : state_(state) {
@@ -372,7 +374,8 @@ class Rescheduler {
   static void Step(void* arg, grpc_error_handle /*error*/) {
     Rescheduler* self = static_cast<Rescheduler*>(arg);
     if (self->state_.KeepRunning()) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_,
+                              GRPC_ERROR_NONE);
     }
   }
 };
@@ -387,8 +390,8 @@ static void BM_ClosureReschedOnExecCtx(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureReschedOnExecCtx);
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,7 +31,8 @@ namespace experimental {
 
 class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
  public:
-  ChannelzServicePlugin() : channelz_service_(new grpc::ChannelzService()) {}
+  ChannelzServicePlugin()
+      : channelz_service_(new grpc::ChannelzService()) {}
 
   std::string name() override { return "channelz_service"; }
 
@@ -41,7 +42,8 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
 
   void Finish(grpc::ServerInitializer* /*si*/) override {}
 
-  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {}
+  void ChangeArguments(const std::string& /*name*/,
+                       void* /*value*/) override {}
 
   bool has_sync_methods() const override {
     if (channelz_service_) {

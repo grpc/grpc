@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,9 +40,9 @@ class DefaultDeleteChar {
   }
 };
 
-// UniquePtr<T> is only allowed for char and UniquePtr<char> is deprecated
-// in favor of std::string. UniquePtr<char> is equivalent std::unique_ptr
-// except that it uses gpr_free for deleter.
+// UniquePtr<T> is only allowed for char and UniquePtr<char> is
+// deprecated in favor of std::string. UniquePtr<char> is equivalent
+// std::unique_ptr except that it uses gpr_free for deleter.
 template <typename T>
 using UniquePtr = std::unique_ptr<T, DefaultDeleteChar>;
 

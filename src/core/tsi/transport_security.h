@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -66,12 +66,14 @@ struct tsi_handshaker_vtable {
                                        size_t* max_protected_frame_size,
                                        tsi_frame_protector** protector);
   void (*destroy)(tsi_handshaker* self);
-  tsi_result (*next)(tsi_handshaker* self, const unsigned char* received_bytes,
+  tsi_result (*next)(tsi_handshaker* self,
+                     const unsigned char* received_bytes,
                      size_t received_bytes_size,
                      const unsigned char** bytes_to_send,
                      size_t* bytes_to_send_size,
                      tsi_handshaker_result** handshaker_result,
-                     tsi_handshaker_on_next_done_cb cb, void* user_data);
+                     tsi_handshaker_on_next_done_cb cb,
+                     void* user_data);
   void (*shutdown)(tsi_handshaker* self);
 };
 struct tsi_handshaker {
@@ -83,21 +85,24 @@ struct tsi_handshaker {
 
 /* Base for tsi_handshaker_result implementations.
    See transport_security_interface.h for documentation.
-   The exec_ctx parameter in create_zero_copy_grpc_protector is supposed to be
-   of type grpc_exec_ctx*, but we're using void* instead to avoid making the TSI
-   API depend on grpc. The create_zero_copy_grpc_protector() method is only used
-   in grpc, where we do need the exec_ctx passed through, but the API still
-   needs to compile in other applications, where grpc_exec_ctx is not defined.
+   The exec_ctx parameter in create_zero_copy_grpc_protector is supposed
+   to be of type grpc_exec_ctx*, but we're using void* instead to avoid
+   making the TSI API depend on grpc. The
+   create_zero_copy_grpc_protector() method is only used in grpc, where
+   we do need the exec_ctx passed through, but the API still needs to
+   compile in other applications, where grpc_exec_ctx is not defined.
 */
 struct tsi_handshaker_result_vtable {
-  tsi_result (*extract_peer)(const tsi_handshaker_result* self, tsi_peer* peer);
+  tsi_result (*extract_peer)(const tsi_handshaker_result* self,
+                             tsi_peer* peer);
   tsi_result (*create_zero_copy_grpc_protector)(
       const tsi_handshaker_result* self,
       size_t* max_output_protected_frame_size,
       tsi_zero_copy_grpc_protector** protector);
-  tsi_result (*create_frame_protector)(const tsi_handshaker_result* self,
-                                       size_t* max_output_protected_frame_size,
-                                       tsi_frame_protector** protector);
+  tsi_result (*create_frame_protector)(
+      const tsi_handshaker_result* self,
+      size_t* max_output_protected_frame_size,
+      tsi_frame_protector** protector);
   tsi_result (*get_unused_bytes)(const tsi_handshaker_result* self,
                                  const unsigned char** bytes,
                                  size_t* bytes_size);
@@ -111,16 +116,15 @@ struct tsi_handshaker_result {
 tsi_result tsi_construct_peer(size_t property_count, tsi_peer* peer);
 tsi_peer_property tsi_init_peer_property(void);
 void tsi_peer_property_destruct(tsi_peer_property* property);
-tsi_result tsi_construct_string_peer_property(const char* name,
-                                              const char* value,
-                                              size_t value_length,
-                                              tsi_peer_property* property);
+tsi_result tsi_construct_string_peer_property(
+    const char* name, const char* value, size_t value_length,
+    tsi_peer_property* property);
 tsi_result tsi_construct_allocated_string_peer_property(
     const char* name, size_t value_length, tsi_peer_property* property);
 tsi_result tsi_construct_string_peer_property_from_cstring(
     const char* name, const char* value, tsi_peer_property* property);
-const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
-                                                       const char* name);
+const tsi_peer_property* tsi_peer_get_property_by_name(
+    const tsi_peer* peer, const char* name);
 /* Utils. */
 char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */
 

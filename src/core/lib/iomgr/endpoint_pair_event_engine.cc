@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
@@ -25,9 +25,9 @@
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
     const char* /* name */, grpc_channel_args* /* args */) {
   // TODO(hork): determine what's needed here in the long run
-  GPR_ASSERT(
-      false &&
-      "grpc_iomgr_create_endpoint_pair is not suppoted with event_engine");
+  GPR_ASSERT(false &&
+             "grpc_iomgr_create_endpoint_pair is not suppoted with "
+             "event_engine");
 }
 
 #endif  // GRPC_USE_EVENT_ENGINE

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,7 +36,8 @@ typedef enum { INSECURE = 0, TLS, ALTS } transport_security;
 }  // namespace testing
 
 std::shared_ptr<Channel> CreateTestChannel(
-    const std::string& server, testing::transport_security security_type);
+    const std::string& server,
+    testing::transport_security security_type);
 
 std::shared_ptr<Channel> CreateTestChannel(
     const std::string& server, const std::string& override_hostname,
@@ -67,31 +68,33 @@ std::shared_ptr<Channel> CreateTestChannel(
     const std::string& server, const std::string& override_hostname,
     testing::transport_security security_type, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
-    std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+    std::vector<std::unique_ptr<
+        experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
 std::shared_ptr<Channel> CreateTestChannel(
     const std::string& server, const std::string& override_hostname,
     testing::transport_security security_type, bool use_prod_roots,
-    const std::shared_ptr<CallCredentials>& creds, const ChannelArguments& args,
-    std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args,
+    std::vector<std::unique_ptr<
+        experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
 std::shared_ptr<Channel> CreateTestChannel(
     const std::string& server, const std::string& cred_type,
     const std::string& override_hostname, bool use_prod_roots,
-    const std::shared_ptr<CallCredentials>& creds, const ChannelArguments& args,
-    std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args,
+    std::vector<std::unique_ptr<
+        experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
 std::shared_ptr<Channel> CreateTestChannel(
     const std::string& server, const std::string& credential_type,
     const std::shared_ptr<CallCredentials>& creds,
-    std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+    std::vector<std::unique_ptr<
+        experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
 }  // namespace grpc

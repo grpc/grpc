@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,7 +52,8 @@ void bad_ssl_run(grpc_server* server) {
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue* cq =
+      grpc_completion_queue_create_for_next(nullptr);
   grpc_completion_queue* shutdown_cq;
 
   grpc_call_details_init(&call_details);
@@ -73,8 +74,8 @@ void bad_ssl_run(grpc_server* server) {
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, nullptr);
       GPR_ASSERT(grpc_completion_queue_pluck(
-                     shutdown_cq, nullptr, grpc_timeout_seconds_to_deadline(5),
-                     nullptr)
+                     shutdown_cq, nullptr,
+                     grpc_timeout_seconds_to_deadline(5), nullptr)
                      .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);

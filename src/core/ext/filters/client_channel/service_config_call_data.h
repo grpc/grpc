@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_CALL_DATA_H
@@ -31,10 +31,11 @@
 
 namespace grpc_core {
 
-/// When a service config is applied to a call in the client_channel_filter,
-/// we create an instance of this object on the arena.  A pointer to this
-/// object is also stored in the call_context, so that future filters can
-/// easily access method and global parameters for the call.
+/// When a service config is applied to a call in the
+/// client_channel_filter, we create an instance of this object on the
+/// arena.  A pointer to this object is also stored in the call_context,
+/// so that future filters can easily access method and global
+/// parameters for the call.
 class ServiceConfigCallData {
  public:
   ServiceConfigCallData(
@@ -48,28 +49,32 @@ class ServiceConfigCallData {
         call_attributes_(std::move(call_attributes)),
         call_dispatch_controller_(call_dispatch_controller) {
     call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
+    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy =
+        Destroy;
   }
 
   ServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
       const ServiceConfigParser::ParsedConfigVector* method_configs,
       grpc_call_context_element* call_context)
-      : ServiceConfigCallData(std::move(service_config), method_configs, {},
-                              nullptr, call_context) {}
+      : ServiceConfigCallData(std::move(service_config), method_configs,
+                              {}, nullptr, call_context) {}
 
   ServiceConfig* service_config() { return service_config_.get(); }
 
-  ServiceConfigParser::ParsedConfig* GetMethodParsedConfig(size_t index) const {
+  ServiceConfigParser::ParsedConfig* GetMethodParsedConfig(
+      size_t index) const {
     return method_configs_ != nullptr ? (*method_configs_)[index].get()
                                       : nullptr;
   }
 
-  ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(size_t index) const {
+  ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
+      size_t index) const {
     return service_config_->GetGlobalParsedConfig(index);
   }
 
-  const std::map<const char*, absl::string_view>& call_attributes() const {
+  const std::map<const char*, absl::string_view>& call_attributes()
+      const {
     return call_attributes_;
   }
 
@@ -78,17 +83,18 @@ class ServiceConfigCallData {
   }
 
  private:
-  // A wrapper for the CallDispatchController returned by the ConfigSelector.
-  // Handles the case where the ConfigSelector doees not return any
-  // CallDispatchController.
-  // Also ensures that we call Commit() at most once, which allows the
-  // client channel code to call Commit() when the call is complete in case
-  // it wasn't called earlier, without needing to know whether or not it was.
+  // A wrapper for the CallDispatchController returned by the
+  // ConfigSelector. Handles the case where the ConfigSelector doees not
+  // return any CallDispatchController. Also ensures that we call
+  // Commit() at most once, which allows the client channel code to call
+  // Commit() when the call is complete in case it wasn't called
+  // earlier, without needing to know whether or not it was.
   class SingleCommitCallDispatchController
       : public ConfigSelector::CallDispatchController {
    public:
     explicit SingleCommitCallDispatchController(
-        ConfigSelector::CallDispatchController* call_dispatch_controller)
+        ConfigSelector::CallDispatchController*
+            call_dispatch_controller)
         : call_dispatch_controller_(call_dispatch_controller) {}
 
     bool ShouldRetry() override {
@@ -111,7 +117,8 @@ class ServiceConfigCallData {
   };
 
   static void Destroy(void* ptr) {
-    ServiceConfigCallData* self = static_cast<ServiceConfigCallData*>(ptr);
+    ServiceConfigCallData* self =
+        static_cast<ServiceConfigCallData*>(ptr);
     self->~ServiceConfigCallData();
   }
 
@@ -123,4 +130,5 @@ class ServiceConfigCallData {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_CALL_DATA_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_CALL_DATA_H \
+        */

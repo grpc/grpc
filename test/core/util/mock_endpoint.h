@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -21,8 +21,9 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
-grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
-                                         grpc_resource_quota* resource_quota);
+grpc_endpoint* grpc_mock_endpoint_create(
+    void (*on_write)(grpc_slice slice),
+    grpc_resource_quota* resource_quota);
 void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice);
 
 #endif

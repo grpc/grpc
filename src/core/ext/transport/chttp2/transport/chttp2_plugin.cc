@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,8 +25,10 @@
 
 GPR_GLOBAL_CONFIG_DEFINE_BOOL(
     grpc_experimental_disable_flow_control, false,
-    "If set, flow control will be effectively disabled. Max out all values and "
-    "assume the remote peer does the same. Thus we can ignore any flow control "
+    "If set, flow control will be effectively disabled. Max out all "
+    "values and "
+    "assume the remote peer does the same. Thus we can ignore any flow "
+    "control "
     "bookkeeping, error checking, and decision making");
 
 void grpc_chttp2_plugin_init(void) {

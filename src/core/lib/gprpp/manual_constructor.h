@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,12 +33,12 @@
 
 namespace grpc_core {
 
-// this contains templated helpers needed to implement the ManualConstructors
-// in this file.
+// this contains templated helpers needed to implement the
+// ManualConstructors in this file.
 namespace manual_ctor_impl {
 
-// is_one_of returns true it a class, Member, is present in a variadic list of
-// classes, List.
+// is_one_of returns true it a class, Member, is present in a variadic
+// list of classes, List.
 template <class Member, class... List>
 class is_one_of;
 
@@ -60,8 +60,8 @@ class is_one_of<Member> {
   static constexpr const bool value = false;
 };
 
-// max_size_of returns sizeof(Type) for the largest type in the variadic list
-// of classes, Types.
+// max_size_of returns sizeof(Type) for the largest type in the variadic
+// list of classes, Types.
 template <class... Types>
 class max_size_of;
 
@@ -74,13 +74,14 @@ class max_size_of<A> {
 template <class A, class... B>
 class max_size_of<A, B...> {
  public:
-  static constexpr const size_t value = sizeof(A) > max_size_of<B...>::value
+  static constexpr const size_t value = sizeof(A) >
+                                                max_size_of<B...>::value
                                             ? sizeof(A)
                                             : max_size_of<B...>::value;
 };
 
-// max_size_of returns alignof(Type) for the largest type in the variadic list
-// of classes, Types.
+// max_size_of returns alignof(Type) for the largest type in the
+// variadic list of classes, Types.
 template <class... Types>
 class max_align_of;
 
@@ -93,9 +94,10 @@ class max_align_of<A> {
 template <class A, class... B>
 class max_align_of<A, B...> {
  public:
-  static constexpr const size_t value = alignof(A) > max_align_of<B...>::value
-                                            ? alignof(A)
-                                            : max_align_of<B...>::value;
+  static constexpr const size_t value =
+      alignof(A) > max_align_of<B...>::value
+          ? alignof(A)
+          : max_align_of<B...>::value;
 };
 
 }  // namespace manual_ctor_impl
@@ -104,9 +106,9 @@ template <class BaseType, class... DerivedTypes>
 class PolymorphicManualConstructor {
  public:
   // No constructor or destructor because one of the most useful uses of
-  // this class is as part of a union, and members of a union could not have
-  // constructors or destructors till C++11.  And, anyway, the whole point of
-  // this class is to bypass constructor and destructor.
+  // this class is as part of a union, and members of a union could not
+  // have constructors or destructors till C++11.  And, anyway, the
+  // whole point of this class is to bypass constructor and destructor.
 
   BaseType* get() { return reinterpret_cast<BaseType*>(&space_); }
   const BaseType* get() const {
@@ -128,8 +130,8 @@ class PolymorphicManualConstructor {
   // (which are forwarded to Type's constructor).
   //
   // Note that Init() with no arguments performs default-initialization,
-  // not zero-initialization (i.e it behaves the same as "new Type;", not
-  // "new Type();"), so it will leave non-class types uninitialized.
+  // not zero-initialization (i.e it behaves the same as "new Type;",
+  // not "new Type();"), so it will leave non-class types uninitialized.
   template <class DerivedType, typename... Ts>
   void Init(Ts&&... args) {
     FinishInit(new (&space_) DerivedType(std::forward<Ts>(args)...));
@@ -154,27 +156,30 @@ class PolymorphicManualConstructor {
   template <class DerivedType>
   void FinishInit(DerivedType* p) {
     static_assert(
-        manual_ctor_impl::is_one_of<DerivedType, DerivedTypes...>::value,
+        manual_ctor_impl::is_one_of<DerivedType,
+                                    DerivedTypes...>::value,
         "DerivedType must be one of the predeclared DerivedTypes");
     GPR_ASSERT(static_cast<BaseType*>(p) == p);
   }
 
   typename std::aligned_storage<
       grpc_core::manual_ctor_impl::max_size_of<DerivedTypes...>::value,
-      grpc_core::manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type
-      space_;
+      grpc_core::manual_ctor_impl::max_align_of<
+          DerivedTypes...>::value>::type space_;
 };
 
 template <typename Type>
 class ManualConstructor {
  public:
   // No constructor or destructor because one of the most useful uses of
-  // this class is as part of a union, and members of a union could not have
-  // constructors or destructors till C++11.  And, anyway, the whole point of
-  // this class is to bypass constructor and destructor.
+  // this class is as part of a union, and members of a union could not
+  // have constructors or destructors till C++11.  And, anyway, the
+  // whole point of this class is to bypass constructor and destructor.
 
   Type* get() { return reinterpret_cast<Type*>(&space_); }
-  const Type* get() const { return reinterpret_cast<const Type*>(&space_); }
+  const Type* get() const {
+    return reinterpret_cast<const Type*>(&space_);
+  }
 
   Type* operator->() { return get(); }
   const Type* operator->() const { return get(); }
@@ -188,8 +193,8 @@ class ManualConstructor {
   // (which are forwarded to Type's constructor).
   //
   // Note that Init() with no arguments performs default-initialization,
-  // not zero-initialization (i.e it behaves the same as "new Type;", not
-  // "new Type();"), so it will leave non-class types uninitialized.
+  // not zero-initialization (i.e it behaves the same as "new Type;",
+  // not "new Type();"), so it will leave non-class types uninitialized.
   template <typename... Ts>
   void Init(Ts&&... args) {
     new (&space_) Type(std::forward<Ts>(args)...);
@@ -205,7 +210,8 @@ class ManualConstructor {
   void Destroy() { get()->~Type(); }
 
  private:
-  typename std::aligned_storage<sizeof(Type), alignof(Type)>::type space_;
+  typename std::aligned_storage<sizeof(Type), alignof(Type)>::type
+      space_;
 };
 
 }  // namespace grpc_core

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_H
@@ -40,13 +40,15 @@ class Call final {
         call_(nullptr),
         max_receive_message_size_(-1) {}
   /** call is owned by the caller */
-  Call(grpc_call* call, CallHook* call_hook, ::grpc::CompletionQueue* cq)
+  Call(grpc_call* call, CallHook* call_hook,
+       ::grpc::CompletionQueue* cq)
       : call_hook_(call_hook),
         cq_(cq),
         call_(call),
         max_receive_message_size_(-1) {}
 
-  Call(grpc_call* call, CallHook* call_hook, ::grpc::CompletionQueue* cq,
+  Call(grpc_call* call, CallHook* call_hook,
+       ::grpc::CompletionQueue* cq,
        experimental::ClientRpcInfo* rpc_info)
       : call_hook_(call_hook),
         cq_(cq),
@@ -54,8 +56,9 @@ class Call final {
         max_receive_message_size_(-1),
         client_rpc_info_(rpc_info) {}
 
-  Call(grpc_call* call, CallHook* call_hook, ::grpc::CompletionQueue* cq,
-       int max_receive_message_size, experimental::ServerRpcInfo* rpc_info)
+  Call(grpc_call* call, CallHook* call_hook,
+       ::grpc::CompletionQueue* cq, int max_receive_message_size,
+       experimental::ServerRpcInfo* rpc_info)
       : call_hook_(call_hook),
         cq_(cq),
         call_(call),
@@ -69,7 +72,9 @@ class Call final {
   grpc_call* call() const { return call_; }
   ::grpc::CompletionQueue* cq() const { return cq_; }
 
-  int max_receive_message_size() const { return max_receive_message_size_; }
+  int max_receive_message_size() const {
+    return max_receive_message_size_;
+  }
 
   experimental::ClientRpcInfo* client_rpc_info() const {
     return client_rpc_info_;

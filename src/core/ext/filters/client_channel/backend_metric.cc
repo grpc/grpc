@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -30,8 +30,8 @@ namespace {
 template <typename EntryType>
 std::map<absl::string_view, double> ParseMap(
     udpa_data_orca_v1_OrcaLoadReport* msg,
-    const EntryType* (*entry_func)(const udpa_data_orca_v1_OrcaLoadReport*,
-                                   size_t*),
+    const EntryType* (*entry_func)(
+        const udpa_data_orca_v1_OrcaLoadReport*, size_t*),
     upb_strview (*key_func)(const EntryType*),
     double (*value_func)(const EntryType*), Arena* arena) {
   std::map<absl::string_view, double> result;
@@ -70,12 +70,14 @@ const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
       ParseMap<udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry>(
           msg, udpa_data_orca_v1_OrcaLoadReport_request_cost_next,
           udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_key,
-          udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_value, arena);
+          udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_value,
+          arena);
   backend_metric_data->utilization =
       ParseMap<udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry>(
           msg, udpa_data_orca_v1_OrcaLoadReport_utilization_next,
           udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_key,
-          udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_value, arena);
+          udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_value,
+          arena);
   return backend_metric_data;
 }
 

@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -28,32 +28,36 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
+class FakeCertificateProviderFactory1
+    : public CertificateProviderFactory {
  public:
   const char* name() const override { return "fake1"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+      const Json& /*config_json*/,
+      grpc_error_handle* /*error*/) override {
     return nullptr;
   }
 
-  RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<Config> /*config*/) override {
+  RefCountedPtr<grpc_tls_certificate_provider>
+  CreateCertificateProvider(RefCountedPtr<Config> /*config*/) override {
     return nullptr;
   }
 };
 
-class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
+class FakeCertificateProviderFactory2
+    : public CertificateProviderFactory {
  public:
   const char* name() const override { return "fake2"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+      const Json& /*config_json*/,
+      grpc_error_handle* /*error*/) override {
     return nullptr;
   }
 
-  RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<Config> /*config*/) override {
+  RefCountedPtr<grpc_tls_certificate_provider>
+  CreateCertificateProvider(RefCountedPtr<Config> /*config*/) override {
     return nullptr;
   }
 };
@@ -67,13 +71,16 @@ TEST(CertificateProviderRegistryTest, Basic) {
   CertificateProviderRegistry::RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory>(fake_factory_2));
   EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake1"),
+      CertificateProviderRegistry::LookupCertificateProviderFactory(
+          "fake1"),
       fake_factory_1);
   EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake2"),
+      CertificateProviderRegistry::LookupCertificateProviderFactory(
+          "fake2"),
       fake_factory_2);
   EXPECT_EQ(
-      CertificateProviderRegistry::LookupCertificateProviderFactory("fake3"),
+      CertificateProviderRegistry::LookupCertificateProviderFactory(
+          "fake3"),
       nullptr);
   CertificateProviderRegistry::ShutdownRegistry();
 }

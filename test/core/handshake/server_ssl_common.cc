@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -64,7 +64,8 @@ int create_socket(int port) {
     return -1;
   }
 
-  if (connect(s, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
+  if (connect(s, reinterpret_cast<struct sockaddr*>(&addr),
+              sizeof(addr)) < 0) {
     perror("Unable to connect");
     return -1;
   }
@@ -96,7 +97,8 @@ class ServerInfo {
   bool ready_ = false;
 };
 
-// Simple gRPC server. This listens until client_handshake_complete occurs.
+// Simple gRPC server. This listens until client_handshake_complete
+// occurs.
 void server_thread(void* arg) {
   ServerInfo* s = static_cast<ServerInfo*>(arg);
   const int port = s->port();
@@ -104,42 +106,46 @@ void server_thread(void* arg) {
   // Load key pair and establish server SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
   grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
   const char* ca_cert =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
   pem_key_cert_pair.private_key =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-      ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
+  grpc_server_credentials* ssl_creds =
+      grpc_ssl_server_credentials_create(ca_cert, &pem_key_cert_pair, 1,
+                                         0, nullptr);
 
   // Start server listening on local port.
   std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(
-      grpc_server_add_secure_http2_port(server, addr.c_str(), ssl_creds));
+  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr.c_str(),
+                                               ssl_creds));
 
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue* cq =
+      grpc_completion_queue_create_for_next(nullptr);
 
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
-  // Notify the other side that it is now ok to start working since SSL is
-  // definitely already started.
+  // Notify the other side that it is now ok to start working since SSL
+  // is definitely already started.
   s->Activate();
 
-  // Wait a bounded number of time until client_handshake_complete is set,
-  // sleeping between polls.
+  // Wait a bounded number of time until client_handshake_complete is
+  // set, sleeping between polls.
   int retries = 10;
   while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
-    const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(1);
-    grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
+    const gpr_timespec cq_deadline =
+        grpc_timeout_seconds_to_deadline(1);
+    grpc_event ev =
+        grpc_completion_queue_next(cq, cq_deadline, nullptr);
     GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
   }
 
@@ -161,11 +167,12 @@ void server_thread(void* arg) {
 
 }  // namespace
 
-// This test launches a gRPC server on a separate thread and then establishes a
-// TLS handshake via a minimal TLS client. The TLS client has configurable (via
-// alpn_list) ALPN settings and can probe at the supported ALPN preferences
-// using this (via alpn_expected).
-bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
+// This test launches a gRPC server on a separate thread and then
+// establishes a TLS handshake via a minimal TLS client. The TLS client
+// has configurable (via alpn_list) ALPN settings and can probe at the
+// supported ALPN preferences using this (via alpn_expected).
+bool server_ssl_test(const char* alpn_list[],
+                     unsigned int alpn_list_len,
                      const char* alpn_expected) {
   bool success = true;
 
@@ -179,9 +186,9 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   GPR_ASSERT(ok);
   thd.Start();
 
-  // The work in server_thread will cause the SSL initialization to take place
-  // so long as we wait for it to reach beyond the point of adding a secure
-  // server port.
+  // The work in server_thread will cause the SSL initialization to take
+  // place so long as we wait for it to reach beyond the point of adding
+  // a secure server port.
   s.Await();
 
   const SSL_METHOD* method = TLSv1_2_client_method();
@@ -193,11 +200,13 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   }
 
   // Load key pair.
-  if (SSL_CTX_use_certificate_file(ctx, SSL_CERT_PATH, SSL_FILETYPE_PEM) < 0) {
+  if (SSL_CTX_use_certificate_file(ctx, SSL_CERT_PATH,
+                                   SSL_FILETYPE_PEM) < 0) {
     ERR_print_errors_fp(stderr);
     abort();
   }
-  if (SSL_CTX_use_PrivateKey_file(ctx, SSL_KEY_PATH, SSL_FILETYPE_PEM) < 0) {
+  if (SSL_CTX_use_PrivateKey_file(ctx, SSL_KEY_PATH, SSL_FILETYPE_PEM) <
+      0) {
     ERR_print_errors_fp(stderr);
     abort();
   }
@@ -205,7 +214,8 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   // Set the cipher list to match the one expressed in
   // src/core/tsi/ssl_transport_security.c.
   const char* cipher_list =
-      "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
+      "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-"
+      "AES256-"
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
@@ -213,8 +223,9 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     abort();
   }
 
-  // Configure ALPN list the client will send to the server. This must match the
-  // wire format, see documentation for SSL_CTX_set_alpn_protos.
+  // Configure ALPN list the client will send to the server. This must
+  // match the wire format, see documentation for
+  // SSL_CTX_set_alpn_protos.
   unsigned int alpn_protos_len = alpn_list_len;
   for (unsigned int i = 0; i < alpn_list_len; ++i) {
     alpn_protos_len += static_cast<unsigned int>(strlen(alpn_list[i]));
@@ -228,10 +239,11 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     memcpy(p, alpn_list[i], len);
     p += len;
   }
-  GPR_ASSERT(SSL_CTX_set_alpn_protos(ctx, alpn_protos, alpn_protos_len) == 0);
+  GPR_ASSERT(
+      SSL_CTX_set_alpn_protos(ctx, alpn_protos, alpn_protos_len) == 0);
 
-  // Try and connect to server. We allow a bounded number of retries as we might
-  // be racing with the server setup on its separate thread.
+  // Try and connect to server. We allow a bounded number of retries as
+  // we might be racing with the server setup on its separate thread.
   int retries = 10;
   int sock = -1;
   while (sock == -1 && retries-- > 0) {
@@ -258,8 +270,8 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     unsigned int alpn_selected_len;
     SSL_get0_alpn_selected(ssl, &alpn_selected, &alpn_selected_len);
     if (strlen(alpn_expected) != alpn_selected_len ||
-        strncmp(reinterpret_cast<const char*>(alpn_selected), alpn_expected,
-                alpn_selected_len) != 0) {
+        strncmp(reinterpret_cast<const char*>(alpn_selected),
+                alpn_expected, alpn_selected_len) != 0) {
       gpr_log(GPR_ERROR, "Unexpected ALPN protocol preference");
       success = false;
     }

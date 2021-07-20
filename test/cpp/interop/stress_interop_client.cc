@@ -10,10 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *is % allowed in string
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ *implied. See the License for the specific language governing
+ *permissions and limitations under the License. is % allowed in string
  */
 
 #include "test/cpp/interop/stress_interop_client.h"
@@ -43,8 +42,8 @@ WeightedRandomTestSelector::WeightedRandomTestSelector(
   }
 }
 
-// Returns a weighted-randomly selected test case based on the test weights
-// passed in the constructror
+// Returns a weighted-randomly selected test case based on the test
+// weights passed in the constructror
 TestCaseType WeightedRandomTestSelector::GetNextTest() const {
   int random = 0;
   TestCaseType selected_test = UNKNOWN_TEST;
@@ -69,13 +68,15 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
 StressTestInteropClient::StressTestInteropClient(
     int test_id, const std::string& server_address,
     ChannelCreationFunc channel_creation_func,
-    const WeightedRandomTestSelector& test_selector, long test_duration_secs,
-    long sleep_duration_ms, bool do_not_abort_on_transient_failures)
+    const WeightedRandomTestSelector& test_selector,
+    long test_duration_secs, long sleep_duration_ms,
+    bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
       server_address_(server_address),
       channel_creation_func_(std::move(channel_creation_func)),
-      interop_client_(new InteropClient(channel_creation_func_, false,
-                                        do_not_abort_on_transient_failures)),
+      interop_client_(
+          new InteropClient(channel_creation_func_, false,
+                            do_not_abort_on_transient_failures)),
       test_selector_(test_selector),
       test_duration_secs_(test_duration_secs),
       sleep_duration_ms_(sleep_duration_ms) {}
@@ -89,26 +90,28 @@ void StressTestInteropClient::MainLoop(
   if (test_duration_secs_ < 0) {
     test_end_time = gpr_inf_future(GPR_CLOCK_REALTIME);
   } else {
-    test_end_time =
-        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                     gpr_time_from_seconds(test_duration_secs_, GPR_TIMESPAN));
+    test_end_time = gpr_time_add(
+        gpr_now(GPR_CLOCK_REALTIME),
+        gpr_time_from_seconds(test_duration_secs_, GPR_TIMESPAN));
   }
 
   qps_gauge->Reset();
 
   while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), test_end_time) < 0) {
-    // Select the test case to execute based on the weights and execute it
+    // Select the test case to execute based on the weights and execute
+    // it
     TestCaseType test_case = test_selector_.GetNextTest();
-    gpr_log(GPR_DEBUG, "%d - Executing the test case %d", test_id_, test_case);
+    gpr_log(GPR_DEBUG, "%d - Executing the test case %d", test_id_,
+            test_case);
     RunTest(test_case);
 
     qps_gauge->Incr();
 
     // Sleep between successive calls if needed
     if (sleep_duration_ms_ > 0) {
-      gpr_timespec sleep_time =
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_millis(sleep_duration_ms_, GPR_TIMESPAN));
+      gpr_timespec sleep_time = gpr_time_add(
+          gpr_now(GPR_CLOCK_REALTIME),
+          gpr_time_from_millis(sleep_duration_ms_, GPR_TIMESPAN));
       gpr_sleep_until(sleep_time);
     }
   }
@@ -150,7 +153,8 @@ bool StressTestInteropClient::RunTest(TestCaseType test_case) {
       break;
     }
     case SLOW_CONSUMER: {
-      is_success = interop_client_->DoResponseStreamingWithSlowConsumer();
+      is_success =
+          interop_client_->DoResponseStreamingWithSlowConsumer();
       break;
     }
     case HALF_DUPLEX: {

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -83,14 +83,15 @@ void gpr_default_log(gpr_log_func_args* args) {
 
   if (!localtime_r(&timer, &tm)) {
     strcpy(time_buffer, "error:localtime");
-  } else if (0 ==
-             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
+  } else if (0 == strftime(time_buffer, sizeof(time_buffer),
+                           "%m%d %H:%M:%S", &tm)) {
     strcpy(time_buffer, "error:strftime");
   }
 
   std::string prefix = absl::StrFormat(
-      "%s%s.%09d %7" PRIdPTR " %s:%d]", gpr_log_severity_string(args->severity),
-      time_buffer, (int)(now.tv_nsec), sys_gettid(), display_file, args->line);
+      "%s%s.%09d %7" PRIdPTR " %s:%d]",
+      gpr_log_severity_string(args->severity), time_buffer,
+      (int)(now.tv_nsec), sys_gettid(), display_file, args->line);
 
   absl::optional<std::string> stack_trace =
       gpr_should_log_stacktrace(args->severity)

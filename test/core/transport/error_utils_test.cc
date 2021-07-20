@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include "src/core/lib/transport/error_utils.h"
@@ -38,7 +38,8 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
 }
 
 // ---- Asymmetry of conversions of "Special" errors ----
-TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
+TEST(ErrorUtilsTest,
+     AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
   grpc_error_handle error =
       absl_status_to_grpc_error(absl::CancelledError("Cancelled"));
   ASSERT_NE(error, GRPC_ERROR_CANCELLED);
@@ -63,11 +64,14 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
       absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
   // Status code checks
   intptr_t code;
-  ASSERT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &code));
-  ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_UNAVAILABLE);
+  ASSERT_TRUE(
+      grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &code));
+  ASSERT_EQ(static_cast<grpc_status_code>(code),
+            GRPC_STATUS_UNAVAILABLE);
   // Status message checks
   grpc_slice message;
-  ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
+  ASSERT_TRUE(
+      grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
   absl::string_view str = grpc_core::StringViewFromSlice(message);
   ASSERT_EQ(str, "Making tea");
   grpc_slice_unref(message);
@@ -77,12 +81,14 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
 TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
   grpc_error_handle error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "weighted_target: all children report state TRANSIENT_FAILURE"),
+          "weighted_target: all children report state "
+          "TRANSIENT_FAILURE"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   absl::Status status = grpc_error_to_absl_status(error);
   ASSERT_TRUE(absl::IsUnavailable(status));
-  ASSERT_EQ(status.message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
+  ASSERT_EQ(
+      status.message(),
+      "weighted_target: all children report state TRANSIENT_FAILURE");
   GRPC_ERROR_UNREF(error);
 }
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,7 +33,8 @@ std::string ProtoServerReflectionPlugin::name() {
   return "proto_server_reflection";
 }
 
-void ProtoServerReflectionPlugin::InitServer(grpc::ServerInitializer* si) {
+void ProtoServerReflectionPlugin::InitServer(
+    grpc::ServerInitializer* si) {
   si->RegisterService(reflection_service_);
 }
 
@@ -41,8 +42,8 @@ void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
   reflection_service_->SetServiceList(si->GetServiceList());
 }
 
-void ProtoServerReflectionPlugin::ChangeArguments(const std::string& /*name*/,
-                                                  void* /*value*/) {}
+void ProtoServerReflectionPlugin::ChangeArguments(
+    const std::string& /*name*/, void* /*value*/) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
   if (reflection_service_) {
@@ -58,7 +59,8 @@ bool ProtoServerReflectionPlugin::has_async_methods() const {
   return false;
 }
 
-static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateProtoReflection() {
+static std::unique_ptr< ::grpc::ServerBuilderPlugin>
+CreateProtoReflection() {
   return std::unique_ptr< ::grpc::ServerBuilderPlugin>(
       new ProtoServerReflectionPlugin());
 }
@@ -66,7 +68,8 @@ static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateProtoReflection() {
 void InitProtoReflectionServerBuilderPlugin() {
   static struct Initialize {
     Initialize() {
-      ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
+      ::grpc::ServerBuilder::InternalAddPluginFactory(
+          &CreateProtoReflection);
     }
   } initializer;
 }

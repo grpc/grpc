@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -25,10 +25,11 @@
 namespace grpc_core {
 
 // If a certificate provider is created, the CertificateProviderStore
-// maintains a raw pointer to the created CertificateProviderWrapper so that
-// future calls to `CreateOrGetCertificateProvider()` with the same key result
-// in returning a ref to this created certificate provider. This entry is
-// deleted when the refcount to this provider reaches zero.
+// maintains a raw pointer to the created CertificateProviderWrapper so
+// that future calls to `CreateOrGetCertificateProvider()` with the same
+// key result in returning a ref to this created certificate provider.
+// This entry is deleted when the refcount to this provider reaches
+// zero.
 RefCountedPtr<grpc_tls_certificate_provider>
 CertificateProviderStore::CreateOrGetCertificateProvider(
     absl::string_view key) {
@@ -62,14 +63,15 @@ CertificateProviderStore::CreateCertificateProviderLocked(
           plugin_config_it->second.plugin_name);
   if (factory == nullptr) {
     // This should never happen since an entry is only inserted in the
-    // plugin_config_map_ if the corresponding factory was found when parsing
-    // the xDS bootstrap file.
+    // plugin_config_map_ if the corresponding factory was found when
+    // parsing the xDS bootstrap file.
     gpr_log(GPR_ERROR, "Certificate provider factory %s not found",
             plugin_config_it->second.plugin_name.c_str());
     return nullptr;
   }
   return MakeRefCounted<CertificateProviderWrapper>(
-      factory->CreateCertificateProvider(plugin_config_it->second.config),
+      factory->CreateCertificateProvider(
+          plugin_config_it->second.config),
       Ref(), plugin_config_it->first);
 }
 

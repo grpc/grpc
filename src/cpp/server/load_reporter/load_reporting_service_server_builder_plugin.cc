@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,7 +32,8 @@ bool LoadReportingServiceServerBuilderPlugin::has_sync_methods() const {
   return false;
 }
 
-bool LoadReportingServiceServerBuilderPlugin::has_async_methods() const {
+bool LoadReportingServiceServerBuilderPlugin::has_async_methods()
+    const {
   if (service_ != nullptr) {
     return service_->has_async_methods();
   }
@@ -42,7 +43,8 @@ bool LoadReportingServiceServerBuilderPlugin::has_async_methods() const {
 void LoadReportingServiceServerBuilderPlugin::UpdateServerBuilder(
     grpc::ServerBuilder* builder) {
   auto cq = builder->AddCompletionQueue();
-  service_ = std::make_shared<LoadReporterAsyncServiceImpl>(std::move(cq));
+  service_ =
+      std::make_shared<LoadReporterAsyncServiceImpl>(std::move(cq));
 }
 
 void LoadReportingServiceServerBuilderPlugin::InitServer(

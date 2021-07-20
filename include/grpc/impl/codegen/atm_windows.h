@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,20 +48,22 @@ static __inline void gpr_atm_rel_store(gpr_atm* p, gpr_atm value) {
   *p = value;
 }
 
-static __inline void gpr_atm_no_barrier_store(gpr_atm* p, gpr_atm value) {
+static __inline void gpr_atm_no_barrier_store(gpr_atm* p,
+                                              gpr_atm value) {
   /* TODO(ctiller): Can we implement something better here? */
   gpr_atm_rel_store(p, value);
 }
 
-static __inline int gpr_atm_no_barrier_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
+static __inline int gpr_atm_no_barrier_cas(gpr_atm* p, gpr_atm o,
+                                           gpr_atm n) {
 /** InterlockedCompareExchangePointerNoFence() not available on vista or
    windows7 */
 #ifdef GPR_ARCH_64
   return o == (gpr_atm)InterlockedCompareExchangeAcquire64(
                   (volatile LONGLONG*)p, (LONGLONG)n, (LONGLONG)o);
 #else
-  return o == (gpr_atm)InterlockedCompareExchangeAcquire((volatile LONG*)p,
-                                                         (LONG)n, (LONG)o);
+  return o == (gpr_atm)InterlockedCompareExchangeAcquire(
+                  (volatile LONG*)p, (LONG)n, (LONG)o);
 #endif
 }
 
@@ -70,8 +72,8 @@ static __inline int gpr_atm_acq_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
   return o == (gpr_atm)InterlockedCompareExchangeAcquire64(
                   (volatile LONGLONG*)p, (LONGLONG)n, (LONGLONG)o);
 #else
-  return o == (gpr_atm)InterlockedCompareExchangeAcquire((volatile LONG*)p,
-                                                         (LONG)n, (LONG)o);
+  return o == (gpr_atm)InterlockedCompareExchangeAcquire(
+                  (volatile LONG*)p, (LONG)n, (LONG)o);
 #endif
 }
 
@@ -80,18 +82,18 @@ static __inline int gpr_atm_rel_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
   return o == (gpr_atm)InterlockedCompareExchangeRelease64(
                   (volatile LONGLONG*)p, (LONGLONG)n, (LONGLONG)o);
 #else
-  return o == (gpr_atm)InterlockedCompareExchangeRelease((volatile LONG*)p,
-                                                         (LONG)n, (LONG)o);
+  return o == (gpr_atm)InterlockedCompareExchangeRelease(
+                  (volatile LONG*)p, (LONG)n, (LONG)o);
 #endif
 }
 
 static __inline int gpr_atm_full_cas(gpr_atm* p, gpr_atm o, gpr_atm n) {
 #ifdef GPR_ARCH_64
-  return o == (gpr_atm)InterlockedCompareExchange64((volatile LONGLONG*)p,
-                                                    (LONGLONG)n, (LONGLONG)o);
+  return o == (gpr_atm)InterlockedCompareExchange64(
+                  (volatile LONGLONG*)p, (LONGLONG)n, (LONGLONG)o);
 #else
-  return o == (gpr_atm)InterlockedCompareExchange((volatile LONG*)p, (LONG)n,
-                                                  (LONG)o);
+  return o == (gpr_atm)InterlockedCompareExchange((volatile LONG*)p,
+                                                  (LONG)n, (LONG)o);
 #endif
 }
 
@@ -105,15 +107,16 @@ static __inline gpr_atm gpr_atm_no_barrier_fetch_add(gpr_atm* p,
   return old;
 }
 
-static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm* p, gpr_atm delta) {
+static __inline gpr_atm gpr_atm_full_fetch_add(gpr_atm* p,
+                                               gpr_atm delta) {
   /** Use a CAS operation to get pointer-sized fetch and add */
   gpr_atm old;
 #ifdef GPR_ARCH_64
   do {
     old = *p;
-  } while (old != (gpr_atm)InterlockedCompareExchange64((volatile LONGLONG*)p,
-                                                        (LONGLONG)old + delta,
-                                                        (LONGLONG)old));
+  } while (old != (gpr_atm)InterlockedCompareExchange64(
+                      (volatile LONGLONG*)p, (LONGLONG)old + delta,
+                      (LONGLONG)old));
 #else
   do {
     old = *p;

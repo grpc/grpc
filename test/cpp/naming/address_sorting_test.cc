@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -61,7 +61,8 @@ struct TestAddress {
   int family;
 };
 
-grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
+grpc_resolved_address TestAddressToGrpcResolvedAddress(
+    TestAddress test_addr) {
   std::string host;
   std::string port;
   grpc_resolved_address resolved_addr;
@@ -71,7 +72,8 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
     memset(&in_dest, 0, sizeof(sockaddr_in));
     in_dest.sin_port = htons(atoi(port.c_str()));
     in_dest.sin_family = AF_INET;
-    GPR_ASSERT(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr) == 1);
+    GPR_ASSERT(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr) ==
+               1);
     memcpy(&resolved_addr.addr, &in_dest, sizeof(sockaddr_in));
     resolved_addr.len = sizeof(sockaddr_in);
   } else {
@@ -80,14 +82,16 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
     memset(&in6_dest, 0, sizeof(sockaddr_in6));
     in6_dest.sin6_port = htons(atoi(port.c_str()));
     in6_dest.sin6_family = AF_INET6;
-    GPR_ASSERT(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr) == 1);
+    GPR_ASSERT(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr) ==
+               1);
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
   }
   return resolved_addr;
 }
 
-class MockSourceAddrFactory : public address_sorting_source_addr_factory {
+class MockSourceAddrFactory
+    : public address_sorting_source_addr_factory {
  public:
   MockSourceAddrFactory(
       bool ipv4_supported, bool ipv6_supported,
@@ -148,8 +152,8 @@ void mock_source_addr_factory_wrapper_destroy(
   delete mock;
 }
 
-const address_sorting_source_addr_factory_vtable kMockSourceAddrFactoryVtable =
-    {
+const address_sorting_source_addr_factory_vtable
+    kMockSourceAddrFactoryVtable = {
         mock_source_addr_factory_wrapper_get_source_addr,
         mock_source_addr_factory_wrapper_destroy,
 };
@@ -157,8 +161,9 @@ const address_sorting_source_addr_factory_vtable kMockSourceAddrFactoryVtable =
 void OverrideAddressSortingSourceAddrFactory(
     bool ipv4_supported, bool ipv6_supported,
     const std::map<std::string, TestAddress>& dest_addr_to_src_addr) {
-  address_sorting_source_addr_factory* factory = new MockSourceAddrFactory(
-      ipv4_supported, ipv6_supported, dest_addr_to_src_addr);
+  address_sorting_source_addr_factory* factory =
+      new MockSourceAddrFactory(ipv4_supported, ipv6_supported,
+                                dest_addr_to_src_addr);
   factory->vtable = &kMockSourceAddrFactoryVtable;
   address_sorting_override_source_addr_factory_for_testing(factory);
 }
@@ -167,7 +172,8 @@ grpc_core::ServerAddressList BuildLbAddrInputs(
     const std::vector<TestAddress>& test_addrs) {
   grpc_core::ServerAddressList addresses;
   for (const auto& addr : test_addrs) {
-    addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr), nullptr);
+    addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr),
+                           nullptr);
   }
   return addresses;
 }
@@ -176,8 +182,8 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
                          std::vector<std::string> expected_addrs) {
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {
-    std::string ip_addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */);
+    std::string ip_addr_str = grpc_sockaddr_to_string(
+        &addresses[i].address(), false /* normalize */);
     EXPECT_EQ(expected_addrs[i], ip_addr_str);
   }
 }
@@ -238,7 +244,8 @@ TEST_F(AddressSortingTest, TestDepriotizesUnsupportedDomainIpv4) {
       ipv4_supported, ipv6_supported,
       {
           {"1.2.3.4:443", {"4.3.2.1:0", AF_INET}},
-          {"[2607:f8b0:400a:801::1002]:443", {"[fec0::1234]:0", AF_INET6}},
+          {"[2607:f8b0:400a:801::1002]:443",
+           {"[fec0::1234]:0", AF_INET6}},
       });
   auto lb_addrs = BuildLbAddrInputs({
       {"[2607:f8b0:400a:801::1002]:443", AF_INET6},
@@ -260,9 +267,11 @@ TEST_F(AddressSortingTest, TestDepriotizesNonMatchingScope) {
       ipv4_supported, ipv6_supported,
       {
           {"[2000:f8b0:400a:801::1002]:443",
-           {"[fec0::1000]:0", AF_INET6}},  // global and site-local scope
+           {"[fec0::1000]:0",
+            AF_INET6}},  // global and site-local scope
           {"[fec0::5000]:443",
-           {"[fec0::5001]:0", AF_INET6}},  // site-local and site-local scope
+           {"[fec0::5001]:0",
+            AF_INET6}},  // site-local and site-local scope
       });
   auto lb_addrs = BuildLbAddrInputs({
       {"[2000:f8b0:400a:801::1002]:443", AF_INET6},
@@ -339,20 +348,23 @@ TEST_F(AddressSortingTest,
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
   VerifyLbAddrOutputs(
-      lb_addrs, {
-                    // The AF_INET address should be IPv4-mapped by the sort,
-                    // and IPv4-mapped
-                    // addresses have higher precedence than 3ffe::/16 by spec.
-                    "1.2.3.4:443",
-                    "[3ffe::5001]:443",
-                });
+      lb_addrs,
+      {
+          // The AF_INET address should be IPv4-mapped by the sort,
+          // and IPv4-mapped
+          // addresses have higher precedence than 3ffe::/16 by spec.
+          "1.2.3.4:443",
+          "[3ffe::5001]:443",
+      });
 }
 
-TEST_F(AddressSortingTest,
-       TestUsesDestinationWithHigherPrecedenceWithV4CompatAndLocalhostAddress) {
+TEST_F(
+    AddressSortingTest,
+    TestUsesDestinationWithHigherPrecedenceWithV4CompatAndLocalhostAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
+// Handle unique observed behavior of inet_ntop(v4-compatible-address)
+// on OS X.
 #if GPR_APPLE == 1
   const char* v4_compat_dest = "[::0.0.0.2]:443";
   const char* v4_compat_src = "[::0.0.0.2]:0";
@@ -377,15 +389,16 @@ TEST_F(AddressSortingTest,
                                 });
 }
 
-TEST_F(AddressSortingTest,
-       TestUsesDestinationWithHigherPrecedenceWithCatchAllAndLocalhostAddress) {
+TEST_F(
+    AddressSortingTest,
+    TestUsesDestinationWithHigherPrecedenceWithCatchAllAndLocalhostAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
-          // 1234::2 for src and dest to make sure that prefix matching has no
-          // influence on this test.
+          // 1234::2 for src and dest to make sure that prefix matching
+          // has no influence on this test.
           {"[1234::2]:443", {"[1234::2]:0", AF_INET6}},
           {"[::1]:443", {"[::1]:0", AF_INET6}},
       });
@@ -394,13 +407,13 @@ TEST_F(AddressSortingTest,
       {"[::1]:443", AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(
-      lb_addrs,
-      {
-          // ::1 should match the localhost precedence entry and be prioritized
-          "[::1]:443",
-          "[1234::2]:443",
-      });
+  VerifyLbAddrOutputs(lb_addrs,
+                      {
+                          // ::1 should match the localhost precedence
+                          // entry and be prioritized
+                          "[::1]:443",
+                          "[1234::2]:443",
+                      });
 }
 
 TEST_F(AddressSortingTest,
@@ -419,11 +432,12 @@ TEST_F(AddressSortingTest,
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
   VerifyLbAddrOutputs(
-      lb_addrs, {
-                    // The 2000::/16 address should match the ::/0 prefix rule
-                    "[2000::5001]:443",
-                    "[2001::1234]:443",
-                });
+      lb_addrs,
+      {
+          // The 2000::/16 address should match the ::/0 prefix rule
+          "[2000::5001]:443",
+          "[2001::1234]:443",
+      });
 }
 
 TEST_F(
@@ -448,8 +462,9 @@ TEST_F(
                                 });
 }
 
-TEST_F(AddressSortingTest,
-       TestUsesDestinationWithHigherPrecedenceWithLinkAndSiteLocalAddresses) {
+TEST_F(
+    AddressSortingTest,
+    TestUsesDestinationWithHigherPrecedenceWithLinkAndSiteLocalAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
   OverrideAddressSortingSourceAddrFactory(
@@ -474,8 +489,8 @@ TEST_F(
     TestUsesDestinationWithHigherPrecedenceWithCatchAllAndAndV4MappedAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  // Use embedded ipv4 addresses with leading 1's instead of zero's to be
-  // compatible with inet_ntop implementations that can display such
+  // Use embedded ipv4 addresses with leading 1's instead of zero's to
+  // be compatible with inet_ntop implementations that can display such
   // addresses with leading zero's as e.g.: "::ffff:0:2", as on windows.
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
@@ -488,12 +503,13 @@ TEST_F(
       {"[1234::2]:443", AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs, {
-                                    // ::ffff:0:2 should match the v4-mapped
-                                    // precedence entry and be deprioritized.
-                                    "[1234::2]:443",
-                                    "[::ffff:1.1.1.2]:443",
-                                });
+  VerifyLbAddrOutputs(lb_addrs,
+                      {
+                          // ::ffff:0:2 should match the v4-mapped
+                          // precedence entry and be deprioritized.
+                          "[1234::2]:443",
+                          "[::ffff:1.1.1.2]:443",
+                      });
 }
 
 /* Tests for rule 8 */
@@ -504,9 +520,8 @@ TEST_F(AddressSortingTest, TestPrefersSmallerScope) {
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
-          // Both of these destinations have the same precedence in default
-          // policy
-          // table.
+          // Both of these destinations have the same precedence in
+          // default policy table.
           {"[fec0::1234]:443", {"[fec0::5678]:0", AF_INET6}},
           {"[3ffe::5001]:443", {"[3ffe::5002]:0", AF_INET6}},
       });
@@ -529,9 +544,8 @@ TEST_F(AddressSortingTest, TestPrefersLongestMatchingSrcDstPrefix) {
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
-          // Both of these destinations have the same precedence in default
-          // policy
-          // table.
+          // Both of these destinations have the same precedence in
+          // default policy table.
           {"[3ffe:1234::]:443", {"[3ffe:1235::]:0", AF_INET6}},
           {"[3ffe:5001::]:443", {"[3ffe:4321::]:0", AF_INET6}},
       });
@@ -567,7 +581,8 @@ TEST_F(AddressSortingTest,
                                 });
 }
 
-TEST_F(AddressSortingTest, TestPrefersLongestPrefixStressInnerBytePrefix) {
+TEST_F(AddressSortingTest,
+       TestPrefersLongestPrefixStressInnerBytePrefix) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
   OverrideAddressSortingSourceAddrFactory(
@@ -587,7 +602,8 @@ TEST_F(AddressSortingTest, TestPrefersLongestPrefixStressInnerBytePrefix) {
                                 });
 }
 
-TEST_F(AddressSortingTest, TestPrefersLongestPrefixDiffersOnHighestBitOfByte) {
+TEST_F(AddressSortingTest,
+       TestPrefersLongestPrefixDiffersOnHighestBitOfByte) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
   OverrideAddressSortingSourceAddrFactory(
@@ -683,7 +699,8 @@ TEST_F(AddressSortingTest, TestStableSortFiveElements) {
 TEST_F(AddressSortingTest, TestStableSortNoSrcAddrsExist) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported, {});
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported,
+                                          ipv6_supported, {});
   auto lb_addrs = BuildLbAddrInputs({
       {"[3ffe::1231]:443", AF_INET6},
       {"[3ffe::1232]:443", AF_INET6},
@@ -704,7 +721,8 @@ TEST_F(AddressSortingTest, TestStableSortNoSrcAddrsExist) {
 TEST_F(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-  OverrideAddressSortingSourceAddrFactory(ipv4_supported, ipv6_supported, {});
+  OverrideAddressSortingSourceAddrFactory(ipv4_supported,
+                                          ipv6_supported, {});
   auto lb_addrs = BuildLbAddrInputs({
       {"[::ffff:5.6.7.8]:443", AF_INET6},
       {"1.2.3.4:443", AF_INET},
@@ -716,10 +734,12 @@ TEST_F(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
                                 });
 }
 
-TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
+TEST_F(AddressSortingTest,
+       TestStableSortV4CompatAndSiteLocalAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
+// Handle unique observed behavior of inet_ntop(v4-compatible-address)
+// on OS X.
 #if GPR_APPLE == 1
   const char* v4_compat_dest = "[::0.0.0.2]:443";
   const char* v4_compat_src = "[::0.0.0.3]:0";
@@ -738,13 +758,13 @@ TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
       {v4_compat_dest, AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs,
-                      {
-                          // The sort should be stable since
-                          // v4-compatible has same precedence as site-local.
-                          "[fec0::2000]:443",
-                          v4_compat_dest,
-                      });
+  VerifyLbAddrOutputs(
+      lb_addrs, {
+                    // The sort should be stable since
+                    // v4-compatible has same precedence as site-local.
+                    "[fec0::2000]:443",
+                    v4_compat_dest,
+                });
 }
 
 /* TestPrefersIpv6Loopback tests the actual "address probing" code
@@ -795,9 +815,10 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
   memcpy(&sort_input_dest.addr, &ipv6_loopback, sizeof(ipv6_loopback));
   sort_input_dest.len = sizeof(ipv6_loopback);
   address_sorting_address source_for_sort_input_dest;
-  memset(&source_for_sort_input_dest, 0, sizeof(source_for_sort_input_dest));
-  // address_sorting_get_source_addr returns true if a source address was found
-  // for the destination address, otherwise false.
+  memset(&source_for_sort_input_dest, 0,
+         sizeof(source_for_sort_input_dest));
+  // address_sorting_get_source_addr returns true if a source address
+  // was found for the destination address, otherwise false.
   EXPECT_TRUE(address_sorting_get_source_addr_for_testing(
       &sort_input_dest, &source_for_sort_input_dest));
   // Now also check that the source address was filled in correctly.
@@ -806,14 +827,15 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
       reinterpret_cast<sockaddr_in6*>(source_for_sort_input_dest.addr);
   EXPECT_EQ(source_addr_output->sin6_family, AF_INET6);
   char* buf = static_cast<char*>(gpr_zalloc(100));
-  EXPECT_NE(inet_ntop(AF_INET6, &source_addr_output->sin6_addr, buf, 100),
-            nullptr)
+  EXPECT_NE(
+      inet_ntop(AF_INET6, &source_addr_output->sin6_addr, buf, 100),
+      nullptr)
       << "inet_ntop failed. Errno: " + std::to_string(errno);
   std::string source_addr_str(buf);
   gpr_free(buf);
   // This test
-  // assumes that the source address for any loopback destination is also the
-  // loopback address.
+  // assumes that the source address for any loopback destination is
+  // also the loopback address.
   EXPECT_EQ(source_addr_str, "::1");
 }
 

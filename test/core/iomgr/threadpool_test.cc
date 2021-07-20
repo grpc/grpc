@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,11 +39,13 @@ static void test_constructor_option(void) {
   options.set_stack_size(192 * 1024);  // Random non-default value
   grpc_core::ThreadPool* pool =
       new grpc_core::ThreadPool(0, "test_constructor_option", options);
-  GPR_ASSERT(pool->thread_options().stack_size() == options.stack_size());
+  GPR_ASSERT(pool->thread_options().stack_size() ==
+             options.stack_size());
   delete pool;
 }
 
-// Simple functor for testing. It will count how many times being called.
+// Simple functor for testing. It will count how many times being
+// called.
 class SimpleFunctorForAdd : public grpc_completion_queue_functor {
  public:
   friend class SimpleFunctorCheckForAdd;
@@ -54,7 +56,8 @@ class SimpleFunctorForAdd : public grpc_completion_queue_functor {
     internal_success = 0;
   }
   ~SimpleFunctorForAdd() {}
-  static void Run(struct grpc_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(struct grpc_completion_queue_functor* cb,
+                  int /*ok*/) {
     auto* callback = static_cast<SimpleFunctorForAdd*>(cb);
     callback->count_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
   }
@@ -83,7 +86,8 @@ static void test_add(void) {
 // Thread that adds closures to pool
 class WorkThread {
  public:
-  WorkThread(grpc_core::ThreadPool* pool, SimpleFunctorForAdd* cb, int num_add)
+  WorkThread(grpc_core::ThreadPool* pool, SimpleFunctorForAdd* cb,
+             int num_add)
       : num_add_(num_add), cb_(cb), pool_(pool) {
     thd_ = grpc_core::Thread(
         "thread_pool_test_add_thd",
@@ -145,7 +149,8 @@ class SimpleFunctorCheckForAdd : public grpc_completion_queue_functor {
     internal_success = ok;
   }
   ~SimpleFunctorCheckForAdd() {}
-  static void Run(struct grpc_completion_queue_functor* cb, int /*ok*/) {
+  static void Run(struct grpc_completion_queue_functor* cb,
+                  int /*ok*/) {
     auto* callback = static_cast<SimpleFunctorCheckForAdd*>(cb);
     (*callback->count_)++;
     GPR_ASSERT(*callback->count_ == callback->internal_success);
@@ -161,8 +166,8 @@ static void test_one_thread_FIFO(void) {
   grpc_core::ThreadPool* pool =
       new grpc_core::ThreadPool(1, "test_one_thread_FIFO");
   SimpleFunctorCheckForAdd** check_functors =
-      static_cast<SimpleFunctorCheckForAdd**>(
-          gpr_zalloc(sizeof(SimpleFunctorCheckForAdd*) * kThreadSmallIter));
+      static_cast<SimpleFunctorCheckForAdd**>(gpr_zalloc(
+          sizeof(SimpleFunctorCheckForAdd*) * kThreadSmallIter));
   for (int i = 0; i < kThreadSmallIter; ++i) {
     check_functors[i] = new SimpleFunctorCheckForAdd(i + 1, &counter);
     pool->Add(check_functors[i]);

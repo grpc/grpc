@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,22 +33,24 @@ char* grpc_dump_slice(const grpc_slice& s, uint32_t flags) {
                   GRPC_SLICE_LENGTH(s), flags);
 }
 
-grpc_slice grpc_dump_slice_to_slice(const grpc_slice& s, uint32_t flags) {
+grpc_slice grpc_dump_slice_to_slice(const grpc_slice& s,
+                                    uint32_t flags) {
   size_t len;
-  grpc_core::UniquePtr<char> ptr(
-      gpr_dump_return_len(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s),
-                          GRPC_SLICE_LENGTH(s), flags, &len));
+  grpc_core::UniquePtr<char> ptr(gpr_dump_return_len(
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s),
+      GRPC_SLICE_LENGTH(s), flags, &len));
   return grpc_slice_from_moved_buffer(std::move(ptr), len);
 }
 
 /** Finds the initial (\a begin) and final (\a end) offsets of the next
- * substring from \a str + \a read_offset until the next \a sep or the end of \a
- * str.
+ * substring from \a str + \a read_offset until the next \a sep or the
+ * end of \a str.
  *
  * Returns 1 and updates \a begin and \a end. Returns 0 otherwise. */
-static int slice_find_separator_offset(const grpc_slice str, const char* sep,
-                                       const size_t read_offset, size_t* begin,
-                                       size_t* end) {
+static int slice_find_separator_offset(const grpc_slice str,
+                                       const char* sep,
+                                       const size_t read_offset,
+                                       size_t* begin, size_t* end) {
   size_t i;
   const uint8_t* str_ptr = GRPC_SLICE_START_PTR(str) + read_offset;
   const size_t str_len = GRPC_SLICE_LENGTH(str) - read_offset;
@@ -78,7 +80,8 @@ static void skip_leading_trailing_spaces(const uint8_t* str_buffer,
 }
 
 static void grpc_slice_split_inner(grpc_slice str, const char* sep,
-                                   grpc_slice_buffer* dst, bool no_space) {
+                                   grpc_slice_buffer* dst,
+                                   bool no_space) {
   const size_t sep_len = strlen(sep);
   size_t begin, end;
   const uint8_t* str_buffer = GRPC_SLICE_START_PTR(str);
@@ -92,9 +95,10 @@ static void grpc_slice_split_inner(grpc_slice str, const char* sep,
       if (no_space) {
         skip_leading_trailing_spaces(str_buffer, &begin, &end);
       }
-      grpc_slice_buffer_add_indexed(dst, grpc_slice_sub(str, begin, end));
-    } while (slice_find_separator_offset(str, sep, sep_pos + sep_len, &begin,
-                                         &end) != 0);
+      grpc_slice_buffer_add_indexed(dst,
+                                    grpc_slice_sub(str, begin, end));
+    } while (slice_find_separator_offset(str, sep, sep_pos + sep_len,
+                                         &begin, &end) != 0);
     begin = sep_pos + sep_len;
     end = GRPC_SLICE_LENGTH(str);
     if (no_space) {
@@ -111,7 +115,8 @@ static void grpc_slice_split_inner(grpc_slice str, const char* sep,
   }
 }
 
-void grpc_slice_split(grpc_slice str, const char* sep, grpc_slice_buffer* dst) {
+void grpc_slice_split(grpc_slice str, const char* sep,
+                      grpc_slice_buffer* dst) {
   grpc_slice_split_inner(str, sep, dst, false);
 }
 

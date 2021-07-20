@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,23 +37,25 @@ using ::std::set;
 namespace grpc_objective_c_generator {
 namespace {
 
-void PrintProtoRpcDeclarationAsPragma(Printer* printer,
-                                      const MethodDescriptor* method,
-                                      map< ::std::string, ::std::string> vars) {
+void PrintProtoRpcDeclarationAsPragma(
+    Printer* printer, const MethodDescriptor* method,
+    map< ::std::string, ::std::string> vars) {
   vars["client_stream"] = method->client_streaming() ? "stream " : "";
   vars["server_stream"] = method->server_streaming() ? "stream " : "";
 
-  printer->Print(vars,
-                 "#pragma mark $method_name$($client_stream$$request_type$)"
-                 " returns ($server_stream$$response_type$)\n\n");
+  printer->Print(
+      vars,
+      "#pragma mark $method_name$($client_stream$$request_type$)"
+      " returns ($server_stream$$response_type$)\n\n");
 }
 
 template <typename DescriptorType>
-static void PrintAllComments(const DescriptorType* desc, Printer* printer,
+static void PrintAllComments(const DescriptorType* desc,
+                             Printer* printer,
                              bool deprecated = false) {
   std::vector<std::string> comments;
-  grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED,
-                             &comments);
+  grpc_generator::GetComment(
+      desc, grpc_generator::COMMENTTYPE_LEADING_DETACHED, &comments);
   grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_LEADING,
                              &comments);
   grpc_generator::GetComment(desc, grpc_generator::COMMENTTYPE_TRAILING,
@@ -73,15 +75,17 @@ static void PrintAllComments(const DescriptorType* desc, Printer* printer,
   if (deprecated) {
     printer->Print(" *\n");
     printer->Print(
-        " * This method belongs to a set of APIs that have been deprecated. "
+        " * This method belongs to a set of APIs that have been "
+        "deprecated. "
         "Using"
         " the v2 API is recommended.\n");
   }
   printer->Print(" */\n");
 }
 
-void PrintMethodSignature(Printer* printer, const MethodDescriptor* method,
-                          const map< ::std::string, ::std::string>& vars) {
+void PrintMethodSignature(
+    Printer* printer, const MethodDescriptor* method,
+    const map< ::std::string, ::std::string>& vars) {
   // Print comment
   PrintAllComments(method, printer, true);
 
@@ -94,18 +98,21 @@ void PrintMethodSignature(Printer* printer, const MethodDescriptor* method,
 
   // TODO(jcanizales): Put this on a new line and align colons.
   if (method->server_streaming()) {
-    printer->Print(vars,
-                   " eventHandler:(void(^)(BOOL done, "
-                   "$response_class$ *_Nullable response, NSError *_Nullable "
-                   "error))eventHandler");
+    printer->Print(
+        vars,
+        " eventHandler:(void(^)(BOOL done, "
+        "$response_class$ *_Nullable response, NSError *_Nullable "
+        "error))eventHandler");
   } else {
-    printer->Print(vars,
-                   " handler:(void(^)($response_class$ *_Nullable response, "
-                   "NSError *_Nullable error))handler");
+    printer->Print(
+        vars,
+        " handler:(void(^)($response_class$ *_Nullable response, "
+        "NSError *_Nullable error))handler");
   }
 }
 
-void PrintSimpleSignature(Printer* printer, const MethodDescriptor* method,
+void PrintSimpleSignature(Printer* printer,
+                          const MethodDescriptor* method,
                           map< ::std::string, ::std::string> vars) {
   vars["method_name"] =
       grpc_generator::LowercaseFirstLetter(vars["method_name"]);
@@ -113,7 +120,8 @@ void PrintSimpleSignature(Printer* printer, const MethodDescriptor* method,
   PrintMethodSignature(printer, method, vars);
 }
 
-void PrintAdvancedSignature(Printer* printer, const MethodDescriptor* method,
+void PrintAdvancedSignature(Printer* printer,
+                            const MethodDescriptor* method,
                             map< ::std::string, ::std::string> vars) {
   vars["method_name"] = "RPCTo" + vars["method_name"];
   vars["return_type"] = "GRPCProtoCall *";
@@ -134,13 +142,16 @@ void PrintV2Signature(Printer* printer, const MethodDescriptor* method,
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
-    printer->Print("ResponseHandler:(id<GRPCProtoResponseHandler>)handler");
+    printer->Print(
+        "ResponseHandler:(id<GRPCProtoResponseHandler>)handler");
   } else {
-    printer->Print(vars,
-                   "Message:($request_class$ *)message "
-                   "responseHandler:(id<GRPCProtoResponseHandler>)handler");
+    printer->Print(
+        vars,
+        "Message:($request_class$ *)message "
+        "responseHandler:(id<GRPCProtoResponseHandler>)handler");
   }
-  printer->Print(" callOptions:(GRPCCallOptions *_Nullable)callOptions");
+  printer->Print(
+      " callOptions:(GRPCCallOptions *_Nullable)callOptions");
 }
 
 inline map< ::std::string, ::std::string> GetMethodVars(
@@ -154,7 +165,8 @@ inline map< ::std::string, ::std::string> GetMethodVars(
   return res;
 }
 
-void PrintMethodDeclarations(Printer* printer, const MethodDescriptor* method) {
+void PrintMethodDeclarations(Printer* printer,
+                             const MethodDescriptor* method) {
   map< ::std::string, ::std::string> vars = GetMethodVars(method);
 
   PrintProtoRpcDeclarationAsPragma(printer, method, vars);
@@ -175,8 +187,9 @@ void PrintV2MethodDeclarations(Printer* printer,
   printer->Print(";\n\n");
 }
 
-void PrintSimpleImplementation(Printer* printer, const MethodDescriptor* method,
-                               map< ::std::string, ::std::string> vars) {
+void PrintSimpleImplementation(
+    Printer* printer, const MethodDescriptor* method,
+    map< ::std::string, ::std::string> vars) {
   printer->Print("{\n");
   printer->Print(vars, "  [[self RPCTo$method_name$With");
   if (method->client_streaming()) {
@@ -192,11 +205,12 @@ void PrintSimpleImplementation(Printer* printer, const MethodDescriptor* method,
   printer->Print("}\n");
 }
 
-void PrintAdvancedImplementation(Printer* printer,
-                                 const MethodDescriptor* method,
-                                 map< ::std::string, ::std::string> vars) {
+void PrintAdvancedImplementation(
+    Printer* printer, const MethodDescriptor* method,
+    map< ::std::string, ::std::string> vars) {
   printer->Print("{\n");
-  printer->Print(vars, "  return [self RPCToMethod:@\"$method_name$\"\n");
+  printer->Print(vars,
+                 "  return [self RPCToMethod:@\"$method_name$\"\n");
 
   printer->Print("            requestsWriter:");
   if (method->client_streaming()) {
@@ -205,7 +219,8 @@ void PrintAdvancedImplementation(Printer* printer,
     printer->Print("[GRXWriter writerWithValue:request]\n");
   }
 
-  printer->Print(vars, "             responseClass:[$response_class$ class]\n");
+  printer->Print(
+      vars, "             responseClass:[$response_class$ class]\n");
 
   printer->Print("        responsesWriteable:[GRXWriteable ");
   if (method->server_streaming()) {
@@ -217,22 +232,27 @@ void PrintAdvancedImplementation(Printer* printer,
   printer->Print("}\n");
 }
 
-void PrintV2Implementation(Printer* printer, const MethodDescriptor* method,
+void PrintV2Implementation(Printer* printer,
+                           const MethodDescriptor* method,
                            map< ::std::string, ::std::string> vars) {
   printer->Print(" {\n");
   if (method->client_streaming()) {
-    printer->Print(vars, "  return [self RPCToMethod:@\"$method_name$\"\n");
+    printer->Print(vars,
+                   "  return [self RPCToMethod:@\"$method_name$\"\n");
     printer->Print("           responseHandler:handler\n");
     printer->Print("               callOptions:callOptions\n");
     printer->Print(
-        vars, "             responseClass:[$response_class$ class]];\n}\n\n");
+        vars,
+        "             responseClass:[$response_class$ class]];\n}\n\n");
   } else {
-    printer->Print(vars, "  return [self RPCToMethod:@\"$method_name$\"\n");
+    printer->Print(vars,
+                   "  return [self RPCToMethod:@\"$method_name$\"\n");
     printer->Print("                   message:message\n");
     printer->Print("           responseHandler:handler\n");
     printer->Print("               callOptions:callOptions\n");
     printer->Print(
-        vars, "             responseClass:[$response_class$ class]];\n}\n\n");
+        vars,
+        "             responseClass:[$response_class$ class]];\n}\n\n");
   }
 }
 
@@ -283,20 +303,22 @@ void PrintMethodImplementations(Printer* printer,
 
   if (generator_params.no_v1_compatibility) return output;
 
-  // Scope the output stream so it closes and finalizes output to the string.
+  // Scope the output stream so it closes and finalizes output to the
+  // string.
   grpc::protobuf::io::StringOutputStream output_stream(&output);
   Printer printer(&output_stream, '$');
 
   map< ::std::string, ::std::string> vars = {
       {"service_class", ServiceClassName(service)}};
 
-  printer.Print(vars,
-                "/**\n"
-                " * The methods in this protocol belong to a set of old APIs "
-                "that have been deprecated. They do not\n"
-                " * recognize call options provided in the initializer. Using "
-                "the v2 protocol is recommended.\n"
-                " */\n");
+  printer.Print(
+      vars,
+      "/**\n"
+      " * The methods in this protocol belong to a set of old APIs "
+      "that have been deprecated. They do not\n"
+      " * recognize call options provided in the initializer. Using "
+      "the v2 protocol is recommended.\n"
+      " */\n");
   printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
   for (int i = 0; i < service->method_count(); i++) {
     PrintMethodDeclarations(&printer, service->method(i));
@@ -309,7 +331,8 @@ void PrintMethodImplementations(Printer* printer,
 ::std::string GetV2Protocol(const ServiceDescriptor* service) {
   ::std::string output;
 
-  // Scope the output stream so it closes and finalizes output to the string.
+  // Scope the output stream so it closes and finalizes output to the
+  // string.
   grpc::protobuf::io::StringOutputStream output_stream(&output);
   Printer printer(&output_stream, '$');
 
@@ -329,18 +352,20 @@ void PrintMethodImplementations(Printer* printer,
                            const Parameters& generator_params) {
   ::std::string output;
 
-  // Scope the output stream so it closes and finalizes output to the string.
+  // Scope the output stream so it closes and finalizes output to the
+  // string.
   grpc::protobuf::io::StringOutputStream output_stream(&output);
   Printer printer(&output_stream, '$');
 
   map< ::std::string, ::std::string> vars = {
       {"service_class", ServiceClassName(service)}};
 
-  printer.Print(vars,
-                "/**\n"
-                " * Basic service implementation, over gRPC, that only does\n"
-                " * marshalling and parsing.\n"
-                " */\n");
+  printer.Print(
+      vars,
+      "/**\n"
+      " * Basic service implementation, over gRPC, that only does\n"
+      " * marshalling and parsing.\n"
+      " */\n");
   printer.Print(vars,
                 "@interface $service_class$ :"
                 " GRPCProtoService<$service_class$2");
@@ -358,10 +383,12 @@ void PrintMethodImplementations(Printer* printer,
       "callOptions:(GRPCCallOptions *_Nullable)callOptions;\n");
   if (!generator_params.no_v1_compatibility) {
     printer.Print(
-        "// The following methods belong to a set of old APIs that have been "
+        "// The following methods belong to a set of old APIs that "
+        "have been "
         "deprecated.\n");
     printer.Print("- (instancetype)initWithHost:(NSString *)host;\n");
-    printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
+    printer.Print(
+        "+ (instancetype)serviceWithHost:(NSString *)host;\n");
   }
   printer.Print("@end\n");
 
@@ -372,7 +399,8 @@ void PrintMethodImplementations(Printer* printer,
                         const Parameters& generator_params) {
   ::std::string output;
   {
-    // Scope the output stream so it closes and finalizes output to the string.
+    // Scope the output stream so it closes and finalizes output to the
+    // string.
     grpc::protobuf::io::StringOutputStream output_stream(&output);
     Printer printer(&output_stream, '$');
 
@@ -381,26 +409,28 @@ void PrintMethodImplementations(Printer* printer,
         {"service_class", ServiceClassName(service)},
         {"package", service->file()->package()}};
 
-    printer.Print(vars,
-                  "@implementation $service_class$\n\n"
-                  "#pragma clang diagnostic push\n"
-                  "#pragma clang diagnostic ignored "
-                  "\"-Wobjc-designated-initializers\"\n\n"
-                  "// Designated initializer\n"
-                  "- (instancetype)initWithHost:(NSString *)host "
-                  "callOptions:(GRPCCallOptions *_Nullable)callOptions {\n"
-                  "  return [super initWithHost:host\n"
-                  "                 packageName:@\"$package$\"\n"
-                  "                 serviceName:@\"$service_name$\"\n"
-                  "                 callOptions:callOptions];\n"
-                  "}\n\n");
+    printer.Print(
+        vars,
+        "@implementation $service_class$\n\n"
+        "#pragma clang diagnostic push\n"
+        "#pragma clang diagnostic ignored "
+        "\"-Wobjc-designated-initializers\"\n\n"
+        "// Designated initializer\n"
+        "- (instancetype)initWithHost:(NSString *)host "
+        "callOptions:(GRPCCallOptions *_Nullable)callOptions {\n"
+        "  return [super initWithHost:host\n"
+        "                 packageName:@\"$package$\"\n"
+        "                 serviceName:@\"$service_name$\"\n"
+        "                 callOptions:callOptions];\n"
+        "}\n\n");
     if (!generator_params.no_v1_compatibility) {
-      printer.Print(vars,
-                    "- (instancetype)initWithHost:(NSString *)host {\n"
-                    "  return [super initWithHost:host\n"
-                    "                 packageName:@\"$package$\"\n"
-                    "                 serviceName:@\"$service_name$\"];\n"
-                    "}\n\n");
+      printer.Print(
+          vars,
+          "- (instancetype)initWithHost:(NSString *)host {\n"
+          "  return [super initWithHost:host\n"
+          "                 packageName:@\"$package$\"\n"
+          "                 serviceName:@\"$service_name$\"];\n"
+          "}\n\n");
     }
     printer.Print("#pragma clang diagnostic pop\n\n");
 
@@ -418,7 +448,8 @@ void PrintMethodImplementations(Printer* printer,
         "- (instancetype)initWithHost:(NSString *)host\n"
         "                 packageName:(NSString *)packageName\n"
         "                 serviceName:(NSString *)serviceName\n"
-        "                 callOptions:(GRPCCallOptions *)callOptions {\n"
+        "                 callOptions:(GRPCCallOptions *)callOptions "
+        "{\n"
         "  return [self initWithHost:host callOptions:callOptions];\n"
         "}\n\n");
 
@@ -432,7 +463,8 @@ void PrintMethodImplementations(Printer* printer,
     printer.Print(
         "+ (instancetype)serviceWithHost:(NSString *)host "
         "callOptions:(GRPCCallOptions *_Nullable)callOptions {\n"
-        "  return [[self alloc] initWithHost:host callOptions:callOptions];\n"
+        "  return [[self alloc] initWithHost:host "
+        "callOptions:callOptions];\n"
         "}\n\n");
 
     printer.Print("#pragma mark - Method Implementations\n\n");

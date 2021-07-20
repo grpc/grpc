@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,7 +28,8 @@ const uint8_t grpc_url_percent_encoding_unreserved_bytes[256 / 8] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0xfe, 0xff, 0xff,
     0x87, 0xfe, 0xff, 0xff, 0x47, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const uint8_t grpc_compatible_percent_encoding_unreserved_bytes[256 / 8] = {
+const uint8_t grpc_compatible_percent_encoding_unreserved_bytes[256 /
+                                                                8] = {
     0x00, 0x00, 0x00, 0x00, 0xdf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -126,7 +127,8 @@ bool grpc_strict_percent_decode_slice(const grpc_slice& slice_in,
   return true;
 }
 
-grpc_slice grpc_permissive_percent_decode_slice(const grpc_slice& slice_in) {
+grpc_slice grpc_permissive_percent_decode_slice(
+    const grpc_slice& slice_in) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice_in);
   const uint8_t* in_end = GRPC_SLICE_END_PTR(slice_in);
   size_t out_length = 0;

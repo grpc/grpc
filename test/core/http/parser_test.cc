@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -67,7 +67,8 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
 
   if (expect_body != nullptr) {
     GPR_ASSERT(strlen(expect_body) == request.body_length);
-    GPR_ASSERT(0 == memcmp(expect_body, request.body, request.body_length));
+    GPR_ASSERT(0 ==
+               memcmp(expect_body, request.body, request.body_length));
   } else {
     GPR_ASSERT(request.body_length == 0);
   }
@@ -122,7 +123,8 @@ static void test_succeeds(grpc_slice_split_mode split_mode,
   GPR_ASSERT(expect_status == response.status);
   if (expect_body != nullptr) {
     GPR_ASSERT(strlen(expect_body) == response.body_length);
-    GPR_ASSERT(0 == memcmp(expect_body, response.body, response.body_length));
+    GPR_ASSERT(
+        0 == memcmp(expect_body, response.body, response.body_length));
   } else {
     GPR_ASSERT(response.body_length == 0);
   }
@@ -217,8 +219,8 @@ static void test_request_fails(grpc_slice_split_mode split_mode,
 
 int main(int argc, char** argv) {
   size_t i;
-  const grpc_slice_split_mode split_modes[] = {GRPC_SLICE_SPLIT_IDENTITY,
-                                               GRPC_SLICE_SPLIT_ONE_BYTE};
+  const grpc_slice_split_mode split_modes[] = {
+      GRPC_SLICE_SPLIT_IDENTITY, GRPC_SLICE_SPLIT_ONE_BYTE};
 
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -269,8 +271,8 @@ int main(int argc, char** argv) {
                           "xyz: abc\r\n"
                           "\r\n"
                           "xyz",
-                          "GET", GRPC_HTTP_HTTP10, "/", "xyz", "xyz", "abc",
-                          NULL);
+                          "GET", GRPC_HTTP_HTTP10, "/", "xyz", "xyz",
+                          "abc", NULL);
     test_request_succeeds(split_modes[i],
                           "GET / HTTP/1.0\n"
                           "\n"
@@ -295,8 +297,8 @@ int main(int argc, char** argv) {
     test_request_fails(split_modes[i], "GET / HTTP/1.2\r\n");
     test_request_fails(split_modes[i], "GET / HTTP/1.0\n");
 
-    char* tmp1 =
-        static_cast<char*>(gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH));
+    char* tmp1 = static_cast<char*>(
+        gpr_malloc(2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH));
     memset(tmp1, 'a', 2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1);
     tmp1[2 * GRPC_HTTP_PARSER_MAX_HEADER_LENGTH - 1] = 0;
     std::string tmp2 =

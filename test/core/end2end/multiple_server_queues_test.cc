@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -58,9 +58,12 @@ int main(int argc, char** argv) {
   grpc_completion_queue_shutdown(cq2);
   grpc_completion_queue_shutdown(cq3);
 
-  grpc_completion_queue_next(cq1, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  grpc_completion_queue_next(cq2, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-  grpc_completion_queue_next(cq3, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_completion_queue_next(cq1, gpr_inf_future(GPR_CLOCK_REALTIME),
+                             nullptr);
+  grpc_completion_queue_next(cq2, gpr_inf_future(GPR_CLOCK_REALTIME),
+                             nullptr);
+  grpc_completion_queue_next(cq3, gpr_inf_future(GPR_CLOCK_REALTIME),
+                             nullptr);
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq1);

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -64,10 +64,11 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error;
   CFErrorRef stream_error;
-  CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
+  CFStreamHandle* handle =
+      static_cast<CFStreamHandle*>(client_callback_info);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream ReadCallback (%p, %p, %lu, %p)", handle,
-            stream, type, client_callback_info);
+    gpr_log(GPR_DEBUG, "CFStream ReadCallback (%p, %p, %lu, %p)",
+            handle, stream, type, client_callback_info);
   }
   switch (type) {
     case kCFStreamEventOpenCompleted:
@@ -99,10 +100,11 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error;
   CFErrorRef stream_error;
-  CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
+  CFStreamHandle* handle =
+      static_cast<CFStreamHandle*>(clientCallBackInfo);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)", handle,
-            stream, type, clientCallBackInfo);
+    gpr_log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)",
+            handle, stream, type, clientCallBackInfo);
   }
   switch (type) {
     case kCFStreamEventOpenCompleted:
@@ -134,10 +136,11 @@ CFStreamHandle::CFStreamHandle(CFReadStreamRef read_stream,
   open_event_.InitEvent();
   read_event_.InitEvent();
   write_event_.InitEvent();
-  dispatch_queue_ = dispatch_queue_create(nullptr, DISPATCH_QUEUE_SERIAL);
+  dispatch_queue_ =
+      dispatch_queue_create(nullptr, DISPATCH_QUEUE_SERIAL);
   CFStreamClientContext ctx = {0, static_cast<void*>(this),
-                               CFStreamHandle::Retain, CFStreamHandle::Release,
-                               nil};
+                               CFStreamHandle::Retain,
+                               CFStreamHandle::Release, nil};
   CFReadStreamSetClient(
       read_stream,
       kCFStreamEventOpenCompleted | kCFStreamEventHasBytesAvailable |
@@ -178,22 +181,24 @@ void CFStreamHandle::Shutdown(grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
+void CFStreamHandle::Ref(const char* file, int line,
+                         const char* reason) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "CFStream Handle ref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
-            reason, val, val + 1);
+            "CFStream Handle ref %p : %s %" PRIdPTR " -> %" PRIdPTR,
+            this, reason, val, val + 1);
   }
   gpr_ref(&refcount_);
 }
 
-void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
+void CFStreamHandle::Unref(const char* file, int line,
+                           const char* reason) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
     gpr_log(GPR_DEBUG,
-            "CFStream Handle unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
-            reason, val, val - 1);
+            "CFStream Handle unref %p : %s %" PRIdPTR " -> %" PRIdPTR,
+            this, reason, val, val - 1);
   }
   if (gpr_unref(&refcount_)) {
     delete this;

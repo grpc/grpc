@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,14 +29,15 @@
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/gprpp/time_util.h"
 
-// The core library is not accessible in C++ codegen headers, and vice versa.
-// Thus, we need to have duplicate headers with similar functionality.
-// Make sure any change to this file is also reflected in
+// The core library is not accessible in C++ codegen headers, and vice
+// versa. Thus, we need to have duplicate headers with similar
+// functionality. Make sure any change to this file is also reflected in
 // include/grpcpp/impl/codegen/sync.h.
 //
-// Whenever possible, prefer using this file over <grpcpp/impl/codegen/sync.h>
-// since this file doesn't rely on g_core_codegen_interface and hence does not
-// pay the costs of virtual function calls.
+// Whenever possible, prefer using this file over
+// <grpcpp/impl/codegen/sync.h> since this file doesn't rely on
+// g_core_codegen_interface and hence does not pay the costs of virtual
+// function calls.
 
 namespace grpc_core {
 
@@ -47,8 +48,8 @@ using MutexLock = absl::MutexLock;
 using ReleasableMutexLock = absl::ReleasableMutexLock;
 using CondVar = absl::CondVar;
 
-// Returns the underlying gpr_mu from Mutex. This should be used only when
-// it has to like passing the C++ mutex to C-core API.
+// Returns the underlying gpr_mu from Mutex. This should be used only
+// when it has to like passing the C++ mutex to C-core API.
 // TODO(veblush): Remove this after C-core no longer uses gpr_mu.
 inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) {
   return reinterpret_cast<gpr_mu*>(mutex);
@@ -77,14 +78,15 @@ class ABSL_LOCKABLE Mutex {
   friend gpr_mu* GetUnderlyingGprMu(Mutex* mutex);
 };
 
-// Returns the underlying gpr_mu from Mutex. This should be used only when
-// it has to like passing the C++ mutex to C-core API.
+// Returns the underlying gpr_mu from Mutex. This should be used only
+// when it has to like passing the C++ mutex to C-core API.
 // TODO(veblush): Remove this after C-core no longer uses gpr_mu.
 inline gpr_mu* GetUnderlyingGprMu(Mutex* mutex) { return &mutex->mu_; }
 
 class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
+  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+      : mu_(mu) {
     mu_->Lock();
   }
   ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
@@ -98,7 +100,8 @@ class ABSL_SCOPED_LOCKABLE MutexLock {
 
 class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
  public:
-  explicit ReleasableMutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+  explicit ReleasableMutexLock(Mutex* mu)
+      ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
       : mu_(mu) {
     mu_->Lock();
   }
@@ -164,8 +167,8 @@ static bool WaitUntilWithTimeout(CondVar* cv, Mutex* mu, Predicate pred,
 
 // Returns true iff we timed-out
 template <typename Predicate>
-static bool WaitUntilWithDeadline(CondVar* cv, Mutex* mu, Predicate pred,
-                                  absl::Time deadline) {
+static bool WaitUntilWithDeadline(CondVar* cv, Mutex* mu,
+                                  Predicate pred, absl::Time deadline) {
   while (!pred()) {
     if (cv->WaitWithDeadline(mu, deadline)) return true;
   }
@@ -197,8 +200,8 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
     if (!released_) mu_->Unlock();
   }
 
-  LockableAndReleasableMutexLock(const LockableAndReleasableMutexLock&) =
-      delete;
+  LockableAndReleasableMutexLock(
+      const LockableAndReleasableMutexLock&) = delete;
   LockableAndReleasableMutexLock& operator=(
       const LockableAndReleasableMutexLock&) = delete;
 

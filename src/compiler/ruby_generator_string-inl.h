@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,8 +31,8 @@ using std::transform;
 namespace grpc_ruby_generator {
 
 // Split splits a string using char into elems.
-inline std::vector<std::string>& Split(const std::string& s, char delim,
-                                       std::vector<std::string>* elems) {
+inline std::vector<std::string>& Split(
+    const std::string& s, char delim, std::vector<std::string>* elems) {
   std::stringstream ss(s);
   std::string item;
   while (getline(ss, item, delim)) {
@@ -42,7 +42,8 @@ inline std::vector<std::string>& Split(const std::string& s, char delim,
 }
 
 // Split splits a string using char, returning the result in a vector.
-inline std::vector<std::string> Split(const std::string& s, char delim) {
+inline std::vector<std::string> Split(const std::string& s,
+                                      char delim) {
   std::vector<std::string> elems;
   Split(s, delim, &elems);
   return elems;
@@ -100,8 +101,10 @@ inline std::string Modularize(std::string s) {
   return new_string;
 }
 
-// RubyPackage gets the ruby package in either proto or ruby_package format
-inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
+// RubyPackage gets the ruby package in either proto or ruby_package
+// format
+inline std::string RubyPackage(
+    const grpc::protobuf::FileDescriptor* file) {
   std::string package_name = file->package();
   if (file->options().has_ruby_package()) {
     package_name = file->options().ruby_package();
@@ -116,12 +119,14 @@ inline std::string RubyPackage(const grpc::protobuf::FileDescriptor* file) {
 }
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
-inline std::string RubyTypeOf(const grpc::protobuf::Descriptor* descriptor) {
+inline std::string RubyTypeOf(
+    const grpc::protobuf::Descriptor* descriptor) {
   std::string proto_type = descriptor->full_name();
   if (descriptor->file()->options().has_ruby_package()) {
     // remove the leading package if present
     ReplacePrefix(&proto_type, descriptor->file()->package(), "");
-    ReplacePrefix(&proto_type, ".", "");  // remove the leading . (no package)
+    ReplacePrefix(&proto_type, ".",
+                  "");  // remove the leading . (no package)
     proto_type = RubyPackage(descriptor->file()) + "." + proto_type;
   }
   std::string res("." + proto_type);

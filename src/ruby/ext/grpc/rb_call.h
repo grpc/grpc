@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,13 +42,14 @@ VALUE grpc_rb_md_ary_to_h(grpc_metadata_array* md_ary);
 /* grpc_rb_md_ary_convert converts a ruby metadata hash into
    a grpc_metadata_array.
 */
-void grpc_rb_md_ary_convert(VALUE md_ary_hash, grpc_metadata_array* md_ary);
+void grpc_rb_md_ary_convert(VALUE md_ary_hash,
+                            grpc_metadata_array* md_ary);
 
 void grpc_rb_metadata_array_destroy_including_entries(
     grpc_metadata_array* md_ary);
 
-/* grpc_rb_eCallError is the ruby class of the exception thrown during call
-   operations. */
+/* grpc_rb_eCallError is the ruby class of the exception thrown during
+   call operations. */
 extern VALUE grpc_rb_eCallError;
 
 /* Initializes the Call class. */

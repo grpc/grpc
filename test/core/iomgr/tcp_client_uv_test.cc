@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,22 +43,24 @@ static int g_connections_complete = 0;
 static grpc_endpoint* g_connecting = NULL;
 
 static grpc_millis test_deadline(void) {
-  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+  return grpc_timespec_to_millis_round_up(
+      grpc_timeout_seconds_to_deadline(10));
 }
 
 static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, NULL)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(g_pollset, NULL)));
   gpr_mu_unlock(g_mu);
 }
 
 static void must_succeed(void* arg, grpc_error_handle error) {
   GPR_ASSERT(g_connecting != NULL);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                           "must_succeed called"));
+  grpc_endpoint_shutdown(
+      g_connecting,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
   g_connecting = NULL;
   finish_connection();
@@ -84,7 +86,8 @@ static void connection_cb(uv_stream_t* server, int status) {
 void test_succeeds(void) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
-  uv_tcp_t* svr_handle = static_cast<uv_tcp_t*>(gpr_malloc(sizeof(uv_tcp_t)));
+  uv_tcp_t* svr_handle =
+      static_cast<uv_tcp_t*>(gpr_malloc(sizeof(uv_tcp_t)));
   int connections_complete_before;
   grpc_closure done;
   grpc_core::ExecCtx exec_ctx;
@@ -98,7 +101,8 @@ void test_succeeds(void) {
   /* create a phony server */
   GPR_ASSERT(0 == uv_tcp_init(uv_default_loop(), svr_handle));
   GPR_ASSERT(0 == uv_tcp_bind(svr_handle, (struct sockaddr*)addr, 0));
-  GPR_ASSERT(0 == uv_listen((uv_stream_t*)svr_handle, 1, connection_cb));
+  GPR_ASSERT(0 ==
+             uv_listen((uv_stream_t*)svr_handle, 1, connection_cb));
 
   gpr_mu_lock(g_mu);
   connections_complete_before = g_connections_complete;
@@ -107,9 +111,10 @@ void test_succeeds(void) {
   /* connect to it */
   GPR_ASSERT(uv_tcp_getsockname(svr_handle, (struct sockaddr*)addr,
                                 (int*)&resolved_addr.len) == 0);
-  GRPC_CLOSURE_INIT(&done, must_succeed, NULL, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, NULL, NULL, &resolved_addr,
-                          GRPC_MILLIS_INF_FUTURE);
+  GRPC_CLOSURE_INIT(&done, must_succeed, NULL,
+                    grpc_schedule_on_exec_ctx);
+  grpc_tcp_client_connect(&done, &g_connecting, NULL, NULL,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 
@@ -125,7 +130,8 @@ void test_succeeds(void) {
     gpr_mu_lock(g_mu);
   }
 
-  // This will get cleaned up when the pollset runs again or gets shutdown
+  // This will get cleaned up when the pollset runs again or gets
+  // shutdown
   uv_close((uv_handle_t*)svr_handle, close_cb);
 
   gpr_mu_unlock(g_mu);
@@ -151,8 +157,8 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, NULL, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, NULL, NULL, &resolved_addr,
-                          GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, NULL, NULL,
+                          &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
   gpr_mu_lock(g_mu);
 
@@ -192,7 +198,8 @@ int main(int argc, char** argv) {
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
-    g_pollset = static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));
+    g_pollset =
+        static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
 
     test_succeeds();

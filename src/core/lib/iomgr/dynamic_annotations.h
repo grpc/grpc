@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,8 +39,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void AnnotateHappensBefore(const char* file, int line, const volatile void* cv);
-void AnnotateHappensAfter(const char* file, int line, const volatile void* cv);
+void AnnotateHappensBefore(const char* file, int line,
+                           const volatile void* cv);
+void AnnotateHappensAfter(const char* file, int line,
+                          const volatile void* cv);
 void AnnotateRWLockCreate(const char* file, int line,
                           const volatile void* lock);
 void AnnotateRWLockDestroy(const char* file, int line,

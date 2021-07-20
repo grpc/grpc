@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -36,27 +36,31 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_fault_injection_filter_trace(false, "fault_injection_filter");
+TraceFlag grpc_fault_injection_filter_trace(false,
+                                            "fault_injection_filter");
 
 namespace {
 
 Atomic<uint32_t> g_active_faults{0};
-static_assert(
-    std::is_trivially_destructible<Atomic<uint32_t>>::value,
-    "the active fault counter needs to have a trivially destructible type");
+static_assert(std::is_trivially_destructible<Atomic<uint32_t>>::value,
+              "the active fault counter needs to have a trivially "
+              "destructible type");
 
 inline int GetLinkedMetadatumValueInt(grpc_linked_mdelem* md) {
   int res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)),
+                       &res)) {
     return res;
   } else {
     return -1;
   }
 }
 
-inline uint32_t GetLinkedMetadatumValueUnsignedInt(grpc_linked_mdelem* md) {
+inline uint32_t GetLinkedMetadatumValueUnsignedInt(
+    grpc_linked_mdelem* md) {
   uint32_t res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)),
+                       &res)) {
     return res;
   } else {
     return -1;
@@ -65,7 +69,8 @@ inline uint32_t GetLinkedMetadatumValueUnsignedInt(grpc_linked_mdelem* md) {
 
 inline int64_t GetLinkedMetadatumValueInt64(grpc_linked_mdelem* md) {
   int64_t res;
-  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)),
+                       &res)) {
     return res;
   } else {
     return -1;
@@ -90,7 +95,8 @@ class ChannelData {
   int index() const { return index_; }
 
  private:
-  ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
+  ChannelData(grpc_channel_element* elem,
+              grpc_channel_element_args* args);
   ~ChannelData() = default;
 
   // The relative index of instances of the same filter.
@@ -115,20 +121,20 @@ class CallData {
   CallData(grpc_call_element* elem, const grpc_call_element_args* args);
   ~CallData();
 
-  void DecideWhetherToInjectFaults(grpc_metadata_batch* initial_metadata);
+  void DecideWhetherToInjectFaults(
+      grpc_metadata_batch* initial_metadata);
 
   // Checks if current active faults exceed the allowed max faults.
   bool HaveActiveFaultsQuota(bool increment);
 
-  // Returns true if this RPC needs to be delayed. If so, this call will be
-  // counted as an active fault.
+  // Returns true if this RPC needs to be delayed. If so, this call will
+  // be counted as an active fault.
   bool MaybeDelay();
 
-  // Returns the aborted RPC status if this RPC needs to be aborted. If so,
-  // this call will be counted as an active fault. Otherwise, it returns
-  // GRPC_ERROR_NONE.
-  // If this call is already been delay injected, skip the active faults
-  // quota check.
+  // Returns the aborted RPC status if this RPC needs to be aborted. If
+  // so, this call will be counted as an active fault. Otherwise, it
+  // returns GRPC_ERROR_NONE. If this call is already been delay
+  // injected, skip the active faults quota check.
   grpc_error_handle MaybeAbort();
 
   // Delays the stream operations batch.
@@ -143,28 +149,36 @@ class CallData {
     g_active_faults.FetchSub(1, MemoryOrder::RELAXED);
   }
 
-  // This is a callback that will be invoked after the delay timer is up.
+  // This is a callback that will be invoked after the delay timer is
+  // up.
   static void ResumeBatch(void* arg, grpc_error_handle error);
 
-  // This is a callback invoked upon completion of recv_trailing_metadata.
-  // Injects the abort_error_ to the recv_trailing_metadata batch if needed.
-  static void HijackedRecvTrailingMetadataReady(void* arg, grpc_error_handle);
+  // This is a callback invoked upon completion of
+  // recv_trailing_metadata. Injects the abort_error_ to the
+  // recv_trailing_metadata batch if needed.
+  static void HijackedRecvTrailingMetadataReady(void* arg,
+                                                grpc_error_handle);
 
-  // Used to track the policy structs that needs to be destroyed in dtor.
+  // Used to track the policy structs that needs to be destroyed in
+  // dtor.
   bool fi_policy_owned_ = false;
-  const FaultInjectionMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
+  const FaultInjectionMethodParsedConfig::FaultInjectionPolicy*
+      fi_policy_;
   grpc_call_stack* owning_call_;
   Arena* arena_;
   CallCombiner* call_combiner_;
 
-  // Indicates whether we are doing a delay and/or an abort for this call.
+  // Indicates whether we are doing a delay and/or an abort for this
+  // call.
   bool delay_request_ = false;
   bool abort_request_ = false;
 
   // Delay states
   grpc_timer delay_timer_ ABSL_GUARDED_BY(delay_mu_);
-  ResumeBatchCanceller* resume_batch_canceller_ ABSL_GUARDED_BY(delay_mu_);
-  grpc_transport_stream_op_batch* delayed_batch_ ABSL_GUARDED_BY(delay_mu_);
+  ResumeBatchCanceller* resume_batch_canceller_
+      ABSL_GUARDED_BY(delay_mu_);
+  grpc_transport_stream_op_batch* delayed_batch_
+      ABSL_GUARDED_BY(delay_mu_);
   // Abort states
   grpc_error_handle abort_error_ = GRPC_ERROR_NONE;
   grpc_closure recv_trailing_metadata_ready_;
@@ -189,8 +203,8 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
 
 ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args)
-    : index_(grpc_channel_stack_filter_instance_number(args->channel_stack,
-                                                       elem)) {}
+    : index_(grpc_channel_stack_filter_instance_number(
+          args->channel_stack, elem)) {}
 
 // CallData::ResumeBatchCanceller
 
@@ -199,7 +213,8 @@ class CallData::ResumeBatchCanceller {
   explicit ResumeBatchCanceller(grpc_call_element* elem) : elem_(elem) {
     auto* calld = static_cast<CallData*>(elem->call_data);
     GRPC_CALL_STACK_REF(calld->owning_call_, "ResumeBatchCanceller");
-    GRPC_CLOSURE_INIT(&closure_, &Cancel, this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&closure_, &Cancel, this,
+                      grpc_schedule_on_exec_ctx);
     calld->call_combiner_->SetNotifyOnCancel(&closure_);
   }
 
@@ -214,10 +229,11 @@ class CallData::ResumeBatchCanceller {
         gpr_log(GPR_INFO,
                 "chand=%p calld=%p: cancelling schdueled pick: "
                 "error=%s self=%p calld->resume_batch_canceller_=%p",
-                chand, calld, grpc_error_std_string(error).c_str(), self,
-                calld->resume_batch_canceller_);
+                chand, calld, grpc_error_std_string(error).c_str(),
+                self, calld->resume_batch_canceller_);
       }
-      if (error != GRPC_ERROR_NONE && calld->resume_batch_canceller_ == self) {
+      if (error != GRPC_ERROR_NONE &&
+          calld->resume_batch_canceller_ == self) {
         // Cancel the delayed pick.
         calld->CancelDelayTimer();
         calld->FaultInjectionFinished();
@@ -257,19 +273,21 @@ void CallData::Destroy(grpc_call_element* elem,
 void CallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   auto* calld = static_cast<CallData*>(elem->call_data);
-  // There should only be one send_initial_metdata op, and fault injection also
-  // only need to be enforced once.
+  // There should only be one send_initial_metdata op, and fault
+  // injection also only need to be enforced once.
   if (batch->send_initial_metadata) {
     calld->DecideWhetherToInjectFaults(
         batch->payload->send_initial_metadata.send_initial_metadata);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
       gpr_log(GPR_INFO,
-              "chand=%p calld=%p: Fault injection triggered delay=%d abort=%d",
+              "chand=%p calld=%p: Fault injection triggered delay=%d "
+              "abort=%d",
               elem->channel_data, calld, calld->delay_request_,
               calld->abort_request_);
     }
     if (calld->MaybeDelay()) {
-      // Delay the batch, and pass down the batch in the scheduled closure.
+      // Delay the batch, and pass down the batch in the scheduled
+      // closure.
       calld->DelayBatch(elem, batch);
       return;
     }
@@ -277,24 +295,29 @@ void CallData::StartTransportStreamOpBatch(
     if (abort_error != GRPC_ERROR_NONE) {
       calld->abort_error_ = abort_error;
       grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(calld->abort_error_), calld->call_combiner_);
+          batch, GRPC_ERROR_REF(calld->abort_error_),
+          calld->call_combiner_);
       return;
     }
   } else {
     if (batch->recv_trailing_metadata) {
-      // Intercept recv_trailing_metadata callback so that we can inject the
-      // failure when aborting streaming calls, because their
+      // Intercept recv_trailing_metadata callback so that we can inject
+      // the failure when aborting streaming calls, because their
       // recv_trailing_metatdata op may not be on the same batch as the
       // send_initial_metadata op.
       calld->original_recv_trailing_metadata_ready_ =
-          batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+          batch->payload->recv_trailing_metadata
+              .recv_trailing_metadata_ready;
+      batch->payload->recv_trailing_metadata
+          .recv_trailing_metadata_ready =
           &calld->recv_trailing_metadata_ready_;
     }
     if (calld->abort_error_ != GRPC_ERROR_NONE) {
-      // If we already decided to abort, then immediately fail this batch.
+      // If we already decided to abort, then immediately fail this
+      // batch.
       grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(calld->abort_error_), calld->call_combiner_);
+          batch, GRPC_ERROR_REF(calld->abort_error_),
+          calld->call_combiner_);
       return;
     }
   }
@@ -302,13 +325,14 @@ void CallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, batch);
 }
 
-CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
+CallData::CallData(grpc_call_element* elem,
+                   const grpc_call_element_args* args)
     : owning_call_(args->call_stack),
       arena_(args->arena),
       call_combiner_(args->call_combiner) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
-  // Fetch the fault injection policy from the service config, based on the
-  // relative index for which policy should this CallData use.
+  // Fetch the fault injection policy from the service config, based on
+  // the relative index for which policy should this CallData use.
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   auto* method_params = static_cast<FaultInjectionMethodParsedConfig*>(
@@ -331,8 +355,8 @@ CallData::~CallData() {
 
 void CallData::DecideWhetherToInjectFaults(
     grpc_metadata_batch* initial_metadata) {
-  FaultInjectionMethodParsedConfig::FaultInjectionPolicy* copied_policy =
-      nullptr;
+  FaultInjectionMethodParsedConfig::FaultInjectionPolicy*
+      copied_policy = nullptr;
   // Update the policy with values in initial metadata.
   if (!fi_policy_->abort_code_header.empty() ||
       !fi_policy_->abort_percentage_header.empty() ||
@@ -341,13 +365,13 @@ void CallData::DecideWhetherToInjectFaults(
     // Defer the actual copy until the first matched header.
     auto maybe_copy_policy_func = [this, &copied_policy]() {
       if (copied_policy == nullptr) {
-        copied_policy =
-            arena_->New<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>(
-                *fi_policy_);
+        copied_policy = arena_->New<
+            FaultInjectionMethodParsedConfig::FaultInjectionPolicy>(
+            *fi_policy_);
       }
     };
-    for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
-         md = md->next) {
+    for (grpc_linked_mdelem* md = initial_metadata->list.head;
+         md != nullptr; md = md->next) {
       absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md->md));
       // Only perform string comparison if:
       //   1. Needs to check this header;
@@ -385,14 +409,17 @@ void CallData::DecideWhetherToInjectFaults(
     if (copied_policy != nullptr) fi_policy_ = copied_policy;
   }
   // Roll the dice
-  delay_request_ = fi_policy_->delay != 0 &&
-                   UnderFraction(fi_policy_->delay_percentage_numerator,
-                                 fi_policy_->delay_percentage_denominator);
-  abort_request_ = fi_policy_->abort_code != GRPC_STATUS_OK &&
-                   UnderFraction(fi_policy_->abort_percentage_numerator,
-                                 fi_policy_->abort_percentage_denominator);
+  delay_request_ =
+      fi_policy_->delay != 0 &&
+      UnderFraction(fi_policy_->delay_percentage_numerator,
+                    fi_policy_->delay_percentage_denominator);
+  abort_request_ =
+      fi_policy_->abort_code != GRPC_STATUS_OK &&
+      UnderFraction(fi_policy_->abort_percentage_numerator,
+                    fi_policy_->abort_percentage_denominator);
   if (!delay_request_ && !abort_request_) {
-    if (copied_policy != nullptr) copied_policy->~FaultInjectionPolicy();
+    if (copied_policy != nullptr)
+      copied_policy->~FaultInjectionPolicy();
     // No fault injection for this call
   } else {
     fi_policy_owned_ = copied_policy != nullptr;
@@ -400,7 +427,8 @@ void CallData::DecideWhetherToInjectFaults(
 }
 
 bool CallData::HaveActiveFaultsQuota(bool increment) {
-  if (g_active_faults.Load(MemoryOrder::ACQUIRE) >= fi_policy_->max_faults) {
+  if (g_active_faults.Load(MemoryOrder::ACQUIRE) >=
+      fi_policy_->max_faults) {
     return false;
   }
   if (increment) g_active_faults.FetchAdd(1, MemoryOrder::RELAXED);
@@ -415,10 +443,12 @@ bool CallData::MaybeDelay() {
 }
 
 grpc_error_handle CallData::MaybeAbort() {
-  if (abort_request_ && (delay_request_ || HaveActiveFaultsQuota(false))) {
-    return grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(fi_policy_->abort_message.c_str()),
-        GRPC_ERROR_INT_GRPC_STATUS, fi_policy_->abort_code);
+  if (abort_request_ &&
+      (delay_request_ || HaveActiveFaultsQuota(false))) {
+    return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                                  fi_policy_->abort_message.c_str()),
+                              GRPC_ERROR_INT_GRPC_STATUS,
+                              fi_policy_->abort_code);
   }
   return GRPC_ERROR_NONE;
 }
@@ -431,7 +461,8 @@ void CallData::DelayBatch(grpc_call_element* elem,
   grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);
+  grpc_timer_init(&delay_timer_, resume_time,
+                  &batch->handler_private.closure);
 }
 
 void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
@@ -444,7 +475,8 @@ void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: Resuming delayed stream op batch %p",
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p: Resuming delayed stream op batch %p",
             elem->channel_data, calld, calld->delayed_batch_);
   }
   // Lame the canceller
@@ -462,8 +494,8 @@ void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
   grpc_call_next_op(elem, calld->delayed_batch_);
 }
 
-void CallData::HijackedRecvTrailingMetadataReady(void* arg,
-                                                 grpc_error_handle error) {
+void CallData::HijackedRecvTrailingMetadataReady(
+    void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<CallData*>(elem->call_data);
   if (calld->abort_error_ != GRPC_ERROR_NONE) {
@@ -472,8 +504,8 @@ void CallData::HijackedRecvTrailingMetadataReady(void* arg,
   } else {
     error = GRPC_ERROR_REF(error);
   }
-  Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
-               error);
+  Closure::Run(DEBUG_LOCATION,
+               calld->original_recv_trailing_metadata_ready_, error);
 }
 
 }  // namespace

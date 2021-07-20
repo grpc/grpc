@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,7 +52,8 @@ class Reporter {
   /** Reports QPS per core as (YYY/server core). */
   virtual void ReportQPSPerCore(const ScenarioResult& result) = 0;
 
-  /** Reports latencies for the 50, 90, 95, 99 and 99.9 percentiles, in ms. */
+  /** Reports latencies for the 50, 90, 95, 99 and 99.9 percentiles, in
+   * ms. */
   virtual void ReportLatency(const ScenarioResult& result) = 0;
 
   /** Reports system and user time for client and server systems. */
@@ -129,8 +130,10 @@ class JsonReporter : public Reporter {
 
 class RpcReporter : public Reporter {
  public:
-  RpcReporter(const string& name, const std::shared_ptr<grpc::Channel>& channel)
-      : Reporter(name), stub_(ReportQpsScenarioService::NewStub(channel)) {}
+  RpcReporter(const string& name,
+              const std::shared_ptr<grpc::Channel>& channel)
+      : Reporter(name),
+        stub_(ReportQpsScenarioService::NewStub(channel)) {}
 
  private:
   void ReportQPS(const ScenarioResult& result) override;

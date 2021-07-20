@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -103,7 +103,8 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
         ClientContext::FromServerContext(*server_context);
 
     // always use the first proxy for streaming
-    auto stream_to_backend = stubs_[0]->BidiStream(client_context.get());
+    auto stream_to_backend =
+        stubs_[0]->BidiStream(client_context.get());
     while (stream_from_client->Read(&request)) {
       stream_to_backend->Write(request);
       stream_to_backend->Read(&response);
@@ -115,7 +116,8 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
   }
 
  private:
-  std::vector<std::unique_ptr<::grpc::testing::EchoTestService::Stub>> stubs_;
+  std::vector<std::unique_ptr<::grpc::testing::EchoTestService::Stub>>
+      stubs_;
 };
 
 enum class CredentialsType {
@@ -125,24 +127,25 @@ enum class CredentialsType {
 };
 
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
-constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerCertPath[] =
+    "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 
 std::string ReadFile(const char* file_path) {
   grpc_slice slice;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
+                               grpc_load_file(file_path, 0, &slice)));
   std::string file_contents(grpc_core::StringViewFromSlice(slice));
   grpc_slice_unref(slice);
   return file_contents;
 }
 
-grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
-                                                  const char* cert_path) {
-  return grpc_core::PemKeyCertPairList{
-      grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
+grpc_core::PemKeyCertPairList ReadTlsIdentityPair(
+    const char* key_path, const char* cert_path) {
+  return grpc_core::PemKeyCertPairList{grpc_core::PemKeyCertPair(
+      ReadFile(key_path), ReadFile(cert_path))};
 }
 
 std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
@@ -151,11 +154,13 @@ std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
     return InsecureChannelCredentials();
   }
   args->SetSslTargetNameOverride("foo.test.google.fr");
-  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-      {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
+  std::vector<experimental::IdentityKeyCertPair>
+      identity_key_cert_pairs = {
+          {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+      std::make_shared<
+          grpc::experimental::StaticDataCertificateProvider>(
           ReadFile(kCaCertPath), identity_key_cert_pairs));
   if (type == CredentialsType::kMtls) {
     options.watch_identity_key_cert_pairs();
@@ -169,24 +174,29 @@ std::shared_ptr<grpc::ServerCredentials> GetServerCredentials(
   if (type == CredentialsType::kInsecure) {
     return InsecureServerCredentials();
   }
-  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-      {ReadFile(kServerKeyPath), ReadFile(kServerCertPath)}};
-  auto certificate_provider =
-      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath), identity_key_cert_pairs);
-  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  std::vector<experimental::IdentityKeyCertPair>
+      identity_key_cert_pairs = {
+          {ReadFile(kServerKeyPath), ReadFile(kServerCertPath)}};
+  auto certificate_provider = std::make_shared<
+      grpc::experimental::StaticDataCertificateProvider>(
+      ReadFile(kCaCertPath), identity_key_cert_pairs);
+  grpc::experimental::TlsServerCredentialsOptions options(
+      certificate_provider);
   options.watch_root_certs();
   options.watch_identity_key_cert_pairs();
-  options.set_cert_request_type(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
   return grpc::experimental::TlsServerCredentials(options);
 }
 
 std::string RemoveWhitespaces(std::string input) {
-  input.erase(remove_if(input.begin(), input.end(), isspace), input.end());
+  input.erase(remove_if(input.begin(), input.end(), isspace),
+              input.end());
   return input;
 }
 
-class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
+class ChannelzServerTest
+    : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChannelzServerTest() {}
   static void SetUpTestCase() {
@@ -202,7 +212,8 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     // We set up a proxy server with channelz enabled.
     proxy_port_ = grpc_pick_unused_port_or_die();
     ServerBuilder proxy_builder;
-    std::string proxy_server_address = "localhost:" + to_string(proxy_port_);
+    std::string proxy_server_address =
+        "localhost:" + to_string(proxy_port_);
     proxy_builder.AddListeningPort(proxy_server_address,
                                    GetServerCredentials(GetParam()));
     // forces channelz and channel tracing to be enabled.
@@ -222,22 +233,25 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       ServerBuilder backend_builder;
       std::string backend_server_address =
           "localhost:" + to_string(backends_[i].port);
-      backend_builder.AddListeningPort(backend_server_address,
-                                       GetServerCredentials(GetParam()));
+      backend_builder.AddListeningPort(
+          backend_server_address, GetServerCredentials(GetParam()));
       backends_[i].service = absl::make_unique<TestServiceImpl>();
       // ensure that the backend itself has channelz disabled.
       backend_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 0);
       backend_builder.RegisterService(backends_[i].service.get());
       backends_[i].server = backend_builder.BuildAndStart();
-      // set up a channel to the backend. We ensure that this channel has
-      // channelz enabled since these channels (proxy outbound to backends)
-      // are the ones that our test will actually be validating.
+      // set up a channel to the backend. We ensure that this channel
+      // has channelz enabled since these channels (proxy outbound to
+      // backends) are the ones that our test will actually be
+      // validating.
       ChannelArguments args;
       args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 1);
-      args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
-      std::shared_ptr<Channel> channel_to_backend = ::grpc::CreateCustomChannel(
-          backend_server_address, GetChannelCredentials(GetParam(), &args),
-          args);
+      args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE,
+                  1024);
+      std::shared_ptr<Channel> channel_to_backend =
+          ::grpc::CreateCustomChannel(
+              backend_server_address,
+              GetChannelCredentials(GetParam(), &args), args);
       proxy_service_.AddChannelToBackend(channel_to_backend);
     }
   }
@@ -245,7 +259,8 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
   void ResetStubs() {
     string target = "dns:localhost:" + to_string(proxy_port_);
     ChannelArguments args;
-    // disable channelz. We only want to focus on proxy to backend outbound.
+    // disable channelz. We only want to focus on proxy to backend
+    // outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     std::shared_ptr<Channel> channel = ::grpc::CreateCustomChannel(
         target, GetChannelCredentials(GetParam(), &args), args);
@@ -256,7 +271,8 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> NewEchoStub() {
     string target = "dns:localhost:" + to_string(proxy_port_);
     ChannelArguments args;
-    // disable channelz. We only want to focus on proxy to backend outbound.
+    // disable channelz. We only want to focus on proxy to backend
+    // outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     // This ensures that gRPC will not do connection sharing.
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true);
@@ -304,14 +320,15 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     EXPECT_FALSE(s.ok());
   }
 
-  // Uses GetTopChannels to return the channel_id of a particular channel,
-  // so that the unit tests may test GetChannel call.
+  // Uses GetTopChannels to return the channel_id of a particular
+  // channel, so that the unit tests may test GetChannel call.
   intptr_t GetChannelId(int channel_idx) {
     GetTopChannelsRequest request;
     GetTopChannelsResponse response;
     request.set_start_channel_id(0);
     ClientContext context;
-    Status s = channelz_stub_->GetTopChannels(&context, request, &response);
+    Status s =
+        channelz_stub_->GetTopChannels(&context, request, &response);
     EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_GT(response.channel_size(), channel_idx);
     return response.channel(channel_idx).ref().channel_id();
@@ -350,7 +367,8 @@ TEST_P(ChannelzServerTest, BasicTest) {
   GetTopChannelsResponse response;
   request.set_start_channel_id(0);
   ClientContext context;
-  Status s = channelz_stub_->GetTopChannels(&context, request, &response);
+  Status s =
+      channelz_stub_->GetTopChannels(&context, request, &response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), 1);
 }
@@ -362,7 +380,8 @@ TEST_P(ChannelzServerTest, HighStartId) {
   GetTopChannelsResponse response;
   request.set_start_channel_id(10000);
   ClientContext context;
-  Status s = channelz_stub_->GetTopChannels(&context, request, &response);
+  Status s =
+      channelz_stub_->GetTopChannels(&context, request, &response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), 0);
 }
@@ -429,7 +448,8 @@ TEST_P(ChannelzServerTest, ManyChannels) {
   GetTopChannelsResponse response;
   request.set_start_channel_id(0);
   ClientContext context;
-  Status s = channelz_stub_->GetTopChannels(&context, request, &response);
+  Status s =
+      channelz_stub_->GetTopChannels(&context, request, &response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), kNumChannels);
 }
@@ -521,13 +541,13 @@ TEST_P(ChannelzServerTest, ManySubchannels) {
   GetTopChannelsResponse gtc_response;
   gtc_request.set_start_channel_id(0);
   ClientContext context;
-  Status s =
-      channelz_stub_->GetTopChannels(&context, gtc_request, &gtc_response);
+  Status s = channelz_stub_->GetTopChannels(&context, gtc_request,
+                                            &gtc_response);
   EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(gtc_response.channel_size(), kNumChannels);
   for (int i = 0; i < gtc_response.channel_size(); ++i) {
-    // if the channel sent no RPCs, then expect no subchannels to have been
-    // created.
+    // if the channel sent no RPCs, then expect no subchannels to have
+    // been created.
     if (gtc_response.channel(i).data().calls_started() == 0) {
       EXPECT_EQ(gtc_response.channel(i).subchannel_ref_size(), 0);
       continue;
@@ -539,8 +559,8 @@ TEST_P(ChannelzServerTest, ManySubchannels) {
     gsc_request.set_subchannel_id(
         gtc_response.channel(i).subchannel_ref(0).subchannel_id());
     ClientContext context;
-    Status s =
-        channelz_stub_->GetSubchannel(&context, gsc_request, &gsc_response);
+    Status s = channelz_stub_->GetSubchannel(&context, gsc_request,
+                                             &gsc_response);
     EXPECT_TRUE(s.ok()) << s.error_message();
     EXPECT_EQ(gtc_response.channel(i).data().calls_started(),
               gsc_response.subchannel().data().calls_started());
@@ -606,9 +626,10 @@ TEST_P(ChannelzServerTest, ServerCallTest) {
   EXPECT_EQ(response.server_size(), 1);
   EXPECT_EQ(response.server(0).data().calls_succeeded(), kNumSuccess);
   EXPECT_EQ(response.server(0).data().calls_failed(), kNumFailed);
-  // This is success+failure+1 because the call that retrieved this information
-  // will be counted as started. It will not track success/failure until after
-  // it has returned, so that is not included in the response.
+  // This is success+failure+1 because the call that retrieved this
+  // information will be counted as started. It will not track
+  // success/failure until after it has returned, so that is not
+  // included in the response.
   EXPECT_EQ(response.server(0).data().calls_started(),
             kNumSuccess + kNumFailed + 1);
 }
@@ -631,13 +652,13 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
   GetTopChannelsResponse gtc_response;
   gtc_request.set_start_channel_id(0);
   ClientContext context;
-  Status s =
-      channelz_stub_->GetTopChannels(&context, gtc_request, &gtc_response);
+  Status s = channelz_stub_->GetTopChannels(&context, gtc_request,
+                                            &gtc_response);
   EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(gtc_response.channel_size(), kNumChannels);
   for (int i = 0; i < gtc_response.channel_size(); ++i) {
-    // if the channel sent no RPCs, then expect no subchannels to have been
-    // created.
+    // if the channel sent no RPCs, then expect no subchannels to have
+    // been created.
     if (gtc_response.channel(i).data().calls_started() == 0) {
       EXPECT_EQ(gtc_response.channel(i).subchannel_ref_size(), 0);
       continue;
@@ -663,11 +684,12 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
     s = channelz_stub_->GetSocket(&get_socket_ctx, get_socket_req,
                                   &get_socket_resp);
     EXPECT_TRUE(
-        get_subchannel_resp.subchannel().socket_ref(0).name().find("http"));
+        get_subchannel_resp.subchannel().socket_ref(0).name().find(
+            "http"));
     EXPECT_TRUE(s.ok()) << s.error_message();
-    // calls started == streams started AND stream succeeded. Since none of
-    // these RPCs were canceled, all of the streams will succeeded even though
-    // the RPCs they represent might have failed.
+    // calls started == streams started AND stream succeeded. Since none
+    // of these RPCs were canceled, all of the streams will succeeded
+    // even though the RPCs they represent might have failed.
     EXPECT_EQ(get_subchannel_resp.subchannel().data().calls_started(),
               get_socket_resp.socket().data().streams_started());
     EXPECT_EQ(get_subchannel_resp.subchannel().data().calls_started(),
@@ -687,10 +709,11 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
       case CredentialsType::kMtls:
         EXPECT_TRUE(get_socket_resp.socket().has_security());
         EXPECT_TRUE(get_socket_resp.socket().security().has_tls());
-        EXPECT_EQ(
-            RemoveWhitespaces(
-                get_socket_resp.socket().security().tls().remote_certificate()),
-            RemoveWhitespaces(ReadFile(kServerCertPath)));
+        EXPECT_EQ(RemoveWhitespaces(get_socket_resp.socket()
+                                        .security()
+                                        .tls()
+                                        .remote_certificate()),
+                  RemoveWhitespaces(ReadFile(kServerCertPath)));
         break;
     }
   }
@@ -723,9 +746,12 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
                                     get_subchannel_request,
                                     &get_subchannel_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
-  EXPECT_EQ(get_subchannel_response.subchannel().data().calls_started(), 1);
-  EXPECT_EQ(get_subchannel_response.subchannel().data().calls_succeeded(), 1);
-  EXPECT_EQ(get_subchannel_response.subchannel().data().calls_failed(), 0);
+  EXPECT_EQ(get_subchannel_response.subchannel().data().calls_started(),
+            1);
+  EXPECT_EQ(
+      get_subchannel_response.subchannel().data().calls_succeeded(), 1);
+  EXPECT_EQ(get_subchannel_response.subchannel().data().calls_failed(),
+            0);
   // Get the socket
   ASSERT_GT(get_subchannel_response.subchannel().socket_ref_size(), 0);
   GetSocketRequest get_socket_request;
@@ -734,14 +760,16 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
   get_socket_request.set_socket_id(
       get_subchannel_response.subchannel().socket_ref(0).socket_id());
   EXPECT_TRUE(
-      get_subchannel_response.subchannel().socket_ref(0).name().find("http"));
+      get_subchannel_response.subchannel().socket_ref(0).name().find(
+          "http"));
   s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
                                 &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_socket_response.socket().data().streams_started(), 1);
   EXPECT_EQ(get_socket_response.socket().data().streams_succeeded(), 1);
   EXPECT_EQ(get_socket_response.socket().data().streams_failed(), 0);
-  EXPECT_EQ(get_socket_response.socket().data().messages_sent(), kNumMessages);
+  EXPECT_EQ(get_socket_response.socket().data().messages_sent(),
+            kNumMessages);
   EXPECT_EQ(get_socket_response.socket().data().messages_received(),
             kNumMessages);
   switch (GetParam()) {
@@ -768,8 +796,8 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
   GetServersResponse get_server_response;
   get_server_request.set_start_server_id(0);
   ClientContext get_server_context;
-  Status s = channelz_stub_->GetServers(&get_server_context, get_server_request,
-                                        &get_server_response);
+  Status s = channelz_stub_->GetServers(
+      &get_server_context, get_server_request, &get_server_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_response.server_size(), 1);
   GetServerSocketsRequest get_server_sockets_request;
@@ -783,7 +811,8 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
                                        &get_server_sockets_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
-  EXPECT_TRUE(get_server_sockets_response.socket_ref(0).name().find("http"));
+  EXPECT_TRUE(
+      get_server_sockets_response.socket_ref(0).name().find("http"));
   // Get the socket to verify security information.
   GetSocketRequest get_socket_request;
   GetSocketResponse get_socket_response;
@@ -823,7 +852,8 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
 TEST_P(ChannelzServerTest, GetServerSocketsPaginationTest) {
   ResetStubs();
   ConfigureProxy(1);
-  std::vector<std::unique_ptr<grpc::testing::EchoTestService::Stub>> stubs;
+  std::vector<std::unique_ptr<grpc::testing::EchoTestService::Stub>>
+      stubs;
   const int kNumServerSocketsCreated = 20;
   for (int i = 0; i < kNumServerSocketsCreated; ++i) {
     stubs.push_back(NewEchoStub());
@@ -840,8 +870,8 @@ TEST_P(ChannelzServerTest, GetServerSocketsPaginationTest) {
   GetServersResponse get_server_response;
   get_server_request.set_start_server_id(0);
   ClientContext get_server_context;
-  Status s = channelz_stub_->GetServers(&get_server_context, get_server_request,
-                                        &get_server_response);
+  Status s = channelz_stub_->GetServers(
+      &get_server_context, get_server_request, &get_server_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_response.server_size(), 1);
   // Make a request that gets all of the serversockets
@@ -876,7 +906,8 @@ TEST_P(ChannelzServerTest, GetServerSocketsPaginationTest) {
                                          get_server_sockets_request,
                                          &get_server_sockets_response);
     EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
-    EXPECT_EQ(get_server_sockets_response.socket_ref_size(), kMaxResults);
+    EXPECT_EQ(get_server_sockets_response.socket_ref_size(),
+              kMaxResults);
     EXPECT_FALSE(get_server_sockets_response.end());
   }
 }
@@ -888,23 +919,25 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
   GetServersResponse get_server_response;
   get_server_request.set_start_server_id(0);
   ClientContext get_server_context;
-  Status s = channelz_stub_->GetServers(&get_server_context, get_server_request,
-                                        &get_server_response);
+  Status s = channelz_stub_->GetServers(
+      &get_server_context, get_server_request, &get_server_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_response.server_size(), 1);
   // The resolver might return one or two addresses depending on the
   // configuration, one for ipv4 and one for ipv6.
-  int listen_socket_size = get_server_response.server(0).listen_socket_size();
+  int listen_socket_size =
+      get_server_response.server(0).listen_socket_size();
   EXPECT_TRUE(listen_socket_size == 1 || listen_socket_size == 2);
   GetSocketRequest get_socket_request;
   GetSocketResponse get_socket_response;
   get_socket_request.set_socket_id(
       get_server_response.server(0).listen_socket(0).socket_id());
   EXPECT_TRUE(
-      get_server_response.server(0).listen_socket(0).name().find("http"));
+      get_server_response.server(0).listen_socket(0).name().find(
+          "http"));
   ClientContext get_socket_context_1;
-  s = channelz_stub_->GetSocket(&get_socket_context_1, get_socket_request,
-                                &get_socket_response);
+  s = channelz_stub_->GetSocket(
+      &get_socket_context_1, get_socket_request, &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
 
   EXPECT_TRUE(ValidateAddress(get_socket_response.socket().remote()));
@@ -914,17 +947,20 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
         get_server_response.server(0).listen_socket(1).socket_id());
     ClientContext get_socket_context_2;
     EXPECT_TRUE(
-        get_server_response.server(0).listen_socket(1).name().find("http"));
-    s = channelz_stub_->GetSocket(&get_socket_context_2, get_socket_request,
+        get_server_response.server(0).listen_socket(1).name().find(
+            "http"));
+    s = channelz_stub_->GetSocket(&get_socket_context_2,
+                                  get_socket_request,
                                   &get_socket_response);
     EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(ChannelzServer, ChannelzServerTest,
-                         ::testing::ValuesIn(std::vector<CredentialsType>(
-                             {CredentialsType::kInsecure, CredentialsType::kTls,
-                              CredentialsType::kMtls})));
+INSTANTIATE_TEST_SUITE_P(
+    ChannelzServer, ChannelzServerTest,
+    ::testing::ValuesIn(std::vector<CredentialsType>(
+        {CredentialsType::kInsecure, CredentialsType::kTls,
+         CredentialsType::kMtls})));
 
 }  // namespace
 }  // namespace testing

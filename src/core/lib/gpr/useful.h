@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,7 +23,8 @@
 
 #define GPR_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define GPR_MAX(a, b) ((a) > (b) ? (a) : (b))
-#define GPR_CLAMP(a, min, max) ((a) < (min) ? (min) : (a) > (max) ? (max) : (a))
+#define GPR_CLAMP(a, min, max) \
+  ((a) < (min) ? (min) : (a) > (max) ? (max) : (a))
 /** rotl, rotr assume x is unsigned */
 #define GPR_ROTL(x, n) (((x) << (n)) | ((x) >> (sizeof(x) * 8 - (n))))
 #define GPR_ROTR(x, n) (((x) >> (n)) | ((x) << (sizeof(x) * 8 - (n))))
@@ -59,8 +60,9 @@
 
 #define GPR_ICMP(a, b) ((a) < (b) ? -1 : ((a) > (b) ? 1 : 0))
 
-#define GPR_HASH_POINTER(x, range)                                         \
-  (((((size_t)(x)) >> 4) ^ (((size_t)(x)) >> 9) ^ (((size_t)(x)) >> 14)) % \
+#define GPR_HASH_POINTER(x, range)                \
+  (((((size_t)(x)) >> 4) ^ (((size_t)(x)) >> 9) ^ \
+    (((size_t)(x)) >> 14)) %                      \
    (range))
 
 #endif /* GRPC_CORE_LIB_GPR_USEFUL_H */

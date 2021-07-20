@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -44,8 +44,8 @@ class AuthPropertyIteratorTest : public ::testing::Test {
     grpc_auth_context_add_cstring_property(ctx_.get(), "name", "chapi");
     grpc_auth_context_add_cstring_property(ctx_.get(), "name", "chapo");
     grpc_auth_context_add_cstring_property(ctx_.get(), "foo", "bar");
-    EXPECT_EQ(1, grpc_auth_context_set_peer_identity_property_name(ctx_.get(),
-                                                                   "name"));
+    EXPECT_EQ(1, grpc_auth_context_set_peer_identity_property_name(
+                     ctx_.get(), "name"));
   }
   grpc_core::RefCountedPtr<grpc_auth_context> ctx_;
 };

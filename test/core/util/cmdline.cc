@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,7 +62,8 @@ struct gpr_cmdline {
 static int normal_state(gpr_cmdline* cl, char* str);
 
 gpr_cmdline* gpr_cmdline_create(const char* description) {
-  gpr_cmdline* cl = static_cast<gpr_cmdline*>(gpr_zalloc(sizeof(gpr_cmdline)));
+  gpr_cmdline* cl =
+      static_cast<gpr_cmdline*>(gpr_zalloc(sizeof(gpr_cmdline)));
 
   cl->description = description;
   cl->state = normal_state;
@@ -100,24 +101,26 @@ static void add_arg(gpr_cmdline* cl, const char* name, const char* help,
   cl->args = a;
 }
 
-void gpr_cmdline_add_int(gpr_cmdline* cl, const char* name, const char* help,
-                         int* value) {
+void gpr_cmdline_add_int(gpr_cmdline* cl, const char* name,
+                         const char* help, int* value) {
   add_arg(cl, name, help, ARGTYPE_INT, value);
 }
 
-void gpr_cmdline_add_flag(gpr_cmdline* cl, const char* name, const char* help,
-                          int* value) {
+void gpr_cmdline_add_flag(gpr_cmdline* cl, const char* name,
+                          const char* help, int* value) {
   add_arg(cl, name, help, ARGTYPE_BOOL, value);
 }
 
-void gpr_cmdline_add_string(gpr_cmdline* cl, const char* name, const char* help,
-                            const char** value) {
+void gpr_cmdline_add_string(gpr_cmdline* cl, const char* name,
+                            const char* help, const char** value) {
   add_arg(cl, name, help, ARGTYPE_STRING, value);
 }
 
-void gpr_cmdline_on_extra_arg(
-    gpr_cmdline* cl, const char* name, const char* help,
-    void (*on_extra_arg)(void* user_data, const char* arg), void* user_data) {
+void gpr_cmdline_on_extra_arg(gpr_cmdline* cl, const char* name,
+                              const char* help,
+                              void (*on_extra_arg)(void* user_data,
+                                                   const char* arg),
+                              void* user_data) {
   GPR_ASSERT(!cl->extra_arg);
   GPR_ASSERT(on_extra_arg);
 
@@ -135,7 +138,8 @@ static void add_args_to_usage(arg* a, std::vector<std::string>* s) {
   add_args_to_usage(a->next, s);
   switch (a->type) {
     case ARGTYPE_BOOL:
-      s->push_back(absl::StrFormat(" [--%s|--no-%s]", a->name, a->name));
+      s->push_back(
+          absl::StrFormat(" [--%s|--no-%s]", a->name, a->name));
       break;
     case ARGTYPE_STRING:
       s->push_back(absl::StrFormat(" [--%s=string]", a->name));
@@ -146,7 +150,8 @@ static void add_args_to_usage(arg* a, std::vector<std::string>* s) {
   }
 }
 
-std::string gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0) {
+std::string gpr_cmdline_usage_string(gpr_cmdline* cl,
+                                     const char* argv0) {
   const char* name = strrchr(argv0, '/');
   if (name != nullptr) {
     name++;
@@ -165,7 +170,8 @@ std::string gpr_cmdline_usage_string(gpr_cmdline* cl, const char* argv0) {
 }
 
 static int print_usage_and_die(gpr_cmdline* cl) {
-  fprintf(stderr, "%s", gpr_cmdline_usage_string(cl, cl->argv0).c_str());
+  fprintf(stderr, "%s",
+          gpr_cmdline_usage_string(cl, cl->argv0).c_str());
   if (!cl->survive_failure) {
     exit(1);
   }
@@ -275,8 +281,8 @@ static int normal_state(gpr_cmdline* cl, char* str) {
     eq = strchr(str, '=');
     if (eq != nullptr) {
       /* copy the string into a temp buffer and extract the name */
-      tmp = arg_name =
-          static_cast<char*>(gpr_malloc(static_cast<size_t>(eq - str + 1)));
+      tmp = arg_name = static_cast<char*>(
+          gpr_malloc(static_cast<size_t>(eq - str + 1)));
       memcpy(arg_name, str, static_cast<size_t>(eq - str));
       arg_name[eq - str] = 0;
     } else {
@@ -290,7 +296,8 @@ static int normal_state(gpr_cmdline* cl, char* str) {
       /* str was of the type --foo=value, parse the value */
       r = value_state(cl, eq + 1);
     } else if (cl->cur_arg->type != ARGTYPE_BOOL) {
-      /* flag types don't have a '--foo value' variant, other types do */
+      /* flag types don't have a '--foo value' variant, other types do
+       */
       cl->state = value_state;
     } else {
       /* flag parameter: just set the value */

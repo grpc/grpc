@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_MATCHERS_MATCHERS_H
 #define GRPC_CORE_LIB_MATCHERS_MATCHERS_H
@@ -40,9 +40,8 @@ class StringMatcher {
 
   // Creates StringMatcher instance. Returns error status on failure.
   // Note: case_sensitive is ignored for type kSafeRegex.
-  static absl::StatusOr<StringMatcher> Create(Type type,
-                                              absl::string_view matcher,
-                                              bool case_sensitive = true);
+  static absl::StatusOr<StringMatcher> Create(
+      Type type, absl::string_view matcher, bool case_sensitive = true);
 
   StringMatcher() = default;
   StringMatcher(const StringMatcher& other);
@@ -66,7 +65,8 @@ class StringMatcher {
   bool case_sensitive() const { return case_sensitive_; }
 
  private:
-  StringMatcher(Type type, absl::string_view matcher, bool case_sensitive);
+  StringMatcher(Type type, absl::string_view matcher,
+                bool case_sensitive);
   explicit StringMatcher(std::unique_ptr<RE2> regex_matcher);
 
   Type type_ = Type::kExact;
@@ -87,9 +87,9 @@ class HeaderMatcher {
     kPresent,    // uses present_match field
   };
 
-  // Make sure that the first five HeaderMatcher::Type enum values match up to
-  // the corresponding StringMatcher::Type enum values, so that it's safe to
-  // convert by casting when delegating to StringMatcher.
+  // Make sure that the first five HeaderMatcher::Type enum values match
+  // up to the corresponding StringMatcher::Type enum values, so that
+  // it's safe to convert by casting when delegating to StringMatcher.
   static_assert(static_cast<StringMatcher::Type>(Type::kExact) ==
                     StringMatcher::Type::kExact,
                 "");
@@ -107,12 +107,10 @@ class HeaderMatcher {
                 "");
 
   // Creates HeaderMatcher instance. Returns error status on failure.
-  static absl::StatusOr<HeaderMatcher> Create(absl::string_view name, Type type,
-                                              absl::string_view matcher,
-                                              int64_t range_start = 0,
-                                              int64_t range_end = 0,
-                                              bool present_match = false,
-                                              bool invert_match = false);
+  static absl::StatusOr<HeaderMatcher> Create(
+      absl::string_view name, Type type, absl::string_view matcher,
+      int64_t range_start = 0, int64_t range_end = 0,
+      bool present_match = false, bool invert_match = false);
 
   HeaderMatcher() = default;
   HeaderMatcher(const HeaderMatcher& other);
@@ -139,13 +137,14 @@ class HeaderMatcher {
 
  private:
   // For StringMatcher.
-  HeaderMatcher(absl::string_view name, Type type, StringMatcher matcher,
-                bool invert_match);
+  HeaderMatcher(absl::string_view name, Type type,
+                StringMatcher matcher, bool invert_match);
   // For RangeMatcher.
-  HeaderMatcher(absl::string_view name, int64_t range_start, int64_t range_end,
-                bool invert_match);
+  HeaderMatcher(absl::string_view name, int64_t range_start,
+                int64_t range_end, bool invert_match);
   // For PresentMatcher.
-  HeaderMatcher(absl::string_view name, bool present_match, bool invert_match);
+  HeaderMatcher(absl::string_view name, bool present_match,
+                bool invert_match);
 
   std::string name_;
   Type type_ = Type::kExact;

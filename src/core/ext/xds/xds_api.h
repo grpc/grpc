@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -63,15 +63,17 @@ class XdsApi {
       return seconds == other.seconds && nanos == other.nanos;
     }
     std::string ToString() const {
-      return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds, nanos);
+      return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds,
+                             nanos);
     }
   };
 
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
 
-  // TODO(donnadionne): When we can use absl::variant<>, consider using that
-  // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
+  // TODO(donnadionne): When we can use absl::variant<>, consider using
+  // that for: PathMatcher, HeaderMatcher, cluster_name and
+  // weighted_clusters
   struct Route {
     // Matchers for this route.
     struct Matchers {
@@ -115,7 +117,8 @@ class XdsApi {
 
     // Action for this route.
     // TODO(roth): When we can use absl::variant<>, consider using that
-    // here, to enforce the fact that only one of the two fields can be set.
+    // here, to enforce the fact that only one of the two fields can be
+    // set.
     std::string cluster_name;
     struct ClusterWeight {
       std::string name;
@@ -131,14 +134,15 @@ class XdsApi {
     std::vector<ClusterWeight> weighted_clusters;
     // Storing the timeout duration from route action:
     // RouteAction.max_stream_duration.grpc_timeout_header_max or
-    // RouteAction.max_stream_duration.max_stream_duration if the former is
-    // not set.
+    // RouteAction.max_stream_duration.max_stream_duration if the former
+    // is not set.
     absl::optional<Duration> max_stream_duration;
 
     TypedPerFilterConfig typed_per_filter_config;
 
     bool operator==(const Route& other) const {
-      return matchers == other.matchers && cluster_name == other.cluster_name &&
+      return matchers == other.matchers &&
+             cluster_name == other.cluster_name &&
              weighted_clusters == other.weighted_clusters &&
              max_stream_duration == other.max_stream_duration &&
              typed_per_filter_config == other.typed_per_filter_config;
@@ -197,23 +201,28 @@ class XdsApi {
       CertificateProviderInstance
           validation_context_certificate_provider_instance;
 
-      bool operator==(const CombinedCertificateValidationContext& other) const {
-        return default_validation_context == other.default_validation_context &&
+      bool operator==(
+          const CombinedCertificateValidationContext& other) const {
+        return default_validation_context ==
+                   other.default_validation_context &&
                validation_context_certificate_provider_instance ==
-                   other.validation_context_certificate_provider_instance;
+                   other
+                       .validation_context_certificate_provider_instance;
       }
 
       std::string ToString() const;
       bool Empty() const;
     };
 
-    CertificateProviderInstance tls_certificate_certificate_provider_instance;
+    CertificateProviderInstance
+        tls_certificate_certificate_provider_instance;
     CombinedCertificateValidationContext combined_validation_context;
 
     bool operator==(const CommonTlsContext& other) const {
       return tls_certificate_certificate_provider_instance ==
                  other.tls_certificate_certificate_provider_instance &&
-             combined_validation_context == other.combined_validation_context;
+             combined_validation_context ==
+                 other.combined_validation_context;
     }
 
     std::string ToString() const;
@@ -226,7 +235,8 @@ class XdsApi {
 
     bool operator==(const DownstreamTlsContext& other) const {
       return common_tls_context == other.common_tls_context &&
-             require_client_certificate == other.require_client_certificate;
+             require_client_certificate ==
+                 other.require_client_certificate;
     }
 
     std::string ToString() const;
@@ -234,7 +244,8 @@ class XdsApi {
   };
 
   // TODO(roth): When we can use absl::variant<>, consider using that
-  // here, to enforce the fact that only one of the two fields can be set.
+  // here, to enforce the fact that only one of the two fields can be
+  // set.
   struct LdsUpdate {
     enum class ListenerType {
       kTcpListener = 0,
@@ -265,7 +276,8 @@ class XdsApi {
 
       bool operator==(const HttpConnectionManager& other) const {
         return route_config_name == other.route_config_name &&
-               http_max_stream_duration == other.http_max_stream_duration &&
+               http_max_stream_duration ==
+                   other.http_max_stream_duration &&
                rds_update == other.rds_update &&
                http_filters == other.http_filters;
       }
@@ -294,13 +306,14 @@ class XdsApi {
       std::string ToString() const;
     } filter_chain_data;
 
-    // A multi-level map used to determine which filter chain to use for a given
-    // incoming connection. Determining the right filter chain for a given
-    // connection checks the following properties, in order:
+    // A multi-level map used to determine which filter chain to use for
+    // a given incoming connection. Determining the right filter chain
+    // for a given connection checks the following properties, in order:
     // - destination port (never matched, so not present in map)
     // - destination IP address
     // - server name (never matched, so not present in map)
-    // - transport protocol (allows only "raw_buffer" or unset, prefers the
+    // - transport protocol (allows only "raw_buffer" or unset, prefers
+    // the
     //   former, so only one of those two types is present in map)
     // - application protocol (never matched, so not present in map)
     // - connection source type (any, local or external)
@@ -320,13 +333,15 @@ class XdsApi {
         uint32_t prefix_len;
 
         bool operator==(const CidrRange& other) const {
-          return memcmp(&address, &other.address, sizeof(address)) == 0 &&
+          return memcmp(&address, &other.address, sizeof(address)) ==
+                     0 &&
                  prefix_len == other.prefix_len;
         }
 
         std::string ToString() const;
       };
-      using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
+      using SourcePortsMap =
+          std::map<uint16_t, FilterChainDataSharedPtr>;
       struct SourceIp {
         absl::optional<CidrRange> prefix_range;
         SourcePortsMap ports_map;
@@ -345,8 +360,8 @@ class XdsApi {
       using ConnectionSourceTypesArray = std::array<SourceIpVector, 3>;
       struct DestinationIp {
         absl::optional<CidrRange> prefix_range;
-        // We always fail match on server name, so those filter chains are not
-        // included here.
+        // We always fail match on server name, so those filter chains
+        // are not included here.
         ConnectionSourceTypesArray source_types_array;
 
         bool operator==(const DestinationIp& other) const {
@@ -382,7 +397,8 @@ class XdsApi {
     std::string serialized_proto;
   };
 
-  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsResourceData>;
+  using LdsUpdateMap =
+      std::map<std::string /*server_name*/, LdsResourceData>;
 
   struct RdsResourceData {
     RdsUpdate resource;
@@ -411,8 +427,8 @@ class XdsApi {
 
     // The LRS server to use for load reporting.
     // If not set, load reporting will be disabled.
-    // If set to the empty string, will use the same server we obtained the CDS
-    // data from.
+    // If set to the empty string, will use the same server we obtained
+    // the CDS data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
 
     // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
@@ -420,15 +436,16 @@ class XdsApi {
     // Used for RING_HASH LB policy only.
     uint64_t min_ring_size = 1024;
     uint64_t max_ring_size = 8388608;
-    // Maximum number of outstanding requests can be made to the upstream
-    // cluster.
+    // Maximum number of outstanding requests can be made to the
+    // upstream cluster.
     uint32_t max_concurrent_requests = 1024;
 
     bool operator==(const CdsUpdate& other) const {
       return cluster_type == other.cluster_type &&
              eds_service_name == other.eds_service_name &&
              dns_hostname == other.dns_hostname &&
-             prioritized_cluster_names == other.prioritized_cluster_names &&
+             prioritized_cluster_names ==
+                 other.prioritized_cluster_names &&
              common_tls_context == other.common_tls_context &&
              lrs_load_reporting_server_name ==
                  other.lrs_load_reporting_server_name &&
@@ -446,7 +463,8 @@ class XdsApi {
     std::string serialized_proto;
   };
 
-  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsResourceData>;
+  using CdsUpdateMap =
+      std::map<std::string /*cluster_name*/, CdsResourceData>;
 
   struct EdsUpdate {
     struct Priority {
@@ -465,7 +483,8 @@ class XdsApi {
         std::string ToString() const;
       };
 
-      std::map<XdsLocalityName*, Locality, XdsLocalityName::Less> localities;
+      std::map<XdsLocalityName*, Locality, XdsLocalityName::Less>
+          localities;
 
       bool operator==(const Priority& other) const;
       std::string ToString() const;
@@ -496,8 +515,8 @@ class XdsApi {
         if (parts_per_million == 1000000) drop_all_ = true;
       }
 
-      // The only method invoked from outside the WorkSerializer (used in
-      // the data plane).
+      // The only method invoked from outside the WorkSerializer (used
+      // in the data plane).
       bool ShouldDrop(const std::string** category_name) const;
 
       const DropCategoryList& drop_category_list() const {
@@ -540,28 +559,35 @@ class XdsApi {
 
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
-    std::map<RefCountedPtr<XdsLocalityName>, XdsClusterLocalityStats::Snapshot,
-             XdsLocalityName::Less>
+    std::map<RefCountedPtr<XdsLocalityName>,
+             XdsClusterLocalityStats::Snapshot, XdsLocalityName::Less>
         locality_stats;
     grpc_millis load_report_interval;
   };
-  using ClusterLoadReportMap = std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      ClusterLoadReport>;
+  using ClusterLoadReportMap =
+      std::map<std::pair<std::string /*cluster_name*/,
+                         std::string /*eds_service_name*/>,
+               ClusterLoadReport>;
 
   // The metadata of the xDS resource; used by the xDS config dump.
   struct ResourceMetadata {
     // Resource status from the view of a xDS client, which tells the
     // synchronization status between the xDS client and the xDS server.
     enum ClientResourceStatus {
-      // Client requested this resource but hasn't received any update from
-      // management server. The client will not fail requests, but will queue
+      // Client requested this resource but hasn't received any update
+      // from
+      // management server. The client will not fail requests, but will
+      // queue
       // them
-      // until update arrives or the client times out waiting for the resource.
+      // until update arrives or the client times out waiting for the
+      // resource.
       REQUESTED = 1,
-      // This resource has been requested by the client but has either not been
-      // delivered by the server or was previously delivered by the server and
-      // then subsequently removed from resources provided by the server.
+      // This resource has been requested by the client but has either
+      // not been
+      // delivered by the server or was previously delivered by the
+      // server and
+      // then subsequently removed from resources provided by the
+      // server.
       DOES_NOT_EXIST,
       // Client received this resource and replied with ACK.
       ACKED,
@@ -571,7 +597,8 @@ class XdsApi {
 
     // The client status of this resource.
     ClientResourceStatus client_status = REQUESTED;
-    // The serialized bytes of the last successfully updated raw xDS resource.
+    // The serialized bytes of the last successfully updated raw xDS
+    // resource.
     std::string serialized_proto;
     // The timestamp when the resource was last successfully updated.
     grpc_millis update_time = 0;
@@ -585,7 +612,8 @@ class XdsApi {
     grpc_millis failed_update_time = 0;
   };
   using ResourceMetadataMap =
-      std::map<absl::string_view /*resource_name*/, const ResourceMetadata*>;
+      std::map<absl::string_view /*resource_name*/,
+               const ResourceMetadata*>;
   struct ResourceTypeMetadata {
     absl::string_view version;
     ResourceMetadataMap resource_metadata_map;
@@ -596,10 +624,11 @@ class XdsApi {
                     envoy_admin_v3_REQUESTED) ==
                     ResourceMetadata::ClientResourceStatus::REQUESTED,
                 "");
-  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
-                    envoy_admin_v3_DOES_NOT_EXIST) ==
-                    ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST,
-                "");
+  static_assert(
+      static_cast<ResourceMetadata::ClientResourceStatus>(
+          envoy_admin_v3_DOES_NOT_EXIST) ==
+          ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST,
+      "");
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
                     envoy_admin_v3_ACKED) ==
                     ResourceMetadata::ClientResourceStatus::ACKED,
@@ -628,41 +657,47 @@ class XdsApi {
     std::set<std::string> resource_names_failed;
   };
 
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
+  XdsApi(XdsClient* client, TraceFlag* tracer,
+         const XdsBootstrap::Node* node,
          const CertificateProviderStore::PluginDefinitionMap* map);
 
   // Creates an ADS request.
   // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
-                              const std::string& type_url,
-                              const std::set<absl::string_view>& resource_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error_handle error,
-                              bool populate_node);
+  grpc_slice CreateAdsRequest(
+      const XdsBootstrap::XdsServer& server,
+      const std::string& type_url,
+      const std::set<absl::string_view>& resource_names,
+      const std::string& version, const std::string& nonce,
+      grpc_error_handle error, bool populate_node);
 
   // Parses an ADS response.
   AdsParseResult ParseAdsResponse(
-      const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
+      const XdsBootstrap::XdsServer& server,
+      const grpc_slice& encoded_response,
       const std::set<absl::string_view>& expected_listener_names,
-      const std::set<absl::string_view>& expected_route_configuration_names,
+      const std::set<absl::string_view>&
+          expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,
       const std::set<absl::string_view>& expected_eds_service_names);
 
   // Creates an initial LRS request.
-  grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);
+  grpc_slice CreateLrsInitialRequest(
+      const XdsBootstrap::XdsServer& server);
 
   // Creates an LRS request sending a client-side load report.
-  grpc_slice CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
+  grpc_slice CreateLrsRequest(
+      ClusterLoadReportMap cluster_load_report_map);
 
   // Parses the LRS response and returns \a
-  // load_reporting_interval for client-side load reporting. If there is any
-  // error, the output config is invalid.
-  grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response,
-                                     bool* send_all_clusters,
-                                     std::set<std::string>* cluster_names,
-                                     grpc_millis* load_reporting_interval);
+  // load_reporting_interval for client-side load reporting. If there is
+  // any error, the output config is invalid.
+  grpc_error_handle ParseLrsResponse(
+      const grpc_slice& encoded_response, bool* send_all_clusters,
+      std::set<std::string>* cluster_names,
+      grpc_millis* load_reporting_interval);
 
-  // Assemble the client config proto message and return the serialized result.
+  // Assemble the client config proto message and return the serialized
+  // result.
   std::string AssembleClientConfig(
       const ResourceTypeMetadataMap& resource_type_metadata_map);
 

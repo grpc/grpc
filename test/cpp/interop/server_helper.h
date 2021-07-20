@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,7 +37,8 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials();
 
 class InteropServerContextInspector {
  public:
-  explicit InteropServerContextInspector(const ::grpc::ServerContext& context);
+  explicit InteropServerContextInspector(
+      const ::grpc::ServerContext& context);
 
   // Inspector methods, able to peek inside ServerContext, follow.
   std::shared_ptr<const AuthContext> GetAuthContext() const;
@@ -69,15 +70,19 @@ void RunServer(const std::shared_ptr<ServerCredentials>& creds);
 ///
 /// \param creds The credentials associated with the server.
 /// \param port Port to use for the server.
-/// \param server_started_condition (optional) Struct holding mutex, condition
-///     variable, and condition used to notify when the server has started.
-void RunServer(const std::shared_ptr<ServerCredentials>& creds, int port,
+/// \param server_started_condition (optional) Struct holding mutex,
+/// condition
+///     variable, and condition used to notify when the server has
+///     started.
+void RunServer(const std::shared_ptr<ServerCredentials>& creds,
+               int port,
                ServerStartedCondition* server_started_condition);
 
 /// Run gRPC interop server.
 ///
 /// \param creds The credentials associated with the server.
-/// \param server_options List of options to set when building the server.
+/// \param server_options List of options to set when building the
+/// server.
 void RunServer(
     const std::shared_ptr<ServerCredentials>& creds,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
@@ -87,13 +92,16 @@ void RunServer(
 ///
 /// \param creds The credentials associated with the server.
 /// \param port Port to use for the server.
-/// \param server_options List of options to set when building the server.
-/// \param server_started_condition (optional) Struct holding mutex, condition
-//     variable, and condition used to notify when the server has started.
+/// \param server_options List of options to set when building the
+/// server. \param server_started_condition (optional) Struct holding
+/// mutex, condition
+//     variable, and condition used to notify when the server has
+//     started.
 void RunServer(
     const std::shared_ptr<ServerCredentials>& creds, const int port,
     ServerStartedCondition* server_started_condition,
-    std::unique_ptr<std::vector<std::unique_ptr<grpc::ServerBuilderOption>>>
+    std::unique_ptr<
+        std::vector<std::unique_ptr<grpc::ServerBuilderOption>>>
         server_options);
 
 }  // namespace interop

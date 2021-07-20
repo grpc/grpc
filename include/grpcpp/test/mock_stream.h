@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -111,7 +111,8 @@ class MockClientAsyncReader : public ClientAsyncReaderInterface<R> {
 };
 
 template <class W>
-class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
+class MockClientAsyncWriter
+    : public ::grpc::ClientAsyncWriterInterface<W> {
  public:
   MockClientAsyncWriter() = default;
 
@@ -176,7 +177,8 @@ class MockServerWriter : public ::grpc::ServerWriterInterface<W> {
 };
 
 template <class W, class R>
-class MockServerReaderWriter : public grpc::ServerReaderWriterInterface<W, R> {
+class MockServerReaderWriter
+    : public grpc::ServerReaderWriterInterface<W, R> {
  public:
   MockServerReaderWriter() = default;
 

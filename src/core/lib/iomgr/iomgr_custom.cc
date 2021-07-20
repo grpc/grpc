@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,7 +39,9 @@ static void iomgr_platform_init(void) {
   grpc_pollset_global_init();
 }
 static void iomgr_platform_flush(void) {}
-static void iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }
+static void iomgr_platform_shutdown(void) {
+  grpc_pollset_global_shutdown();
+}
 static void iomgr_platform_shutdown_background_closure(void) {}
 static bool iomgr_platform_is_any_background_poller_thread(void) {
   return false;

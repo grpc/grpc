@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,7 +36,8 @@ static bool errqueue_supported = false;
 bool kernel_supports_errqueue() { return errqueue_supported; }
 
 void grpc_errqueue_init() {
-/* Both-compile time and run-time linux kernel versions should be at least 4.0.0
+/* Both-compile time and run-time linux kernel versions should be at
+ * least 4.0.0
  */
 #ifdef GRPC_LINUX_ERRQUEUE
   struct utsname buffer;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -21,10 +21,9 @@
 
 /* A collection of macros to cast between various integer types that are
  * used differently between BoringSSL and OpenSSL:
- * TSI_INT_AS_SIZE(x):  convert 'int x' to a length parameter for an OpenSSL
- *                      function
- * TSI_SIZE_AS_SIZE(x): convert 'size_t x' to a length parameter for an OpenSSL
- *                      function
+ * TSI_INT_AS_SIZE(x):  convert 'int x' to a length parameter for an
+ * OpenSSL function TSI_SIZE_AS_SIZE(x): convert 'size_t x' to a length
+ * parameter for an OpenSSL function
  */
 
 #include <grpc/support/port_platform.h>

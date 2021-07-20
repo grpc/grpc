@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,7 +26,8 @@
 #include <grpc/slice.h>
 #include "rb_grpc.h"
 
-grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char* string, size_t length) {
+grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char* string,
+                                           size_t length) {
   grpc_slice slice = grpc_slice_from_copied_buffer(string, length);
   grpc_byte_buffer* buffer = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
@@ -42,7 +43,8 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer* buffer) {
   }
   rb_string = rb_str_buf_new(grpc_byte_buffer_length(buffer));
   if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
-    rb_raise(rb_eRuntimeError, "Error initializing byte buffer reader.");
+    rb_raise(rb_eRuntimeError,
+             "Error initializing byte buffer reader.");
     return Qnil;
   }
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
@@ -56,8 +58,9 @@ VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer* buffer) {
 
 VALUE grpc_rb_slice_to_ruby_string(grpc_slice slice) {
   if (GRPC_SLICE_START_PTR(slice) == NULL) {
-    rb_raise(rb_eRuntimeError,
-             "attempt to convert uninitialized grpc_slice to ruby string");
+    rb_raise(
+        rb_eRuntimeError,
+        "attempt to convert uninitialized grpc_slice to ruby string");
   }
   return rb_str_new((char*)GRPC_SLICE_START_PTR(slice),
                     GRPC_SLICE_LENGTH(slice));

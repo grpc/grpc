@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -49,7 +49,8 @@
 namespace grpc {
 namespace testing {
 
-static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
+static std::unique_ptr<Client> CreateClient(
+    const ClientConfig& config) {
   gpr_log(GPR_INFO, "Starting client of type %s %s %d",
           ClientType_Name(config.client_type()).c_str(),
           RpcType_Name(config.rpc_type()).c_str(),
@@ -70,7 +71,8 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   abort();
 }
 
-static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
+static std::unique_ptr<Server> CreateServer(
+    const ServerConfig& config) {
   gpr_log(GPR_INFO, "Starting server of type %s",
           ServerType_Name(config.server_type()).c_str());
 
@@ -113,7 +115,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
     gpr_log(GPR_INFO, "RunClient: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
-      return Status(StatusCode::RESOURCE_EXHAUSTED, "Client worker busy");
+      return Status(StatusCode::RESOURCE_EXHAUSTED,
+                    "Client worker busy");
     }
 
     ScopedProfile profile("qps_client.prof", false);
@@ -128,7 +131,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
     gpr_log(GPR_INFO, "RunServer: Entering");
     InstanceGuard g(this);
     if (!g.Acquired()) {
-      return Status(StatusCode::RESOURCE_EXHAUSTED, "Server worker busy");
+      return Status(StatusCode::RESOURCE_EXHAUSTED,
+                    "Server worker busy");
     }
 
     ScopedProfile profile("qps_server.prof", false);
@@ -143,10 +147,12 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return Status::OK;
   }
 
-  Status QuitWorker(ServerContext* /*ctx*/, const Void*, Void*) override {
+  Status QuitWorker(ServerContext* /*ctx*/, const Void*,
+                    Void*) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
-      return Status(StatusCode::RESOURCE_EXHAUSTED, "Quitting worker busy");
+      return Status(StatusCode::RESOURCE_EXHAUSTED,
+                    "Quitting worker busy");
     }
 
     worker_->MarkDone();
@@ -185,8 +191,9 @@ class WorkerServiceImpl final : public WorkerService::Service {
     acquired_ = false;
   }
 
-  Status RunClientBody(ServerContext* /*ctx*/,
-                       ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
+  Status RunClientBody(
+      ServerContext* /*ctx*/,
+      ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read args");
@@ -197,12 +204,14 @@ class WorkerServiceImpl final : public WorkerService::Service {
     gpr_log(GPR_INFO, "RunClientBody: about to create client");
     std::unique_ptr<Client> client = CreateClient(args.setup());
     if (!client) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create client");
+      return Status(StatusCode::INVALID_ARGUMENT,
+                    "Couldn't create client");
     }
     gpr_log(GPR_INFO, "RunClientBody: client created");
     ClientStatus status;
     if (!stream->Write(status)) {
-      return Status(StatusCode::UNKNOWN, "Client couldn't report init status");
+      return Status(StatusCode::UNKNOWN,
+                    "Client couldn't report init status");
     }
     gpr_log(GPR_INFO, "RunClientBody: creation status reported");
     while (stream->Read(&args)) {
@@ -213,7 +222,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
       }
       *status.mutable_stats() = client->Mark(args.mark().reset());
       if (!stream->Write(status)) {
-        return Status(StatusCode::UNKNOWN, "Client couldn't respond to mark");
+        return Status(StatusCode::UNKNOWN,
+                      "Client couldn't respond to mark");
       }
       gpr_log(GPR_INFO, "RunClientBody: Mark response given");
     }
@@ -225,14 +235,17 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return Status::OK;
   }
 
-  Status RunServerBody(ServerContext* /*ctx*/,
-                       ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
+  Status RunServerBody(
+      ServerContext* /*ctx*/,
+      ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
     ServerArgs args;
     if (!stream->Read(&args)) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read server args");
+      return Status(StatusCode::INVALID_ARGUMENT,
+                    "Couldn't read server args");
     }
     if (!args.has_setup()) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Bad server creation args");
+      return Status(StatusCode::INVALID_ARGUMENT,
+                    "Bad server creation args");
     }
     if (server_port_ > 0 && args.setup().port() == 0) {
       args.mutable_setup()->set_port(server_port_);
@@ -243,14 +256,16 @@ class WorkerServiceImpl final : public WorkerService::Service {
       g_inproc_servers->push_back(server.get());
     }
     if (!server) {
-      return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create server");
+      return Status(StatusCode::INVALID_ARGUMENT,
+                    "Couldn't create server");
     }
     gpr_log(GPR_INFO, "RunServerBody: server created");
     ServerStatus status;
     status.set_port(server->port());
     status.set_cores(server->cores());
     if (!stream->Write(status)) {
-      return Status(StatusCode::UNKNOWN, "Server couldn't report init status");
+      return Status(StatusCode::UNKNOWN,
+                    "Server couldn't report init status");
     }
     gpr_log(GPR_INFO, "RunServerBody: creation status reported");
     while (stream->Read(&args)) {
@@ -261,7 +276,8 @@ class WorkerServiceImpl final : public WorkerService::Service {
       }
       *status.mutable_stats() = server->Mark(args.mark().reset());
       if (!stream->Write(status)) {
-        return Status(StatusCode::UNKNOWN, "Server couldn't respond to mark");
+        return Status(StatusCode::UNKNOWN,
+                      "Server couldn't respond to mark");
       }
       gpr_log(GPR_INFO, "RunServerBody: Mark response given");
     }
@@ -284,22 +300,26 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
   builder->AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0);
   if (driver_port >= 0) {
-    std::string server_address = grpc_core::JoinHostPort("::", driver_port);
+    std::string server_address =
+        grpc_core::JoinHostPort("::", driver_port);
     builder->AddListeningPort(
         server_address.c_str(),
-        GetCredentialsProvider()->GetServerCredentials(credential_type));
+        GetCredentialsProvider()->GetServerCredentials(
+            credential_type));
   }
   builder->RegisterService(impl_.get());
 
   server_ = builder->BuildAndStart();
   if (server_ == nullptr) {
     gpr_log(GPR_ERROR,
-            "QpsWorker: Fail to BuildAndStart(driver_port=%d, server_port=%d)",
+            "QpsWorker: Fail to BuildAndStart(driver_port=%d, "
+            "server_port=%d)",
             driver_port, server_port);
   } else {
-    gpr_log(GPR_INFO,
-            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
-            driver_port, server_port);
+    gpr_log(
+        GPR_INFO,
+        "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
+        driver_port, server_port);
   }
 }
 

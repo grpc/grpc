@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,10 +29,9 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -52,16 +51,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -107,16 +107,17 @@ static void test_request_response_with_metadata_and_payload(
        {{nullptr, nullptr, nullptr, nullptr}}}};
   grpc_metadata meta_s[2] = {
       {grpc_slice_from_static_string("key3-bin"),
-       grpc_slice_from_static_string(
-           "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee"),
+       grpc_slice_from_static_string("\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7"
+                                     "\xe8\xe9\xea\xeb\xec\xed\xee"),
        {{nullptr, nullptr, nullptr, nullptr}}},
       {grpc_slice_from_static_string("key4-bin"),
        grpc_slice_from_static_string(
-           "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"),
+           "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd"
+           "\xfe\xff"),
        {{nullptr, nullptr, nullptr, nullptr}}}};
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_request_response_with_metadata_and_payload",
-                 nullptr, nullptr);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "test_request_response_with_metadata_and_payload",
+      nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
   grpc_op* op;
@@ -132,9 +133,10 @@ static void test_request_response_with_metadata_and_payload(
   int was_cancelled = 2;
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -160,7 +162,8 @@ static void test_request_response_with_metadata_and_payload(
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -170,19 +173,20 @@ static void test_request_response_with_metadata_and_payload(
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -200,8 +204,8 @@ static void test_request_response_with_metadata_and_payload(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -223,27 +227,41 @@ static void test_request_response_with_metadata_and_payload(
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   grpc_slice status_string = grpc_slice_from_static_string(
-      "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12"
-      "\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24"
-      "\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36"
-      "\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40\x41\x42\x43\x44\x45\x46\x47\x48"
-      "\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5a"
-      "\x5b\x5c\x5d\x5e\x5f\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a\x6b\x6c"
-      "\x6d\x6e\x6f\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a\x7b\x7c\x7d\x7e"
-      "\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90"
-      "\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2"
-      "\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4"
-      "\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6"
-      "\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8"
-      "\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea"
-      "\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc"
+      "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10"
+      "\x11\x12"
+      "\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22"
+      "\x23\x24"
+      "\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34"
+      "\x35\x36"
+      "\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40\x41\x42\x43\x44\x45\x46"
+      "\x47\x48"
+      "\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50\x51\x52\x53\x54\x55\x56\x57\x58"
+      "\x59\x5a"
+      "\x5b\x5c\x5d\x5e\x5f\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a"
+      "\x6b\x6c"
+      "\x6d\x6e\x6f\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a\x7b\x7c"
+      "\x7d\x7e"
+      "\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e"
+      "\x8f\x90"
+      "\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0"
+      "\xa1\xa2"
+      "\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2"
+      "\xb3\xb4"
+      "\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4"
+      "\xc5\xc6"
+      "\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6"
+      "\xd7\xd8"
+      "\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8"
+      "\xe9\xea"
+      "\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa"
+      "\xfb\xfc"
       "\xfd\xfe\xff");
   op->data.send_status_from_server.status_details = &status_string;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
@@ -251,29 +269,43 @@ static void test_request_response_with_metadata_and_payload(
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(
-      0 ==
-      grpc_slice_str_cmp(
-          details,
-          "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10"
-          "\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20"
-          "\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30"
-          "\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40"
-          "\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50"
-          "\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5a\x5b\x5c\x5d\x5e\x5f\x60"
-          "\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a\x6b\x6c\x6d\x6e\x6f\x70"
-          "\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a\x7b\x7c\x7d\x7e\x7f\x80"
-          "\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90"
-          "\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0"
-          "\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0"
-          "\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0"
-          "\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0"
-          "\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0"
-          "\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0"
-          "\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details,
+                                     "\x01\x02\x03\x04\x05\x06\x07\x08"
+                                     "\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10"
+                                     "\x11\x12\x13\x14\x15\x16\x17\x18"
+                                     "\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20"
+                                     "\x21\x22\x23\x24\x25\x26\x27\x28"
+                                     "\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30"
+                                     "\x31\x32\x33\x34\x35\x36\x37\x38"
+                                     "\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40"
+                                     "\x41\x42\x43\x44\x45\x46\x47\x48"
+                                     "\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50"
+                                     "\x51\x52\x53\x54\x55\x56\x57\x58"
+                                     "\x59\x5a\x5b\x5c\x5d\x5e\x5f\x60"
+                                     "\x61\x62\x63\x64\x65\x66\x67\x68"
+                                     "\x69\x6a\x6b\x6c\x6d\x6e\x6f\x70"
+                                     "\x71\x72\x73\x74\x75\x76\x77\x78"
+                                     "\x79\x7a\x7b\x7c\x7d\x7e\x7f\x80"
+                                     "\x81\x82\x83\x84\x85\x86\x87\x88"
+                                     "\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90"
+                                     "\x91\x92\x93\x94\x95\x96\x97\x98"
+                                     "\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0"
+                                     "\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8"
+                                     "\xa9\xaa\xab\xac\xad\xae\xaf\xb0"
+                                     "\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8"
+                                     "\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0"
+                                     "\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8"
+                                     "\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0"
+                                     "\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8"
+                                     "\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0"
+                                     "\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8"
+                                     "\xe9\xea\xeb\xec\xed\xee\xef\xf0"
+                                     "\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8"
+                                     "\xf9\xfa\xfb\xfc\xfd\xfe\xff"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   GPR_ASSERT(was_cancelled == 0);
-  GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
+  GPR_ASSERT(
+      byte_buffer_eq_string(request_payload_recv, "hello world"));
   GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
   GPR_ASSERT(contains_metadata(
       &request_metadata_recv, "key1-bin",
@@ -284,9 +316,9 @@ static void test_request_response_with_metadata_and_payload(
   GPR_ASSERT(contains_metadata(
       &initial_metadata_recv, "key3-bin",
       "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee"));
-  GPR_ASSERT(contains_metadata(
-      &initial_metadata_recv, "key4-bin",
-      "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"));
+  GPR_ASSERT(contains_metadata(&initial_metadata_recv, "key4-bin",
+                               "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8"
+                               "\xf9\xfa\xfb\xfc\xfd\xfe\xff"));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,17 +23,19 @@
 
 #include <stdbool.h>
 
-/* Timer Manager tries to keep only one thread waiting for the next timeout at
-   all times, and thus effectively preventing the thundering herd problem. */
+/* Timer Manager tries to keep only one thread waiting for the next
+   timeout at
+   all times, and thus effectively preventing the thundering herd
+   problem. */
 
 void grpc_timer_manager_init(void);
 void grpc_timer_manager_shutdown(void);
 
-/* enable/disable threading - must be called after grpc_timer_manager_init and
- * before grpc_timer_manager_shutdown */
+/* enable/disable threading - must be called after
+ * grpc_timer_manager_init and before grpc_timer_manager_shutdown */
 void grpc_timer_manager_set_threading(bool enabled);
-/* explicitly perform one tick of the timer system - for when threading is
- * disabled */
+/* explicitly perform one tick of the timer system - for when threading
+ * is disabled */
 void grpc_timer_manager_tick(void);
 /* get global counter that tracks timer wakeups */
 uint64_t grpc_timer_manager_get_wakeups_testonly(void);

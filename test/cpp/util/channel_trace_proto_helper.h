@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,12 +24,16 @@ namespace testing {
 
 void ValidateChannelTraceProtoJsonTranslation(const char* json_c_str);
 void ValidateChannelProtoJsonTranslation(const char* json_c_str);
-void ValidateGetTopChannelsResponseProtoJsonTranslation(const char* json_c_str);
-void ValidateGetChannelResponseProtoJsonTranslation(const char* json_c_str);
-void ValidateGetServerResponseProtoJsonTranslation(const char* json_c_str);
+void ValidateGetTopChannelsResponseProtoJsonTranslation(
+    const char* json_c_str);
+void ValidateGetChannelResponseProtoJsonTranslation(
+    const char* json_c_str);
+void ValidateGetServerResponseProtoJsonTranslation(
+    const char* json_c_str);
 void ValidateSubchannelProtoJsonTranslation(const char* json_c_str);
 void ValidateServerProtoJsonTranslation(const char* json_c_str);
-void ValidateGetServersResponseProtoJsonTranslation(const char* json_c_str);
+void ValidateGetServersResponseProtoJsonTranslation(
+    const char* json_c_str);
 
 }  // namespace testing
 }  // namespace grpc

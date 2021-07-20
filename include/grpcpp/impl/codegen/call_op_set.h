@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,12 +48,13 @@ namespace internal {
 class Call;
 class CallHook;
 
-// TODO(yangg) if the map is changed before we send, the pointers will be a
-// mess. Make sure it does not happen.
+// TODO(yangg) if the map is changed before we send, the pointers will
+// be a mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
     const std::multimap<std::string, std::string>& metadata,
     size_t* metadata_count, const std::string& optional_error_details) {
-  *metadata_count = metadata.size() + (optional_error_details.empty() ? 0 : 1);
+  *metadata_count =
+      metadata.size() + (optional_error_details.empty() ? 0 : 1);
   if (*metadata_count == 0) {
     return nullptr;
   }
@@ -61,7 +62,8 @@ inline grpc_metadata* FillMetadataArray(
       static_cast<grpc_metadata*>(g_core_codegen_interface->gpr_malloc(
           (*metadata_count) * sizeof(grpc_metadata)));
   size_t i = 0;
-  for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
+  for (auto iter = metadata.cbegin(); iter != metadata.cend();
+       ++iter, ++i) {
     metadata_array[i].key = SliceReferencingString(iter->first);
     metadata_array[i].value = SliceReferencingString(iter->second);
   }
@@ -69,7 +71,8 @@ inline grpc_metadata* FillMetadataArray(
     metadata_array[i].key =
         g_core_codegen_interface->grpc_slice_from_static_buffer(
             kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
-    metadata_array[i].value = SliceReferencingString(optional_error_details);
+    metadata_array[i].value =
+        SliceReferencingString(optional_error_details);
   }
   return metadata_array;
 }
@@ -86,7 +89,8 @@ class WriteOptions {
   /// Returns raw flags bitset.
   inline uint32_t flags() const { return flags_; }
 
-  /// Sets flag for the disabling of compression for the next message write.
+  /// Sets flag for the disabling of compression for the next message
+  /// write.
   ///
   /// \sa GRPC_WRITE_NO_COMPRESS
   inline WriteOptions& set_no_compression() {
@@ -94,7 +98,8 @@ class WriteOptions {
     return *this;
   }
 
-  /// Clears flag for the disabling of compression for the next message write.
+  /// Clears flag for the disabling of compression for the next message
+  /// write.
   ///
   /// \sa GRPC_WRITE_NO_COMPRESS
   inline WriteOptions& clear_no_compression() {
@@ -110,8 +115,8 @@ class WriteOptions {
     return GetBit(GRPC_WRITE_NO_COMPRESS);
   }
 
-  /// Sets flag indicating that the write may be buffered and need not go out on
-  /// the wire immediately.
+  /// Sets flag indicating that the write may be buffered and need not
+  /// go out on the wire immediately.
   ///
   /// \sa GRPC_WRITE_BUFFER_HINT
   inline WriteOptions& set_buffer_hint() {
@@ -119,8 +124,8 @@ class WriteOptions {
     return *this;
   }
 
-  /// Clears flag indicating that the write may be buffered and need not go out
-  /// on the wire immediately.
+  /// Clears flag indicating that the write may be buffered and need not
+  /// go out on the wire immediately.
   ///
   /// \sa GRPC_WRITE_BUFFER_HINT
   inline WriteOptions& clear_buffer_hint() {
@@ -128,14 +133,16 @@ class WriteOptions {
     return *this;
   }
 
-  /// Get value for the flag indicating that the write may be buffered and need
-  /// not go out on the wire immediately.
+  /// Get value for the flag indicating that the write may be buffered
+  /// and need not go out on the wire immediately.
   ///
   /// \sa GRPC_WRITE_BUFFER_HINT
-  inline bool get_buffer_hint() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
+  inline bool get_buffer_hint() const {
+    return GetBit(GRPC_WRITE_BUFFER_HINT);
+  }
 
-  /// corked bit: aliases set_buffer_hint currently, with the intent that
-  /// set_buffer_hint will be removed in the future
+  /// corked bit: aliases set_buffer_hint currently, with the intent
+  /// that set_buffer_hint will be removed in the future
   inline WriteOptions& set_corked() {
     SetBit(GRPC_WRITE_BUFFER_HINT);
     return *this;
@@ -146,13 +153,15 @@ class WriteOptions {
     return *this;
   }
 
-  inline bool is_corked() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
+  inline bool is_corked() const {
+    return GetBit(GRPC_WRITE_BUFFER_HINT);
+  }
 
   /// last-message bit: indicates this is the last message in a stream
-  /// client-side:  makes Write the equivalent of performing Write, WritesDone
-  /// in a single step
-  /// server-side:  hold the Write until the service handler returns (sync api)
-  /// or until Finish is called (async api)
+  /// client-side:  makes Write the equivalent of performing Write,
+  /// WritesDone in a single step server-side:  hold the Write until the
+  /// service handler returns (sync api) or until Finish is called
+  /// (async api)
   inline WriteOptions& set_last_message() {
     last_message_ = true;
     return *this;
@@ -165,17 +174,20 @@ class WriteOptions {
     return *this;
   }
 
-  /// Guarantee that all bytes have been written to the socket before completing
-  /// this write (usually writes are completed when they pass flow control).
+  /// Guarantee that all bytes have been written to the socket before
+  /// completing this write (usually writes are completed when they pass
+  /// flow control).
   inline WriteOptions& set_write_through() {
     SetBit(GRPC_WRITE_THROUGH);
     return *this;
   }
 
-  inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
+  inline bool is_write_through() const {
+    return GetBit(GRPC_WRITE_THROUGH);
+  }
 
-  /// Get value for the flag indicating that this is the last message, and
-  /// should be coalesced with trailing metadata.
+  /// Get value for the flag indicating that this is the last message,
+  /// and should be coalesced with trailing metadata.
   ///
   /// \sa GRPC_WRITE_LAST_MESSAGE
   bool is_last_message() const { return last_message_; }
@@ -185,7 +197,9 @@ class WriteOptions {
 
   void ClearBit(const uint32_t mask) { flags_ &= ~mask; }
 
-  bool GetBit(const uint32_t mask) const { return (flags_ & mask) != 0; }
+  bool GetBit(const uint32_t mask) const {
+    return (flags_ & mask) != 0;
+  }
 
   uint32_t flags_;
   bool last_message_;
@@ -205,8 +219,8 @@ class CallNoOp {
       InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
-  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
-  }
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 };
 
 class CallOpSendInitialMetadata {
@@ -215,8 +229,9 @@ class CallOpSendInitialMetadata {
     maybe_compression_level_.is_set = false;
   }
 
-  void SendInitialMetadata(std::multimap<std::string, std::string>* metadata,
-                           uint32_t flags) {
+  void SendInitialMetadata(
+      std::multimap<std::string, std::string>* metadata,
+      uint32_t flags) {
     maybe_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
@@ -256,14 +271,16 @@ class CallOpSendInitialMetadata {
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (!send_) return;
     interceptor_methods->AddInterceptionHookPoint(
-        experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA);
+        experimental::InterceptionHookPoints::
+            PRE_SEND_INITIAL_METADATA);
     interceptor_methods->SetSendInitialMetadata(metadata_map_);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -283,8 +300,8 @@ class CallOpSendMessage {
  public:
   CallOpSendMessage() : send_buf_() {}
 
-  /// Send \a message using \a options for the write. The \a options are cleared
-  /// after use.
+  /// Send \a message using \a options for the write. The \a options are
+  /// cleared after use.
   template <class M>
   Status SendMessage(const M& message,
                      WriteOptions options) GRPC_MUST_USE_RESULT;
@@ -292,15 +309,15 @@ class CallOpSendMessage {
   template <class M>
   Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
 
-  /// Send \a message using \a options for the write. The \a options are cleared
-  /// after use. This form of SendMessage allows gRPC to reference \a message
-  /// beyond the lifetime of SendMessage.
+  /// Send \a message using \a options for the write. The \a options are
+  /// cleared after use. This form of SendMessage allows gRPC to
+  /// reference \a message beyond the lifetime of SendMessage.
   template <class M>
   Status SendMessagePtr(const M* message,
                         WriteOptions options) GRPC_MUST_USE_RESULT;
 
-  /// This form of SendMessage allows gRPC to reference \a message beyond the
-  /// lifetime of SendMessage.
+  /// This form of SendMessage allows gRPC to reference \a message
+  /// beyond the lifetime of SendMessage.
   template <class M>
   Status SendMessagePtr(const M* message) GRPC_MUST_USE_RESULT;
 
@@ -340,8 +357,8 @@ class CallOpSendMessage {
     if (msg_ == nullptr && !send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
-    interceptor_methods->SetSendMessage(&send_buf_, &msg_, &failed_send_,
-                                        serializer_);
+    interceptor_methods->SetSendMessage(&send_buf_, &msg_,
+                                        &failed_send_, serializer_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -358,7 +375,8 @@ class CallOpSendMessage {
                                         nullptr);
   }
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -372,14 +390,17 @@ class CallOpSendMessage {
 };
 
 template <class M>
-Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
+Status CallOpSendMessage::SendMessage(const M& message,
+                                      WriteOptions options) {
   write_options_ = options;
-  // Serialize immediately since we do not have access to the message pointer
+  // Serialize immediately since we do not have access to the message
+  // pointer
   bool own_buf;
   // TODO(vjpai): Remove the void below when possible
   // The void in the template parameter below should not be needed
   // (since it should be implicit) but is needed due to an observed
-  // difference in behavior between clang and gcc for certain internal users
+  // difference in behavior between clang and gcc for certain internal
+  // users
   Status result = SerializationTraits<M, void>::Serialize(
       message, send_buf_.bbuf_ptr(), &own_buf);
   if (!own_buf) {
@@ -404,9 +425,11 @@ Status CallOpSendMessage::SendMessagePtr(const M* message,
     // TODO(vjpai): Remove the void below when possible
     // The void in the template parameter below should not be needed
     // (since it should be implicit) but is needed due to an observed
-    // difference in behavior between clang and gcc for certain internal users
+    // difference in behavior between clang and gcc for certain internal
+    // users
     Status result = SerializationTraits<M, void>::Serialize(
-        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
+        *static_cast<const M*>(message), send_buf_.bbuf_ptr(),
+        &own_buf);
     if (!own_buf) {
       send_buf_.Duplicate();
     }
@@ -444,9 +467,9 @@ class CallOpRecvMessage {
     if (message_ == nullptr) return;
     if (recv_buf_.Valid()) {
       if (*status) {
-        got_message = *status =
-            SerializationTraits<R>::Deserialize(recv_buf_.bbuf_ptr(), message_)
-                .ok();
+        got_message = *status = SerializationTraits<R>::Deserialize(
+                                    recv_buf_.bbuf_ptr(), message_)
+                                    .ok();
         recv_buf_.Release();
       } else {
         got_message = false;
@@ -456,9 +479,9 @@ class CallOpRecvMessage {
       if (hijacked_recv_message_failed_) {
         FinishOpRecvMessageFailureHandler(status);
       } else {
-        // The op was hijacked and it was successful. There is no further action
-        // to be performed since the message is already in its non-serialized
-        // form.
+        // The op was hijacked and it was successful. There is no
+        // further action to be performed since the message is already
+        // in its non-serialized form.
       }
     } else {
       FinishOpRecvMessageFailureHandler(status);
@@ -477,9 +500,11 @@ class CallOpRecvMessage {
     if (message_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
-    if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
+    if (!got_message)
+      interceptor_methods->SetRecvMessage(nullptr, nullptr);
   }
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
     if (message_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
@@ -514,21 +539,23 @@ class DeserializeFuncType final : public DeserializeFunc {
  public:
   explicit DeserializeFuncType(R* message) : message_(message) {}
   Status Deserialize(ByteBuffer* buf) override {
-    return SerializationTraits<R>::Deserialize(buf->bbuf_ptr(), message_);
+    return SerializationTraits<R>::Deserialize(buf->bbuf_ptr(),
+                                               message_);
   }
 
   ~DeserializeFuncType() override {}
 
  private:
-  R* message_;  // Not a managed pointer because management is external to this
+  R* message_;  // Not a managed pointer because management is external
+                // to this
 };
 
 class CallOpGenericRecvMessage {
  public:
   template <class R>
   void RecvMessage(R* message) {
-    // Use an explicit base class pointer to avoid resolution error in the
-    // following unique_ptr::reset for some old implementations.
+    // Use an explicit base class pointer to avoid resolution error in
+    // the following unique_ptr::reset for some old implementations.
     DeserializeFunc* func = new DeserializeFuncType<R>(message);
     deserialize_.reset(func);
     message_ = message;
@@ -564,9 +591,9 @@ class CallOpGenericRecvMessage {
       if (hijacked_recv_message_failed_) {
         FinishOpRecvMessageFailureHandler(status);
       } else {
-        // The op was hijacked and it was successful. There is no further action
-        // to be performed since the message is already in its non-serialized
-        // form.
+        // The op was hijacked and it was successful. There is no
+        // further action to be performed since the message is already
+        // in its non-serialized form.
       }
     } else {
       got_message = false;
@@ -588,10 +615,12 @@ class CallOpGenericRecvMessage {
     if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
-    if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
+    if (!got_message)
+      interceptor_methods->SetRecvMessage(nullptr, nullptr);
     deserialize_.reset();
   }
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
     if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
@@ -642,7 +671,8 @@ class CallOpClientSendClose {
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -661,7 +691,8 @@ class CallOpServerSendStatus {
     send_error_details_ = status.error_details();
     metadata_map_ = trailing_metadata;
     send_status_available_ = true;
-    send_status_code_ = static_cast<grpc_status_code>(status.error_code());
+    send_status_code_ =
+        static_cast<grpc_status_code>(status.error_code());
     send_error_message_ = status.error_message();
   }
 
@@ -674,7 +705,8 @@ class CallOpServerSendStatus {
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->data.send_status_from_server.trailing_metadata_count =
         trailing_metadata_count_;
-    op->data.send_status_from_server.trailing_metadata = trailing_metadata_;
+    op->data.send_status_from_server.trailing_metadata =
+        trailing_metadata_;
     op->data.send_status_from_server.status = send_status_code_;
     error_message_slice_ = SliceReferencingString(send_error_message_);
     op->data.send_status_from_server.status_details =
@@ -695,14 +727,15 @@ class CallOpServerSendStatus {
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_STATUS);
     interceptor_methods->SetSendTrailingMetadata(metadata_map_);
-    interceptor_methods->SetSendStatus(&send_status_code_, &send_error_details_,
-                                       &send_error_message_);
+    interceptor_methods->SetSendStatus(
+        &send_status_code_, &send_error_details_, &send_error_message_);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -732,7 +765,8 @@ class CallOpRecvInitialMetadata {
     if (metadata_map_ == nullptr || hijacked_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata.recv_initial_metadata = metadata_map_->arr();
+    op->data.recv_initial_metadata.recv_initial_metadata =
+        metadata_map_->arr();
     op->flags = 0;
     op->reserved = nullptr;
   }
@@ -750,15 +784,18 @@ class CallOpRecvInitialMetadata {
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (metadata_map_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
-        experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA);
+        experimental::InterceptionHookPoints::
+            POST_RECV_INITIAL_METADATA);
     metadata_map_ = nullptr;
   }
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
     if (metadata_map_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
-        experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA);
+        experimental::InterceptionHookPoints::
+            PRE_RECV_INITIAL_METADATA);
   }
 
  private:
@@ -771,7 +808,8 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus()
       : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
-  void ClientRecvStatus(::grpc::ClientContext* context, Status* status) {
+  void ClientRecvStatus(::grpc::ClientContext* context,
+                        Status* status) {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
@@ -783,7 +821,8 @@ class CallOpClientRecvStatus {
     if (recv_status_ == nullptr || hijacked_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = metadata_map_->arr();
+    op->data.recv_status_on_client.trailing_metadata =
+        metadata_map_->arr();
     op->data.recv_status_on_client.status = &status_code_;
     op->data.recv_status_on_client.status_details = &error_message_;
     op->data.recv_status_on_client.error_string = &debug_error_string_;
@@ -810,7 +849,8 @@ class CallOpClientRecvStatus {
             const_cast<char*>(debug_error_string_));
       }
     }
-    // TODO(soheil): Find callers that set debug string even for status OK,
+    // TODO(soheil): Find callers that set debug string even for status
+    // OK,
     //               and fix them.
     g_core_codegen_interface->grpc_slice_unref(error_message_);
   }
@@ -829,7 +869,8 @@ class CallOpClientRecvStatus {
     recv_status_ = nullptr;
   }
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(
+      InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
     if (recv_status_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
@@ -855,9 +896,11 @@ class CallOpSet;
 /// Since we cannot use variadic templates, we declare slots up to
 /// the maximum count of ops we'll need in a set. We leverage the
 /// empty base class optimization to slim this class (especially
-/// when there are many unused slots used). To avoid duplicate base classes,
-/// the template parameter for CallNoOp is varied by argument position.
-template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
+/// when there are many unused slots used). To avoid duplicate base
+/// classes, the template parameter for CallNoOp is varied by argument
+/// position.
+template <class Op1, class Op2, class Op3, class Op4, class Op5,
+          class Op6>
 class CallOpSet : public CallOpSetInterface,
                   public Op1,
                   public Op2,
@@ -868,8 +911,9 @@ class CallOpSet : public CallOpSetInterface,
  public:
   CallOpSet() : core_cq_tag_(this), return_tag_(this) {}
   // The copy constructor and assignment operator reset the value of
-  // core_cq_tag_, return_tag_, done_intercepting_ and interceptor_methods_
-  // since those are only meaningful on a specific object, not across objects.
+  // core_cq_tag_, return_tag_, done_intercepting_ and
+  // interceptor_methods_ since those are only meaningful on a specific
+  // object, not across objects.
   CallOpSet(const CallOpSet& other)
       : core_cq_tag_(this),
         return_tag_(this),
@@ -892,24 +936,25 @@ class CallOpSet : public CallOpSetInterface,
   void FillOps(Call* call) override {
     done_intercepting_ = false;
     g_core_codegen_interface->grpc_call_ref(call->call());
-    call_ =
-        *call;  // It's fine to create a copy of call since it's just pointers
+    call_ = *call;  // It's fine to create a copy of call since it's
+                    // just pointers
 
     if (RunInterceptors()) {
       ContinueFillOpsAfterInterception();
     } else {
-      // After the interceptors are run, ContinueFillOpsAfterInterception will
-      // be run
+      // After the interceptors are run,
+      // ContinueFillOpsAfterInterception will be run
     }
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
     if (done_intercepting_) {
-      // Complete the avalanching since we are done with this batch of ops
+      // Complete the avalanching since we are done with this batch of
+      // ops
       call_.cq()->CompleteAvalanching();
-      // We have already finished intercepting and filling in the results. This
-      // round trip from the core needed to be made because interceptors were
-      // run
+      // We have already finished intercepting and filling in the
+      // results. This round trip from the core needed to be made
+      // because interceptors were run
       *tag = return_tag_;
       *status = saved_status_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
@@ -928,8 +973,9 @@ class CallOpSet : public CallOpSetInterface,
       g_core_codegen_interface->grpc_call_unref(call_.call());
       return true;
     }
-    // Interceptors are going to be run, so we can't return the tag just yet.
-    // After the interceptors are run, ContinueFinalizeResultAfterInterception
+    // Interceptors are going to be run, so we can't return the tag just
+    // yet. After the interceptors are run,
+    // ContinueFinalizeResultAfterInterception
     return false;
   }
 
@@ -937,14 +983,16 @@ class CallOpSet : public CallOpSetInterface,
 
   void* core_cq_tag() override { return core_cq_tag_; }
 
-  /// set_core_cq_tag is used to provide a different core CQ tag than "this".
-  /// This is used for callback-based tags, where the core tag is the core
-  /// callback function. It does not change the use or behavior of any other
-  /// function (such as FinalizeResult)
-  void set_core_cq_tag(void* core_cq_tag) { core_cq_tag_ = core_cq_tag; }
+  /// set_core_cq_tag is used to provide a different core CQ tag than
+  /// "this". This is used for callback-based tags, where the core tag
+  /// is the core callback function. It does not change the use or
+  /// behavior of any other function (such as FinalizeResult)
+  void set_core_cq_tag(void* core_cq_tag) {
+    core_cq_tag_ = core_cq_tag;
+  }
 
-  // This will be called while interceptors are run if the RPC is a hijacked
-  // RPC. This should set hijacking state for each of the ops.
+  // This will be called while interceptors are run if the RPC is a
+  // hijacked RPC. This should set hijacking state for each of the ops.
   void SetHijackingState() override {
     this->Op1::SetHijackingState(&interceptor_methods_);
     this->Op2::SetHijackingState(&interceptor_methods_);
@@ -966,28 +1014,29 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::AddOp(ops, &nops);
     this->Op6::AddOp(ops, &nops);
 
-    grpc_call_error err = g_core_codegen_interface->grpc_call_start_batch(
-        call_.call(), ops, nops, core_cq_tag(), nullptr);
+    grpc_call_error err =
+        g_core_codegen_interface->grpc_call_start_batch(
+            call_.call(), ops, nops, core_cq_tag(), nullptr);
 
     if (err != GRPC_CALL_OK) {
-      // A failure here indicates an API misuse; for example, doing a Write
-      // while another Write is already pending on the same RPC or invoking
-      // WritesDone multiple times
-      // gpr_log(GPR_ERROR, "API misuse of type %s observed",
+      // A failure here indicates an API misuse; for example, doing a
+      // Write while another Write is already pending on the same RPC or
+      // invoking WritesDone multiple times gpr_log(GPR_ERROR, "API
+      // misuse of type %s observed",
       //        g_core_codegen_interface->grpc_call_error_to_string(err));
       GPR_CODEGEN_ASSERT(false);
     }
   }
 
-  // Should be called after interceptors are done running on the finalize result
-  // path
+  // Should be called after interceptors are done running on the
+  // finalize result path
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
-    // The following call_start_batch is internally-generated so no need for an
-    // explanatory log on failure.
+    // The following call_start_batch is internally-generated so no need
+    // for an explanatory log on failure.
     GPR_CODEGEN_ASSERT(g_core_codegen_interface->grpc_call_start_batch(
-                           call_.call(), nullptr, 0, core_cq_tag(), nullptr) ==
-                       GRPC_CALL_OK);
+                           call_.call(), nullptr, 0, core_cq_tag(),
+                           nullptr) == GRPC_CALL_OK);
   }
 
  private:

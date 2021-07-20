@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,23 +28,24 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-/** Populate \a resolved_addr from \a uri, whose path is expected to contain a
- * unix socket path. Returns true upon success. */
+/** Populate \a resolved_addr from \a uri, whose path is expected to
+ * contain a unix socket path. Returns true upon success. */
 bool grpc_parse_unix(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr);
 
-/** Populate \a resolved_addr from \a uri, whose path is expected to contain a
- * unix socket path in the abstract namespace. Returns true upon success. */
+/** Populate \a resolved_addr from \a uri, whose path is expected to
+ * contain a unix socket path in the abstract namespace. Returns true
+ * upon success. */
 bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
                               grpc_resolved_address* resolved_addr);
 
-/** Populate \a resolved_addr from \a uri, whose path is expected to contain an
- * IPv4 host:port pair. Returns true upon success. */
+/** Populate \a resolved_addr from \a uri, whose path is expected to
+ * contain an IPv4 host:port pair. Returns true upon success. */
 bool grpc_parse_ipv4(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr);
 
-/** Populate \a resolved_addr from \a uri, whose path is expected to contain an
- * IPv6 host:port pair. Returns true upon success. */
+/** Populate \a resolved_addr from \a uri, whose path is expected to
+ * contain an IPv6 host:port pair. Returns true upon success. */
 bool grpc_parse_ipv6(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr);
 
@@ -54,21 +55,24 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
 
 /** Parse bare IPv4 or IPv6 "IP:port" strings. */
 bool grpc_parse_ipv4_hostport(absl::string_view hostport,
-                              grpc_resolved_address* addr, bool log_errors);
+                              grpc_resolved_address* addr,
+                              bool log_errors);
 bool grpc_parse_ipv6_hostport(absl::string_view hostport,
-                              grpc_resolved_address* addr, bool log_errors);
+                              grpc_resolved_address* addr,
+                              bool log_errors);
 
-/* Converts named or numeric port to a uint16 suitable for use in a sockaddr. */
+/* Converts named or numeric port to a uint16 suitable for use in a
+ * sockaddr. */
 uint16_t grpc_strhtons(const char* port);
 
 namespace grpc_core {
 
 /** Populate \a resolved_addr to be a unix socket at |path| */
-grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
-                                       grpc_resolved_address* resolved_addr);
+grpc_error_handle UnixSockaddrPopulate(
+    absl::string_view path, grpc_resolved_address* resolved_addr);
 
-/** Populate \a resolved_addr to be a unix socket in the abstract namespace
- * at |path| */
+/** Populate \a resolved_addr to be a unix socket in the abstract
+ * namespace at |path| */
 grpc_error_handle UnixAbstractSockaddrPopulate(
     absl::string_view path, grpc_resolved_address* resolved_addr);
 

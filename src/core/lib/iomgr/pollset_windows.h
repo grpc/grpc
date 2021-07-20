@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,10 +28,10 @@
 #ifdef GRPC_WINSOCK_SOCKET
 #include "src/core/lib/iomgr/socket_windows.h"
 
-/* There isn't really any such thing as a pollset under Windows, due to the
-   nature of the IO completion ports. A Windows "pollset" is merely a mutex
-   used to synchronize with the IOCP, and workers are condition variables
-   used to block threads until work is ready. */
+/* There isn't really any such thing as a pollset under Windows, due to
+   the nature of the IO completion ports. A Windows "pollset" is merely
+   a mutex used to synchronize with the IOCP, and workers are condition
+   variables used to block threads until work is ready. */
 
 typedef enum {
   GRPC_POLLSET_WORKER_LINK_POLLSET = 0,

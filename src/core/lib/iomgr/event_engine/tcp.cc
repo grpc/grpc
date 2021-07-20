@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
@@ -43,7 +43,8 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 struct grpc_tcp_server {
   grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener,
                   grpc_resource_quota* rq)
-      : refcount(1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr),
+      : refcount(1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp"
+                                                            : nullptr),
         listener(std::move(listener)),
         resource_quota(rq) {
     shutdown_starting.head = nullptr;
@@ -66,12 +67,13 @@ struct grpc_tcp_server {
 
 namespace {
 
-/// Converts a grpc_closure to an EventEngine Callback. The closure is expected
-/// to already be initialized.
+/// Converts a grpc_closure to an EventEngine Callback. The closure is
+/// expected to already be initialized.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
   return [closure, endpoint_ptr](
-             absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
+             absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+                 endpoint) {
     grpc_core::ExecCtx exec_ctx;
     if (endpoint.ok()) {
       auto* grpc_endpoint_out =
@@ -81,18 +83,21 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
       grpc_endpoint_destroy(*endpoint_ptr);
       *endpoint_ptr = nullptr;
     }
-    grpc_core::Closure::Run(DEBUG_LOCATION, closure,
-                            absl_status_to_grpc_error(endpoint.status()));
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION, closure,
+        absl_status_to_grpc_error(endpoint.status()));
     exec_ctx.Flush();
     grpc_pollset_ee_broadcast_event();
   };
 }
 
-/// Usage note: this method does not take ownership of any pointer arguments.
+/// Usage note: this method does not take ownership of any pointer
+/// arguments.
 void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
-                 const grpc_resolved_address* addr, grpc_millis deadline) {
+                 const grpc_resolved_address* addr,
+                 grpc_millis deadline) {
   grpc_event_engine_endpoint* ee_endpoint =
       reinterpret_cast<grpc_event_engine_endpoint*>(
           grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
@@ -100,8 +105,8 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, endpoint);
   SliceAllocator sa(ee_endpoint->ru);
-  EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
-                                  addr->len);
+  EventEngine::ResolvedAddress ra(
+      reinterpret_cast<const sockaddr*>(addr->addr), addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
   ChannelArgsEndpointConfig endpoint_config(channel_args);
@@ -137,9 +142,9 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                     gpr_zalloc(sizeof(*acceptor)));
             acceptor->from_server = *server;
             acceptor->external_connection = false;
-            (*server)->on_accept_internal((*server)->on_accept_internal_arg,
-                                          &iomgr_endpoint->base, nullptr,
-                                          acceptor);
+            (*server)->on_accept_internal(
+                (*server)->on_accept_internal_arg,
+                &iomgr_endpoint->base, nullptr, acceptor);
             exec_ctx.Flush();
             grpc_pollset_ee_broadcast_event();
           },
@@ -157,16 +162,16 @@ void tcp_server_start(grpc_tcp_server* server,
                       grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
   server->on_accept_internal = on_accept_cb;
   server->on_accept_internal_arg = cb_arg;
-  // The iomgr API does not handle situations where the server cannot start, so
-  // a crash may be preferable for now.
+  // The iomgr API does not handle situations where the server cannot
+  // start, so a crash may be preferable for now.
   GPR_ASSERT(server->listener->Start().ok());
 }
 
 grpc_error* tcp_server_add_port(grpc_tcp_server* s,
                                 const grpc_resolved_address* addr,
                                 int* out_port) {
-  EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
-                                  addr->len);
+  EventEngine::ResolvedAddress ra(
+      reinterpret_cast<const sockaddr*>(addr->addr), addr->len);
   auto port = s->listener->Bind(ra);
   if (!port.ok()) {
     return absl_status_to_grpc_error(port.status());
@@ -186,7 +191,8 @@ unsigned tcp_server_port_fd_count(grpc_tcp_server* /* s */,
   return 0;
 }
 
-int tcp_server_port_fd(grpc_tcp_server* /* s */, unsigned /* port_index */,
+int tcp_server_port_fd(grpc_tcp_server* /* s */,
+                       unsigned /* port_index */,
                        unsigned /* fd_index */) {
   // Note: only used internally
   return -1;
@@ -215,7 +221,8 @@ void tcp_server_shutdown_listeners(grpc_tcp_server* /* s */) {}
 
 }  // namespace
 
-grpc_tcp_client_vtable grpc_event_engine_tcp_client_vtable = {tcp_connect};
+grpc_tcp_client_vtable grpc_event_engine_tcp_client_vtable = {
+    tcp_connect};
 grpc_tcp_server_vtable grpc_event_engine_tcp_server_vtable = {
     tcp_server_create,        tcp_server_start,
     tcp_server_add_port,      tcp_server_create_fd_handler,

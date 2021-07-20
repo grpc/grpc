@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,10 +39,9 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -62,7 +61,8 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -71,7 +71,8 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
 
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         five_seconds_from_now(), nullptr)
+                                         five_seconds_from_now(),
+                                         nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -93,8 +94,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-/* Client sends a request, server replies with a payload, then waits for the
-   keepalive watchdog timeouts before returning status. */
+/* Client sends a request, server replies with a payload, then waits for
+   the keepalive watchdog timeouts before returning status. */
 static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
@@ -105,16 +106,19 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
 
   grpc_arg keepalive_arg_elems[3];
   keepalive_arg_elems[0].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[0].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS);
+  keepalive_arg_elems[0].key =
+      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS);
   keepalive_arg_elems[0].value.integer = 3500;
   keepalive_arg_elems[1].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
+  keepalive_arg_elems[1].key =
+      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
   keepalive_arg_elems[1].value.integer = 0;
   keepalive_arg_elems[2].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
+  keepalive_arg_elems[2].key =
+      const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
   keepalive_arg_elems[2].value.integer = 0;
-  grpc_channel_args keepalive_args = {GPR_ARRAY_SIZE(keepalive_arg_elems),
-                                      keepalive_arg_elems};
+  grpc_channel_args keepalive_args = {
+      GPR_ARRAY_SIZE(keepalive_arg_elems), keepalive_arg_elems};
 
   grpc_end2end_test_fixture f =
       begin_test(config, "keepalive_timeout", &keepalive_args, nullptr);
@@ -134,9 +138,10 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_set_disable_ping_ack(true);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -152,18 +157,20 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s, &call_details,
+                                      &request_metadata_recv, f.cq,
+                                      f.cq, tag(101)));
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
@@ -175,8 +182,8 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -186,12 +193,13 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
@@ -200,7 +208,8 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   char* details_str = grpc_slice_to_c_string(details);
   char* method_str = grpc_slice_to_c_string(call_details.method);
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "keepalive watchdog timeout"));
+  GPR_ASSERT(0 ==
+             grpc_slice_str_cmp(details, "keepalive watchdog timeout"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
 
   gpr_free(details_str);
@@ -224,13 +233,15 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-/* Verify that reads reset the keepalive ping timer. The client sends 30 pings
- * with a sleep of 10ms in between. It has a configured keepalive timer of
- * 200ms. In the success case, each ping ack should reset the keepalive timer so
- * that the keepalive ping is never sent. */
-static void test_read_delays_keepalive(grpc_end2end_test_config config) {
+/* Verify that reads reset the keepalive ping timer. The client sends 30
+ * pings with a sleep of 10ms in between. It has a configured keepalive
+ * timer of 200ms. In the success case, each ping ack should reset the
+ * keepalive timer so that the keepalive ping is never sent. */
+static void test_read_delays_keepalive(
+    grpc_end2end_test_config config) {
 #ifdef GRPC_POSIX_SOCKET
-  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  grpc_core::UniquePtr<char> poller =
+      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   /* It is hard to get the timing right for the polling engine poll. */
   if ((0 == strcmp(poller.get(), "poll"))) {
     return;
@@ -239,18 +250,21 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   const int kPingIntervalMS = 100;
   grpc_arg keepalive_arg_elems[3];
   keepalive_arg_elems[0].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[0].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS);
+  keepalive_arg_elems[0].key =
+      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS);
   keepalive_arg_elems[0].value.integer = 20 * kPingIntervalMS;
   keepalive_arg_elems[1].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
+  keepalive_arg_elems[1].key =
+      const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
   keepalive_arg_elems[1].value.integer = 0;
   keepalive_arg_elems[2].type = GRPC_ARG_INTEGER;
-  keepalive_arg_elems[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
+  keepalive_arg_elems[2].key =
+      const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
   keepalive_arg_elems[2].value.integer = 0;
-  grpc_channel_args keepalive_args = {GPR_ARRAY_SIZE(keepalive_arg_elems),
-                                      keepalive_arg_elems};
-  grpc_end2end_test_fixture f = begin_test(config, "test_read_delays_keepalive",
-                                           &keepalive_args, nullptr);
+  grpc_channel_args keepalive_args = {
+      GPR_ARRAY_SIZE(keepalive_arg_elems), keepalive_arg_elems};
+  grpc_end2end_test_fixture f = begin_test(
+      config, "test_read_delays_keepalive", &keepalive_args, nullptr);
   /* Disable ping ack to trigger the keepalive timeout */
   grpc_set_disable_ping_ack(true);
   grpc_call* c;
@@ -277,9 +291,10 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
       grpc_slice_from_copied_string("hello you");
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -295,24 +310,26 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(100));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(100), 1);
   cq_verify(cqv);
@@ -329,13 +346,15 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(101),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(101), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (i = 0; i < 30; i++) {
-    request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-    response_payload = grpc_raw_byte_buffer_create(&response_payload_slice, 1);
+    request_payload =
+        grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+    response_payload =
+        grpc_raw_byte_buffer_create(&response_payload_slice, 1);
 
     memset(ops, 0, sizeof(ops));
     op = ops;
@@ -349,8 +368,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                  nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                  tag(2), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -384,8 +403,10 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     grpc_byte_buffer_destroy(response_payload);
     grpc_byte_buffer_destroy(request_payload_recv);
     grpc_byte_buffer_destroy(response_payload_recv);
-    /* Sleep for a short interval to check if the client sends any pings */
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(kPingIntervalMS));
+    /* Sleep for a short interval to check if the client sends any pings
+     */
+    gpr_sleep_until(
+        grpc_timeout_milliseconds_to_deadline(kPingIntervalMS));
   }
 
   grpc_slice_unref(request_payload_slice);
@@ -397,8 +418,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(3), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -411,8 +432,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);

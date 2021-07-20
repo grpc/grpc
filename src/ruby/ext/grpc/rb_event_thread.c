@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,7 +52,8 @@ typedef struct grpc_rb_event_queue {
 
 static grpc_rb_event_queue event_queue;
 
-void grpc_rb_event_queue_enqueue(void (*callback)(void*), void* argument) {
+void grpc_rb_event_queue_enqueue(void (*callback)(void*),
+                                 void* argument) {
   grpc_rb_event* event = gpr_malloc(sizeof(grpc_rb_event));
   event->callback = callback;
   event->argument = argument;
@@ -112,16 +113,16 @@ static void grpc_rb_event_unblocking_func(void* arg) {
   gpr_mu_unlock(&event_queue.mu);
 }
 
-/* This is the implementation of the thread that handles auth metadata plugin
- * events */
+/* This is the implementation of the thread that handles auth metadata
+ * plugin events */
 static VALUE grpc_rb_event_thread(VALUE arg) {
   grpc_rb_event* event;
   (void)arg;
   grpc_ruby_init();
   while (true) {
     event = (grpc_rb_event*)rb_thread_call_without_gvl(
-        grpc_rb_wait_for_event_no_gil, NULL, grpc_rb_event_unblocking_func,
-        NULL);
+        grpc_rb_wait_for_event_no_gil, NULL,
+        grpc_rb_event_unblocking_func, NULL);
     if (event == NULL) {
       // Indicates that the thread needs to shut down
       break;

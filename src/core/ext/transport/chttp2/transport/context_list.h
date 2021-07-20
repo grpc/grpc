@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,13 +29,13 @@ namespace grpc_core {
 /** A list of RPC Contexts */
 class ContextList {
  public:
-  /* Creates a new element with \a context as the value and appends it to the
-   * list. */
+  /* Creates a new element with \a context as the value and appends it
+   * to the list. */
   static void Append(ContextList** head, grpc_chttp2_stream* s);
 
-  /* Executes a function \a fn with each context in the list and \a ts. It also
-   * frees up the entire list after this operation. It is intended as a callback
-   * and hence does not take a ref on \a error */
+  /* Executes a function \a fn with each context in the list and \a ts.
+   * It also frees up the entire list after this operation. It is
+   * intended as a callback and hence does not take a ref on \a error */
   static void Execute(void* arg, grpc_core::Timestamps* ts,
                       grpc_error_handle error);
 

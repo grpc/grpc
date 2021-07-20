@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,14 +23,17 @@
 
 #include <grpc/grpc.h>
 
-/* Converts a hash object containing channel args to a channel args instance.
+/* Converts a hash object containing channel args to a channel args
+ * instance.
  *
- * This func ALLOCs args->args.  The caller is responsible for freeing it.  If
- * a ruby error is raised during processing of the hash values, the func takes
- * care to deallocate any memory allocated so far, and propagate the error.
+ * This func ALLOCs args->args.  The caller is responsible for freeing
+ * it.  If a ruby error is raised during processing of the hash values,
+ * the func takes care to deallocate any memory allocated so far, and
+ * propagate the error.
  *
  * @param src_hash A ruby hash
- * @param dst the grpc_channel_args that the hash entries will be added to.
+ * @param dst the grpc_channel_args that the hash entries will be added
+ * to.
  */
 void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
                                           grpc_channel_args* dst);

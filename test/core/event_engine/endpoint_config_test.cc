@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #include "grpc/event_engine/endpoint_config.h"
@@ -27,7 +27,8 @@
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 
 TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
-  grpc_arg arg = grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
+  grpc_arg arg =
+      grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
   const grpc_channel_args args = {1, &arg};
   ChannelArgsEndpointConfig config(&args);
   EXPECT_EQ(absl::get<int>(config.Get("arst")), 3);
@@ -35,8 +36,8 @@ TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
 
 TEST(EndpointConfigTest, ReturnsMonostateForMissingKeys) {
   ChannelArgsEndpointConfig config(nullptr);
-  EXPECT_TRUE(
-      absl::holds_alternative<absl::monostate>(config.Get("nonexistent")));
+  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
+      config.Get("nonexistent")));
 }
 
 int main(int argc, char** argv) {

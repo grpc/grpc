@@ -9,13 +9,14 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 // This is similar to the sockaddr resolver, except that it supports a
-// bunch of query args that are useful for dependency injection in tests.
+// bunch of query args that are useful for dependency injection in
+// tests.
 
 #include <grpc/support/port_platform.h>
 
@@ -72,8 +73,8 @@ class FakeResolver : public Resolver {
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
-  // If has_next_result_ is true, next_result_ is the next resolution result
-  // to be returned.
+  // If has_next_result_ is true, next_result_ is the next resolution
+  // result to be returned.
   bool has_next_result_ = false;
   Result next_result_;
   // Result to use for the pretended re-resolution in
@@ -95,11 +96,12 @@ FakeResolver::FakeResolver(ResolverArgs args)
       result_handler_(std::move(args.result_handler)),
       response_generator_(
           FakeResolverResponseGenerator::GetFromArgs(args.args)) {
-  // Channels sharing the same subchannels may have different resolver response
-  // generators. If we don't remove this arg, subchannel pool will create new
-  // subchannels for the same address instead of reusing existing ones because
-  // of different values of this channel arg.
-  const char* args_to_remove[] = {GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
+  // Channels sharing the same subchannels may have different resolver
+  // response generators. If we don't remove this arg, subchannel pool
+  // will create new subchannels for the same address instead of reusing
+  // existing ones because of different values of this channel arg.
+  const char* args_to_remove[] = {
+      GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
   channel_args_ = grpc_channel_args_copy_and_remove(
       args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
   if (response_generator_ != nullptr) {
@@ -107,7 +109,9 @@ FakeResolver::FakeResolver(ResolverArgs args)
   }
 }
 
-FakeResolver::~FakeResolver() { grpc_channel_args_destroy(channel_args_); }
+FakeResolver::~FakeResolver() {
+  grpc_channel_args_destroy(channel_args_);
+}
 
 void FakeResolver::StartLocked() {
   started_ = true;
@@ -144,7 +148,8 @@ void FakeResolver::MaybeSendResultLocked() {
     // TODO(roth): Change resolver result generator to be able to inject
     // the error to be returned.
     result_handler_->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver transient failure"),
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Resolver transient failure"),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     return_failure_ = false;
   } else if (has_next_result_) {
@@ -154,10 +159,11 @@ void FakeResolver::MaybeSendResultLocked() {
     // TODO(roth): Use std::move() once grpc_error is converted to C++.
     result.service_config_error = next_result_.service_config_error;
     next_result_.service_config_error = GRPC_ERROR_NONE;
-    // When both next_results_ and channel_args_ contain an arg with the same
-    // name, only the one in next_results_ will be kept since next_results_ is
-    // before channel_args_.
-    result.args = grpc_channel_args_union(next_result_.args, channel_args_);
+    // When both next_results_ and channel_args_ contain an arg with the
+    // same name, only the one in next_results_ will be kept since
+    // next_results_ is before channel_args_.
+    result.args =
+        grpc_channel_args_union(next_result_.args, channel_args_);
     result_handler_->ReturnResult(std::move(result));
     has_next_result_ = false;
   }
@@ -171,10 +177,9 @@ void FakeResolver::ReturnReresolutionResult() {
 
 class FakeResolverResponseSetter {
  public:
-  explicit FakeResolverResponseSetter(RefCountedPtr<FakeResolver> resolver,
-                                      Resolver::Result result,
-                                      bool has_result = false,
-                                      bool immediate = true)
+  explicit FakeResolverResponseSetter(
+      RefCountedPtr<FakeResolver> resolver, Resolver::Result result,
+      bool has_result = false, bool immediate = true)
       : resolver_(std::move(resolver)),
         result_(std::move(result)),
         has_result_(has_result),
@@ -226,7 +231,8 @@ FakeResolverResponseGenerator::FakeResolverResponseGenerator() {}
 
 FakeResolverResponseGenerator::~FakeResolverResponseGenerator() {}
 
-void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
+void FakeResolverResponseGenerator::SetResponse(
+    Resolver::Result result) {
   RefCountedPtr<FakeResolver> resolver;
   {
     MutexLock lock(&mu_);
@@ -254,7 +260,8 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
   FakeResolverResponseSetter* arg = new FakeResolverResponseSetter(
       resolver, std::move(result), true /* has_result */);
   resolver->work_serializer_->Run(
-      [arg]() { arg->SetReresolutionResponseLocked(); }, DEBUG_LOCATION);
+      [arg]() { arg->SetReresolutionResponseLocked(); },
+      DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
@@ -267,7 +274,8 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
   FakeResolverResponseSetter* arg =
       new FakeResolverResponseSetter(resolver, Resolver::Result());
   resolver->work_serializer_->Run(
-      [arg]() { arg->SetReresolutionResponseLocked(); }, DEBUG_LOCATION);
+      [arg]() { arg->SetReresolutionResponseLocked(); },
+      DEBUG_LOCATION);
 }
 
 void FakeResolverResponseGenerator::SetFailure() {
@@ -305,8 +313,8 @@ void FakeResolverResponseGenerator::SetFakeResolver(
   if (has_result_) {
     FakeResolverResponseSetter* arg =
         new FakeResolverResponseSetter(resolver_, std::move(result_));
-    resolver_->work_serializer_->Run([arg]() { arg->SetResponseLocked(); },
-                                     DEBUG_LOCATION);
+    resolver_->work_serializer_->Run(
+        [arg]() { arg->SetResponseLocked(); }, DEBUG_LOCATION);
     has_result_ = false;
   }
 }
@@ -324,24 +332,28 @@ void ResponseGeneratorChannelArgDestroy(void* p) {
   generator->Unref();
 }
 
-int ResponseGeneratorChannelArgCmp(void* a, void* b) { return GPR_ICMP(a, b); }
+int ResponseGeneratorChannelArgCmp(void* a, void* b) {
+  return GPR_ICMP(a, b);
+}
 
 }  // namespace
 
 const grpc_arg_pointer_vtable
     FakeResolverResponseGenerator::kChannelArgPointerVtable = {
-        ResponseGeneratorChannelArgCopy, ResponseGeneratorChannelArgDestroy,
+        ResponseGeneratorChannelArgCopy,
+        ResponseGeneratorChannelArgDestroy,
         ResponseGeneratorChannelArgCmp};
 
 grpc_arg FakeResolverResponseGenerator::MakeChannelArg(
     FakeResolverResponseGenerator* generator) {
   return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR), generator,
-      &kChannelArgPointerVtable);
+      const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR),
+      generator, &kChannelArgPointerVtable);
 }
 
 RefCountedPtr<FakeResolverResponseGenerator>
-FakeResolverResponseGenerator::GetFromArgs(const grpc_channel_args* args) {
+FakeResolverResponseGenerator::GetFromArgs(
+    const grpc_channel_args* args) {
   auto* response_generator =
       grpc_channel_args_find_pointer<FakeResolverResponseGenerator>(
           args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
@@ -359,7 +371,8 @@ class FakeResolverFactory : public ResolverFactory {
  public:
   bool IsValidUri(const URI& /*uri*/) const override { return true; }
 
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      ResolverArgs args) const override {
     return MakeOrphanable<FakeResolver>(std::move(args));
   }
 

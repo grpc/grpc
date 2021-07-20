@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -53,16 +53,21 @@ gpr_char_to_tchar(LPCSTR input) {
 LPSTR
 gpr_tchar_to_char(LPCTSTR input) {
   LPSTR ret;
-  int needed = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
+  int needed =
+      WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
   if (needed <= 0) return NULL;
   ret = (LPSTR)gpr_malloc((unsigned)needed);
   WideCharToMultiByte(CP_UTF8, 0, input, -1, ret, needed, NULL, NULL);
   return ret;
 }
 #else
-LPSTR gpr_tchar_to_char(LPCTSTR input) { return (LPSTR)gpr_strdup(input); }
+LPSTR gpr_tchar_to_char(LPCTSTR input) {
+  return (LPSTR)gpr_strdup(input);
+}
 
-LPTSTR gpr_char_to_tchar(LPCTSTR input) { return (LPTSTR)gpr_strdup(input); }
+LPTSTR gpr_char_to_tchar(LPCTSTR input) {
+  return (LPTSTR)gpr_strdup(input);
+}
 #endif
 
 char* gpr_format_message(int messageid) {

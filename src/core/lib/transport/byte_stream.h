@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,16 +25,18 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
 
-/** Internal bit flag for grpc_begin_message's \a flags signaling the use of
- * compression for the message. (Does not apply for stream compression.) */
+/** Internal bit flag for grpc_begin_message's \a flags signaling the
+ * use of compression for the message. (Does not apply for stream
+ * compression.) */
 #define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
-/** Internal bit flag for determining whether the message was compressed and had
- * to be decompressed by the message_decompress filter. (Does not apply for
- * stream compression.) */
+/** Internal bit flag for determining whether the message was compressed
+ * and had to be decompressed by the message_decompress filter. (Does
+ * not apply for stream compression.) */
 #define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
 /** Mask of all valid internal flags. */
 #define GRPC_WRITE_INTERNAL_USED_MASK \
-  (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
+  (GRPC_WRITE_INTERNAL_COMPRESS |     \
+   GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
 
 namespace grpc_core {
 
@@ -43,14 +45,15 @@ class ByteStream : public Orphanable {
   ~ByteStream() override {}
 
   // Returns true if the bytes are available immediately (in which case
-  // on_complete will not be called), or false if the bytes will be available
-  // asynchronously (in which case on_complete will be called when they
-  // are available). Should not be called if there is no data left on the
-  // stream.
+  // on_complete will not be called), or false if the bytes will be
+  // available asynchronously (in which case on_complete will be called
+  // when they are available). Should not be called if there is no data
+  // left on the stream.
   //
   // max_size_hint can be set as a hint as to the maximum number
   // of bytes that would be acceptable to read.
-  virtual bool Next(size_t max_size_hint, grpc_closure* on_complete) = 0;
+  virtual bool Next(size_t max_size_hint,
+                    grpc_closure* on_complete) = 0;
 
   // Returns the next slice in the byte stream when it is available, as
   // indicated by Next().
@@ -90,7 +93,8 @@ class ByteStream : public Orphanable {
 class SliceBufferByteStream : public ByteStream {
  public:
   // Removes all slices in slice_buffer, leaving it empty.
-  SliceBufferByteStream(grpc_slice_buffer* slice_buffer, uint32_t flags);
+  SliceBufferByteStream(grpc_slice_buffer* slice_buffer,
+                        uint32_t flags);
 
   ~SliceBufferByteStream() override;
 
@@ -112,8 +116,8 @@ class SliceBufferByteStream : public ByteStream {
 // the resulting slices in a slice buffer.  If an initial attempt fails
 // without fully draining the underlying stream, a new caching stream
 // can be created from the same underlying cache, in which case it will
-// return whatever is in the backing buffer before continuing to read the
-// underlying stream.
+// return whatever is in the backing buffer before continuing to read
+// the underlying stream.
 //
 // NOTE: No synchronization is done, so it is not safe to have multiple
 // CachingByteStreams simultaneously drawing from the same underlying

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -67,15 +67,20 @@ static bool maybe_prepend_server_auth_filter(
 }
 
 void grpc_register_security_filters(void) {
-  // Register the auth client with a priority < INT_MAX to allow the authority
-  // filter -on which the auth filter depends- to be higher on the channel
-  // stack.
+  // Register the auth client with a priority < INT_MAX to allow the
+  // authority filter -on which the auth filter depends- to be higher on
+  // the channel stack.
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX - 1,
-                                   maybe_prepend_client_auth_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX - 1,
-                                   maybe_prepend_client_auth_filter, nullptr);
+                                   maybe_prepend_client_auth_filter,
+                                   nullptr);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX - 1,
+      maybe_prepend_client_auth_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX - 1,
-                                   maybe_prepend_server_auth_filter, nullptr);
+                                   maybe_prepend_server_auth_filter,
+                                   nullptr);
 }
 
-void grpc_security_init() { grpc_core::SecurityRegisterHandshakerFactories(); }
+void grpc_security_init() {
+  grpc_core::SecurityRegisterHandshakerFactories();
+}

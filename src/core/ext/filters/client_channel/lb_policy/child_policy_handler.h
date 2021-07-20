@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_CHILD_POLICY_HANDLER_H
@@ -69,7 +69,8 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
 
   // The most recent config passed to UpdateLocked().
   // If pending_child_policy_ is non-null, this is the config passed to
-  // pending_child_policy_; otherwise, it's the config passed to child_policy_.
+  // pending_child_policy_; otherwise, it's the config passed to
+  // child_policy_.
   RefCountedPtr<LoadBalancingPolicy::Config> current_config_;
 
   // Child LB policy.

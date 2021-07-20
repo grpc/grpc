@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,15 +47,16 @@ static int g_connections_complete = 0;
 static grpc_endpoint* g_connecting = nullptr;
 
 static grpc_millis test_deadline(void) {
-  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+  return grpc_timespec_to_millis_round_up(
+      grpc_timeout_seconds_to_deadline(10));
 }
 
 static void finish_connection() {
   gpr_mu_lock(g_mu);
   g_connections_complete++;
   grpc_core::ExecCtx exec_ctx;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(g_pollset, nullptr)));
 
   gpr_mu_unlock(g_mu);
 }
@@ -63,8 +64,9 @@ static void finish_connection() {
 static void must_succeed(void* /*arg*/, grpc_error_handle error) {
   GPR_ASSERT(g_connecting != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                           "must_succeed called"));
+  grpc_endpoint_shutdown(
+      g_connecting,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
   g_connecting = nullptr;
   finish_connection();
@@ -89,14 +91,15 @@ void test_succeeds(void) {
   gpr_log(GPR_DEBUG, "test_succeeds");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+  resolved_addr.len =
+      static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(svr_fd >= 0);
-  GPR_ASSERT(
-      0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
+  GPR_ASSERT(0 == bind(svr_fd, (struct sockaddr*)addr,
+                       (socklen_t)resolved_addr.len));
   GPR_ASSERT(0 == listen(svr_fd, 1));
 
   gpr_mu_lock(g_mu);
@@ -106,7 +109,8 @@ void test_succeeds(void) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
-  GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&done, must_succeed, nullptr,
+                    grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
                           &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
@@ -147,7 +151,8 @@ void test_fails(void) {
   gpr_log(GPR_DEBUG, "test_fails");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+  resolved_addr.len =
+      static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
 
   gpr_mu_lock(g_mu);
@@ -155,7 +160,8 @@ void test_fails(void) {
   gpr_mu_unlock(g_mu);
 
   /* connect to a broken address */
-  GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&done, must_fail, nullptr,
+                    grpc_schedule_on_exec_ctx);
   grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
                           &resolved_addr, GRPC_MILLIS_INF_FUTURE);
 
@@ -197,7 +203,8 @@ int main(int argc, char** argv) {
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset_set = grpc_pollset_set_create();
-    g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    g_pollset =
+        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
     grpc_pollset_set_add_pollset(g_pollset_set, g_pollset);
 

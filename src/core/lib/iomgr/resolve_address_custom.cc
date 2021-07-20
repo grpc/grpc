@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -113,8 +113,8 @@ static grpc_error_handle blocking_resolve_address_impl(
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
 
   grpc_custom_resolver resolver;
-  grpc_error_handle err =
-      try_split_host_port(name, default_port, &resolver.host, &resolver.port);
+  grpc_error_handle err = try_split_host_port(
+      name, default_port, &resolver.host, &resolver.port);
   if (err != GRPC_ERROR_NONE) {
     return err;
   }
@@ -138,14 +138,15 @@ static grpc_error_handle blocking_resolve_address_impl(
   return err;
 }
 
-static void resolve_address_impl(const char* name, const char* default_port,
-                                 grpc_pollset_set* /*interested_parties*/,
-                                 grpc_closure* on_done,
-                                 grpc_resolved_addresses** addrs) {
+static void resolve_address_impl(
+    const char* name, const char* default_port,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
+    grpc_resolved_addresses** addrs) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   std::string host;
   std::string port;
-  grpc_error_handle err = try_split_host_port(name, default_port, &host, &port);
+  grpc_error_handle err =
+      try_split_host_port(name, default_port, &host, &port);
   if (err != GRPC_ERROR_NONE) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, err);
     return;
@@ -157,7 +158,8 @@ static void resolve_address_impl(const char* name, const char* default_port,
   r->port = std::move(port);
 
   /* Call getaddrinfo */
-  resolve_address_vtable->resolve_async(r, r->host.c_str(), r->port.c_str());
+  resolve_address_vtable->resolve_async(r, r->host.c_str(),
+                                        r->port.c_str());
 }
 
 static grpc_address_resolver_vtable custom_resolver_vtable = {

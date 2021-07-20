@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_TEST_CORE_UTIL_EVALUATE_ARGS_TEST_UTIL_H
 #define GRPC_TEST_CORE_UTIL_EVALUATE_ARGS_TEST_UTIL_H
@@ -38,12 +38,14 @@ class EvaluateArgsTestUtil {
   void AddPairToMetadata(const char* key, const char* value) {
     metadata_storage_.emplace_back();
     auto& storage = metadata_storage_.back();
-    ASSERT_EQ(grpc_metadata_batch_add_tail(
-                  &metadata_, &storage,
-                  grpc_mdelem_from_slices(
-                      grpc_slice_intern(grpc_slice_from_static_string(key)),
-                      grpc_slice_intern(grpc_slice_from_static_string(value)))),
-              GRPC_ERROR_NONE);
+    ASSERT_EQ(
+        grpc_metadata_batch_add_tail(
+            &metadata_, &storage,
+            grpc_mdelem_from_slices(
+                grpc_slice_intern(grpc_slice_from_static_string(key)),
+                grpc_slice_intern(
+                    grpc_slice_from_static_string(value)))),
+        GRPC_ERROR_NONE);
   }
 
   void SetLocalEndpoint(absl::string_view local_uri) {
@@ -67,7 +69,8 @@ class EvaluateArgsTestUtil {
  private:
   std::list<grpc_linked_mdelem> metadata_storage_;
   grpc_metadata_batch metadata_;
-  MockAuthorizationEndpoint endpoint_{/*local_uri=*/"", /*peer_uri=*/""};
+  MockAuthorizationEndpoint endpoint_{/*local_uri=*/"",
+                                      /*peer_uri=*/""};
   grpc_auth_context auth_context_{nullptr};
   EvaluateArgs::PerChannelArgs* channel_args_ = nullptr;
 };

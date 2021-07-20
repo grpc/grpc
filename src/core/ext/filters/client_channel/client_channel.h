@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H
@@ -50,12 +50,12 @@
 // Client channel filter
 //
 
-// A client channel is a channel that begins disconnected, and can connect
-// to some endpoint on demand. If that endpoint disconnects, it will be
-// connected to again later.
+// A client channel is a channel that begins disconnected, and can
+// connect to some endpoint on demand. If that endpoint disconnects, it
+// will be connected to again later.
 //
-// Calls on a disconnected client channel are queued until a connection is
-// established.
+// Calls on a disconnected client channel are queued until a connection
+// is established.
 
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
@@ -90,19 +90,19 @@ class ClientChannel {
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
-  // Starts a one-time connectivity state watch.  When the channel's state
-  // becomes different from *state, sets *state to the new state and
-  // schedules on_complete.  The watcher_timer_init callback is invoked as
-  // soon as the watch is actually started (i.e., after hopping into the
-  // client channel combiner).  I/O will be serviced via pollent.
+  // Starts a one-time connectivity state watch.  When the channel's
+  // state becomes different from *state, sets *state to the new state
+  // and schedules on_complete.  The watcher_timer_init callback is
+  // invoked as soon as the watch is actually started (i.e., after
+  // hopping into the client channel combiner).  I/O will be serviced
+  // via pollent.
   //
-  // This is intended to be used when starting a watch from outside of C-core
-  // via grpc_channel_watch_connectivity_state().  It should not be used
-  // by other callers.
-  void AddExternalConnectivityWatcher(grpc_polling_entity pollent,
-                                      grpc_connectivity_state* state,
-                                      grpc_closure* on_complete,
-                                      grpc_closure* watcher_timer_init) {
+  // This is intended to be used when starting a watch from outside of
+  // C-core via grpc_channel_watch_connectivity_state().  It should not
+  // be used by other callers.
+  void AddExternalConnectivityWatcher(
+      grpc_polling_entity pollent, grpc_connectivity_state* state,
+      grpc_closure* on_complete, grpc_closure* watcher_timer_init) {
     new ExternalConnectivityWatcher(this, pollent, state, on_complete,
                                     watcher_timer_init);
   }
@@ -119,13 +119,14 @@ class ClientChannel {
     return static_cast<int>(external_watchers_.size());
   }
 
-  // Starts and stops a connectivity watch.  The watcher will be initially
-  // notified as soon as the state changes from initial_state and then on
-  // every subsequent state change until either the watch is stopped or
-  // it is notified that the state has changed to SHUTDOWN.
+  // Starts and stops a connectivity watch.  The watcher will be
+  // initially notified as soon as the state changes from initial_state
+  // and then on every subsequent state change until either the watch is
+  // stopped or it is notified that the state has changed to SHUTDOWN.
   //
-  // This is intended to be used when starting watches from code inside of
-  // C-core (e.g., for a nested control plane channel for things like xds).
+  // This is intended to be used when starting watches from code inside
+  // of C-core (e.g., for a nested control plane channel for things like
+  // xds).
   void AddConnectivityWatcher(
       grpc_connectivity_state initial_state,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher);
@@ -147,7 +148,8 @@ class ClientChannel {
 
   // Represents a pending connectivity callback from an external caller
   // via grpc_client_channel_watch_connectivity_state().
-  class ExternalConnectivityWatcher : public ConnectivityStateWatcherInterface {
+  class ExternalConnectivityWatcher
+      : public ConnectivityStateWatcherInterface {
    public:
     ExternalConnectivityWatcher(ClientChannel* chand,
                                 grpc_polling_entity pollent,
@@ -158,9 +160,8 @@ class ClientChannel {
     ~ExternalConnectivityWatcher() override;
 
     // Removes the watcher from the external_watchers_ map.
-    static void RemoveWatcherFromExternalWatchersMap(ClientChannel* chand,
-                                                     grpc_closure* on_complete,
-                                                     bool cancel);
+    static void RemoveWatcherFromExternalWatchersMap(
+        ClientChannel* chand, grpc_closure* on_complete, bool cancel);
 
     void Notify(grpc_connectivity_state state,
                 const absl::Status& /* status */) override;
@@ -168,8 +169,8 @@ class ClientChannel {
     void Cancel();
 
    private:
-    // Adds the watcher to state_tracker_. Consumes the ref that is passed to it
-    // from Start().
+    // Adds the watcher to state_tracker_. Consumes the ref that is
+    // passed to it from Start().
     void AddWatcherLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_);
     void RemoveWatcherLocked()
@@ -193,7 +194,8 @@ class ClientChannel {
     LbQueuedCall* next = nullptr;
   };
 
-  ClientChannel(grpc_channel_element_args* args, grpc_error_handle* error);
+  ClientChannel(grpc_channel_element_args* args,
+                grpc_error_handle* error);
   ~ClientChannel();
 
   // Filter vtable functions.
@@ -220,7 +222,8 @@ class ClientChannel {
 
   void CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-      Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      Resolver::Result result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const grpc_channel_args& args)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
@@ -234,14 +237,16 @@ class ClientChannel {
   void UpdateServiceConfigInControlPlaneLocked(
       RefCountedPtr<ServiceConfig> service_config,
       RefCountedPtr<ConfigSelector> config_selector,
-      const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
+      const internal::ClientChannelGlobalParsedConfig*
+          parsed_service_config,
       const char* lb_policy_name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void UpdateServiceConfigInDataPlaneLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
-  void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void CreateResolverLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
@@ -251,7 +256,8 @@ class ClientChannel {
   void StartTransportOpLocked(grpc_transport_op* op)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
-  void TryToConnectLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void TryToConnectLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   // These methods all require holding resolution_mu_.
   void AddResolverQueuedCall(ResolverQueuedCall* call,
@@ -264,7 +270,8 @@ class ClientChannel {
   // These methods all require holding data_plane_mu_.
   void AddLbQueuedCall(LbQueuedCall* call, grpc_polling_entity* pollent)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
-  void RemoveLbQueuedCall(LbQueuedCall* to_remove, grpc_polling_entity* pollent)
+  void RemoveLbQueuedCall(LbQueuedCall* to_remove,
+                          grpc_polling_entity* pollent)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
   RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
       SubchannelInterface* subchannel) const
@@ -289,13 +296,15 @@ class ClientChannel {
   //
   mutable Mutex resolution_mu_;
   // Linked list of calls queued waiting for resolver result.
-  ResolverQueuedCall* resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_) =
-      nullptr;
+  ResolverQueuedCall* resolver_queued_calls_
+      ABSL_GUARDED_BY(resolution_mu_) = nullptr;
   // Data from service config.
   grpc_error_handle resolver_transient_failure_error_
       ABSL_GUARDED_BY(resolution_mu_) = GRPC_ERROR_NONE;
-  bool received_service_config_data_ ABSL_GUARDED_BY(resolution_mu_) = false;
-  RefCountedPtr<ServiceConfig> service_config_ ABSL_GUARDED_BY(resolution_mu_);
+  bool received_service_config_data_ ABSL_GUARDED_BY(resolution_mu_) =
+      false;
+  RefCountedPtr<ServiceConfig> service_config_
+      ABSL_GUARDED_BY(resolution_mu_);
   RefCountedPtr<ConfigSelector> config_selector_
       ABSL_GUARDED_BY(resolution_mu_);
   RefCountedPtr<DynamicFilters> dynamic_filters_
@@ -308,13 +317,15 @@ class ClientChannel {
   std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker_
       ABSL_GUARDED_BY(data_plane_mu_);
   // Linked list of calls queued waiting for LB pick.
-  LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(data_plane_mu_) = nullptr;
+  LbQueuedCall* lb_queued_calls_ ABSL_GUARDED_BY(data_plane_mu_) =
+      nullptr;
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.
   //
   std::shared_ptr<WorkSerializer> work_serializer_;
-  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(work_serializer_);
+  ConnectivityStateTracker state_tracker_
+      ABSL_GUARDED_BY(work_serializer_);
   OrphanablePtr<Resolver> resolver_ ABSL_GUARDED_BY(work_serializer_);
   bool previous_resolution_contained_addresses_
       ABSL_GUARDED_BY(work_serializer_) = false;
@@ -328,18 +339,21 @@ class ClientChannel {
       ABSL_GUARDED_BY(work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
       ABSL_GUARDED_BY(work_serializer_);
-  // The number of SubchannelWrapper instances referencing a given Subchannel.
+  // The number of SubchannelWrapper instances referencing a given
+  // Subchannel.
   std::map<Subchannel*, int> subchannel_refcount_map_
       ABSL_GUARDED_BY(work_serializer_);
   // The set of SubchannelWrappers that currently exist.
-  // No need to hold a ref, since the map is updated in the control-plane
-  // work_serializer when the SubchannelWrappers are created and destroyed.
+  // No need to hold a ref, since the map is updated in the
+  // control-plane work_serializer when the SubchannelWrappers are
+  // created and destroyed.
   std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(work_serializer_);
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
-  // Updates are queued here in the control plane work_serializer and then
-  // applied in the data plane mutex when the picker is updated.
-  std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
+  // Updates are queued here in the control plane work_serializer and
+  // then applied in the data plane mutex when the picker is updated.
+  std::map<RefCountedPtr<SubchannelWrapper>,
+           RefCountedPtr<ConnectedSubchannel>>
       pending_subchannel_updates_ ABSL_GUARDED_BY(work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(work_serializer_) = -1;
 
@@ -359,7 +373,8 @@ class ClientChannel {
 
   //
   // Fields guarded by a mutex, since they need to be accessed
-  // synchronously via grpc_channel_num_external_connectivity_watchers().
+  // synchronously via
+  // grpc_channel_num_external_connectivity_watchers().
   //
   mutable Mutex external_watchers_mu_;
   std::map<grpc_closure*, RefCountedPtr<ExternalConnectivityWatcher>>
@@ -373,9 +388,11 @@ class ClientChannel {
 // This object is ref-counted, but it cannot inherit from RefCounted<>,
 // because it is allocated on the arena and can't free its memory when
 // its refcount goes to zero.  So instead, it manually implements the
-// same API as RefCounted<>, so that it can be used with RefCountedPtr<>.
+// same API as RefCounted<>, so that it can be used with
+// RefCountedPtr<>.
 class ClientChannel::LoadBalancedCall
-    : public RefCounted<LoadBalancedCall, PolymorphicRefCount, kUnrefCallDtor> {
+    : public RefCounted<LoadBalancedCall, PolymorphicRefCount,
+                        kUnrefCallDtor> {
  public:
   // If on_call_destruction_complete is non-null, then it will be
   // invoked once the LoadBalancedCall is completely destroyed.
@@ -385,17 +402,20 @@ class ClientChannel::LoadBalancedCall
   // is not invoked until after the subchannel call stack is destroyed.
   LoadBalancedCall(
       ClientChannel* chand, const grpc_call_element_args& args,
-      grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
+      grpc_polling_entity* pollent,
+      grpc_closure* on_call_destruction_complete,
       ConfigSelector::CallDispatchController* call_dispatch_controller);
   ~LoadBalancedCall() override;
 
-  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
+  void StartTransportStreamOpBatch(
+      grpc_transport_stream_op_batch* batch);
 
   // Invoked by channel for queued LB picks when the picker is updated.
   static void PickSubchannel(void* arg, grpc_error_handle error);
-  // Helper function for performing an LB pick while holding the data plane
-  // mutex.  Returns true if the pick is complete, in which case the caller
-  // must invoke PickDone() or AsyncPickDone() with the returned error.
+  // Helper function for performing an LB pick while holding the data
+  // plane mutex.  Returns true if the pick is complete, in which case
+  // the caller must invoke PickDone() or AsyncPickDone() with the
+  // returned error.
   bool PickSubchannelLocked(grpc_error_handle* error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
   // Schedules a callback to process the completed pick.  The callback
@@ -416,13 +436,16 @@ class ClientChannel::LoadBalancedCall
   void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
   static void FailPendingBatchInCallCombiner(void* arg,
                                              grpc_error_handle error);
-  // A predicate type and some useful implementations for PendingBatchesFail().
+  // A predicate type and some useful implementations for
+  // PendingBatchesFail().
   typedef bool (*YieldCallCombinerPredicate)(
       const CallCombinerClosureList& closures);
-  static bool YieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
+  static bool YieldCallCombiner(
+      const CallCombinerClosureList& /*closures*/) {
     return true;
   }
-  static bool NoYieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
+  static bool NoYieldCallCombiner(
+      const CallCombinerClosureList& /*closures*/) {
     return false;
   }
   static bool YieldCallCombinerIfPendingBatchesFound(
@@ -430,13 +453,13 @@ class ClientChannel::LoadBalancedCall
     return closures.size() > 0;
   }
   // Fails all pending batches.
-  // If yield_call_combiner_predicate returns true, assumes responsibility for
-  // yielding the call combiner.
+  // If yield_call_combiner_predicate returns true, assumes
+  // responsibility for yielding the call combiner.
   void PendingBatchesFail(
       grpc_error_handle error,
       YieldCallCombinerPredicate yield_call_combiner_predicate);
-  static void ResumePendingBatchInCallCombiner(void* arg,
-                                               grpc_error_handle ignored);
+  static void ResumePendingBatchInCallCombiner(
+      void* arg, grpc_error_handle ignored);
   // Resumes all pending batches on subchannel_call_.
   void PendingBatchesResume();
 
@@ -448,10 +471,12 @@ class ClientChannel::LoadBalancedCall
   void CreateSubchannelCall();
   // Invoked when a pick is completed, on both success or failure.
   static void PickDone(void* arg, grpc_error_handle error);
-  // Removes the call from the channel's list of queued picks if present.
+  // Removes the call from the channel's list of queued picks if
+  // present.
   void MaybeRemoveCallFromLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
-  // Adds the call to the channel's list of queued picks if not already present.
+  // Adds the call to the channel's list of queued picks if not already
+  // present.
   void MaybeAddCallToLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
 
@@ -482,14 +507,16 @@ class ClientChannel::LoadBalancedCall
   // Accessed while holding ClientChannel::data_plane_mu_.
   ClientChannel::LbQueuedCall queued_call_
       ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_);
-  bool queued_pending_lb_pick_ ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) =
-      false;
+  bool queued_pending_lb_pick_
+      ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = false;
   LbQueuedCallCanceller* lb_call_canceller_
       ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
-  std::function<void(grpc_error_handle, LoadBalancingPolicy::MetadataInterface*,
+  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ =
+      nullptr;
+  std::function<void(grpc_error_handle,
+                     LoadBalancingPolicy::MetadataInterface*,
                      LoadBalancingPolicy::CallState*)>
       lb_recv_trailing_metadata_ready_;
 
@@ -505,7 +532,8 @@ class ClientChannel::LoadBalancedCall
   // either we have invoked all of the batch's callbacks or we have
   // passed the batch down to the subchannel call and are not
   // intercepting any of its callbacks).
-  grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
+  grpc_transport_stream_op_batch*
+      pending_batches_[MAX_PENDING_BATCHES] = {};
 };
 
 }  // namespace grpc_core

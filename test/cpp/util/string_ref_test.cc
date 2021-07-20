@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -68,7 +68,8 @@ TEST_F(StringRefTest, CopyConstructor) {
 }
 
 TEST_F(StringRefTest, FromStringWithEmbeddedNull) {
-  string copy(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
+  string copy(kTestStringWithEmbeddedNull,
+              kTestStringWithEmbeddedNullLength);
   string_ref s(copy);
   EXPECT_EQ(copy.data(), s.data());
   EXPECT_EQ(copy.length(), s.length());
@@ -123,7 +124,8 @@ TEST_F(StringRefTest, Compare) {
   string_ref s1(kTestString);
   string s1_copy(kTestString);
   string_ref s2(kTestUnrelatedString);
-  string_ref s3(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
+  string_ref s3(kTestStringWithEmbeddedNull,
+                kTestStringWithEmbeddedNullLength);
   EXPECT_EQ(0, s1.compare(s1_copy));
   EXPECT_NE(0, s1.compare(s2));
   EXPECT_NE(0, s1.compare(s3));
@@ -132,7 +134,8 @@ TEST_F(StringRefTest, Compare) {
 TEST_F(StringRefTest, StartsWith) {
   string_ref s1(kTestString);
   string_ref s2(kTestUnrelatedString);
-  string_ref s3(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
+  string_ref s3(kTestStringWithEmbeddedNull,
+                kTestStringWithEmbeddedNullLength);
   EXPECT_TRUE(s1.starts_with(s1));
   EXPECT_FALSE(s1.starts_with(s2));
   EXPECT_FALSE(s2.starts_with(s1));
@@ -143,7 +146,8 @@ TEST_F(StringRefTest, StartsWith) {
 TEST_F(StringRefTest, Endswith) {
   string_ref s1(kTestString);
   string_ref s2(kTestUnrelatedString);
-  string_ref s3(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
+  string_ref s3(kTestStringWithEmbeddedNull,
+                kTestStringWithEmbeddedNullLength);
   EXPECT_TRUE(s1.ends_with(s1));
   EXPECT_FALSE(s1.ends_with(s2));
   EXPECT_FALSE(s2.ends_with(s1));
@@ -154,7 +158,8 @@ TEST_F(StringRefTest, Endswith) {
 TEST_F(StringRefTest, Find) {
   string_ref s1(kTestString);
   string_ref s2(kTestUnrelatedString);
-  string_ref s3(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
+  string_ref s3(kTestStringWithEmbeddedNull,
+                kTestStringWithEmbeddedNullLength);
   EXPECT_EQ(0U, s1.find(s1));
   EXPECT_EQ(0U, s2.find(s2));
   EXPECT_EQ(0U, s3.find(s3));
@@ -168,7 +173,8 @@ TEST_F(StringRefTest, Find) {
 }
 
 TEST_F(StringRefTest, SubString) {
-  string_ref s(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
+  string_ref s(kTestStringWithEmbeddedNull,
+               kTestStringWithEmbeddedNullLength);
   string_ref sub1 = s.substr(0, 4);
   EXPECT_EQ(string_ref(kTestString), sub1);
   string_ref sub2 = s.substr(5);
@@ -178,7 +184,8 @@ TEST_F(StringRefTest, SubString) {
 TEST_F(StringRefTest, ComparisonOperators) {
   string_ref s1(kTestString);
   string_ref s2(kTestUnrelatedString);
-  string_ref s3(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
+  string_ref s3(kTestStringWithEmbeddedNull,
+                kTestStringWithEmbeddedNullLength);
   EXPECT_EQ(s1, s1);
   EXPECT_EQ(s2, s2);
   EXPECT_EQ(s3, s3);

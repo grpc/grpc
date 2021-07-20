@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,7 +60,8 @@ static void test_gcp_environment_check_success() {
   /* With leading and trailing \t and \n. */
   GPR_ASSERT(check_bios_data_linux_test("\t\tGoogle Compute Engine\t"));
   GPR_ASSERT(check_bios_data_linux_test("Google Compute Engine\n"));
-  GPR_ASSERT(check_bios_data_linux_test("\n\n\tGoogle Compute Engine \n\t\t"));
+  GPR_ASSERT(
+      check_bios_data_linux_test("\n\n\tGoogle Compute Engine \n\t\t"));
 }
 
 static void test_gcp_environment_check_failure() {

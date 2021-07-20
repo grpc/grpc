@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,13 +35,15 @@ double PidController::Update(double error, double dt) {
                               args_.integral_range());
   double diff_error = (error - last_error_) / dt;
   /* calculate derivative of control value vs time */
-  double dc_dt = args_.gain_p() * error + args_.gain_i() * error_integral_ +
+  double dc_dt = args_.gain_p() * error +
+                 args_.gain_i() * error_integral_ +
                  args_.gain_d() * diff_error;
   /* and perform trapezoidal integration */
   double new_control_value =
       last_control_value_ + dt * (last_dc_dt_ + dc_dt) * 0.5;
-  new_control_value = GPR_CLAMP(new_control_value, args_.min_control_value(),
-                                args_.max_control_value());
+  new_control_value =
+      GPR_CLAMP(new_control_value, args_.min_control_value(),
+                args_.max_control_value());
   last_error_ = error;
   last_dc_dt_ = dc_dt;
   last_control_value_ = new_control_value;

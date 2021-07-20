@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -37,9 +37,11 @@ class XdsCredentials final : public grpc_channel_credentials {
       : grpc_channel_credentials(kCredentialsTypeXds),
         fallback_credentials_(std::move(fallback_credentials)) {}
 
-  RefCountedPtr<grpc_channel_security_connector> create_security_connector(
-      RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
-      const grpc_channel_args* args, grpc_channel_args** new_args) override;
+  RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target_name, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
 
  private:
   RefCountedPtr<grpc_channel_credentials> fallback_credentials_;
@@ -52,7 +54,8 @@ class XdsServerCredentials final : public grpc_server_credentials {
       : grpc_server_credentials(kCredentialsTypeXds),
         fallback_credentials_(std::move(fallback_credentials)) {}
 
-  RefCountedPtr<grpc_server_security_connector> create_security_connector(
+  RefCountedPtr<grpc_server_security_connector>
+  create_security_connector(
       const grpc_channel_args* /* args */) override;
 
  private:

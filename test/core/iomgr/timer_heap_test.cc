@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,8 +32,8 @@
 static gpr_atm random_deadline(void) { return rand(); }
 
 static grpc_timer* create_test_elements(size_t num_elements) {
-  grpc_timer* elems =
-      static_cast<grpc_timer*>(gpr_malloc(num_elements * sizeof(grpc_timer)));
+  grpc_timer* elems = static_cast<grpc_timer*>(
+      gpr_malloc(num_elements * sizeof(grpc_timer)));
   size_t i;
   for (i = 0; i < num_elements; i++) {
     elems[i].deadline = random_deadline();
@@ -55,10 +55,12 @@ static void check_valid(grpc_timer_heap* pq) {
     size_t left_child = 1u + 2u * i;
     size_t right_child = left_child + 1u;
     if (left_child < pq->timer_count) {
-      GPR_ASSERT(pq->timers[i]->deadline <= pq->timers[left_child]->deadline);
+      GPR_ASSERT(pq->timers[i]->deadline <=
+                 pq->timers[left_child]->deadline);
     }
     if (right_child < pq->timer_count) {
-      GPR_ASSERT(pq->timers[i]->deadline <= pq->timers[right_child]->deadline);
+      GPR_ASSERT(pq->timers[i]->deadline <=
+                 pq->timers[right_child]->deadline);
     }
   }
 }
@@ -159,8 +161,8 @@ static void test2(void) {
   grpc_timer_heap pq;
 
   static const size_t elems_size = 1000;
-  elem_struct* elems =
-      static_cast<elem_struct*>(gpr_malloc(elems_size * sizeof(elem_struct)));
+  elem_struct* elems = static_cast<elem_struct*>(
+      gpr_malloc(elems_size * sizeof(elem_struct)));
   size_t num_inserted = 0;
 
   grpc_timer_heap_init(&pq);
@@ -231,13 +233,14 @@ static void shrink_test(void) {
   size_t i;
   size_t expected_size;
 
-  /* A large random number to allow for multiple shrinkages, at least 512. */
+  /* A large random number to allow for multiple shrinkages, at least
+   * 512. */
   const size_t num_elements = static_cast<size_t>(rand()) % 2000 + 512;
 
   grpc_timer_heap_init(&pq);
 
-  /* Create a priority queue with many elements.  Make sure the Size() is
-     correct. */
+  /* Create a priority queue with many elements.  Make sure the Size()
+     is correct. */
   for (i = 0; i < num_elements; ++i) {
     GPR_ASSERT(i == pq.timer_count);
     grpc_timer_heap_add(&pq, create_test_elements(1));
@@ -258,8 +261,9 @@ static void shrink_test(void) {
   GPR_ASSERT(pq.timer_capacity <= pq.timer_count * 4);
   check_valid(&pq);
 
-  /* Remove the rest of the elements.  Check that the Capacity is not more than
-     4 times the Size and not less than 2 times, but never goes below 16. */
+  /* Remove the rest of the elements.  Check that the Capacity is not
+     more than 4 times the Size and not less than 2 times, but never
+     goes below 16. */
   expected_size = pq.timer_count;
   while (pq.timer_count > 0) {
     const size_t which = static_cast<size_t>(rand()) % pq.timer_count;

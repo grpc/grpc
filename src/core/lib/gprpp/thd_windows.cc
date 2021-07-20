@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -54,7 +54,8 @@ thread_local struct thd_info* g_thd_info;
 class ThreadInternalsWindows
     : public grpc_core::internal::ThreadInternalsInterface {
  public:
-  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success,
+  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg,
+                         bool* success,
                          const grpc_core::Thread::Options& options)
       : started_(false) {
     gpr_mu_init(&mu_);
@@ -77,11 +78,13 @@ class ThreadInternalsWindows
     }
 
     if (options.stack_size() != 0) {
-      // Windows will round up the given stack_size value to nearest page.
-      handle = CreateThread(nullptr, options.stack_size(), thread_body, info_,
-                            0, nullptr);
+      // Windows will round up the given stack_size value to nearest
+      // page.
+      handle = CreateThread(nullptr, options.stack_size(), thread_body,
+                            info_, 0, nullptr);
     } else {
-      handle = CreateThread(nullptr, 64 * 1024, thread_body, info_, 0, nullptr);
+      handle = CreateThread(nullptr, 64 * 1024, thread_body, info_, 0,
+                            nullptr);
     }
 
     if (handle == nullptr) {
@@ -151,8 +154,8 @@ class ThreadInternalsWindows
 
 namespace grpc_core {
 
-Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success, const Options& options)
+Thread::Thread(const char* thd_name, void (*thd_body)(void* arg),
+               void* arg, bool* success, const Options& options)
     : options_(options) {
   bool outcome = false;
   impl_ = new ThreadInternalsWindows(thd_body, arg, &outcome, options);

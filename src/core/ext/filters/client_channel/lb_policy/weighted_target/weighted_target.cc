@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -85,7 +85,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   // A simple wrapper for ref-counting a picker from the child policy.
   class ChildPickerWrapper : public RefCounted<ChildPickerWrapper> {
    public:
-    explicit ChildPickerWrapper(std::unique_ptr<SubchannelPicker> picker)
+    explicit ChildPickerWrapper(
+        std::unique_ptr<SubchannelPicker> picker)
         : picker_(std::move(picker)) {}
     PickResult Pick(PickArgs args) { return picker_->Pick(args); }
 
@@ -98,9 +99,10 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   class WeightedPicker : public SubchannelPicker {
    public:
     // Maintains a weighted list of pickers from each child that is in
-    // ready state. The first element in the pair represents the end of a
-    // range proportional to the child's weight. The start of the range
-    // is the previous value in the vector and is 0 for the first element.
+    // ready state. The first element in the pair represents the end of
+    // a range proportional to the child's weight. The start of the
+    // range is the previous value in the vector and is 0 for the first
+    // element.
     using PickerList = absl::InlinedVector<
         std::pair<uint32_t, RefCountedPtr<ChildPickerWrapper>>, 1>;
 
@@ -116,8 +118,9 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   // Each WeightedChild holds a ref to its parent WeightedTargetLb.
   class WeightedChild : public InternallyRefCounted<WeightedChild> {
    public:
-    WeightedChild(RefCountedPtr<WeightedTargetLb> weighted_target_policy,
-                  const std::string& name);
+    WeightedChild(
+        RefCountedPtr<WeightedTargetLb> weighted_target_policy,
+        const std::string& name);
     ~WeightedChild() override;
 
     void Orphan() override;
@@ -142,13 +145,16 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       explicit Helper(RefCountedPtr<WeightedChild> weighted_child)
           : weighted_child_(std::move(weighted_child)) {}
 
-      ~Helper() override { weighted_child_.reset(DEBUG_LOCATION, "Helper"); }
+      ~Helper() override {
+        weighted_child_.reset(DEBUG_LOCATION, "Helper");
+      }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const grpc_channel_args& args) override;
-      void UpdateState(grpc_connectivity_state state,
-                       const absl::Status& status,
-                       std::unique_ptr<SubchannelPicker> picker) override;
+          ServerAddress address,
+          const grpc_channel_args& args) override;
+      void UpdateState(
+          grpc_connectivity_state state, const absl::Status& status,
+          std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
@@ -165,7 +171,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
         grpc_connectivity_state state, const absl::Status& status,
         std::unique_ptr<SubchannelPicker> picker);
 
-    static void OnDelayedRemovalTimer(void* arg, grpc_error_handle error);
+    static void OnDelayedRemovalTimer(void* arg,
+                                      grpc_error_handle error);
     void OnDelayedRemovalTimerLocked(grpc_error_handle error);
 
     // The owning LB policy.
@@ -178,7 +185,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
     RefCountedPtr<ChildPickerWrapper> picker_wrapper_;
-    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
+    grpc_connectivity_state connectivity_state_ =
+        GRPC_CHANNEL_CONNECTING;
     bool seen_failure_since_ready_ = false;
 
     // States for delayed removal.
@@ -247,9 +255,10 @@ WeightedTargetLb::WeightedTargetLb(Args args)
 
 WeightedTargetLb::~WeightedTargetLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
-    gpr_log(GPR_INFO,
-            "[weighted_target_lb %p] destroying weighted_target LB policy",
-            this);
+    gpr_log(
+        GPR_INFO,
+        "[weighted_target_lb %p] destroying weighted_target LB policy",
+        this);
   }
 }
 
@@ -276,22 +285,24 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   for (const auto& p : targets_) {
     const std::string& name = p.first;
     WeightedChild* child = p.second.get();
-    if (config_->target_map().find(name) == config_->target_map().end()) {
+    if (config_->target_map().find(name) ==
+        config_->target_map().end()) {
       child->DeactivateLocked();
     }
   }
   // Create any children that don't already exist.
   // Note that we add all children before updating any of them, because
   // an update may trigger a child to immediately update its
-  // connectivity state (e.g., reporting TRANSIENT_FAILURE immediately when
-  // receiving an empty address list), and we don't want to return an
-  // overall state with incomplete data.
+  // connectivity state (e.g., reporting TRANSIENT_FAILURE immediately
+  // when receiving an empty address list), and we don't want to return
+  // an overall state with incomplete data.
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     auto it = targets_.find(name);
     if (it == targets_.end()) {
-      targets_.emplace(name, MakeOrphanable<WeightedChild>(
-                                 Ref(DEBUG_LOCATION, "WeightedChild"), name));
+      targets_.emplace(name,
+                       MakeOrphanable<WeightedChild>(
+                           Ref(DEBUG_LOCATION, "WeightedChild"), name));
     }
   }
   // Update all children.
@@ -315,8 +326,8 @@ void WeightedTargetLb::UpdateStateLocked() {
   }
   // Construct a new picker which maintains a map of all child pickers
   // that are ready. Each child is represented by a portion of the range
-  // proportional to its weight, such that the total range is the sum of the
-  // weights of all children.
+  // proportional to its weight, such that the total range is the sum of
+  // the weights of all children.
   WeightedPicker::PickerList picker_list;
   uint32_t end = 0;
   // Also count the number of children in each state, to determine the
@@ -328,12 +339,14 @@ void WeightedTargetLb::UpdateStateLocked() {
     const std::string& child_name = p.first;
     const WeightedChild* child = p.second.get();
     // Skip the targets that are not in the latest update.
-    if (config_->target_map().find(child_name) == config_->target_map().end()) {
+    if (config_->target_map().find(child_name) ==
+        config_->target_map().end()) {
       continue;
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
       gpr_log(GPR_INFO,
-              "[weighted_target_lb %p]   child=%s state=%s weight=%d picker=%p",
+              "[weighted_target_lb %p]   child=%s state=%s weight=%d "
+              "picker=%p",
               this, child_name.c_str(),
               ConnectivityStateName(child->connectivity_state()),
               child->weight(), child->picker_wrapper().get());
@@ -341,7 +354,8 @@ void WeightedTargetLb::UpdateStateLocked() {
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
         end += child->weight();
-        picker_list.push_back(std::make_pair(end, child->picker_wrapper()));
+        picker_list.push_back(
+            std::make_pair(end, child->picker_wrapper()));
         break;
       }
       case GRPC_CHANNEL_CONNECTING: {
@@ -372,24 +386,27 @@ void WeightedTargetLb::UpdateStateLocked() {
     connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
-    gpr_log(GPR_INFO, "[weighted_target_lb %p] connectivity changed to %s",
-            this, ConnectivityStateName(connectivity_state));
+    gpr_log(GPR_INFO,
+            "[weighted_target_lb %p] connectivity changed to %s", this,
+            ConnectivityStateName(connectivity_state));
   }
   std::unique_ptr<SubchannelPicker> picker;
   absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = absl::make_unique<WeightedPicker>(std::move(picker_list));
+      picker =
+          absl::make_unique<WeightedPicker>(std::move(picker_list));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
-      picker =
-          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
+      picker = absl::make_unique<QueuePicker>(
+          Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
       grpc_error_handle error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "weighted_target: all children report state TRANSIENT_FAILURE"),
+              "weighted_target: all children report state "
+              "TRANSIENT_FAILURE"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       status = grpc_error_to_absl_status(error);
       picker = absl::make_unique<TransientFailurePicker>(error);
@@ -405,20 +422,23 @@ void WeightedTargetLb::UpdateStateLocked() {
 WeightedTargetLb::WeightedChild::WeightedChild(
     RefCountedPtr<WeightedTargetLb> weighted_target_policy,
     const std::string& name)
-    : weighted_target_policy_(std::move(weighted_target_policy)), name_(name) {
+    : weighted_target_policy_(std::move(weighted_target_policy)),
+      name_(name) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
-    gpr_log(GPR_INFO, "[weighted_target_lb %p] created WeightedChild %p for %s",
+    gpr_log(GPR_INFO,
+            "[weighted_target_lb %p] created WeightedChild %p for %s",
             weighted_target_policy_.get(), this, name_.c_str());
   }
-  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer,
+                    this, grpc_schedule_on_exec_ctx);
 }
 
 WeightedTargetLb::WeightedChild::~WeightedChild() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
-    gpr_log(GPR_INFO,
-            "[weighted_target_lb %p] WeightedChild %p %s: destroying child",
-            weighted_target_policy_.get(), this, name_.c_str());
+    gpr_log(
+        GPR_INFO,
+        "[weighted_target_lb %p] WeightedChild %p %s: destroying child",
+        weighted_target_policy_.get(), this, name_.c_str());
   }
   weighted_target_policy_.reset(DEBUG_LOCATION, "WeightedChild");
 }
@@ -426,7 +446,8 @@ WeightedTargetLb::WeightedChild::~WeightedChild() {
 void WeightedTargetLb::WeightedChild::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
-            "[weighted_target_lb %p] WeightedChild %p %s: shutting down child",
+            "[weighted_target_lb %p] WeightedChild %p %s: shutting "
+            "down child",
             weighted_target_policy_.get(), this, name_.c_str());
   }
   // Remove the child policy's interested_parties pollset_set from the
@@ -450,23 +471,26 @@ OrphanablePtr<LoadBalancingPolicy>
 WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.work_serializer = weighted_target_policy_->work_serializer();
+  lb_policy_args.work_serializer =
+      weighted_target_policy_->work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
-      MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
-                                         &grpc_lb_weighted_target_trace);
+      MakeOrphanable<ChildPolicyHandler>(
+          std::move(lb_policy_args), &grpc_lb_weighted_target_trace);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
-            "[weighted_target_lb %p] WeightedChild %p %s: Created new child "
+            "[weighted_target_lb %p] WeightedChild %p %s: Created new "
+            "child "
             "policy handler %p",
             weighted_target_policy_.get(), this, name_.c_str(),
             lb_policy.get());
   }
-  // Add the xDS's interested_parties pollset_set to that of the newly created
-  // child policy. This will make the child policy progress upon activity on
-  // xDS LB, which in turn is tied to the application's call.
+  // Add the xDS's interested_parties pollset_set to that of the newly
+  // created child policy. This will make the child policy progress upon
+  // activity on xDS LB, which in turn is tied to the application's
+  // call.
   grpc_pollset_set_add_pollset_set(
       lb_policy->interested_parties(),
       weighted_target_policy_->interested_parties());
@@ -482,9 +506,10 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   // Reactivate if needed.
   if (delayed_removal_timer_callback_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
-      gpr_log(GPR_INFO,
-              "[weighted_target_lb %p] WeightedChild %p %s: reactivating",
-              weighted_target_policy_.get(), this, name_.c_str());
+      gpr_log(
+          GPR_INFO,
+          "[weighted_target_lb %p] WeightedChild %p %s: reactivating",
+          weighted_target_policy_.get(), this, name_.c_str());
     }
     delayed_removal_timer_callback_pending_ = false;
     grpc_timer_cancel(&delayed_removal_timer_);
@@ -500,11 +525,12 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   update_args.args = grpc_channel_args_copy(args);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
-    gpr_log(GPR_INFO,
-            "[weighted_target_lb %p] WeightedChild %p %s: Updating child "
-            "policy handler %p",
-            weighted_target_policy_.get(), this, name_.c_str(),
-            child_policy_.get());
+    gpr_log(
+        GPR_INFO,
+        "[weighted_target_lb %p] WeightedChild %p %s: Updating child "
+        "policy handler %p",
+        weighted_target_policy_.get(), this, name_.c_str(),
+        child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
 }
@@ -517,7 +543,8 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
     grpc_connectivity_state state, const absl::Status& status,
     std::unique_ptr<SubchannelPicker> picker) {
   // Cache the picker in the WeightedChild.
-  picker_wrapper_ = MakeRefCounted<ChildPickerWrapper>(std::move(picker));
+  picker_wrapper_ =
+      MakeRefCounted<ChildPickerWrapper>(std::move(picker));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
             "[weighted_target_lb %p] WeightedChild %p %s: connectivity "
@@ -530,9 +557,9 @@ void WeightedTargetLb::WeightedChild::OnConnectivityStateUpdateLocked(
   if (state == GRPC_CHANNEL_IDLE) child_policy_->ExitIdleLocked();
   // Decide what state to report for aggregation purposes.
   // If we haven't seen a failure since the last time we were in state
-  // READY, then we report the state change as-is.  However, once we do see
-  // a failure, we report TRANSIENT_FAILURE and ignore any subsequent state
-  // changes until we go back into state READY.
+  // READY, then we report the state change as-is.  However, once we do
+  // see a failure, we report TRANSIENT_FAILURE and ignore any
+  // subsequent state changes until we go back into state READY.
   if (!seen_failure_since_ready_) {
     if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       seen_failure_since_ready_ = true;
@@ -554,7 +581,8 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
             "[weighted_target_lb %p] WeightedChild %p %s: deactivating",
             weighted_target_policy_.get(), this, name_.c_str());
   }
-  // Set the child weight to 0 so that future picker won't contain this child.
+  // Set the child weight to 0 so that future picker won't contain this
+  // child.
   weight_ = 0;
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "WeightedChild+timer").release();
@@ -575,8 +603,9 @@ void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimer(
 
 void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimerLocked(
     grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE && delayed_removal_timer_callback_pending_ &&
-      !shutdown_ && weight_ == 0) {
+  if (error == GRPC_ERROR_NONE &&
+      delayed_removal_timer_callback_pending_ && !shutdown_ &&
+      weight_ == 0) {
     delayed_removal_timer_callback_pending_ = false;
     weighted_target_policy_->targets_.erase(name_);
   }
@@ -591,8 +620,10 @@ void WeightedTargetLb::WeightedChild::OnDelayedRemovalTimerLocked(
 RefCountedPtr<SubchannelInterface>
 WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
-  if (weighted_child_->weighted_target_policy_->shutting_down_) return nullptr;
-  return weighted_child_->weighted_target_policy_->channel_control_helper()
+  if (weighted_child_->weighted_target_policy_->shutting_down_)
+    return nullptr;
+  return weighted_child_->weighted_target_policy_
+      ->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);
 }
 
@@ -637,8 +668,10 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
       // weighted_target was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:loadBalancingPolicy error:weighted_target policy requires "
-          "configuration.  Please use loadBalancingConfig field of service "
+          "field:loadBalancingPolicy error:weighted_target policy "
+          "requires "
+          "configuration.  Please use loadBalancingConfig field of "
+          "service "
           "config instead.");
       return nullptr;
     }
@@ -658,10 +691,11 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
         std::vector<grpc_error_handle> child_errors =
             ParseChildConfig(p.second, &child_config);
         if (!child_errors.empty()) {
-          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-          // string is not static in this case.
-          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("field:targets key:", p.first).c_str());
+          // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the
+          // error string is not static in this case.
+          grpc_error_handle error =
+              GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                  absl::StrCat("field:targets key:", p.first).c_str());
           for (grpc_error_handle child_error : child_errors) {
             error = grpc_error_add_child(error, child_error);
           }
@@ -676,12 +710,14 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
           "weighted_target_experimental LB policy config", &error_list);
       return nullptr;
     }
-    return MakeRefCounted<WeightedTargetLbConfig>(std::move(target_map));
+    return MakeRefCounted<WeightedTargetLbConfig>(
+        std::move(target_map));
   }
 
  private:
   static std::vector<grpc_error_handle> ParseChildConfig(
-      const Json& json, WeightedTargetLbConfig::ChildConfig* child_config) {
+      const Json& json,
+      WeightedTargetLbConfig::ChildConfig* child_config) {
     std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -697,7 +733,8 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:weight error:must be of type number"));
     } else {
-      int weight = gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      int weight =
+          gpr_parse_nonnegative_int(it->second.string_value().c_str());
       if (weight == -1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:weight error:unparseable value"));
@@ -713,14 +750,14 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     if (it != json.object_value().end()) {
       grpc_error_handle parse_error = GRPC_ERROR_NONE;
       child_config->config =
-          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second,
-                                                                &parse_error);
+          LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+              it->second, &parse_error);
       if (child_config->config == nullptr) {
         GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
         std::vector<grpc_error_handle> child_errors;
         child_errors.push_back(parse_error);
-        error_list.push_back(
-            GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
+            "field:childPolicy", &child_errors));
       }
     }
     return error_list;

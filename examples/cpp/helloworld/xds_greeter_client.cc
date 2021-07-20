@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,7 +31,8 @@
 #include "helloworld.grpc.pb.h"
 #endif
 
-ABSL_FLAG(std::string, target, "xds:///helloworld:50051", "Target string");
+ABSL_FLAG(std::string, target, "xds:///helloworld:50051",
+          "Target string");
 ABSL_FLAG(bool, secure, true, "Secure mode");
 
 using grpc::Channel;
@@ -46,8 +47,8 @@ class GreeterClient {
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
+  // Assembles the client's payload, sends it and presents the response
+  // back from the server.
   std::string SayHello(const std::string& user) {
     // Data we are sending to the server.
     HelloRequest request;
@@ -56,8 +57,8 @@ class GreeterClient {
     // Container for the data we expect from the server.
     HelloReply reply;
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
+    // Context for the client. It could be used to convey extra
+    // information to the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
     // The actual RPC.
@@ -79,11 +80,12 @@ class GreeterClient {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
-  GreeterClient greeter(grpc::CreateChannel(
-      absl::GetFlag(FLAGS_target), absl::GetFlag(FLAGS_secure)
-                                       ? grpc::experimental::XdsCredentials(
-                                             grpc::InsecureChannelCredentials())
-                                       : grpc::InsecureChannelCredentials()));
+  GreeterClient greeter(
+      grpc::CreateChannel(absl::GetFlag(FLAGS_target),
+                          absl::GetFlag(FLAGS_secure)
+                              ? grpc::experimental::XdsCredentials(
+                                    grpc::InsecureChannelCredentials())
+                              : grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;

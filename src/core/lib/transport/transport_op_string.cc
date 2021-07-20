@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,13 +40,16 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(grpc_mdelem md, std::vector<std::string>* out) {
+static void put_metadata(grpc_mdelem md,
+                         std::vector<std::string>* out) {
   out->push_back("key=");
-  char* dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  char* dump =
+      grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
   out->push_back(dump);
   gpr_free(dump);
   out->push_back(" value=");
-  dump = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  dump =
+      grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
   out->push_back(dump);
   gpr_free(dump);
 }
@@ -69,28 +72,31 @@ std::string grpc_transport_stream_op_batch_string(
 
   if (op->send_initial_metadata) {
     out.push_back(" SEND_INITIAL_METADATA{");
-    put_metadata_list(*op->payload->send_initial_metadata.send_initial_metadata,
-                      &out);
+    put_metadata_list(
+        *op->payload->send_initial_metadata.send_initial_metadata,
+        &out);
     out.push_back("}");
   }
 
   if (op->send_message) {
     if (op->payload->send_message.send_message != nullptr) {
-      out.push_back(
-          absl::StrFormat(" SEND_MESSAGE:flags=0x%08x:len=%d",
-                          op->payload->send_message.send_message->flags(),
-                          op->payload->send_message.send_message->length()));
+      out.push_back(absl::StrFormat(
+          " SEND_MESSAGE:flags=0x%08x:len=%d",
+          op->payload->send_message.send_message->flags(),
+          op->payload->send_message.send_message->length()));
     } else {
       // This can happen when we check a batch after the transport has
       // processed and cleared the send_message op.
-      out.push_back(" SEND_MESSAGE(flag and length unknown, already orphaned)");
+      out.push_back(
+          " SEND_MESSAGE(flag and length unknown, already orphaned)");
     }
   }
 
   if (op->send_trailing_metadata) {
     out.push_back(" SEND_TRAILING_METADATA{");
     put_metadata_list(
-        *op->payload->send_trailing_metadata.send_trailing_metadata, &out);
+        *op->payload->send_trailing_metadata.send_trailing_metadata,
+        &out);
     out.push_back("}");
   }
 
@@ -108,8 +114,8 @@ std::string grpc_transport_stream_op_batch_string(
 
   if (op->cancel_stream) {
     out.push_back(absl::StrCat(
-        " CANCEL:",
-        grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
+        " CANCEL:", grpc_error_std_string(
+                        op->payload->cancel_stream.cancel_error)));
   }
 
   return absl::StrJoin(out, "");
@@ -119,10 +125,11 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   std::vector<std::string> out;
 
   if (op->start_connectivity_watch != nullptr) {
-    out.push_back(absl::StrFormat(
-        " START_CONNECTIVITY_WATCH:watcher=%p:from=%s",
-        op->start_connectivity_watch.get(),
-        grpc_core::ConnectivityStateName(op->start_connectivity_watch_state)));
+    out.push_back(
+        absl::StrFormat(" START_CONNECTIVITY_WATCH:watcher=%p:from=%s",
+                        op->start_connectivity_watch.get(),
+                        grpc_core::ConnectivityStateName(
+                            op->start_connectivity_watch_state)));
   }
 
   if (op->stop_connectivity_watch != nullptr) {
@@ -131,13 +138,14 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    out.push_back(absl::StrCat(
-        " DISCONNECT:", grpc_error_std_string(op->disconnect_with_error)));
+    out.push_back(
+        absl::StrCat(" DISCONNECT:",
+                     grpc_error_std_string(op->disconnect_with_error)));
   }
 
   if (op->goaway_error != GRPC_ERROR_NONE) {
-    out.push_back(absl::StrCat(" SEND_GOAWAY:%s",
-                               grpc_error_std_string(op->goaway_error)));
+    out.push_back(absl::StrCat(
+        " SEND_GOAWAY:%s", grpc_error_std_string(op->goaway_error)));
   }
 
   if (op->set_accept_stream) {
@@ -154,16 +162,18 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
     out.push_back(" BIND_POLLSET_SET");
   }
 
-  if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
+  if (op->send_ping.on_initiate != nullptr ||
+      op->send_ping.on_ack != nullptr) {
     out.push_back(" SEND_PING");
   }
 
   return absl::StrJoin(out, "");
 }
 
-void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
+void grpc_call_log_op(const char* file, int line,
+                      gpr_log_severity severity,
                       grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op) {
-  gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem,
-          grpc_transport_stream_op_batch_string(op).c_str());
+  gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name,
+          elem, grpc_transport_stream_op_batch_string(op).c_str());
 }

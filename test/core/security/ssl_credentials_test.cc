@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,9 +28,10 @@
 #include "test/core/util/test_config.h"
 
 static void test_convert_grpc_to_tsi_cert_pairs() {
-  grpc_ssl_pem_key_cert_pair grpc_pairs[] = {{"private_key1", "cert_chain1"},
-                                             {"private_key2", "cert_chain2"},
-                                             {"private_key3", "cert_chain3"}};
+  grpc_ssl_pem_key_cert_pair grpc_pairs[] = {
+      {"private_key1", "cert_chain1"},
+      {"private_key2", "cert_chain2"},
+      {"private_key3", "cert_chain3"}};
   const size_t num_pairs = 3;
 
   {
@@ -45,9 +46,11 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
 
     GPR_ASSERT(tsi_pairs != nullptr);
     for (size_t i = 0; i < num_pairs; i++) {
-      GPR_ASSERT(strncmp(grpc_pairs[i].private_key, tsi_pairs[i].private_key,
+      GPR_ASSERT(strncmp(grpc_pairs[i].private_key,
+                         tsi_pairs[i].private_key,
                          strlen(grpc_pairs[i].private_key)) == 0);
-      GPR_ASSERT(strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain,
+      GPR_ASSERT(strncmp(grpc_pairs[i].cert_chain,
+                         tsi_pairs[i].cert_chain,
                          strlen(grpc_pairs[i].cert_chain)) == 0);
     }
 

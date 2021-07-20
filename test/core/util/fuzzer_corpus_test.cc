@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,9 +36,11 @@ extern bool squelch;
 extern bool leak_check;
 
 ABSL_FLAG(std::string, file, "", "Use this file as test data");
-ABSL_FLAG(std::string, directory, "", "Use this directory as test data");
+ABSL_FLAG(std::string, directory, "",
+          "Use this directory as test data");
 
-class FuzzerCorpusTest : public ::testing::TestWithParam<std::string> {};
+class FuzzerCorpusTest : public ::testing::TestWithParam<std::string> {
+};
 
 TEST_P(FuzzerCorpusTest, RunOneExample) {
   // Need to call grpc_init() here to use a slice, but need to shut it
@@ -50,8 +52,8 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   grpc_slice buffer;
   squelch = false;
   leak_check = false;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(GetParam().c_str(), 0, &buffer)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(GetParam().c_str(), 0, &buffer)));
   size_t length = GRPC_SLICE_LENGTH(buffer);
   void* data = gpr_malloc(length);
   memcpy(data, GPR_SLICE_START_PTR(buffer), length);
@@ -80,17 +82,19 @@ class ExampleGenerator
         gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"", test_srcdir);
         std::string directory = absl::GetFlag(FLAGS_directory);
         if (test_srcdir != nullptr) {
-          directory =
-              test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
+          directory = test_srcdir +
+                      std::string("/com_github_grpc_grpc/") + directory;
         }
-        gpr_log(GPR_DEBUG, "Using corpus directory: %s", directory.c_str());
+        gpr_log(GPR_DEBUG, "Using corpus directory: %s",
+                directory.c_str());
         DIR* dp;
         struct dirent* ep;
         dp = opendir(directory.c_str());
 
         if (dp != nullptr) {
           while ((ep = readdir(dp)) != nullptr) {
-            if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0) {
+            if (strcmp(ep->d_name, ".") != 0 &&
+                strcmp(ep->d_name, "..") != 0) {
               examples_.push_back(directory + "/" + ep->d_name);
             }
           }
@@ -118,20 +122,28 @@ class ExampleIterator
                   std::vector<std::string>::const_iterator begin)
       : base_(base_), begin_(begin), current_(begin) {}
 
-  const ExampleGenerator* BaseGenerator() const override { return &base_; }
+  const ExampleGenerator* BaseGenerator() const override {
+    return &base_;
+  }
 
   void Advance() override { current_++; }
-  ExampleIterator* Clone() const override { return new ExampleIterator(*this); }
+  ExampleIterator* Clone() const override {
+    return new ExampleIterator(*this);
+  }
   const std::string* Current() const override { return &*current_; }
 
-  bool Equals(const ParamIteratorInterface<std::string>& other) const override {
+  bool Equals(
+      const ParamIteratorInterface<std::string>& other) const override {
     return &base_ == other.BaseGenerator() &&
-           current_ == dynamic_cast<const ExampleIterator*>(&other)->current_;
+           current_ ==
+               dynamic_cast<const ExampleIterator*>(&other)->current_;
   }
 
  private:
   ExampleIterator(const ExampleIterator& other)
-      : base_(other.base_), begin_(other.begin_), current_(other.current_) {}
+      : base_(other.base_),
+        begin_(other.begin_),
+        current_(other.current_) {}
 
   const ExampleGenerator& base_;
   const std::vector<std::string>::const_iterator begin_;
@@ -152,7 +164,8 @@ ExampleGenerator::End() const {
 
 INSTANTIATE_TEST_SUITE_P(
     CorpusExamples, FuzzerCorpusTest,
-    ::testing::internal::ParamGenerator<std::string>(new ExampleGenerator));
+    ::testing::internal::ParamGenerator<std::string>(
+        new ExampleGenerator));
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

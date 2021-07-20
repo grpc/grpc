@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,14 +26,17 @@
 namespace grpc {
 namespace testing {
 
-/// A test-only class to access private members and methods of ServerContext.
+/// A test-only class to access private members and methods of
+/// ServerContext.
 class ServerContextTestSpouse {
  public:
   explicit ServerContextTestSpouse(ServerContext* ctx) : ctx_(ctx) {}
 
-  /// Inject client metadata to the ServerContext for the test. The test spouse
-  /// must be alive when \a ServerContext::client_metadata is called.
-  void AddClientMetadata(const std::string& key, const std::string& value) {
+  /// Inject client metadata to the ServerContext for the test. The test
+  /// spouse must be alive when \a ServerContext::client_metadata is
+  /// called.
+  void AddClientMetadata(const std::string& key,
+                         const std::string& value) {
     client_metadata_storage_.insert(
         std::pair<std::string, std::string>(key, value));
     ctx_->client_metadata_.map()->clear();
@@ -41,7 +44,8 @@ class ServerContextTestSpouse {
       ctx_->client_metadata_.map()->insert(
           std::pair<grpc::string_ref, grpc::string_ref>(
               item.first.c_str(),
-              grpc::string_ref(item.second.data(), item.second.size())));
+              grpc::string_ref(item.second.data(),
+                               item.second.size())));
     }
   }
 

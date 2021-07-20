@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -67,8 +67,8 @@ static void prepare_test(int is_client) {
 
   if (is_client) {
     /* create a call, channel to a non existant server */
-    g_state.chan =
-        grpc_insecure_channel_create("nonexistant:54321", nullptr, nullptr);
+    g_state.chan = grpc_insecure_channel_create("nonexistant:54321",
+                                                nullptr, nullptr);
     grpc_slice host = grpc_slice_from_static_string("nonexistant");
     g_state.call = grpc_channel_create_call(
         g_state.chan, nullptr, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
@@ -76,14 +76,16 @@ static void prepare_test(int is_client) {
         nullptr);
   } else {
     g_state.server = grpc_server_create(nullptr, nullptr);
-    grpc_server_register_completion_queue(g_state.server, g_state.cq, nullptr);
-    std::string server_hostport = grpc_core::JoinHostPort("0.0.0.0", port);
+    grpc_server_register_completion_queue(g_state.server, g_state.cq,
+                                          nullptr);
+    std::string server_hostport =
+        grpc_core::JoinHostPort("0.0.0.0", port);
     grpc_server_add_insecure_http2_port(g_state.server,
                                         server_hostport.c_str());
     grpc_server_start(g_state.server);
     server_hostport = grpc_core::JoinHostPort("localhost", port);
-    g_state.chan =
-        grpc_insecure_channel_create(server_hostport.c_str(), nullptr, nullptr);
+    g_state.chan = grpc_insecure_channel_create(server_hostport.c_str(),
+                                                nullptr, nullptr);
     grpc_slice host = grpc_slice_from_static_string("bar");
     g_state.call = grpc_channel_create_call(
         g_state.chan, nullptr, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
@@ -97,14 +99,16 @@ static void prepare_test(int is_client) {
     op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
     op->reserved = nullptr;
     op++;
-    GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
-                                                     (size_t)(op - g_state.ops),
-                                                     tag(1), nullptr));
     GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_server_request_call(g_state.server, &g_state.server_call,
-                                        &g_state.call_details,
-                                        &g_state.server_initial_metadata_recv,
-                                        g_state.cq, g_state.cq, tag(101)));
+               grpc_call_start_batch(g_state.call, g_state.ops,
+                                     (size_t)(op - g_state.ops), tag(1),
+                                     nullptr));
+    GPR_ASSERT(
+        GRPC_CALL_OK ==
+        grpc_server_request_call(g_state.server, &g_state.server_call,
+                                 &g_state.call_details,
+                                 &g_state.server_initial_metadata_recv,
+                                 g_state.cq, g_state.cq, tag(101)));
     CQ_EXPECT_COMPLETION(g_state.cqv, tag(101), 1);
     CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 1);
     cq_verify(g_state.cqv);
@@ -123,10 +127,11 @@ static void cleanup_test() {
   if (!g_state.is_client) {
     shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
     grpc_call_unref(g_state.server_call);
-    grpc_server_shutdown_and_notify(g_state.server, shutdown_cq, tag(1000));
-    GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                           grpc_timeout_seconds_to_deadline(5),
-                                           nullptr)
+    grpc_server_shutdown_and_notify(g_state.server, shutdown_cq,
+                                    tag(1000));
+    GPR_ASSERT(grpc_completion_queue_pluck(
+                   shutdown_cq, tag(1000),
+                   grpc_timeout_seconds_to_deadline(5), nullptr)
                    .type == GRPC_OP_COMPLETE);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(g_state.server);
@@ -134,8 +139,8 @@ static void cleanup_test() {
     grpc_metadata_array_destroy(&g_state.server_initial_metadata_recv);
   }
   grpc_completion_queue_shutdown(g_state.cq);
-  while (grpc_completion_queue_next(g_state.cq,
-                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
+  while (grpc_completion_queue_next(
+             g_state.cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
              .type != GRPC_QUEUE_SHUTDOWN) {
   }
   grpc_completion_queue_destroy(g_state.cq);
@@ -145,8 +150,9 @@ static void test_non_null_reserved_on_start_batch() {
   gpr_log(GPR_INFO, "test_non_null_reserved_on_start_batch");
 
   prepare_test(1);
-  GPR_ASSERT(GRPC_CALL_ERROR ==
-             grpc_call_start_batch(g_state.call, nullptr, 0, nullptr, tag(1)));
+  GPR_ASSERT(GRPC_CALL_ERROR == grpc_call_start_batch(g_state.call,
+                                                      nullptr, 0,
+                                                      nullptr, tag(1)));
   cleanup_test();
 }
 
@@ -181,9 +187,10 @@ static void test_send_initial_metadata_more_than_once() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
-                                                   (size_t)(op - g_state.ops),
-                                                   tag(1), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(g_state.call, g_state.ops,
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 0);
   cq_verify(g_state.cqv);
 
@@ -208,7 +215,8 @@ static void test_too_many_metadata() {
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = static_cast<size_t>(INT_MAX) + 1;
+  op->data.send_initial_metadata.count =
+      static_cast<size_t>(INT_MAX) + 1;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -264,7 +272,8 @@ static void test_send_messages_at_the_same_time() {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = static_cast<grpc_byte_buffer*>(tag(2));
+  op->data.send_message.send_message =
+      static_cast<grpc_byte_buffer*>(tag(2));
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -310,9 +319,10 @@ static void test_receive_initial_metadata_twice_at_client() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
-                                                   (size_t)(op - g_state.ops),
-                                                   tag(1), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(g_state.call, g_state.ops,
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 0);
   cq_verify(g_state.cqv);
   op = g_state.ops;
@@ -406,9 +416,10 @@ static void test_recv_status_on_client_twice() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
-                                                   (size_t)(op - g_state.ops),
-                                                   tag(1), nullptr));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(g_state.call, g_state.ops,
+                                   (size_t)(op - g_state.ops), tag(1),
+                                   nullptr));
   CQ_EXPECT_COMPLETION(g_state.cqv, tag(1), 1);
   cq_verify(g_state.cqv);
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,7 +43,8 @@ struct cq_verifier {
 };
 
 cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
-  cq_verifier* v = static_cast<cq_verifier*>(gpr_malloc(sizeof(cq_verifier)));
+  cq_verifier* v =
+      static_cast<cq_verifier*>(gpr_malloc(sizeof(cq_verifier)));
   v->cq = cq;
   v->first_expectation = NULL;
   uv_timer_init(uv_default_loop(), &v->timer);
@@ -82,14 +83,14 @@ grpc_event cq_verifier_next_event(cq_verifier* v, int timeout_seconds) {
   grpc_event ev;
   v->timer.data = (void*)TIMER_STARTED;
   uv_timer_start(&v->timer, timer_run_cb, timeout_ms, 0);
-  ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),
-                                  NULL);
+  ev = grpc_completion_queue_next(
+      v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
   // Stop the loop if the timer goes off or we get a non-timeout event
   while ((static_cast<timer_state>(v->timer.data) != TIMER_TRIGGERED) &&
          ev.type == GRPC_QUEUE_TIMEOUT) {
     uv_run(uv_default_loop(), UV_RUN_ONCE);
-    ev = grpc_completion_queue_next(v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC),
-                                    NULL);
+    ev = grpc_completion_queue_next(
+        v->cq, gpr_inf_past(GPR_CLOCK_MONOTONIC), NULL);
   }
   return ev;
 }

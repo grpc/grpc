@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,11 +27,12 @@ namespace grpc {
 
 namespace {
 
-grpc::protobuf::util::Status ParseJson(const char* json_str,
-                                       grpc::protobuf::Message* message) {
+grpc::protobuf::util::Status ParseJson(
+    const char* json_str, grpc::protobuf::Message* message) {
   grpc::protobuf::json::JsonParseOptions options;
   options.case_insensitive_enum_parsing = true;
-  return grpc::protobuf::json::JsonStringToMessage(json_str, message, options);
+  return grpc::protobuf::json::JsonStringToMessage(json_str, message,
+                                                   options);
 }
 
 }  // namespace
@@ -40,7 +41,8 @@ Status ChannelzService::GetTopChannels(
     ServerContext* /*unused*/,
     const channelz::v1::GetTopChannelsRequest* request,
     channelz::v1::GetTopChannelsResponse* response) {
-  char* json_str = grpc_channelz_get_top_channels(request->start_channel_id());
+  char* json_str =
+      grpc_channelz_get_top_channels(request->start_channel_id());
   if (json_str == nullptr) {
     return Status(StatusCode::INTERNAL,
                   "grpc_channelz_get_top_channels returned null");
@@ -54,9 +56,11 @@ Status ChannelzService::GetTopChannels(
 }
 
 Status ChannelzService::GetServers(
-    ServerContext* /*unused*/, const channelz::v1::GetServersRequest* request,
+    ServerContext* /*unused*/,
+    const channelz::v1::GetServersRequest* request,
     channelz::v1::GetServersResponse* response) {
-  char* json_str = grpc_channelz_get_servers(request->start_server_id());
+  char* json_str =
+      grpc_channelz_get_servers(request->start_server_id());
   if (json_str == nullptr) {
     return Status(StatusCode::INTERNAL,
                   "grpc_channelz_get_servers returned null");
@@ -69,9 +73,10 @@ Status ChannelzService::GetServers(
   return Status::OK;
 }
 
-Status ChannelzService::GetServer(ServerContext* /*unused*/,
-                                  const channelz::v1::GetServerRequest* request,
-                                  channelz::v1::GetServerResponse* response) {
+Status ChannelzService::GetServer(
+    ServerContext* /*unused*/,
+    const channelz::v1::GetServerRequest* request,
+    channelz::v1::GetServerResponse* response) {
   char* json_str = grpc_channelz_get_server(request->server_id());
   if (json_str == nullptr) {
     return Status(StatusCode::INTERNAL,
@@ -90,7 +95,8 @@ Status ChannelzService::GetServerSockets(
     const channelz::v1::GetServerSocketsRequest* request,
     channelz::v1::GetServerSocketsResponse* response) {
   char* json_str = grpc_channelz_get_server_sockets(
-      request->server_id(), request->start_socket_id(), request->max_results());
+      request->server_id(), request->start_socket_id(),
+      request->max_results());
   if (json_str == nullptr) {
     return Status(StatusCode::INTERNAL,
                   "grpc_channelz_get_server_sockets returned null");
@@ -104,11 +110,13 @@ Status ChannelzService::GetServerSockets(
 }
 
 Status ChannelzService::GetChannel(
-    ServerContext* /*unused*/, const channelz::v1::GetChannelRequest* request,
+    ServerContext* /*unused*/,
+    const channelz::v1::GetChannelRequest* request,
     channelz::v1::GetChannelResponse* response) {
   char* json_str = grpc_channelz_get_channel(request->channel_id());
   if (json_str == nullptr) {
-    return Status(StatusCode::NOT_FOUND, "No object found for that ChannelId");
+    return Status(StatusCode::NOT_FOUND,
+                  "No object found for that ChannelId");
   }
   grpc::protobuf::util::Status s = ParseJson(json_str, response);
   gpr_free(json_str);
@@ -122,7 +130,8 @@ Status ChannelzService::GetSubchannel(
     ServerContext* /*unused*/,
     const channelz::v1::GetSubchannelRequest* request,
     channelz::v1::GetSubchannelResponse* response) {
-  char* json_str = grpc_channelz_get_subchannel(request->subchannel_id());
+  char* json_str =
+      grpc_channelz_get_subchannel(request->subchannel_id());
   if (json_str == nullptr) {
     return Status(StatusCode::NOT_FOUND,
                   "No object found for that SubchannelId");
@@ -135,12 +144,14 @@ Status ChannelzService::GetSubchannel(
   return Status::OK;
 }
 
-Status ChannelzService::GetSocket(ServerContext* /*unused*/,
-                                  const channelz::v1::GetSocketRequest* request,
-                                  channelz::v1::GetSocketResponse* response) {
+Status ChannelzService::GetSocket(
+    ServerContext* /*unused*/,
+    const channelz::v1::GetSocketRequest* request,
+    channelz::v1::GetSocketResponse* response) {
   char* json_str = grpc_channelz_get_socket(request->socket_id());
   if (json_str == nullptr) {
-    return Status(StatusCode::NOT_FOUND, "No object found for that SocketId");
+    return Status(StatusCode::NOT_FOUND,
+                  "No object found for that SocketId");
   }
   grpc::protobuf::util::Status s = ParseJson(json_str, response);
   gpr_free(json_str);

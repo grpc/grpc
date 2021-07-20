@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -91,7 +91,8 @@ static const char* output_filename() {
   return output_filename_or_null;
 }
 
-static int timer_log_push_back(gpr_timer_log_list* list, gpr_timer_log* log) {
+static int timer_log_push_back(gpr_timer_log_list* list,
+                               gpr_timer_log* log) {
   if (list->head == NULL) {
     list->head = list->tail = log;
     log->next = log->prev = NULL;
@@ -118,7 +119,8 @@ static gpr_timer_log* timer_log_pop_front(gpr_timer_log_list* list) {
   return out;
 }
 
-static void timer_log_remove(gpr_timer_log_list* list, gpr_timer_log* log) {
+static void timer_log_remove(gpr_timer_log_list* list,
+                             gpr_timer_log* log) {
   if (log->prev == NULL) {
     list->head = log->next;
     if (list->head != NULL) {
@@ -151,8 +153,9 @@ static void write_log(gpr_timer_log* log) {
             "{\"t\": %" PRId64
             ".%09d, \"thd\": \"%d\", \"type\": \"%c\", \"tag\": "
             "\"%s\", \"file\": \"%s\", \"line\": %d, \"imp\": %d}\n",
-            entry->tm.tv_sec, entry->tm.tv_nsec, entry->thd, entry->type,
-            entry->tagstr, entry->file, entry->line, entry->important);
+            entry->tm.tv_sec, entry->tm.tv_nsec, entry->thd,
+            entry->type, entry->tagstr, entry->file, entry->line,
+            entry->important);
   }
 }
 
@@ -160,7 +163,8 @@ static void* writing_thread(void* unused) {
   gpr_timer_log* log;
   pthread_mutex_lock(&g_mu);
   for (;;) {
-    while ((log = timer_log_pop_front(&g_done_logs)) == NULL && !g_shutdown) {
+    while ((log = timer_log_pop_front(&g_done_logs)) == NULL &&
+           !g_shutdown) {
       pthread_cond_wait(&g_cv, &g_mu);
     }
     if (log != NULL) {
@@ -218,8 +222,10 @@ static void init_output() {
 }
 
 static void rotate_log() {
-  /* Using malloc here, as this code could end up being called by gpr_malloc */
-  gpr_timer_log* log = static_cast<gpr_timer_log*>(malloc(sizeof(*log)));
+  /* Using malloc here, as this code could end up being called by
+   * gpr_malloc */
+  gpr_timer_log* log =
+      static_cast<gpr_timer_log*>(malloc(sizeof(*log)));
   gpr_once_init(&g_once_init, init_output);
   log->num_entries = 0;
   pthread_mutex_lock(&g_mu);
@@ -237,7 +243,8 @@ static void rotate_log() {
 }
 
 static void gpr_timers_log_add(const char* tagstr, marker_type type,
-                               int important, const char* file, int line) {
+                               int important, const char* file,
+                               int line) {
   gpr_timer_entry* entry;
 
   if (!g_writing_enabled) {
@@ -260,13 +267,13 @@ static void gpr_timers_log_add(const char* tagstr, marker_type type,
 }
 
 /* Latency profiler API implementation. */
-void gpr_timer_add_mark(const char* tagstr, int important, const char* file,
-                        int line) {
+void gpr_timer_add_mark(const char* tagstr, int important,
+                        const char* file, int line) {
   gpr_timers_log_add(tagstr, MARK, important, file, line);
 }
 
-void gpr_timer_begin(const char* tagstr, int important, const char* file,
-                     int line) {
+void gpr_timer_begin(const char* tagstr, int important,
+                     const char* file, int line) {
   gpr_timers_log_add(tagstr, BEGIN, important, file, line);
 }
 

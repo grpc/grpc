@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -97,8 +97,8 @@ static grpc_error_handle windows_blocking_resolve_address(
   }
 
   /* Success path: set addrs non-NULL, fill it in */
-  (*addresses) =
-      (grpc_resolved_addresses*)gpr_malloc(sizeof(grpc_resolved_addresses));
+  (*addresses) = (grpc_resolved_addresses*)gpr_malloc(
+      sizeof(grpc_resolved_addresses));
   (*addresses)->naddrs = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
     (*addresses)->naddrs++;
@@ -107,7 +107,8 @@ static grpc_error_handle windows_blocking_resolve_address(
       sizeof(grpc_resolved_address) * (*addresses)->naddrs);
   i = 0;
   for (resp = result; resp != NULL; resp = resp->ai_next) {
-    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
+    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr,
+           resp->ai_addrlen);
     (*addresses)->addrs[i].len = resp->ai_addrlen;
     i++;
   }
@@ -124,8 +125,8 @@ done:
 static void do_request_thread(void* rp, grpc_error_handle error) {
   request* r = (request*)rp;
   if (error == GRPC_ERROR_NONE) {
-    error =
-        grpc_blocking_resolve_address(r->name, r->default_port, r->addresses);
+    error = grpc_blocking_resolve_address(r->name, r->default_port,
+                                          r->addresses);
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -135,10 +136,10 @@ static void do_request_thread(void* rp, grpc_error_handle error) {
   gpr_free(r);
 }
 
-static void windows_resolve_address(const char* name, const char* default_port,
-                                    grpc_pollset_set* interested_parties,
-                                    grpc_closure* on_done,
-                                    grpc_resolved_addresses** addresses) {
+static void windows_resolve_address(
+    const char* name, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_resolved_addresses** addresses) {
   request* r = (request*)gpr_malloc(sizeof(request));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r, nullptr);
   r->name = gpr_strdup(name);

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -50,7 +50,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
 
     ServerBuilder builder;
     std::string server_address = "localhost:" + to_string(port_);
-    builder.AddListeningPort(server_address, InsecureServerCredentials());
+    builder.AddListeningPort(server_address,
+                             InsecureServerCredentials());
     server_ = builder.BuildAndStart();
   }
 
@@ -59,8 +60,10 @@ class ProtoServerReflectionTest : public ::testing::Test {
     std::shared_ptr<Channel> channel =
         grpc::CreateChannel(target, InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
-    desc_db_ = absl::make_unique<ProtoReflectionDescriptorDatabase>(channel);
-    desc_pool_ = absl::make_unique<protobuf::DescriptorPool>(desc_db_.get());
+    desc_db_ =
+        absl::make_unique<ProtoReflectionDescriptorDatabase>(channel);
+    desc_pool_ =
+        absl::make_unique<protobuf::DescriptorPool>(desc_db_.get());
   }
 
   string to_string(const int number) {
@@ -76,14 +79,16 @@ class ProtoServerReflectionTest : public ::testing::Test {
         ref_desc_pool_->FindServiceByName(service);
     EXPECT_TRUE(service_desc != nullptr);
     EXPECT_TRUE(ref_service_desc != nullptr);
-    EXPECT_EQ(service_desc->DebugString(), ref_service_desc->DebugString());
+    EXPECT_EQ(service_desc->DebugString(),
+              ref_service_desc->DebugString());
 
     const protobuf::FileDescriptor* file_desc = service_desc->file();
-    if (known_files_.find(file_desc->package() + "/" + file_desc->name()) !=
-        known_files_.end()) {
+    if (known_files_.find(file_desc->package() + "/" +
+                          file_desc->name()) != known_files_.end()) {
       EXPECT_EQ(file_desc->DebugString(),
                 ref_service_desc->file()->DebugString());
-      known_files_.insert(file_desc->package() + "/" + file_desc->name());
+      known_files_.insert(file_desc->package() + "/" +
+                          file_desc->name());
     }
 
     for (int i = 0; i < service_desc->method_count(); ++i) {
@@ -98,7 +103,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
         ref_desc_pool_->FindMethodByName(method);
     EXPECT_TRUE(method_desc != nullptr);
     EXPECT_TRUE(ref_method_desc != nullptr);
-    EXPECT_EQ(method_desc->DebugString(), ref_method_desc->DebugString());
+    EXPECT_EQ(method_desc->DebugString(),
+              ref_method_desc->DebugString());
 
     CompareType(method_desc->input_type()->full_name());
     CompareType(method_desc->output_type()->full_name());
@@ -109,7 +115,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
       return;
     }
 
-    const protobuf::Descriptor* desc = desc_pool_->FindMessageTypeByName(type);
+    const protobuf::Descriptor* desc =
+        desc_pool_->FindMessageTypeByName(type);
     const protobuf::Descriptor* ref_desc =
         ref_desc_pool_->FindMessageTypeByName(type);
     EXPECT_TRUE(desc != nullptr);
@@ -129,7 +136,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
   reflection::ProtoServerReflectionPlugin plugin_;
 };
 
-TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
+TEST_F(ProtoServerReflectionTest,
+       CheckResponseWithLocalDescriptorPool) {
   ResetStub();
 
   std::vector<std::string> services;

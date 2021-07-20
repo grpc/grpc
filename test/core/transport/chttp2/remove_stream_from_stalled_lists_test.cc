@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,7 +46,8 @@
 namespace {
 
 class TransportTargetWindowEstimatesMocker
-    : public grpc_core::chttp2::TestOnlyTransportTargetWindowEstimatesMocker {
+    : public grpc_core::chttp2::
+          TestOnlyTransportTargetWindowEstimatesMocker {
  public:
   explicit TransportTargetWindowEstimatesMocker() {}
 
@@ -54,11 +55,12 @@ class TransportTargetWindowEstimatesMocker
       double current_target) override {
     const double kTinyWindow = 512;
     const double kSmallWindow = 8192;
-    // The goal is to bounce back and forth between 512 and 8192 initial window
-    // sizes, in order to get the following to happen at the server (in order):
+    // The goal is to bounce back and forth between 512 and 8192 initial
+    // window sizes, in order to get the following to happen at the
+    // server (in order):
     //
-    // 1) Stall the server-side RPC's outgoing message on stream window flow
-    // control.
+    // 1) Stall the server-side RPC's outgoing message on stream window
+    // flow control.
     //
     // 2) Send another settings frame with a change in initial window
     // size setting, which will make the server-side call go writable.
@@ -108,7 +110,8 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -118,7 +121,8 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -144,11 +148,14 @@ class TestServer {
   explicit TestServer() {
     cq_ = grpc_completion_queue_create_for_next(nullptr);
     server_ = grpc_server_create(nullptr, nullptr);
-    address_ = grpc_core::JoinHostPort("[::1]", grpc_pick_unused_port_or_die());
+    address_ = grpc_core::JoinHostPort("[::1]",
+                                       grpc_pick_unused_port_or_die());
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server_, address_.c_str()));
+    GPR_ASSERT(
+        grpc_server_add_insecure_http2_port(server_, address_.c_str()));
     grpc_server_start(server_);
-    accept_thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));
+    accept_thread_ =
+        std::thread(std::bind(&TestServer::AcceptThread, this));
   }
 
   int ShutdownAndGetNumCallsHandled() {
@@ -161,8 +168,8 @@ class TestServer {
     accept_thread_.join();
     grpc_server_destroy(server_);
     grpc_completion_queue_shutdown(cq_);
-    while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                      nullptr)
+    while (grpc_completion_queue_next(
+               cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
                .type != GRPC_QUEUE_SHUTDOWN) {
     }
     grpc_completion_queue_destroy(cq_);
@@ -188,8 +195,8 @@ class TestServer {
         if (!shutdown_) {
           call_cq = grpc_completion_queue_create_for_next(nullptr);
           grpc_call_error error = grpc_server_request_call(
-              server_, &call, &call_details, &request_metadata_recv, call_cq,
-              cq_, request_call_tag);
+              server_, &call, &call_details, &request_metadata_recv,
+              call_cq, cq_, request_call_tag);
           GPR_ASSERT(error == GRPC_CALL_OK);
         }
       }
@@ -202,8 +209,8 @@ class TestServer {
         if (event.tag == request_call_tag) {
           // HandleOneRpc takes ownership of its parameters
           num_calls_handled_++;
-          rpc_threads.push_back(
-              std::thread(std::bind(&TestServer::HandleOneRpc, call, call_cq)));
+          rpc_threads.push_back(std::thread(
+              std::bind(&TestServer::HandleOneRpc, call, call_cq)));
         } else if (event.tag == this /* shutdown_and_notify tag */) {
           grpc_core::MutexLock lock(&shutdown_mu_);
           GPR_ASSERT(shutdown_);
@@ -225,8 +232,10 @@ class TestServer {
     gpr_log(GPR_INFO, "test server threads all finished!");
   }
 
-  static void HandleOneRpc(grpc_call* call, grpc_completion_queue* call_cq) {
-    // Send a large enough payload to get us stalled on outgoing flow control
+  static void HandleOneRpc(grpc_call* call,
+                           grpc_completion_queue* call_cq) {
+    // Send a large enough payload to get us stalled on outgoing flow
+    // control
     std::string send_payload = "";
     for (int i = 0; i < 4 * 1e6; i++) {
       send_payload += "a";
@@ -252,8 +261,8 @@ class TestServer {
         call, ops, static_cast<size_t>(op - ops), tag, nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     std::thread poller([call_cq]() {
-      // poll the connection so that we actively pick up bytes off the wire,
-      // including settings frames with window size increases
+      // poll the connection so that we actively pick up bytes off the
+      // wire, including settings frames with window size increases
       while (grpc_completion_queue_next(
                  call_cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
                  .type != GRPC_QUEUE_SHUTDOWN) {
@@ -280,25 +289,27 @@ class TestServer {
 // Perform a simple RPC where the server cancels the request with
 // grpc_call_cancel_with_status
 TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
-  // 64 threads is arbitrary but chosen because, experimentally it's enough to
-  // repro the targetted crash crash (which is then fixed by
+  // 64 threads is arbitrary but chosen because, experimentally it's
+  // enough to repro the targetted crash crash (which is then fixed by
   // https://github.com/grpc/grpc/pull/23984) at a very high rate.
   const int kNumCalls = 64;
   std::vector<std::thread> threads;
   threads.reserve(kNumCalls);
-  std::unique_ptr<TestServer> test_server = absl::make_unique<TestServer>();
+  std::unique_ptr<TestServer> test_server =
+      absl::make_unique<TestServer>();
   const std::string server_address = test_server->address();
   for (int i = 0; i < kNumCalls; i++) {
     threads.push_back(std::thread([server_address]() {
       std::vector<grpc_arg> args;
-      // this test is meant to create one connection to the server for each
-      // of these threads
+      // this test is meant to create one connection to the server for
+      // each of these threads
       args.push_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true));
-      grpc_channel_args* channel_args =
-          grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
+      grpc_channel_args* channel_args = grpc_channel_args_copy_and_add(
+          nullptr, args.data(), args.size());
       grpc_channel* channel = grpc_insecure_channel_create(
-          std::string("ipv6:" + server_address).c_str(), channel_args, nullptr);
+          std::string("ipv6:" + server_address).c_str(), channel_args,
+          nullptr);
       grpc_channel_args_destroy(channel_args);
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);
@@ -308,18 +319,21 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
           gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
       StartCall(call, cq);
       // Explicitly avoid reading on this RPC for a period of time. The
-      // goal is to get the server side RPC to stall on it's outgoing stream
-      // flow control window, as the first step in trying to trigger a bug.
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
-      // Note that this test doesn't really care what the status of the RPC was,
-      // because we're just trying to make sure that we don't crash.
+      // goal is to get the server side RPC to stall on it's outgoing
+      // stream flow control window, as the first step in trying to
+      // trigger a bug.
+      gpr_sleep_until(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_seconds(1, GPR_TIMESPAN)));
+      // Note that this test doesn't really care what the status of the
+      // RPC was, because we're just trying to make sure that we don't
+      // crash.
       FinishCall(call, cq);
       grpc_call_unref(call);
       grpc_channel_destroy(channel);
       grpc_completion_queue_shutdown(cq);
-      while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                        nullptr)
+      while (grpc_completion_queue_next(
+                 cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
                  .type != GRPC_QUEUE_SHUTDOWN) {
       }
       grpc_completion_queue_destroy(cq);
@@ -329,13 +343,17 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
     thread.join();
   }
   gpr_log(GPR_DEBUG, "All RPCs completed!");
-  int num_calls_seen_at_server = test_server->ShutdownAndGetNumCallsHandled();
+  int num_calls_seen_at_server =
+      test_server->ShutdownAndGetNumCallsHandled();
   if (num_calls_seen_at_server != kNumCalls) {
     gpr_log(GPR_ERROR,
-            "Expected server to handle %d calls, but instead it only handled "
-            "%d. This suggests some or all RPCs didn't make it to the server, "
+            "Expected server to handle %d calls, but instead it only "
+            "handled "
+            "%d. This suggests some or all RPCs didn't make it to the "
+            "server, "
             "which means "
-            "that this test likely isn't doing what it's meant to be doing.",
+            "that this test likely isn't doing what it's meant to be "
+            "doing.",
             kNumCalls, num_calls_seen_at_server);
     GPR_ASSERT(0);
   }
@@ -345,12 +363,14 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // Make sure that we will have an active poller on all client-side fd's that
-  // are capable of sending settings frames with window updates etc., even in
-  // the case that we don't have an active RPC operation on the fd.
+  // Make sure that we will have an active poller on all client-side
+  // fd's that are capable of sending settings frames with window
+  // updates etc., even in the case that we don't have an active RPC
+  // operation on the fd.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-  grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
-      new TransportTargetWindowEstimatesMocker();
+  grpc_core::chttp2::
+      g_test_only_transport_target_window_estimates_mocker =
+          new TransportTargetWindowEstimatesMocker();
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();

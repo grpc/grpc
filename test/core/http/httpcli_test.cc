@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -51,12 +51,14 @@ static void on_finish(void* arg, grpc_error_handle error) {
           grpc_error_std_string(error).c_str());
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
-  GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
+  GPR_ASSERT(0 ==
+             memcmp(expect, response->body, response->body_length));
   gpr_mu_lock(g_mu);
   g_done = 1;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), nullptr)));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops),
+                        nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -78,18 +80,21 @@ static void test_get(int port) {
 
   grpc_http_response response;
   response = {};
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_get");
-  grpc_httpcli_get(
-      &g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
-      GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
-      &response);
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_create("test_get");
+  grpc_httpcli_get(&g_context, &g_pops, resource_quota, &req,
+                   n_seconds_time(15),
+                   GRPC_CLOSURE_CREATE(on_finish, &response,
+                                       grpc_schedule_on_exec_ctx),
+                   &response);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
-                                          &worker, n_seconds_time(1))));
+        "pollset_work",
+        grpc_pollset_work(grpc_polling_entity_pollset(&g_pops), &worker,
+                          n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
 
     gpr_mu_lock(g_mu);
@@ -117,18 +122,21 @@ static void test_post(int port) {
 
   grpc_http_response response;
   response = {};
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_post");
-  grpc_httpcli_post(
-      &g_context, &g_pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
-      GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
-      &response);
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_create("test_post");
+  grpc_httpcli_post(&g_context, &g_pops, resource_quota, &req, "hello",
+                    5, n_seconds_time(15),
+                    GRPC_CLOSURE_CREATE(on_finish, &response,
+                                        grpc_schedule_on_exec_ctx),
+                    &response);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
-                                          &worker, n_seconds_time(1))));
+        "pollset_work",
+        grpc_pollset_work(grpc_polling_entity_pollset(&g_pops), &worker,
+                          n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
 
     gpr_mu_lock(g_mu);
@@ -139,8 +147,8 @@ static void test_post(int port) {
 }
 
 static void destroy_pops(void* p, grpc_error_handle /*error*/) {
-  grpc_pollset_destroy(
-      grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p)));
+  grpc_pollset_destroy(grpc_polling_entity_pollset(
+      static_cast<grpc_polling_entity*>(p)));
 }
 
 int main(int argc, char** argv) {
@@ -164,8 +172,8 @@ int main(int argc, char** argv) {
                   sizeof("http") - 1) == 0) {
         lslash = me + (lslash - me) - sizeof("http");
       }
-      root = static_cast<char*>(
-          gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
+      root = static_cast<char*>(gpr_malloc(
+          static_cast<size_t>(lslash - me + sizeof("/../.."))));
       memcpy(root, me, static_cast<size_t>(lslash - me));
       memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
     } else {
@@ -177,23 +185,25 @@ int main(int argc, char** argv) {
       args[0] = gpr_strdup(argv[1]);
     } else {
       arg_shift = 1;
-      gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
+      gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh",
+                   root);
       gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
     }
 
     /* start the server */
     args[1 + arg_shift] = const_cast<char*>("--port");
     gpr_asprintf(&args[2 + arg_shift], "%d", port);
-    server =
-        gpr_subprocess_create(3 + arg_shift, const_cast<const char**>(args));
+    server = gpr_subprocess_create(3 + arg_shift,
+                                   const_cast<const char**>(args));
     GPR_ASSERT(server);
     gpr_free(args[0]);
     if (arg_shift) gpr_free(args[1]);
     gpr_free(args[2 + arg_shift]);
     gpr_free(root);
 
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_seconds(5, GPR_TIMESPAN)));
 
     grpc_httpcli_context_init(&g_context);
     grpc_pollset* pollset =
@@ -207,7 +217,8 @@ int main(int argc, char** argv) {
     grpc_httpcli_context_destroy(&g_context);
     GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
                       grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(grpc_polling_entity_pollset(&g_pops), &destroyed);
+    grpc_pollset_shutdown(grpc_polling_entity_pollset(&g_pops),
+                          &destroyed);
   }
   grpc_shutdown();
 

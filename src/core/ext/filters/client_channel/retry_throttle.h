@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,9 +30,11 @@ namespace grpc_core {
 namespace internal {
 
 /// Tracks retry throttling data for an individual server name.
-class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
+class ServerRetryThrottleData
+    : public RefCounted<ServerRetryThrottleData> {
  public:
-  ServerRetryThrottleData(intptr_t max_milli_tokens, intptr_t milli_token_ratio,
+  ServerRetryThrottleData(intptr_t max_milli_tokens,
+                          intptr_t milli_token_ratio,
                           ServerRetryThrottleData* old_throttle_data);
   ~ServerRetryThrottleData() override;
 
@@ -52,9 +54,9 @@ class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
   const intptr_t max_milli_tokens_;
   const intptr_t milli_token_ratio_;
   gpr_atm milli_tokens_;
-  // A pointer to the replacement for this ServerRetryThrottleData entry.
-  // If non-nullptr, then this entry is stale and must not be used.
-  // We hold a reference to the replacement.
+  // A pointer to the replacement for this ServerRetryThrottleData
+  // entry. If non-nullptr, then this entry is stale and must not be
+  // used. We hold a reference to the replacement.
   gpr_atm replacement_ = 0;
 };
 
@@ -66,8 +68,8 @@ class ServerRetryThrottleMap {
   /// Shuts down global map of failure data for each server name.
   static void Shutdown();
 
-  /// Returns the failure data for \a server_name, creating a new entry if
-  /// needed.
+  /// Returns the failure data for \a server_name, creating a new entry
+  /// if needed.
   static RefCountedPtr<ServerRetryThrottleData> GetDataForServer(
       const std::string& server_name, intptr_t max_milli_tokens,
       intptr_t milli_token_ratio);

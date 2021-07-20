@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,18 +27,18 @@ extern "C" {
 
 /** Metadata key for the gRPC LB load balancer token.
  *
- * The value corresponding to this key is an opaque token that is given to the
- * frontend as part of each pick; the frontend sends this token to the backend
- * in each request it sends when using that pick. The token is used by the
- * backend to verify the request and to allow the backend to report load to the
- * gRPC LB system. */
+ * The value corresponding to this key is an opaque token that is given
+ * to the frontend as part of each pick; the frontend sends this token
+ * to the backend in each request it sends when using that pick. The
+ * token is used by the backend to verify the request and to allow the
+ * backend to report load to the gRPC LB system. */
 #define GRPC_LB_TOKEN_MD_KEY "lb-token"
 
 /** Metadata key for gRPC LB cost reporting.
  *
- * The value corresponding to this key is an opaque binary blob reported by the
- * backend as part of its trailing metadata containing cost information for the
- * call. */
+ * The value corresponding to this key is an opaque binary blob reported
+ * by the backend as part of its trailing metadata containing cost
+ * information for the call. */
 #define GRPC_LB_COST_MD_KEY "lb-cost-bin"
 
 #ifdef __cplusplus

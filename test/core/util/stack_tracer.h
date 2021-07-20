@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,12 +26,13 @@
 namespace grpc_core {
 namespace testing {
 
-// Returns the current stack trace as a string. To have symbolized stack-traces,
-// InitializeStackTracer needs to be called beforehand.
+// Returns the current stack trace as a string. To have symbolized
+// stack-traces, InitializeStackTracer needs to be called beforehand.
 //
 // Example of stack-trace is
 // Stack trace:
-//    @           0x405b0f        192  StackTracerTest_Basic_Test::TestBody()
+//    @           0x405b0f        192
+//    StackTracerTest_Basic_Test::TestBody()
 //    @     0x7fbace6baf75        288  testing::internal::RunAllTests()
 //    @     0x7fbace6baa93        144  testing::UnitTest::Run()
 //    @           0x405d4d         64  main
@@ -39,7 +40,8 @@ namespace testing {
 std::string GetCurrentStackTrace();
 
 // Initializes a stack tracer so that GetCurrentStackTrace can work.
-// This inits debug symbols and sets this as a gRPC stack-trace provider.
+// This inits debug symbols and sets this as a gRPC stack-trace
+// provider.
 void InitializeStackTracer(const char* argv0);
 
 }  // namespace testing

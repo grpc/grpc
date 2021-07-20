@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,9 +31,10 @@ void ThreadPoolWorker::Run() {
       gpr_timespec wait_time = gpr_time_0(GPR_TIMESPAN);
       elem = queue_->Get(&wait_time);
       stats_.sleep_time = gpr_time_add(stats_.sleep_time, wait_time);
-      gpr_log(GPR_INFO,
-              "ThreadPool Worker [%s %d] Stats:  sleep_time          %f",
-              thd_name_, index_, gpr_timespec_to_micros(stats_.sleep_time));
+      gpr_log(
+          GPR_INFO,
+          "ThreadPool Worker [%s %d] Stats:  sleep_time          %f",
+          thd_name_, index_, gpr_timespec_to_micros(stats_.sleep_time));
     } else {
       elem = queue_->Get(nullptr);
     }
@@ -57,7 +58,8 @@ void ThreadPool::SharedThreadPoolConstructor() {
   threads_ = static_cast<ThreadPoolWorker**>(
       gpr_zalloc(num_threads_ * sizeof(ThreadPoolWorker*)));
   for (int i = 0; i < num_threads_; ++i) {
-    threads_[i] = new ThreadPoolWorker(thd_name_, queue_, thread_options_, i);
+    threads_[i] =
+        new ThreadPoolWorker(thd_name_, queue_, thread_options_, i);
     threads_[i]->Start();
   }
 }

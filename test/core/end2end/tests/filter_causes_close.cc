@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,10 +34,9 @@ static bool g_enable_filter = false;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -57,16 +56,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -111,9 +111,10 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_slice details;
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -139,32 +140,34 @@ static void test_request(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
-  GPR_ASSERT(0 ==
-             grpc_slice_str_cmp(details, "Failure that's not preventable."));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(
+                      details, "Failure that's not preventable."));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -200,10 +203,10 @@ static void recv_im_ready(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_core::Closure::Run(
       DEBUG_LOCATION, calld->recv_im_ready,
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Failure that's not preventable.", &error, 1),
-                         GRPC_ERROR_INT_GRPC_STATUS,
-                         GRPC_STATUS_PERMISSION_DENIED));
+      grpc_error_set_int(
+          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+              "Failure that's not preventable.", &error, 1),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED));
 }
 
 static void start_transport_stream_op_batch(
@@ -213,22 +216,26 @@ static void start_transport_stream_op_batch(
     calld->recv_im_ready =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        GRPC_CLOSURE_CREATE(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_CREATE(recv_im_ready, elem,
+                            grpc_schedule_on_exec_ctx);
   }
   grpc_call_next_op(elem, op);
 }
 
 static grpc_error_handle init_call_elem(
-    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
+    grpc_call_element* /*elem*/,
+    const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_call_elem(grpc_call_element* /*elem*/,
-                              const grpc_call_final_info* /*final_info*/,
-                              grpc_closure* /*ignored*/) {}
+static void destroy_call_elem(
+    grpc_call_element* /*elem*/,
+    const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {}
 
 static grpc_error_handle init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+    grpc_channel_element* /*elem*/,
+    grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -254,16 +261,16 @@ static const grpc_channel_filter test_filter = {
 static bool maybe_add_filter(grpc_channel_stack_builder* builder,
                              void* /*arg*/) {
   if (g_enable_filter) {
-    return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
-                                                     nullptr, nullptr);
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &test_filter, nullptr, nullptr);
   } else {
     return true;
   }
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
-                                   nullptr);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0,
+                                   maybe_add_filter, nullptr);
 }
 
 static void destroy_plugin(void) {}

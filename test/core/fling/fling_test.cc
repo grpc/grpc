@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,8 +45,8 @@ int main(int /*argc*/, const char** argv) {
     strcpy(root, ".");
   }
   /* start the server */
-  std::string command =
-      absl::StrCat(root, "/fling_server", gpr_subprocess_binary_extension());
+  std::string command = absl::StrCat(root, "/fling_server",
+                                     gpr_subprocess_binary_extension());
   args[0] = const_cast<char*>(command.c_str());
   args[1] = const_cast<char*>("--bind");
   std::string joined = grpc_core::JoinHostPort("::", port);
@@ -55,8 +55,8 @@ int main(int /*argc*/, const char** argv) {
   svr = gpr_subprocess_create(4, const_cast<const char**>(args));
 
   /* start the client */
-  command =
-      absl::StrCat(root, "/fling_client", gpr_subprocess_binary_extension());
+  command = absl::StrCat(root, "/fling_client",
+                         gpr_subprocess_binary_extension());
   args[0] = const_cast<char*>(command.c_str());
   args[1] = const_cast<char*>("--target");
   joined = grpc_core::JoinHostPort("127.0.0.1", port);

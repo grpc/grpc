@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -56,7 +56,8 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
     }
   };
 
-  XdsLocalityName(std::string region, std::string zone, std::string sub_zone)
+  XdsLocalityName(std::string region, std::string zone,
+                  std::string sub_zone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
         sub_zone_(std::move(sub_zone)) {}
@@ -84,9 +85,9 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 
   const std::string& AsHumanReadableString() {
     if (human_readable_string_.empty()) {
-      human_readable_string_ =
-          absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                          region_, zone_, sub_zone_);
+      human_readable_string_ = absl::StrFormat(
+          "{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}", region_,
+          zone_, sub_zone_);
     }
     return human_readable_string_;
   }
@@ -103,7 +104,8 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
  public:
   // The total number of requests dropped for any reason is the sum of
   // uncategorized_drops, and dropped_requests map.
-  using CategorizedDropsMap = std::map<std::string /* category */, uint64_t>;
+  using CategorizedDropsMap =
+      std::map<std::string /* category */, uint64_t>;
   struct Snapshot {
     uint64_t uncategorized_drops = 0;
     // The number of requests dropped for the specific drop categories
@@ -145,15 +147,17 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
   Atomic<uint64_t> uncategorized_drops_{0};
-  // Protects categorized_drops_. A mutex is necessary because the length of
-  // dropped_requests can be accessed by both the picker (from data plane
-  // mutex) and the load reporting thread (from the control plane combiner).
+  // Protects categorized_drops_. A mutex is necessary because the
+  // length of dropped_requests can be accessed by both the picker (from
+  // data plane mutex) and the load reporting thread (from the control
+  // plane combiner).
   Mutex mu_;
   CategorizedDropsMap categorized_drops_ ABSL_GUARDED_BY(mu_);
 };
 
 // Locality stats for an xds cluster.
-class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
+class XdsClusterLocalityStats
+    : public RefCounted<XdsClusterLocalityStats> {
  public:
   struct BackendMetric {
     uint64_t num_requests_finished_with_metric;
@@ -167,7 +171,8 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
     }
 
     bool IsZero() const {
-      return num_requests_finished_with_metric == 0 && total_metric_value == 0;
+      return num_requests_finished_with_metric == 0 &&
+             total_metric_value == 0;
     }
   };
 
@@ -190,7 +195,8 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
     }
 
     bool IsZero() const {
-      if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
+      if (total_successful_requests != 0 ||
+          total_requests_in_progress != 0 ||
           total_error_requests != 0 || total_issued_requests != 0) {
         return false;
       }
@@ -226,10 +232,11 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   Atomic<uint64_t> total_error_requests_{0};
   Atomic<uint64_t> total_issued_requests_{0};
 
-  // Protects backend_metrics_. A mutex is necessary because the length of
-  // backend_metrics_ can be accessed by both the callback intercepting the
-  // call's recv_trailing_metadata (not from the control plane work serializer)
-  // and the load reporting thread (from the control plane work serializer).
+  // Protects backend_metrics_. A mutex is necessary because the length
+  // of backend_metrics_ can be accessed by both the callback
+  // intercepting the call's recv_trailing_metadata (not from the
+  // control plane work serializer) and the load reporting thread (from
+  // the control plane work serializer).
   Mutex backend_metrics_mu_;
   std::map<std::string, BackendMetric> backend_metrics_
       ABSL_GUARDED_BY(backend_metrics_mu_);

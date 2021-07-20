@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,10 +30,9 @@
 static grpc_stream_compression_context identity_ctx = {
     &grpc_stream_compression_identity_vtable};
 
-static void grpc_stream_compression_pass_through(grpc_slice_buffer* in,
-                                                 grpc_slice_buffer* out,
-                                                 size_t* output_size,
-                                                 size_t max_output_size) {
+static void grpc_stream_compression_pass_through(
+    grpc_slice_buffer* in, grpc_slice_buffer* out, size_t* output_size,
+    size_t max_output_size) {
   if (max_output_size >= in->length) {
     if (output_size) {
       *output_size = in->length;
@@ -54,7 +53,8 @@ static bool grpc_stream_compress_identity(
   if (ctx == nullptr) {
     return false;
   }
-  grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
+  grpc_stream_compression_pass_through(in, out, output_size,
+                                       max_output_size);
   return true;
 }
 
@@ -65,7 +65,8 @@ static bool grpc_stream_decompress_identity(
   if (ctx == nullptr) {
     return false;
   }
-  grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
+  grpc_stream_compression_pass_through(in, out, output_size,
+                                       max_output_size);
   if (end_of_context) {
     *end_of_context = false;
   }
@@ -84,7 +85,8 @@ grpc_stream_compression_context_create_identity(
 static void grpc_stream_compression_context_destroy_identity(
     grpc_stream_compression_context* /*ctx*/) {}
 
-const grpc_stream_compression_vtable grpc_stream_compression_identity_vtable = {
-    grpc_stream_compress_identity, grpc_stream_decompress_identity,
-    grpc_stream_compression_context_create_identity,
-    grpc_stream_compression_context_destroy_identity};
+const grpc_stream_compression_vtable
+    grpc_stream_compression_identity_vtable = {
+        grpc_stream_compress_identity, grpc_stream_decompress_identity,
+        grpc_stream_compression_context_create_identity,
+        grpc_stream_compression_context_destroy_identity};

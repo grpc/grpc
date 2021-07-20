@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,12 +62,12 @@
 //
 // * Caveat for setting global configs at runtime
 //
-// Setting global configs at runtime multiple times is safe but it doesn't
-// mean that it will have a valid effect on the module depending configs.
-// In unit tests, it may be unpredictable to set different global configs
-// between test cases because grpc init and shutdown can ignore changes.
-// It's considered safe to set global configs before the first call to
-// grpc_init().
+// Setting global configs at runtime multiple times is safe but it
+// doesn't mean that it will have a valid effect on the module depending
+// configs. In unit tests, it may be unpredictable to set different
+// global configs between test cases because grpc init and shutdown can
+// ignore changes. It's considered safe to set global configs before the
+// first call to grpc_init().
 
 // --------------------------------------------------------------------
 // How to customize the global configuration system:
@@ -82,9 +82,9 @@
 //   GPR_GLOBAL_CONFIG_DEFINE_INT32
 //   GPR_GLOBAL_CONFIG_DEFINE_STRING
 //
-// These macros should define functions for getting and setting variable.
-// For example, GPR_GLOBAL_CONFIG_DEFINE_BOOL(test, ...) would define two
-// functions.
+// These macros should define functions for getting and setting
+// variable. For example, GPR_GLOBAL_CONFIG_DEFINE_BOOL(test, ...) would
+// define two functions.
 //
 //   bool gpr_global_config_get_test();
 //   void gpr_global_config_set_test(bool value);

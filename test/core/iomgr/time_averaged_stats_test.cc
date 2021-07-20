@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -161,13 +161,15 @@ static void some_regress_some_persist_test(void) {
 
   grpc_time_averaged_stats_add_sample(&tas, 2640);
   grpc_time_averaged_stats_update_average(&tas);
-  /* (1 * 2640 + 0.6 * 0.4 * 1000 + 0.4 * 1000 / (1 + 0.6 * 0.4 + 0.4) */
+  /* (1 * 2640 + 0.6 * 0.4 * 1000 + 0.4 * 1000 / (1 + 0.6 * 0.4 + 0.4)
+   */
   EXPECT_DOUBLE_EQ(2000, tas.aggregate_weighted_avg);
   EXPECT_DOUBLE_EQ(1.64, tas.aggregate_total_weight);
 
   grpc_time_averaged_stats_add_sample(&tas, 2876.8);
   grpc_time_averaged_stats_update_average(&tas);
-  /* (1 * 2876.8 + 0.6 * 1.64 * 2000 + 0.4 * 1000 / (1 + 0.6 * 1.64 + 0.4) */
+  /* (1 * 2876.8 + 0.6 * 1.64 * 2000 + 0.4 * 1000 / (1 + 0.6 * 1.64 +
+   * 0.4) */
   EXPECT_DOUBLE_EQ(2200, tas.aggregate_weighted_avg);
   EXPECT_DOUBLE_EQ(2.384, tas.aggregate_total_weight);
 

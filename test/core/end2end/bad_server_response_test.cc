@@ -10,16 +10,17 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
-/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-   using that endpoint. Because of various transitive includes in uv.h,
-   including windows.h on Windows, uv.h must be included before other system
-   headers. Therefore, sockaddr.h must always be included first */
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h
+   when using that endpoint. Because of various transitive includes in
+   uv.h, including windows.h on Windows, uv.h must be included before
+   other system headers. Therefore, sockaddr.h must always be included
+   first */
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
@@ -65,9 +66,10 @@
 #define HTTP2_DETAIL_MSG(STATUS_CODE) \
   "Received http2 header with status: " #STATUS_CODE
 
-/* TODO(zyc) Check the content of incoming data instead of using this length */
-/* The 'bad' server will start sending responses after reading this amount of
- * data from the client. */
+/* TODO(zyc) Check the content of incoming data instead of using this
+ * length */
+/* The 'bad' server will start sending responses after reading this
+ * amount of data from the client. */
 #define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
@@ -113,7 +115,8 @@ static void handle_write() {
 
   grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
   grpc_slice_buffer_add(&state.outgoing_buffer, slice);
-  grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write, nullptr);
+  grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write,
+                      nullptr);
 }
 
 static void handle_read(void* /*arg*/, grpc_error_handle error) {
@@ -152,10 +155,13 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   test_tcp_server* server = static_cast<test_tcp_server*>(arg);
-  GRPC_CLOSURE_INIT(&on_read, handle_read, nullptr, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_writing_settings_frame, done_writing_settings_frame,
-                    nullptr, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_write, done_write, nullptr, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_read, handle_read, nullptr,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_writing_settings_frame,
+                    done_writing_settings_frame, nullptr,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_write, done_write, nullptr,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&state.temp_incoming_buffer);
   grpc_slice_buffer_init(&state.outgoing_buffer);
   state.connection_attempt_made = true;
@@ -195,15 +201,15 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cqv = cq_verifier_create(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
 
-  state.channel =
-      grpc_insecure_channel_create(state.target.c_str(), nullptr, nullptr);
+  state.channel = grpc_insecure_channel_create(state.target.c_str(),
+                                               nullptr, nullptr);
   grpc_slice host = grpc_slice_from_static_string("localhost");
-  // The default connect deadline is 20 seconds, so reduce the RPC deadline to 1
-  // second. This helps us verify - a) If the server responded with a non-HTTP2
-  // response, the connect fails immediately resulting in
-  // GRPC_STATUS_UNAVAILABLE instead of GRPC_STATUS_DEADLINE_EXCEEDED. b) If the
-  // server does not send a HTTP2 SETTINGs frame, the RPC fails with a
-  // DEADLINE_EXCEEDED.
+  // The default connect deadline is 20 seconds, so reduce the RPC
+  // deadline to 1 second. This helps us verify - a) If the server
+  // responded with a non-HTTP2 response, the connect fails immediately
+  // resulting in GRPC_STATUS_UNAVAILABLE instead of
+  // GRPC_STATUS_DEADLINE_EXCEEDED. b) If the server does not send a
+  // HTTP2 SETTINGs frame, the RPC fails with a DEADLINE_EXCEEDED.
   state.call = grpc_channel_create_call(
       state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
       grpc_slice_from_static_string("/Service/Method"), &host,
@@ -224,19 +230,21 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(state.call, ops, static_cast<size_t>(op - ops),
-                                tag(1), nullptr);
+  error = grpc_call_start_batch(
+      state.call, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -245,8 +253,9 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GPR_ASSERT(status == expected_status);
   if (expected_detail != nullptr) {
-    GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
-                                                   expected_detail)));
+    GPR_ASSERT(-1 !=
+               grpc_slice_slice(details, grpc_slice_from_static_string(
+                                             expected_detail)));
   }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -262,7 +271,8 @@ static void cleanup_rpc() {
   grpc_call_unref(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
-    ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1), nullptr);
+    ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(state.cq);
   grpc_channel_destroy(state.channel);
@@ -299,8 +309,8 @@ static grpc_core::Thread* poll_server_until_read_done(
   poll_args* pa = static_cast<poll_args*>(gpr_malloc(sizeof(*pa)));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
-  auto* th =
-      new grpc_core::Thread("grpc_poll_server", actually_poll_server, pa);
+  auto* th = new grpc_core::Thread("grpc_poll_server",
+                                   actually_poll_server, pa);
   th->Start();
   return th;
 }
@@ -333,8 +343,8 @@ static void run_test(bool http2_response, bool send_settings,
   /* Proof that the server accepted the TCP connection. */
   GPR_ASSERT(state.connection_attempt_made == true);
   /* clean up */
-  grpc_endpoint_shutdown(state.tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
+  grpc_endpoint_shutdown(
+      state.tcp, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   grpc_endpoint_destroy(state.tcp);
   cleanup_rpc();
   grpc_core::ExecCtx::Get()->Flush();
@@ -376,18 +386,20 @@ int main(int argc, char** argv) {
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
   run_test(true, true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
-  /* unparseable response. RPC should fail immediately due to a connect failure.
+  /* unparseable response. RPC should fail immediately due to a connect
+   * failure.
    */
   run_test(false, false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
 
-  /* http1 response. RPC should fail immediately due to a connect failure. */
+  /* http1 response. RPC should fail immediately due to a connect
+   * failure. */
   run_test(false, false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
 
-  /* http2 response without sending a SETTINGs frame. RPC should fail with
-   * DEADLINE_EXCEEDED since the RPC deadline is lower than the connection
-   * attempt deadline. */
+  /* http2 response without sending a SETTINGs frame. RPC should fail
+   * with DEADLINE_EXCEEDED since the RPC deadline is lower than the
+   * connection attempt deadline. */
   run_test(true, false, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
            GRPC_STATUS_DEADLINE_EXCEEDED, nullptr);
   grpc_shutdown();

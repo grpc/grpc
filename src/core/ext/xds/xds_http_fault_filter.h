@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
@@ -36,17 +36,20 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
 
   // Overrides the GenerateFilterConfig method
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const override;
+      upb_strview serialized_filter_config,
+      upb_arena* arena) const override;
 
   // Overrides the GenerateFilterConfigOverride method
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview serialized_filter_config, upb_arena* arena) const override;
+      upb_strview serialized_filter_config,
+      upb_arena* arena) const override;
 
   // Overrides the channel_filter method
   const grpc_channel_filter* channel_filter() const override;
 
   // Overrides the ModifyChannelArgs method
-  grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const override;
+  grpc_channel_args* ModifyChannelArgs(
+      grpc_channel_args* args) const override;
 
   // Overrides the GenerateServiceConfig method
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(

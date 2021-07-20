@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,19 +27,21 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h"
 
 /**
- * This method creates a privacy-integrity alts_grpc_record_protocol instance,
- * given a gsec_aead_crypter instance and a flag indicating if the created
- * instance will be used at the client or server side. The ownership of
- * gsec_aead_crypter instance is transferred to this new object.
+ * This method creates a privacy-integrity alts_grpc_record_protocol
+ * instance, given a gsec_aead_crypter instance and a flag indicating if
+ * the created instance will be used at the client or server side. The
+ * ownership of gsec_aead_crypter instance is transferred to this new
+ * object.
  *
- * - crypter: a gsec_aead_crypter instance used to perform AEAD decryption.
- * - is_client: a flag indicating if the alts_grpc_record_protocol instance will
- *   be used at the client or server side.
+ * - crypter: a gsec_aead_crypter instance used to perform AEAD
+ * decryption.
+ * - is_client: a flag indicating if the alts_grpc_record_protocol
+ * instance will be used at the client or server side.
  * - rp: an alts_grpc_record_protocol instance to be returned from
  *   the method.
  *
- * This method returns TSI_OK in case of success or a specific error code in
- * case of failure.
+ * This method returns TSI_OK in case of success or a specific error
+ * code in case of failure.
  */
 tsi_result alts_grpc_privacy_integrity_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,

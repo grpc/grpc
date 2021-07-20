@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,23 +27,27 @@ static internal::GrpcLibraryInitializer g_gli_initializer;
 
 Status ByteBuffer::TrySingleSlice(Slice* slice) const {
   if (!buffer_) {
-    return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");
+    return Status(StatusCode::FAILED_PRECONDITION,
+                  "Buffer not initialized");
   }
   if ((buffer_->type == GRPC_BB_RAW) &&
       (buffer_->data.raw.compression == GRPC_COMPRESS_NONE) &&
       (buffer_->data.raw.slice_buffer.count == 1)) {
-    grpc_slice internal_slice = buffer_->data.raw.slice_buffer.slices[0];
+    grpc_slice internal_slice =
+        buffer_->data.raw.slice_buffer.slices[0];
     *slice = Slice(internal_slice, Slice::ADD_REF);
     return Status::OK;
   } else {
-    return Status(StatusCode::FAILED_PRECONDITION,
-                  "Buffer isn't made up of a single uncompressed slice.");
+    return Status(
+        StatusCode::FAILED_PRECONDITION,
+        "Buffer isn't made up of a single uncompressed slice.");
   }
 }
 
 Status ByteBuffer::DumpToSingleSlice(Slice* slice) const {
   if (!buffer_) {
-    return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");
+    return Status(StatusCode::FAILED_PRECONDITION,
+                  "Buffer not initialized");
   }
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer_)) {
@@ -59,7 +63,8 @@ Status ByteBuffer::DumpToSingleSlice(Slice* slice) const {
 Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
   slices->clear();
   if (!buffer_) {
-    return Status(StatusCode::FAILED_PRECONDITION, "Buffer not initialized");
+    return Status(StatusCode::FAILED_PRECONDITION,
+                  "Buffer not initialized");
   }
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer_)) {

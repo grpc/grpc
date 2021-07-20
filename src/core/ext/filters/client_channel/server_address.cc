@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,8 +34,9 @@ namespace grpc_core {
 //
 // ServerAddressWeightAttribute
 //
-const char* ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
-    "server_address_weight";
+const char*
+    ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
+        "server_address_weight";
 
 //
 // ServerAddress
@@ -43,19 +44,24 @@ const char* ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
 
 ServerAddress::ServerAddress(
     const grpc_resolved_address& address, grpc_channel_args* args,
-    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
-    : address_(address), args_(args), attributes_(std::move(attributes)) {}
+    std::map<const char*, std::unique_ptr<AttributeInterface>>
+        attributes)
+    : address_(address),
+      args_(args),
+      attributes_(std::move(attributes)) {}
 
 ServerAddress::ServerAddress(
     const void* address, size_t address_len, grpc_channel_args* args,
-    std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
+    std::map<const char*, std::unique_ptr<AttributeInterface>>
+        attributes)
     : args_(args), attributes_(std::move(attributes)) {
   memcpy(address_.addr, address, address_len);
   address_.len = static_cast<socklen_t>(address_len);
 }
 
 ServerAddress::ServerAddress(const ServerAddress& other)
-    : address_(other.address_), args_(grpc_channel_args_copy(other.args_)) {
+    : address_(other.address_),
+      args_(grpc_channel_args_copy(other.args_)) {
   for (const auto& p : other.attributes_) {
     attributes_[p.first] = p.second->Copy();
   }
@@ -80,7 +86,8 @@ ServerAddress::ServerAddress(ServerAddress&& other) noexcept
       attributes_(std::move(other.attributes_)) {
   other.args_ = nullptr;
 }
-ServerAddress& ServerAddress::operator=(ServerAddress&& other) noexcept {
+ServerAddress& ServerAddress::operator=(
+    ServerAddress&& other) noexcept {
   address_ = other.address_;
   grpc_channel_args_destroy(args_);
   args_ = other.args_;
@@ -99,7 +106,8 @@ int CompareAttributes(
                    std::unique_ptr<ServerAddress::AttributeInterface>>&
         attributes2) {
   auto it2 = attributes2.begin();
-  for (auto it1 = attributes1.begin(); it1 != attributes1.end(); ++it1) {
+  for (auto it1 = attributes1.begin(); it1 != attributes1.end();
+       ++it1) {
     // attributes2 has fewer elements than attributes1
     if (it2 == attributes2.end()) return -1;
     // compare keys
@@ -159,7 +167,8 @@ std::string ServerAddress::ToString() const {
   if (!attributes_.empty()) {
     std::vector<std::string> attrs;
     for (const auto& p : attributes_) {
-      attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
+      attrs.emplace_back(
+          absl::StrCat(p.first, "=", p.second->ToString()));
     }
     parts.emplace_back(
         absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,10 +34,11 @@ bool grpc_status_code_from_string(const char* status_str,
 /// Returns the string form of \a status, or "UNKNOWN" if invalid.
 const char* grpc_status_code_to_string(grpc_status_code status);
 
-// Converts an int to grpc_status_code. If the int is not a valid status code,
-// sets the code to GRPC_STATUS_UNKNOWN and returns false. Otherwise, returns
-// true.
-bool grpc_status_code_from_int(int status_int, grpc_status_code* status);
+// Converts an int to grpc_status_code. If the int is not a valid status
+// code, sets the code to GRPC_STATUS_UNKNOWN and returns false.
+// Otherwise, returns true.
+bool grpc_status_code_from_int(int status_int,
+                               grpc_status_code* status);
 
 namespace grpc_core {
 namespace internal {
@@ -47,7 +48,9 @@ class StatusCodeSet {
  public:
   bool Empty() const { return status_code_mask_ == 0; }
 
-  void Add(grpc_status_code status) { status_code_mask_ |= (1 << status); }
+  void Add(grpc_status_code status) {
+    status_code_mask_ |= (1 << status);
+  }
 
   bool Contains(grpc_status_code status) const {
     return status_code_mask_ & (1 << status);

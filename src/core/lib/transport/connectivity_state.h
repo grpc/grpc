@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -75,15 +75,16 @@ class AsyncConnectivityStateWatcherInterface
  protected:
   class Notifier;
 
-  // If \a work_serializer is nullptr, then the notification will be scheduled
-  // on the ExecCtx.
+  // If \a work_serializer is nullptr, then the notification will be
+  // scheduled on the ExecCtx.
   explicit AsyncConnectivityStateWatcherInterface(
       std::shared_ptr<WorkSerializer> work_serializer = nullptr)
       : work_serializer_(std::move(work_serializer)) {}
 
   // Invoked asynchronously when Notify() is called.
-  virtual void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                         const absl::Status& status) = 0;
+  virtual void OnConnectivityStateChange(
+      grpc_connectivity_state new_state,
+      const absl::Status& status) = 0;
 
  private:
   std::shared_ptr<WorkSerializer> work_serializer_;
@@ -98,7 +99,8 @@ class AsyncConnectivityStateWatcherInterface
 class ConnectivityStateTracker {
  public:
   explicit ConnectivityStateTracker(
-      const char* name, grpc_connectivity_state state = GRPC_CHANNEL_IDLE,
+      const char* name,
+      grpc_connectivity_state state = GRPC_CHANNEL_IDLE,
       const absl::Status& status = absl::Status())
       : name_(name), state_(state), status_(status) {}
 
@@ -109,8 +111,9 @@ class ConnectivityStateTracker {
   // will be notified immediately.  Otherwise, it will be notified
   // whenever the state changes.
   // Not thread safe; access must be serialized with an external lock.
-  void AddWatcher(grpc_connectivity_state initial_state,
-                  OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+  void AddWatcher(
+      grpc_connectivity_state initial_state,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   // Removes a watcher.  The watcher will be orphaned.
   // Not thread safe; access must be serialized with an external lock.
@@ -118,8 +121,8 @@ class ConnectivityStateTracker {
 
   // Sets connectivity state.
   // Not thread safe; access must be serialized with an external lock.
-  void SetState(grpc_connectivity_state state, const absl::Status& status,
-                const char* reason);
+  void SetState(grpc_connectivity_state state,
+                const absl::Status& status, const char* reason);
 
   // Gets the current state.
   // Thread safe; no need to use an external lock.

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,8 +45,8 @@ static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
-// Counter incremented by test_resolve_address_impl indicating the number of
-// times a system-level resolution has happened.
+// Counter incremented by test_resolve_address_impl indicating the
+// number of times a system-level resolution has happened.
 static int g_resolution_count;
 
 static struct iomgr_args {
@@ -57,13 +57,12 @@ static struct iomgr_args {
   grpc_pollset_set* pollset_set;
 } g_iomgr_args;
 
-// Wrapper around default resolve_address in order to count the number of
-// times we incur in a system-level name resolution.
-static void test_resolve_address_impl(const char* name,
-                                      const char* default_port,
-                                      grpc_pollset_set* /*interested_parties*/,
-                                      grpc_closure* on_done,
-                                      grpc_resolved_addresses** addrs) {
+// Wrapper around default resolve_address in order to count the number
+// of times we incur in a system-level name resolution.
+static void test_resolve_address_impl(
+    const char* name, const char* default_port,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
+    grpc_resolved_addresses** addrs) {
   default_resolve_address->resolve_address(
       name, default_port, g_iomgr_args.pollset_set, on_done, addrs);
   ++g_resolution_count;
@@ -77,20 +76,21 @@ static void test_resolve_address_impl(const char* name,
     GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
     last_resolution_time = now;
   }
-  // For correct time diff comparisons, make sure that any subsequent calls
-  // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
-  // which is earlier than that returned by the call(s) to
-  // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
-  // because the resolver's last_resolution_timestamp_ will be taken from
-  // grpc_core::ExecCtx::Get()->Now() right after this returns.
+  // For correct time diff comparisons, make sure that any subsequent
+  // calls to grpc_core::ExecCtx::Get()->Now() on this thread don't
+  // return a time which is earlier than that returned by the call(s) to
+  // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is
+  // important because the resolver's last_resolution_timestamp_ will be
+  // taken from grpc_core::ExecCtx::Get()->Now() right after this
+  // returns.
   grpc_core::ExecCtx::Get()->InvalidateNow();
 }
 
 static grpc_error_handle test_blocking_resolve_address_impl(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
-  return default_resolve_address->blocking_resolve_address(name, default_port,
-                                                           addresses);
+  return default_resolve_address->blocking_resolve_address(
+      name, default_port, addresses);
 }
 
 static grpc_address_resolver_vtable test_resolver = {
@@ -105,8 +105,8 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
-      addresses, balancer_addresses, service_config_json, query_timeout_ms,
-      std::move(work_serializer));
+      addresses, balancer_addresses, service_config_json,
+      query_timeout_ms, std::move(work_serializer));
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
   grpc_millis now =
@@ -122,12 +122,13 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
     GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
     last_resolution_time = now;
   }
-  // For correct time diff comparisons, make sure that any subsequent calls
-  // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
-  // which is earlier than that returned by the call(s) to
-  // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
-  // because the resolver's last_resolution_timestamp_ will be taken from
-  // grpc_core::ExecCtx::Get()->Now() right after this returns.
+  // For correct time diff comparisons, make sure that any subsequent
+  // calls to grpc_core::ExecCtx::Get()->Now() on this thread don't
+  // return a time which is earlier than that returned by the call(s) to
+  // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is
+  // important because the resolver's last_resolution_timestamp_ will be
+  // taken from grpc_core::ExecCtx::Get()->Now() right after this
+  // returns.
   grpc_core::ExecCtx::Get()->InvalidateNow();
   return result;
 }
@@ -140,7 +141,8 @@ static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 static void iomgr_args_init(iomgr_args* args) {
   gpr_event_init(&args->ev);
-  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  args->pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
@@ -181,8 +183,9 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
     GPR_ASSERT(time_left >= 0);
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
-                                                        n_sec_deadline(1)));
+    GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
     gpr_mu_unlock(args->mu);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -195,7 +198,8 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   using ResultCallback = void (*)(OnResolutionCallbackArg* state);
 
-  void SetCallback(ResultCallback result_cb, OnResolutionCallbackArg* state) {
+  void SetCallback(ResultCallback result_cb,
+                   OnResolutionCallbackArg* state) {
     GPR_ASSERT(result_cb_ == nullptr);
     result_cb_ = result_cb;
     GPR_ASSERT(state_ == nullptr);
@@ -295,8 +299,8 @@ static void start_test_under_work_serializer(void* arg) {
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(res_cb_arg->uri_str);
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
-          factory->scheme());
+  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'",
+          res_cb_arg->uri_str, factory->scheme());
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
@@ -304,8 +308,9 @@ static void start_test_under_work_serializer(void* arg) {
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
   args.work_serializer = *g_work_serializer;
-  args.result_handler = std::unique_ptr<grpc_core::Resolver::ResultHandler>(
-      res_cb_arg->result_handler);
+  args.result_handler =
+      std::unique_ptr<grpc_core::Resolver::ResultHandler>(
+          res_cb_arg->result_handler);
   g_resolution_count = 0;
 
   grpc_arg cooldown_arg = grpc_channel_arg_integer_create(
@@ -316,7 +321,8 @@ static void start_test_under_work_serializer(void* arg) {
   res_cb_arg->resolver = factory->CreateResolver(std::move(args));
   GPR_ASSERT(res_cb_arg->resolver != nullptr);
   // First resolution, would incur in system-level resolution.
-  res_cb_arg->result_handler->SetCallback(on_first_resolution, res_cb_arg);
+  res_cb_arg->result_handler->SetCallback(on_first_resolution,
+                                          res_cb_arg);
   res_cb_arg->resolver->StartLocked();
 }
 
@@ -327,8 +333,11 @@ static void test_cooldown() {
   res_cb_arg->uri_str = "dns:127.0.0.1";
 
   (*g_work_serializer)
-      ->Run([res_cb_arg]() { start_test_under_work_serializer(res_cb_arg); },
-            DEBUG_LOCATION);
+      ->Run(
+          [res_cb_arg]() {
+            start_test_under_work_serializer(res_cb_arg);
+          },
+          DEBUG_LOCATION);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&g_iomgr_args);
   iomgr_args_finish(&g_iomgr_args);

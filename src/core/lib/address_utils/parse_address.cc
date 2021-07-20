@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -69,8 +69,8 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
             uri.scheme().c_str());
     return false;
   }
-  grpc_error_handle error =
-      grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
+  grpc_error_handle error = grpc_core::UnixAbstractSockaddrPopulate(
+      uri.path(), resolved_addr);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
@@ -81,8 +81,8 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
 
 namespace grpc_core {
 
-grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
-                                       grpc_resolved_address* resolved_addr) {
+grpc_error_handle UnixSockaddrPopulate(
+    absl::string_view path, grpc_resolved_address* resolved_addr) {
   struct sockaddr_un* un =
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
@@ -127,20 +127,23 @@ bool grpc_parse_unix(const grpc_core::URI& /* uri */,
   abort();
 }
 
-bool grpc_parse_unix_abstract(const grpc_core::URI& /* uri */,
-                              grpc_resolved_address* /* resolved_addr */) {
+bool grpc_parse_unix_abstract(
+    const grpc_core::URI& /* uri */,
+    grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
 namespace grpc_core {
 
 grpc_error_handle UnixSockaddrPopulate(
-    absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
+    absl::string_view /* path */,
+    grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
 grpc_error_handle UnixAbstractSockaddrPopulate(
-    absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
+    absl::string_view /* path */,
+    grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
@@ -148,7 +151,8 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 #endif /* GRPC_HAVE_UNIX_SOCKET */
 
 bool grpc_parse_ipv4_hostport(absl::string_view hostport,
-                              grpc_resolved_address* addr, bool log_errors) {
+                              grpc_resolved_address* addr,
+                              bool log_errors) {
   bool success = false;
   // Split host and port.
   std::string host;
@@ -163,7 +167,8 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
-  grpc_sockaddr_in* in = reinterpret_cast<grpc_sockaddr_in*>(addr->addr);
+  grpc_sockaddr_in* in =
+      reinterpret_cast<grpc_sockaddr_in*>(addr->addr);
   in->sin_family = GRPC_AF_INET;
   if (grpc_inet_pton(GRPC_AF_INET, host.c_str(), &in->sin_addr) == 0) {
     if (log_errors) {
@@ -179,7 +184,8 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
   int port_num;
   if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
       port_num > 65535) {
-    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port.c_str());
+    if (log_errors)
+      gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port.c_str());
     goto done;
   }
   in->sin_port = grpc_htons(static_cast<uint16_t>(port_num));
@@ -200,7 +206,8 @@ bool grpc_parse_ipv4(const grpc_core::URI& uri,
 }
 
 bool grpc_parse_ipv6_hostport(absl::string_view hostport,
-                              grpc_resolved_address* addr, bool log_errors) {
+                              grpc_resolved_address* addr,
+                              bool log_errors) {
   bool success = false;
   // Split host and port.
   std::string host;
@@ -215,7 +222,8 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
-  grpc_sockaddr_in6* in6 = reinterpret_cast<grpc_sockaddr_in6*>(addr->addr);
+  grpc_sockaddr_in6* in6 =
+      reinterpret_cast<grpc_sockaddr_in6*>(addr->addr);
   in6->sin6_family = GRPC_AF_INET6;
   // Handle the RFC6874 syntax for IPv6 zone identifiers.
   char* host_end =
@@ -228,26 +236,27 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
     uint32_t sin6_scope_id = 0;
     if (host_without_scope_len > GRPC_INET6_ADDRSTRLEN) {
       if (log_errors) {
-        gpr_log(
-            GPR_ERROR,
-            "invalid ipv6 address length %zu. Length cannot be greater than "
-            "GRPC_INET6_ADDRSTRLEN i.e %d)",
-            host_without_scope_len, GRPC_INET6_ADDRSTRLEN);
+        gpr_log(GPR_ERROR,
+                "invalid ipv6 address length %zu. Length cannot be "
+                "greater than "
+                "GRPC_INET6_ADDRSTRLEN i.e %d)",
+                host_without_scope_len, GRPC_INET6_ADDRSTRLEN);
       }
       goto done;
     }
     strncpy(host_without_scope, host.c_str(), host_without_scope_len);
     host_without_scope[host_without_scope_len] = '\0';
-    if (grpc_inet_pton(GRPC_AF_INET6, host_without_scope, &in6->sin6_addr) ==
-        0) {
+    if (grpc_inet_pton(GRPC_AF_INET6, host_without_scope,
+                       &in6->sin6_addr) == 0) {
       if (log_errors) {
-        gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host_without_scope);
+        gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'",
+                host_without_scope);
       }
       goto done;
     }
-    if (gpr_parse_bytes_to_uint32(host_end + 1,
-                                  host.size() - host_without_scope_len - 1,
-                                  &sin6_scope_id) == 0) {
+    if (gpr_parse_bytes_to_uint32(
+            host_end + 1, host.size() - host_without_scope_len - 1,
+            &sin6_scope_id) == 0) {
       if ((sin6_scope_id = grpc_if_nametoindex(host_end + 1)) == 0) {
         gpr_log(GPR_ERROR,
                 "Invalid interface name: '%s'. "
@@ -256,10 +265,12 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
         goto done;
       }
     }
-    // Handle "sin6_scope_id" being type "u_long". See grpc issue #10027.
+    // Handle "sin6_scope_id" being type "u_long". See grpc issue
+    // #10027.
     in6->sin6_scope_id = sin6_scope_id;
   } else {
-    if (grpc_inet_pton(GRPC_AF_INET6, host.c_str(), &in6->sin6_addr) == 0) {
+    if (grpc_inet_pton(GRPC_AF_INET6, host.c_str(), &in6->sin6_addr) ==
+        0) {
       if (log_errors) {
         gpr_log(GPR_ERROR, "invalid ipv6 address: '%s'", host.c_str());
       }
@@ -274,7 +285,8 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
   int port_num;
   if (sscanf(port.c_str(), "%d", &port_num) != 1 || port_num < 0 ||
       port_num > 65535) {
-    if (log_errors) gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port.c_str());
+    if (log_errors)
+      gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port.c_str());
     goto done;
   }
   in6->sin6_port = grpc_htons(static_cast<uint16_t>(port_num));

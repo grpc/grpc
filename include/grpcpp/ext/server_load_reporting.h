@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,22 +30,24 @@ namespace grpc {
 namespace load_reporter {
 namespace experimental {
 
-// The ServerBuilderOption to enable server-side load reporting feature. To
-// enable the feature, please make sure the binary builds with the
+// The ServerBuilderOption to enable server-side load reporting feature.
+// To enable the feature, please make sure the binary builds with the
 // grpcpp_server_load_reporting library and set this option in the
 // ServerBuilder.
 class LoadReportingServiceServerBuilderOption
     : public grpc::ServerBuilderOption {
  public:
   void UpdateArguments(::grpc::ChannelArguments* args) override;
-  void UpdatePlugins(std::vector<std::unique_ptr<::grpc::ServerBuilderPlugin>>*
-                         plugins) override;
+  void UpdatePlugins(
+      std::vector<std::unique_ptr<::grpc::ServerBuilderPlugin>>*
+          plugins) override;
 };
 
-// Adds the load reporting cost with \a cost_name and \a cost_value in the
-// trailing metadata of the server context.
+// Adds the load reporting cost with \a cost_name and \a cost_value in
+// the trailing metadata of the server context.
 void AddLoadReportingCost(grpc::ServerContext* ctx,
-                          const std::string& cost_name, double cost_value);
+                          const std::string& cost_name,
+                          double cost_value);
 
 }  // namespace experimental
 }  // namespace load_reporter

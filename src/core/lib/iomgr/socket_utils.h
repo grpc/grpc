@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,8 +23,8 @@
 
 #include <stddef.h>
 
-// TODO(juanlishen): The following functions might be simple enough to implement
-// ourselves, so that they don't cause any portability hassle.
+// TODO(juanlishen): The following functions might be simple enough to
+// implement ourselves, so that they don't cause any portability hassle.
 
 /* A wrapper for htons on POSIX and Windows */
 uint16_t grpc_htons(uint16_t hostshort);
@@ -41,7 +41,9 @@ uint32_t grpc_ntohl(uint32_t netlong);
 /* A wrapper for inet_pton on POSIX and WINDOWS */
 int grpc_inet_pton(int af, const char* src, void* dst);
 
-/* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size);
+/* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows
+ * systems */
+const char* grpc_inet_ntop(int af, const void* src, char* dst,
+                           size_t size);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H */

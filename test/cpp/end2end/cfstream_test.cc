@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -59,7 +59,8 @@ namespace testing {
 namespace {
 
 struct TestScenario {
-  TestScenario(const std::string& creds_type, const std::string& content)
+  TestScenario(const std::string& creds_type,
+               const std::string& content)
       : credentials_type(creds_type), message_content(content) {}
   const std::string credentials_type;
   const std::string message_content;
@@ -89,13 +90,15 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
 
   void InterfaceUp() {
     std::ostringstream cmd;
-    cmd << "sudo /sbin/ifconfig " << interface_ << " alias " << ipv4_address_;
+    cmd << "sudo /sbin/ifconfig " << interface_ << " alias "
+        << ipv4_address_;
     std::system(cmd.str().c_str());
   }
 
   void InterfaceDown() {
     std::ostringstream cmd;
-    cmd << "sudo /sbin/ifconfig " << interface_ << " -alias " << ipv4_address_;
+    cmd << "sudo /sbin/ifconfig " << interface_ << " -alias "
+        << ipv4_address_;
     std::system(cmd.str().c_str());
   }
 
@@ -139,9 +142,11 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     std::ostringstream server_address;
     server_address << server_host_ << ":" << port_;
     ChannelArguments args;
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
-    return CreateCustomChannel(server_address.str(), channel_creds, args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(
+            GetParam().credentials_type, &args);
+    return CreateCustomChannel(server_address.str(), channel_creds,
+                               args);
   }
 
   void SendRpc(
@@ -157,7 +162,8 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
       gpr_log(GPR_DEBUG, "RPC with succeeded");
       EXPECT_EQ(msg, response->message());
     } else {
-      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
+      gpr_log(GPR_DEBUG, "RPC failed: %s",
+              status.error_message().c_str());
     }
     if (expect_success) {
       EXPECT_TRUE(status.ok());
@@ -175,13 +181,15 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
         stub->PrepareAsyncEcho(&call->context, request, &cq_);
 
     call->response_reader->StartCall();
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    call->response_reader->Finish(&call->reply, &call->status,
+                                  (void*)call);
   }
 
   void ShutdownCQ() { cq_.Shutdown(); }
 
   bool CQNext(void** tag, bool* ok) {
-    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);
+    auto deadline =
+        std::chrono::system_clock::now() + std::chrono::seconds(10);
     auto ret = cq_.AsyncNext(tag, ok, deadline);
     if (ret == grpc::CompletionQueue::GOT_EVENT) {
       return true;
@@ -189,15 +197,17 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
       return false;
     } else {
       GPR_ASSERT(ret == grpc::CompletionQueue::TIMEOUT);
-      // This can happen if we hit the Apple CFStream bug which results in the
-      // read stream freezing. We are ignoring hangs and timeouts, but these
-      // tests are still useful as they can catch memory memory corruptions,
-      // crashes and other bugs that don't result in test freeze/timeout.
+      // This can happen if we hit the Apple CFStream bug which results
+      // in the read stream freezing. We are ignoring hangs and
+      // timeouts, but these tests are still useful as they can catch
+      // memory memory corruptions, crashes and other bugs that don't
+      // result in test freeze/timeout.
       return false;
     }
   }
 
-  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+  bool WaitForChannelNotReady(Channel* channel,
+                              int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
@@ -223,7 +233,8 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     EchoResponse reply;
     ClientContext context;
     Status status;
-    std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<EchoResponse>>
+        response_reader;
   };
 
  private:
@@ -243,8 +254,8 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
+      thread_.reset(new std::thread(std::bind(
+          &ServerData::Serve, this, server_host, &mu, &cond)));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
@@ -285,13 +296,15 @@ std::vector<TestScenario> CreateTestScenarios() {
   std::vector<std::string> messages;
 
   credentials_types.push_back(kInsecureCredentialsType);
-  auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
+  auto sec_list =
+      GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
 
   messages.push_back("🖖");
-  for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024; k *= 32) {
+  for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024;
+       k *= 32) {
     std::string big_msg;
     for (size_t i = 0; i < k * 1024; ++i) {
       char c = 'a' + (i % 26);
@@ -299,8 +312,8 @@ std::vector<TestScenario> CreateTestScenarios() {
     }
     messages.push_back(big_msg);
   }
-  for (auto cred = credentials_types.begin(); cred != credentials_types.end();
-       ++cred) {
+  for (auto cred = credentials_types.begin();
+       cred != credentials_types.end(); ++cred) {
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
       scenarios.emplace_back(*cred, *msg);
     }
@@ -312,7 +325,8 @@ std::vector<TestScenario> CreateTestScenarios() {
 INSTANTIATE_TEST_SUITE_P(CFStreamTest, CFStreamTest,
                          ::testing::ValuesIn(CreateTestScenarios()));
 
-// gRPC should automatically detech network flaps (without enabling keepalives)
+// gRPC should automatically detech network flaps (without enabling
+// keepalives)
 //  when CFStream is enabled
 TEST_P(CFStreamTest, NetworkTransition) {
   auto channel = BuildChannel();
@@ -390,8 +404,8 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
       }
       delete call;
     }
-    // Remove line below and uncomment the following line after Apple CFStream
-    // bug has been fixed.
+    // Remove line below and uncomment the following line after Apple
+    // CFStream bug has been fixed.
     (void)rpcs_sent;
     // EXPECT_EQ(total_completions, rpcs_sent);
   });
@@ -433,8 +447,8 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
       }
       delete call;
     }
-    // Remove line below and uncomment the following line after Apple CFStream
-    // bug has been fixed.
+    // Remove line below and uncomment the following line after Apple
+    // CFStream bug has been fixed.
     (void)rpcs_sent;
     // EXPECT_EQ(total_completions, rpcs_sent);
   });

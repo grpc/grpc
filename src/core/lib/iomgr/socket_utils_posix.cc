@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,21 +31,24 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/iomgr/sockaddr.h"
 
-int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
-                 int cloexec) {
+int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr,
+                 int nonblock, int cloexec) {
   int fd, flags;
-  fd = accept(sockfd, reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr),
+  fd = accept(sockfd,
+              reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr),
               &resolved_addr->len);
   if (fd >= 0) {
     if (nonblock) {
       flags = fcntl(fd, F_GETFL, 0);
       if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) goto close_and_error;
+      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0)
+        goto close_and_error;
     }
     if (cloexec) {
       flags = fcntl(fd, F_GETFD, 0);
       if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
+      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0)
+        goto close_and_error;
     }
   }
   return fd;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,16 +48,19 @@ class TestSocketMutator : public grpc_socket_mutator {
 //
 
 bool test_mutator_mutate_fd(int fd, grpc_socket_mutator* mutator) {
-  TestSocketMutator* tsm = reinterpret_cast<TestSocketMutator*>(mutator);
+  TestSocketMutator* tsm =
+      reinterpret_cast<TestSocketMutator*>(mutator);
   return tsm->MutateFd(fd);
 }
 
-int test_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
+int test_mutator_compare(grpc_socket_mutator* a,
+                         grpc_socket_mutator* b) {
   return GPR_ICMP(a, b);
 }
 
 void test_mutator_destroy(grpc_socket_mutator* mutator) {
-  TestSocketMutator* tsm = reinterpret_cast<TestSocketMutator*>(mutator);
+  TestSocketMutator* tsm =
+      reinterpret_cast<TestSocketMutator*>(mutator);
   delete tsm;
 }
 
@@ -77,9 +80,10 @@ TestSocketMutator::TestSocketMutator() {
 class ChannelArgumentsTest : public ::testing::Test {
  protected:
   ChannelArgumentsTest()
-      : pointer_vtable_({&ChannelArguments::PointerVtableMembers::Copy,
-                         &ChannelArguments::PointerVtableMembers::Destroy,
-                         &ChannelArguments::PointerVtableMembers::Compare}) {}
+      : pointer_vtable_(
+            {&ChannelArguments::PointerVtableMembers::Copy,
+             &ChannelArguments::PointerVtableMembers::Destroy,
+             &ChannelArguments::PointerVtableMembers::Compare}) {}
 
   void SetChannelArgs(const ChannelArguments& channel_args,
                       grpc_channel_args* args) {
@@ -115,7 +119,8 @@ class ChannelArgumentsTest : public ::testing::Test {
         if (arg.type == GRPC_ARG_INTEGER) {
           return arg.value.integer == expected_arg.value.integer;
         } else if (arg.type == GRPC_ARG_STRING) {
-          return std::string(arg.value.string) == expected_arg.value.string;
+          return std::string(arg.value.string) ==
+                 expected_arg.value.string;
         } else if (arg.type == GRPC_ARG_POINTER) {
           return arg.value.pointer.p == expected_arg.value.pointer.p &&
                  arg.value.pointer.vtable->copy ==
@@ -215,7 +220,8 @@ TEST_F(ChannelArgumentsTest, SetSocketMutator) {
   channel_args_.SetSocketMutator(mutator0);
   EXPECT_TRUE(HasArg(arg0));
 
-  // Exercise the copy constructor because we ran some sanity checks in it.
+  // Exercise the copy constructor because we ran some sanity checks in
+  // it.
   grpc::ChannelArguments new_args{channel_args_};
 
   channel_args_.SetSocketMutator(mutator1);

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -84,7 +84,8 @@ bool ParseUri(const URI& uri,
               bool parse(const URI& uri, grpc_resolved_address* dst),
               ServerAddressList* addresses) {
   if (!uri.authority().empty()) {
-    gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
+    gpr_log(GPR_ERROR,
+            "authority-based URIs not supported by the %s scheme",
             uri.scheme().c_str());
     return false;
   }
@@ -105,7 +106,8 @@ bool ParseUri(const URI& uri,
 }
 
 OrphanablePtr<Resolver> CreateSockaddrResolver(
-    ResolverArgs args, bool parse(const URI& uri, grpc_resolved_address* dst)) {
+    ResolverArgs args,
+    bool parse(const URI& uri, grpc_resolved_address* dst)) {
   ServerAddressList addresses;
   if (!ParseUri(args.uri, parse, &addresses)) return nullptr;
   // Instantiate resolver.
@@ -119,7 +121,8 @@ class IPv4ResolverFactory : public ResolverFactory {
     return ParseUri(uri, grpc_parse_ipv4, nullptr);
   }
 
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv4);
   }
 
@@ -132,7 +135,8 @@ class IPv6ResolverFactory : public ResolverFactory {
     return ParseUri(uri, grpc_parse_ipv6, nullptr);
   }
 
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv6);
   }
 
@@ -146,7 +150,8 @@ class UnixResolverFactory : public ResolverFactory {
     return ParseUri(uri, grpc_parse_unix, nullptr);
   }
 
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+  OrphanablePtr<Resolver> CreateResolver(
+      ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
@@ -163,8 +168,10 @@ class UnixAbstractResolverFactory : public ResolverFactory {
     return ParseUri(uri, grpc_parse_unix_abstract, nullptr);
   }
 
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    return CreateSockaddrResolver(std::move(args), grpc_parse_unix_abstract);
+  OrphanablePtr<Resolver> CreateResolver(
+      ResolverArgs args) const override {
+    return CreateSockaddrResolver(std::move(args),
+                                  grpc_parse_unix_abstract);
   }
 
   std::string GetDefaultAuthority(const URI& /*uri*/) const override {

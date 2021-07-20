@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -51,7 +51,8 @@ class SessionTracker {
     // so try both.
     tsi::SslSessionPtr session = NewSessionInternal(SSL_SESSION_new);
     SessionExDataId* data = new SessionExDataId{this, id};
-    int result = SSL_SESSION_set_ex_data(session.get(), ex_data_id, data);
+    int result =
+        SSL_SESSION_set_ex_data(session.get(), ex_data_id, data);
     EXPECT_EQ(result, 1);
     alive_sessions_.insert(id);
     return session;
@@ -68,12 +69,14 @@ class SessionTracker {
     return tsi::SslSessionPtr(cb());
   }
 
-  tsi::SslSessionPtr NewSessionInternal(SSL_SESSION* (*cb)(const SSL_CTX*)) {
+  tsi::SslSessionPtr NewSessionInternal(
+      SSL_SESSION* (*cb)(const SSL_CTX*)) {
     return tsi::SslSessionPtr(cb(ssl_context_));
   }
 
-  static void DestroyExData(void* /*parent*/, void* ptr, CRYPTO_EX_DATA* /*ad*/,
-                            int /*index*/, long /*argl*/, void* /*argp*/) {
+  static void DestroyExData(void* /*parent*/, void* ptr,
+                            CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+                            long /*argl*/, void* /*argp*/) {
     SessionExDataId* data = static_cast<SessionExDataId*>(ptr);
     data->tracker->alive_sessions_.erase(data->id);
     delete data;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,17 +45,19 @@ void ProtoServerReflection::SetServiceList(
 
 Status ProtoServerReflection::ServerReflectionInfo(
     ServerContext* context,
-    ServerReaderWriter<ServerReflectionResponse, ServerReflectionRequest>*
-        stream) {
+    ServerReaderWriter<ServerReflectionResponse,
+                       ServerReflectionRequest>* stream) {
   ServerReflectionRequest request;
   ServerReflectionResponse response;
   Status status;
   while (stream->Read(&request)) {
     switch (request.message_request_case()) {
       case ServerReflectionRequest::MessageRequestCase::kFileByFilename:
-        status = GetFileByName(context, request.file_by_filename(), &response);
+        status = GetFileByName(context, request.file_by_filename(),
+                               &response);
         break;
-      case ServerReflectionRequest::MessageRequestCase::kFileContainingSymbol:
+      case ServerReflectionRequest::MessageRequestCase::
+          kFileContainingSymbol:
         status = GetFileContainingSymbol(
             context, request.file_containing_symbol(), &response);
         break;
@@ -71,8 +73,8 @@ Status ProtoServerReflection::ServerReflectionInfo(
             response.mutable_all_extension_numbers_response());
         break;
       case ServerReflectionRequest::MessageRequestCase::kListServices:
-        status =
-            ListService(context, response.mutable_list_services_response());
+        status = ListService(context,
+                             response.mutable_list_services_response());
         break;
       default:
         status = Status(StatusCode::UNIMPLEMENTED, "");
@@ -90,14 +92,14 @@ Status ProtoServerReflection::ServerReflectionInfo(
   return Status::OK;
 }
 
-void ProtoServerReflection::FillErrorResponse(const Status& status,
-                                              ErrorResponse* error_response) {
+void ProtoServerReflection::FillErrorResponse(
+    const Status& status, ErrorResponse* error_response) {
   error_response->set_error_code(status.error_code());
   error_response->set_error_message(status.error_message());
 }
 
-Status ProtoServerReflection::ListService(ServerContext* /*context*/,
-                                          ListServiceResponse* response) {
+Status ProtoServerReflection::ListService(
+    ServerContext* /*context*/, ListServiceResponse* response) {
   if (services_ == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Services not found.");
   }
@@ -150,14 +152,15 @@ Status ProtoServerReflection::GetFileContainingExtension(
   }
 
   const protobuf::Descriptor* desc =
-      descriptor_pool_->FindMessageTypeByName(request->containing_type());
+      descriptor_pool_->FindMessageTypeByName(
+          request->containing_type());
   if (desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Type not found.");
   }
 
   const protobuf::FieldDescriptor* field_desc =
-      descriptor_pool_->FindExtensionByNumber(desc,
-                                              request->extension_number());
+      descriptor_pool_->FindExtensionByNumber(
+          desc, request->extension_number());
   if (field_desc == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Extension not found.");
   }
@@ -201,10 +204,12 @@ void ProtoServerReflection::FillFileDescriptorResponse(
   std::string data;
   file_desc->CopyTo(&file_desc_proto);
   file_desc_proto.SerializeToString(&data);
-  response->mutable_file_descriptor_response()->add_file_descriptor_proto(data);
+  response->mutable_file_descriptor_response()
+      ->add_file_descriptor_proto(data);
 
   for (int i = 0; i < file_desc->dependency_count(); ++i) {
-    FillFileDescriptorResponse(file_desc->dependency(i), response, seen_files);
+    FillFileDescriptorResponse(file_desc->dependency(i), response,
+                               seen_files);
   }
 }
 

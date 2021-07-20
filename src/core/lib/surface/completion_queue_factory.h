@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,8 +25,9 @@
 #include "src/core/lib/surface/completion_queue.h"
 
 typedef struct grpc_completion_queue_factory_vtable {
-  grpc_completion_queue* (*create)(const grpc_completion_queue_factory*,
-                                   const grpc_completion_queue_attributes*);
+  grpc_completion_queue* (*create)(
+      const grpc_completion_queue_factory*,
+      const grpc_completion_queue_attributes*);
 } grpc_completion_queue_factory_vtable;
 
 struct grpc_completion_queue_factory {

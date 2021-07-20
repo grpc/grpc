@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,8 +29,9 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/sync.h>
 
-void grpc_socket_factory_init(grpc_socket_factory* factory,
-                              const grpc_socket_factory_vtable* vtable) {
+void grpc_socket_factory_init(
+    grpc_socket_factory* factory,
+    const grpc_socket_factory_vtable* vtable) {
   factory->vtable = vtable;
   gpr_ref_init(&factory->refcount, 1);
 }
@@ -59,7 +60,8 @@ int grpc_socket_factory_compare(grpc_socket_factory* a,
   return c;
 }
 
-grpc_socket_factory* grpc_socket_factory_ref(grpc_socket_factory* factory) {
+grpc_socket_factory* grpc_socket_factory_ref(
+    grpc_socket_factory* factory) {
   gpr_ref(&factory->refcount);
   return factory;
 }
@@ -79,12 +81,14 @@ static void socket_factory_arg_destroy(void* p) {
 }
 
 static int socket_factory_cmp(void* a, void* b) {
-  return grpc_socket_factory_compare(static_cast<grpc_socket_factory*>(a),
-                                     static_cast<grpc_socket_factory*>(b));
+  return grpc_socket_factory_compare(
+      static_cast<grpc_socket_factory*>(a),
+      static_cast<grpc_socket_factory*>(b));
 }
 
 static const grpc_arg_pointer_vtable socket_factory_arg_vtable = {
-    socket_factory_arg_copy, socket_factory_arg_destroy, socket_factory_cmp};
+    socket_factory_arg_copy, socket_factory_arg_destroy,
+    socket_factory_cmp};
 
 grpc_arg grpc_socket_factory_to_arg(grpc_socket_factory* factory) {
   return grpc_channel_arg_pointer_create(

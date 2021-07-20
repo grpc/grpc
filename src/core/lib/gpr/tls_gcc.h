@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ struct gpr_gcc_thread_local {
 #define GPR_TLS_CLASS_DECL(name) \
   static __thread struct gpr_gcc_thread_local name
 
-#define GPR_TLS_CLASS_DEF(name) __thread struct gpr_gcc_thread_local name = {0}
+#define GPR_TLS_CLASS_DEF(name) \
+  __thread struct gpr_gcc_thread_local name = {0}
 
 #define gpr_tls_init(tls) \
   do {                    \

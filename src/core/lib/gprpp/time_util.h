@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_LIB_GPRPP_TIME_UTIL_H
@@ -34,7 +34,8 @@ gpr_timespec ToGprTimeSpec(absl::Time time);
 // Converts gpr_timespec(GPR_TIMESPAN) to absl::Duration
 absl::Duration ToAbslDuration(gpr_timespec ts);
 
-// Converts gpr_timespec(GPR_CLOCK_[MONOTONIC|REALTIME|PRECISE]) to absl::Time
+// Converts gpr_timespec(GPR_CLOCK_[MONOTONIC|REALTIME|PRECISE]) to
+// absl::Time
 absl::Time ToAbslTime(gpr_timespec ts);
 
 }  // namespace grpc_core

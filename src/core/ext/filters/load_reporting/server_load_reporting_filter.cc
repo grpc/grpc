@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -74,12 +74,14 @@ void ServerLoadReportingCallData::Destroy(
     grpc_call_element* elem, const grpc_call_final_info* final_info,
     grpc_closure* /*then_call_closure*/) {
   ServerLoadReportingChannelData* chand =
-      reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
-  // Only record an end if we've recorded its corresponding start, which is
-  // indicated by a non-null client_ip_and_lr_token_. Note that it's possible
-  // that we attempt to record the call end before we have recorded the call
-  // start, because the data needed for recording the start comes from the
-  // initial metadata, which may not be ready before the call finishes.
+      reinterpret_cast<ServerLoadReportingChannelData*>(
+          elem->channel_data);
+  // Only record an end if we've recorded its corresponding start, which
+  // is indicated by a non-null client_ip_and_lr_token_. Note that it's
+  // possible that we attempt to record the call end before we have
+  // recorded the call start, because the data needed for recording the
+  // start comes from the initial metadata, which may not be ready
+  // before the call finishes.
   if (client_ip_and_lr_token_ != nullptr) {
     opencensus::stats::Record(
         {{::grpc::load_reporter::MeasureEndCount(), 1},
@@ -111,15 +113,16 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
     peer_string_ = op->get_peer_string();
     recv_initial_metadata_ =
         op->op()->payload->recv_initial_metadata.recv_initial_metadata;
-    original_recv_initial_metadata_ready_ = op->recv_initial_metadata_ready();
+    original_recv_initial_metadata_ready_ =
+        op->recv_initial_metadata_ready();
     // Substitute the original closure for the wrapper closure.
     op->set_recv_initial_metadata_ready(&recv_initial_metadata_ready_);
   } else if (op->send_trailing_metadata() != nullptr) {
-    GRPC_LOG_IF_ERROR(
-        "server_load_reporting_filter",
-        grpc_metadata_batch_filter(op->send_trailing_metadata()->batch(),
-                                   SendTrailingMetadataFilter, elem,
-                                   "send_trailing_metadata filtering error"));
+    GRPC_LOG_IF_ERROR("server_load_reporting_filter",
+                      grpc_metadata_batch_filter(
+                          op->send_trailing_metadata()->batch(),
+                          SendTrailingMetadataFilter, elem,
+                          "send_trailing_metadata filtering error"));
   }
   grpc_call_next_op(elem, op->op());
 }
@@ -129,16 +132,18 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
   const char* client_uri_str =
       reinterpret_cast<const char*>(gpr_atm_acq_load(peer_string_));
   if (client_uri_str == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Unable to extract client URI string (peer string) from gRPC "
-            "metadata.");
+    gpr_log(
+        GPR_ERROR,
+        "Unable to extract client URI string (peer string) from gRPC "
+        "metadata.");
     return "";
   }
   absl::StatusOr<grpc_core::URI> client_uri =
       grpc_core::URI::Parse(client_uri_str);
   if (!client_uri.ok()) {
     gpr_log(GPR_ERROR,
-            "Unable to parse the client URI string (peer string) to a client "
+            "Unable to parse the client URI string (peer string) to a "
+            "client "
             "URI. Error: %s",
             client_uri.status().ToString().c_str());
     return "";
@@ -151,19 +156,23 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
             "Unable to parse client URI into a grpc_resolved_address.");
     return "";
   }
-  // Convert the socket address in the grpc_resolved_address into a hex string
-  // according to the address family.
-  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_address.addr);
+  // Convert the socket address in the grpc_resolved_address into a hex
+  // string according to the address family.
+  grpc_sockaddr* addr =
+      reinterpret_cast<grpc_sockaddr*>(resolved_address.addr);
   if (addr->sa_family == GRPC_AF_INET) {
     grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(addr);
     return absl::StrFormat("%08x", grpc_ntohl(addr4->sin_addr.s_addr));
   } else if (addr->sa_family == GRPC_AF_INET6) {
-    grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr);
+    grpc_sockaddr_in6* addr6 =
+        reinterpret_cast<grpc_sockaddr_in6*>(addr);
     std::string client_ip;
     client_ip.reserve(32);
-    uint32_t* addr6_next_long = reinterpret_cast<uint32_t*>(&addr6->sin6_addr);
+    uint32_t* addr6_next_long =
+        reinterpret_cast<uint32_t*>(&addr6->sin6_addr);
     for (size_t i = 0; i < 4; ++i) {
-      absl::StrAppendFormat(&client_ip, "%08x", grpc_ntohl(*addr6_next_long++));
+      absl::StrAppendFormat(&client_ip, "%08x",
+                            grpc_ntohl(*addr6_next_long++));
     }
     return client_ip;
   } else {
@@ -171,8 +180,8 @@ std::string ServerLoadReportingCallData::GetCensusSafeClientIpString() {
   }
 }
 
-void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
-                                                          size_t lr_token_len) {
+void ServerLoadReportingCallData::StoreClientIpAndLrToken(
+    const char* lr_token, size_t lr_token_len) {
   std::string client_ip = GetCensusSafeClientIpString();
   client_ip_and_lr_token_len_ =
       kLengthPrefixSize + client_ip.size() + lr_token_len;
@@ -183,9 +192,11 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
   if (client_ip.empty()) {
     strncpy(cur_pos, kEmptyAddressLengthString, kLengthPrefixSize);
   } else if (client_ip.size() == 8) {
-    strncpy(cur_pos, kEncodedIpv4AddressLengthString, kLengthPrefixSize);
+    strncpy(cur_pos, kEncodedIpv4AddressLengthString,
+            kLengthPrefixSize);
   } else if (client_ip.size() == 32) {
-    strncpy(cur_pos, kEncodedIpv6AddressLengthString, kLengthPrefixSize);
+    strncpy(cur_pos, kEncodedIpv6AddressLengthString,
+            kLengthPrefixSize);
   } else {
     GPR_UNREACHABLE_CODE();
   }
@@ -203,9 +214,11 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
              long(client_ip_and_lr_token_len_));
 }
 
-grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
-    void* user_data, grpc_mdelem md) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
+grpc_filtered_mdelem
+ServerLoadReportingCallData::RecvInitialMetadataFilter(void* user_data,
+                                                       grpc_mdelem md) {
+  grpc_call_element* elem =
+      reinterpret_cast<grpc_call_element*>(user_data);
   ServerLoadReportingCallData* calld =
       reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
@@ -221,10 +234,12 @@ grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
           tolower(GRPC_SLICE_START_PTR(target_host_slice)[i]));
     }
   } else if (grpc_slice_str_cmp(GRPC_MDKEY(md),
-                                grpc_core::kGrpcLbLbTokenMetadataKey) == 0) {
+                                grpc_core::kGrpcLbLbTokenMetadataKey) ==
+             0) {
     if (calld->client_ip_and_lr_token_ == nullptr) {
       calld->StoreClientIpAndLrToken(
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(GRPC_MDVALUE(md)),
+          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(
+              GRPC_MDVALUE(md)),
           GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)));
     }
     return GRPC_FILTERED_REMOVE();
@@ -238,22 +253,24 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
   ServerLoadReportingCallData* calld =
       reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
   ServerLoadReportingChannelData* chand =
-      reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
+      reinterpret_cast<ServerLoadReportingChannelData*>(
+          elem->channel_data);
   if (err == GRPC_ERROR_NONE) {
     GRPC_LOG_IF_ERROR(
         "server_load_reporting_filter",
-        grpc_metadata_batch_filter(calld->recv_initial_metadata_,
-                                   RecvInitialMetadataFilter, elem,
-                                   "recv_initial_metadata filtering error"));
-    // If the LB token was not found in the recv_initial_metadata, only the
-    // client IP part will be recorded (with an empty LB token).
+        grpc_metadata_batch_filter(
+            calld->recv_initial_metadata_, RecvInitialMetadataFilter,
+            elem, "recv_initial_metadata filtering error"));
+    // If the LB token was not found in the recv_initial_metadata, only
+    // the client IP part will be recorded (with an empty LB token).
     if (calld->client_ip_and_lr_token_ == nullptr) {
       calld->StoreClientIpAndLrToken(nullptr, 0);
     }
     opencensus::stats::Record(
         {{::grpc::load_reporter::MeasureStartCount(), 1}},
         {{::grpc::load_reporter::TagKeyToken(),
-          {calld->client_ip_and_lr_token_, calld->client_ip_and_lr_token_len_}},
+          {calld->client_ip_and_lr_token_,
+           calld->client_ip_and_lr_token_len_}},
          {::grpc::load_reporter::TagKeyHost(),
           {calld->target_host_, calld->target_host_len_}},
          {::grpc::load_reporter::TagKeyUserId(),
@@ -267,24 +284,29 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
 grpc_error_handle ServerLoadReportingCallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   service_method_ = grpc_empty_slice();
-  GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
-                    elem, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_,
+                    RecvInitialMetadataReady, elem,
+                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 
-grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
+grpc_filtered_mdelem
+ServerLoadReportingCallData::SendTrailingMetadataFilter(
     void* user_data, grpc_mdelem md) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
+  grpc_call_element* elem =
+      reinterpret_cast<grpc_call_element*>(user_data);
   ServerLoadReportingCallData* calld =
       reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
   ServerLoadReportingChannelData* chand =
-      reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
+      reinterpret_cast<ServerLoadReportingChannelData*>(
+          elem->channel_data);
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
     const grpc_slice value = GRPC_MDVALUE(md);
     const size_t cost_entry_size = GRPC_SLICE_LENGTH(value);
     if (cost_entry_size < sizeof(double)) {
       gpr_log(GPR_ERROR,
-              "Cost metadata value too small (%zu bytes) to hold valid data. "
+              "Cost metadata value too small (%zu bytes) to hold valid "
+              "data. "
               "Ignoring.",
               cost_entry_size);
       return GRPC_FILTERED_REMOVE();
@@ -292,12 +314,14 @@ grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
     const double* cost_entry_ptr =
         reinterpret_cast<const double*>(GRPC_SLICE_START_PTR(value));
     double cost_value = *cost_entry_ptr++;
-    const char* cost_name = reinterpret_cast<const char*>(cost_entry_ptr);
+    const char* cost_name =
+        reinterpret_cast<const char*>(cost_entry_ptr);
     const size_t cost_name_len = cost_entry_size - sizeof(double);
     opencensus::stats::Record(
         {{::grpc::load_reporter::MeasureOtherCallMetric(), cost_value}},
         {{::grpc::load_reporter::TagKeyToken(),
-          {calld->client_ip_and_lr_token_, calld->client_ip_and_lr_token_len_}},
+          {calld->client_ip_and_lr_token_,
+           calld->client_ip_and_lr_token_len_}},
          {::grpc::load_reporter::TagKeyHost(),
           {calld->target_host_, calld->target_host_len_}},
          {::grpc::load_reporter::TagKeyUserId(),
@@ -329,14 +353,16 @@ const char* ServerLoadReportingCallData::GetStatusTagForStatus(
 namespace {
 bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
   return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(&args, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
+      grpc_channel_args_find(&args, GRPC_ARG_ENABLE_LOAD_REPORTING),
+      false);
 }
 }  // namespace
 
-// TODO(juanlishen): We should register the filter during grpc initialization
-// time once OpenCensus is compatible with our build system. For now, we force
-// registration of the server load reporting filter at static initialization
-// time if we build with the filter target.
+// TODO(juanlishen): We should register the filter during grpc
+// initialization time once OpenCensus is compatible with our build
+// system. For now, we force registration of the server load reporting
+// filter at static initialization time if we build with the filter
+// target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
     static grpc_core::Atomic<bool> registered{false};
@@ -345,8 +371,8 @@ struct ServerLoadReportingFilterStaticRegistrar {
                           ServerLoadReportingCallData>(
         "server_load_reporting", GRPC_SERVER_CHANNEL, INT_MAX,
         MaybeAddServerLoadReportingFilter);
-    // Access measures to ensure they are initialized. Otherwise, we can't
-    // create any valid view before the first RPC.
+    // Access measures to ensure they are initialized. Otherwise, we
+    // can't create any valid view before the first RPC.
     ::grpc::load_reporter::MeasureStartCount();
     ::grpc::load_reporter::MeasureEndCount();
     ::grpc::load_reporter::MeasureEndBytesSent();

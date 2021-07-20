@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,14 +32,14 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args,
-                                            bool request_status_early) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args,
+    bool request_status_early) {
   grpc_end2end_test_fixture f;
-  gpr_log(GPR_INFO, "Running test: %s/%s/request_status_early=%s", test_name,
-          config.name, request_status_early ? "true" : "false");
+  gpr_log(GPR_INFO, "Running test: %s/%s/request_status_early=%s",
+          test_name, config.name,
+          request_status_early ? "true" : "false");
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
@@ -57,16 +57,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -88,18 +89,21 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Client sends a request with payload, potentially requesting status early. The
-// server reads and streams responses. The client cancels the RPC to get an
-// error status. (Server sending a non-OK status is not considered an error
-// status.)
-static void test(grpc_end2end_test_config config, bool request_status_early,
+// Client sends a request with payload, potentially requesting status
+// early. The server reads and streams responses. The client cancels the
+// RPC to get an error status. (Server sending a non-OK status is not
+// considered an error status.)
+static void test(grpc_end2end_test_config config,
+                 bool request_status_early,
                  bool recv_message_separately) {
   grpc_call* c;
   grpc_call* s;
-  grpc_slice response_payload1_slice = grpc_slice_from_copied_string("hello");
+  grpc_slice response_payload1_slice =
+      grpc_slice_from_copied_string("hello");
   grpc_byte_buffer* response_payload1 =
       grpc_raw_byte_buffer_create(&response_payload1_slice, 1);
-  grpc_slice response_payload2_slice = grpc_slice_from_copied_string("world");
+  grpc_slice response_payload2_slice =
+      grpc_slice_from_copied_string("world");
   grpc_byte_buffer* response_payload2 =
       grpc_raw_byte_buffer_create(&response_payload2_slice, 1);
   grpc_end2end_test_fixture f =
@@ -121,9 +125,10 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
 
   gpr_timespec deadline = five_seconds_from_now();
   GPR_ASSERT(!recv_message_separately || request_status_early);
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -139,7 +144,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op++;
   if (!recv_message_separately) {
     op->op = GRPC_OP_RECV_MESSAGE;
@@ -148,18 +154,20 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   }
   if (request_status_early) {
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+    op->data.recv_status_on_client.trailing_metadata =
+        &trailing_metadata_recv;
     op->data.recv_status_on_client.status = &status;
     op->data.recv_status_on_client.status_details = &details;
     op++;
   }
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(f.server, &s, &call_details,
+                                      &request_metadata_recv, f.cq,
+                                      f.cq, tag(101)));
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
@@ -171,8 +179,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload1;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (recv_message_separately) {
@@ -181,8 +189,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
     op->op = GRPC_OP_RECV_MESSAGE;
     op->data.recv_message.recv_message = &response_payload1_recv;
     op++;
-    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
-                                  nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                  tag(4), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
   }
 
@@ -200,14 +208,14 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload2;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  // The success of the op depends on whether the payload is written before the
-  // transport sees the end of stream. If the stream has been write closed
-  // before the write completes, it would fail, otherwise it would succeed.
-  // Since this behavior is dependent on the transport implementation, we allow
-  // any success status with this op.
+  // The success of the op depends on whether the payload is written
+  // before the transport sees the end of stream. If the stream has been
+  // write closed before the write completes, it would fail, otherwise
+  // it would succeed. Since this behavior is dependent on the transport
+  // implementation, we allow any success status with this op.
   CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(103));
 
   if (!request_status_early) {
@@ -216,8 +224,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
     op->op = GRPC_OP_RECV_MESSAGE;
     op->data.recv_message.recv_message = &response_payload2_recv;
     op++;
-    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                  nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                  tag(2), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
@@ -231,8 +239,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(104), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
@@ -245,12 +253,13 @@ static void test(grpc_end2end_test_config config, bool request_status_early,
     memset(ops, 0, sizeof(ops));
     op = ops;
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+    op->data.recv_status_on_client.trailing_metadata =
+        &trailing_metadata_recv;
     op->data.recv_status_on_client.status = &status;
     op->data.recv_status_on_client.status_details = &details;
     op++;
-    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
-                                  nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                  tag(3), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(3), 1);

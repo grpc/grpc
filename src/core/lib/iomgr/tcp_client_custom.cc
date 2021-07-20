@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,7 +46,8 @@ struct grpc_custom_tcp_connect {
   grpc_resource_quota* resource_quota;
 };
 
-static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
+static void custom_tcp_connect_cleanup(
+    grpc_custom_tcp_connect* connect) {
   grpc_custom_socket* socket = connect->socket;
   grpc_resource_quota_unref_internal(connect->resource_quota);
   delete connect;
@@ -65,12 +66,13 @@ static void on_alarm(void* acp, grpc_error_handle error) {
   grpc_custom_tcp_connect* connect = socket->connector;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            connect->addr_name.c_str(), grpc_error_std_string(error).c_str());
+            connect->addr_name.c_str(),
+            grpc_error_std_string(error).c_str());
   }
   if (error == GRPC_ERROR_NONE) {
-    /* error == NONE implies that the timer ran out, and wasn't cancelled. If
-       it was cancelled, then the handler that cancelled it also should close
-       the handle, if applicable */
+    /* error == NONE implies that the timer ran out, and wasn't
+       cancelled. If it was cancelled, then the handler that cancelled
+       it also should close the handle, if applicable */
     grpc_custom_socket_vtable->close(socket, custom_close_callback);
   }
   done = (--connect->refs == 0);
@@ -101,8 +103,8 @@ static void custom_connect_callback(grpc_custom_socket* socket,
                                     grpc_error_handle error) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   if (grpc_core::ExecCtx::Get() == nullptr) {
-    /* If we are being run on a thread which does not have an exec_ctx created
-     * yet, we should create one. */
+    /* If we are being run on a thread which does not have an exec_ctx
+     * created yet, we should create one. */
     grpc_core::ExecCtx exec_ctx;
     custom_connect_callback_internal(socket, error);
   } else {
@@ -118,19 +120,21 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   (void)channel_args;
   (void)interested_parties;
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_create(nullptr);
   if (channel_args != nullptr) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+      if (0 ==
+          strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(resource_quota);
-        resource_quota =
-            grpc_resource_quota_ref_internal(static_cast<grpc_resource_quota*>(
+        resource_quota = grpc_resource_quota_ref_internal(
+            static_cast<grpc_resource_quota*>(
                 channel_args->args[i].value.pointer.p));
       }
     }
   }
-  grpc_custom_socket* socket =
-      static_cast<grpc_custom_socket*>(gpr_malloc(sizeof(grpc_custom_socket)));
+  grpc_custom_socket* socket = static_cast<grpc_custom_socket*>(
+      gpr_malloc(sizeof(grpc_custom_socket)));
   socket->refs = 2;
   grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
   grpc_custom_tcp_connect* connect = new grpc_custom_tcp_connect();
@@ -145,15 +149,17 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   connect->refs = 2;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %p %s: asynchronously connecting",
-            socket, connect->addr_name.c_str());
+    gpr_log(GPR_INFO,
+            "CLIENT_CONNECT: %p %s: asynchronously connecting", socket,
+            connect->addr_name.c_str());
   }
 
   GRPC_CLOSURE_INIT(&connect->on_alarm, on_alarm, socket,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&connect->alarm, deadline, &connect->on_alarm);
   grpc_custom_socket_vtable->connect(
-      socket, reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr),
+      socket,
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr),
       resolved_addr->len, custom_connect_callback);
 }
 

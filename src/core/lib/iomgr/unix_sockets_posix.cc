@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <grpc/support/port_platform.h>
@@ -59,7 +59,8 @@ grpc_error_handle grpc_resolve_unix_abstract_domain_address(
   (*addresses)->naddrs = 1;
   (*addresses)->addrs = static_cast<grpc_resolved_address*>(
       gpr_malloc(sizeof(grpc_resolved_address)));
-  return grpc_core::UnixAbstractSockaddrPopulate(name, (*addresses)->addrs);
+  return grpc_core::UnixAbstractSockaddrPopulate(name,
+                                                 (*addresses)->addrs);
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {
@@ -84,7 +85,8 @@ void grpc_unlink_if_unix_domain_socket(
   }
 
   struct stat st;
-  if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
+  if (stat(un->sun_path, &st) == 0 &&
+      (st.st_mode & S_IFMT) == S_IFSOCK) {
     unlink(un->sun_path);
   }
 }
@@ -96,8 +98,10 @@ std::string grpc_sockaddr_to_uri_unix_if_possible(
   if (addr->sa_family != AF_UNIX) {
     return "";
   }
-  const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
-  if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
+  const auto* unix_addr =
+      reinterpret_cast<const struct sockaddr_un*>(addr);
+  if (unix_addr->sun_path[0] == '\0' &&
+      unix_addr->sun_path[1] != '\0') {
     return absl::StrCat(
         "unix-abstract:",
         absl::string_view(

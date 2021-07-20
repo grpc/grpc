@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -82,10 +82,10 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   chan = grpc_insecure_channel_create(addr.c_str(), args, nullptr);
   grpc_slice host = grpc_slice_from_static_string("nonexistant");
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
-  call =
-      grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               &host, deadline, nullptr);
+  call = grpc_channel_create_call(
+      chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/service/method"), &host, deadline,
+      nullptr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -97,15 +97,16 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), tag(1),
-                                                   nullptr));
+                                                   (size_t)(op - ops),
+                                                   tag(1), nullptr));
   /* verify that all tags get completed */
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
@@ -117,8 +118,8 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   }
 
   grpc_completion_queue_shutdown(cq);
-  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                    nullptr)
+  while (grpc_completion_queue_next(
+             cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
              .type != GRPC_QUEUE_SHUTDOWN) {
   }
   grpc_completion_queue_destroy(cq);

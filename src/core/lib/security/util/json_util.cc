@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,8 +33,8 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
                                           grpc_error_handle* error) {
   if (json.type() != grpc_core::Json::Type::OBJECT) {
     if (error != nullptr) {
-      *error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON value is not an object");
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "JSON value is not an object");
     }
     return nullptr;
   }
@@ -42,7 +42,8 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
   if (it == json.object_value().end()) {
     if (error != nullptr) {
       *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Property ", prop_name, " not found in JSON object.")
+          absl::StrCat("Property ", prop_name,
+                       " not found in JSON object.")
               .c_str());
     }
     return nullptr;

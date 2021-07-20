@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,7 +43,8 @@ ABSL_FLAG(bool, use_tls, false, "Whether to use tls.");
 ABSL_FLAG(std::string, custom_credentials_type, "",
           "User provided credentials type.");
 ABSL_FLAG(int32_t, port, 0, "Server port.");
-ABSL_FLAG(int32_t, max_send_message_size, -1, "The maximum send message size.");
+ABSL_FLAG(int32_t, max_send_message_size, -1,
+          "The maximum send message size.");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -65,7 +66,8 @@ using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
-const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
+const char kEchoTrailingBinMetadataKey[] =
+    "x-grpc-test-echo-trailing-bin";
 const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
 void MaybeEchoMetadata(ServerContext* context) {
@@ -114,20 +116,24 @@ bool CheckExpectedCompression(const ServerContext& context,
     if (received_compression == GRPC_COMPRESS_NONE) {
       // Expected some compression, got NONE. This is an error.
       gpr_log(GPR_ERROR,
-              "Expected compression but got uncompressed request from client.");
+              "Expected compression but got uncompressed request from "
+              "client.");
       return false;
     }
     if (!(inspector.WasCompressed())) {
       gpr_log(GPR_ERROR,
-              "Failure: Requested compression in a compressable request, but "
+              "Failure: Requested compression in a compressable "
+              "request, but "
               "compression bit in message flags not set.");
       return false;
     }
   } else {
-    // Didn't expect compression -> make sure the request is uncompressed
+    // Didn't expect compression -> make sure the request is
+    // uncompressed
     if (inspector.WasCompressed()) {
       gpr_log(GPR_ERROR,
-              "Failure: Didn't requested compression, but compression bit in "
+              "Failure: Didn't requested compression, but compression "
+              "bit in "
               "message flags set.");
       return false;
     }
@@ -144,13 +150,15 @@ class TestServiceImpl : public TestService::Service {
     return Status::OK;
   }
 
-  // Response contains current timestamp. We ignore everything in the request.
+  // Response contains current timestamp. We ignore everything in the
+  // request.
   Status CacheableUnaryCall(ServerContext* context,
                             const SimpleRequest* /*request*/,
                             SimpleResponse* response) override {
     gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
     std::string timestamp = std::to_string(ts.tv_nsec);
-    response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
+    response->mutable_payload()->set_body(timestamp.c_str(),
+                                          timestamp.size());
     context->AddInitialMetadata("cache-control", "max-age=60, public");
     return Status::OK;
   }
@@ -159,32 +167,35 @@ class TestServiceImpl : public TestService::Service {
                    SimpleResponse* response) override {
     MaybeEchoMetadata(context);
     if (request->has_response_compressed()) {
-      const bool compression_requested = request->response_compressed().value();
+      const bool compression_requested =
+          request->response_compressed().value();
       gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
               compression_requested ? "enabled" : "disabled", __func__);
       if (compression_requested) {
-        // Any level would do, let's go for HIGH because we are overachievers.
+        // Any level would do, let's go for HIGH because we are
+        // overachievers.
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
       } else {
         context->set_compression_level(GRPC_COMPRESS_LEVEL_NONE);
       }
     }
-    if (!CheckExpectedCompression(*context,
-                                  request->expect_compressed().value())) {
+    if (!CheckExpectedCompression(
+            *context, request->expect_compressed().value())) {
       return Status(grpc::StatusCode::INVALID_ARGUMENT,
                     "Compressed request expectation not met.");
     }
     if (request->response_size() > 0) {
-      if (!SetPayload(request->response_size(), response->mutable_payload())) {
+      if (!SetPayload(request->response_size(),
+                      response->mutable_payload())) {
         return Status(grpc::StatusCode::INVALID_ARGUMENT,
                       "Error creating payload.");
       }
     }
 
     if (request->has_response_status()) {
-      return Status(
-          static_cast<grpc::StatusCode>(request->response_status().code()),
-          request->response_status().message());
+      return Status(static_cast<grpc::StatusCode>(
+                        request->response_status().code()),
+                    request->response_status().message());
     }
 
     return Status::OK;
@@ -195,7 +206,8 @@ class TestServiceImpl : public TestService::Service {
       ServerWriter<StreamingOutputCallResponse>* writer) override {
     StreamingOutputCallResponse response;
     bool write_success = true;
-    for (int i = 0; write_success && i < request->response_parameters_size();
+    for (int i = 0;
+         write_success && i < request->response_parameters_size();
          i++) {
       if (!SetPayload(request->response_parameters(i).size(),
                       response.mutable_payload())) {
@@ -208,14 +220,16 @@ class TestServiceImpl : public TestService::Service {
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
         const bool compression_requested =
             request->response_parameters(i).compressed().value();
-        gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
-                compression_requested ? "enabled" : "disabled", __func__);
+        gpr_log(
+            GPR_DEBUG, "Request for compression (%s) present for %s",
+            compression_requested ? "enabled" : "disabled", __func__);
         if (!compression_requested) {
           wopts.set_no_compression();
         }  // else, compression is already enabled via the context.
       }
       int time_us;
-      if ((time_us = request->response_parameters(i).interval_us()) > 0) {
+      if ((time_us = request->response_parameters(i).interval_us()) >
+          0) {
         // Sleep before response if needed
         gpr_timespec sleep_time =
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -227,18 +241,20 @@ class TestServiceImpl : public TestService::Service {
     if (write_success) {
       return Status::OK;
     } else {
-      return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
+      return Status(grpc::StatusCode::INTERNAL,
+                    "Error writing response.");
     }
   }
 
-  Status StreamingInputCall(ServerContext* context,
-                            ServerReader<StreamingInputCallRequest>* reader,
-                            StreamingInputCallResponse* response) override {
+  Status StreamingInputCall(
+      ServerContext* context,
+      ServerReader<StreamingInputCallRequest>* reader,
+      StreamingInputCallResponse* response) override {
     StreamingInputCallRequest request;
     int aggregated_payload_size = 0;
     while (reader->Read(&request)) {
-      if (!CheckExpectedCompression(*context,
-                                    request.expect_compressed().value())) {
+      if (!CheckExpectedCompression(
+              *context, request.expect_compressed().value())) {
         return Status(grpc::StatusCode::INVALID_ARGUMENT,
                       "Compressed request expectation not met.");
       }
@@ -260,16 +276,17 @@ class TestServiceImpl : public TestService::Service {
     bool write_success = true;
     while (write_success && stream->Read(&request)) {
       if (request.has_response_status()) {
-        return Status(
-            static_cast<grpc::StatusCode>(request.response_status().code()),
-            request.response_status().message());
+        return Status(static_cast<grpc::StatusCode>(
+                          request.response_status().code()),
+                      request.response_status().message());
       }
       if (request.response_parameters_size() != 0) {
         response.mutable_payload()->set_type(request.payload().type());
         response.mutable_payload()->set_body(
             std::string(request.response_parameters(0).size(), '\0'));
         int time_us;
-        if ((time_us = request.response_parameters(0).interval_us()) > 0) {
+        if ((time_us = request.response_parameters(0).interval_us()) >
+            0) {
           // Sleep before response if needed
           gpr_timespec sleep_time =
               gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -282,7 +299,8 @@ class TestServiceImpl : public TestService::Service {
     if (write_success) {
       return Status::OK;
     } else {
-      return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
+      return Status(grpc::StatusCode::INTERNAL,
+                    "Error writing response.");
     }
   }
 
@@ -298,8 +316,10 @@ class TestServiceImpl : public TestService::Service {
 
     StreamingOutputCallResponse response;
     bool write_success = true;
-    for (unsigned int i = 0; write_success && i < requests.size(); i++) {
-      response.mutable_payload()->set_type(requests[i].payload().type());
+    for (unsigned int i = 0; write_success && i < requests.size();
+         i++) {
+      response.mutable_payload()->set_type(
+          requests[i].payload().type());
       if (requests[i].response_parameters_size() == 0) {
         return Status(grpc::StatusCode::INTERNAL,
                       "Request does not have response parameters.");
@@ -311,7 +331,8 @@ class TestServiceImpl : public TestService::Service {
     if (write_success) {
       return Status::OK;
     } else {
-      return Status(grpc::StatusCode::INTERNAL, "Error writing response.");
+      return Status(grpc::StatusCode::INTERNAL,
+                    "Error writing response.");
     }
   }
 };
@@ -357,10 +378,12 @@ void grpc::testing::interop::RunServer(
     }
   }
   if (absl::GetFlag(FLAGS_max_send_message_size) >= 0) {
-    builder.SetMaxSendMessageSize(absl::GetFlag(FLAGS_max_send_message_size));
+    builder.SetMaxSendMessageSize(
+        absl::GetFlag(FLAGS_max_send_message_size));
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
+  gpr_log(GPR_INFO, "Server listening on %s",
+          server_address.str().c_str());
 
   // Signal that the server has started.
   if (server_started_condition) {
@@ -370,7 +393,8 @@ void grpc::testing::interop::RunServer(
   }
 
   while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_seconds(5, GPR_TIMESPAN)));
   }
 }

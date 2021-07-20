@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -64,13 +64,14 @@ class ServerAddress {
   };
 
   // Takes ownership of args.
-  ServerAddress(const grpc_resolved_address& address, grpc_channel_args* args,
-                std::map<const char*, std::unique_ptr<AttributeInterface>>
-                    attributes = {});
-  ServerAddress(const void* address, size_t address_len,
-                grpc_channel_args* args,
-                std::map<const char*, std::unique_ptr<AttributeInterface>>
-                    attributes = {});
+  ServerAddress(
+      const grpc_resolved_address& address, grpc_channel_args* args,
+      std::map<const char*, std::unique_ptr<AttributeInterface>>
+          attributes = {});
+  ServerAddress(
+      const void* address, size_t address_len, grpc_channel_args* args,
+      std::map<const char*, std::unique_ptr<AttributeInterface>>
+          attributes = {});
 
   ~ServerAddress() { grpc_channel_args_destroy(args_); }
 
@@ -82,7 +83,9 @@ class ServerAddress {
   ServerAddress(ServerAddress&& other) noexcept;
   ServerAddress& operator=(ServerAddress&& other) noexcept;
 
-  bool operator==(const ServerAddress& other) const { return Cmp(other) == 0; }
+  bool operator==(const ServerAddress& other) const {
+    return Cmp(other) == 0;
+  }
 
   int Cmp(const ServerAddress& other) const;
 
@@ -93,15 +96,16 @@ class ServerAddress {
 
   // Returns a copy of the address with a modified attribute.
   // If the new value is null, the attribute is removed.
-  ServerAddress WithAttribute(const char* key,
-                              std::unique_ptr<AttributeInterface> value) const;
+  ServerAddress WithAttribute(
+      const char* key, std::unique_ptr<AttributeInterface> value) const;
 
   std::string ToString() const;
 
  private:
   grpc_resolved_address address_;
   grpc_channel_args* args_;
-  std::map<const char*, std::unique_ptr<AttributeInterface>> attributes_;
+  std::map<const char*, std::unique_ptr<AttributeInterface>>
+      attributes_;
 };
 
 //
@@ -113,11 +117,13 @@ typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
 //
 // ServerAddressWeightAttribute
 //
-class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
+class ServerAddressWeightAttribute
+    : public ServerAddress::AttributeInterface {
  public:
   static const char* kServerAddressWeightAttributeKey;
 
-  explicit ServerAddressWeightAttribute(uint32_t weight) : weight_(weight) {}
+  explicit ServerAddressWeightAttribute(uint32_t weight)
+      : weight_(weight) {}
 
   uint32_t weight() const { return weight_; }
 

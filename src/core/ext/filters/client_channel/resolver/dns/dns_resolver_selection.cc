@@ -9,20 +9,22 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 // This is similar to the sockaddr resolver, except that it supports a
-// bunch of query args that are useful for dependency injection in tests.
+// bunch of query args that are useful for dependency injection in
+// tests.
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_dns_resolver, "",
-    "Declares which DNS resolver to use. The default is ares if gRPC is built "
-    "with c-ares support. Otherwise, the value of this environment variable is "
-    "ignored.")
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_dns_resolver, "",
+                                "Declares which DNS resolver to use. "
+                                "The default is ares if gRPC is built "
+                                "with c-ares support. Otherwise, the "
+                                "value of this environment variable is "
+                                "ignored.")

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,7 +47,8 @@ int test_client(const char* root, const char* host, int port) {
   if (cli == 0) {
     std::string binary_path = absl::StrCat(root, "/interop_client");
     std::string port_arg = absl::StrCat("--server_port=", port);
-    execl(binary_path.c_str(), binary_path.c_str(), port_arg.c_str(), NULL);
+    execl(binary_path.c_str(), binary_path.c_str(), port_arg.c_str(),
+          NULL);
     return 1;
   }
   /* wait for client */
@@ -68,8 +69,8 @@ int main(int argc, char** argv) {
   pid_t svr;
   int ret;
   int do_ipv6 = 1;
-  /* seed rng with pid, so we don't end up with the same random numbers as a
-     concurrently running test binary */
+  /* seed rng with pid, so we don't end up with the same random numbers
+     as a concurrently running test binary */
   srand(getpid());
   if (!grpc_ipv6_loopback_available()) {
     gpr_log(GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
@@ -91,8 +92,8 @@ int main(int argc, char** argv) {
     std::string port_arg = absl::StrCat("--port=", port);
     args.push_back(const_cast<char*>(port_arg.c_str()));
     if (!absl::GetFlag(FLAGS_extra_server_flags).empty()) {
-      args.push_back(
-          const_cast<char*>(absl::GetFlag(FLAGS_extra_server_flags).c_str()));
+      args.push_back(const_cast<char*>(
+          absl::GetFlag(FLAGS_extra_server_flags).c_str()));
     }
     args.push_back(nullptr);
     execv(args[0], args.data());

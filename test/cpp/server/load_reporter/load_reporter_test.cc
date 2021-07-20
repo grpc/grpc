@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -91,9 +91,9 @@ class LoadReporterTest : public ::testing::Test {
   }
 
   CpuStatsProvider::CpuStatsSample initial_cpu_stats_{2, 20};
-  const std::vector<CpuStatsProvider::CpuStatsSample> kCpuStatsSamples = {
-      {13, 53},    {64, 96},     {245, 345},  {314, 785},
-      {874, 1230}, {1236, 2145}, {1864, 2974}};
+  const std::vector<CpuStatsProvider::CpuStatsSample> kCpuStatsSamples =
+      {{13, 53},    {64, 96},     {245, 345},  {314, 785},
+       {874, 1230}, {1236, 2145}, {1864, 2974}};
 
   std::unique_ptr<LoadReporter> load_reporter_;
 
@@ -133,9 +133,9 @@ class LoadReporterTest : public ::testing::Test {
     // Set up the load reporter.
     auto mock_cpu = new MockCpuStatsProvider();
     auto mock_census = new MockCensusViewProvider();
-    // Prepare the initial CPU stats data. Note that the expectation should be
-    // set up before the load reporter is initialized, because CPU stats is
-    // sampled at that point.
+    // Prepare the initial CPU stats data. Note that the expectation
+    // should be set up before the load reporter is initialized, because
+    // CPU stats is sampled at that point.
     EXPECT_CALL(*mock_cpu, GetCpuStats())
         .WillOnce(Return(initial_cpu_stats_))
         .RetiresOnSaturation();
@@ -148,10 +148,10 @@ class LoadReporterTest : public ::testing::Test {
 
 class LbFeedbackTest : public LoadReporterTest {
  public:
-  // Note that [start, start + count) of the fake samples (maybe plus the
-  // initial record) are in the window now.
-  void VerifyLbFeedback(const LoadBalancingFeedback& lb_feedback, size_t start,
-                        size_t count) {
+  // Note that [start, start + count) of the fake samples (maybe plus
+  // the initial record) are in the window now.
+  void VerifyLbFeedback(const LoadBalancingFeedback& lb_feedback,
+                        size_t start, size_t count) {
     const CpuStatsProvider::CpuStatsSample* base =
         start == 0 ? &initial_cpu_stats_ : &kCpuStatsSamples[start - 1];
     double expected_cpu_util =
@@ -168,15 +168,16 @@ class LbFeedbackTest : public LoadReporterTest {
     }
     double expected_qps = qps_sum / count;
     double expected_eps = eps_sum / count;
-    // TODO(juanlishen): The error is big because we use sleep(). It should be
-    // much smaller when we use fake clock.
+    // TODO(juanlishen): The error is big because we use sleep(). It
+    // should be much smaller when we use fake clock.
     ASSERT_THAT(static_cast<double>(lb_feedback.calls_per_second()),
                 DoubleNear(expected_qps, expected_qps * 0.3));
     ASSERT_THAT(static_cast<double>(lb_feedback.errors_per_second()),
                 DoubleNear(expected_eps, expected_eps * 0.3));
-    gpr_log(GPR_INFO,
-            "Verified LB feedback matches the samples of index [%lu, %lu).",
-            start, start + count);
+    gpr_log(
+        GPR_INFO,
+        "Verified LB feedback matches the samples of index [%lu, %lu).",
+        start, start + count);
   }
 
   const std::vector<std::pair<double, double>> kQpsEpsSamples = {
@@ -187,8 +188,8 @@ class LbFeedbackTest : public LoadReporterTest {
 TEST_F(LbFeedbackTest, ZeroDuration) {
   PrepareCpuExpectation(kCpuStatsSamples.size());
   EXPECT_CALL(*mock_census_view_provider(), FetchViewData())
-      .WillRepeatedly(
-          Return(::grpc::load_reporter::CensusViewProvider::ViewDataMap()));
+      .WillRepeatedly(Return(
+          ::grpc::load_reporter::CensusViewProvider::ViewDataMap()));
   // Verify that divide-by-zero exception doesn't happen.
   for (size_t i = 0; i < kCpuStatsSamples.size(); ++i) {
     load_reporter_->FetchAndSample();
@@ -206,18 +207,19 @@ TEST_F(LbFeedbackTest, Normal) {
     double error_count = eps * kFetchAndSampleIntervalSeconds;
     double ok_count_1 = ok_count / 3.0;
     double ok_count_2 = ok_count - ok_count_1;
-    auto end_count_vd = ::opencensus::stats::testing::TestUtils::MakeViewData(
-        mock_census_view_provider()->FindViewDescriptor(
-            ::grpc::load_reporter::kViewEndCount),
-        {{{kClientIp0 + kLbToken1, kHostname1, kUser1,
-           ::grpc::load_reporter::kCallStatusOk},
-          ok_count_1},
-         {{kClientIp0 + kLbToken1, kHostname1, kUser2,
-           ::grpc::load_reporter::kCallStatusOk},
-          ok_count_2},
-         {{kClientIp0 + kLbToken1, kHostname1, kUser1,
-           ::grpc::load_reporter::kCallStatusClientError},
-          error_count}});
+    auto end_count_vd =
+        ::opencensus::stats::testing::TestUtils::MakeViewData(
+            mock_census_view_provider()->FindViewDescriptor(
+                ::grpc::load_reporter::kViewEndCount),
+            {{{kClientIp0 + kLbToken1, kHostname1, kUser1,
+               ::grpc::load_reporter::kCallStatusOk},
+              ok_count_1},
+             {{kClientIp0 + kLbToken1, kHostname1, kUser2,
+               ::grpc::load_reporter::kCallStatusOk},
+              ok_count_2},
+             {{kClientIp0 + kLbToken1, kHostname1, kUser1,
+               ::grpc::load_reporter::kCallStatusClientError},
+              error_count}});
     // Values for other view data don't matter.
     auto end_bytes_sent_vd =
         ::opencensus::stats::testing::TestUtils::MakeViewData(
@@ -245,22 +247,24 @@ TEST_F(LbFeedbackTest, Normal) {
              {{kClientIp0 + kLbToken1, kHostname1, kUser1,
                ::grpc::load_reporter::kCallStatusClientError},
               0}});
-    auto end_latency_vd = ::opencensus::stats::testing::TestUtils::MakeViewData(
-        mock_census_view_provider()->FindViewDescriptor(
-            ::grpc::load_reporter::kViewEndLatencyMs),
-        {{{kClientIp0 + kLbToken1, kHostname1, kUser1,
-           ::grpc::load_reporter::kCallStatusOk},
-          0},
-         {{kClientIp0 + kLbToken1, kHostname1, kUser2,
-           ::grpc::load_reporter::kCallStatusOk},
-          0},
-         {{kClientIp0 + kLbToken1, kHostname1, kUser1,
-           ::grpc::load_reporter::kCallStatusClientError},
-          0}});
+    auto end_latency_vd =
+        ::opencensus::stats::testing::TestUtils::MakeViewData(
+            mock_census_view_provider()->FindViewDescriptor(
+                ::grpc::load_reporter::kViewEndLatencyMs),
+            {{{kClientIp0 + kLbToken1, kHostname1, kUser1,
+               ::grpc::load_reporter::kCallStatusOk},
+              0},
+             {{kClientIp0 + kLbToken1, kHostname1, kUser2,
+               ::grpc::load_reporter::kCallStatusOk},
+              0},
+             {{kClientIp0 + kLbToken1, kHostname1, kUser1,
+               ::grpc::load_reporter::kCallStatusClientError},
+              0}});
     view_data_map_list.push_back(
         {{::grpc::load_reporter::kViewEndCount, end_count_vd},
          {::grpc::load_reporter::kViewEndBytesSent, end_bytes_sent_vd},
-         {::grpc::load_reporter::kViewEndBytesReceived, end_bytes_received_vd},
+         {::grpc::load_reporter::kViewEndBytesReceived,
+          end_bytes_received_vd},
          {::grpc::load_reporter::kViewEndLatencyMs, end_latency_vd}});
   }
   {
@@ -272,9 +276,9 @@ TEST_F(LbFeedbackTest, Normal) {
     }
   }
   PrepareCpuExpectation(kNumFeedbackSamplesInWindow + 2);
-  // When the load reporter is created, a trivial LB feedback record is added.
-  // But that's not enough for generating an LB feedback.
-  // Fetch some view data so that non-trivial LB feedback can be generated.
+  // When the load reporter is created, a trivial LB feedback record is
+  // added. But that's not enough for generating an LB feedback. Fetch
+  // some view data so that non-trivial LB feedback can be generated.
   for (size_t i = 0; i < kNumFeedbackSamplesInWindow / 2; ++i) {
     // TODO(juanlishen): Find some fake clock to speed up testing.
     sleep(1);
@@ -282,15 +286,16 @@ TEST_F(LbFeedbackTest, Normal) {
   }
   VerifyLbFeedback(load_reporter_->GenerateLoadBalancingFeedback(), 0,
                    kNumFeedbackSamplesInWindow / 2);
-  // Fetch more view data so that the feedback record window is just full (the
-  // initial record just falls out of the window).
+  // Fetch more view data so that the feedback record window is just
+  // full (the initial record just falls out of the window).
   for (size_t i = 0; i < (kNumFeedbackSamplesInWindow + 1) / 2; ++i) {
     sleep(1);
     load_reporter_->FetchAndSample();
   }
   VerifyLbFeedback(load_reporter_->GenerateLoadBalancingFeedback(), 0,
                    kNumFeedbackSamplesInWindow);
-  // Further fetching will cause the old records to fall out of the window.
+  // Further fetching will cause the old records to fall out of the
+  // window.
   for (size_t i = 0; i < 2; ++i) {
     sleep(1);
     load_reporter_->FetchAndSample();
@@ -399,16 +404,20 @@ TEST_F(LoadReportTest, BasicReport) {
               ::grpc::load_reporter::kViewOtherCallMetricCount),
           {{{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1}, 1},
            {{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1}, 1},
-           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric2},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+             kMetric2},
             1}}));
   vdm1.emplace(
       ::grpc::load_reporter::kViewOtherCallMetricValue,
       ::opencensus::stats::testing::TestUtils::MakeViewData(
           mock_census_view_provider()->FindViewDescriptor(
               ::grpc::load_reporter::kViewOtherCallMetricValue),
-          {{{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1}, 1.2},
-           {{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1}, 1.2},
-           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric2},
+          {{{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1},
+            1.2},
+           {{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1},
+            1.2},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+             kMetric2},
             3.2}}));
   // Make up the second view data map.
   CensusViewProvider::ViewDataMap vdm2;
@@ -418,7 +427,8 @@ TEST_F(LoadReportTest, BasicReport) {
           mock_census_view_provider()->FindViewDescriptor(
               ::grpc::load_reporter::kViewStartCount),
           {{{kClientIp2 + kLbToken1, kHostname1, kUser1}, 3},
-           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3}, 778}}));
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3},
+            778}}));
   vdm2.emplace(::grpc::load_reporter::kViewEndCount,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
@@ -464,16 +474,22 @@ TEST_F(LoadReportTest, BasicReport) {
       ::opencensus::stats::testing::TestUtils::MakeViewData(
           mock_census_view_provider()->FindViewDescriptor(
               ::grpc::load_reporter::kViewOtherCallMetricCount),
-          {{{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric1}, 1},
-           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric2},
+          {{{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+             kMetric1},
+            1},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+             kMetric2},
             1}}));
   vdm2.emplace(
       ::grpc::load_reporter::kViewOtherCallMetricValue,
       ::opencensus::stats::testing::TestUtils::MakeViewData(
           mock_census_view_provider()->FindViewDescriptor(
               ::grpc::load_reporter::kViewOtherCallMetricValue),
-          {{{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric1}, 9.6},
-           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric2},
+          {{{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+             kMetric1},
+            9.6},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+             kMetric2},
             5.7}}));
   // Set up mock expectation.
   EXPECT_CALL(*mock_census_view_provider(), FetchViewData())

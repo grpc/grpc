@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,7 +60,8 @@ static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void args_init(args_struct* args) {
   gpr_event_init(&args->ev);
-  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  args->pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
@@ -101,8 +102,10 @@ static void actually_poll(void* argsp) {
       if (args->done) {
         break;
       }
-      grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
+      grpc_millis time_left =
+          deadline - grpc_core::ExecCtx::Get()->Now();
+      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
+              time_left);
       GPR_ASSERT(time_left >= 0);
       grpc_pollset_worker* worker = nullptr;
       GRPC_LOG_IF_ERROR(
@@ -114,7 +117,8 @@ static void actually_poll(void* argsp) {
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
-  args->thd = grpc_core::Thread("grpc_poll_pollset", actually_poll, args);
+  args->thd =
+      grpc_core::Thread("grpc_poll_pollset", actually_poll, args);
   args->thd.Start();
 }
 
@@ -125,7 +129,8 @@ static void must_succeed(void* argsp, grpc_error_handle err) {
   GPR_ASSERT(args->addrs->naddrs > 0);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(args->pollset, nullptr));
 }
 
 static void must_fail(void* argsp, grpc_error_handle err) {
@@ -133,7 +138,8 @@ static void must_fail(void* argsp, grpc_error_handle err) {
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(args->pollset, nullptr));
 }
 
 static void resolve_address_must_succeed(const char* target) {
@@ -141,16 +147,17 @@ static void resolve_address_must_succeed(const char* target) {
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
-  grpc_resolve_address(
-      target, "1" /* port number */, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+  grpc_resolve_address(target, "1" /* port number */, args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed, &args,
+                                           grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   args_finish(&args);
 }
 
 static void test_named_and_numeric_scope_ids(void) {
-  char* arbitrary_interface_name = static_cast<char*>(gpr_zalloc(IF_NAMESIZE));
+  char* arbitrary_interface_name =
+      static_cast<char*>(gpr_zalloc(IF_NAMESIZE));
   int interface_index = 0;
   // Probe candidate interface index numbers until we find one that the
   // system recognizes, and then use that for the test.
@@ -182,11 +189,11 @@ int main(int argc, char** argv) {
   // First set the resolver type based off of --resolver
   const char* resolver_type = nullptr;
   gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
-  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
-                         &resolver_type);
+  gpr_cmdline_add_string(
+      cl, "resolver", "Resolver type (ares or native)", &resolver_type);
   // In case that there are more than one argument on the command line,
-  // --resolver will always be the first one, so only parse the first argument
-  // (other arguments may be unknown to cl)
+  // --resolver will always be the first one, so only parse the first
+  // argument (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
   grpc_core::UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
@@ -194,7 +201,8 @@ int main(int argc, char** argv) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
             resolver.get());
   }
-  if (resolver_type != nullptr && gpr_stricmp(resolver_type, "native") == 0) {
+  if (resolver_type != nullptr &&
+      gpr_stricmp(resolver_type, "native") == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
   } else if (resolver_type != nullptr &&
              gpr_stricmp(resolver_type, "ares") == 0) {
@@ -209,9 +217,9 @@ int main(int argc, char** argv) {
   {
     grpc_core::ExecCtx exec_ctx;
     test_named_and_numeric_scope_ids();
-    // c-ares resolver doesn't support UDS (ability for native DNS resolver
-    // to handle this is only expected to be used by servers, which
-    // unconditionally use the native DNS resolver).
+    // c-ares resolver doesn't support UDS (ability for native DNS
+    // resolver to handle this is only expected to be used by servers,
+    // which unconditionally use the native DNS resolver).
     grpc_core::UniquePtr<char> resolver =
         GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   }

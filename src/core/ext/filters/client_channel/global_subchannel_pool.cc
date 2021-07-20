@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -59,14 +59,16 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
   return constructed;
 }
 
-RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
+RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ =
+    nullptr;
 
-void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
-                                                Subchannel* subchannel) {
+void GlobalSubchannelPool::UnregisterSubchannel(
+    const SubchannelKey& key, Subchannel* subchannel) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
-  // delete only if key hasn't been re-registered to a different subchannel
-  // between strong-unreffing and unregistration of subchannel.
+  // delete only if key hasn't been re-registered to a different
+  // subchannel between strong-unreffing and unregistration of
+  // subchannel.
   if (it != subchannel_map_.end() && it->second == subchannel) {
     subchannel_map_.erase(it);
   }

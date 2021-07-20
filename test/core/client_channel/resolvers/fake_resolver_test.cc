@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -65,10 +65,12 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
   gpr_event* ev_ = nullptr;
 };
 
-static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
+static grpc_core::OrphanablePtr<grpc_core::Resolver>
+build_fake_resolver(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
     grpc_core::FakeResolverResponseGenerator* response_generator,
-    std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
+    std::unique_ptr<grpc_core::Resolver::ResultHandler>
+        result_handler) {
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("fake");
   grpc_arg generator_arg =
@@ -91,9 +93,11 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
   // Create address list.
   grpc_core::Resolver::Result result;
   for (size_t i = 0; i < num_addresses; ++i) {
-    std::string uri_string = absl::StrFormat("ipv4:127.0.0.1:100%" PRIuPTR,
-                                             test_counter * num_addresses + i);
-    absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_string);
+    std::string uri_string =
+        absl::StrFormat("ipv4:127.0.0.1:100%" PRIuPTR,
+                        test_counter * num_addresses + i);
+    absl::StatusOr<grpc_core::URI> uri =
+        grpc_core::URI::Parse(uri_string);
     GPR_ASSERT(uri.ok());
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
@@ -113,11 +117,13 @@ static void test_fake_resolver() {
   // Create resolver.
   ResultHandler* result_handler = new ResultHandler();
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      response_generator =
-          grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = build_fake_resolver(
-      work_serializer, response_generator.get(),
-      std::unique_ptr<grpc_core::Resolver::ResultHandler>(result_handler));
+      response_generator = grpc_core::MakeRefCounted<
+          grpc_core::FakeResolverResponseGenerator>();
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
+      build_fake_resolver(
+          work_serializer, response_generator.get(),
+          std::unique_ptr<grpc_core::Resolver::ResultHandler>(
+              result_handler));
   GPR_ASSERT(resolver.get() != nullptr);
   resolver->StartLocked();
   // Test 1: normal resolution.
@@ -130,8 +136,8 @@ static void test_fake_resolver() {
   result_handler->SetExpectedAndEvent(result, &ev1);
   response_generator->SetResponse(std::move(result));
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_event_wait(&ev1, grpc_timeout_seconds_to_deadline(5)) !=
-             nullptr);
+  GPR_ASSERT(gpr_event_wait(
+                 &ev1, grpc_timeout_seconds_to_deadline(5)) != nullptr);
   // Test 2: update resolution.
   // next_results != NULL, reresolution_results == NULL.
   // Expected response is next_results.
@@ -142,8 +148,8 @@ static void test_fake_resolver() {
   result_handler->SetExpectedAndEvent(result, &ev2);
   response_generator->SetResponse(std::move(result));
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_event_wait(&ev2, grpc_timeout_seconds_to_deadline(5)) !=
-             nullptr);
+  GPR_ASSERT(gpr_event_wait(
+                 &ev2, grpc_timeout_seconds_to_deadline(5)) != nullptr);
   // Test 3: normal re-resolution.
   // next_results == NULL, reresolution_results != NULL.
   // Expected response is reresolution_results.
@@ -160,20 +166,21 @@ static void test_fake_resolver() {
   // Trigger a re-resolution.
   resolver->RequestReresolutionLocked();
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_event_wait(&ev3, grpc_timeout_seconds_to_deadline(5)) !=
-             nullptr);
+  GPR_ASSERT(gpr_event_wait(
+                 &ev3, grpc_timeout_seconds_to_deadline(5)) != nullptr);
   // Test 4: repeat re-resolution.
   // next_results == NULL, reresolution_results != NULL.
   // Expected response is reresolution_results.
   gpr_log(GPR_INFO, "TEST 4");
   gpr_event ev4;
   gpr_event_init(&ev4);
-  result_handler->SetExpectedAndEvent(std::move(reresolution_result), &ev4);
+  result_handler->SetExpectedAndEvent(std::move(reresolution_result),
+                                      &ev4);
   // Trigger a re-resolution.
   resolver->RequestReresolutionLocked();
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_event_wait(&ev4, grpc_timeout_seconds_to_deadline(5)) !=
-             nullptr);
+  GPR_ASSERT(gpr_event_wait(
+                 &ev4, grpc_timeout_seconds_to_deadline(5)) != nullptr);
   // Test 5: normal resolution.
   // next_results != NULL, reresolution_results != NULL.
   // Expected response is next_results.
@@ -184,17 +191,18 @@ static void test_fake_resolver() {
   result_handler->SetExpectedAndEvent(result, &ev5);
   response_generator->SetResponse(std::move(result));
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_event_wait(&ev5, grpc_timeout_seconds_to_deadline(5)) !=
-             nullptr);
+  GPR_ASSERT(gpr_event_wait(
+                 &ev5, grpc_timeout_seconds_to_deadline(5)) != nullptr);
   // Test 6: no-op.
-  // Requesting a new resolution without setting the response shouldn't trigger
-  // the resolution callback.
+  // Requesting a new resolution without setting the response shouldn't
+  // trigger the resolution callback.
   gpr_log(GPR_INFO, "TEST 6");
   gpr_event ev6;
   gpr_event_init(&ev6);
-  result_handler->SetExpectedAndEvent(grpc_core::Resolver::Result(), &ev6);
-  GPR_ASSERT(gpr_event_wait(&ev6, grpc_timeout_milliseconds_to_deadline(100)) ==
-             nullptr);
+  result_handler->SetExpectedAndEvent(grpc_core::Resolver::Result(),
+                                      &ev6);
+  GPR_ASSERT(gpr_event_wait(&ev6, grpc_timeout_milliseconds_to_deadline(
+                                      100)) == nullptr);
   // Clean up.
   resolver.reset();
 }

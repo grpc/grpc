@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -274,9 +274,12 @@ static void test_memrchr(void) {
   GPR_ASSERT(nullptr == gpr_memrchr(nullptr, 'a', 0));
   GPR_ASSERT(nullptr == gpr_memrchr("", 'a', 0));
   GPR_ASSERT(nullptr == gpr_memrchr("hello", 'b', 5));
-  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'h', 5), "hello"));
-  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'o', 5), "o"));
-  GPR_ASSERT(0 == strcmp((const char*)gpr_memrchr("hello", 'l', 5), "lo"));
+  GPR_ASSERT(
+      0 == strcmp((const char*)gpr_memrchr("hello", 'h', 5), "hello"));
+  GPR_ASSERT(0 ==
+             strcmp((const char*)gpr_memrchr("hello", 'o', 5), "o"));
+  GPR_ASSERT(0 ==
+             strcmp((const char*)gpr_memrchr("hello", 'l', 5), "lo"));
 }
 
 static void test_parse_bool_value(void) {
@@ -284,7 +287,8 @@ static void test_parse_bool_value(void) {
 
   bool ret;
   GPR_ASSERT(true == gpr_parse_bool_value("truE", &ret) && true == ret);
-  GPR_ASSERT(true == gpr_parse_bool_value("falsE", &ret) && false == ret);
+  GPR_ASSERT(true == gpr_parse_bool_value("falsE", &ret) &&
+             false == ret);
   GPR_ASSERT(true == gpr_parse_bool_value("1", &ret) && true == ret);
   GPR_ASSERT(true == gpr_parse_bool_value("0", &ret) && false == ret);
   GPR_ASSERT(true == gpr_parse_bool_value("Yes", &ret) && true == ret);

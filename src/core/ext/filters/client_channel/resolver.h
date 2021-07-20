@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,10 +42,10 @@ namespace grpc_core {
 /// This interface is designed to support both push-based and pull-based
 /// mechanisms.  A push-based mechanism is one where the resolver will
 /// subscribe to updates for a given name, and the name service will
-/// proactively send new data to the resolver whenever the data associated
-/// with the name changes.  A pull-based mechanism is one where the resolver
-/// needs to query the name service again to get updated information (e.g.,
-/// DNS).
+/// proactively send new data to the resolver whenever the data
+/// associated with the name changes.  A pull-based mechanism is one
+/// where the resolver needs to query the name service again to get
+/// updated information (e.g., DNS).
 ///
 /// Note: All methods with a "Locked" suffix must be called from the
 /// work_serializer passed to the constructor.
@@ -59,7 +59,8 @@ class Resolver : public InternallyRefCounted<Resolver> {
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once grpc_error and
-    // grpc_channel_args are convert to copyable and movable C++ objects.
+    // grpc_channel_args are convert to copyable and movable C++
+    // objects.
     Result() = default;
     ~Result();
     Result(const Result& other);
@@ -80,7 +81,8 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
     /// Returns a transient error to the channel.
     /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
-    /// attribute on the error, calls will be failed with status UNKNOWN.
+    /// attribute on the error, calls will be failed with status
+    /// UNKNOWN.
     virtual void ReturnError(grpc_error_handle error) = 0;
 
     // TODO(yashkt): As part of the service config error handling

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,7 +39,8 @@ extern grpc_core::TraceFlag grpc_http_trace;
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl) {
   size_t i;
   for (i = 0; i < tbl->num_ents; i++) {
-    GRPC_MDELEM_UNREF(tbl->ents[(tbl->first_ent + i) % tbl->cap_entries]);
+    GRPC_MDELEM_UNREF(
+        tbl->ents[(tbl->first_ent + i) % tbl->cap_entries]);
   }
   gpr_free(tbl->ents);
   tbl->ents = nullptr;
@@ -52,7 +53,8 @@ static grpc_mdelem lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
   tbl_index -= (GRPC_CHTTP2_LAST_STATIC_ENTRY + 1);
   if (tbl_index < tbl->num_ents) {
     uint32_t offset =
-        (tbl->num_ents - 1u - tbl_index + tbl->first_ent) % tbl->cap_entries;
+        (tbl->num_ents - 1u - tbl_index + tbl->first_ent) %
+        tbl->cap_entries;
     grpc_mdelem md = tbl->ents[offset];
     if (take_ref) {
       GRPC_MDELEM_REF(md);
@@ -63,8 +65,8 @@ static grpc_mdelem lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
   return GRPC_MDNULL;
 }
 
-grpc_mdelem grpc_chttp2_hptbl_lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
-                                                   uint32_t tbl_index) {
+grpc_mdelem grpc_chttp2_hptbl_lookup_dynamic_index(
+    const grpc_chttp2_hptbl* tbl, uint32_t tbl_index) {
   return lookup_dynamic_index<false>(tbl, tbl_index);
 }
 
@@ -122,8 +124,8 @@ grpc_error_handle grpc_chttp2_hptbl_set_current_table_size(
   if (bytes > tbl->max_bytes) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrFormat(
-            "Attempt to make hpack table %d bytes when max is %d bytes", bytes,
-            tbl->max_bytes)
+            "Attempt to make hpack table %d bytes when max is %d bytes",
+            bytes, tbl->max_bytes)
             .c_str());
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
@@ -154,10 +156,10 @@ grpc_error_handle grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
 
   if (tbl->current_table_bytes > tbl->max_bytes) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat(
-            "HPACK max table size reduced to %d but not reflected by hpack "
-            "stream (still at %d)",
-            tbl->max_bytes, tbl->current_table_bytes)
+        absl::StrFormat("HPACK max table size reduced to %d but not "
+                        "reflected by hpack "
+                        "stream (still at %d)",
+                        tbl->max_bytes, tbl->current_table_bytes)
             .c_str());
   }
 
@@ -179,8 +181,8 @@ grpc_error_handle grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
   }
 
   /* evict entries to ensure no overflow */
-  while (elem_bytes >
-         static_cast<size_t>(tbl->current_table_bytes) - tbl->mem_used) {
+  while (elem_bytes > static_cast<size_t>(tbl->current_table_bytes) -
+                          tbl->mem_used) {
     evict1(tbl);
   }
 
@@ -212,7 +214,8 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
   for (i = 0; i < tbl->num_ents; i++) {
     uint32_t idx = static_cast<uint32_t>(tbl->num_ents - i +
                                          GRPC_CHTTP2_LAST_STATIC_ENTRY);
-    grpc_mdelem ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
+    grpc_mdelem ent =
+        tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
     if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
     r.index = idx;
     r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));
@@ -227,16 +230,17 @@ static size_t get_base64_encoded_size(size_t raw_length) {
   return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
 }
 
-size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
-                                           bool use_true_binary_metadata) {
+size_t grpc_chttp2_get_size_in_hpack_table(
+    grpc_mdelem elem, bool use_true_binary_metadata) {
   const uint8_t* key_buf = GRPC_SLICE_START_PTR(GRPC_MDKEY(elem));
   size_t key_len = GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
   size_t overhead_and_key = 32 + key_len;
   size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
   if (grpc_key_is_binary_header(key_buf, key_len)) {
-    return overhead_and_key + (use_true_binary_metadata
-                                   ? value_len + 1
-                                   : get_base64_encoded_size(value_len));
+    return overhead_and_key +
+           (use_true_binary_metadata
+                ? value_len + 1
+                : get_base64_encoded_size(value_len));
   } else {
     return overhead_and_key + value_len;
   }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,9 +29,10 @@
 namespace grpc {
 namespace load_reporter {
 
-// Note that the functions here are specified as inline to share the static
-// objects across all the translation units including this header. See more
-// details on https://en.cppreference.com/w/cpp/language/inline.
+// Note that the functions here are specified as inline to share the
+// static objects across all the translation units including this
+// header. See more details on
+// https://en.cppreference.com/w/cpp/language/inline.
 
 // Measures.
 
@@ -51,31 +52,33 @@ inline ::opencensus::stats::MeasureInt64 MeasureEndCount() {
 
 inline ::opencensus::stats::MeasureInt64 MeasureEndBytesSent() {
   static const ::opencensus::stats::MeasureInt64 measure =
-      ::opencensus::stats::MeasureInt64::Register(
-          kMeasureEndBytesSent, kMeasureEndBytesSent, kMeasureEndBytesSent);
+      ::opencensus::stats::MeasureInt64::Register(kMeasureEndBytesSent,
+                                                  kMeasureEndBytesSent,
+                                                  kMeasureEndBytesSent);
   return measure;
 }
 
 inline ::opencensus::stats::MeasureInt64 MeasureEndBytesReceived() {
   static const ::opencensus::stats::MeasureInt64 measure =
-      ::opencensus::stats::MeasureInt64::Register(kMeasureEndBytesReceived,
-                                                  kMeasureEndBytesReceived,
-                                                  kMeasureEndBytesReceived);
+      ::opencensus::stats::MeasureInt64::Register(
+          kMeasureEndBytesReceived, kMeasureEndBytesReceived,
+          kMeasureEndBytesReceived);
   return measure;
 }
 
 inline ::opencensus::stats::MeasureInt64 MeasureEndLatencyMs() {
   static const ::opencensus::stats::MeasureInt64 measure =
-      ::opencensus::stats::MeasureInt64::Register(
-          kMeasureEndLatencyMs, kMeasureEndLatencyMs, kMeasureEndLatencyMs);
+      ::opencensus::stats::MeasureInt64::Register(kMeasureEndLatencyMs,
+                                                  kMeasureEndLatencyMs,
+                                                  kMeasureEndLatencyMs);
   return measure;
 }
 
 inline ::opencensus::stats::MeasureDouble MeasureOtherCallMetric() {
   static const ::opencensus::stats::MeasureDouble measure =
-      ::opencensus::stats::MeasureDouble::Register(kMeasureOtherCallMetric,
-                                                   kMeasureOtherCallMetric,
-                                                   kMeasureOtherCallMetric);
+      ::opencensus::stats::MeasureDouble::Register(
+          kMeasureOtherCallMetric, kMeasureOtherCallMetric,
+          kMeasureOtherCallMetric);
   return measure;
 }
 

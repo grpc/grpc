@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,7 +30,8 @@
 
 /* -- Composite channel credentials. -- */
 
-class grpc_composite_channel_credentials : public grpc_channel_credentials {
+class grpc_composite_channel_credentials
+    : public grpc_channel_credentials {
  public:
   grpc_composite_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
@@ -52,15 +53,20 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override {
+  grpc_channel_args* update_arguments(
+      grpc_channel_args* args) override {
     return inner_creds_->update_arguments(args);
   }
 
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();
   }
-  const grpc_call_credentials* call_creds() const { return call_creds_.get(); }
-  grpc_call_credentials* mutable_call_creds() { return call_creds_.get(); }
+  const grpc_call_credentials* call_creds() const {
+    return call_creds_.get();
+  }
+  grpc_call_credentials* mutable_call_creds() {
+    return call_creds_.get();
+  }
 
  private:
   grpc_core::RefCountedPtr<grpc_channel_credentials> inner_creds_;
@@ -71,8 +77,8 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 
 class grpc_composite_call_credentials : public grpc_call_credentials {
  public:
-  using CallCredentialsList =
-      absl::InlinedVector<grpc_core::RefCountedPtr<grpc_call_credentials>, 2>;
+  using CallCredentialsList = absl::InlinedVector<
+      grpc_core::RefCountedPtr<grpc_call_credentials>, 2>;
 
   grpc_composite_call_credentials(
       grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
@@ -85,8 +91,9 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  void cancel_get_request_metadata(
+      grpc_credentials_mdelem_array* md_array,
+      grpc_error_handle error) override;
 
   grpc_security_level min_security_level() const override {
     return min_security_level_;
@@ -96,8 +103,9 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   std::string debug_string() override;
 
  private:
-  void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
-                     bool is_composite);
+  void push_to_inner(
+      grpc_core::RefCountedPtr<grpc_call_credentials> creds,
+      bool is_composite);
   grpc_security_level min_security_level_;
   CallCredentialsList inner_;
 };

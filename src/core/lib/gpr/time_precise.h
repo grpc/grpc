@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,12 +24,12 @@
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
-// Depending on the platform gpr_get_cycle_counter() can have a resolution as
-// low as a usec. Use other clock sources or gpr_precise_clock_now(),
-// where you need high resolution clocks.
+// Depending on the platform gpr_get_cycle_counter() can have a
+// resolution as low as a usec. Use other clock sources or
+// gpr_precise_clock_now(), where you need high resolution clocks.
 //
-// Using gpr_get_cycle_counter() is preferred to using ExecCtx::Get()->Now()
-// whenever possible.
+// Using gpr_get_cycle_counter() is preferred to using
+// ExecCtx::Get()->Now() whenever possible.
 
 #if GPR_CYCLE_COUNTER_CUSTOM
 typedef int64_t gpr_cycle_counter;
@@ -65,6 +65,7 @@ gpr_cycle_counter gpr_get_cycle_counter();
 void gpr_precise_clock_init(void);
 void gpr_precise_clock_now(gpr_timespec* clk);
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles);
-gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b);
+gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a,
+                                   gpr_cycle_counter b);
 
 #endif /* GRPC_CORE_LIB_GPR_TIME_PRECISE_H */

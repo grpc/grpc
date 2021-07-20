@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,20 +47,23 @@ TEST(ServerChttp2, AddSamePortTwice) {
   grpc_channel_args args = {1, &a};
 
   int port = grpc_pick_unused_port_or_die();
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(nullptr);
+  grpc_completion_queue* cq =
+      grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server* server = grpc_server_create(&args, nullptr);
   grpc_server_credentials* fake_creds =
       grpc_fake_transport_security_server_credentials_create();
   std::string addr = grpc_core::JoinHostPort("localhost", port);
-  EXPECT_EQ(grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds),
+  EXPECT_EQ(grpc_server_add_secure_http2_port(server, addr.c_str(),
+                                              fake_creds),
             port);
-  EXPECT_EQ(grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds),
+  EXPECT_EQ(grpc_server_add_secure_http2_port(server, addr.c_str(),
+                                              fake_creds),
             0);
 
   grpc_server_credentials_release(fake_creds);
   grpc_server_shutdown_and_notify(server, cq, nullptr);
-  grpc_completion_queue_pluck(cq, nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
-                              nullptr);
+  grpc_completion_queue_pluck(
+      cq, nullptr, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
 }

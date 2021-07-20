@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,9 +39,11 @@
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
 
-static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
+static bool append_filter(grpc_channel_stack_builder* builder,
+                          void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr,
+      nullptr);
 }
 
 void grpc_client_channel_init(void) {
@@ -55,7 +57,8 @@ void grpc_client_channel_init(void) {
   grpc_core::RegisterHttpProxyMapper();
   grpc_core::GlobalSubchannelPool::Init();
   grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
+      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      append_filter,
       const_cast<grpc_channel_filter*>(
           &grpc_core::ClientChannel::kFilterVtable));
   grpc_http_connect_register_handshaker_factory();

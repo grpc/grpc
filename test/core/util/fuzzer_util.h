@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,8 +36,8 @@ typedef struct {
 // get a byte from an input stream.
 uint8_t grpc_fuzzer_get_next_byte(input_stream* inp);
 
-// get a string and boolean values (if special is not null) from an input
-// stream.
+// get a string and boolean values (if special is not null) from an
+// input stream.
 char* grpc_fuzzer_get_next_string(input_stream* inp, bool* special);
 
 // get a uint32 value from an input stream.

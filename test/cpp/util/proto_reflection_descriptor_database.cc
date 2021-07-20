@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     const std::shared_ptr<grpc::Channel>& channel)
     : stub_(ServerReflection::NewStub(channel)) {}
 
-ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
+ProtoReflectionDescriptorDatabase::
+    ~ProtoReflectionDescriptorDatabase() {
   if (stream_) {
     stream_->WritesDone();
     Status status = stream_->Finish();
@@ -49,7 +50,8 @@ ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
                 "is the ServerReflection service enabled?\n");
       } else {
         fprintf(stderr,
-                "ServerReflectionInfo rpc failed. Error code: %d, message: %s, "
+                "ServerReflectionInfo rpc failed. Error code: %d, "
+                "message: %s, "
                 "debug info: %s\n",
                 static_cast<int>(status.error_code()),
                 status.error_message().c_str(),
@@ -78,10 +80,12 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
   }
 
   if (response.message_response_case() ==
-      ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
+      ServerReflectionResponse::MessageResponseCase::
+          kFileDescriptorResponse) {
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
-             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::
+                 kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileByName(%s)",
@@ -94,13 +98,13 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
               error.error_message().c_str());
     }
   } else {
-    gpr_log(
-        GPR_INFO,
-        "Error on FindFileByName(%s) response type\n"
-        "\tExpecting: %d\n\tReceived: %d",
-        filename.c_str(),
-        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
-        response.message_response_case());
+    gpr_log(GPR_INFO,
+            "Error on FindFileByName(%s) response type\n"
+            "\tExpecting: %d\n\tReceived: %d",
+            filename.c_str(),
+            ServerReflectionResponse::MessageResponseCase::
+                kFileDescriptorResponse,
+            response.message_response_case());
   }
 
   return cached_db_.FindFileByName(filename, output);
@@ -125,10 +129,12 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
   }
 
   if (response.message_response_case() ==
-      ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
+      ServerReflectionResponse::MessageResponseCase::
+          kFileDescriptorResponse) {
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
-             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::
+                 kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       missing_symbols_.insert(symbol_name);
@@ -143,13 +149,13 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
               error.error_message().c_str());
     }
   } else {
-    gpr_log(
-        GPR_INFO,
-        "Error on FindFileContainingSymbol(%s) response type\n"
-        "\tExpecting: %d\n\tReceived: %d",
-        symbol_name.c_str(),
-        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
-        response.message_response_case());
+    gpr_log(GPR_INFO,
+            "Error on FindFileContainingSymbol(%s) response type\n"
+            "\tExpecting: %d\n\tReceived: %d",
+            symbol_name.c_str(),
+            ServerReflectionResponse::MessageResponseCase::
+                kFileDescriptorResponse,
+            response.message_response_case());
   }
   return cached_db_.FindFileContainingSymbol(symbol_name, output);
 }
@@ -157,12 +163,13 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
 bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     const string& containing_type, int field_number,
     protobuf::FileDescriptorProto* output) {
-  if (cached_db_.FindFileContainingExtension(containing_type, field_number,
-                                             output)) {
+  if (cached_db_.FindFileContainingExtension(containing_type,
+                                             field_number, output)) {
     return true;
   }
 
-  if (missing_extensions_.find(containing_type) != missing_extensions_.end() &&
+  if (missing_extensions_.find(containing_type) !=
+          missing_extensions_.end() &&
       missing_extensions_[containing_type].find(field_number) !=
           missing_extensions_[containing_type].end()) {
     gpr_log(GPR_INFO, "nested map.");
@@ -181,10 +188,12 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
   }
 
   if (response.message_response_case() ==
-      ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse) {
+      ServerReflectionResponse::MessageResponseCase::
+          kFileDescriptorResponse) {
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
-             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::
+                 kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       if (missing_extensions_.find(containing_type) ==
@@ -193,7 +202,8 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
       }
       missing_extensions_[containing_type].insert(field_number);
       gpr_log(GPR_INFO,
-              "NOT_FOUND from server for FindFileContainingExtension(%s, %d)",
+              "NOT_FOUND from server for "
+              "FindFileContainingExtension(%s, %d)",
               containing_type.c_str(), field_number);
     } else {
       gpr_log(GPR_INFO,
@@ -208,12 +218,13 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
         "Error on FindFileContainingExtension(%s, %d) response type\n"
         "\tExpecting: %d\n\tReceived: %d",
         containing_type.c_str(), field_number,
-        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
+        ServerReflectionResponse::MessageResponseCase::
+            kFileDescriptorResponse,
         response.message_response_case());
   }
 
-  return cached_db_.FindFileContainingExtension(containing_type, field_number,
-                                                output);
+  return cached_db_.FindFileContainingExtension(containing_type,
+                                                field_number, output);
 }
 
 bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
@@ -235,15 +246,18 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::
           kAllExtensionNumbersResponse) {
-    auto number = response.all_extension_numbers_response().extension_number();
+    auto number =
+        response.all_extension_numbers_response().extension_number();
     *output = std::vector<int>(number.begin(), number.end());
     cached_extension_numbers_[extendee_type] = *output;
     return true;
   } else if (response.message_response_case() ==
-             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::
+                 kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
-      gpr_log(GPR_INFO, "NOT_FOUND from server for FindAllExtensionNumbers(%s)",
+      gpr_log(GPR_INFO,
+              "NOT_FOUND from server for FindAllExtensionNumbers(%s)",
               extendee_type.c_str());
     } else {
       gpr_log(GPR_INFO,
@@ -267,25 +281,29 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   }
 
   if (response.message_response_case() ==
-      ServerReflectionResponse::MessageResponseCase::kListServicesResponse) {
-    const ListServiceResponse& ls_response = response.list_services_response();
+      ServerReflectionResponse::MessageResponseCase::
+          kListServicesResponse) {
+    const ListServiceResponse& ls_response =
+        response.list_services_response();
     for (int i = 0; i < ls_response.service_size(); ++i) {
       (*output).push_back(ls_response.service(i).name());
     }
     return true;
   } else if (response.message_response_case() ==
-             ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
+             ServerReflectionResponse::MessageResponseCase::
+                 kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     gpr_log(GPR_INFO,
             "Error on GetServices()\n\tError code: %d\n"
             "\tError Message: %s",
             error.error_code(), error.error_message().c_str());
   } else {
-    gpr_log(
-        GPR_INFO,
-        "Error on GetServices() response type\n\tExpecting: %d\n\tReceived: %d",
-        ServerReflectionResponse::MessageResponseCase::kListServicesResponse,
-        response.message_response_case());
+    gpr_log(GPR_INFO,
+            "Error on GetServices() response type\n\tExpecting: "
+            "%d\n\tReceived: %d",
+            ServerReflectionResponse::MessageResponseCase::
+                kListServicesResponse,
+            response.message_response_case());
   }
   return false;
 }
@@ -302,7 +320,8 @@ void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
     const grpc::reflection::v1alpha::FileDescriptorResponse& response) {
   for (int i = 0; i < response.file_descriptor_proto_size(); ++i) {
     const protobuf::FileDescriptorProto file_proto =
-        ParseFileDescriptorProtoResponse(response.file_descriptor_proto(i));
+        ParseFileDescriptorProtoResponse(
+            response.file_descriptor_proto(i));
     if (known_files_.find(file_proto.name()) == known_files_.end()) {
       known_files_.insert(file_proto.name());
       cached_db_.Add(file_proto);

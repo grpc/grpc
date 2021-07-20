@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,8 +31,9 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif
 
-// MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
-// should be skipped based on a decision made at SetUp time.
+// MAYBE_SKIP_TEST is a macro to determine if this particular test
+// configuration should be skipped based on a decision made at SetUp
+// time.
 #define MAYBE_SKIP_TEST \
   do {                  \
     if (do_not_test_) { \
@@ -70,8 +71,9 @@ TEST_F(TimerTest, NoTimers) {
   grpc_core::ExecCtx exec_ctx;
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1500));
 
-  // We expect to get 1 wakeup per second. Sometimes we also get a wakeup
-  // during initialization, so in 1.5 seconds we expect to get 1 or 2 wakeups.
+  // We expect to get 1 wakeup per second. Sometimes we also get a
+  // wakeup during initialization, so in 1.5 seconds we expect to get 1
+  // or 2 wakeups.
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   GPR_ASSERT(wakeups == 1 || wakeups == 2);
 }
@@ -92,9 +94,9 @@ TEST_F(TimerTest, OneTimerExpires) {
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1500));
   GPR_ASSERT(1 == timer_fired);
 
-  // We expect to get 1 wakeup/second + 1 wakeup for the expired timer + maybe 1
-  // wakeup during initialization. i.e. in 1.5 seconds we expect 2 or 3 wakeups.
-  // Actual number of wakeups is more due to bug
+  // We expect to get 1 wakeup/second + 1 wakeup for the expired timer +
+  // maybe 1 wakeup during initialization. i.e. in 1.5 seconds we expect
+  // 2 or 3 wakeups. Actual number of wakeups is more due to bug
   // https://github.com/grpc/grpc/issues/19947
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
@@ -107,7 +109,8 @@ TEST_F(TimerTest, MultipleTimersExpire) {
   grpc_timer timers[kNumTimers];
   int timer_fired = 0;
   for (int i = 0; i < kNumTimers; ++i) {
-    grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 500 + i,
+    grpc_timer_init(&timers[i],
+                    grpc_core::ExecCtx::Get()->Now() + 500 + i,
                     GRPC_CLOSURE_CREATE(
                         [](void* arg, grpc_error_handle) {
                           int* timer_fired = static_cast<int*>(arg);
@@ -119,9 +122,9 @@ TEST_F(TimerTest, MultipleTimersExpire) {
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1500));
   GPR_ASSERT(kNumTimers == timer_fired);
 
-  // We expect to get 1 wakeup/second + 1 wakeup for per timer fired + maybe 1
-  // wakeup during initialization. i.e. in 1.5 seconds we expect 11 or 12
-  // wakeups. Actual number of wakeups is more due to bug
+  // We expect to get 1 wakeup/second + 1 wakeup for per timer fired +
+  // maybe 1 wakeup during initialization. i.e. in 1.5 seconds we expect
+  // 11 or 12 wakeups. Actual number of wakeups is more due to bug
   // https://github.com/grpc/grpc/issues/19947
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
@@ -134,7 +137,8 @@ TEST_F(TimerTest, CancelSomeTimers) {
   grpc_timer timers[kNumTimers];
   int timer_fired = 0;
   for (int i = 0; i < kNumTimers; ++i) {
-    grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 500 + i,
+    grpc_timer_init(&timers[i],
+                    grpc_core::ExecCtx::Get()->Now() + 500 + i,
                     GRPC_CLOSURE_CREATE(
                         [](void* arg, grpc_error_handle error) {
                           if (error == GRPC_ERROR_CANCELLED) {
@@ -152,9 +156,9 @@ TEST_F(TimerTest, CancelSomeTimers) {
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1500));
   GPR_ASSERT(kNumTimers / 2 == timer_fired);
 
-  // We expect to get 1 wakeup/second + 1 wakeup per timer fired + maybe 1
-  // wakeup during initialization. i.e. in 1.5 seconds we expect 6 or 7 wakeups.
-  // Actual number of wakeups is more due to bug
+  // We expect to get 1 wakeup/second + 1 wakeup per timer fired + maybe
+  // 1 wakeup during initialization. i.e. in 1.5 seconds we expect 6 or
+  // 7 wakeups. Actual number of wakeups is more due to bug
   // https://github.com/grpc/grpc/issues/19947
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
@@ -165,9 +169,10 @@ TEST_F(TimerTest, CancelSomeTimers) {
 TEST_F(TimerTest, DISABLED_TimerNotCanceled) {
   grpc_core::ExecCtx exec_ctx;
   grpc_timer timer;
-  grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 10000,
-                  GRPC_CLOSURE_CREATE([](void*, grpc_error_handle) {}, nullptr,
-                                      grpc_schedule_on_exec_ctx));
+  grpc_timer_init(
+      &timer, grpc_core::ExecCtx::Get()->Now() + 10000,
+      GRPC_CLOSURE_CREATE([](void*, grpc_error_handle) {}, nullptr,
+                          grpc_schedule_on_exec_ctx));
 }
 
 // Enable the following test after
@@ -182,7 +187,8 @@ TEST_F(TimerTest, DISABLED_CancelRace) {
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
                     GRPC_CLOSURE_CREATE(
                         [](void* arg, grpc_error_handle /*error*/) {
-                          grpc_timer* timer = static_cast<grpc_timer*>(arg);
+                          grpc_timer* timer =
+                              static_cast<grpc_timer*>(arg);
                           if (timer) {
                             grpc_timer_cancel(timer);
                           }
@@ -212,7 +218,8 @@ TEST_F(TimerTest, DISABLED_CancelNextTimer) {
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
                     GRPC_CLOSURE_CREATE(
                         [](void* arg, grpc_error_handle /*error*/) {
-                          grpc_timer* timer = static_cast<grpc_timer*>(arg);
+                          grpc_timer* timer =
+                              static_cast<grpc_timer*>(arg);
                           if (timer) {
                             grpc_timer_cancel(timer);
                           }

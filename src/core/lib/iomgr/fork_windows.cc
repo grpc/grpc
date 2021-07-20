@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,11 +26,13 @@
 #include <grpc/support/log.h>
 
 /*
- * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
- *       AROUND VERY SPECIFIC USE CASES.
+ * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO
+ * WORK AROUND VERY SPECIFIC USE CASES.
  */
 
-void grpc_prefork() { gpr_log(GPR_ERROR, "Forking not supported on Windows"); }
+void grpc_prefork() {
+  gpr_log(GPR_ERROR, "Forking not supported on Windows");
+}
 
 void grpc_postfork_parent() {}
 

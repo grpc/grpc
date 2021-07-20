@@ -10,18 +10,18 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
 #ifndef GRPC_INTERNAL_COMPILER_CPP_GENERATOR_H
 #define GRPC_INTERNAL_COMPILER_CPP_GENERATOR_H
 
-// cpp_generator.h/.cc do not directly depend on GRPC/ProtoBuf, such that they
-// can be used to generate code for other serialization systems, such as
-// FlatBuffers.
+// cpp_generator.h/.cc do not directly depend on GRPC/ProtoBuf, such
+// that they can be used to generate code for other serialization
+// systems, such as FlatBuffers.
 
 #include <memory>
 #include <string>
@@ -56,7 +56,8 @@ struct Parameters {
   std::string grpc_search_path;
   // Generate Google Mock code to facilitate unit testing.
   bool generate_mock_code;
-  // Google Mock search path, when non-empty, local includes will be used.
+  // Google Mock search path, when non-empty, local includes will be
+  // used.
   std::string gmock_search_path;
   // *EXPERIMENTAL* Additional include files in grpc.pb.h
   std::vector<std::string> additional_header_includes;

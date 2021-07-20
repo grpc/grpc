@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include "src/core/lib/gprpp/match.h"
 #include <gtest/gtest.h>
@@ -19,13 +19,14 @@ namespace grpc_core {
 namespace testing {
 
 TEST(MatchTest, Test) {
-  EXPECT_EQ(Match(
-                absl::variant<int, double>(1.9), [](int) -> int { abort(); },
-                [](double x) -> int {
-                  EXPECT_EQ(x, 1.9);
-                  return 42;
-                }),
-            42);
+  EXPECT_EQ(
+      Match(
+          absl::variant<int, double>(1.9), [](int) -> int { abort(); },
+          [](double x) -> int {
+            EXPECT_EQ(x, 1.9);
+            return 42;
+          }),
+      42);
   EXPECT_EQ(Match(
                 absl::variant<int, double>(3),
                 [](int x) -> int {

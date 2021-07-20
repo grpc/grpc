@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H
@@ -34,14 +34,15 @@
 
 namespace grpc_core {
 
-// CelAuthorizationEngine makes an AuthorizationDecision to ALLOW or DENY the
-// current action based on the condition fields in provided RBAC policies.
-// The engine may be constructed with one or two policies. If two polcies,
-// the first policy is deny-if-matched and the second is allow-if-matched.
-// The engine returns UNDECIDED decision if it fails to find a match in any
-// policy. This engine ignores the principal and permission fields in RBAC
-// policies. It is the caller's responsibility to provide RBAC policies that
-// are compatible with this engine.
+// CelAuthorizationEngine makes an AuthorizationDecision to ALLOW or
+// DENY the current action based on the condition fields in provided
+// RBAC policies. The engine may be constructed with one or two
+// policies. If two polcies, the first policy is deny-if-matched and the
+// second is allow-if-matched. The engine returns UNDECIDED decision if
+// it fails to find a match in any policy. This engine ignores the
+// principal and permission fields in RBAC policies. It is the caller's
+// responsibility to provide RBAC policies that are compatible with this
+// engine.
 //
 // Example:
 // CelAuthorizationEngine* engine =
@@ -49,9 +50,10 @@ namespace grpc_core {
 // engine->Evaluate(evaluate_args); // returns authorization decision.
 class CelAuthorizationEngine {
  public:
-  // rbac_policies must be a vector containing either a single policy of any
-  // kind, or one deny policy and one allow policy, in that order.
-  static std::unique_ptr<CelAuthorizationEngine> CreateCelAuthorizationEngine(
+  // rbac_policies must be a vector containing either a single policy of
+  // any kind, or one deny policy and one allow policy, in that order.
+  static std::unique_ptr<CelAuthorizationEngine>
+  CreateCelAuthorizationEngine(
       const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies);
 
   // Users should use the CreateCelAuthorizationEngine factory function
@@ -81,4 +83,5 @@ class CelAuthorizationEngine {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H */
+#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H \
+        */

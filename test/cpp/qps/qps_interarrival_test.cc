@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -44,7 +44,8 @@ static void RunTest(RandomDistInterface&& r, int threads,
   std::cout << title << " Distribution" << std::endl;
   std::cout << "Value, Percentile" << std::endl;
   for (double pct = 0.0; pct < 100.0; pct += 1.0) {
-    std::cout << grpc_histogram_percentile(h, pct) << "," << pct << std::endl;
+    std::cout << grpc_histogram_percentile(h, pct) << "," << pct
+              << std::endl;
   }
 
   grpc_histogram_destroy(h);

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,8 +38,10 @@
 #define ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME "Hello Google"
 #define ALTS_TSI_HANDSHAKER_TEST_CONSUMED_BYTES "Hello "
 #define ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES "Google"
-#define ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY "chapi@service.google.com"
-#define ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL "TSI_PRIVACY_AND_INTEGRITY"
+#define ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY \
+  "chapi@service.google.com"
+#define ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL \
+  "TSI_PRIVACY_AND_INTEGRITY"
 #define ALTS_TSI_HANDSHAKER_TEST_KEY_DATA \
   "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOPABCDEFGHIJKL"
 #define ALTS_TSI_HANDSHAKER_TEST_BUFFER_SIZE 100
@@ -48,7 +50,8 @@
 #define ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MINOR 2
 #define ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MAJOR 2
 #define ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MINOR 1
-#define ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY "chapilocal@service.google.com"
+#define ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY \
+  "chapilocal@service.google.com"
 #define ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL \
   "test application protocol"
 #define ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL "test record protocol"
@@ -56,19 +59,25 @@
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY "peer"
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE "attributes"
 
-using grpc_core::internal::alts_handshaker_client_check_fields_for_testing;
-using grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing;
+using grpc_core::internal::
+    alts_handshaker_client_check_fields_for_testing;
+using grpc_core::internal::
+    alts_handshaker_client_get_handshaker_for_testing;
 using grpc_core::internal::
     alts_handshaker_client_get_recv_buffer_addr_for_testing;
 using grpc_core::internal::
     alts_handshaker_client_on_status_received_for_testing;
 using grpc_core::internal::alts_handshaker_client_ref_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_cb_for_testing;
-using grpc_core::internal::alts_handshaker_client_set_fields_for_testing;
-using grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing;
+using grpc_core::internal::
+    alts_handshaker_client_set_fields_for_testing;
+using grpc_core::internal::
+    alts_handshaker_client_set_recv_bytes_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
-using grpc_core::internal::alts_tsi_handshaker_get_is_client_for_testing;
-using grpc_core::internal::alts_tsi_handshaker_set_client_vtable_for_testing;
+using grpc_core::internal::
+    alts_tsi_handshaker_get_is_client_for_testing;
+using grpc_core::internal::
+    alts_tsi_handshaker_set_client_vtable_for_testing;
 static bool should_handshaker_client_api_succeed = true;
 
 /* ALTS mock notification. */
@@ -120,15 +129,16 @@ static void wait(notification* n) {
 }
 
 /**
- * This method mocks ALTS handshaker service to generate handshaker response
- * for a specific request.
+ * This method mocks ALTS handshaker service to generate handshaker
+ * response for a specific request.
  */
 static grpc_byte_buffer* generate_handshaker_response(
     alts_handshaker_response_type type) {
   upb::Arena arena;
   grpc_gcp_HandshakerResult* result;
   grpc_gcp_Identity* peer_identity;
-  grpc_gcp_HandshakerResp* resp = grpc_gcp_HandshakerResp_new(arena.ptr());
+  grpc_gcp_HandshakerResp* resp =
+      grpc_gcp_HandshakerResp_new(arena.ptr());
   grpc_gcp_HandshakerStatus* status =
       grpc_gcp_HandshakerResp_mutable_status(resp, arena.ptr());
   grpc_gcp_HandshakerStatus_set_code(status, 0);
@@ -146,13 +156,16 @@ static grpc_byte_buffer* generate_handshaker_response(
           resp, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
       grpc_gcp_HandshakerResp_set_bytes_consumed(
           resp, strlen(ALTS_TSI_HANDSHAKER_TEST_CONSUMED_BYTES));
-      result = grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
-      peer_identity =
-          grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
+      result =
+          grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
+      peer_identity = grpc_gcp_HandshakerResult_mutable_peer_identity(
+          result, arena.ptr());
       grpc_gcp_Identity_attributes_set(
           peer_identity,
-          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
-          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
+          upb_strview_makez(
+              ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
+          upb_strview_makez(
+              ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
           arena.ptr());
       grpc_gcp_Identity_set_service_account(
           peer_identity,
@@ -160,33 +173,38 @@ static grpc_byte_buffer* generate_handshaker_response(
       grpc_gcp_HandshakerResult_set_key_data(
           result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_KEY_DATA));
       GPR_ASSERT(grpc_gcp_handshaker_resp_set_peer_rpc_versions(
-          resp, arena.ptr(), ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MAJOR,
+          resp, arena.ptr(),
+          ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MAJOR,
           ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MINOR,
           ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MAJOR,
           ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MINOR));
-      local_identity =
-          grpc_gcp_HandshakerResult_mutable_local_identity(result, arena.ptr());
+      local_identity = grpc_gcp_HandshakerResult_mutable_local_identity(
+          result, arena.ptr());
       grpc_gcp_Identity_set_service_account(
           local_identity,
           upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY));
       grpc_gcp_HandshakerResult_set_application_protocol(
-          result,
-          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
+          result, upb_strview_makez(
+                      ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
       grpc_gcp_HandshakerResult_set_record_protocol(
-          result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+          result,
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       grpc_gcp_HandshakerResult_set_max_frame_size(
           result, ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE);
       break;
     case SERVER_NEXT:
       grpc_gcp_HandshakerResp_set_bytes_consumed(
           resp, strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
-      result = grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
-      peer_identity =
-          grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
+      result =
+          grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
+      peer_identity = grpc_gcp_HandshakerResult_mutable_peer_identity(
+          result, arena.ptr());
       grpc_gcp_Identity_attributes_set(
           peer_identity,
-          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
-          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
+          upb_strview_makez(
+              ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
+          upb_strview_makez(
+              ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
           arena.ptr());
       grpc_gcp_Identity_set_service_account(
           peer_identity,
@@ -194,27 +212,31 @@ static grpc_byte_buffer* generate_handshaker_response(
       grpc_gcp_HandshakerResult_set_key_data(
           result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_KEY_DATA));
       GPR_ASSERT(grpc_gcp_handshaker_resp_set_peer_rpc_versions(
-          resp, arena.ptr(), ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MAJOR,
+          resp, arena.ptr(),
+          ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MAJOR,
           ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MINOR,
           ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MAJOR,
           ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MINOR));
-      local_identity =
-          grpc_gcp_HandshakerResult_mutable_local_identity(result, arena.ptr());
+      local_identity = grpc_gcp_HandshakerResult_mutable_local_identity(
+          result, arena.ptr());
       grpc_gcp_Identity_set_service_account(
           local_identity,
           upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY));
       grpc_gcp_HandshakerResult_set_application_protocol(
-          result,
-          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
+          result, upb_strview_makez(
+                      ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
       grpc_gcp_HandshakerResult_set_record_protocol(
-          result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+          result,
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       break;
     case FAILED:
-      grpc_gcp_HandshakerStatus_set_code(status, 3 /* INVALID ARGUMENT */);
+      grpc_gcp_HandshakerStatus_set_code(status,
+                                         3 /* INVALID ARGUMENT */);
       break;
   }
   size_t buf_len;
-  char* buf = grpc_gcp_HandshakerResp_serialize(resp, arena.ptr(), &buf_len);
+  char* buf =
+      grpc_gcp_HandshakerResp_serialize(resp, arena.ptr(), &buf_len);
   grpc_slice slice = gpr_slice_from_copied_buffer(buf, buf_len);
   if (type == INVALID) {
     grpc_slice bad_slice =
@@ -229,20 +251,21 @@ static grpc_byte_buffer* generate_handshaker_response(
   return buffer;
 }
 
-static void check_must_not_be_called(tsi_result /*status*/, void* /*user_data*/,
-                                     const unsigned char* /*bytes_to_send*/,
-                                     size_t /*bytes_to_send_size*/,
-                                     tsi_handshaker_result* /*result*/) {
+static void check_must_not_be_called(
+    tsi_result /*status*/, void* /*user_data*/,
+    const unsigned char* /*bytes_to_send*/,
+    size_t /*bytes_to_send_size*/, tsi_handshaker_result* /*result*/) {
   GPR_ASSERT(0);
 }
 
-static void on_client_start_success_cb(tsi_result status, void* user_data,
-                                       const unsigned char* bytes_to_send,
-                                       size_t bytes_to_send_size,
-                                       tsi_handshaker_result* result) {
+static void on_client_start_success_cb(
+    tsi_result status, void* user_data,
+    const unsigned char* bytes_to_send, size_t bytes_to_send_size,
+    tsi_handshaker_result* result) {
   GPR_ASSERT(status == TSI_OK);
   GPR_ASSERT(user_data == nullptr);
-  GPR_ASSERT(bytes_to_send_size == strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
+  GPR_ASSERT(bytes_to_send_size ==
+             strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
   GPR_ASSERT(memcmp(bytes_to_send, ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME,
                     bytes_to_send_size) == 0);
   GPR_ASSERT(result == nullptr);
@@ -257,19 +280,20 @@ static void on_client_start_success_cb(tsi_result status, void* user_data,
   /* Validate unused bytes. */
   const unsigned char* unused_bytes = nullptr;
   size_t unused_bytes_size = 0;
-  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(result, &unused_bytes,
-                                                    &unused_bytes_size) ==
+  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
+                 result, &unused_bytes, &unused_bytes_size) ==
              TSI_INVALID_ARGUMENT);
   signal(&tsi_to_caller_notification);
 }
 
-static void on_server_start_success_cb(tsi_result status, void* user_data,
-                                       const unsigned char* bytes_to_send,
-                                       size_t bytes_to_send_size,
-                                       tsi_handshaker_result* result) {
+static void on_server_start_success_cb(
+    tsi_result status, void* user_data,
+    const unsigned char* bytes_to_send, size_t bytes_to_send_size,
+    tsi_handshaker_result* result) {
   GPR_ASSERT(status == TSI_OK);
   GPR_ASSERT(user_data == nullptr);
-  GPR_ASSERT(bytes_to_send_size == strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
+  GPR_ASSERT(bytes_to_send_size ==
+             strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
   GPR_ASSERT(memcmp(bytes_to_send, ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME,
                     bytes_to_send_size) == 0);
   GPR_ASSERT(result == nullptr);
@@ -284,25 +308,26 @@ static void on_server_start_success_cb(tsi_result status, void* user_data,
   /* Validate unused bytes. */
   const unsigned char* unused_bytes = nullptr;
   size_t unused_bytes_size = 0;
-  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(result, &unused_bytes,
-                                                    &unused_bytes_size) ==
+  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
+                 result, &unused_bytes, &unused_bytes_size) ==
              TSI_INVALID_ARGUMENT);
   signal(&tsi_to_caller_notification);
 }
 
-static void on_client_next_success_cb(tsi_result status, void* user_data,
-                                      const unsigned char* bytes_to_send,
-                                      size_t bytes_to_send_size,
-                                      tsi_handshaker_result* result) {
+static void on_client_next_success_cb(
+    tsi_result status, void* user_data,
+    const unsigned char* bytes_to_send, size_t bytes_to_send_size,
+    tsi_handshaker_result* result) {
   GPR_ASSERT(status == TSI_OK);
   GPR_ASSERT(user_data == nullptr);
-  GPR_ASSERT(bytes_to_send_size == strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
+  GPR_ASSERT(bytes_to_send_size ==
+             strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
   GPR_ASSERT(memcmp(bytes_to_send, ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME,
                     bytes_to_send_size) == 0);
   GPR_ASSERT(result != nullptr);
-  // Validate max frame size value after Frame Size Negotiation. Here peer max
-  // frame size is greater than default value, and user specified max frame size
-  // is absent.
+  // Validate max frame size value after Frame Size Negotiation. Here
+  // peer max frame size is greater than default value, and user
+  // specified max frame size is absent.
   tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
   GPR_ASSERT(tsi_handshaker_result_create_zero_copy_grpc_protector(
                  result, nullptr, &zero_copy_protector) == TSI_OK);
@@ -313,9 +338,11 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
   /* Validate peer identity. */
   tsi_peer peer;
-  GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) ==
+             TSI_OK);
   GPR_ASSERT(peer.property_count == kTsiAltsNumOfPeerProperties);
-  GPR_ASSERT(memcmp(TSI_ALTS_CERTIFICATE_TYPE, peer.properties[0].value.data,
+  GPR_ASSERT(memcmp(TSI_ALTS_CERTIFICATE_TYPE,
+                    peer.properties[0].value.data,
                     peer.properties[0].value.length) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY,
                     peer.properties[1].value.data,
@@ -328,17 +355,21 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   GPR_ASSERT(ctx != nullptr);
   upb_strview application_protocol =
       grpc_gcp_AltsContext_application_protocol(ctx);
-  upb_strview record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
-  upb_strview peer_account = grpc_gcp_AltsContext_peer_service_account(ctx);
-  upb_strview local_account = grpc_gcp_AltsContext_local_service_account(ctx);
+  upb_strview record_protocol =
+      grpc_gcp_AltsContext_record_protocol(ctx);
+  upb_strview peer_account =
+      grpc_gcp_AltsContext_peer_service_account(ctx);
+  upb_strview local_account =
+      grpc_gcp_AltsContext_local_service_account(ctx);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL,
-                    application_protocol.data, application_protocol.size) == 0);
+                    application_protocol.data,
+                    application_protocol.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
                     record_protocol.data, record_protocol.size) == 0);
-  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY, peer_account.data,
-                    peer_account.size) == 0);
-  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
-                    local_account.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY,
+                    peer_account.data, peer_account.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY,
+                    local_account.data, local_account.size) == 0);
   size_t iter = UPB_MAP_BEGIN;
   grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
       grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
@@ -351,10 +382,11 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
         const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
             peer_attributes_entry));
     GPR_ASSERT(upb_strview_eql(
-        key, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+        key, upb_strview_makez(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
     GPR_ASSERT(upb_strview_eql(
-        val,
-        upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+        val, upb_strview_makez(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
     peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   }
@@ -366,11 +398,12 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
   size_t bytes_size = 0;
-  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(result, &bytes,
-                                                    &bytes_size) == TSI_OK);
-  GPR_ASSERT(bytes_size == strlen(ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES));
-  GPR_ASSERT(memcmp(bytes, ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES, bytes_size) ==
-             0);
+  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
+                 result, &bytes, &bytes_size) == TSI_OK);
+  GPR_ASSERT(bytes_size ==
+             strlen(ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES));
+  GPR_ASSERT(memcmp(bytes, ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES,
+                    bytes_size) == 0);
   /* Validate frame protector. */
   tsi_frame_protector* protector = nullptr;
   GPR_ASSERT(tsi_handshaker_result_create_frame_protector(
@@ -381,18 +414,18 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   signal(&tsi_to_caller_notification);
 }
 
-static void on_server_next_success_cb(tsi_result status, void* user_data,
-                                      const unsigned char* bytes_to_send,
-                                      size_t bytes_to_send_size,
-                                      tsi_handshaker_result* result) {
+static void on_server_next_success_cb(
+    tsi_result status, void* user_data,
+    const unsigned char* bytes_to_send, size_t bytes_to_send_size,
+    tsi_handshaker_result* result) {
   GPR_ASSERT(status == TSI_OK);
   GPR_ASSERT(user_data == nullptr);
   GPR_ASSERT(bytes_to_send_size == 0);
   GPR_ASSERT(bytes_to_send == nullptr);
   GPR_ASSERT(result != nullptr);
-  // Validate max frame size value after Frame Size Negotiation. The negotiated
-  // frame size value equals minimum send frame size, due to the absence of peer
-  // max frame size.
+  // Validate max frame size value after Frame Size Negotiation. The
+  // negotiated frame size value equals minimum send frame size, due to
+  // the absence of peer max frame size.
   tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
   size_t user_specified_max_frame_size =
       ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE;
@@ -406,9 +439,11 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
   /* Validate peer identity. */
   tsi_peer peer;
-  GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) ==
+             TSI_OK);
   GPR_ASSERT(peer.property_count == kTsiAltsNumOfPeerProperties);
-  GPR_ASSERT(memcmp(TSI_ALTS_CERTIFICATE_TYPE, peer.properties[0].value.data,
+  GPR_ASSERT(memcmp(TSI_ALTS_CERTIFICATE_TYPE,
+                    peer.properties[0].value.data,
                     peer.properties[0].value.length) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY,
                     peer.properties[1].value.data,
@@ -421,17 +456,21 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   GPR_ASSERT(ctx != nullptr);
   upb_strview application_protocol =
       grpc_gcp_AltsContext_application_protocol(ctx);
-  upb_strview record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
-  upb_strview peer_account = grpc_gcp_AltsContext_peer_service_account(ctx);
-  upb_strview local_account = grpc_gcp_AltsContext_local_service_account(ctx);
+  upb_strview record_protocol =
+      grpc_gcp_AltsContext_record_protocol(ctx);
+  upb_strview peer_account =
+      grpc_gcp_AltsContext_peer_service_account(ctx);
+  upb_strview local_account =
+      grpc_gcp_AltsContext_local_service_account(ctx);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL,
-                    application_protocol.data, application_protocol.size) == 0);
+                    application_protocol.data,
+                    application_protocol.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
                     record_protocol.data, record_protocol.size) == 0);
-  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY, peer_account.data,
-                    peer_account.size) == 0);
-  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
-                    local_account.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY,
+                    peer_account.data, peer_account.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY,
+                    local_account.data, local_account.size) == 0);
   size_t iter = UPB_MAP_BEGIN;
   grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
       grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
@@ -444,10 +483,11 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
         const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
             peer_attributes_entry));
     GPR_ASSERT(upb_strview_eql(
-        key, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+        key, upb_strview_makez(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
     GPR_ASSERT(upb_strview_eql(
-        val,
-        upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+        val, upb_strview_makez(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
     peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   }
@@ -460,8 +500,8 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
   size_t bytes_size = 0;
-  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(result, &bytes,
-                                                    &bytes_size) == TSI_OK);
+  GPR_ASSERT(tsi_handshaker_result_get_unused_bytes(
+                 result, &bytes, &bytes_size) == TSI_OK);
   GPR_ASSERT(bytes_size == 0);
   GPR_ASSERT(bytes == nullptr);
   /* Validate frame protector. */
@@ -521,13 +561,15 @@ static tsi_result mock_next(alts_handshaker_client* client,
   }
   alts_tsi_handshaker* handshaker =
       alts_handshaker_client_get_handshaker_for_testing(client);
-  bool is_client = alts_tsi_handshaker_get_is_client_for_testing(handshaker);
+  bool is_client =
+      alts_tsi_handshaker_get_is_client_for_testing(handshaker);
   tsi_handshaker_on_next_done_cb cb =
       is_client ? on_client_next_success_cb : on_server_next_success_cb;
   alts_handshaker_client_set_cb_for_testing(client, cb);
-  alts_handshaker_client_set_recv_bytes_for_testing(client, bytes_received);
-  alts_handshaker_client_check_fields_for_testing(client, cb, nullptr, true,
-                                                  bytes_received);
+  alts_handshaker_client_set_recv_bytes_for_testing(client,
+                                                    bytes_received);
+  alts_handshaker_client_check_fields_for_testing(client, cb, nullptr,
+                                                  true, bytes_received);
   GPR_ASSERT(bytes_received != nullptr);
   GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*bytes_received),
                     ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
@@ -537,8 +579,9 @@ static tsi_result mock_next(alts_handshaker_client* client,
       grpc_slice_from_static_string(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME);
   grpc_byte_buffer** recv_buffer_ptr =
       alts_handshaker_client_get_recv_buffer_addr_for_testing(client);
-  *recv_buffer_ptr = is_client ? generate_handshaker_response(CLIENT_NEXT)
-                               : generate_handshaker_response(SERVER_NEXT);
+  *recv_buffer_ptr = is_client
+                         ? generate_handshaker_response(CLIENT_NEXT)
+                         : generate_handshaker_response(SERVER_NEXT);
   alts_handshaker_client_set_recv_bytes_for_testing(client, &out_frame);
   cb_event = client;
   signal(&caller_to_tsi_notification);
@@ -548,20 +591,21 @@ static tsi_result mock_next(alts_handshaker_client* client,
 
 static void mock_destruct(alts_handshaker_client* /*client*/) {}
 
-static alts_handshaker_client_vtable vtable = {mock_client_start,
-                                               mock_server_start, mock_next,
-                                               mock_shutdown, mock_destruct};
+static alts_handshaker_client_vtable vtable = {
+    mock_client_start, mock_server_start, mock_next, mock_shutdown,
+    mock_destruct};
 
 static tsi_handshaker* create_test_handshaker(bool is_client) {
   tsi_handshaker* handshaker = nullptr;
   grpc_alts_credentials_options* options =
       grpc_alts_credentials_client_options_create();
   alts_tsi_handshaker_create(options, "target_name",
-                             ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, is_client,
-                             nullptr, &handshaker, 0);
+                             ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
+                             is_client, nullptr, &handshaker, 0);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker, &vtable);
+  alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker,
+                                                    &vtable);
   grpc_alts_credentials_options_destroy(options);
   return handshaker;
 }
@@ -576,12 +620,12 @@ static void check_handshaker_next_invalid_input() {
   /* Initialization. */
   tsi_handshaker* handshaker = create_test_handshaker(true);
   /* Check nullptr handshaker. */
-  GPR_ASSERT(tsi_handshaker_next(nullptr, nullptr, 0, nullptr, nullptr, nullptr,
-                                 check_must_not_be_called,
+  GPR_ASSERT(tsi_handshaker_next(nullptr, nullptr, 0, nullptr, nullptr,
+                                 nullptr, check_must_not_be_called,
                                  nullptr) == TSI_INVALID_ARGUMENT);
   /* Check nullptr callback. */
-  GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
-                                 nullptr, nullptr,
+  GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr,
+                                 nullptr, nullptr, nullptr,
                                  nullptr) == TSI_INVALID_ARGUMENT);
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
@@ -589,7 +633,8 @@ static void check_handshaker_next_invalid_input() {
 
 static void check_handshaker_shutdown_invalid_input() {
   /* Initialization. */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client */);
   /* Check nullptr handshaker. */
   tsi_handshaker_shutdown(nullptr);
   /* Cleanup. */
@@ -607,27 +652,31 @@ static void check_handshaker_next_success() {
       create_test_handshaker(false /* is_client */);
   /* Client start. */
   GPR_ASSERT(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr,
-                                 nullptr, nullptr, on_client_start_success_cb,
+                                 nullptr, nullptr,
+                                 on_client_start_success_cb,
                                  nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Client next. */
-  GPR_ASSERT(tsi_handshaker_next(
-                 client_handshaker,
-                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                 nullptr, on_client_next_success_cb, nullptr) == TSI_ASYNC);
+  GPR_ASSERT(
+      tsi_handshaker_next(
+          client_handshaker,
+          (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+          strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+          nullptr, on_client_next_success_cb, nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Server start. */
   GPR_ASSERT(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr,
-                                 nullptr, nullptr, on_server_start_success_cb,
+                                 nullptr, nullptr,
+                                 on_server_start_success_cb,
                                  nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Server next. */
-  GPR_ASSERT(tsi_handshaker_next(
-                 server_handshaker,
-                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                 nullptr, on_server_next_success_cb, nullptr) == TSI_ASYNC);
+  GPR_ASSERT(
+      tsi_handshaker_next(
+          server_handshaker,
+          (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+          strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+          nullptr, on_server_next_success_cb, nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
@@ -635,19 +684,21 @@ static void check_handshaker_next_success() {
 }
 
 static void check_handshaker_next_with_shutdown() {
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client*/);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client*/);
   /* next(success) -- shutdown(success) -- next (fail) */
-  GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
-                                 nullptr, on_client_start_success_cb,
-                                 nullptr) == TSI_ASYNC);
+  GPR_ASSERT(tsi_handshaker_next(
+                 handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                 on_client_start_success_cb, nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   tsi_handshaker_shutdown(handshaker);
-  GPR_ASSERT(tsi_handshaker_next(
-                 handshaker,
-                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                 nullptr, on_client_next_success_cb,
-                 nullptr) == TSI_HANDSHAKE_SHUTDOWN);
+  GPR_ASSERT(
+      tsi_handshaker_next(
+          handshaker,
+          (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+          strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+          nullptr, on_client_next_success_cb,
+          nullptr) == TSI_HANDSHAKE_SHUTDOWN);
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
 }
@@ -659,7 +710,8 @@ static void check_handle_response_with_shutdown(void* /*unused*/) {
 
 static void check_handshaker_next_failure() {
   /**
-   * Create handshakers for which internal mock client is always going to fail.
+   * Create handshakers for which internal mock client is always going
+   * to fail.
    */
   tsi_handshaker* client_handshaker =
       create_test_handshaker(true /* is_client */);
@@ -667,26 +719,30 @@ static void check_handshaker_next_failure() {
       create_test_handshaker(false /* is_client */);
   /* Client start. */
   GPR_ASSERT(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr,
-                                 nullptr, nullptr, check_must_not_be_called,
+                                 nullptr, nullptr,
+                                 check_must_not_be_called,
                                  nullptr) == TSI_INTERNAL_ERROR);
   /* Server start. */
   GPR_ASSERT(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr,
-                                 nullptr, nullptr, check_must_not_be_called,
+                                 nullptr, nullptr,
+                                 check_must_not_be_called,
                                  nullptr) == TSI_INTERNAL_ERROR);
   /* Server next. */
-  GPR_ASSERT(tsi_handshaker_next(
-                 server_handshaker,
-                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                 nullptr, check_must_not_be_called,
-                 nullptr) == TSI_INTERNAL_ERROR);
+  GPR_ASSERT(
+      tsi_handshaker_next(
+          server_handshaker,
+          (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+          strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+          nullptr, check_must_not_be_called,
+          nullptr) == TSI_INTERNAL_ERROR);
   /* Client next. */
-  GPR_ASSERT(tsi_handshaker_next(
-                 client_handshaker,
-                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                 nullptr, check_must_not_be_called,
-                 nullptr) == TSI_INTERNAL_ERROR);
+  GPR_ASSERT(
+      tsi_handshaker_next(
+          client_handshaker,
+          (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+          strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+          nullptr, check_must_not_be_called,
+          nullptr) == TSI_INTERNAL_ERROR);
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
   run_tsi_handshaker_destroy_with_exec_ctx(client_handshaker);
@@ -719,27 +775,29 @@ static void check_handle_response_nullptr_handshaker() {
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
   /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
+   * Create a handshaker at the client side, for which internal mock
+   * client is always going to fail.
    */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client */);
   tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
-  grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_byte_buffer* recv_buffer =
+      grpc_raw_byte_buffer_create(&slice, 1);
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check nullptr handshaker. */
-  alts_handshaker_client_set_fields_for_testing(client, nullptr,
-                                                on_invalid_input_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, nullptr, on_invalid_input_cb, nullptr, recv_buffer,
+      GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
-  /* Note: here and elsewhere in this test, we first ref the handshaker in order
-   * to match the unref that on_status_received will do. This necessary
-   * because this test mocks out the grpc call in such a way that the code
-   * path that would usually take this ref is skipped. */
+  /* Note: here and elsewhere in this test, we first ref the handshaker
+   * in order to match the unref that on_status_received will do. This
+   * necessary because this test mocks out the grpc call in such a way
+   * that the code path that would usually take this ref is skipped. */
   alts_handshaker_client_ref_for_testing(client);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -758,10 +816,11 @@ static void check_handle_response_nullptr_recv_bytes() {
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
   /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
+   * Create a handshaker at the client side, for which internal mock
+   * client is always going to fail.
    */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client */);
   tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
@@ -769,9 +828,9 @@ static void check_handle_response_nullptr_recv_bytes() {
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check nullptr recv_bytes. */
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_invalid_input_cb, nullptr,
-                                                nullptr, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_invalid_input_cb, nullptr, nullptr,
+      GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -785,27 +844,30 @@ static void check_handle_response_nullptr_recv_bytes() {
   notification_destroy(&tsi_to_caller_notification);
 }
 
-static void check_handle_response_failed_grpc_call_to_handshaker_service() {
+static void
+check_handle_response_failed_grpc_call_to_handshaker_service() {
   /* Initialization. */
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
   /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
+   * Create a handshaker at the client side, for which internal mock
+   * client is always going to fail.
    */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client */);
   tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
-  grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_byte_buffer* recv_buffer =
+      grpc_raw_byte_buffer_create(&slice, 1);
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check failed grpc call made to handshaker service. */
   alts_handshaker_client_set_fields_for_testing(
-      client, alts_handshaker, on_failed_grpc_call_cb, nullptr, recv_buffer,
-      GRPC_STATUS_UNKNOWN);
+      client, alts_handshaker, on_failed_grpc_call_cb, nullptr,
+      recv_buffer, GRPC_STATUS_UNKNOWN);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -826,22 +888,24 @@ check_handle_response_failed_recv_message_from_handshaker_service() {
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
   /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
+   * Create a handshaker at the client side, for which internal mock
+   * client is always going to fail.
    */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client */);
   tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
-  grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_byte_buffer* recv_buffer =
+      grpc_raw_byte_buffer_create(&slice, 1);
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check failed recv message op from handshaker service. */
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_failed_grpc_call_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_failed_grpc_call_cb, nullptr,
+      recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, false);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -872,10 +936,11 @@ static void check_handle_response_invalid_resp() {
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
   /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
+   * Create a handshaker at the client side, for which internal mock
+   * client is always going to fail.
    */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client */);
   tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
@@ -884,9 +949,9 @@ static void check_handle_response_invalid_resp() {
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Tests. */
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(INVALID);
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_invalid_resp_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_invalid_resp_cb, nullptr, recv_buffer,
+      GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -943,10 +1008,11 @@ static void check_handle_response_failure() {
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
   /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
+   * Create a handshaker at the client side, for which internal mock
+   * client is always going to fail.
    */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client */);
   tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
@@ -955,9 +1021,9 @@ static void check_handle_response_failure() {
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Tests. */
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(FAILED);
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_failed_resp_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_failed_resp_cb, nullptr, recv_buffer,
+      GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true /* is_ok*/);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -986,7 +1052,8 @@ static void check_handle_response_after_shutdown() {
   /* Initialization. */
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker* handshaker =
+      create_test_handshaker(true /* is_client */);
   tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
                       on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
@@ -999,10 +1066,11 @@ static void check_handle_response_after_shutdown() {
 
   /* Tests. */
   tsi_handshaker_shutdown(handshaker);
-  grpc_byte_buffer* recv_buffer = generate_handshaker_response(CLIENT_START);
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_shutdown_resp_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  grpc_byte_buffer* recv_buffer =
+      generate_handshaker_response(CLIENT_START);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_shutdown_resp_cb, nullptr,
+      recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
   {

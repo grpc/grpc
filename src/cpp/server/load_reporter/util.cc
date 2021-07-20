@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,7 +29,8 @@ namespace load_reporter {
 namespace experimental {
 
 void AddLoadReportingCost(grpc::ServerContext* ctx,
-                          const std::string& cost_name, double cost_value) {
+                          const std::string& cost_name,
+                          double cost_value) {
   if (std::isnormal(cost_value)) {
     std::string buf;
     buf.resize(sizeof(cost_value) + cost_name.size());

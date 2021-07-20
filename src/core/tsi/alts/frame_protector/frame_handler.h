@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,8 +37,9 @@ const size_t kFrameHeaderSize =
  */
 
 /**
- * Main struct for a frame writer. It reads frames from an input buffer, and
- * writes the contents as raw bytes. It does not own the input buffer.
+ * Main struct for a frame writer. It reads frames from an input buffer,
+ * and writes the contents as raw bytes. It does not own the input
+ * buffer.
  */
 typedef struct alts_frame_writer {
   const unsigned char* input_buffer;
@@ -49,8 +50,9 @@ typedef struct alts_frame_writer {
 } alts_frame_writer;
 
 /**
- * Main struct for a frame reader. It reads raw bytes and puts the framed
- * result into an output buffer. It does not own the output buffer.
+ * Main struct for a frame reader. It reads raw bytes and puts the
+ * framed result into an output buffer. It does not own the output
+ * buffer.
  */
 typedef struct alts_frame_reader {
   unsigned char* output_buffer;
@@ -61,14 +63,14 @@ typedef struct alts_frame_reader {
 } alts_frame_reader;
 
 /**
- * This method creates a frame writer instance and initializes its internal
- * states.
+ * This method creates a frame writer instance and initializes its
+ * internal states.
  */
 alts_frame_writer* alts_create_frame_writer();
 
 /**
- * This method resets internal states of a frame writer and prepares to write
- * a single frame. It does not take ownership of payload_buffer.
+ * This method resets internal states of a frame writer and prepares to
+ * write a single frame. It does not take ownership of payload_buffer.
  * The payload_buffer must outlive the writer.
  *
  * - writer: a frame writer instance.
@@ -78,28 +80,29 @@ alts_frame_writer* alts_create_frame_writer();
  * The method returns true on success and false otherwise.
  */
 bool alts_reset_frame_writer(alts_frame_writer* writer,
-                             const unsigned char* buffer, size_t length);
+                             const unsigned char* buffer,
+                             size_t length);
 
 /**
  * This method writes up to bytes_size bytes of a frame to output.
  *
  * - writer: a frame writer instance.
  * - output: an output buffer used to store the frame.
- * - bytes_size: an in/out parameter that stores the size of output buffer
- *   before the call, and gets written the number of frame bytes written to the
- *   buffer.
+ * - bytes_size: an in/out parameter that stores the size of output
+ * buffer before the call, and gets written the number of frame bytes
+ * written to the buffer.
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
-                            size_t* bytes_size);
+bool alts_write_frame_bytes(alts_frame_writer* writer,
+                            unsigned char* output, size_t* bytes_size);
 
 /**
- * This method checks if a reset can be called to write a new frame. It returns
- * true if it's the first time to frame a payload, or the current frame has
- * been finished processing. It returns false if it's not ready yet to start a
- * new frame (e.g., more payload data needs to be accumulated to process the
- * current frame).
+ * This method checks if a reset can be called to write a new frame. It
+ * returns true if it's the first time to frame a payload, or the
+ * current frame has been finished processing. It returns false if it's
+ * not ready yet to start a new frame (e.g., more payload data needs to
+ * be accumulated to process the current frame).
  *
  * if (alts_is_frame_writer_done(writer)) {
  *   // a new frame can be written, call reset.
@@ -113,8 +116,8 @@ bool alts_write_frame_bytes(alts_frame_writer* writer, unsigned char* output,
 bool alts_is_frame_writer_done(alts_frame_writer* writer);
 
 /**
- * This method returns the number of bytes left to write before a complete frame
- * is formed.
+ * This method returns the number of bytes left to write before a
+ * complete frame is formed.
  *
  * - writer: a frame writer instance.
  */
@@ -128,62 +131,68 @@ size_t alts_get_num_writer_bytes_remaining(alts_frame_writer* writer);
 void alts_destroy_frame_writer(alts_frame_writer* writer);
 
 /**
- * This method creates a frame reader instance and initializes its internal
- * states.
+ * This method creates a frame reader instance and initializes its
+ * internal states.
  */
 alts_frame_reader* alts_create_frame_reader();
 
 /**
- * This method resets internal states of a frame reader (including setting its
- * output_buffer with buffer), and prepares to write processed bytes to
- * an output_buffer. It does not take ownership of buffer. The buffer must
- * outlive reader.
+ * This method resets internal states of a frame reader (including
+ * setting its output_buffer with buffer), and prepares to write
+ * processed bytes to an output_buffer. It does not take ownership of
+ * buffer. The buffer must outlive reader.
  *
  * - reader: a frame reader instance.
  * - buffer: an output buffer used to store deframed results.
  *
  * The method returns true on success and false otherwise.
  */
-bool alts_reset_frame_reader(alts_frame_reader* reader, unsigned char* buffer);
+bool alts_reset_frame_reader(alts_frame_reader* reader,
+                             unsigned char* buffer);
 
 /**
- * This method processes up to the number of bytes given in bytes_size. It may
- * choose not to process all the bytes, if, for instance, more bytes are
- * given to the method than required to complete the current frame.
+ * This method processes up to the number of bytes given in bytes_size.
+ * It may choose not to process all the bytes, if, for instance, more
+ * bytes are given to the method than required to complete the current
+ * frame.
  *
  * - reader: a frame reader instance.
  * - bytes: a buffer that stores data to be processed.
- * - bytes_size: an in/out parameter that stores the size of bytes before the
- *   call and gets written the number of bytes processed.
+ * - bytes_size: an in/out parameter that stores the size of bytes
+ * before the call and gets written the number of bytes processed.
  *
  * The method returns true on success and false otherwise.
  */
 bool alts_read_frame_bytes(alts_frame_reader* reader,
-                           const unsigned char* bytes, size_t* bytes_size);
+                           const unsigned char* bytes,
+                           size_t* bytes_size);
 
 /**
  * This method checks if a frame length has been read.
  *
  * - reader: a frame reader instance.
  *
- * The method returns true if a frame length has been read and false otherwise.
+ * The method returns true if a frame length has been read and false
+ * otherwise.
  */
 bool alts_has_read_frame_length(alts_frame_reader* reader);
 
 /**
- * This method returns the number of bytes the frame reader intends to write.
- * It may only be called if alts_has_read_frame_length() returns true.
+ * This method returns the number of bytes the frame reader intends to
+ * write. It may only be called if alts_has_read_frame_length() returns
+ * true.
  *
  * - reader: a frame reader instance.
  */
 size_t alts_get_reader_bytes_remaining(alts_frame_reader* reader);
 
 /**
- * This method resets output_buffer but does not otherwise modify other internal
- * states of a frame reader instance. After being set, the new output_buffer
- * will hold the deframed payload held by the original output_buffer. It does
- * not take ownership of buffer. The buffer must outlive the reader.
- * To distinguish between two reset methods on a frame reader,
+ * This method resets output_buffer but does not otherwise modify other
+ * internal states of a frame reader instance. After being set, the new
+ * output_buffer will hold the deframed payload held by the original
+ * output_buffer. It does not take ownership of buffer. The buffer must
+ * outlive the reader. To distinguish between two reset methods on a
+ * frame reader,
  *
  * if (alts_fh_is_frame_reader_done(reader)) {
  *   // if buffer contains a full payload to be deframed, call reset.
@@ -191,8 +200,10 @@ size_t alts_get_reader_bytes_remaining(alts_frame_reader* reader);
  * }
  *
  * // if remaining buffer space is not enough to hold a full payload
- * if (buffer_space_remaining < alts_get_reader_bytes_remaining(reader)) {
- *   // allocate enough space for a new buffer, copy back data processed so far,
+ * if (buffer_space_remaining < alts_get_reader_bytes_remaining(reader))
+ * {
+ *   // allocate enough space for a new buffer, copy back data processed
+ * so far,
  *   // and call reset.
  *   alts_reset_reader_output_buffer(reader, new_buffer).
  * }
@@ -204,8 +215,10 @@ void alts_reset_reader_output_buffer(alts_frame_reader* reader,
                                      unsigned char* buffer);
 
 /**
- * This method checks if reset can be called to start processing a new frame.
- * If true and reset was previously called, a full frame has been processed and
+ * This method checks if reset can be called to start processing a new
+ frame.
+ * If true and reset was previously called, a full frame has been
+ processed and
  * the content of the frame is available in output_buffer.
 
  * - reader: a frame reader instance.

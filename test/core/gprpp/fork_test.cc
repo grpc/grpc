@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,8 +52,9 @@ static void test_init() {
 
 static void sleeping_thd(void* arg) {
   int64_t sleep_ms = reinterpret_cast<int64_t>(arg);
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_millis(sleep_ms, GPR_TIMESPAN)));
+  gpr_sleep_until(
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_millis(sleep_ms, GPR_TIMESPAN)));
 }
 
 static void test_thd_count() {
@@ -115,8 +116,8 @@ static void test_exec_count() {
 
   // Test that block_exec_ctx() blocks grpc_core::Fork::IncExecCtxCount
   bool exec_ctx_created = false;
-  grpc_core::Thread thd =
-      grpc_core::Thread("grpc_fork_test", exec_ctx_thread, &exec_ctx_created);
+  grpc_core::Thread thd = grpc_core::Thread(
+      "grpc_fork_test", exec_ctx_thread, &exec_ctx_created);
   grpc_core::Fork::IncExecCtxCount();
   GPR_ASSERT(grpc_core::Fork::BlockExecCtx());
   grpc_core::Fork::DecExecCtxCount();

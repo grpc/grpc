@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,8 +42,8 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
     void* engine, const char* target, const grpc_channel_args* args,
     void* reserved) {
   gpr_log(GPR_DEBUG,
-          "grpc_create_cronet_transport: stream_engine = %p, target=%s", engine,
-          target);
+          "grpc_create_cronet_transport: stream_engine = %p, target=%s",
+          engine, target);
 
   // Disable client authority filter when using Cronet
   grpc_arg disable_client_authority_filter_arg;
@@ -58,8 +58,8 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
       grpc_create_cronet_transport(engine, target, new_args, reserved);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel* channel =
-      grpc_channel_create(target, new_args, GRPC_CLIENT_DIRECT_CHANNEL, ct);
+  grpc_channel* channel = grpc_channel_create(
+      target, new_args, GRPC_CLIENT_DIRECT_CHANNEL, ct);
   grpc_channel_args_destroy(new_args);
   return channel;
 }

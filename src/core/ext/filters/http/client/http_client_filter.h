@@ -9,9 +9,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,7 +25,9 @@
 /* Processes metadata on the client side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_client_filter;
 
-/* Channel arg to determine maximum size of payload eligible for GET request */
-#define GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET "grpc.max_payload_size_for_get"
+/* Channel arg to determine maximum size of payload eligible for GET
+ * request */
+#define GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET \
+  "grpc.max_payload_size_for_get"
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_HTTP_CLIENT_FILTER_H */

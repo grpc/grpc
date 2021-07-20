@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,8 +27,8 @@
 #include "src/core/lib/profiling/stap_probes.h"
 
 /* Latency profiler API implementation. */
-void gpr_timer_add_mark(int tag, const char* tagstr, void* id, const char* file,
-                        int line) {
+void gpr_timer_add_mark(int tag, const char* tagstr, void* id,
+                        const char* file, int line) {
   _STAP_ADD_MARK(tag);
 }
 
@@ -37,13 +37,13 @@ void gpr_timer_add_important_mark(int tag, const char* tagstr, void* id,
   _STAP_ADD_IMPORTANT_MARK(tag);
 }
 
-void gpr_timer_begin(int tag, const char* tagstr, void* id, const char* file,
-                     int line) {
+void gpr_timer_begin(int tag, const char* tagstr, void* id,
+                     const char* file, int line) {
   _STAP_TIMING_NS_BEGIN(tag);
 }
 
-void gpr_timer_end(int tag, const char* tagstr, void* id, const char* file,
-                   int line) {
+void gpr_timer_end(int tag, const char* tagstr, void* id,
+                   const char* file, int line) {
   _STAP_TIMING_NS_END(tag);
 }
 

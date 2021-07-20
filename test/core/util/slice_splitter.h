@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,16 +34,19 @@ typedef enum {
   GRPC_SLICE_SPLIT_ONE_BYTE
 } grpc_slice_split_mode;
 
-/* allocates *dst_slices; caller must unref all slices in dst_slices then free
-   it */
-void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice* src_slices,
-                       size_t src_slice_count, grpc_slice** dst_slices,
+/* allocates *dst_slices; caller must unref all slices in dst_slices
+   then free it */
+void grpc_split_slices(grpc_slice_split_mode mode,
+                       grpc_slice* src_slices, size_t src_slice_count,
+                       grpc_slice** dst_slices,
                        size_t* dst_slice_count);
 
 void grpc_split_slices_to_buffer(grpc_slice_split_mode mode,
-                                 grpc_slice* src_slices, size_t src_slice_count,
+                                 grpc_slice* src_slices,
+                                 size_t src_slice_count,
                                  grpc_slice_buffer* dst);
-void grpc_split_slice_buffer(grpc_slice_split_mode mode, grpc_slice_buffer* src,
+void grpc_split_slice_buffer(grpc_slice_split_mode mode,
+                             grpc_slice_buffer* src,
                              grpc_slice_buffer* dst);
 
 grpc_slice grpc_slice_merge(grpc_slice* slices, size_t nslices);

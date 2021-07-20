@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -68,11 +68,12 @@ ServerBuilder::~ServerBuilder() {
   }
 }
 
-std::unique_ptr<grpc::ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
-    bool is_frequently_polled) {
+std::unique_ptr<grpc::ServerCompletionQueue>
+ServerBuilder::AddCompletionQueue(bool is_frequently_polled) {
   grpc::ServerCompletionQueue* cq = new grpc::ServerCompletionQueue(
       GRPC_CQ_NEXT,
-      is_frequently_polled ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_LISTENING,
+      is_frequently_polled ? GRPC_CQ_DEFAULT_POLLING
+                           : GRPC_CQ_NON_LISTENING,
       nullptr);
   cqs_.push_back(cq);
   return std::unique_ptr<grpc::ServerCompletionQueue>(cq);
@@ -200,8 +201,8 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
-    const std::string& addr_uri, std::shared_ptr<ServerCredentials> creds,
-    int* selected_port) {
+    const std::string& addr_uri,
+    std::shared_ptr<ServerCredentials> creds, int* selected_port) {
   const std::string uri_scheme = "dns:";
   std::string addr = addr_uri;
   if (addr_uri.compare(0, uri_scheme.size(), uri_scheme) == 0) {
@@ -217,10 +218,12 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 ChannelArguments ServerBuilder::BuildChannelArgs() {
   ChannelArguments args;
   if (max_receive_message_size_ >= -1) {
-    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
+    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+                max_receive_message_size_);
   }
   if (max_send_message_size_ >= -1) {
-    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
+    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH,
+                max_send_message_size_);
   }
   for (const auto& option : options_) {
     option->UpdateArguments(&args);
@@ -245,9 +248,10 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
     plugin->UpdateChannelArguments(&args);
   }
   if (authorization_provider_ != nullptr) {
-    args.SetPointerWithVtable(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
-                              authorization_provider_->c_provider(),
-                              grpc_authorization_policy_provider_arg_vtable());
+    args.SetPointerWithVtable(
+        GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
+        authorization_provider_->c_provider(),
+        grpc_authorization_policy_provider_arg_vtable());
   }
   return args;
 }
@@ -273,17 +277,19 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     }
   }
 
-  // If this is a Sync server, i.e a server expositing sync API, then the server
-  // needs to create some completion queues to listen for incoming requests.
-  // 'sync_server_cqs' are those internal completion queues.
+  // If this is a Sync server, i.e a server expositing sync API, then
+  // the server needs to create some completion queues to listen for
+  // incoming requests. 'sync_server_cqs' are those internal completion
+  // queues.
   //
-  // This is different from the completion queues added to the server via
-  // ServerBuilder's AddCompletionQueue() method (those completion queues
-  // are in 'cqs_' member variable of ServerBuilder object)
-  std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
+  // This is different from the completion queues added to the server
+  // via ServerBuilder's AddCompletionQueue() method (those completion
+  // queues are in 'cqs_' member variable of ServerBuilder object)
+  std::shared_ptr<
+      std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
       sync_server_cqs(
-          std::make_shared<
-              std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>());
+          std::make_shared<std::vector<
+              std::unique_ptr<grpc::ServerCompletionQueue>>>());
 
   bool has_frequently_polled_cqs = false;
   for (const auto& cq : cqs_) {
@@ -307,28 +313,32 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     has_frequently_polled_cqs = true;
   }
 
-  const bool is_hybrid_server = has_sync_methods && has_frequently_polled_cqs;
+  const bool is_hybrid_server =
+      has_sync_methods && has_frequently_polled_cqs;
 
   if (has_sync_methods) {
-    grpc_cq_polling_type polling_type =
-        is_hybrid_server ? GRPC_CQ_NON_POLLING : GRPC_CQ_DEFAULT_POLLING;
+    grpc_cq_polling_type polling_type = is_hybrid_server
+                                            ? GRPC_CQ_NON_POLLING
+                                            : GRPC_CQ_DEFAULT_POLLING;
 
     // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
-      sync_server_cqs->emplace_back(
-          new grpc::ServerCompletionQueue(GRPC_CQ_NEXT, polling_type, nullptr));
+      sync_server_cqs->emplace_back(new grpc::ServerCompletionQueue(
+          GRPC_CQ_NEXT, polling_type, nullptr));
     }
   }
 
-  // TODO(vjpai): Add a section here for plugins once they can support callback
-  // methods
+  // TODO(vjpai): Add a section here for plugins once they can support
+  // callback methods
 
   if (has_sync_methods) {
     // This is a Sync server
     gpr_log(GPR_INFO,
-            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
+            "Synchronous server. Num CQs: %d, Min pollers: %d, Max "
+            "Pollers: "
             "%d, CQ timeout (msec): %d",
-            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
+            sync_server_settings_.num_cqs,
+            sync_server_settings_.min_pollers,
             sync_server_settings_.max_pollers,
             sync_server_settings_.cq_timeout_msec);
   }
@@ -339,42 +349,49 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
-      sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
-      std::move(acceptors_), server_config_fetcher_, resource_quota_,
+      sync_server_settings_.max_pollers,
+      sync_server_settings_.cq_timeout_msec, std::move(acceptors_),
+      server_config_fetcher_, resource_quota_,
       std::move(interceptor_creators_)));
 
   ServerInitializer* initializer = server->initializer();
 
   // Register all the completion queues with the server. i.e
-  //  1. sync_server_cqs: internal completion queues created IF this is a sync
+  //  1. sync_server_cqs: internal completion queues created IF this is
+  //  a sync
   //     server
   //  2. cqs_: Completion queues added via AddCompletionQueue() call
 
   for (const auto& cq : *sync_server_cqs) {
-    grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
+    grpc_server_register_completion_queue(server->server_, cq->cq(),
+                                          nullptr);
     has_frequently_polled_cqs = true;
   }
 
   if (has_callback_methods || callback_generic_service_ != nullptr) {
     auto* cq = server->CallbackCQ();
-    grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
+    grpc_server_register_completion_queue(server->server_, cq->cq(),
+                                          nullptr);
   }
 
-  // cqs_ contains the completion queue added by calling the ServerBuilder's
-  // AddCompletionQueue() API. Some of them may not be frequently polled (i.e by
-  // calling Next() or AsyncNext()) and hence are not safe to be used for
-  // listening to incoming channels. Such completion queues must be registered
-  // as non-listening queues. In debug mode, these should have their server list
-  // tracked since these are provided the user and must be Shutdown by the user
-  // after the server is shutdown.
+  // cqs_ contains the completion queue added by calling the
+  // ServerBuilder's AddCompletionQueue() API. Some of them may not be
+  // frequently polled (i.e by calling Next() or AsyncNext()) and hence
+  // are not safe to be used for listening to incoming channels. Such
+  // completion queues must be registered as non-listening queues. In
+  // debug mode, these should have their server list tracked since these
+  // are provided the user and must be Shutdown by the user after the
+  // server is shutdown.
   for (const auto& cq : cqs_) {
-    grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
+    grpc_server_register_completion_queue(server->server_, cq->cq(),
+                                          nullptr);
     cq->RegisterServer(server.get());
   }
 
   if (!has_frequently_polled_cqs) {
     gpr_log(GPR_ERROR,
-            "At least one of the completion queues must be frequently polled");
+            "At least one of the completion queues must be frequently "
+            "polled");
     return nullptr;
   }
 
@@ -434,12 +451,15 @@ void ServerBuilder::InternalAddPluginFactory(
   (*g_plugin_factory_list).push_back(CreatePlugin);
 }
 
-ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
+ServerBuilder& ServerBuilder::EnableWorkaround(
+    grpc_workaround_list id) {
   switch (id) {
     case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
-      return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
+      return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION,
+                                1);
     default:
-      gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
+      gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.",
+              id);
       return *this;
   }
 }

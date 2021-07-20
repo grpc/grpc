@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -64,31 +64,37 @@ static void BM_TimerBatch(benchmark::State& state) {
   const bool check = state.range(0);
   const bool reverse = state.range(1);
 
-  const grpc_millis start =
-      reverse ? GRPC_MILLIS_INF_FUTURE : GRPC_MILLIS_INF_FUTURE - kTimerCount;
-  const grpc_millis end =
-      reverse ? GRPC_MILLIS_INF_FUTURE - kTimerCount : GRPC_MILLIS_INF_FUTURE;
+  const grpc_millis start = reverse
+                                ? GRPC_MILLIS_INF_FUTURE
+                                : GRPC_MILLIS_INF_FUTURE - kTimerCount;
+  const grpc_millis end = reverse ? GRPC_MILLIS_INF_FUTURE - kTimerCount
+                                  : GRPC_MILLIS_INF_FUTURE;
   const grpc_millis increment = reverse ? -1 : 1;
 
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   std::vector<TimerClosure> timer_closures(kTimerCount);
   for (auto _ : state) {
-    for (grpc_millis deadline = start; deadline != end; deadline += increment) {
-      TimerClosure* timer_closure = &timer_closures[deadline % kTimerCount];
+    for (grpc_millis deadline = start; deadline != end;
+         deadline += increment) {
+      TimerClosure* timer_closure =
+          &timer_closures[deadline % kTimerCount];
       GRPC_CLOSURE_INIT(
           &timer_closure->closure,
           [](void* /*args*/, grpc_error_handle /*err*/) {}, nullptr,
           grpc_schedule_on_exec_ctx);
 
-      grpc_timer_init(&timer_closure->timer, deadline, &timer_closure->closure);
+      grpc_timer_init(&timer_closure->timer, deadline,
+                      &timer_closure->closure);
     }
     if (check) {
       grpc_millis next = GRPC_MILLIS_INF_FUTURE;
       grpc_timer_check(&next);
     }
-    for (grpc_millis deadline = start; deadline != end; deadline += increment) {
-      TimerClosure* timer_closure = &timer_closures[deadline % kTimerCount];
+    for (grpc_millis deadline = start; deadline != end;
+         deadline += increment) {
+      TimerClosure* timer_closure =
+          &timer_closures[deadline % kTimerCount];
       grpc_timer_cancel(&timer_closure->timer);
     }
     exec_ctx.Flush();
@@ -105,8 +111,8 @@ BENCHMARK(BM_TimerBatch)
 }  // namespace testing
 }  // namespace grpc
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

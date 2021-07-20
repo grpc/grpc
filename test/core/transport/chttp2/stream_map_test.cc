@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -61,21 +61,25 @@ static void test_basic_add_find(uint32_t n) {
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, 0));
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, n + 1));
   for (i = 1; i <= n; i++) {
-    got = reinterpret_cast<uintptr_t>(grpc_chttp2_stream_map_find(&map, i));
+    got = reinterpret_cast<uintptr_t>(
+        grpc_chttp2_stream_map_find(&map, i));
     GPR_ASSERT(i == got);
   }
   grpc_chttp2_stream_map_destroy(&map);
 }
 
-/* verify that for_each gets the right values during test_delete_evens_XXX */
-static void verify_for_each(void* user_data, uint32_t stream_id, void* ptr) {
+/* verify that for_each gets the right values during
+ * test_delete_evens_XXX */
+static void verify_for_each(void* user_data, uint32_t stream_id,
+                            void* ptr) {
   uint32_t* for_each_check = static_cast<uint32_t*>(user_data);
   GPR_ASSERT(ptr);
   GPR_ASSERT(*for_each_check == stream_id);
   *for_each_check += 2;
 }
 
-static void check_delete_evens(grpc_chttp2_stream_map* map, uint32_t n) {
+static void check_delete_evens(grpc_chttp2_stream_map* map,
+                               uint32_t n) {
   uint32_t for_each_check = 1;
   uint32_t i;
   size_t got;
@@ -84,14 +88,16 @@ static void check_delete_evens(grpc_chttp2_stream_map* map, uint32_t n) {
   GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(map, n + 1));
   for (i = 1; i <= n; i++) {
     if (i & 1) {
-      got = reinterpret_cast<uintptr_t>(grpc_chttp2_stream_map_find(map, i));
+      got = reinterpret_cast<uintptr_t>(
+          grpc_chttp2_stream_map_find(map, i));
       GPR_ASSERT(i == got);
     } else {
       GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(map, i));
     }
   }
 
-  grpc_chttp2_stream_map_for_each(map, verify_for_each, &for_each_check);
+  grpc_chttp2_stream_map_for_each(map, verify_for_each,
+                                  &for_each_check);
   if (n & 1) {
     GPR_ASSERT(for_each_check == n + 2);
   } else {
@@ -114,15 +120,16 @@ static void test_delete_evens_sweep(uint32_t n) {
   }
   for (i = 1; i <= n; i++) {
     if ((i & 1) == 0) {
-      GPR_ASSERT((void*)(uintptr_t)i == grpc_chttp2_stream_map_delete(&map, i));
+      GPR_ASSERT((void*)(uintptr_t)i ==
+                 grpc_chttp2_stream_map_delete(&map, i));
     }
   }
   check_delete_evens(&map, n);
   grpc_chttp2_stream_map_destroy(&map);
 }
 
-/* add a bunch of keys, delete the even ones immediately, and make sure the map
-   is consistent */
+/* add a bunch of keys, delete the even ones immediately, and make sure
+   the map is consistent */
 static void test_delete_evens_incremental(uint32_t n) {
   grpc_chttp2_stream_map map;
   uint32_t i;

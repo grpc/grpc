@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,10 +42,9 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -65,16 +64,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -112,8 +112,10 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
-  grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
-  grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_static_string("foo");
+  grpc_slice response_payload_slice =
+      grpc_slice_from_static_string("bar");
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
@@ -135,7 +137,8 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
               "{\n"
               "  \"methodConfig\": [ {\n"
               "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "      { \"service\": \"service\", \"method\": "
+              "\"method\" }\n"
               "    ],\n"
               "    \"retryPolicy\": {\n"
               "      \"maxAttempts\": 2,\n"
@@ -154,9 +157,10 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
+  c = grpc_channel_create_call(
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"), nullptr,
+      deadline, nullptr);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -181,8 +185,8 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Start a batch containing recv ops.
@@ -192,15 +196,17 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client send ops should now complete.
@@ -208,9 +214,9 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   // Server should get a call.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
@@ -229,30 +235,33 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // In principle, the server batch should complete before the client
-  // recv ops batch, but in the proxy fixtures, there are multiple threads
-  // involved, so the completion order tends to be a little racy.
+  // recv ops batch, but in the proxy fixtures, there are multiple
+  // threads involved, so the completion order tends to be a little
+  // racy.
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
   CQ_EXPECT_COMPLETION(cqv, tag(2), true);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
+  GPR_ASSERT(
+      0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
-  // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
+  // Make sure the "grpc-previous-rpc-attempts" header was sent in the
+  // retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
     if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
                       GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_1));
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               GRPC_MDSTR_1));
       found_retry_header = true;
       break;
     }
@@ -304,8 +313,10 @@ class FailFirstSendOpFilter {
     }
 
     static void StartTransportStreamOpBatch(
-        grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-      auto* chand = static_cast<FailFirstSendOpFilter*>(elem->channel_data);
+        grpc_call_element* elem,
+        grpc_transport_stream_op_batch* batch) {
+      auto* chand =
+          static_cast<FailFirstSendOpFilter*>(elem->channel_data);
       auto* calld = static_cast<CallData*>(elem->call_data);
       if (!chand->seen_first_) {
         chand->seen_first_ = true;
@@ -314,9 +325,10 @@ class FailFirstSendOpFilter {
       if (calld->fail_ && !batch->cancel_stream) {
         grpc_transport_stream_op_batch_finish_with_failure(
             batch,
-            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "FailFirstSendOpFilter failing batch"),
-                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED),
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "FailFirstSendOpFilter failing batch"),
+                GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED),
             calld->call_combiner_);
         return;
       }
@@ -338,7 +350,8 @@ class FailFirstSendOpFilter {
   }
 
   static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<FailFirstSendOpFilter*>(elem->channel_data);
+    auto* chand =
+        static_cast<FailFirstSendOpFilter*>(elem->channel_data);
     chand->~FailFirstSendOpFilter();
   }
 
@@ -361,13 +374,15 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 
 bool g_enable_filter = false;
 
-bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* /*arg*/) {
+bool MaybeAddFilter(grpc_channel_stack_builder* builder,
+                    void* /*arg*/) {
   // Skip if filter is not enabled.
   if (!g_enable_filter) return true;
   // Skip on proxy (which explicitly disables retries).
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
+  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES,
+                                   true)) {
     return true;
   }
   // Install filter.
@@ -376,8 +391,8 @@ bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* /*arg*/) {
 }
 
 void InitPlugin(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, 0, MaybeAddFilter,
-                                   nullptr);
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, 0,
+                                   MaybeAddFilter, nullptr);
 }
 
 void DestroyPlugin(void) {}
@@ -385,7 +400,8 @@ void DestroyPlugin(void) {}
 }  // namespace
 
 void retry_send_op_fails(grpc_end2end_test_config config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
+  GPR_ASSERT(config.feature_mask &
+             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   g_enable_filter = true;
   test_retry_send_op_fails(config);
   g_enable_filter = false;

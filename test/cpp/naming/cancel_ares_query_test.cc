@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -87,7 +87,8 @@ struct ArgsStruct {
 };
 
 void ArgsInit(ArgsStruct* args) {
-  args->pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  args->pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
@@ -130,7 +131,8 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
   }
 }
 
-class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
+class AssertFailureResultHandler
+    : public grpc_core::Resolver::ResultHandler {
  public:
   explicit AssertFailureResultHandler(ArgsStruct* args) : args_(args) {}
 
@@ -146,7 +148,9 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
     GPR_ASSERT(false);
   }
 
-  void ReturnError(grpc_error_handle /*error*/) override { GPR_ASSERT(false); }
+  void ReturnError(grpc_error_handle /*error*/) override {
+    GPR_ASSERT(false);
+  }
 
  private:
   ArgsStruct* args_;
@@ -154,7 +158,8 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
 
 void TestCancelActiveDNSQuery(ArgsStruct* args) {
   int fake_dns_port = grpc_pick_unused_port_or_die();
-  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(
+      fake_dns_port);
   std::string client_target = absl::StrFormat(
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
       fake_dns_port);
@@ -187,7 +192,8 @@ class CancelDuringAresQuery : public ::testing::Test {
 
   static void TearDownTestCase() {
     grpc_shutdown();
-    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
+    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) >
+        0) {
       gpr_log(GPR_ERROR, "Test took too long");
       abort();
     }
@@ -208,7 +214,8 @@ TEST_F(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
 #ifdef GPR_WINDOWS
 
 void MaybePollArbitraryPollsetTwice() {
-  grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  grpc_pollset* pollset =
+      (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
   gpr_mu* mu;
   grpc_pollset_init(pollset, &mu);
   grpc_pollset_worker* worker = nullptr;
@@ -216,7 +223,8 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker,
+                        grpc_core::ExecCtx::Get()->Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   // Make a second zero-timeout poll (in case the first one
@@ -224,7 +232,8 @@ void MaybePollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+      grpc_pollset_work(pollset, &worker,
+                        grpc_core::ExecCtx::Get()->Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(pollset);
@@ -248,16 +257,18 @@ TEST_F(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   // pollset set is destroyed should keep the resolver's fd alive and
   // fail the test.
   grpc_pollset_set* fake_other_pollset_set = grpc_pollset_set_create();
-  grpc_pollset_set_add_pollset_set(fake_other_pollset_set, args.pollset_set);
-  // Note that running the cancellation c-ares test is somewhat irrelevant for
-  // this test. This test only cares about what happens to fd's that c-ares
-  // opens.
+  grpc_pollset_set_add_pollset_set(fake_other_pollset_set,
+                                   args.pollset_set);
+  // Note that running the cancellation c-ares test is somewhat
+  // irrelevant for this test. This test only cares about what happens
+  // to fd's that c-ares opens.
   TestCancelActiveDNSQuery(&args);
   // This test relies on the assumption that cancelling a c-ares query
   // will flush out all callbacks on the current exec ctx, which is true
-  // on posix platforms but not on Windows, because fd shutdown on Windows
-  // requires a trip through the polling loop to schedule the callback.
-  // So we need to do extra polling work on Windows to free things up.
+  // on posix platforms but not on Windows, because fd shutdown on
+  // Windows requires a trip through the polling loop to schedule the
+  // callback. So we need to do extra polling work on Windows to free
+  // things up.
   MaybePollArbitraryPollsetTwice();
   EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
   grpc_pollset_set_destroy(fake_other_pollset_set);
@@ -274,12 +285,14 @@ void TestCancelDuringActiveQuery(
     cancellation_test_query_timeout_setting query_timeout_setting) {
   // Start up fake non responsive DNS server
   int fake_dns_port = grpc_pick_unused_port_or_die();
-  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(
+      fake_dns_port);
   // Create a call that will try to use the fake DNS server
   std::string client_target = absl::StrFormat(
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
       fake_dns_port);
-  gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
+  gpr_log(GPR_DEBUG,
+          "TestCancelActiveDNSQuery. query timeout setting: %d",
           query_timeout_setting);
   grpc_channel_args* client_args = nullptr;
   grpc_status_code expected_status_code = GRPC_STATUS_OK;
@@ -298,13 +311,13 @@ void TestCancelDuringActiveQuery(
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
     arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
-    arg.value.integer =
-        1;  // Set this shorter than the call deadline so that it goes off.
+    arg.value.integer = 1;  // Set this shorter than the call deadline
+                            // so that it goes off.
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
     // Set the deadline high enough such that if we hit this and get
-    // a deadline exceeded status code, then we are confident that there's
-    // a bug causing cancellation of DNS resolutions to not happen in a timely
-    // manner.
+    // a deadline exceeded status code, then we are confident that
+    // there's a bug causing cancellation of DNS resolutions to not
+    // happen in a timely manner.
     rpc_deadline = grpc_timeout_seconds_to_deadline(10);
   } else if (query_timeout_setting == ZERO) {
     // The RPC deadline should go off well before the DNS resolution
@@ -313,19 +326,22 @@ void TestCancelDuringActiveQuery(
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
     arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
-    arg.value.integer = 0;  // Set this to zero to disable query timeouts.
+    arg.value.integer =
+        0;  // Set this to zero to disable query timeouts.
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
     rpc_deadline = grpc_timeout_milliseconds_to_deadline(100);
   } else {
     abort();
   }
-  grpc_channel* client =
-      grpc_insecure_channel_create(client_target.c_str(), client_args, nullptr);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_channel* client = grpc_insecure_channel_create(
+      client_target.c_str(), client_args, nullptr);
+  grpc_completion_queue* cq =
+      grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-      grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
+      grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline,
+      nullptr);
   GPR_ASSERT(call);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
@@ -352,12 +368,14 @@ void TestCancelDuringActiveQuery(
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.error_string = &error_string;
@@ -366,7 +384,8 @@ void TestCancelDuringActiveQuery(
   op++;
   // Run the call and sanity check it failed as expected
   grpc_call_error error = grpc_call_start_batch(
-      call, ops_base, static_cast<size_t>(op - ops_base), Tag(1), nullptr);
+      call, ops_base, static_cast<size_t>(op - ops_base), Tag(1),
+      nullptr);
   EXPECT_EQ(GRPC_CALL_OK, error);
   CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
   cq_verify(cqv);

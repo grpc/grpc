@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,7 +39,8 @@ namespace grpc {
 namespace {
 
 bool mock_socket_mutator_mutate_fd(int, grpc_socket_mutator*);
-int mock_socket_mutator_compare(grpc_socket_mutator*, grpc_socket_mutator*);
+int mock_socket_mutator_compare(grpc_socket_mutator*,
+                                grpc_socket_mutator*);
 void mock_socket_mutator_destroy(grpc_socket_mutator*);
 
 const grpc_socket_mutator_vtable mock_socket_mutator_vtable = {
@@ -65,7 +66,8 @@ bool mock_socket_mutator_mutate_fd(int /*fd*/, grpc_socket_mutator* m) {
 
 int mock_socket_mutator_compare(grpc_socket_mutator* a,
                                 grpc_socket_mutator* b) {
-  return reinterpret_cast<uintptr_t>(a) - reinterpret_cast<uintptr_t>(b);
+  return reinterpret_cast<uintptr_t>(a) -
+         reinterpret_cast<uintptr_t>(b);
 }
 
 void mock_socket_mutator_destroy(grpc_socket_mutator* m) {
@@ -73,7 +75,8 @@ void mock_socket_mutator_destroy(grpc_socket_mutator* m) {
   delete s;
 }
 
-class MockSocketMutatorServerBuilderOption : public grpc::ServerBuilderOption {
+class MockSocketMutatorServerBuilderOption
+    : public grpc::ServerBuilderOption {
  public:
   explicit MockSocketMutatorServerBuilderOption(
       MockSocketMutator* mock_socket_mutator)
@@ -96,11 +99,15 @@ class ServerBuilderWithSocketMutatorTest : public ::testing::Test {
   static void TearDownTestCase() { grpc_shutdown(); }
 };
 
-TEST_F(ServerBuilderWithSocketMutatorTest, CreateServerWithSocketMutator) {
-  auto address = "localhost:" + std::to_string(grpc_pick_unused_port_or_die());
+TEST_F(ServerBuilderWithSocketMutatorTest,
+       CreateServerWithSocketMutator) {
+  auto address =
+      "localhost:" + std::to_string(grpc_pick_unused_port_or_die());
   auto mock_socket_mutator = new MockSocketMutator();
-  std::unique_ptr<grpc::ServerBuilderOption> mock_socket_mutator_builder_option(
-      new MockSocketMutatorServerBuilderOption(mock_socket_mutator));
+  std::unique_ptr<grpc::ServerBuilderOption>
+      mock_socket_mutator_builder_option(
+          new MockSocketMutatorServerBuilderOption(
+              mock_socket_mutator));
   testing::EchoTestService::Service echo_service;
   EXPECT_EQ(mock_socket_mutator->mutate_fd_call_count_, 0);
   ServerBuilder builder;

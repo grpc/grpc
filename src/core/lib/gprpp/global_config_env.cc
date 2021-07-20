@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,14 +47,15 @@ GlobalConfigEnvErrorFunctionType g_global_config_env_error_func =
 
 void LogParsingError(const char* name, const char* value) {
   std::string error_message = absl::StrFormat(
-      "Illegal value '%s' specified for environment variable '%s'", value,
-      name);
+      "Illegal value '%s' specified for environment variable '%s'",
+      value, name);
   (*g_global_config_env_error_func)(error_message.c_str());
 }
 
 }  // namespace
 
-void SetGlobalConfigEnvErrorFunction(GlobalConfigEnvErrorFunctionType func) {
+void SetGlobalConfigEnvErrorFunction(
+    GlobalConfigEnvErrorFunctionType func) {
   g_global_config_env_error_func = func;
 }
 
@@ -76,8 +77,9 @@ char* GlobalConfigEnv::GetName() {
   }
   return name_;
 }
-static_assert(std::is_trivially_destructible<GlobalConfigEnvBool>::value,
-              "GlobalConfigEnvBool needs to be trivially destructible.");
+static_assert(
+    std::is_trivially_destructible<GlobalConfigEnvBool>::value,
+    "GlobalConfigEnvBool needs to be trivially destructible.");
 
 bool GlobalConfigEnvBool::Get() {
   grpc_core::UniquePtr<char> str = GetValue();
@@ -97,8 +99,9 @@ void GlobalConfigEnvBool::Set(bool value) {
   SetValue(value ? "true" : "false");
 }
 
-static_assert(std::is_trivially_destructible<GlobalConfigEnvInt32>::value,
-              "GlobalConfigEnvInt32 needs to be trivially destructible.");
+static_assert(
+    std::is_trivially_destructible<GlobalConfigEnvInt32>::value,
+    "GlobalConfigEnvInt32 needs to be trivially destructible.");
 
 int32_t GlobalConfigEnvInt32::Get() {
   grpc_core::UniquePtr<char> str = GetValue();
@@ -121,8 +124,9 @@ void GlobalConfigEnvInt32::Set(int32_t value) {
   SetValue(buffer);
 }
 
-static_assert(std::is_trivially_destructible<GlobalConfigEnvString>::value,
-              "GlobalConfigEnvString needs to be trivially destructible.");
+static_assert(
+    std::is_trivially_destructible<GlobalConfigEnvString>::value,
+    "GlobalConfigEnvString needs to be trivially destructible.");
 
 grpc_core::UniquePtr<char> GlobalConfigEnvString::Get() {
   grpc_core::UniquePtr<char> str = GetValue();

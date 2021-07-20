@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,11 +30,13 @@ namespace load_reporter {
 std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   uint64_t busy = 0, total = 0;
   gpr_log(GPR_ERROR,
-          "Platforms other than Linux, Windows, and MacOS are not supported.");
+          "Platforms other than Linux, Windows, and MacOS are not "
+          "supported.");
   return std::make_pair(busy, total);
 }
 
 }  // namespace load_reporter
 }  // namespace grpc
 
-#endif  // !defined(GPR_LINUX) && !defined(GPR_WINDOWS) && !defined(GPR_APPLE)
+#endif  // !defined(GPR_LINUX) && !defined(GPR_WINDOWS) &&
+        // !defined(GPR_APPLE)

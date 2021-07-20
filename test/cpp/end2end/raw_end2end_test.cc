@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -51,7 +51,9 @@ namespace testing {
 namespace {
 
 void* tag(int i) { return reinterpret_cast<void*>(i); }
-int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
+int detag(void* p) {
+  return static_cast<int>(reinterpret_cast<intptr_t>(p));
+}
 
 class Verifier {
  public:
@@ -170,13 +172,15 @@ TEST_F(RawEnd2EndTest, PureAsyncService) {
   typedef grpc::testing::EchoTestService::AsyncService SType;
   ResetStub();
   auto service = BuildAndStartServer<SType>();
-  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx_);
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(
+      &srv_ctx_);
 
   send_request_.set_message("hello");
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
-      stub_->AsyncEcho(&cli_ctx_, send_request_, cq_.get()));
-  service->RequestEcho(&srv_ctx_, &recv_request_, &response_writer, cq_.get(),
-                       cq_.get(), tag(2));
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>>
+      response_reader(
+          stub_->AsyncEcho(&cli_ctx_, send_request_, cq_.get()));
+  service->RequestEcho(&srv_ctx_, &recv_request_, &response_writer,
+                       cq_.get(), cq_.get(), tag(2));
   response_reader->Finish(&recv_response_, &recv_status_, tag(4));
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request_.message(), recv_request_.message());
@@ -198,17 +202,19 @@ TEST_F(RawEnd2EndTest, RawServerUnary) {
   grpc::GenericServerAsyncResponseWriter response_writer(&srv_ctx_);
 
   send_request_.set_message("hello unary");
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
-      stub_->AsyncEcho(&cli_ctx_, send_request_, cq_.get()));
-  service->RequestEcho(&srv_ctx_, &recv_request_buffer_, &response_writer,
-                       cq_.get(), cq_.get(), tag(2));
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>>
+      response_reader(
+          stub_->AsyncEcho(&cli_ctx_, send_request_, cq_.get()));
+  service->RequestEcho(&srv_ctx_, &recv_request_buffer_,
+                       &response_writer, cq_.get(), cq_.get(), tag(2));
   response_reader->Finish(&recv_response_, &recv_status_, tag(4));
   Verifier().Expect(2, true).Verify(cq_.get());
-  EXPECT_TRUE(ParseFromByteBuffer(&recv_request_buffer_, &recv_request_));
+  EXPECT_TRUE(
+      ParseFromByteBuffer(&recv_request_buffer_, &recv_request_));
   EXPECT_EQ(send_request_.message(), recv_request_.message());
   send_response_.set_message(recv_request_.message());
-  EXPECT_TRUE(
-      SerializeToByteBufferInPlace(&send_response_, &send_response_buffer_));
+  EXPECT_TRUE(SerializeToByteBufferInPlace(&send_response_,
+                                           &send_response_buffer_));
   response_writer.Finish(send_response_buffer_, Status::OK, tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
@@ -228,10 +234,11 @@ TEST_F(RawEnd2EndTest, RawServerClientStreaming) {
 
   send_request_.set_message("hello client streaming");
   std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
-      stub_->AsyncRequestStream(&cli_ctx_, &recv_response_, cq_.get(), tag(1)));
+      stub_->AsyncRequestStream(&cli_ctx_, &recv_response_, cq_.get(),
+                                tag(1)));
 
-  service->RequestRequestStream(&srv_ctx_, &srv_stream, cq_.get(), cq_.get(),
-                                tag(2));
+  service->RequestRequestStream(&srv_ctx_, &srv_stream, cq_.get(),
+                                cq_.get(), tag(2));
 
   Verifier().Expect(2, true).Expect(1, true).Verify(cq_.get());
 
@@ -273,10 +280,12 @@ TEST_F(RawEnd2EndTest, RawServerServerStreaming) {
 
   send_request_.set_message("hello server streaming");
   std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
-      stub_->AsyncResponseStream(&cli_ctx_, send_request_, cq_.get(), tag(1)));
+      stub_->AsyncResponseStream(&cli_ctx_, send_request_, cq_.get(),
+                                 tag(1)));
 
-  service->RequestResponseStream(&srv_ctx_, &recv_request_buffer_, &srv_stream,
-                                 cq_.get(), cq_.get(), tag(2));
+  service->RequestResponseStream(&srv_ctx_, &recv_request_buffer_,
+                                 &srv_stream, cq_.get(), cq_.get(),
+                                 tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   ParseFromByteBuffer(&recv_request_buffer_, &recv_request_);
@@ -318,8 +327,8 @@ TEST_F(RawEnd2EndTest, RawServerBidiStreaming) {
   std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
       cli_stream(stub_->AsyncBidiStream(&cli_ctx_, cq_.get(), tag(1)));
 
-  service->RequestBidiStream(&srv_ctx_, &srv_stream, cq_.get(), cq_.get(),
-                             tag(2));
+  service->RequestBidiStream(&srv_ctx_, &srv_stream, cq_.get(),
+                             cq_.get(), tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 

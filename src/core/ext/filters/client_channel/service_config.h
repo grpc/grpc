@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_H
@@ -47,7 +47,8 @@
 //         }
 //       ],
 //       // remaining fields are optional.
-//       // see https://developers.google.com/protocol-buffers/docs/proto3#json
+//       // see
+//       https://developers.google.com/protocol-buffers/docs/proto3#json
 //       // for format details.
 //       "waitForReady": bool,
 //       "timeout": "duration_string",
@@ -59,15 +60,15 @@
 
 namespace grpc_core {
 
-// TODO(roth): Consider stripping this down further to the completely minimal
-// interface requied to be exposed as part of the resolver API.
+// TODO(roth): Consider stripping this down further to the completely
+// minimal interface requied to be exposed as part of the resolver API.
 class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
   /// Creates a new service config from parsing \a json_string.
   /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const grpc_channel_args* args,
-                                             absl::string_view json_string,
-                                             grpc_error_handle* error);
+  static RefCountedPtr<ServiceConfig> Create(
+      const grpc_channel_args* args, absl::string_view json_string,
+      grpc_error_handle* error);
 
   ServiceConfig(const grpc_channel_args* args, std::string json_string,
                 Json json, grpc_error_handle* error);
@@ -78,16 +79,17 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// Retrieves the global parsed config at index \a index. The
   /// lifetime of the returned object is tied to the lifetime of the
   /// ServiceConfig object.
-  ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(size_t index) {
+  ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
+      size_t index) {
     GPR_DEBUG_ASSERT(index < parsed_global_configs_.size());
     return parsed_global_configs_[index].get();
   }
 
   /// Retrieves the vector of parsed configs for the method identified
-  /// by \a path.  The lifetime of the returned vector and contained objects
-  /// is tied to the lifetime of the ServiceConfig object.
-  const ServiceConfigParser::ParsedConfigVector* GetMethodParsedConfigVector(
-      const grpc_slice& path) const;
+  /// by \a path.  The lifetime of the returned vector and contained
+  /// objects is tied to the lifetime of the ServiceConfig object.
+  const ServiceConfigParser::ParsedConfigVector*
+  GetMethodParsedConfigVector(const grpc_slice& path) const;
 
  private:
   // Helper functions for parsing the method configs.
@@ -103,22 +105,24 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   std::string json_string_;
   Json json_;
 
-  absl::InlinedVector<std::unique_ptr<ServiceConfigParser::ParsedConfig>,
-                      ServiceConfigParser::kNumPreallocatedParsers>
+  absl::InlinedVector<
+      std::unique_ptr<ServiceConfigParser::ParsedConfig>,
+      ServiceConfigParser::kNumPreallocatedParsers>
       parsed_global_configs_;
-  // A map from the method name to the parsed config vector. Note that we are
-  // using a raw pointer and not a unique pointer so that we can use the same
-  // vector for multiple names.
-  std::unordered_map<grpc_slice, const ServiceConfigParser::ParsedConfigVector*,
+  // A map from the method name to the parsed config vector. Note that
+  // we are using a raw pointer and not a unique pointer so that we can
+  // use the same vector for multiple names.
+  std::unordered_map<grpc_slice,
+                     const ServiceConfigParser::ParsedConfigVector*,
                      SliceHash>
       parsed_method_configs_map_;
   // Default method config.
-  const ServiceConfigParser::ParsedConfigVector* default_method_config_vector_ =
-      nullptr;
+  const ServiceConfigParser::ParsedConfigVector*
+      default_method_config_vector_ = nullptr;
   // Storage for all the vectors that are being used in
   // parsed_method_configs_table_.
-  absl::InlinedVector<std::unique_ptr<ServiceConfigParser::ParsedConfigVector>,
-                      32>
+  absl::InlinedVector<
+      std::unique_ptr<ServiceConfigParser::ParsedConfigVector>, 32>
       parsed_method_config_vectors_storage_;
 };
 

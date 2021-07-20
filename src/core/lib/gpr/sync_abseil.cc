@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -79,15 +79,17 @@ void gpr_cv_destroy(gpr_cv* cv) {
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   GPR_TIMER_SCOPE("gpr_cv_wait", 0);
-  if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
-      0) {
+  if (gpr_time_cmp(abs_deadline,
+                   gpr_inf_future(abs_deadline.clock_type)) == 0) {
     reinterpret_cast<absl::CondVar*>(cv)->Wait(
         reinterpret_cast<absl::Mutex*>(mu));
     return 0;
   }
-  abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
-  timespec ts = {static_cast<decltype(ts.tv_sec)>(abs_deadline.tv_sec),
-                 static_cast<decltype(ts.tv_nsec)>(abs_deadline.tv_nsec)};
+  abs_deadline =
+      gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
+  timespec ts = {
+      static_cast<decltype(ts.tv_sec)>(abs_deadline.tv_sec),
+      static_cast<decltype(ts.tv_nsec)>(abs_deadline.tv_nsec)};
   return reinterpret_cast<absl::CondVar*>(cv)->WaitWithDeadline(
       reinterpret_cast<absl::Mutex*>(mu), absl::TimeFromTimespec(ts));
 }
@@ -107,7 +109,8 @@ void gpr_cv_broadcast(gpr_cv* cv) {
 void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   static_assert(sizeof(gpr_once) == sizeof(absl::once_flag),
                 "gpr_once and absl::once_flag must be the same size");
-  absl::call_once(*reinterpret_cast<absl::once_flag*>(once), init_function);
+  absl::call_once(*reinterpret_cast<absl::once_flag*>(once),
+                  init_function);
 }
 
 #endif /* defined(GPR_ABSEIL_SYNC) && !defined(GPR_CUSTOM_SYNC) */

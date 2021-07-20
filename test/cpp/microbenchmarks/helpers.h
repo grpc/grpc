@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,14 +62,16 @@ class TrackCounters {
   grpc_stats_data stats_begin_;
   std::vector<std::string> labels_;
 #ifdef GPR_LOW_LEVEL_COUNTERS
-  const size_t mu_locks_at_start_ = gpr_atm_no_barrier_load(&gpr_mu_locks);
+  const size_t mu_locks_at_start_ =
+      gpr_atm_no_barrier_load(&gpr_mu_locks);
   const size_t atm_cas_at_start_ =
       gpr_atm_no_barrier_load(&gpr_counter_atm_cas);
   const size_t atm_add_at_start_ =
       gpr_atm_no_barrier_load(&gpr_counter_atm_add);
   const size_t now_calls_at_start_ =
       gpr_atm_no_barrier_load(&gpr_now_call_count);
-  grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
+  grpc_memory_counters counters_at_start_ =
+      grpc_memory_counters_snapshot();
 #endif
 };
 

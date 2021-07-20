@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,19 +32,20 @@
 /**
  * This method creates a local TSI handshaker instance.
  *
- * - is_client: boolean value indicating if the handshaker is used at the client
- *   (is_client = true) or server (is_client = false) side. The parameter is
- *   added for future extension.
- * - self: address of local TSI handshaker instance to be returned from the
- *   method.
+ * - is_client: boolean value indicating if the handshaker is used at
+ * the client (is_client = true) or server (is_client = false) side. The
+ * parameter is added for future extension.
+ * - self: address of local TSI handshaker instance to be returned from
+ * the method.
  *
  * It returns TSI_OK on success and an error status code on failure.
  *
- * This handshaker is also being used as a minimalist handshaker for insecure
- * security connector. If this handshaker ever needs to do anything more that
- * does not fit with an insecure connector, we would need to add a separate
- * handshaker for insecure connectors.
+ * This handshaker is also being used as a minimalist handshaker for
+ * insecure security connector. If this handshaker ever needs to do
+ * anything more that does not fit with an insecure connector, we would
+ * need to add a separate handshaker for insecure connectors.
  */
-tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker** self);
+tsi_result tsi_local_handshaker_create(bool is_client,
+                                       tsi_handshaker** self);
 
 #endif /* GRPC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H */

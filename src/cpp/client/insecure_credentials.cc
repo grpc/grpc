@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <grpcpp/security/credentials.h>
@@ -30,7 +30,8 @@ namespace {
 class InsecureChannelCredentialsImpl final : public ChannelCredentials {
  public:
   std::shared_ptr<Channel> CreateChannelImpl(
-      const std::string& target, const ChannelArguments& args) override {
+      const std::string& target,
+      const ChannelArguments& args) override {
     return CreateChannelWithInterceptors(
         target, args,
         std::vector<std::unique_ptr<
@@ -46,11 +47,14 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
     args.SetChannelArgs(&channel_args);
     return ::grpc::CreateChannelInternal(
         "",
-        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr),
+        grpc_insecure_channel_create(target.c_str(), &channel_args,
+                                     nullptr),
         std::move(interceptor_creators));
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
+  SecureChannelCredentials* AsSecureCredentials() override {
+    return nullptr;
+  }
 
  private:
   bool IsInsecure() const override { return true; }

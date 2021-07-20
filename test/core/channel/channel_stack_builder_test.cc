@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,20 +30,23 @@
 #include "test/core/util/test_config.h"
 
 static grpc_error_handle channel_init_func(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+    grpc_channel_element* /*elem*/,
+    grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
 static grpc_error_handle call_init_func(
-    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
+    grpc_call_element* /*elem*/,
+    const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
 static void channel_destroy_func(grpc_channel_element* /*elem*/) {}
 
-static void call_destroy_func(grpc_call_element* /*elem*/,
-                              const grpc_call_final_info* /*final_info*/,
-                              grpc_closure* /*ignored*/) {}
+static void call_destroy_func(
+    grpc_call_element* /*elem*/,
+    const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {}
 
 bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
@@ -56,8 +59,8 @@ void set_arg_once_fn(grpc_channel_stack* /*channel_stack*/,
 }
 
 static void test_channel_stack_builder_filter_replace(void) {
-  grpc_channel* channel =
-      grpc_insecure_channel_create("target name isn't used", nullptr, nullptr);
+  grpc_channel* channel = grpc_insecure_channel_create(
+      "target name isn't used", nullptr, nullptr);
   GPR_ASSERT(channel != nullptr);
   // Make sure the high priority filter has been created.
   GPR_ASSERT(g_replacement_fn_called);
@@ -96,9 +99,10 @@ static bool add_replacement_filter(grpc_channel_stack_builder* builder,
                                    void* arg) {
   const grpc_channel_filter* filter =
       static_cast<const grpc_channel_filter*>(arg);
-  // Get rid of any other version of the filter, as determined by having the
-  // same name.
-  GPR_ASSERT(grpc_channel_stack_builder_remove_filter(builder, filter->name));
+  // Get rid of any other version of the filter, as determined by having
+  // the same name.
+  GPR_ASSERT(
+      grpc_channel_stack_builder_remove_filter(builder, filter->name));
   return grpc_channel_stack_builder_prepend_filter(
       builder, filter, set_arg_once_fn, &g_replacement_fn_called);
 }
@@ -106,8 +110,8 @@ static bool add_replacement_filter(grpc_channel_stack_builder* builder,
 static bool add_original_filter(grpc_channel_stack_builder* builder,
                                 void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), set_arg_once_fn,
-      &g_original_fn_called);
+      builder, static_cast<const grpc_channel_filter*>(arg),
+      set_arg_once_fn, &g_original_fn_called);
 }
 
 static void init_plugin(void) {

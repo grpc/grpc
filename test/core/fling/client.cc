@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,13 +62,15 @@ static void init_ping_pong_request(void) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &response_payload_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
@@ -82,9 +84,10 @@ static void step_ping_pong_request(void) {
       grpc_slice_from_static_string("/Reflector/reflectUnary"), &host,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
-                                                   (size_t)(op - ops), (void*)1,
-                                                   nullptr));
-  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+                                                   (size_t)(op - ops),
+                                                   (void*)1, nullptr));
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                             nullptr);
   grpc_call_unref(call);
   grpc_byte_buffer_destroy(response_payload_recv);
   call = nullptr;
@@ -107,14 +110,16 @@ static void init_ping_pong_stream(void) {
   error = grpc_call_start_batch(call, stream_init_ops, 2,
                                 reinterpret_cast<void*>(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                             nullptr);
 
   grpc_metadata_array_init(&initial_metadata_recv);
 
   stream_step_ops[0].op = GRPC_OP_SEND_MESSAGE;
   stream_step_ops[0].data.send_message.send_message = the_buffer;
   stream_step_ops[1].op = GRPC_OP_RECV_MESSAGE;
-  stream_step_ops[1].data.recv_message.recv_message = &response_payload_recv;
+  stream_step_ops[1].data.recv_message.recv_message =
+      &response_payload_recv;
 }
 
 static void step_ping_pong_stream(void) {
@@ -123,7 +128,8 @@ static void step_ping_pong_stream(void) {
   error = grpc_call_start_batch(call, stream_step_ops, 2,
                                 reinterpret_cast<void*>(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                             nullptr);
   grpc_byte_buffer_destroy(response_payload_recv);
 }
 
@@ -139,7 +145,8 @@ typedef struct {
 } scenario;
 
 static const scenario scenarios[] = {
-    {"ping-pong-request", init_ping_pong_request, step_ping_pong_request},
+    {"ping-pong-request", init_ping_pong_request,
+     step_ping_pong_request},
     {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream},
 };
 
@@ -176,7 +183,8 @@ int main(int argc, char** argv) {
   gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
   gpr_cmdline_add_string(cl, "scenario", "Scenario", &scenario_name);
   gpr_cmdline_add_int(cl, "warmup", "Warmup seconds", &warmup_seconds);
-  gpr_cmdline_add_int(cl, "benchmark", "Benchmark seconds", &benchmark_seconds);
+  gpr_cmdline_add_int(cl, "benchmark", "Benchmark seconds",
+                      &benchmark_seconds);
   gpr_cmdline_parse(cl, argc, argv);
   gpr_cmdline_destroy(cl);
 
@@ -186,7 +194,8 @@ int main(int argc, char** argv) {
     }
   }
   if (!sc.name) {
-    fprintf(stderr, "unsupported scenario '%s'. Valid are:", scenario_name);
+    fprintf(stderr,
+            "unsupported scenario '%s'. Valid are:", scenario_name);
     fflush(stderr);
     for (i = 0; i < GPR_ARRAY_SIZE(scenarios); i++) {
       fprintf(stderr, " %s", scenarios[i].name);
@@ -197,15 +206,16 @@ int main(int argc, char** argv) {
 
   channel = grpc_insecure_channel_create(target, nullptr, nullptr);
   cq = grpc_completion_queue_create_for_next(nullptr);
-  the_buffer =
-      grpc_raw_byte_buffer_create(&slice, static_cast<size_t>(payload_size));
+  the_buffer = grpc_raw_byte_buffer_create(
+      &slice, static_cast<size_t>(payload_size));
   histogram = grpc_histogram_create(0.01, 60e9);
 
   sc.init();
 
-  gpr_timespec end_warmup = grpc_timeout_seconds_to_deadline(warmup_seconds);
-  gpr_timespec end_profiling =
-      grpc_timeout_seconds_to_deadline(warmup_seconds + benchmark_seconds);
+  gpr_timespec end_warmup =
+      grpc_timeout_seconds_to_deadline(warmup_seconds);
+  gpr_timespec end_profiling = grpc_timeout_seconds_to_deadline(
+      warmup_seconds + benchmark_seconds);
 
   while (gpr_time_cmp(gpr_now(end_warmup.clock_type), end_warmup) < 0) {
     sc.do_one_step();
@@ -213,7 +223,8 @@ int main(int argc, char** argv) {
 
   gpr_log(GPR_INFO, "start profiling");
   grpc_profiler_start("client.prof");
-  while (gpr_time_cmp(gpr_now(end_profiling.clock_type), end_profiling) < 0) {
+  while (gpr_time_cmp(gpr_now(end_profiling.clock_type),
+                      end_profiling) < 0) {
     start = now();
     sc.do_one_step();
     stop = now();
@@ -228,8 +239,8 @@ int main(int argc, char** argv) {
   grpc_channel_destroy(channel);
   grpc_completion_queue_shutdown(cq);
   do {
-    event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                       nullptr);
+    event = grpc_completion_queue_next(
+        cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   } while (event.type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
   grpc_byte_buffer_destroy(the_buffer);

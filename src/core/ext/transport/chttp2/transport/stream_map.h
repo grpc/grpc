@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,12 +23,13 @@
 
 #include <stddef.h>
 
-/* Data structure to map a uint32_t to a data object (represented by a void*)
+/* Data structure to map a uint32_t to a data object (represented by a
+   void*)
 
-   Represented as a sorted array of keys, and a corresponding array of values.
-   Lookups are performed with binary search.
-   Adds are restricted to strictly higher keys than previously seen (this is
-   guaranteed by http2). */
+   Represented as a sorted array of keys, and a corresponding array of
+   values. Lookups are performed with binary search. Adds are restricted
+   to strictly higher keys than previously seen (this is guaranteed by
+   http2). */
 struct grpc_chttp2_stream_map {
   uint32_t* keys;
   void** values;
@@ -40,17 +41,19 @@ void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
                                  size_t initial_capacity);
 void grpc_chttp2_stream_map_destroy(grpc_chttp2_stream_map* map);
 
-/* Add a new key: given http2 semantics, new keys must always be greater than
-   existing keys - this is asserted */
-void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
-                                void* value);
+/* Add a new key: given http2 semantics, new keys must always be greater
+   than existing keys - this is asserted */
+void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map,
+                                uint32_t key, void* value);
 
-/* Delete an existing key - returns the previous value of the key if it existed,
-   or NULL otherwise */
-void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key);
+/* Delete an existing key - returns the previous value of the key if it
+   existed, or NULL otherwise */
+void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map,
+                                    uint32_t key);
 
 /* Return an existing key, or NULL if it does not exist */
-void* grpc_chttp2_stream_map_find(grpc_chttp2_stream_map* map, uint32_t key);
+void* grpc_chttp2_stream_map_find(grpc_chttp2_stream_map* map,
+                                  uint32_t key);
 
 /* Return a random entry */
 void* grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map* map);
@@ -60,7 +63,8 @@ size_t grpc_chttp2_stream_map_size(grpc_chttp2_stream_map* map);
 
 /* Callback on each stream */
 void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map* map,
-                                     void (*f)(void* user_data, uint32_t key,
+                                     void (*f)(void* user_data,
+                                               uint32_t key,
                                                void* value),
                                      void* user_data);
 

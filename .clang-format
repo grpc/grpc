@@ -4,6 +4,7 @@ BasedOnStyle: Google
 DerivePointerAlignment: false
 PointerAlignment: Left
 IncludeBlocks: Preserve
+ColumnLimit: 72
 ---
 Language: ObjC
 BasedOnStyle: Google

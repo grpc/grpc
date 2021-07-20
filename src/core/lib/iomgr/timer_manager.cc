@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,7 +57,8 @@ static bool g_has_timed_waiter;
 // the deadline of the current timed waiter thread (only relevant if
 // g_has_timed_waiter is true)
 static grpc_millis g_timed_waiter_deadline;
-// generation counter to track which thread is waiting for the next timer
+// generation counter to track which thread is waiting for the next
+// timer
 static uint64_t g_timed_waiter_generation;
 // number of timer wakeups
 static uint64_t g_wakeups;
@@ -109,16 +110,18 @@ static void run_some_timers() {
 
   // if there's something to execute...
   gpr_mu_lock(&g_mu);
-  // remove a waiter from the pool, and start another thread if necessary
+  // remove a waiter from the pool, and start another thread if
+  // necessary
   --g_waiter_count;
   if (g_waiter_count == 0 && g_threaded) {
-    // The number of timer threads is always increasing until all the threads
-    // are stopped. In rare cases, if a large number of timers fire
-    // simultaneously, we may end up using a large number of threads.
+    // The number of timer threads is always increasing until all the
+    // threads are stopped. In rare cases, if a large number of timers
+    // fire simultaneously, we may end up using a large number of
+    // threads.
     start_timer_thread_and_unlock();
   } else {
-    // if there's no thread waiting with a timeout, kick an existing untimed
-    // waiter so that the next deadline is not missed
+    // if there's no thread waiting with a timeout, kick an existing
+    // untimed waiter so that the next deadline is not missed
     if (!g_has_timed_waiter) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
         gpr_log(GPR_INFO, "kick untimed waiter");
@@ -140,9 +143,9 @@ static void run_some_timers() {
   gpr_mu_unlock(&g_mu);
 }
 
-// wait until 'next' (or forever if there is already a timed waiter in the pool)
-// returns true if the thread should continue executing (false if it should
-// shutdown)
+// wait until 'next' (or forever if there is already a timed waiter in
+// the pool) returns true if the thread should continue executing (false
+// if it should shutdown)
 static bool wait_until(grpc_millis next) {
   gpr_mu_lock(&g_mu);
   // if we're not threaded anymore, leave
@@ -151,32 +154,34 @@ static bool wait_until(grpc_millis next) {
     return false;
   }
 
-  // If g_kicked is true at this point, it means there was a kick from the timer
-  // system that the timer-manager threads here missed. We cannot trust 'next'
-  // here any longer (since there might be an earlier deadline). So if g_kicked
-  // is true at this point, we should quickly exit this and get the next
-  // deadline from the timer system
+  // If g_kicked is true at this point, it means there was a kick from
+  // the timer system that the timer-manager threads here missed. We
+  // cannot trust 'next' here any longer (since there might be an
+  // earlier deadline). So if g_kicked is true at this point, we should
+  // quickly exit this and get the next deadline from the timer system
 
   if (!g_kicked) {
-    // if there's no timed waiter, we should become one: that waiter waits
-    // only until the next timer should expire. All other timers wait forever
+    // if there's no timed waiter, we should become one: that waiter
+    // waits only until the next timer should expire. All other timers
+    // wait forever
     //
-    // 'g_timed_waiter_generation' is a global generation counter. The idea here
-    // is that the thread becoming a timed-waiter increments and stores this
-    // global counter locally in 'my_timed_waiter_generation' before going to
-    // sleep. After waking up, if my_timed_waiter_generation ==
-    // g_timed_waiter_generation, it can be sure that it was the timed_waiter
-    // thread (and that no other thread took over while this was asleep)
+    // 'g_timed_waiter_generation' is a global generation counter. The
+    // idea here is that the thread becoming a timed-waiter increments
+    // and stores this global counter locally in
+    // 'my_timed_waiter_generation' before going to sleep. After waking
+    // up, if my_timed_waiter_generation == g_timed_waiter_generation,
+    // it can be sure that it was the timed_waiter thread (and that no
+    // other thread took over while this was asleep)
     //
-    // Initialize my_timed_waiter_generation to some value that is NOT equal to
-    // g_timed_waiter_generation
+    // Initialize my_timed_waiter_generation to some value that is NOT
+    // equal to g_timed_waiter_generation
     uint64_t my_timed_waiter_generation = g_timed_waiter_generation - 1;
 
-    /* If there's no timed waiter, we should become one: that waiter waits only
-       until the next timer should expire. All other timer threads wait forever
-       unless their 'next' is earlier than the current timed-waiter's deadline
-       (in which case the thread with earlier 'next' takes over as the new timed
-       waiter) */
+    /* If there's no timed waiter, we should become one: that waiter
+       waits only until the next timer should expire. All other timer
+       threads wait forever unless their 'next' is earlier than the
+       current timed-waiter's deadline (in which case the thread with
+       earlier 'next' takes over as the new timed waiter) */
     if (next != GRPC_MILLIS_INF_FUTURE) {
       if (!g_has_timed_waiter || (next < g_timed_waiter_deadline)) {
         my_timed_waiter_generation = ++g_timed_waiter_generation;
@@ -184,10 +189,13 @@ static bool wait_until(grpc_millis next) {
         g_timed_waiter_deadline = next;
 
         if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-          grpc_millis wait_time = next - grpc_core::ExecCtx::Get()->Now();
-          gpr_log(GPR_INFO, "sleep for a %" PRId64 " milliseconds", wait_time);
+          grpc_millis wait_time =
+              next - grpc_core::ExecCtx::Get()->Now();
+          gpr_log(GPR_INFO, "sleep for a %" PRId64 " milliseconds",
+                  wait_time);
         }
-      } else {  // g_timed_waiter == true && next >= g_timed_waiter_deadline
+      } else {  // g_timed_waiter == true && next >=
+                // g_timed_waiter_deadline
         next = GRPC_MILLIS_INF_FUTURE;
       }
     }
@@ -205,9 +213,10 @@ static bool wait_until(grpc_millis next) {
               my_timed_waiter_generation == g_timed_waiter_generation,
               g_kicked);
     }
-    // if this was the timed waiter, then we need to check timers, and flag
-    // that there's now no timed waiter... we'll look for a replacement if
-    // there's work to do after checking timers (code above)
+    // if this was the timed waiter, then we need to check timers, and
+    // flag that there's now no timed waiter... we'll look for a
+    // replacement if there's work to do after checking timers (code
+    // above)
     if (my_timed_waiter_generation == g_timed_waiter_generation) {
       ++g_wakeups;
       g_has_timed_waiter = false;
@@ -215,8 +224,8 @@ static bool wait_until(grpc_millis next) {
     }
   }
 
-  // if this was a kick from the timer system, consume it (and don't stop
-  // this thread yet)
+  // if this was a kick from the timer system, consume it (and don't
+  // stop this thread yet)
   if (g_kicked) {
     grpc_timer_consume_kick();
     g_kicked = false;
@@ -237,17 +246,18 @@ static void timer_main_loop() {
         run_some_timers();
         break;
       case GRPC_TIMERS_NOT_CHECKED:
-        /* This case only happens under contention, meaning more than one timer
-           manager thread checked timers concurrently.
+        /* This case only happens under contention, meaning more than
+           one timer manager thread checked timers concurrently.
 
-           If that happens, we're guaranteed that some other thread has just
-           checked timers, and this will avalanche into some other thread seeing
-           empty timers and doing a timed sleep.
+           If that happens, we're guaranteed that some other thread has
+           just checked timers, and this will avalanche into some other
+           thread seeing empty timers and doing a timed sleep.
 
-           Consequently, we can just sleep forever here and be happy at some
-           saved wakeup cycles. */
+           Consequently, we can just sleep forever here and be happy at
+           some saved wakeup cycles. */
         if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-          gpr_log(GPR_INFO, "timers not checked: expect another thread to");
+          gpr_log(GPR_INFO,
+                  "timers not checked: expect another thread to");
         }
         next = GRPC_MILLIS_INF_FUTURE;
       // fallthrough
@@ -262,8 +272,8 @@ static void timer_main_loop() {
 
 static void timer_thread_cleanup(completed_thread* ct) {
   gpr_mu_lock(&g_mu);
-  // terminate the thread: drop the waiter count, thread count, and let whomever
-  // stopped the threading stuff know that we're done
+  // terminate the thread: drop the waiter count, thread count, and let
+  // whomever stopped the threading stuff know that we're done
   --g_waiter_count;
   --g_thread_count;
   if (0 == g_thread_count) {
@@ -278,12 +288,13 @@ static void timer_thread_cleanup(completed_thread* ct) {
 }
 
 static void timer_thread(void* completed_thread_ptr) {
-  // this threads exec_ctx: we try to run things through to completion here
-  // since it's easy to spin up new threads
+  // this threads exec_ctx: we try to run things through to completion
+  // here since it's easy to spin up new threads
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
   timer_main_loop();
 
-  timer_thread_cleanup(static_cast<completed_thread*>(completed_thread_ptr));
+  timer_thread_cleanup(
+      static_cast<completed_thread*>(completed_thread_ptr));
 }
 
 static void start_threads(void) {
@@ -323,7 +334,8 @@ static void stop_threads(void) {
       gpr_log(GPR_INFO, "num timer threads: %d", g_thread_count);
     }
     while (g_thread_count > 0) {
-      gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+      gpr_cv_wait(&g_cv_shutdown, &g_mu,
+                  gpr_inf_future(GPR_CLOCK_MONOTONIC));
       if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
         gpr_log(GPR_INFO, "num timer threads: %d", g_thread_count);
       }
@@ -360,4 +372,6 @@ void grpc_kick_poller(void) {
   gpr_mu_unlock(&g_mu);
 }
 
-uint64_t grpc_timer_manager_get_wakeups_testonly(void) { return g_wakeups; }
+uint64_t grpc_timer_manager_get_wakeups_testonly(void) {
+  return g_wakeups;
+}

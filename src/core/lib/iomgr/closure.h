@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,16 +46,16 @@ typedef struct grpc_closure_list {
 /** gRPC Callback definition.
  *
  * \param arg Arbitrary input.
- * \param error GRPC_ERROR_NONE if no error occurred, otherwise some grpc_error
- *              describing what went wrong.
- *              Error contract: it is not the cb's job to unref this error;
- *              the closure scheduler will do that after the cb returns */
+ * \param error GRPC_ERROR_NONE if no error occurred, otherwise some
+ * grpc_error describing what went wrong. Error contract: it is not the
+ * cb's job to unref this error; the closure scheduler will do that
+ * after the cb returns */
 typedef void (*grpc_iomgr_cb_func)(void* arg, grpc_error_handle error);
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {
-  /** Once queued, next indicates the next queued closure; before then, scratch
-   *  space */
+  /** Once queued, next indicates the next queued closure; before then,
+   * scratch space */
   union {
     grpc_closure* next;
     grpc_core::ManualConstructor<
@@ -70,14 +70,16 @@ struct grpc_closure {
   /** Arguments to be passed to "cb". */
   void* cb_arg;
 
-  /** Once queued, the result of the closure. Before then: scratch space */
+  /** Once queued, the result of the closure. Before then: scratch space
+   */
   union {
     grpc_error_handle error;
     uintptr_t scratch;
   } error_data;
 
-// extra tracing and debugging for grpc_closure. This incurs a decent amount of
-// overhead per closure, so it must be enabled at compile time.
+// extra tracing and debugging for grpc_closure. This incurs a decent
+// amount of overhead per closure, so it must be enabled at compile
+// time.
 #ifndef NDEBUG
   bool scheduled;
   bool run;  // true = run, false = scheduled
@@ -91,10 +93,12 @@ struct grpc_closure {
 #ifndef NDEBUG
 inline grpc_closure* grpc_closure_init(const char* file, int line,
                                        grpc_closure* closure,
-                                       grpc_iomgr_cb_func cb, void* cb_arg) {
+                                       grpc_iomgr_cb_func cb,
+                                       void* cb_arg) {
 #else
 inline grpc_closure* grpc_closure_init(grpc_closure* closure,
-                                       grpc_iomgr_cb_func cb, void* cb_arg) {
+                                       grpc_iomgr_cb_func cb,
+                                       void* cb_arg) {
 #endif
   closure->cb = cb;
   closure->cb_arg = cb_arg;
@@ -110,7 +114,8 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
   return closure;
 }
 
-/** Initializes \a closure with \a cb and \a cb_arg. Returns \a closure. */
+/** Initializes \a closure with \a cb and \a cb_arg. Returns \a closure.
+ */
 #ifndef NDEBUG
 #define GRPC_CLOSURE_INIT(closure, cb, cb_arg, scheduler) \
   grpc_closure_init(__FILE__, __LINE__, closure, cb, cb_arg)
@@ -138,24 +143,28 @@ inline void closure_wrapper(void* arg, grpc_error_handle error) {
 
 #ifndef NDEBUG
 inline grpc_closure* grpc_closure_create(const char* file, int line,
-                                         grpc_iomgr_cb_func cb, void* cb_arg) {
+                                         grpc_iomgr_cb_func cb,
+                                         void* cb_arg) {
 #else
-inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg) {
+inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb,
+                                         void* cb_arg) {
 #endif
   closure_impl::wrapped_closure* wc =
-      static_cast<closure_impl::wrapped_closure*>(gpr_malloc(sizeof(*wc)));
+      static_cast<closure_impl::wrapped_closure*>(
+          gpr_malloc(sizeof(*wc)));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
 #ifndef NDEBUG
-  grpc_closure_init(file, line, &wc->wrapper, closure_impl::closure_wrapper,
-                    wc);
+  grpc_closure_init(file, line, &wc->wrapper,
+                    closure_impl::closure_wrapper, wc);
 #else
   grpc_closure_init(&wc->wrapper, closure_impl::closure_wrapper, wc);
 #endif
   return &wc->wrapper;
 }
 
-/* Create a heap allocated closure: try to avoid except for very rare events */
+/* Create a heap allocated closure: try to avoid except for very rare
+ * events */
 #ifndef NDEBUG
 #define GRPC_CLOSURE_CREATE(cb, cb_arg, scheduler) \
   grpc_closure_create(__FILE__, __LINE__, cb, cb_arg)
@@ -194,9 +203,10 @@ inline bool grpc_closure_list_append(grpc_closure_list* closure_list,
 }
 
 /** force all success bits in \a list to false */
-inline void grpc_closure_list_fail_all(grpc_closure_list* list,
-                                       grpc_error_handle forced_failure) {
-  for (grpc_closure* c = list->head; c != nullptr; c = c->next_data.next) {
+inline void grpc_closure_list_fail_all(
+    grpc_closure_list* list, grpc_error_handle forced_failure) {
+  for (grpc_closure* c = list->head; c != nullptr;
+       c = c->next_data.next) {
     if (c->error_data.error == GRPC_ERROR_NONE) {
       c->error_data.error = GRPC_ERROR_REF(forced_failure);
     }
@@ -236,7 +246,8 @@ class Closure {
     }
 #ifndef NDEBUG
     if (grpc_trace_closure.enabled()) {
-      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
+      gpr_log(GPR_DEBUG,
+              "running closure %p: created [%s:%d]: run [%s:%d]",
               closure, closure->file_created, closure->line_created,
               location.file(), location.line());
     }

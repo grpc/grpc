@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,8 +24,9 @@
 
 #include "test/core/util/test_config.h"
 
-static void test_varint(uint32_t value, uint32_t prefix_bits, uint8_t prefix_or,
-                        const char* expect_bytes, size_t expect_length) {
+static void test_varint(uint32_t value, uint32_t prefix_bits,
+                        uint8_t prefix_or, const char* expect_bytes,
+                        size_t expect_length) {
   uint32_t nbytes = GRPC_CHTTP2_VARINT_LENGTH(value, prefix_bits);
   grpc_slice expect =
       grpc_slice_from_copied_buffer(expect_bytes, expect_length);

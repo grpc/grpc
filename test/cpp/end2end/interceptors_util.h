@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,22 +27,25 @@
 
 namespace grpc {
 namespace testing {
-/* This interceptor does nothing. Just keeps a global count on the number of
- * times it was invoked. */
+/* This interceptor does nothing. Just keeps a global count on the
+ * number of times it was invoked. */
 class PhonyInterceptor : public experimental::Interceptor {
  public:
   PhonyInterceptor() {}
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
       num_times_run_++;
     } else if (methods->QueryInterceptionHookPoint(
                    experimental::InterceptionHookPoints::
                        POST_RECV_INITIAL_METADATA)) {
       num_times_run_reverse_++;
     } else if (methods->QueryInterceptionHookPoint(
-                   experimental::InterceptionHookPoints::PRE_SEND_CANCEL)) {
+                   experimental::InterceptionHookPoints::
+                       PRE_SEND_CANCEL)) {
       num_times_cancel_++;
     }
     methods->Proceed();
@@ -85,18 +88,21 @@ class PhonyInterceptorFactory
 /* This interceptor can be used to test the interception mechanism. */
 class TestInterceptor : public experimental::Interceptor {
  public:
-  TestInterceptor(const std::string& method, const char* suffix_for_stats,
+  TestInterceptor(const std::string& method,
+                  const char* suffix_for_stats,
                   experimental::ClientRpcInfo* info) {
     EXPECT_EQ(info->method(), method);
 
-    if (suffix_for_stats == nullptr || info->suffix_for_stats() == nullptr) {
+    if (suffix_for_stats == nullptr ||
+        info->suffix_for_stats() == nullptr) {
       EXPECT_EQ(info->suffix_for_stats(), suffix_for_stats);
     } else {
       EXPECT_EQ(strcmp(info->suffix_for_stats(), suffix_for_stats), 0);
     }
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     methods->Proceed();
   }
 };
@@ -142,20 +148,22 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
               EchoResponse* response) override {
     auto client_metadata = context->client_metadata();
     for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+      context->AddTrailingMetadata(ToString(pair.first),
+                                   ToString(pair.second));
     }
     response->set_message(request->message());
     return Status::OK;
   }
 
-  Status BidiStream(
-      ServerContext* context,
-      grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+  Status BidiStream(ServerContext* context,
+                    grpc::ServerReaderWriter<EchoResponse, EchoRequest>*
+                        stream) override {
     EchoRequest req;
     EchoResponse resp;
     auto client_metadata = context->client_metadata();
     for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+      context->AddTrailingMetadata(ToString(pair.first),
+                                   ToString(pair.second));
     }
 
     while (stream->Read(&req)) {
@@ -170,7 +178,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
                        EchoResponse* resp) override {
     auto client_metadata = context->client_metadata();
     for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+      context->AddTrailingMetadata(ToString(pair.first),
+                                   ToString(pair.second));
     }
 
     EchoRequest req;
@@ -186,7 +195,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
                         ServerWriter<EchoResponse>* writer) override {
     auto client_metadata = context->client_metadata();
     for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+      context->AddTrailingMetadata(ToString(pair.first),
+                                   ToString(pair.second));
     }
 
     EchoResponse resp;
@@ -211,21 +221,26 @@ void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel);
 
 void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel);
 
-void MakeAsyncCQClientStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeAsyncCQClientStreamingCall(
+    const std::shared_ptr<Channel>& channel);
 
-void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeAsyncCQServerStreamingCall(
+    const std::shared_ptr<Channel>& channel);
 
-void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& channel);
+void MakeAsyncCQBidiStreamingCall(
+    const std::shared_ptr<Channel>& channel);
 
 void MakeCallbackCall(const std::shared_ptr<Channel>& channel);
 
-bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
-                   const string& key, const string& value);
+bool CheckMetadata(
+    const std::multimap<grpc::string_ref, grpc::string_ref>& map,
+    const string& key, const string& value);
 
 bool CheckMetadata(const std::multimap<std::string, std::string>& map,
                    const string& key, const string& value);
 
-std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+std::vector<
+    std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreatePhonyClientInterceptors();
 
 inline void* tag(int i) { return reinterpret_cast<void*>(i); }
@@ -248,9 +263,8 @@ class Verifier {
     }
     return *this;
   }
-  // ExpectMaybe sets the expected ok value for a specific tag, but does not
-  // require it to appear
-  // If it does, sets *seen to true
+  // ExpectMaybe sets the expected ok value for a specific tag, but does
+  // not require it to appear If it does, sets *seen to true
   Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
     if (!*seen) {
       maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
@@ -302,14 +316,16 @@ class Verifier {
     if (expectations_.empty()) {
       bool ok;
       void* got_tag;
-      EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
-                CompletionQueue::TIMEOUT);
+      EXPECT_EQ(
+          DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
+          CompletionQueue::TIMEOUT);
     } else {
       while (!expectations_.empty()) {
         bool ok;
         void* got_tag;
-        EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
-                  CompletionQueue::GOT_EVENT);
+        EXPECT_EQ(
+            DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
+            CompletionQueue::GOT_EVENT);
         GotTag(got_tag, ok, false);
       }
     }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <vector>
@@ -56,11 +56,11 @@ int main(int argc, char** argv) {
   // out if it still wants to queue for more work or if it should kick
   // other pollers.
   //
-  // Previously that kick only affected pollers in the same pollset, thus
-  // leaving the other threads stuck in the poller queue. Now the pollset-
-  // specific grpc_pollset_kick will also kick pollers from other pollsets
-  // if there are no pollers in the current pollset. This frees up the
-  // last threads and completes the test.
+  // Previously that kick only affected pollers in the same pollset,
+  // thus leaving the other threads stuck in the poller queue. Now the
+  // pollset- specific grpc_pollset_kick will also kick pollers from
+  // other pollsets if there are no pollers in the current pollset. This
+  // frees up the last threads and completes the test.
   ThreadParams params = {};
   gpr_cv_init(&params.cv);
   gpr_mu_init(&params.mu);
@@ -76,11 +76,12 @@ int main(int argc, char** argv) {
           grpc_pollset pollset = {};
           grpc_pollset_init(&pollset, &mu);
 
-          // Lock the pollset mutex before notifying the test runner thread that
-          // one more thread is queuing. This allows the test runner thread to
-          // wait for all threads to be queued before sending the first kick by
-          // waiting for the mutexes to be released, which happens in
-          // gpr_pollset_work when the poller is queued.
+          // Lock the pollset mutex before notifying the test runner
+          // thread that one more thread is queuing. This allows the
+          // test runner thread to wait for all threads to be queued
+          // before sending the first kick by waiting for the mutexes to
+          // be released, which happens in gpr_pollset_work when the
+          // poller is queued.
           gpr_mu_lock(mu);
 
           gpr_mu_lock(&tparams->mu);
@@ -89,10 +90,11 @@ int main(int argc, char** argv) {
           gpr_cv_signal(&tparams->cv);
           gpr_mu_unlock(&tparams->mu);
 
-          // Queue for work and once we're done, make sure to kick the remaining
-          // threads.
+          // Queue for work and once we're done, make sure to kick the
+          // remaining threads.
           grpc_error_handle error;
-          error = grpc_pollset_work(&pollset, NULL, GRPC_MILLIS_INF_FUTURE);
+          error =
+              grpc_pollset_work(&pollset, NULL, GRPC_MILLIS_INF_FUTURE);
           error = grpc_pollset_kick(&pollset, NULL);
 
           gpr_mu_unlock(mu);
@@ -109,18 +111,18 @@ int main(int argc, char** argv) {
 
   // Wait for all three threads to be queuing.
   gpr_mu_lock(&params.mu);
-  while (
-      params.queuing != THREADS &&
-      !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)))
+  while (params.queuing != THREADS &&
+         !gpr_cv_wait(&params.cv, &params.mu,
+                      gpr_inf_future(GPR_CLOCK_REALTIME)))
     ;
   gpr_mu_unlock(&params.mu);
 
-  // Wait for the mutexes to be released. This indicates that the threads have
-  // entered the work wait.
+  // Wait for the mutexes to be released. This indicates that the
+  // threads have entered the work wait.
   //
-  // At least currently these are essentially all references to the same global
-  // pollset mutex, but we are still waiting on them once for each thread in
-  // the case this ever changes.
+  // At least currently these are essentially all references to the same
+  // global pollset mutex, but we are still waiting on them once for
+  // each thread in the case this ever changes.
   for (int i = 0; i < THREADS; i++) {
     gpr_mu_lock(params.pollset_mu[i]);
     gpr_mu_unlock(params.pollset_mu[i]);
@@ -130,9 +132,9 @@ int main(int argc, char** argv) {
 
   // Wait for the threads to complete.
   gpr_mu_lock(&params.mu);
-  while (
-      params.complete != THREADS &&
-      !gpr_cv_wait(&params.cv, &params.mu, gpr_inf_future(GPR_CLOCK_REALTIME)))
+  while (params.complete != THREADS &&
+         !gpr_cv_wait(&params.cv, &params.mu,
+                      gpr_inf_future(GPR_CLOCK_REALTIME)))
     ;
   gpr_mu_unlock(&params.mu);
 

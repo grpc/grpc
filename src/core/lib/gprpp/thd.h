@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,8 +62,9 @@ class Thread {
     }
     bool tracked() const { return tracked_; }
 
-    /// Sets thread stack size (in bytes). Sets to 0 will use the default stack
-    /// size which is 64KB for Windows threads and 2MB for Posix(x86) threads.
+    /// Sets thread stack size (in bytes). Sets to 0 will use the
+    /// default stack size which is 64KB for Windows threads and 2MB for
+    /// Posix(x86) threads.
     Options& set_stack_size(size_t bytes) {
       stack_size_ = bytes;
       return *this;
@@ -75,9 +76,10 @@ class Thread {
     bool tracked_;
     size_t stack_size_;
   };
-  /// Default constructor only to allow use in structs that lack constructors
-  /// Does not produce a validly-constructed thread; must later
-  /// use placement new to construct a real thread. Does not init mu_ and cv_
+  /// Default constructor only to allow use in structs that lack
+  /// constructors Does not produce a validly-constructed thread; must
+  /// later use placement new to construct a real thread. Does not init
+  /// mu_ and cv_
   Thread() : state_(FAKE), impl_(nullptr) {}
 
   /// Normal constructor to create a thread with name \a thd_name,
@@ -89,25 +91,27 @@ class Thread {
   Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
          bool* success = nullptr, const Options& options = Options());
 
-  /// Move constructor for thread. After this is called, the other thread
-  /// no longer represents a living thread object
+  /// Move constructor for thread. After this is called, the other
+  /// thread no longer represents a living thread object
   Thread(Thread&& other) noexcept
-      : state_(other.state_), impl_(other.impl_), options_(other.options_) {
+      : state_(other.state_),
+        impl_(other.impl_),
+        options_(other.options_) {
     other.state_ = MOVED;
     other.impl_ = nullptr;
     other.options_ = Options();
   }
 
-  /// Move assignment operator for thread. After this is called, the other
-  /// thread no longer represents a living thread object. Not allowed if this
-  /// thread actually exists
+  /// Move assignment operator for thread. After this is called, the
+  /// other thread no longer represents a living thread object. Not
+  /// allowed if this thread actually exists
   Thread& operator=(Thread&& other) noexcept {
     if (this != &other) {
       // TODO(vjpai): if we can be sure that all Thread's are actually
-      // constructed, then we should assert GPR_ASSERT(impl_ == nullptr) here.
-      // However, as long as threads come in structures that are
-      // allocated via gpr_malloc, this will not be the case, so we cannot
-      // assert it for the time being.
+      // constructed, then we should assert GPR_ASSERT(impl_ == nullptr)
+      // here. However, as long as threads come in structures that are
+      // allocated via gpr_malloc, this will not be the case, so we
+      // cannot assert it for the time being.
       state_ = other.state_;
       impl_ = other.impl_;
       options_ = other.options_;
@@ -118,11 +122,11 @@ class Thread {
     return *this;
   }
 
-  /// The destructor is strictly optional; either the thread never came to life
-  /// and the constructor itself killed it, or it has already been joined and
-  /// the Join function kills it, or it was detached (non-joinable) and it has
-  /// run to completion and is now killing itself. The destructor shouldn't have
-  /// to do anything.
+  /// The destructor is strictly optional; either the thread never came
+  /// to life and the constructor itself killed it, or it has already
+  /// been joined and the Join function kills it, or it was detached
+  /// (non-joinable) and it has run to completion and is now killing
+  /// itself. The destructor shouldn't have to do anything.
   ~Thread() { GPR_ASSERT(!options_.joinable() || impl_ == nullptr); }
 
   void Start() {
@@ -130,11 +134,12 @@ class Thread {
       GPR_ASSERT(state_ == ALIVE);
       state_ = STARTED;
       impl_->Start();
-      // If the Thread is not joinable, then the impl_ will cause the deletion
-      // of this Thread object when the thread function completes. Since no
-      // other operation is allowed to a detached thread after Start, there is
-      // no need to change the value of the impl_ or state_ . The next operation
-      // on this object will be the deletion, which will trigger the destructor.
+      // If the Thread is not joinable, then the impl_ will cause the
+      // deletion of this Thread object when the thread function
+      // completes. Since no other operation is allowed to a detached
+      // thread after Start, there is no need to change the value of the
+      // impl_ or state_ . The next operation on this object will be the
+      // deletion, which will trigger the destructor.
     } else {
       GPR_ASSERT(state_ == FAILED);
     }
@@ -157,9 +162,9 @@ class Thread {
   Thread& operator=(const Thread&) = delete;
 
   /// The thread states are as follows:
-  /// FAKE -- just a phony placeholder Thread created by the default constructor
-  /// ALIVE -- an actual thread of control exists associated with this thread
-  /// STARTED -- the thread of control has been started
+  /// FAKE -- just a phony placeholder Thread created by the default
+  /// constructor ALIVE -- an actual thread of control exists associated
+  /// with this thread STARTED -- the thread of control has been started
   /// DONE -- the thread of control has completed and been joined
   /// FAILED -- the thread of control never came alive
   /// MOVED -- contents were moved out and we're no longer tracking them

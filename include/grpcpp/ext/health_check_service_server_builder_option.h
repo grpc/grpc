@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,16 +27,17 @@
 
 namespace grpc {
 
-class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
+class HealthCheckServiceServerBuilderOption
+    : public ServerBuilderOption {
  public:
-  /// The ownership of \a hc will be taken and transferred to the grpc server.
-  /// To explicitly disable default service, pass in a nullptr.
+  /// The ownership of \a hc will be taken and transferred to the grpc
+  /// server. To explicitly disable default service, pass in a nullptr.
   explicit HealthCheckServiceServerBuilderOption(
       std::unique_ptr<HealthCheckServiceInterface> hc);
   ~HealthCheckServiceServerBuilderOption() override {}
   void UpdateArguments(ChannelArguments* args) override;
-  void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override;
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>*
+                         plugins) override;
 
  private:
   std::unique_ptr<HealthCheckServiceInterface> hc_;

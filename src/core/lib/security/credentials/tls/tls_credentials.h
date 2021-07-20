@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,9 @@ class TlsCredentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  grpc_tls_credentials_options* options() const { return options_.get(); }
+  grpc_tls_credentials_options* options() const {
+    return options_.get();
+  }
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
@@ -51,9 +53,12 @@ class TlsServerCredentials final : public grpc_server_credentials {
   ~TlsServerCredentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* /* args */) override;
+  create_security_connector(
+      const grpc_channel_args* /* args */) override;
 
-  grpc_tls_credentials_options* options() const { return options_.get(); }
+  grpc_tls_credentials_options* options() const {
+    return options_.get();
+  }
 
  private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;

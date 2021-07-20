@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,16 +35,17 @@
 
 namespace grpc_core {
 
-// WorkSerializer is a mechanism to schedule callbacks in a synchronized manner.
-// All callbacks scheduled on a WorkSerializer instance will be executed
-// serially in a borrowed thread. The API provides a FIFO guarantee to the
-// execution of callbacks scheduled on the thread.
-// When a thread calls Run() with a callback, the thread is considered borrowed.
-// The callback might run inline, or it might run asynchronously in a different
-// thread that is already inside of Run(). If the callback runs directly inline,
-// other callbacks from other threads might also be executed before Run()
-// returns. Since an arbitrary set of callbacks might be executed when Run() is
-// called, generally no locks should be held while calling Run().
+// WorkSerializer is a mechanism to schedule callbacks in a synchronized
+// manner. All callbacks scheduled on a WorkSerializer instance will be
+// executed serially in a borrowed thread. The API provides a FIFO
+// guarantee to the execution of callbacks scheduled on the thread. When
+// a thread calls Run() with a callback, the thread is considered
+// borrowed. The callback might run inline, or it might run
+// asynchronously in a different thread that is already inside of Run().
+// If the callback runs directly inline, other callbacks from other
+// threads might also be executed before Run() returns. Since an
+// arbitrary set of callbacks might be executed when Run() is called,
+// generally no locks should be held while calling Run().
 class ABSL_LOCKABLE WorkSerializer {
  public:
   WorkSerializer();
@@ -53,9 +54,10 @@ class ABSL_LOCKABLE WorkSerializer {
 
   // Runs a given callback.
   //
-  // If you want to use clang thread annotation to make sure that callback is
-  // called by WorkSerializer only, you need to add the annotation to both the
-  // lambda function given to Run and the actual callback function like;
+  // If you want to use clang thread annotation to make sure that
+  // callback is called by WorkSerializer only, you need to add the
+  // annotation to both the lambda function given to Run and the actual
+  // callback function like;
   //
   //   void run_callback() {
   //     work_serializer.Run(
@@ -63,10 +65,11 @@ class ABSL_LOCKABLE WorkSerializer {
   //            callback();
   //         }, DEBUG_LOCATION);
   //   }
-  //   void callback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) { ... }
+  //   void callback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) {
+  //   ... }
   //
-  // TODO(yashkt): Replace grpc_core::DebugLocation with absl::SourceLocation
-  // once we can start using it directly.
+  // TODO(yashkt): Replace grpc_core::DebugLocation with
+  // absl::SourceLocation once we can start using it directly.
   void Run(std::function<void()> callback,
            const grpc_core::DebugLocation& location);
 

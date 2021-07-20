@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -88,14 +88,18 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   std::string expected_peer_atrributes_value("attributes");
   grpc_security_level expected_sl = GRPC_INTEGRITY_ONLY;
   upb::Arena context_arena;
-  grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
+  grpc_gcp_AltsContext* context =
+      grpc_gcp_AltsContext_new(context_arena.ptr());
   grpc_gcp_AltsContext_set_application_protocol(
-      context, upb_strview_make(expected_ap.data(), expected_ap.length()));
+      context,
+      upb_strview_make(expected_ap.data(), expected_ap.length()));
   grpc_gcp_AltsContext_set_record_protocol(
-      context, upb_strview_make(expected_rp.data(), expected_rp.length()));
+      context,
+      upb_strview_make(expected_rp.data(), expected_rp.length()));
   grpc_gcp_AltsContext_set_security_level(context, expected_sl);
   grpc_gcp_AltsContext_set_peer_service_account(
-      context, upb_strview_make(expected_peer.data(), expected_peer.length()));
+      context,
+      upb_strview_make(expected_peer.data(), expected_peer.length()));
   grpc_gcp_AltsContext_set_local_service_account(
       context,
       upb_strview_make(expected_local.data(), expected_local.length()));
@@ -110,8 +114,8 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);
   EXPECT_NE(serialized_ctx, nullptr);
-  auth_context->AddProperty(TSI_ALTS_CONTEXT,
-                            string(serialized_ctx, serialized_ctx_length));
+  auth_context->AddProperty(
+      TSI_ALTS_CONTEXT, string(serialized_ctx, serialized_ctx_length));
   std::unique_ptr<experimental::AltsContext> alts_context =
       experimental::GetAltsContextFromAuthContext(auth_context);
   EXPECT_NE(alts_context, nullptr);
@@ -127,8 +131,9 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   EXPECT_EQ(0, rpc_protocol_versions.max_rpc_version.minor_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.major_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.minor_version);
-  EXPECT_EQ(expected_peer_atrributes_value,
-            alts_context->peer_attributes().at(expected_peer_atrributes_key));
+  EXPECT_EQ(
+      expected_peer_atrributes_value,
+      alts_context->peer_attributes().at(expected_peer_atrributes_key));
 }
 
 TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {
@@ -138,13 +143,15 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {
       new SecureAuthContext(ctx.get()));
   ctx.reset();
   upb::Arena context_arena;
-  grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
+  grpc_gcp_AltsContext* context =
+      grpc_gcp_AltsContext_new(context_arena.ptr());
   upb::Arena versions_arena;
   grpc_gcp_RpcProtocolVersions* versions =
       grpc_gcp_RpcProtocolVersions_new(versions_arena.ptr());
   upb::Arena max_major_version_arena;
   grpc_gcp_RpcProtocolVersions_Version* version =
-      grpc_gcp_RpcProtocolVersions_Version_new(max_major_version_arena.ptr());
+      grpc_gcp_RpcProtocolVersions_Version_new(
+          max_major_version_arena.ptr());
   grpc_gcp_RpcProtocolVersions_Version_set_major(version, 10);
   grpc_gcp_RpcProtocolVersions_set_max_rpc_version(versions, version);
   grpc_gcp_AltsContext_set_peer_rpc_versions(context, versions);
@@ -152,8 +159,8 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);
   EXPECT_NE(serialized_ctx, nullptr);
-  auth_context->AddProperty(TSI_ALTS_CONTEXT,
-                            string(serialized_ctx, serialized_ctx_length));
+  auth_context->AddProperty(
+      TSI_ALTS_CONTEXT, string(serialized_ctx, serialized_ctx_length));
   std::unique_ptr<experimental::AltsContext> alts_context =
       experimental::GetAltsContextFromAuthContext(auth_context);
   EXPECT_NE(alts_context, nullptr);
@@ -171,16 +178,17 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {
 }
 
 TEST(AltsUtilTest, AltsClientAuthzCheck) {
-  // AltsClientAuthzCheck function should return a permission denied error on
-  // the bad_auth_context, whose internal ALTS context does not exist
+  // AltsClientAuthzCheck function should return a permission denied
+  // error on the bad_auth_context, whose internal ALTS context does not
+  // exist
   const std::shared_ptr<AuthContext> bad_auth_context(
       new SecureAuthContext(nullptr));
   std::vector<std::string> service_accounts{"client"};
-  grpc::Status status =
-      experimental::AltsClientAuthzCheck(bad_auth_context, service_accounts);
+  grpc::Status status = experimental::AltsClientAuthzCheck(
+      bad_auth_context, service_accounts);
   EXPECT_EQ(grpc::StatusCode::PERMISSION_DENIED, status.error_code());
-  // AltsClientAuthzCheck function should function normally when the peer name
-  // in ALTS context is listed in service_accounts
+  // AltsClientAuthzCheck function should function normally when the
+  // peer name in ALTS context is listed in service_accounts
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   const std::shared_ptr<AuthContext> auth_context(
@@ -189,23 +197,26 @@ TEST(AltsUtilTest, AltsClientAuthzCheck) {
   std::string peer("good_client");
   std::vector<std::string> good_service_accounts{"good_client",
                                                  "good_client_1"};
-  std::vector<std::string> bad_service_accounts{"bad_client", "bad_client_1"};
+  std::vector<std::string> bad_service_accounts{"bad_client",
+                                                "bad_client_1"};
   upb::Arena context_arena;
-  grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
+  grpc_gcp_AltsContext* context =
+      grpc_gcp_AltsContext_new(context_arena.ptr());
   grpc_gcp_AltsContext_set_peer_service_account(
       context, upb_strview_make(peer.data(), peer.length()));
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);
   EXPECT_NE(serialized_ctx, nullptr);
-  auth_context->AddProperty(TSI_ALTS_CONTEXT,
-                            string(serialized_ctx, serialized_ctx_length));
-  grpc::Status good_status =
-      experimental::AltsClientAuthzCheck(auth_context, good_service_accounts);
+  auth_context->AddProperty(
+      TSI_ALTS_CONTEXT, string(serialized_ctx, serialized_ctx_length));
+  grpc::Status good_status = experimental::AltsClientAuthzCheck(
+      auth_context, good_service_accounts);
   EXPECT_TRUE(good_status.ok());
-  grpc::Status bad_status =
-      experimental::AltsClientAuthzCheck(auth_context, bad_service_accounts);
-  EXPECT_EQ(grpc::StatusCode::PERMISSION_DENIED, bad_status.error_code());
+  grpc::Status bad_status = experimental::AltsClientAuthzCheck(
+      auth_context, bad_service_accounts);
+  EXPECT_EQ(grpc::StatusCode::PERMISSION_DENIED,
+            bad_status.error_code());
 }
 
 }  // namespace

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,9 +29,9 @@ namespace internal {
 class InterceptorBatchMethodsImpl;
 
 /// An InterceptedChannel is available to client Interceptors. An
-/// InterceptedChannel is unique to an interceptor, and when an RPC is started
-/// on this channel, only those interceptors that come after this interceptor
-/// see the RPC.
+/// InterceptedChannel is unique to an interceptor, and when an RPC is
+/// started on this channel, only those interceptors that come after
+/// this interceptor see the RPC.
 class InterceptedChannel : public ChannelInterface {
  public:
   ~InterceptedChannel() override { channel_ = nullptr; }
@@ -46,9 +46,11 @@ class InterceptedChannel : public ChannelInterface {
   InterceptedChannel(ChannelInterface* channel, size_t pos)
       : channel_(channel), interceptor_pos_(pos) {}
 
-  Call CreateCall(const RpcMethod& method, ::grpc::ClientContext* context,
+  Call CreateCall(const RpcMethod& method,
+                  ::grpc::ClientContext* context,
                   ::grpc::CompletionQueue* cq) override {
-    return channel_->CreateCallInternal(method, context, cq, interceptor_pos_);
+    return channel_->CreateCallInternal(method, context, cq,
+                                        interceptor_pos_);
   }
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override {
@@ -62,7 +64,8 @@ class InterceptedChannel : public ChannelInterface {
                                gpr_timespec deadline,
                                ::grpc::CompletionQueue* cq,
                                void* tag) override {
-    return channel_->NotifyOnStateChangeImpl(last_observed, deadline, cq, tag);
+    return channel_->NotifyOnStateChangeImpl(last_observed, deadline,
+                                             cq, tag);
   }
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override {

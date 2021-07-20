@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,26 +31,28 @@
  * This method creates an ALTS channel security connector.
  *
  * - channel_creds: channel credential instance.
- * - request_metadata_creds: credential object which will be sent with each
- *   request. This parameter can be nullptr.
- * - target_name: the name of the endpoint that the channel is connecting to.
- * - sc: address of ALTS channel security connector instance to be returned from
- *   the method.
+ * - request_metadata_creds: credential object which will be sent with
+ * each request. This parameter can be nullptr.
+ * - target_name: the name of the endpoint that the channel is
+ * connecting to.
+ * - sc: address of ALTS channel security connector instance to be
+ * returned from the method.
  *
  * It returns nullptr on failure.
  */
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_alts_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials>
+        request_metadata_creds,
     const char* target_name);
 
 /**
  * This method creates an ALTS server security connector.
  *
  * - server_creds: server credential instance.
- * - sc: address of ALTS server security connector instance to be returned from
- *   the method.
+ * - sc: address of ALTS server security connector instance to be
+ * returned from the method.
  *
  * It returns nullptr on failure.
  */

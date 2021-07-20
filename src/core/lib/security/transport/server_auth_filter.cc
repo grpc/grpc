@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,7 +28,8 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-static void recv_initial_metadata_ready(void* arg, grpc_error_handle error);
+static void recv_initial_metadata_ready(void* arg,
+                                        grpc_error_handle error);
 static void recv_trailing_metadata_ready(void* user_data,
                                          grpc_error_handle error);
 
@@ -40,9 +41,12 @@ enum async_state {
 };
 
 struct channel_data {
-  channel_data(grpc_auth_context* auth_context, grpc_server_credentials* creds)
+  channel_data(grpc_auth_context* auth_context,
+               grpc_server_credentials* creds)
       : auth_context(auth_context->Ref()), creds(creds->Ref()) {}
-  ~channel_data() { auth_context.reset(DEBUG_LOCATION, "server_auth_filter"); }
+  ~channel_data() {
+    auth_context.reset(DEBUG_LOCATION, "server_auth_filter");
+  }
 
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   grpc_core::RefCountedPtr<grpc_server_credentials> creds;
@@ -50,18 +54,20 @@ struct channel_data {
 
 struct call_data {
   call_data(grpc_call_element* elem, const grpc_call_element_args& args)
-      : call_combiner(args.call_combiner), owning_call(args.call_stack) {
+      : call_combiner(args.call_combiner),
+        owning_call(args.call_stack) {
     GRPC_CLOSURE_INIT(&recv_initial_metadata_ready,
                       ::recv_initial_metadata_ready, elem,
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready,
                       ::recv_trailing_metadata_ready, elem,
                       grpc_schedule_on_exec_ctx);
-    // Create server security context.  Set its auth context from channel
-    // data and save it in the call context.
+    // Create server security context.  Set its auth context from
+    // channel data and save it in the call context.
     grpc_server_security_context* server_ctx =
         grpc_server_security_context_create(args.arena);
-    channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+    channel_data* chand =
+        static_cast<channel_data*>(elem->channel_data);
     server_ctx->auth_context =
         chand->auth_context->Ref(DEBUG_LOCATION, "server_auth_filter");
     if (args.context[GRPC_CONTEXT_SECURITY].value != nullptr) {
@@ -105,7 +111,8 @@ static grpc_metadata_array metadata_batch_to_md_array(
     grpc_slice key = GRPC_MDKEY(md);
     grpc_slice value = GRPC_MDVALUE(md);
     if (result.count == result.capacity) {
-      result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
+      result.capacity =
+          GPR_MAX(result.capacity + 8, result.capacity * 2);
       result.metadata = static_cast<grpc_metadata*>(gpr_realloc(
           result.metadata, result.capacity * sizeof(grpc_metadata)));
     }
@@ -131,18 +138,18 @@ static grpc_filtered_mdelem remove_consumed_md(void* user_data,
   return GRPC_FILTERED_MDELEM(md);
 }
 
-static void on_md_processing_done_inner(grpc_call_element* elem,
-                                        const grpc_metadata* consumed_md,
-                                        size_t num_consumed_md,
-                                        const grpc_metadata* response_md,
-                                        size_t num_response_md,
-                                        grpc_error_handle error) {
+static void on_md_processing_done_inner(
+    grpc_call_element* elem, const grpc_metadata* consumed_md,
+    size_t num_consumed_md, const grpc_metadata* response_md,
+    size_t num_response_md, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
+  grpc_transport_stream_op_batch* batch =
+      calld->recv_initial_metadata_batch;
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != nullptr && num_response_md > 0) {
     gpr_log(GPR_INFO,
-            "response_md in auth metadata processing not supported for now. "
+            "response_md in auth metadata processing not supported for "
+            "now. "
             "Ignoring...");
   }
   if (error == GRPC_ERROR_NONE) {
@@ -165,15 +172,19 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
 }
 
 // Called from application code.
-static void on_md_processing_done(
-    void* user_data, const grpc_metadata* consumed_md, size_t num_consumed_md,
-    const grpc_metadata* response_md, size_t num_response_md,
-    grpc_status_code status, const char* error_details) {
+static void on_md_processing_done(void* user_data,
+                                  const grpc_metadata* consumed_md,
+                                  size_t num_consumed_md,
+                                  const grpc_metadata* response_md,
+                                  size_t num_response_md,
+                                  grpc_status_code status,
+                                  const char* error_details) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  // If the call was not cancelled while we were in flight, process the result.
+  // If the call was not cancelled while we were in flight, process the
+  // result.
   if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
                        static_cast<gpr_atm>(STATE_DONE))) {
     grpc_error_handle error = GRPC_ERROR_NONE;
@@ -185,8 +196,8 @@ static void on_md_processing_done(
           GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
           GRPC_ERROR_INT_GRPC_STATUS, status);
     }
-    on_md_processing_done_inner(elem, consumed_md, num_consumed_md, response_md,
-                                num_response_md, error);
+    on_md_processing_done_inner(elem, consumed_md, num_consumed_md,
+                                response_md, num_response_md, error);
   }
   // Clean up.
   for (size_t i = 0; i < calld->md.count; i++) {
@@ -210,18 +221,20 @@ static void cancel_call(void* arg, grpc_error_handle error) {
   GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_call");
 }
 
-static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
+static void recv_initial_metadata_ready(void* arg,
+                                        grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
+  grpc_transport_stream_op_batch* batch =
+      calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != nullptr &&
         chand->creds->auth_metadata_processor().process != nullptr) {
       // We're calling out to the application, so we need to make sure
       // to drop the call combiner early if we get cancelled.
-      // TODO(yashykt): We would not need this ref if call combiners used
-      // Closure::Run() instead of ExecCtx::Run()
+      // TODO(yashykt): We would not need this ref if call combiners
+      // used Closure::Run() instead of ExecCtx::Run()
       GRPC_CALL_STACK_REF(calld->owning_call, "cancel_call");
       GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
                         grpc_schedule_on_exec_ctx);
@@ -231,8 +244,8 @@ static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
           batch->payload->recv_initial_metadata.recv_initial_metadata);
       chand->creds->auth_metadata_processor().process(
           chand->creds->auth_metadata_processor().state,
-          chand->auth_context.get(), calld->md.metadata, calld->md.count,
-          on_md_processing_done, elem);
+          chand->auth_context.get(), calld->md.metadata,
+          calld->md.count, on_md_processing_done, elem);
       return;
     }
   }
@@ -244,7 +257,8 @@ static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
                              calld->recv_trailing_metadata_error,
                              "continue recv_trailing_metadata_ready");
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, closure,
+                          GRPC_ERROR_REF(error));
 }
 
 static void recv_trailing_metadata_ready(void* user_data,
@@ -254,15 +268,18 @@ static void recv_trailing_metadata_ready(void* user_data,
   if (calld->original_recv_initial_metadata_ready != nullptr) {
     calld->recv_trailing_metadata_error = GRPC_ERROR_REF(err);
     calld->seen_recv_trailing_metadata_ready = true;
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
-                            "deferring recv_trailing_metadata_ready until "
-                            "after recv_initial_metadata_ready");
+    GRPC_CALL_COMBINER_STOP(
+        calld->call_combiner,
+        "deferring recv_trailing_metadata_ready until "
+        "after recv_initial_metadata_ready");
     return;
   }
   err = grpc_error_add_child(
-      GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->recv_initial_metadata_error));
+      GRPC_ERROR_REF(err),
+      GRPC_ERROR_REF(calld->recv_initial_metadata_error));
   grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_recv_trailing_metadata_ready, err);
+                          calld->original_recv_trailing_metadata_ready,
+                          err);
 }
 
 static void server_auth_start_transport_stream_op_batch(
@@ -272,14 +289,17 @@ static void server_auth_start_transport_stream_op_batch(
     // Inject our callback.
     calld->recv_initial_metadata_batch = batch;
     calld->original_recv_initial_metadata_ready =
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
+        batch->payload->recv_initial_metadata
+            .recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->recv_initial_metadata_ready;
   }
   if (batch->recv_trailing_metadata) {
     calld->original_recv_trailing_metadata_ready =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        batch->payload->recv_trailing_metadata
+            .recv_trailing_metadata_ready;
+    batch->payload->recv_trailing_metadata
+        .recv_trailing_metadata_ready =
         &calld->recv_trailing_metadata_ready;
   }
   grpc_call_next_op(elem, batch);
@@ -314,7 +334,8 @@ static grpc_error_handle server_auth_init_channel_elem(
 }
 
 /* Destructor for channel data */
-static void server_auth_destroy_channel_elem(grpc_channel_element* elem) {
+static void server_auth_destroy_channel_elem(
+    grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   chand->~channel_data();
 }

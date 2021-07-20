@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,8 +39,8 @@ TEST(AlarmTest, RegularExpiry) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -57,8 +57,8 @@ TEST(AlarmTest, RegularExpiryMultiSet) {
 
     void* output_tag;
     bool ok;
-    const CompletionQueue::NextStatus status =
-        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+    const CompletionQueue::NextStatus status = cq.AsyncNext(
+        &output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
     EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
     EXPECT_TRUE(ok);
@@ -76,8 +76,8 @@ TEST(AlarmTest, RegularExpiryMultiSetMultiCQ) {
 
     void* output_tag;
     bool ok;
-    const CompletionQueue::NextStatus status =
-        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+    const CompletionQueue::NextStatus status = cq.AsyncNext(
+        &output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
     EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
     EXPECT_TRUE(ok);
@@ -157,8 +157,8 @@ TEST(AlarmTest, MultithreadedRegularExpiry) {
   });
 
   std::thread t2([&cq, &ok, &output_tag, &status] {
-    status =
-        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+    status = cq.AsyncNext(&output_tag, &ok,
+                          grpc_timeout_seconds_to_deadline(10));
   });
 
   t1.join();
@@ -175,8 +175,8 @@ TEST(AlarmTest, DeprecatedRegularExpiry) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -191,8 +191,8 @@ TEST(AlarmTest, MoveConstructor) {
   Alarm second(std::move(first));
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
   EXPECT_EQ(junk, output_tag);
@@ -208,8 +208,8 @@ TEST(AlarmTest, MoveAssignment) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -226,8 +226,8 @@ TEST(AlarmTest, RegularExpiryChrono) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -242,8 +242,8 @@ TEST(AlarmTest, ZeroExpiry) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -258,8 +258,8 @@ TEST(AlarmTest, NegativeExpiry) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -275,8 +275,8 @@ TEST(AlarmTest, Cancellation) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_FALSE(ok);
@@ -331,8 +331,8 @@ TEST(AlarmTest, SetDestruction) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      &output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_FALSE(ok);
@@ -343,13 +343,14 @@ TEST(AlarmTest, CallbackSetDestruction) {
   auto c = std::make_shared<Completion>();
   {
     Alarm alarm;
-    alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(10),
-              [c](bool ok) {
-                EXPECT_FALSE(ok);
-                std::lock_guard<std::mutex> l(c->mu);
-                c->completed = true;
-                c->cv.notify_one();
-              });
+    alarm.Set(
+        std::chrono::system_clock::now() + std::chrono::seconds(10),
+        [c](bool ok) {
+          EXPECT_FALSE(ok);
+          std::lock_guard<std::mutex> l(c->mu);
+          c->completed = true;
+          c->cv.notify_one();
+        });
   }
 
   std::unique_lock<std::mutex> l(c->mu);

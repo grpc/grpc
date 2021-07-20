@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -21,7 +21,8 @@
 
 // C interface to port_server.py
 
-// must be synchronized with tools/run_tests/python_utils/start_port_server.py
+// must be synchronized with
+// tools/run_tests/python_utils/start_port_server.py
 #define GRPC_PORT_SERVER_ADDRESS "localhost:32766"
 
 int grpc_pick_port_using_server(void);

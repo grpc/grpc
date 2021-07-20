@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,24 +30,26 @@
 static int unique = 1;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/,
+    grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f =
       grpc_end2end_local_chttp2_create_fixture_fullstack();
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-  static_cast<grpc_end2end_local_fullstack_fixture_data*>(f.fixture_data)
+  static_cast<grpc_end2end_local_fullstack_fixture_data*>(
+      f.fixture_data)
       ->localaddr = absl::StrFormat(
-      "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%d", getpid(),
-      now.tv_sec, now.tv_nsec, unique++);
+      "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%d",
+      getpid(), now.tv_sec, now.tv_nsec, unique++);
   return f;
 }
 
-static void chttp2_init_client_fullstack_uds(grpc_end2end_test_fixture* f,
-                                             grpc_channel_args* client_args) {
+static void chttp2_init_client_fullstack_uds(
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
   grpc_end2end_local_chttp2_init_client_fullstack(f, client_args, UDS);
 }
 
-static void chttp2_init_server_fullstack_uds(grpc_end2end_test_fixture* f,
-                                             grpc_channel_args* client_args) {
+static void chttp2_init_server_fullstack_uds(
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
   grpc_end2end_local_chttp2_init_server_fullstack(f, client_args, UDS);
 }
 

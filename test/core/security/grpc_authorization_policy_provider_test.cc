@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
@@ -24,7 +24,8 @@
 
 namespace grpc_core {
 
-TEST(AuthorizationPolicyProviderTest, StaticDataInitializationSuccessful) {
+TEST(AuthorizationPolicyProviderTest,
+     StaticDataInitializationSuccessful) {
   const char* authz_policy =
       "{"
       "  \"name\": \"authz\","
@@ -34,14 +35,15 @@ TEST(AuthorizationPolicyProviderTest, StaticDataInitializationSuccessful) {
       "    }"
       "  ]"
       "}";
-  auto provider = StaticDataAuthorizationPolicyProvider::Create(authz_policy);
+  auto provider =
+      StaticDataAuthorizationPolicyProvider::Create(authz_policy);
   ASSERT_TRUE(provider.ok());
-  auto* allow_engine =
-      dynamic_cast<GrpcAuthorizationEngine*>((*provider)->allow_engine().get());
+  auto* allow_engine = dynamic_cast<GrpcAuthorizationEngine*>(
+      (*provider)->allow_engine().get());
   ASSERT_NE(allow_engine, nullptr);
   EXPECT_EQ(allow_engine->action(), Rbac::Action::kAllow);
-  auto* deny_engine =
-      dynamic_cast<GrpcAuthorizationEngine*>((*provider)->deny_engine().get());
+  auto* deny_engine = dynamic_cast<GrpcAuthorizationEngine*>(
+      (*provider)->deny_engine().get());
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
 }
@@ -49,9 +51,12 @@ TEST(AuthorizationPolicyProviderTest, StaticDataInitializationSuccessful) {
 TEST(AuthorizationPolicyProviderTest,
      StaticDataInitializationFailedInvalidPolicy) {
   const char* authz_policy = "{}";
-  auto provider = StaticDataAuthorizationPolicyProvider::Create(authz_policy);
-  EXPECT_EQ(provider.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_EQ(provider.status().message(), "\"name\" field is not present.");
+  auto provider =
+      StaticDataAuthorizationPolicyProvider::Create(authz_policy);
+  EXPECT_EQ(provider.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(provider.status().message(),
+            "\"name\" field is not present.");
 }
 
 }  // namespace grpc_core

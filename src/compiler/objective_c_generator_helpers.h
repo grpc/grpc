@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,12 +32,14 @@ using ::grpc::protobuf::ServiceDescriptor;
 using ::std::string;
 
 inline string MessageHeaderName(const FileDescriptor* file) {
-  return google::protobuf::compiler::objectivec::FilePath(file) + ".pbobjc.h";
+  return google::protobuf::compiler::objectivec::FilePath(file) +
+         ".pbobjc.h";
 }
 
 inline string ServiceClassName(const ServiceDescriptor* service) {
   const FileDescriptor* file = service->file();
-  string prefix = google::protobuf::compiler::objectivec::FileClassPrefix(file);
+  string prefix =
+      google::protobuf::compiler::objectivec::FileClassPrefix(file);
   return prefix + service->name();
 }
 
@@ -51,43 +53,48 @@ inline ::std::string FrameworkImport(const ::std::string& import,
   std::size_t pos = import.rfind("/");
   // If pos is npos, pos + 1 is 0, which gives us the entire string,
   // so there's no need to check that
-  ::std::string filename = import.substr(pos + 1, import.size() - (pos + 1));
-  return ::std::string("#import <" + framework + "/" + filename + ">\n");
+  ::std::string filename =
+      import.substr(pos + 1, import.size() - (pos + 1));
+  return ::std::string("#import <" + framework + "/" + filename +
+                       ">\n");
 }
 
 inline ::std::string SystemImport(const ::std::string& import) {
   return ::std::string("#import <" + import + ">\n");
 }
 
-inline ::std::string PreprocConditional(::std::string symbol, bool invert) {
+inline ::std::string PreprocConditional(::std::string symbol,
+                                        bool invert) {
   return invert ? "!defined(" + symbol + ") || !" + symbol
                 : "defined(" + symbol + ") && " + symbol;
 }
 
 inline ::std::string PreprocIf(const ::std::string& symbol,
                                const ::std::string& if_true) {
-  return ::std::string("#if " + PreprocConditional(symbol, false) + "\n" +
-                       if_true + "#endif\n");
+  return ::std::string("#if " + PreprocConditional(symbol, false) +
+                       "\n" + if_true + "#endif\n");
 }
 
 inline ::std::string PreprocIfNot(const ::std::string& symbol,
                                   const ::std::string& if_true) {
-  return ::std::string("#if " + PreprocConditional(symbol, true) + "\n" +
-                       if_true + "#endif\n");
+  return ::std::string("#if " + PreprocConditional(symbol, true) +
+                       "\n" + if_true + "#endif\n");
 }
 
 inline ::std::string PreprocIfElse(const ::std::string& symbol,
                                    const ::std::string& if_true,
                                    const ::std::string& if_false) {
-  return ::std::string("#if " + PreprocConditional(symbol, false) + "\n" +
-                       if_true + "#else\n" + if_false + "#endif\n");
+  return ::std::string("#if " + PreprocConditional(symbol, false) +
+                       "\n" + if_true + "#else\n" + if_false +
+                       "#endif\n");
 }
 
 inline ::std::string PreprocIfNotElse(const ::std::string& symbol,
                                       const ::std::string& if_true,
                                       const ::std::string& if_false) {
-  return ::std::string("#if " + PreprocConditional(symbol, true) + "\n" +
-                       if_true + "#else\n" + if_false + "#endif\n");
+  return ::std::string("#if " + PreprocConditional(symbol, true) +
+                       "\n" + if_true + "#else\n" + if_false +
+                       "#endif\n");
 }
 
 }  // namespace grpc_objective_c_generator

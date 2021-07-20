@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -64,9 +64,9 @@ grpc_slice grpc_httpcli_format_get_request(
   return grpc_slice_from_copied_buffer(req.data(), req.size());
 }
 
-grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
-                                            const char* body_bytes,
-                                            size_t body_size) {
+grpc_slice grpc_httpcli_format_post_request(
+    const grpc_httpcli_request* request, const char* body_bytes,
+    size_t body_size) {
   std::vector<std::string> out;
   out.push_back("POST ");
   fill_common_header(request, true, &out);
@@ -81,8 +81,9 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
     if (!has_content_type) {
       out.push_back("Content-Type: text/plain\r\n");
     }
-    out.push_back(absl::StrFormat("Content-Length: %lu\r\n",
-                                  static_cast<unsigned long>(body_size)));
+    out.push_back(
+        absl::StrFormat("Content-Length: %lu\r\n",
+                        static_cast<unsigned long>(body_size)));
   }
   out.push_back("\r\n");
   std::string req = absl::StrJoin(out, "");

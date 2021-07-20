@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,10 +47,11 @@
    The test will fail if:
    1) gpr_cpu_num_cores() == 0
    2) Any result from gpr_cpu_current_cpu() >= gpr_cpu_num_cores()
-   3) Ideally, we would fail if not all cores were seen as used. Unfortunately,
-      this is only probabilistically true, and depends on the OS, it's
-      scheduler, etc. So we just print out an indication of how many were seen;
-      hopefully developers can use this to sanity check their system.
+   3) Ideally, we would fail if not all cores were seen as used.
+   Unfortunately, this is only probabilistically true, and depends on
+   the OS, it's scheduler, etc. So we just print out an indication of
+   how many were seen; hopefully developers can use this to sanity check
+   their system.
 */
 
 /* Status shared across threads */
@@ -86,7 +87,8 @@ static void worker_thread(void* arg) {
     }
     gpr_mu_unlock(&ct->mu);
     if (j == ct->ncores) {
-      break; /* all cpus have been used - no further use in running this test */
+      break; /* all cpus have been used - no further use in running this
+                test */
     }
   }
   gpr_mu_lock(&ct->mu);
@@ -113,8 +115,8 @@ static void cpu_test(void) {
   ct.is_done = 0;
 
   uint32_t nthreads = ct.ncores * 3;
-  grpc_core::Thread* thd =
-      static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*thd) * nthreads));
+  grpc_core::Thread* thd = static_cast<grpc_core::Thread*>(
+      gpr_malloc(sizeof(*thd) * nthreads));
 
   for (i = 0; i < nthreads; i++) {
     thd[i] = grpc_core::Thread("grpc_cpu_test", &worker_thread, &ct);
@@ -122,7 +124,8 @@ static void cpu_test(void) {
   }
   gpr_mu_lock(&ct.mu);
   while (!ct.is_done) {
-    gpr_cv_wait(&ct.done_cv, &ct.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    gpr_cv_wait(&ct.done_cv, &ct.mu,
+                gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&ct.mu);
   for (i = 0; i < nthreads; i++) {

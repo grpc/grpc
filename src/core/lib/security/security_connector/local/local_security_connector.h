@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,27 +27,29 @@
  * This method creates a local channel security connector.
  *
  * - channel_creds: channel credential instance.
- * - request_metadata_creds: credential object which will be sent with each
- *   request. This parameter can be nullptr.
- * - target_name: the name of the endpoint that the channel is connecting to.
+ * - request_metadata_creds: credential object which will be sent with
+ * each request. This parameter can be nullptr.
+ * - target_name: the name of the endpoint that the channel is
+ * connecting to.
  * - args: channel args passed from the caller.
- * - sc: address of local channel security connector instance to be returned
- *   from the method.
+ * - sc: address of local channel security connector instance to be
+ * returned from the method.
  *
  * It returns nullptr on failure.
  */
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials>
+        request_metadata_creds,
     const grpc_channel_args* args, const char* target_name);
 
 /**
  * This method creates a local server security connector.
  *
  * - server_creds: server credential instance.
- * - sc: address of local server security connector instance to be returned from
- *   the method.
+ * - sc: address of local server security connector instance to be
+ * returned from the method.
  *
  * It returns nullptr on failure.
  */

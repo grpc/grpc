@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -79,8 +79,9 @@ void LoadBalancingPolicyRegistry::Builder::ShutdownRegistry() {
   g_state = nullptr;
 }
 
-void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-    std::unique_ptr<LoadBalancingPolicyFactory> factory) {
+void LoadBalancingPolicyRegistry::Builder::
+    RegisterLoadBalancingPolicyFactory(
+        std::unique_ptr<LoadBalancingPolicyFactory> factory) {
   InitRegistry();
   g_state->RegisterLoadBalancingPolicyFactory(std::move(factory));
 }
@@ -120,8 +121,8 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
 
 namespace {
 
-// Returns the JSON node of policy (with both policy name and config content)
-// given the JSON node of a LoadBalancingConfig array.
+// Returns the JSON node of policy (with both policy name and config
+// content) given the JSON node of a LoadBalancingConfig array.
 grpc_error_handle ParseLoadBalancingConfigHelper(
     const Json& lb_config_array, Json::Object::const_iterator* result) {
   if (lb_config_array.type() != Json::Type::ARRAY) {
@@ -177,7 +178,8 @@ LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
       g_state->GetLoadBalancingPolicyFactory(policy->first.c_str());
   if (factory == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("Factory not found for policy \"%s\"", policy->first)
+        absl::StrFormat("Factory not found for policy \"%s\"",
+                        policy->first)
             .c_str());
     return nullptr;
   }

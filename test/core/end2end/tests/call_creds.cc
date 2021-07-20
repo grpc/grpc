@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -44,10 +44,9 @@ typedef enum { NONE, OVERRIDE, DESTROY, FAIL } override_mode;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            bool use_secure_call_creds,
-                                            int fail_server_auth_check) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    bool use_secure_call_creds, int fail_server_auth_check) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s%s/%s", test_name,
           use_secure_call_creds ? "_with_secure_call_creds"
@@ -81,16 +80,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -112,7 +112,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
+static void print_auth_context(int is_client,
+                               const grpc_auth_context* ctx) {
   const grpc_auth_property* p;
   grpc_auth_property_iterator it;
   gpr_log(GPR_INFO, "%s peer:", is_client ? "client" : "server");
@@ -130,8 +131,8 @@ static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
 }
 
 static void request_response_with_payload_and_call_creds(
-    const char* test_name, grpc_end2end_test_config config, override_mode mode,
-    bool use_secure_call_creds) {
+    const char* test_name, grpc_end2end_test_config config,
+    override_mode mode, bool use_secure_call_creds) {
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
   grpc_slice request_payload_slice =
@@ -164,16 +165,17 @@ static void request_response_with_payload_and_call_creds(
   cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
   if (use_secure_call_creds) {
-    creds =
-        grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);
+    creds = grpc_google_iam_credentials_create(iam_token, iam_selector,
+                                               nullptr);
   } else {
-    creds =
-        grpc_md_only_test_credentials_create(fake_md_key, fake_md_value, false);
+    creds = grpc_md_only_test_credentials_create(fake_md_key,
+                                                 fake_md_value, false);
   }
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
@@ -223,7 +225,8 @@ static void request_response_with_payload_and_call_creds(
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -233,26 +236,27 @@ static void request_response_with_payload_and_call_creds(
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (mode == FAIL) {
-    // Expect the call to fail since the channel credentials did not satisfy the
-    // minimum security level requirements.
+    // Expect the call to fail since the channel credentials did not
+    // satisfy the minimum security level requirements.
     CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
     cq_verify(cqv);
     GPR_ASSERT(status == GRPC_STATUS_UNAUTHENTICATED);
   } else {
-    error =
-        grpc_server_request_call(f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101));
+    error = grpc_server_request_call(f.server, &s, &call_details,
+                                     &request_metadata_recv, f.cq, f.cq,
+                                     tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
     cq_verify(cqv);
@@ -320,31 +324,35 @@ static void request_response_with_payload_and_call_creds(
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
     GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
     GPR_ASSERT(was_cancelled == 0);
-    GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
-    GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, "hello you"));
+    GPR_ASSERT(
+        byte_buffer_eq_string(request_payload_recv, "hello world"));
+    GPR_ASSERT(
+        byte_buffer_eq_string(response_payload_recv, "hello you"));
 
     switch (mode) {
       case NONE:
         if (use_secure_call_creds) {
           GPR_ASSERT(contains_metadata(
-              &request_metadata_recv, GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-              iam_token));
-          GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                       GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                       iam_selector));
+              &request_metadata_recv,
+              GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, iam_token));
+          GPR_ASSERT(contains_metadata(
+              &request_metadata_recv,
+              GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, iam_selector));
         } else {
-          GPR_ASSERT(contains_metadata(&request_metadata_recv, fake_md_key,
-                                       fake_md_value));
+          GPR_ASSERT(contains_metadata(&request_metadata_recv,
+                                       fake_md_key, fake_md_value));
         }
         break;
       case OVERRIDE:
         if (use_secure_call_creds) {
           GPR_ASSERT(contains_metadata(
-              &request_metadata_recv, GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+              &request_metadata_recv,
+              GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
               overridden_iam_token));
-          GPR_ASSERT(contains_metadata(&request_metadata_recv,
-                                       GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                       overridden_iam_selector));
+          GPR_ASSERT(contains_metadata(
+              &request_metadata_recv,
+              GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+              overridden_iam_selector));
         } else {
           GPR_ASSERT(contains_metadata(&request_metadata_recv,
                                        overridden_fake_md_key,
@@ -352,20 +360,22 @@ static void request_response_with_payload_and_call_creds(
         }
         break;
       case DESTROY:
+        GPR_ASSERT(!contains_metadata(
+            &request_metadata_recv,
+            GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, iam_token));
+        GPR_ASSERT(!contains_metadata(
+            &request_metadata_recv,
+            GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, iam_selector));
+        GPR_ASSERT(!contains_metadata(
+            &request_metadata_recv,
+            GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+            overridden_iam_token));
+        GPR_ASSERT(
+            !contains_metadata(&request_metadata_recv,
+                               GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+                               overridden_iam_selector));
         GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                      GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                      iam_token));
-        GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                      GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                      iam_selector));
-        GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                      GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
-                                      overridden_iam_token));
-        GPR_ASSERT(!contains_metadata(&request_metadata_recv,
-                                      GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
-                                      overridden_iam_selector));
-        GPR_ASSERT(!contains_metadata(&request_metadata_recv, fake_md_key,
-                                      fake_md_value));
+                                      fake_md_key, fake_md_value));
         GPR_ASSERT(!contains_metadata(&request_metadata_recv,
                                       overridden_fake_md_key,
                                       overridden_fake_md_value));
@@ -402,25 +412,26 @@ static void test_request_response_with_payload_and_call_creds(
       use_secure_call_creds);
 }
 
-static void test_request_response_with_payload_and_overridden_call_creds(
+static void
+test_request_response_with_payload_and_overridden_call_creds(
     grpc_end2end_test_config config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
-      "test_request_response_with_payload_and_overridden_call_creds", config,
-      OVERRIDE, use_secure_call_creds);
+      "test_request_response_with_payload_and_overridden_call_creds",
+      config, OVERRIDE, use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_and_deleted_call_creds(
     grpc_end2end_test_config config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
-      "test_request_response_with_payload_and_deleted_call_creds", config,
-      DESTROY, use_secure_call_creds);
+      "test_request_response_with_payload_and_deleted_call_creds",
+      config, DESTROY, use_secure_call_creds);
 }
 
 static void test_request_response_with_payload_fail_to_send_call_creds(
     grpc_end2end_test_config config, bool use_secure_call_creds) {
   request_response_with_payload_and_call_creds(
-      "test_request_response_with_payload_fail_to_send_call_creds", config,
-      FAIL, use_secure_call_creds);
+      "test_request_response_with_payload_fail_to_send_call_creds",
+      config, FAIL, use_secure_call_creds);
 }
 
 static void test_request_with_server_rejecting_client_creds(
@@ -445,17 +456,19 @@ static void test_request_with_server_rejecting_client_creds(
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_call_credentials* creds;
 
-  f = begin_test(config, "test_request_with_server_rejecting_client_creds",
+  f = begin_test(config,
+                 "test_request_with_server_rejecting_client_creds",
                  false, 1);
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
-  creds =
-      grpc_md_only_test_credentials_create(fake_md_key, fake_md_value, false);
+  creds = grpc_md_only_test_credentials_create(fake_md_key,
+                                               fake_md_value, false);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   grpc_call_credentials_release(creds);
@@ -468,7 +481,8 @@ static void test_request_with_server_rejecting_client_creds(
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
@@ -489,7 +503,8 @@ static void test_request_with_server_rejecting_client_creds(
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -498,8 +513,8 @@ static void test_request_with_server_rejecting_client_creds(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(error == GRPC_CALL_OK);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -524,28 +539,35 @@ static void test_request_with_server_rejecting_client_creds(
 }
 
 void call_creds(grpc_end2end_test_config config) {
-  // Test fixtures that support call credentials with a minimum security level
-  // of GRPC_PRIVACY_AND_INTEGRITY
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {
+  // Test fixtures that support call credentials with a minimum security
+  // level of GRPC_PRIVACY_AND_INTEGRITY
+  if (config.feature_mask &
+      FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {
     test_request_response_with_payload_and_call_creds(config, true);
-    test_request_response_with_payload_and_overridden_call_creds(config, true);
-    test_request_response_with_payload_and_deleted_call_creds(config, true);
+    test_request_response_with_payload_and_overridden_call_creds(config,
+                                                                 true);
+    test_request_response_with_payload_and_deleted_call_creds(config,
+                                                              true);
   }
-  // Test that fixtures that support call credentials with a minimum security
-  // level of GRPC_SECURITY_NONE cannot send call credentials that require
-  // higher security level
+  // Test that fixtures that support call credentials with a minimum
+  // security level of GRPC_SECURITY_NONE cannot send call credentials
+  // that require higher security level
   if (config.feature_mask &
       FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE) {
-    test_request_response_with_payload_fail_to_send_call_creds(config, true);
+    test_request_response_with_payload_fail_to_send_call_creds(config,
+                                                               true);
   }
-  // Fixtures that support sending call credentials should be able to send call
-  // credentials of security level GRPC_SECURITY_NONE.
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS ||
+  // Fixtures that support sending call credentials should be able to
+  // send call credentials of security level GRPC_SECURITY_NONE.
+  if (config.feature_mask &
+          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS ||
       config.feature_mask &
           FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE) {
     test_request_response_with_payload_and_call_creds(config, false);
-    test_request_response_with_payload_and_overridden_call_creds(config, false);
-    test_request_response_with_payload_and_deleted_call_creds(config, false);
+    test_request_response_with_payload_and_overridden_call_creds(config,
+                                                                 false);
+    test_request_response_with_payload_and_deleted_call_creds(config,
+                                                              false);
     test_request_with_server_rejecting_client_creds(config);
   }
 }

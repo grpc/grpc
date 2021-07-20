@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,10 +40,9 @@ static bool g_channel_filter_init_failure = false;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -63,16 +62,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -96,7 +96,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Simple request via a SERVER_CHANNEL filter that always fails to
 // initialize the call.
-static void test_server_channel_filter(grpc_end2end_test_config config) {
+static void test_server_channel_filter(
+    grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
   grpc_slice request_payload_slice =
@@ -118,9 +119,10 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   grpc_slice details;
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -146,24 +148,26 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -200,7 +204,8 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
 
 // Simple request via a CLIENT_CHANNEL or CLIENT_DIRECT_CHANNEL filter
 // that always fails to initialize the call.
-static void test_client_channel_filter(grpc_end2end_test_config config) {
+static void test_client_channel_filter(
+    grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -221,9 +226,10 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   grpc_call_error error;
   grpc_slice details;
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -249,19 +255,21 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -293,7 +301,8 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
 
 // Simple request via a CLIENT_SUBCHANNEL filter that always fails to
 // initialize the call.
-static void test_client_subchannel_filter(grpc_end2end_test_config config) {
+static void test_client_subchannel_filter(
+    grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");
@@ -314,9 +323,10 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   grpc_call_error error;
   grpc_slice details;
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -342,20 +352,22 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
 
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -376,13 +388,14 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
   grpc_slice_unref(details);
   details = grpc_empty_slice();
 
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(2), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
@@ -417,22 +430,26 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
  */
 
 static grpc_error_handle init_call_elem(
-    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
+    grpc_call_element* /*elem*/,
+    const grpc_call_element_args* /*args*/) {
   return grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("access denied"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED);
 }
 
-static void destroy_call_elem(grpc_call_element* /*elem*/,
-                              const grpc_call_final_info* /*final_info*/,
-                              grpc_closure* /*ignored*/) {}
+static void destroy_call_elem(
+    grpc_call_element* /*elem*/,
+    const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {}
 
 static grpc_error_handle init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+    grpc_channel_element* /*elem*/,
+    grpc_channel_element_args* /*args*/) {
   if (g_channel_filter_init_failure) {
-    return grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test channel filter init error"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INVALID_ARGUMENT);
+    return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                  "Test channel filter init error"),
+                              GRPC_ERROR_INT_GRPC_STATUS,
+                              GRPC_STATUS_INVALID_ARGUMENT);
   }
   return GRPC_ERROR_NONE;
 }
@@ -456,13 +473,14 @@ static const grpc_channel_filter test_filter = {
  * Registration
  */
 
-static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
-                                            void* /*arg*/) {
+static bool maybe_add_server_channel_filter(
+    grpc_channel_stack_builder* builder, void* /*arg*/) {
   if (g_enable_server_channel_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
-    // can't add it at the very end, because the connected channel filter
-    // must be the last one.  So we add it right before the last one.
+    // can't add it at the very end, because the connected channel
+    // filter must be the last one.  So we add it right before the last
+    // one.
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
@@ -475,13 +493,14 @@ static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
   }
 }
 
-static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder,
-                                            void* /*arg*/) {
+static bool maybe_add_client_channel_filter(
+    grpc_channel_stack_builder* builder, void* /*arg*/) {
   if (g_enable_client_channel_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
-    // can't add it at the very end, because the connected channel filter
-    // must be the last one.  So we add it right before the last one.
+    // can't add it at the very end, because the connected channel
+    // filter must be the last one.  So we add it right before the last
+    // one.
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
@@ -515,32 +534,39 @@ static bool maybe_add_client_subchannel_filter(
 
 static void init_plugin(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_server_channel_filter, nullptr);
+                                   maybe_add_server_channel_filter,
+                                   nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_client_channel_filter, nullptr);
+                                   maybe_add_client_channel_filter,
+                                   nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                   maybe_add_client_subchannel_filter, nullptr);
+                                   maybe_add_client_subchannel_filter,
+                                   nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_add_client_channel_filter, nullptr);
+                                   maybe_add_client_channel_filter,
+                                   nullptr);
 }
 
 static void destroy_plugin(void) {}
 
-static void filter_init_fails_internal(grpc_end2end_test_config config) {
+static void filter_init_fails_internal(
+    grpc_end2end_test_config config) {
   gpr_log(GPR_INFO, "Testing SERVER_CHANNEL filter.");
   g_enable_server_channel_filter = true;
   test_server_channel_filter(config);
   g_enable_server_channel_filter = false;
-  gpr_log(GPR_INFO, "Testing CLIENT_CHANNEL / CLIENT_DIRECT_CHANNEL filter.");
+  gpr_log(GPR_INFO,
+          "Testing CLIENT_CHANNEL / CLIENT_DIRECT_CHANNEL filter.");
   g_enable_client_channel_filter = true;
   test_client_channel_filter(config);
   g_enable_client_channel_filter = false;
-  // If the client handshake completes before the server handshake and the
-  // client is able to send application data before the server handshake
-  // completes, then testing the CLIENT_SUBCHANNEL filter will cause the server
-  // to freeze waiting for the final handshake message from the client. This
-  // handshake message will never arrive because it would have been sent with
-  // the first application data message, which failed because of the filter.
+  // If the client handshake completes before the server handshake and
+  // the client is able to send application data before the server
+  // handshake completes, then testing the CLIENT_SUBCHANNEL filter will
+  // cause the server to freeze waiting for the final handshake message
+  // from the client. This handshake message will never arrive because
+  // it would have been sent with the first application data message,
+  // which failed because of the filter.
   if ((config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL) &&
       !(config.feature_mask &
         FEATURE_MASK_DOES_NOT_SUPPORT_CLIENT_HANDSHAKE_COMPLETE_FIRST)) {

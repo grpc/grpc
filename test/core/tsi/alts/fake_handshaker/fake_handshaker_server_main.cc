@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <grpc/support/log.h>
@@ -34,7 +34,8 @@ static void RunFakeHandshakerServer(const std::string& server_address) {
       grpc::gcp::CreateFakeHandshakerService(
           0 /* expected max concurrent rpcs unset */);
   grpc::ServerBuilder builder;
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address,
+                           grpc::InsecureServerCredentials());
   builder.RegisterService(service.get());
   gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
           server_address.c_str());

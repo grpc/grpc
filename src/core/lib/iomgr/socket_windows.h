@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,37 +41,39 @@
    inside the winsocket wrapper. */
 typedef struct grpc_winsocket_callback_info {
   /* This is supposed to be a WSAOVERLAPPED, but in order to get that
-     definition, we need to include ws2tcpip.h, which needs to be included
-     from the top, otherwise it'll clash with a previous inclusion of
-     windows.h that in turns includes winsock.h. If anyone knows a way
-     to do it properly, feel free to send a patch. */
+     definition, we need to include ws2tcpip.h, which needs to be
+     included from the top, otherwise it'll clash with a previous
+     inclusion of windows.h that in turns includes winsock.h. If anyone
+     knows a way to do it properly, feel free to send a patch. */
   OVERLAPPED overlapped;
-  /* The callback information for the pending operation. May be empty if the
-     caller hasn't registered a callback yet. */
+  /* The callback information for the pending operation. May be empty if
+     the caller hasn't registered a callback yet. */
   grpc_closure* closure;
-  /* A boolean to describe if the IO Completion Port got a notification for
-     that operation. This will happen if the operation completed before the
-     called had time to register a callback. We could avoid that behavior
-     altogether by forcing the caller to always register its callback before
-     proceeding queue an operation, but it is frequent for an IO Completion
-     Port to trigger quickly. This way we avoid a context switch for calling
-     the callback. We also simplify the read / write operations to avoid having
-     to hold a mutex for a long amount of time. */
+  /* A boolean to describe if the IO Completion Port got a notification
+     for that operation. This will happen if the operation completed
+     before the called had time to register a callback. We could avoid
+     that behavior altogether by forcing the caller to always register
+     its callback before proceeding queue an operation, but it is
+     frequent for an IO Completion Port to trigger quickly. This way we
+     avoid a context switch for calling the callback. We also simplify
+     the read / write operations to avoid having to hold a mutex for a
+     long amount of time. */
   int has_pending_iocp;
   /* The results of the overlapped operation. */
   DWORD bytes_transferred;
   int wsa_error;
 } grpc_winsocket_callback_info;
 
-/* This is a wrapper to a Windows socket. A socket can have one outstanding
-   read, and one outstanding write. Doing an asynchronous accept means waiting
-   for a read operation. Doing an asynchronous connect means waiting for a
-   write operation. These are completely arbitrary ties between the operation
-   and the kind of event, because we can have one overlapped per pending
-   operation, whichever its nature is. So we could have more dedicated pending
-   operation callbacks for connect and listen. But given the scope of listen
-   and accept, we don't need to go to that extent and waste memory. Also, this
-   is closer to what happens in posix world. */
+/* This is a wrapper to a Windows socket. A socket can have one
+   outstanding read, and one outstanding write. Doing an asynchronous
+   accept means waiting for a read operation. Doing an asynchronous
+   connect means waiting for a write operation. These are completely
+   arbitrary ties between the operation and the kind of event, because
+   we can have one overlapped per pending operation, whichever its
+   nature is. So we could have more dedicated pending operation
+   callbacks for connect and listen. But given the scope of listen and
+   accept, we don't need to go to that extent and waste memory. Also,
+   this is closer to what happens in posix world. */
 typedef struct grpc_winsocket {
   SOCKET socket;
   bool destroy_called;
@@ -92,17 +94,18 @@ typedef struct grpc_winsocket {
   grpc_iomgr_object iomgr_object;
 } grpc_winsocket;
 
-/* Create a wrapped windows handle. This takes ownership of it, meaning that
-   it will be responsible for closing it. */
+/* Create a wrapped windows handle. This takes ownership of it, meaning
+   that it will be responsible for closing it. */
 grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name);
 
 SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket);
 
-/* Initiate an asynchronous shutdown of the socket. Will call off any pending
-   operation to cancel them. */
+/* Initiate an asynchronous shutdown of the socket. Will call off any
+   pending operation to cancel them. */
 void grpc_winsocket_shutdown(grpc_winsocket* socket);
 
-/* Destroy a socket. Should only be called if there's no pending operation. */
+/* Destroy a socket. Should only be called if there's no pending
+ * operation. */
 void grpc_winsocket_destroy(grpc_winsocket* socket);
 
 void grpc_socket_notify_on_write(grpc_winsocket* winsocket,

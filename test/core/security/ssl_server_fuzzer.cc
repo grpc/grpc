@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -53,7 +53,8 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data,
+                                      size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
   {
@@ -66,12 +67,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_resource_quota_unref_internal(resource_quota);
 
     grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
+        mock_endpoint,
+        grpc_slice_from_copied_buffer((const char*)data, size));
 
     // Load key pair and establish server SSL credentials.
     grpc_slice ca_slice, cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                 grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -82,7 +84,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
     const char* server_key =
         reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key,
+                                                    server_cert};
     grpc_server_credentials* creds = grpc_ssl_server_credentials_create(
         ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
     grpc_slice_unref(cert_slice);
@@ -93,21 +96,22 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
         creds->create_security_connector(nullptr);
     GPR_ASSERT(sc != nullptr);
-    grpc_millis deadline = GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now();
+    grpc_millis deadline =
+        GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now();
 
     struct handshake_state state;
     state.done_callback_called = false;
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
     sc->add_handshakers(nullptr, nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(mock_endpoint, nullptr /* channel_args */,
-                               deadline, nullptr /* acceptor */,
-                               on_handshake_done, &state);
+    handshake_mgr->DoHandshake(
+        mock_endpoint, nullptr /* channel_args */, deadline,
+        nullptr /* acceptor */, on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();
 
-    // If the given string happens to be part of the correct client hello, the
-    // server will wait for more data. Explicitly fail the server by shutting
-    // down the endpoint.
+    // If the given string happens to be part of the correct client
+    // hello, the server will wait for more data. Explicitly fail the
+    // server by shutting down the endpoint.
     if (!state.done_callback_called) {
       grpc_endpoint_shutdown(
           mock_endpoint,

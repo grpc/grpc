@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -64,8 +64,8 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       {
         std::lock_guard<std::mutex> lock(mu);
         if (!shutting_down) {
-          service.RequestEcho(&ctx, &req, &responder, cq.get(), cq.get(),
-                              reinterpret_cast<void*>(1));
+          service.RequestEcho(&ctx, &req, &responder, cq.get(),
+                              cq.get(), reinterpret_cast<void*>(1));
         }
       }
 
@@ -84,24 +84,27 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
           abort();
         }
         if (shutting_down && !ok) {
-          // Failed connection due to shutdown, continue flushing the CQ.
+          // Failed connection due to shutdown, continue flushing the
+          // CQ.
           continue;
         }
       }
 
-      // Send a simple response after a small delay that would ensure the client
-      // deadline is exceeded.
+      // Send a simple response after a small delay that would ensure
+      // the client deadline is exceeded.
       gpr_log(GPR_INFO, "Got request %d", n);
       testing::EchoResponse response;
       response.set_message("foobar");
       // A bit of sleep to make sure the deadline elapses.
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                   gpr_time_from_millis(50, GPR_TIMESPAN)));
+      gpr_sleep_until(
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                       gpr_time_from_millis(50, GPR_TIMESPAN)));
       {
         std::lock_guard<std::mutex> lock(mu);
         if (shutting_down) {
-          gpr_log(GPR_INFO,
-                  "shut down while processing call, not calling Finish()");
+          gpr_log(
+              GPR_INFO,
+              "shut down while processing call, not calling Finish()");
           // Continue flushing the CQ.
           continue;
         }
@@ -124,14 +127,15 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
     testing::EchoRequest request;
 
     /////////
-    // Comment out the following line to get ok=false due to invalid request.
-    // Otherwise, ok=false due to deadline being exceeded.
+    // Comment out the following line to get ok=false due to invalid
+    // request. Otherwise, ok=false due to deadline being exceeded.
     /////////
     request.set_message("foobar");
 
-    // A simple request with a short deadline. The server will always exceed the
-    // deadline, whether due to the sleep or because the server was unable to
-    // even fetch the request from the CQ before the deadline elapsed.
+    // A simple request with a short deadline. The server will always
+    // exceed the deadline, whether due to the sleep or because the
+    // server was unable to even fetch the request from the CQ before
+    // the deadline elapsed.
     testing::EchoResponse response;
     ::grpc::ClientContext ctx;
     ctx.set_fail_fast(false);

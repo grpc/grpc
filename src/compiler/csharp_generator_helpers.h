@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,10 +32,12 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
   return true;
 }
 
-// Get leading or trailing comments in a string. Comment lines start with "// ".
-// Leading detached comments are put in front of leading comments.
+// Get leading or trailing comments in a string. Comment lines start
+// with "// ". Leading detached comments are put in front of leading
+// comments.
 template <typename DescriptorType>
-inline std::string GetCsharpComments(const DescriptorType* desc, bool leading) {
+inline std::string GetCsharpComments(const DescriptorType* desc,
+                                     bool leading) {
   return grpc_generator::GetPrefixedComments(desc, leading, "//");
 }
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,14 +33,19 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
+extern grpc_core::DebugOnlyTraceFlag
+    grpc_trace_security_connector_refcount;
 
-typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
+typedef enum {
+  GRPC_SECURITY_OK = 0,
+  GRPC_SECURITY_ERROR
+} grpc_security_status;
 
 /* --- security_connector object. ---
 
-    A security connector object represents away to configure the underlying
-    transport security mechanism and check the resulting trusted peer.  */
+    A security connector object represents away to configure the
+   underlying transport security mechanism and check the resulting
+   trusted peer.  */
 
 #define GRPC_ARG_SECURITY_CONNECTOR "grpc.security_connector"
 
@@ -49,7 +54,8 @@ class grpc_security_connector
  public:
   explicit grpc_security_connector(const char* url_scheme)
       : grpc_core::RefCounted<grpc_security_connector>(
-            GRPC_TRACE_FLAG_ENABLED(grpc_trace_security_connector_refcount)
+            GRPC_TRACE_FLAG_ENABLED(
+                grpc_trace_security_connector_refcount)
                 ? "security_connector_refcount"
                 : nullptr),
         url_scheme_(url_scheme) {}
@@ -62,8 +68,9 @@ class grpc_security_connector
       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
       grpc_closure* on_peer_checked) = 0;
 
-  // Cancels the pending check_peer() request associated with on_peer_checked.
-  // If there is no such request pending, this is a no-op.
+  // Cancels the pending check_peer() request associated with
+  // on_peer_checked. If there is no such request pending, this is a
+  // no-op.
   virtual void cancel_check_peer(grpc_closure* on_peer_checked,
                                  grpc_error_handle error) = 0;
 
@@ -80,7 +87,8 @@ class grpc_security_connector
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc);
 
 /* Util to get the connector from a channel arg. */
-grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg);
+grpc_security_connector* grpc_security_connector_from_arg(
+    const grpc_arg* arg);
 
 /* Util to find the connector from channel args. */
 grpc_security_connector* grpc_security_connector_find_in_args(
@@ -88,8 +96,8 @@ grpc_security_connector* grpc_security_connector_find_in_args(
 
 /* --- channel_security_connector object. ---
 
-    A channel security connector object represents a way to configure the
-    underlying transport security mechanism on the client side.  */
+    A channel security connector object represents a way to configure
+   the underlying transport security mechanism on the client side.  */
 
 class grpc_channel_security_connector : public grpc_security_connector {
  public:
@@ -102,9 +110,9 @@ class grpc_channel_security_connector : public grpc_security_connector {
   ~grpc_channel_security_connector() override;
 
   /// Checks that the host that will be set for a call is acceptable.
-  /// Returns true if completed synchronously, in which case \a error will
-  /// be set to indicate the result.  Otherwise, \a on_call_host_checked
-  /// will be invoked when complete.
+  /// Returns true if completed synchronously, in which case \a error
+  /// will be set to indicate the result.  Otherwise, \a
+  /// on_call_host_checked will be invoked when complete.
   virtual bool check_call_host(absl::string_view host,
                                grpc_auth_context* auth_context,
                                grpc_closure* on_call_host_checked,
@@ -112,12 +120,13 @@ class grpc_channel_security_connector : public grpc_security_connector {
   /// Cancels a pending asynchronous call to
   /// grpc_channel_security_connector_check_call_host() with
   /// \a on_call_host_checked as its callback.
-  virtual void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                                      grpc_error_handle error) = 0;
+  virtual void cancel_check_call_host(
+      grpc_closure* on_call_host_checked, grpc_error_handle error) = 0;
   /// Registers handshakers with \a handshake_mgr.
-  virtual void add_handshakers(const grpc_channel_args* args,
-                               grpc_pollset_set* interested_parties,
-                               grpc_core::HandshakeManager* handshake_mgr) = 0;
+  virtual void add_handshakers(
+      const grpc_channel_args* args,
+      grpc_pollset_set* interested_parties,
+      grpc_core::HandshakeManager* handshake_mgr) = 0;
 
   const grpc_channel_credentials* channel_creds() const {
     return channel_creds_.get();
@@ -137,14 +146,16 @@ class grpc_channel_security_connector : public grpc_security_connector {
   int channel_security_connector_cmp(
       const grpc_channel_security_connector* other) const;
 
-  // grpc_channel_args* channel_args() const { return channel_args_.get(); }
-  //// Should be called as soon as the channel args are not needed to reduce
-  //// memory usage.
+  // grpc_channel_args* channel_args() const { return
+  // channel_args_.get(); }
+  //// Should be called as soon as the channel args are not needed to
+  ///reduce / memory usage.
   // void clear_channel_arg() { channel_args_.reset(); }
 
  private:
   grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds_;
-  grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds_;
+  grpc_core::RefCountedPtr<grpc_call_credentials>
+      request_metadata_creds_;
   std::unique_ptr<grpc_channel_args> channel_args_;
 };
 
@@ -160,9 +171,10 @@ class grpc_server_security_connector : public grpc_security_connector {
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
   ~grpc_server_security_connector() override;
 
-  virtual void add_handshakers(const grpc_channel_args* args,
-                               grpc_pollset_set* interested_parties,
-                               grpc_core::HandshakeManager* handshake_mgr) = 0;
+  virtual void add_handshakers(
+      const grpc_channel_args* args,
+      grpc_pollset_set* interested_parties,
+      grpc_core::HandshakeManager* handshake_mgr) = 0;
 
   const grpc_server_credentials* server_creds() const {
     return server_creds_.get();
@@ -180,4 +192,5 @@ class grpc_server_security_connector : public grpc_security_connector {
   grpc_core::RefCountedPtr<grpc_server_credentials> server_creds_;
 };
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H */
+#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H \
+        */

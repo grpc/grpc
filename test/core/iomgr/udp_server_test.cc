@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -74,15 +74,15 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
     ssize_t byte_count;
 
     gpr_mu_lock(g_mu);
-    byte_count =
-        recv(grpc_fd_wrapped_fd(emfd()), read_buffer, sizeof(read_buffer), 0);
+    byte_count = recv(grpc_fd_wrapped_fd(emfd()), read_buffer,
+                      sizeof(read_buffer), 0);
 
     g_number_of_reads++;
     g_number_of_bytes_read += static_cast<int>(byte_count);
 
     gpr_log(GPR_DEBUG, "receive %zu on handler %p", byte_count, this);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
-                                 grpc_pollset_kick(g_pollset, nullptr)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
     return false;
   }
@@ -92,8 +92,8 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
     gpr_mu_lock(g_mu);
     g_number_of_writes++;
 
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
-                                 grpc_pollset_kick(g_pollset, nullptr)));
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
   }
 
@@ -101,7 +101,8 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
                          void* /*user_data*/) override {
     gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
             grpc_fd_wrapped_fd(emfd()));
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, orphan_fd_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, orphan_fd_closure,
+                            GRPC_ERROR_NONE);
     g_number_of_orphan_calls++;
   }
 
@@ -113,8 +114,10 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
 
 class TestGrpcUdpHandlerFactory : public GrpcUdpHandlerFactory {
  public:
-  GrpcUdpHandler* CreateUdpHandler(grpc_fd* emfd, void* user_data) override {
-    gpr_log(GPR_INFO, "create udp handler for fd %d", grpc_fd_wrapped_fd(emfd));
+  GrpcUdpHandler* CreateUdpHandler(grpc_fd* emfd,
+                                   void* user_data) override {
+    gpr_log(GPR_INFO, "create udp handler for fd %d",
+            grpc_fd_wrapped_fd(emfd));
     return new TestGrpcUdpHandler(emfd, user_data);
   }
 
@@ -133,20 +136,25 @@ struct test_socket_factory {
 };
 typedef struct test_socket_factory test_socket_factory;
 
-static int test_socket_factory_socket(grpc_socket_factory* factory, int domain,
-                                      int type, int protocol) {
-  test_socket_factory* f = reinterpret_cast<test_socket_factory*>(factory);
+static int test_socket_factory_socket(grpc_socket_factory* factory,
+                                      int domain, int type,
+                                      int protocol) {
+  test_socket_factory* f =
+      reinterpret_cast<test_socket_factory*>(factory);
   f->number_of_socket_calls++;
   return socket(domain, type, protocol);
 }
 
-static int test_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
+static int test_socket_factory_bind(grpc_socket_factory* factory,
+                                    int sockfd,
                                     const grpc_resolved_address* addr) {
-  test_socket_factory* f = reinterpret_cast<test_socket_factory*>(factory);
+  test_socket_factory* f =
+      reinterpret_cast<test_socket_factory*>(factory);
   f->number_of_bind_calls++;
-  return bind(sockfd,
-              reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)),
-              static_cast<socklen_t>(addr->len));
+  return bind(
+      sockfd,
+      reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)),
+      static_cast<socklen_t>(addr->len));
 }
 
 static int test_socket_factory_compare(grpc_socket_factory* a,
@@ -155,7 +163,8 @@ static int test_socket_factory_compare(grpc_socket_factory* a,
 }
 
 static void test_socket_factory_destroy(grpc_socket_factory* factory) {
-  test_socket_factory* f = reinterpret_cast<test_socket_factory*>(factory);
+  test_socket_factory* f =
+      reinterpret_cast<test_socket_factory*>(factory);
   gpr_free(f);
 }
 
@@ -217,7 +226,8 @@ static void test_no_op_with_port(void) {
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+  resolved_addr.len =
+      static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
@@ -225,7 +235,8 @@ static void test_no_op_with_port(void) {
 
   grpc_udp_server_destroy(s, nullptr);
 
-  /* The server haven't start listening, so no udp handler to be notified. */
+  /* The server haven't start listening, so no udp handler to be
+   * notified. */
   GPR_ASSERT(g_number_of_orphan_calls == 0);
   shutdown_and_destroy_pollset();
 }
@@ -249,7 +260,8 @@ static void test_no_op_with_port_and_socket_factory(void) {
   LOG_TEST("test_no_op_with_port_and_socket_factory");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+  resolved_addr.len =
+      static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
@@ -261,7 +273,8 @@ static void test_no_op_with_port_and_socket_factory(void) {
 
   grpc_socket_factory_unref(&socket_factory->base);
 
-  /* The server haven't start listening, so no udp handler to be notified. */
+  /* The server haven't start listening, so no udp handler to be
+   * notified. */
   GPR_ASSERT(g_number_of_orphan_calls == 0);
   shutdown_and_destroy_pollset();
 }
@@ -277,7 +290,8 @@ static void test_no_op_with_port_and_start(void) {
   LOG_TEST("test_no_op_with_port_and_start");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+  resolved_addr.len =
+      static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
@@ -311,7 +325,8 @@ static void test_receive(int number_of_clients) {
   g_number_of_orphan_calls = 0;
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+  resolved_addr.len =
+      static_cast<socklen_t>(sizeof(struct sockaddr_storage));
   addr->ss_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
@@ -330,8 +345,8 @@ static void test_receive(int number_of_clients) {
   gpr_mu_lock(g_mu);
 
   for (i = 0; i < number_of_clients; i++) {
-    deadline =
-        grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+    deadline = grpc_timespec_to_millis_round_up(
+        grpc_timeout_seconds_to_deadline(10));
 
     int number_of_bytes_read_before = g_number_of_bytes_read;
     /* Create a socket, send a packet to the UDP server. */
@@ -344,7 +359,8 @@ static void test_receive(int number_of_clients) {
            deadline > grpc_core::ExecCtx::Get()->Now()) {
       grpc_pollset_worker* worker = nullptr;
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
-          "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+          "pollset_work",
+          grpc_pollset_work(g_pollset, &worker, deadline)));
       gpr_mu_unlock(g_mu);
       grpc_core::ExecCtx::Get()->Flush();
       gpr_mu_lock(g_mu);
@@ -371,7 +387,8 @@ int main(int argc, char** argv) {
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    g_pollset =
+        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
 
     test_no_op();
     test_no_op_with_start();

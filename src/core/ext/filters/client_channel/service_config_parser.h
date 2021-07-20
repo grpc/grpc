@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H
@@ -34,14 +34,15 @@ namespace grpc_core {
 // See service_config.h for more information.
 class ServiceConfigParser {
  public:
-  /// This is the base class that all service config parsers MUST use to store
-  /// parsed service config data.
+  /// This is the base class that all service config parsers MUST use to
+  /// store parsed service config data.
   class ParsedConfig {
    public:
     virtual ~ParsedConfig() = default;
   };
 
-  /// This is the base class that all service config parsers should derive from.
+  /// This is the base class that all service config parsers should
+  /// derive from.
   class Parser {
    public:
     virtual ~Parser() = default;
@@ -73,17 +74,18 @@ class ServiceConfigParser {
   static void Init();
   static void Shutdown();
 
-  /// Globally register a service config parser. On successful registration, it
-  /// returns the index at which the parser was registered. On failure, -1 is
-  /// returned. Each new service config update will go through all the
-  /// registered parser. Each parser is responsible for reading the service
-  /// config json and returning a parsed config. This parsed config can later be
-  /// retrieved using the same index that was returned at registration time.
+  /// Globally register a service config parser. On successful
+  /// registration, it returns the index at which the parser was
+  /// registered. On failure, -1 is returned. Each new service config
+  /// update will go through all the registered parser. Each parser is
+  /// responsible for reading the service config json and returning a
+  /// parsed config. This parsed config can later be retrieved using the
+  /// same index that was returned at registration time.
   static size_t RegisterParser(std::unique_ptr<Parser> parser);
 
-  static ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args,
-                                                  const Json& json,
-                                                  grpc_error_handle* error);
+  static ParsedConfigVector ParseGlobalParameters(
+      const grpc_channel_args* args, const Json& json,
+      grpc_error_handle* error);
 
   static ParsedConfigVector ParsePerMethodParameters(
       const grpc_channel_args* args, const Json& json,
@@ -92,4 +94,5 @@ class ServiceConfigParser {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SERVICE_CONFIG_PARSER_H \
+        */

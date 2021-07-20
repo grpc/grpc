@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,20 +30,23 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
   CronetChannelCredentialsImpl(void* engine) : engine_(engine) {}
 
   std::shared_ptr<grpc::Channel> CreateChannelImpl(
-      const string& target, const grpc::ChannelArguments& args) override {
+      const string& target,
+      const grpc::ChannelArguments& args) override {
     return CreateChannelWithInterceptors(
         target, args,
         std::vector<std::unique_ptr<
             experimental::ClientInterceptorFactoryInterface>>());
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
+  SecureChannelCredentials* AsSecureCredentials() override {
+    return nullptr;
+  }
 
  private:
   std::shared_ptr<grpc::Channel> CreateChannelWithInterceptors(
       const string& target, const grpc::ChannelArguments& args,
-      std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      std::vector<std::unique_ptr<
+          experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
@@ -56,7 +59,8 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
   void* engine_;
 };
 
-std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine) {
+std::shared_ptr<ChannelCredentials> CronetChannelCredentials(
+    void* engine) {
   return std::shared_ptr<ChannelCredentials>(
       new grpc::CronetChannelCredentialsImpl(engine));
 }

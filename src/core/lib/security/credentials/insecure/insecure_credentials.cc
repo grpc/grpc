@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -30,11 +30,14 @@ constexpr char kCredentialsTypeInsecure[] = "insecure";
 
 class InsecureCredentials final : public grpc_channel_credentials {
  public:
-  InsecureCredentials() : grpc_channel_credentials(kCredentialsTypeInsecure) {}
+  InsecureCredentials()
+      : grpc_channel_credentials(kCredentialsTypeInsecure) {}
 
-  RefCountedPtr<grpc_channel_security_connector> create_security_connector(
+  RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* /* target_name */, const grpc_channel_args* /* args */,
+      const char* /* target_name */,
+      const grpc_channel_args* /* args */,
       grpc_channel_args** /* new_args */) override {
     return MakeRefCounted<InsecureChannelSecurityConnector>(
         Ref(), std::move(call_creds));
@@ -46,7 +49,8 @@ class InsecureServerCredentials final : public grpc_server_credentials {
   InsecureServerCredentials()
       : grpc_server_credentials(kCredentialsTypeInsecure) {}
 
-  RefCountedPtr<grpc_server_security_connector> create_security_connector(
+  RefCountedPtr<grpc_server_security_connector>
+  create_security_connector(
       const grpc_channel_args* /* args */) override {
     return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
   }

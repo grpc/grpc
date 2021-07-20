@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,10 +30,12 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
 }
 
 grpc_status_code input_sanity_check(
-    const alts_record_protocol_crypter* rp_crypter, const unsigned char* data,
-    size_t* output_size, char** error_details) {
+    const alts_record_protocol_crypter* rp_crypter,
+    const unsigned char* data, size_t* output_size,
+    char** error_details) {
   if (rp_crypter == nullptr) {
-    maybe_copy_error_msg("alts_crypter instance is nullptr.", error_details);
+    maybe_copy_error_msg("alts_crypter instance is nullptr.",
+                         error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   } else if (data == nullptr) {
     maybe_copy_error_msg("data is nullptr.", error_details);
@@ -45,11 +47,11 @@ grpc_status_code input_sanity_check(
   return GRPC_STATUS_OK;
 }
 
-grpc_status_code increment_counter(alts_record_protocol_crypter* rp_crypter,
-                                   char** error_details) {
+grpc_status_code increment_counter(
+    alts_record_protocol_crypter* rp_crypter, char** error_details) {
   bool is_overflow = false;
-  grpc_status_code status =
-      alts_counter_increment(rp_crypter->ctr, &is_overflow, error_details);
+  grpc_status_code status = alts_counter_increment(
+      rp_crypter->ctr, &is_overflow, error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
@@ -63,7 +65,8 @@ grpc_status_code increment_counter(alts_record_protocol_crypter* rp_crypter,
   return GRPC_STATUS_OK;
 }
 
-size_t alts_record_protocol_crypter_num_overhead_bytes(const alts_crypter* c) {
+size_t alts_record_protocol_crypter_num_overhead_bytes(
+    const alts_crypter* c) {
   if (c != nullptr) {
     size_t num_overhead_bytes = 0;
     char* error_details = nullptr;
@@ -94,8 +97,8 @@ alts_record_protocol_crypter* alts_crypter_create_common(
     auto* rp_crypter = static_cast<alts_record_protocol_crypter*>(
         gpr_malloc(sizeof(alts_record_protocol_crypter)));
     size_t counter_size = 0;
-    grpc_status_code status =
-        gsec_aead_crypter_nonce_length(crypter, &counter_size, error_details);
+    grpc_status_code status = gsec_aead_crypter_nonce_length(
+        crypter, &counter_size, error_details);
     if (status != GRPC_STATUS_OK) {
       return nullptr;
     }

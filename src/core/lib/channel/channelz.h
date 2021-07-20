@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,13 +48,14 @@
   "grpc.channelz_is_internal_channel"
 
 /** This is the default value for whether or not to enable channelz. If
- * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
+ * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value.
+ */
 #define GRPC_ENABLE_CHANNELZ_DEFAULT true
 
-/** This is the default value for the maximum amount of memory used by trace
- * events per channel trace node. If
- * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
- * this default value. */
+/** This is the default value for the maximum amount of memory used by
+ * trace events per channel trace node. If
+ * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will
+ * override this default value. */
 #define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT (1024 * 4)
 
 namespace grpc_core {
@@ -72,9 +73,10 @@ class ChannelNodePeer;
 // base class for all channelz entities
 class BaseNode : public RefCounted<BaseNode> {
  public:
-  // There are only four high level channelz entities. However, to support
-  // GetTopChannelsRequest, we split the Channel entity into two different
-  // types. All children of BaseNode must be one of these types.
+  // There are only four high level channelz entities. However, to
+  // support GetTopChannelsRequest, we split the Channel entity into two
+  // different types. All children of BaseNode must be one of these
+  // types.
   enum class EntityType {
     kTopLevelChannel,
     kInternalChannel,
@@ -92,8 +94,8 @@ class BaseNode : public RefCounted<BaseNode> {
   // All children must implement this function.
   virtual Json RenderJson() = 0;
 
-  // Renders the json and returns allocated string that must be freed by the
-  // caller.
+  // Renders the json and returns allocated string that must be freed by
+  // the caller.
   std::string RenderJsonString();
 
   EntityType type() const { return type_; }
@@ -108,9 +110,9 @@ class BaseNode : public RefCounted<BaseNode> {
   std::string name_;
 };
 
-// This class is a helper class for channelz entities that deal with Channels,
-// Subchannels, and Servers, since those have similar proto definitions.
-// This class has the ability to:
+// This class is a helper class for channelz entities that deal with
+// Channels, Subchannels, and Servers, since those have similar proto
+// definitions. This class has the ability to:
 //   - track calls_{started,succeeded,failed}
 //   - track last_call_started_timestamp
 //   - perform rendering of the above items
@@ -122,7 +124,8 @@ class CallCountingHelper {
   void RecordCallFailed();
   void RecordCallSucceeded();
 
-  // Common rendering of the call count data and last_call_started_timestamp.
+  // Common rendering of the call count data and
+  // last_call_started_timestamp.
   void PopulateCallCounts(Json::Object* json);
 
  private:
@@ -131,14 +134,17 @@ class CallCountingHelper {
 
   // TODO(soheil): add a proper PerCPU helper and use it here.
   struct AtomicCounterData {
-    // Define the ctors so that we can use this structure in InlinedVector.
+    // Define the ctors so that we can use this structure in
+    // InlinedVector.
     AtomicCounterData() = default;
     AtomicCounterData(const AtomicCounterData& that)
         : calls_started(that.calls_started.Load(MemoryOrder::RELAXED)),
-          calls_succeeded(that.calls_succeeded.Load(MemoryOrder::RELAXED)),
+          calls_succeeded(
+              that.calls_succeeded.Load(MemoryOrder::RELAXED)),
           calls_failed(that.calls_failed.Load(MemoryOrder::RELAXED)),
           last_call_started_cycle(
-              that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {}
+              that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {
+    }
 
     Atomic<int64_t> calls_started{0};
     Atomic<int64_t> calls_succeeded{0};
@@ -166,7 +172,8 @@ class CallCountingHelper {
   void CollectData(CounterData* out);
 
   // Really zero-sized, but 0-sized arrays are illegal on MSVC.
-  absl::InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
+  absl::InlinedVector<AtomicCounterData, 1>
+      per_cpu_counter_data_storage_;
   size_t num_cores_ = 0;
 };
 
@@ -183,12 +190,13 @@ class ChannelNode : public BaseNode {
   Json RenderJson() override;
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
+  void AddTraceEvent(ChannelTrace::Severity severity,
+                     const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
-  void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
-                                  RefCountedPtr<BaseNode> referenced_channel) {
+  void AddTraceEventWithReference(
+      ChannelTrace::Severity severity, const grpc_slice& data,
+      RefCountedPtr<BaseNode> referenced_channel) {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
   }
@@ -198,13 +206,13 @@ class ChannelNode : public BaseNode {
 
   void SetConnectivityState(grpc_connectivity_state state);
 
-  // TODO(roth): take in a RefCountedPtr to the child channel so we can retrieve
-  // the human-readable name.
+  // TODO(roth): take in a RefCountedPtr to the child channel so we can
+  // retrieve the human-readable name.
   void AddChildChannel(intptr_t child_uuid);
   void RemoveChildChannel(intptr_t child_uuid);
 
-  // TODO(roth): take in a RefCountedPtr to the child subchannel so we can
-  // retrieve the human-readable name.
+  // TODO(roth): take in a RefCountedPtr to the child subchannel so we
+  // can retrieve the human-readable name.
   void AddChildSubchannel(intptr_t child_uuid);
   void RemoveChildSubchannel(intptr_t child_uuid);
 
@@ -218,7 +226,7 @@ class ChannelNode : public BaseNode {
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
 
-  // Least significant bit indicates whether the value is set.  Remaining
+  // Least significant bit indicates whether the value is set. Remaining
   // bits are a grpc_connectivity_state value.
   Atomic<int> connectivity_state_{0};
 
@@ -248,12 +256,13 @@ class ServerNode : public BaseNode {
   void RemoveChildListenSocket(intptr_t child_uuid);
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
+  void AddTraceEvent(ChannelTrace::Severity severity,
+                     const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
-  void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
-                                  RefCountedPtr<BaseNode> referenced_channel) {
+  void AddTraceEventWithReference(
+      ChannelTrace::Severity severity, const grpc_slice& data,
+      RefCountedPtr<BaseNode> referenced_channel) {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
   }
@@ -266,7 +275,8 @@ class ServerNode : public BaseNode {
   ChannelTrace trace_;
   Mutex child_mu_;  // Guards child maps below.
   std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
-  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
+  std::map<intptr_t, RefCountedPtr<ListenSocketNode>>
+      child_listen_sockets_;
 };
 
 #define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
@@ -276,12 +286,18 @@ class SocketNode : public BaseNode {
  public:
   struct Security : public RefCounted<Security> {
     struct Tls {
-      // This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=50346
+      // This is a workaround for
+      // https://bugs.llvm.org/show_bug.cgi?id=50346
       Tls() {}
 
-      enum class NameType { kUnset = 0, kStandardName = 1, kOtherName = 2 };
+      enum class NameType {
+        kUnset = 0,
+        kStandardName = 1,
+        kOtherName = 2
+      };
       NameType type = NameType::kUnset;
-      // Holds the value of standard_name or other_names if type is not kUnset.
+      // Holds the value of standard_name or other_names if type is not
+      // kUnset.
       std::string name;
       std::string local_certificate;
       std::string remote_certificate;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,8 +31,8 @@
 #include "src/core/lib/gprpp/memory.h"
 
 /*
- * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
- *       AROUND VERY SPECIFIC USE CASES.
+ * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO
+ * WORK AROUND VERY SPECIFIC USE CASES.
  */
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
@@ -52,8 +52,9 @@ namespace internal {
 // 0 active ExecCtxs, exex_ctx_count=3 indicates 1 active ExecCtxs...
 
 // When blocked, the exec_ctx_count is 0-indexed.  Note that ExecCtx
-// creation can only be blocked if there is exactly 1 outstanding ExecCtx,
-// meaning that BLOCKED and UNBLOCKED counts partition the integers
+// creation can only be blocked if there is exactly 1 outstanding
+// ExecCtx, meaning that BLOCKED and UNBLOCKED counts partition the
+// integers
 #define UNBLOCKED(n) ((n) + 2)
 #define BLOCKED(n) (n)
 
@@ -69,8 +70,8 @@ class ExecCtxState {
     gpr_atm count = gpr_atm_no_barrier_load(&count_);
     while (true) {
       if (count <= BLOCKED(1)) {
-        // This only occurs if we are trying to fork.  Wait until the fork()
-        // operation completes before allowing new ExecCtxs.
+        // This only occurs if we are trying to fork.  Wait until the
+        // fork() operation completes before allowing new ExecCtxs.
         gpr_mu_lock(&mu_);
         if (gpr_atm_no_barrier_load(&count_) <= BLOCKED(1)) {
           while (!fork_complete_) {
@@ -120,7 +121,8 @@ class ExecCtxState {
 
 class ThreadState {
  public:
-  ThreadState() : awaiting_threads_(false), threads_done_(false), count_(0) {
+  ThreadState()
+      : awaiting_threads_(false), threads_done_(false), count_(0) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&cv_);
   }
@@ -168,8 +170,9 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-    support_enabled_.Store(GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support),
-                           MemoryOrder::RELAXED);
+    support_enabled_.Store(
+        GPR_GLOBAL_CONFIG_GET(grpc_enable_fork_support),
+        MemoryOrder::RELAXED);
   }
   if (support_enabled_.Load(MemoryOrder::RELAXED)) {
     exec_ctx_state_ = new internal::ExecCtxState();
@@ -184,7 +187,9 @@ void Fork::GlobalShutdown() {
   }
 }
 
-bool Fork::Enabled() { return support_enabled_.Load(MemoryOrder::RELAXED); }
+bool Fork::Enabled() {
+  return support_enabled_.Load(MemoryOrder::RELAXED);
+}
 
 // Testing Only
 void Fork::Enable(bool enable) {

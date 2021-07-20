@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,8 +34,8 @@ namespace grpc_core {
 // SliceBufferByteStream
 //
 
-SliceBufferByteStream::SliceBufferByteStream(grpc_slice_buffer* slice_buffer,
-                                             uint32_t flags)
+SliceBufferByteStream::SliceBufferByteStream(
+    grpc_slice_buffer* slice_buffer, uint32_t flags)
     : ByteStream(static_cast<uint32_t>(slice_buffer->length), flags) {
   GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
   grpc_slice_buffer_init(&backing_buffer_);
@@ -76,7 +76,8 @@ void SliceBufferByteStream::Shutdown(grpc_error_handle error) {
 // ByteStreamCache
 //
 
-ByteStreamCache::ByteStreamCache(OrphanablePtr<ByteStream> underlying_stream)
+ByteStreamCache::ByteStreamCache(
+    OrphanablePtr<ByteStream> underlying_stream)
     : underlying_stream_(std::move(underlying_stream)),
       length_(underlying_stream_->length()),
       flags_(underlying_stream_->flags()) {
@@ -96,7 +97,8 @@ void ByteStreamCache::Destroy() {
 // ByteStreamCache::CachingByteStream
 //
 
-ByteStreamCache::CachingByteStream::CachingByteStream(ByteStreamCache* cache)
+ByteStreamCache::CachingByteStream::CachingByteStream(
+    ByteStreamCache* cache)
     : ByteStream(cache->length_, cache->flags_), cache_(cache) {}
 
 ByteStreamCache::CachingByteStream::~CachingByteStream() {}
@@ -109,20 +111,22 @@ void ByteStreamCache::CachingByteStream::Orphan() {
   // filter stack.
 }
 
-bool ByteStreamCache::CachingByteStream::Next(size_t max_size_hint,
-                                              grpc_closure* on_complete) {
+bool ByteStreamCache::CachingByteStream::Next(
+    size_t max_size_hint, grpc_closure* on_complete) {
   if (shutdown_error_ != GRPC_ERROR_NONE) return true;
   if (cursor_ < cache_->cache_buffer_.count) return true;
   GPR_ASSERT(cache_->underlying_stream_ != nullptr);
   return cache_->underlying_stream_->Next(max_size_hint, on_complete);
 }
 
-grpc_error_handle ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
+grpc_error_handle ByteStreamCache::CachingByteStream::Pull(
+    grpc_slice* slice) {
   if (shutdown_error_ != GRPC_ERROR_NONE) {
     return GRPC_ERROR_REF(shutdown_error_);
   }
   if (cursor_ < cache_->cache_buffer_.count) {
-    *slice = grpc_slice_ref_internal(cache_->cache_buffer_.slices[cursor_]);
+    *slice =
+        grpc_slice_ref_internal(cache_->cache_buffer_.slices[cursor_]);
     ++cursor_;
     offset_ += GRPC_SLICE_LENGTH(*slice);
     return GRPC_ERROR_NONE;
@@ -142,7 +146,8 @@ grpc_error_handle ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
   return error;
 }
 
-void ByteStreamCache::CachingByteStream::Shutdown(grpc_error_handle error) {
+void ByteStreamCache::CachingByteStream::Shutdown(
+    grpc_error_handle error) {
   GRPC_ERROR_UNREF(shutdown_error_);
   shutdown_error_ = GRPC_ERROR_REF(error);
   if (cache_->underlying_stream_ != nullptr) {

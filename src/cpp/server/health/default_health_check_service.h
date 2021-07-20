@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,9 +36,10 @@
 
 namespace grpc {
 
-// Default implementation of HealthCheckServiceInterface. Server will create and
-// own it.
-class DefaultHealthCheckService final : public HealthCheckServiceInterface {
+// Default implementation of HealthCheckServiceInterface. Server will
+// create and own it.
+class DefaultHealthCheckService final
+    : public HealthCheckServiceInterface {
  public:
   enum ServingStatus { NOT_FOUND, SERVING, NOT_SERVING };
 
@@ -62,12 +63,13 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
    private:
     // A tag that can be called with a bool argument. It's tailored for
-    // CallHandler's use. Before being used, it should be constructed with a
-    // method of CallHandler and a shared pointer to the handler. The
-    // shared pointer will be moved to the invoked function and the function
-    // can only be invoked once. That makes ref counting of the handler easier,
-    // because the shared pointer is not bound to the function and can be gone
-    // once the invoked function returns (if not used any more).
+    // CallHandler's use. Before being used, it should be constructed
+    // with a method of CallHandler and a shared pointer to the handler.
+    // The shared pointer will be moved to the invoked function and the
+    // function can only be invoked once. That makes ref counting of the
+    // handler easier, because the shared pointer is not bound to the
+    // function and can be gone once the invoked function returns (if
+    // not used any more).
     class CallableTag {
      public:
       using HandlerFunction =
@@ -75,14 +77,16 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
       CallableTag() {}
 
-      CallableTag(HandlerFunction func, std::shared_ptr<CallHandler> handler)
-          : handler_function_(std::move(func)), handler_(std::move(handler)) {
+      CallableTag(HandlerFunction func,
+                  std::shared_ptr<CallHandler> handler)
+          : handler_function_(std::move(func)),
+            handler_(std::move(handler)) {
         GPR_ASSERT(handler_function_ != nullptr);
         GPR_ASSERT(handler_ != nullptr);
       }
 
-      // Runs the tag. This should be called only once. The handler is no
-      // longer owned by this tag after this method is invoked.
+      // Runs the tag. This should be called only once. The handler is
+      // no longer owned by this tag after this method is invoked.
       void Run(bool ok) {
         GPR_ASSERT(handler_function_ != nullptr);
         GPR_ASSERT(handler_ != nullptr);
@@ -100,20 +104,21 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     };
 
     // Call handler for Check method.
-    // Each handler takes care of one call. It contains per-call data and it
-    // will access the members of the parent class (i.e.,
+    // Each handler takes care of one call. It contains per-call data
+    // and it will access the members of the parent class (i.e.,
     // DefaultHealthCheckService) for per-service health data.
     class CheckCallHandler : public CallHandler {
      public:
-      // Instantiates a CheckCallHandler and requests the next health check
-      // call. The handler object will manage its own lifetime, so no action is
-      // needed from the caller any more regarding that object.
+      // Instantiates a CheckCallHandler and requests the next health
+      // check call. The handler object will manage its own lifetime, so
+      // no action is needed from the caller any more regarding that
+      // object.
       static void CreateAndStart(ServerCompletionQueue* cq,
                                  DefaultHealthCheckService* database,
                                  HealthCheckServiceImpl* service);
 
-      // This ctor is public because we want to use std::make_shared<> in
-      // CreateAndStart(). This ctor shouldn't be used elsewhere.
+      // This ctor is public because we want to use std::make_shared<>
+      // in CreateAndStart(). This ctor shouldn't be used elsewhere.
       CheckCallHandler(ServerCompletionQueue* cq,
                        DefaultHealthCheckService* database,
                        HealthCheckServiceImpl* service);
@@ -124,7 +129,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
      private:
       // Called when we receive a call.
-      // Spawns a new handler so that we can keep servicing future calls.
+      // Spawns a new handler so that we can keep servicing future
+      // calls.
       void OnCallReceived(std::shared_ptr<CallHandler> self, bool ok);
 
       // Called when Finish() is done.
@@ -143,20 +149,21 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     };
 
     // Call handler for Watch method.
-    // Each handler takes care of one call. It contains per-call data and it
-    // will access the members of the parent class (i.e.,
+    // Each handler takes care of one call. It contains per-call data
+    // and it will access the members of the parent class (i.e.,
     // DefaultHealthCheckService) for per-service health data.
     class WatchCallHandler : public CallHandler {
      public:
-      // Instantiates a WatchCallHandler and requests the next health check
-      // call. The handler object will manage its own lifetime, so no action is
-      // needed from the caller any more regarding that object.
+      // Instantiates a WatchCallHandler and requests the next health
+      // check call. The handler object will manage its own lifetime, so
+      // no action is needed from the caller any more regarding that
+      // object.
       static void CreateAndStart(ServerCompletionQueue* cq,
                                  DefaultHealthCheckService* database,
                                  HealthCheckServiceImpl* service);
 
-      // This ctor is public because we want to use std::make_shared<> in
-      // CreateAndStart(). This ctor shouldn't be used elsewhere.
+      // This ctor is public because we want to use std::make_shared<>
+      // in CreateAndStart(). This ctor shouldn't be used elsewhere.
       WatchCallHandler(ServerCompletionQueue* cq,
                        DefaultHealthCheckService* database,
                        HealthCheckServiceImpl* service);
@@ -166,7 +173,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
      private:
       // Called when we receive a call.
-      // Spawns a new handler so that we can keep servicing future calls.
+      // Spawns a new handler so that we can keep servicing future
+      // calls.
       void OnCallReceived(std::shared_ptr<CallHandler> self, bool ok);
 
       // Requires holding send_mu_.
@@ -176,7 +184,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       // When sending a health result finishes.
       void OnSendHealthDone(std::shared_ptr<CallHandler> self, bool ok);
 
-      void SendFinish(std::shared_ptr<CallHandler> self, const Status& status);
+      void SendFinish(std::shared_ptr<CallHandler> self,
+                      const Status& status);
 
       // Requires holding service_->cq_shutdown_mu_.
       void SendFinishLocked(std::shared_ptr<CallHandler> self,
@@ -208,13 +217,15 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       CallableTag on_finish_done_;
     };
 
-    // Handles the incoming requests and drives the completion queue in a loop.
+    // Handles the incoming requests and drives the completion queue in
+    // a loop.
     static void Serve(void* arg);
 
     // Returns true on success.
     static bool DecodeRequest(const ByteBuffer& request,
                               std::string* service_name);
-    static bool EncodeResponse(ServingStatus status, ByteBuffer* response);
+    static bool EncodeResponse(ServingStatus status,
+                               ByteBuffer* response);
 
     // Needed to appease Windows compilers, which don't seem to allow
     // nested classes to access protected members in the parent's
@@ -225,8 +236,9 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     DefaultHealthCheckService* database_;
     std::unique_ptr<ServerCompletionQueue> cq_;
 
-    // To synchronize the operations related to shutdown state of cq_, so that
-    // we don't enqueue new tags into cq_ after it is already shut down.
+    // To synchronize the operations related to shutdown state of cq_,
+    // so that we don't enqueue new tags into cq_ after it is already
+    // shut down.
     grpc_core::Mutex cq_shutdown_mu_;
     std::atomic_bool shutdown_{false};
     std::unique_ptr<::grpc_core::Thread> thread_;
@@ -234,7 +246,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
   DefaultHealthCheckService();
 
-  void SetServingStatus(const std::string& service_name, bool serving) override;
+  void SetServingStatus(const std::string& service_name,
+                        bool serving) override;
   void SetServingStatus(bool serving) override;
 
   void Shutdown() override;
@@ -254,7 +267,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     void AddCallHandler(
         std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler);
     void RemoveCallHandler(
-        const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
+        const std::shared_ptr<HealthCheckServiceImpl::CallHandler>&
+            handler);
     bool Unused() const {
       return call_handlers_.empty() && status_ == NOT_FOUND;
     }
@@ -271,7 +285,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
   void UnregisterCallHandler(
       const std::string& service_name,
-      const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
+      const std::shared_ptr<HealthCheckServiceImpl::CallHandler>&
+          handler);
 
   mutable grpc_core::Mutex mu_;
   bool shutdown_ = false;                            // Guarded by mu_.

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -50,9 +50,10 @@ namespace grpc {
 namespace testing {
 namespace {
 
-// A custom implementation of the health checking service interface. This is
-// used to test that it prevents the server from creating a default service and
-// also serves as an example of how to override the default service.
+// A custom implementation of the health checking service interface.
+// This is used to test that it prevents the server from creating a
+// default service and also serves as an example of how to override the
+// default service.
 class CustomHealthCheckService : public HealthCheckServiceInterface {
  public:
   explicit CustomHealthCheckService(HealthCheckServiceImpl* impl)
@@ -61,8 +62,9 @@ class CustomHealthCheckService : public HealthCheckServiceInterface {
   }
   void SetServingStatus(const std::string& service_name,
                         bool serving) override {
-    impl_->SetStatus(service_name, serving ? HealthCheckResponse::SERVING
-                                           : HealthCheckResponse::NOT_SERVING);
+    impl_->SetStatus(service_name,
+                     serving ? HealthCheckResponse::SERVING
+                             : HealthCheckResponse::NOT_SERVING);
   }
 
   void SetServingStatus(bool serving) override {
@@ -80,9 +82,10 @@ class HealthServiceEnd2endTest : public ::testing::Test {
  protected:
   HealthServiceEnd2endTest() {}
 
-  void SetUpServer(bool register_sync_test_service, bool add_async_cq,
-                   bool explicit_health_service,
-                   std::unique_ptr<HealthCheckServiceInterface> service) {
+  void SetUpServer(
+      bool register_sync_test_service, bool add_async_cq,
+      bool explicit_health_service,
+      std::unique_ptr<HealthCheckServiceInterface> service) {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "localhost:" << port;
 
@@ -93,7 +96,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     ServerBuilder builder;
     if (explicit_health_service) {
       std::unique_ptr<ServerBuilderOption> option(
-          new HealthCheckServiceServerBuilderOption(std::move(service)));
+          new HealthCheckServiceServerBuilderOption(
+              std::move(service)));
       builder.SetOption(std::move(option));
     }
     builder.AddListeningPort(server_address_.str(),
@@ -129,7 +133,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     hc_stub_ = grpc::health::v1::Health::NewStub(channel);
   }
 
-  // When the expected_status is NOT OK, we do not care about the response.
+  // When the expected_status is NOT OK, we do not care about the
+  // response.
   void SendHealthCheckRpc(const std::string& service_name,
                           const Status& expected_status) {
     EXPECT_FALSE(expected_status.ok());
@@ -152,7 +157,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   }
 
   void VerifyHealthCheckService() {
-    HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+    HealthCheckServiceInterface* service =
+        server_->GetHealthCheckService();
     EXPECT_TRUE(service != nullptr);
     const std::string kHealthyService("healthy_service");
     const std::string kUnhealthyService("unhealthy_service");
@@ -171,7 +177,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
                        Status(StatusCode::NOT_FOUND, ""));
 
     service->SetServingStatus(false);
-    SendHealthCheckRpc("", Status::OK, HealthCheckResponse::NOT_SERVING);
+    SendHealthCheckRpc("", Status::OK,
+                       HealthCheckResponse::NOT_SERVING);
     SendHealthCheckRpc(kHealthyService, Status::OK,
                        HealthCheckResponse::NOT_SERVING);
     SendHealthCheckRpc(kUnhealthyService, Status::OK,
@@ -182,13 +189,14 @@ class HealthServiceEnd2endTest : public ::testing::Test {
 
   void VerifyHealthCheckServiceStreaming() {
     const std::string kServiceName("service_name");
-    HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+    HealthCheckServiceInterface* service =
+        server_->GetHealthCheckService();
     // Start Watch for service.
     ClientContext context;
     HealthCheckRequest request;
     request.set_service(kServiceName);
-    std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>> reader =
-        hc_stub_->Watch(&context, request);
+    std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>>
+        reader = hc_stub_->Watch(&context, request);
     // Initial response will be SERVICE_UNKNOWN.
     HealthCheckResponse response;
     EXPECT_TRUE(reader->Read(&response));
@@ -209,13 +217,15 @@ class HealthServiceEnd2endTest : public ::testing::Test {
 
   // Verify that after HealthCheckServiceInterface::Shutdown is called
   // 1. unary client will see NOT_SERVING.
-  // 2. unary client still sees NOT_SERVING after a SetServing(true) is called.
+  // 2. unary client still sees NOT_SERVING after a SetServing(true) is
+  // called.
   // 3. streaming (Watch) client will see an update.
-  // 4. setting a new service to serving after shutdown will add the service
-  // name but return NOT_SERVING to client.
-  // This has to be called last.
+  // 4. setting a new service to serving after shutdown will add the
+  // service name but return NOT_SERVING to client. This has to be
+  // called last.
   void VerifyHealthCheckServiceShutdown() {
-    HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+    HealthCheckServiceInterface* service =
+        server_->GetHealthCheckService();
     EXPECT_TRUE(service != nullptr);
     const std::string kHealthyService("healthy_service");
     const std::string kUnhealthyService("unhealthy_service");
@@ -230,8 +240,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     ClientContext context;
     HealthCheckRequest request;
     request.set_service(kHealthyService);
-    std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>> reader =
-        hc_stub_->Watch(&context, request);
+    std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>>
+        reader = hc_stub_->Watch(&context, request);
 
     HealthCheckResponse response;
     EXPECT_TRUE(reader->Read(&response));
@@ -255,7 +265,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     // Finish Watch call.
     context.TryCancel();
 
-    SendHealthCheckRpc("", Status::OK, HealthCheckResponse::NOT_SERVING);
+    SendHealthCheckRpc("", Status::OK,
+                       HealthCheckResponse::NOT_SERVING);
     SendHealthCheckRpc(kHealthyService, Status::OK,
                        HealthCheckResponse::NOT_SERVING);
     SendHealthCheckRpc(kUnhealthyService, Status::OK,
@@ -268,8 +279,8 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     SendHealthCheckRpc(kHealthyService, Status::OK,
                        HealthCheckResponse::NOT_SERVING);
 
-    // Adding serving status for a new service after shutdown will return
-    // NOT_SERVING.
+    // Adding serving status for a new service after shutdown will
+    // return NOT_SERVING.
     service->SetServingStatus(kNewService, true);
     SendHealthCheckRpc(kNewService, Status::OK,
                        HealthCheckResponse::NOT_SERVING);
@@ -323,7 +334,8 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyDisableViaOverride) {
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   std::unique_ptr<HealthCheckServiceInterface> empty_service;
   SetUpServer(true, false, true, std::move(empty_service));
-  HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+  HealthCheckServiceInterface* service =
+      server_->GetHealthCheckService();
   EXPECT_TRUE(service == nullptr);
 
   ResetStubs();
@@ -337,9 +349,11 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyOverride) {
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   std::unique_ptr<HealthCheckServiceInterface> override_service(
       new CustomHealthCheckService(&health_check_service_impl_));
-  HealthCheckServiceInterface* underlying_service = override_service.get();
+  HealthCheckServiceInterface* underlying_service =
+      override_service.get();
   SetUpServer(false, false, true, std::move(override_service));
-  HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+  HealthCheckServiceInterface* service =
+      server_->GetHealthCheckService();
   EXPECT_TRUE(service == underlying_service);
 
   ResetStubs();
@@ -353,9 +367,11 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyHealthServiceShutdown) {
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   std::unique_ptr<HealthCheckServiceInterface> override_service(
       new CustomHealthCheckService(&health_check_service_impl_));
-  HealthCheckServiceInterface* underlying_service = override_service.get();
+  HealthCheckServiceInterface* underlying_service =
+      override_service.get();
   SetUpServer(false, false, true, std::move(override_service));
-  HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+  HealthCheckServiceInterface* service =
+      server_->GetHealthCheckService();
   EXPECT_TRUE(service == underlying_service);
 
   ResetStubs();

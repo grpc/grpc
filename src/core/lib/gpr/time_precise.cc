@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -67,7 +67,8 @@ static bool is_fake_clock() {
     gpr_timespec delta = gpr_time_sub(now, start);
     sum += delta.tv_sec * GPR_NS_PER_SEC + delta.tv_nsec;
   }
-  // If the clock doesn't move even a nano after 8 tries, it's a fake one.
+  // If the clock doesn't move even a nano after 8 tries, it's a fake
+  // one.
   return sum == 0;
 }
 
@@ -87,7 +88,8 @@ void gpr_precise_clock_init(void) {
     return;
   }
   // Start from a loop of 1ms, and gradually increase the loop duration
-  // until we either converge or we have passed 255ms (1ms+2ms+...+128ms).
+  // until we either converge or we have passed 255ms
+  // (1ms+2ms+...+128ms).
   int64_t measurement_ns = GPR_NS_PER_MS;
   double last_freq = -1;
   bool converged = false;
@@ -103,10 +105,10 @@ void gpr_precise_clock_init(void) {
     } while (loop_ns < measurement_ns);
     gpr_cycle_counter end_cycle = gpr_get_cycle_counter();
     // Frequency should be in Hz.
-    const double freq =
-        static_cast<double>(end_cycle - start_cycle) / loop_ns * GPR_NS_PER_SEC;
-    converged =
-        last_freq != -1 && (freq * 0.99 < last_freq && last_freq < freq * 1.01);
+    const double freq = static_cast<double>(end_cycle - start_cycle) /
+                        loop_ns * GPR_NS_PER_SEC;
+    converged = last_freq != -1 &&
+                (freq * 0.99 < last_freq && last_freq < freq * 1.01);
     last_freq = freq;
   }
   cycles_per_second = last_freq;
@@ -118,18 +120,19 @@ gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
       static_cast<double>(cycles - start_cycle) / cycles_per_second;
   gpr_timespec ts;
   ts.tv_sec = static_cast<int64_t>(secs);
-  ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC *
-                                    (secs - static_cast<double>(ts.tv_sec)));
+  ts.tv_nsec = static_cast<int32_t>(
+      GPR_NS_PER_SEC * (secs - static_cast<double>(ts.tv_sec)));
   ts.clock_type = GPR_CLOCK_PRECISE;
   return ts;
 }
 
-gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
+gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a,
+                                   gpr_cycle_counter b) {
   const double secs = static_cast<double>(a - b) / cycles_per_second;
   gpr_timespec ts;
   ts.tv_sec = static_cast<int64_t>(secs);
-  ts.tv_nsec = static_cast<int32_t>(GPR_NS_PER_SEC *
-                                    (secs - static_cast<double>(ts.tv_sec)));
+  ts.tv_nsec = static_cast<int32_t>(
+      GPR_NS_PER_SEC * (secs - static_cast<double>(ts.tv_sec)));
   ts.clock_type = GPR_TIMESPAN;
   return ts;
 }
@@ -149,8 +152,8 @@ gpr_cycle_counter gpr_get_cycle_counter() {
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
   gpr_timespec ts;
   ts.tv_sec = static_cast<int64_t>(cycles / GPR_US_PER_SEC);
-  ts.tv_nsec = static_cast<int64_t>((cycles - ts.tv_sec * GPR_US_PER_SEC) *
-                                    GPR_NS_PER_US);
+  ts.tv_nsec = static_cast<int64_t>(
+      (cycles - ts.tv_sec * GPR_US_PER_SEC) * GPR_NS_PER_US);
   ts.clock_type = GPR_CLOCK_PRECISE;
   return ts;
 }
@@ -160,7 +163,8 @@ void gpr_precise_clock_now(gpr_timespec* clk) {
   clk->clock_type = GPR_CLOCK_PRECISE;
 }
 
-gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b) {
+gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a,
+                                   gpr_cycle_counter b) {
   return gpr_time_sub(gpr_cycle_counter_to_time(a),
                       gpr_cycle_counter_to_time(b));
 }

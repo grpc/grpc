@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,11 +31,12 @@
    grpc_server_credentials. */
 static VALUE grpc_rb_cServerCredentials = Qnil;
 
-/* grpc_rb_server_credentials wraps a grpc_server_credentials.  It provides a
-   peer ruby object, 'mark' to hold references to objects involved in
-   constructing the server credentials. */
+/* grpc_rb_server_credentials wraps a grpc_server_credentials.  It
+   provides a peer ruby object, 'mark' to hold references to objects
+   involved in constructing the server credentials. */
 typedef struct grpc_rb_server_credentials {
-  /* Holder of ruby objects involved in constructing the server credentials */
+  /* Holder of ruby objects involved in constructing the server
+   * credentials */
   VALUE mark;
   /* The actual server credentials */
   grpc_server_credentials* wrapped;
@@ -49,8 +50,8 @@ static void grpc_rb_server_credentials_free_internal(void* p) {
   };
   wrapper = (grpc_rb_server_credentials*)p;
 
-  /* Delete the wrapped object if the mark object is Qnil, which indicates that
-     no other object is the actual owner. */
+  /* Delete the wrapped object if the mark object is Qnil, which
+     indicates that no other object is the actual owner. */
   if (wrapper->wrapped != NULL && wrapper->mark == Qnil) {
     grpc_server_credentials_release(wrapper->wrapped);
     wrapper->wrapped = NULL;
@@ -96,17 +97,20 @@ static const rb_data_type_t grpc_rb_server_credentials_data_type = {
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_server_credentials_alloc(VALUE cls) {
   grpc_ruby_init();
-  grpc_rb_server_credentials* wrapper = ALLOC(grpc_rb_server_credentials);
+  grpc_rb_server_credentials* wrapper =
+      ALLOC(grpc_rb_server_credentials);
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
-  return TypedData_Wrap_Struct(cls, &grpc_rb_server_credentials_data_type,
-                               wrapper);
+  return TypedData_Wrap_Struct(
+      cls, &grpc_rb_server_credentials_data_type, wrapper);
 }
 
-/* The attribute used on the mark object to preserve the pem_root_certs. */
+/* The attribute used on the mark object to preserve the pem_root_certs.
+ */
 static ID id_pem_root_certs;
 
-/* The attribute used on the mark object to preserve the pem_key_certs */
+/* The attribute used on the mark object to preserve the pem_key_certs
+ */
 static ID id_pem_key_certs;
 
 /* The key used to access the pem cert in a key_cert pair hash */
@@ -126,12 +130,13 @@ static VALUE sym_private_key;
                                    {cert_chain: <pem_cert_chain1>}],
                                   force_client_auth)
 
-    pem_root_certs: (optional) PEM encoding of the server root certificate
-    pem_private_key: (required) PEM encoding of the server's private keys
-    force_client_auth: indicatees
+    pem_root_certs: (optional) PEM encoding of the server root
+  certificate pem_private_key: (required) PEM encoding of the server's
+  private keys force_client_auth: indicatees
 
     Initializes ServerCredential instances. */
-static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
+static VALUE grpc_rb_server_credentials_init(VALUE self,
+                                             VALUE pem_root_certs,
                                              VALUE pem_key_certs,
                                              VALUE force_client_auth) {
   grpc_rb_server_credentials* wrapper = NULL;
@@ -168,24 +173,28 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
                "could not create a server credential: nil key_cert");
       return Qnil;
     } else if (TYPE(key_cert) != T_HASH) {
-      rb_raise(rb_eTypeError,
-               "could not create a server credential: want <Hash>, got <%s>",
-               rb_obj_classname(key_cert));
+      rb_raise(
+          rb_eTypeError,
+          "could not create a server credential: want <Hash>, got <%s>",
+          rb_obj_classname(key_cert));
       return Qnil;
     } else if (rb_hash_aref(key_cert, sym_private_key) == Qnil) {
-      rb_raise(rb_eTypeError,
-               "could not create a server credential: want nil private key");
+      rb_raise(
+          rb_eTypeError,
+          "could not create a server credential: want nil private key");
       return Qnil;
     } else if (rb_hash_aref(key_cert, sym_cert_chain) == Qnil) {
-      rb_raise(rb_eTypeError,
-               "could not create a server credential: want nil cert chain");
+      rb_raise(
+          rb_eTypeError,
+          "could not create a server credential: want nil cert chain");
       return Qnil;
     }
   }
 
-  auth_client = TYPE(force_client_auth) == T_TRUE
-                    ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-                    : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
+  auth_client =
+      TYPE(force_client_auth) == T_TRUE
+          ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+          : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
   key_cert_pairs = ALLOC_N(grpc_ssl_pem_key_cert_pair, num_key_certs);
   for (i = 0; i < num_key_certs; i++) {
     key_cert = rb_ary_entry(pem_key_certs, i);
@@ -202,17 +211,19 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
     creds = grpc_ssl_server_credentials_create_ex(
         NULL, key_cert_pairs, num_key_certs, auth_client, NULL);
   } else {
-    creds = grpc_ssl_server_credentials_create_ex(RSTRING_PTR(pem_root_certs),
-                                                  key_cert_pairs, num_key_certs,
-                                                  auth_client, NULL);
+    creds = grpc_ssl_server_credentials_create_ex(
+        RSTRING_PTR(pem_root_certs), key_cert_pairs, num_key_certs,
+        auth_client, NULL);
   }
   xfree(key_cert_pairs);
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError,
-             "the call to grpc_ssl_server_credentials_create_ex() failed, "
-             "could not create a credentials, see "
-             "https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for "
-             "debugging tips");
+    rb_raise(
+        rb_eRuntimeError,
+        "the call to grpc_ssl_server_credentials_create_ex() failed, "
+        "could not create a credentials, see "
+        "https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md "
+        "for "
+        "debugging tips");
     return Qnil;
   }
   wrapper->wrapped = creds;
@@ -225,8 +236,8 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
 }
 
 void Init_grpc_server_credentials() {
-  grpc_rb_cServerCredentials =
-      rb_define_class_under(grpc_rb_mGrpcCore, "ServerCredentials", rb_cObject);
+  grpc_rb_cServerCredentials = rb_define_class_under(
+      grpc_rb_mGrpcCore, "ServerCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(grpc_rb_cServerCredentials,
@@ -245,7 +256,8 @@ void Init_grpc_server_credentials() {
 }
 
 /* Gets the wrapped grpc_server_credentials from the ruby wrapper */
-grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(VALUE v) {
+grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(
+    VALUE v) {
   grpc_rb_server_credentials* wrapper = NULL;
   Check_TypedStruct(v, &grpc_rb_server_credentials_data_type);
   TypedData_Get_Struct(v, grpc_rb_server_credentials,
@@ -255,5 +267,6 @@ grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(VALUE v) {
 
 /* Check if v is kind of ServerCredentials */
 bool grpc_rb_is_server_credentials(VALUE v) {
-  return rb_typeddata_is_kind_of(v, &grpc_rb_server_credentials_data_type);
+  return rb_typeddata_is_kind_of(v,
+                                 &grpc_rb_server_credentials_data_type);
 }

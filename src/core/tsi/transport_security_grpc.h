@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,11 +24,12 @@
 #include <grpc/slice_buffer.h>
 #include "src/core/tsi/transport_security.h"
 
-/* This method creates a tsi_zero_copy_grpc_protector object. It return TSI_OK
-   assuming there is no fatal error.
-   The caller is responsible for destroying the protector.  */
+/* This method creates a tsi_zero_copy_grpc_protector object. It return
+   TSI_OK assuming there is no fatal error. The caller is responsible
+   for destroying the protector.  */
 tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
+    const tsi_handshaker_result* self,
+    size_t* max_output_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector);
 
 /* -- tsi_zero_copy_grpc_protector object --  */
@@ -37,24 +38,27 @@ tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
    - unprotected_slices is the unprotected data to be protected.
    - protected_slices is the protected output frames. One or more frames
      may be produced in this protect function.
-   - This method returns TSI_OK in case of success or a specific error code in
-     case of failure.  */
+   - This method returns TSI_OK in case of success or a specific error
+   code in case of failure.  */
 tsi_result tsi_zero_copy_grpc_protector_protect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
+    tsi_zero_copy_grpc_protector* self,
+    grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices);
 
 /* Outputs unprotected bytes.
    - protected_slices is the bytes of protected frames.
    - unprotected_slices is the unprotected output data.
-   - This method returns TSI_OK in case of success. Success includes cases where
-     there is not enough data to output in which case unprotected_slices has 0
-     bytes.  */
+   - This method returns TSI_OK in case of success. Success includes
+   cases where there is not enough data to output in which case
+   unprotected_slices has 0 bytes.  */
 tsi_result tsi_zero_copy_grpc_protector_unprotect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    tsi_zero_copy_grpc_protector* self,
+    grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices);
 
 /* Destroys the tsi_zero_copy_grpc_protector object.  */
-void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self);
+void tsi_zero_copy_grpc_protector_destroy(
+    tsi_zero_copy_grpc_protector* self);
 
 /* Returns value of max protected frame size. Useful for testing. */
 tsi_result tsi_zero_copy_grpc_protector_max_frame_size(

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,10 +52,12 @@ struct fullstack_secure_fixture_data {
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/,
+    grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_secure_fixture_data* ffd = new fullstack_secure_fixture_data();
+  fullstack_secure_fixture_data* ffd =
+      new fullstack_secure_fixture_data();
   memset(&f, 0, sizeof(f));
 
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
@@ -65,13 +67,15 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
+static void process_auth_failure(void* state,
+                                 grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
   GPR_ASSERT(state == nullptr);
-  cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
+  cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED,
+     nullptr);
 }
 
 static void chttp2_init_client_secure_fullstack(
@@ -111,8 +115,8 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
   size_t i;
   if (server_args == nullptr) return 0;
   for (i = 0; i < server_args->num_args; i++) {
-    if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
-        0) {
+    if (strcmp(server_args->args[i].key,
+               FAIL_AUTH_CHECK_SERVER_ARG_NAME) == 0) {
       return 1;
     }
   }
@@ -122,33 +126,36 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 #define SERVER_INIT_NAME(REQUEST_TYPE) \
   chttp2_init_server_simple_ssl_secure_fullstack_##REQUEST_TYPE
 
-#define SERVER_INIT(REQUEST_TYPE)                                           \
-  static void SERVER_INIT_NAME(REQUEST_TYPE)(                               \
-      grpc_end2end_test_fixture * f, grpc_channel_args * server_args) {     \
-    grpc_ssl_pem_key_cert_pair pem_cert_key_pair;                           \
-    if (!test_server1_key_id.empty()) {                                     \
-      pem_cert_key_pair.private_key = test_server1_key_id.c_str();          \
-      pem_cert_key_pair.cert_chain = test_server1_cert;                     \
-    } else {                                                                \
-      pem_cert_key_pair.private_key = test_server1_key;                     \
-      pem_cert_key_pair.cert_chain = test_server1_cert;                     \
-    }                                                                       \
-    grpc_server_credentials* ssl_creds =                                    \
-        grpc_ssl_server_credentials_create_ex(                              \
-            test_root_cert, &pem_cert_key_pair, 1, REQUEST_TYPE, NULL);     \
-    if (fail_server_auth_check(server_args)) {                              \
-      grpc_auth_metadata_processor processor = {process_auth_failure, NULL, \
-                                                NULL};                      \
-      grpc_server_credentials_set_auth_metadata_processor(ssl_creds,        \
-                                                          processor);       \
-    }                                                                       \
-    chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);         \
+#define SERVER_INIT(REQUEST_TYPE)                                     \
+  static void SERVER_INIT_NAME(REQUEST_TYPE)(                         \
+      grpc_end2end_test_fixture * f,                                  \
+      grpc_channel_args * server_args) {                              \
+    grpc_ssl_pem_key_cert_pair pem_cert_key_pair;                     \
+    if (!test_server1_key_id.empty()) {                               \
+      pem_cert_key_pair.private_key = test_server1_key_id.c_str();    \
+      pem_cert_key_pair.cert_chain = test_server1_cert;               \
+    } else {                                                          \
+      pem_cert_key_pair.private_key = test_server1_key;               \
+      pem_cert_key_pair.cert_chain = test_server1_cert;               \
+    }                                                                 \
+    grpc_server_credentials* ssl_creds =                              \
+        grpc_ssl_server_credentials_create_ex(test_root_cert,         \
+                                              &pem_cert_key_pair, 1,  \
+                                              REQUEST_TYPE, NULL);    \
+    if (fail_server_auth_check(server_args)) {                        \
+      grpc_auth_metadata_processor processor = {process_auth_failure, \
+                                                NULL, NULL};          \
+      grpc_server_credentials_set_auth_metadata_processor(ssl_creds,  \
+                                                          processor); \
+    }                                                                 \
+    chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);   \
   }
 
 SERVER_INIT(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE)
 SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY)
 SERVER_INIT(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY)
-SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY)
+SERVER_INIT(
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY)
 SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY)
 
 #define CLIENT_INIT_NAME(cert_type) \
@@ -156,43 +163,46 @@ SERVER_INIT(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY)
 
 typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
 
-#define CLIENT_INIT(cert_type)                                               \
-  static void CLIENT_INIT_NAME(cert_type)(grpc_end2end_test_fixture * f,     \
-                                          grpc_channel_args * client_args) { \
-    grpc_channel_credentials* ssl_creds = NULL;                              \
-    grpc_ssl_pem_key_cert_pair self_signed_client_key_cert_pair = {          \
-        test_self_signed_client_key, test_self_signed_client_cert};          \
-    grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {               \
-        test_signed_client_key, test_signed_client_cert};                    \
-    grpc_ssl_pem_key_cert_pair bad_client_key_cert_pair = {                  \
-        test_self_signed_client_key, test_signed_client_cert};               \
-    grpc_ssl_pem_key_cert_pair* key_cert_pair = NULL;                        \
-    switch (cert_type) {                                                     \
-      case SELF_SIGNED:                                                      \
-        key_cert_pair = &self_signed_client_key_cert_pair;                   \
-        break;                                                               \
-      case SIGNED:                                                           \
-        key_cert_pair = &signed_client_key_cert_pair;                        \
-        break;                                                               \
-      case BAD_CERT_PAIR:                                                    \
-        key_cert_pair = &bad_client_key_cert_pair;                           \
-        break;                                                               \
-      default:                                                               \
-        break;                                                               \
-    }                                                                        \
-    ssl_creds = grpc_ssl_credentials_create(test_root_cert, key_cert_pair,   \
-                                            NULL, NULL);                     \
-    grpc_arg ssl_name_override = {                                           \
-        GRPC_ARG_STRING,                                                     \
-        const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),                \
-        {const_cast<char*>("foo.test.google.fr")}};                          \
-    grpc_channel_args* new_client_args =                                     \
-        grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);  \
-    chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);      \
-    {                                                                        \
-      grpc_core::ExecCtx exec_ctx;                                           \
-      grpc_channel_args_destroy(new_client_args);                            \
-    }                                                                        \
+#define CLIENT_INIT(cert_type)                                      \
+  static void CLIENT_INIT_NAME(cert_type)(                          \
+      grpc_end2end_test_fixture * f,                                \
+      grpc_channel_args * client_args) {                            \
+    grpc_channel_credentials* ssl_creds = NULL;                     \
+    grpc_ssl_pem_key_cert_pair self_signed_client_key_cert_pair = { \
+        test_self_signed_client_key, test_self_signed_client_cert}; \
+    grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {      \
+        test_signed_client_key, test_signed_client_cert};           \
+    grpc_ssl_pem_key_cert_pair bad_client_key_cert_pair = {         \
+        test_self_signed_client_key, test_signed_client_cert};      \
+    grpc_ssl_pem_key_cert_pair* key_cert_pair = NULL;               \
+    switch (cert_type) {                                            \
+      case SELF_SIGNED:                                             \
+        key_cert_pair = &self_signed_client_key_cert_pair;          \
+        break;                                                      \
+      case SIGNED:                                                  \
+        key_cert_pair = &signed_client_key_cert_pair;               \
+        break;                                                      \
+      case BAD_CERT_PAIR:                                           \
+        key_cert_pair = &bad_client_key_cert_pair;                  \
+        break;                                                      \
+      default:                                                      \
+        break;                                                      \
+    }                                                               \
+    ssl_creds = grpc_ssl_credentials_create(                        \
+        test_root_cert, key_cert_pair, NULL, NULL);                 \
+    grpc_arg ssl_name_override = {                                  \
+        GRPC_ARG_STRING,                                            \
+        const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),       \
+        {const_cast<char*>("foo.test.google.fr")}};                 \
+    grpc_channel_args* new_client_args =                            \
+        grpc_channel_args_copy_and_add(client_args,                 \
+                                       &ssl_name_override, 1);      \
+    chttp2_init_client_secure_fullstack(f, new_client_args,         \
+                                        ssl_creds);                 \
+    {                                                               \
+      grpc_core::ExecCtx exec_ctx;                                  \
+      grpc_channel_args_destroy(new_client_args);                   \
+    }                                                               \
   }
 
 CLIENT_INIT(NONE)
@@ -227,40 +237,49 @@ typedef struct grpc_end2end_test_config_wrapper {
 
 static grpc_end2end_test_config_wrapper configs[] = {
     SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NONE, SUCCESS),
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SELF_SIGNED, SUCCESS),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SELF_SIGNED,
+             SUCCESS),
     SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, BAD_CERT_PAIR, FAIL),
+    SSL_TEST(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, BAD_CERT_PAIR,
+             FAIL),
 
     SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, NONE,
              SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SELF_SIGNED,
-             SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, SIGNED,
-             SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY, BAD_CERT_PAIR,
-             FAIL),
-
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NONE, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SELF_SIGNED, FAIL),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, BAD_CERT_PAIR,
-             FAIL),
-
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-             NONE, FAIL),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
              SELF_SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
              SIGNED, SUCCESS),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
              BAD_CERT_PAIR, FAIL),
 
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, NONE,
-             FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, NONE,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+             SELF_SIGNED, FAIL),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED,
+             SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
+             BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+        NONE, FAIL),
+    SSL_TEST(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+        SELF_SIGNED, SUCCESS),
+    SSL_TEST(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+        SIGNED, SUCCESS),
+    SSL_TEST(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
+        BAD_CERT_PAIR, FAIL),
+
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             NONE, FAIL),
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
              SELF_SIGNED, FAIL),
-    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY, SIGNED,
-             SUCCESS),
+    SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+             SIGNED, SUCCESS),
     SSL_TEST(GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
              BAD_CERT_PAIR, FAIL),
 };
@@ -271,7 +290,9 @@ static gpr_timespec n_seconds_time(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec five_seconds_time(void) {
+  return n_seconds_time(5);
+}
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -312,10 +333,11 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   grpc_op* op;
   grpc_call_error error;
 
-  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, nullptr);
+  grpc_slice host =
+      grpc_slice_from_static_string("foo.test.google.fr:1234");
+  c = grpc_channel_create_call(
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"), &host, deadline, nullptr);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));
@@ -325,8 +347,8 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), expected_result == SUCCESS);
@@ -336,8 +358,8 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   cq_verifier_destroy(cqv);
 }
 
-class H2SslCertTest
-    : public ::testing::TestWithParam<grpc_end2end_test_config_wrapper> {
+class H2SslCertTest : public ::testing::TestWithParam<
+                          grpc_end2end_test_config_wrapper> {
  protected:
   H2SslCertTest() {
     gpr_log(GPR_INFO, "SSL_CERT_tests/%s", GetParam().config.name);
@@ -383,13 +405,15 @@ int main(int argc, char** argv) {
 
   grpc::testing::TestEnvironment env(argc, argv);
   /* Set the SSL roots env var. */
-  roots_file =
-      gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);
+  roots_file = gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test",
+                           &roots_filename);
   GPR_ASSERT(roots_filename != nullptr);
   GPR_ASSERT(roots_file != nullptr);
-  GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
+  GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) ==
+             roots_size);
   fclose(roots_file);
-  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
+                        roots_filename);
 
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

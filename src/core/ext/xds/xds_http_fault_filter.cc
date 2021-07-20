@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -49,7 +49,8 @@ const char* kXdsHttpFaultFilterConfigName =
 
 namespace {
 
-uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
+uint32_t GetDenominator(
+    const envoy_type_v3_FractionalPercent* fraction) {
   if (fraction != nullptr) {
     const auto denominator =
         static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
@@ -68,26 +69,29 @@ uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
   return 100;
 }
 
-absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
-                                            upb_arena* arena) {
-  auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
-      serialized_http_fault.data, serialized_http_fault.size, arena);
+absl::StatusOr<Json> ParseHttpFaultIntoJson(
+    upb_strview serialized_http_fault, upb_arena* arena) {
+  auto* http_fault =
+      envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
+          serialized_http_fault.data, serialized_http_fault.size,
+          arena);
   if (http_fault == nullptr) {
     return absl::InvalidArgumentError(
         "could not parse fault injection filter config");
   }
-  // NOTE(lidiz): Here, we are manually translating the upb messages into the
-  // JSON form of the filter config as part of method config, which will be
-  // directly used later by service config. In this way, we can validate the
-  // filter configs, and NACK if needed. It also allows the service config to
-  // function independently without xDS, but not the other way around.
-  // NOTE(lidiz): please refer to FaultInjectionPolicy for ground truth
-  // definitions, located at:
+  // NOTE(lidiz): Here, we are manually translating the upb messages
+  // into the JSON form of the filter config as part of method config,
+  // which will be directly used later by service config. In this way,
+  // we can validate the filter configs, and NACK if needed. It also
+  // allows the service config to function independently without xDS,
+  // but not the other way around. NOTE(lidiz): please refer to
+  // FaultInjectionPolicy for ground truth definitions, located at:
   // src/core/ext/filters/fault_injection/service_config_parser.h
   Json::Object fault_injection_policy_json;
   // Section 1: Parse the abort injection config
   const auto* fault_abort =
-      envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
+      envoy_extensions_filters_http_fault_v3_HTTPFault_abort(
+          http_fault);
   if (fault_abort != nullptr) {
     grpc_status_code abort_grpc_status_code = GRPC_STATUS_OK;
     // Try if gRPC status code is set first
@@ -105,7 +109,8 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
       int abort_http_status_code =
           envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
               fault_abort);
-      if (abort_http_status_code != 0 and abort_http_status_code != 200) {
+      if (abort_http_status_code != 0 and
+          abort_http_status_code != 200) {
         abort_grpc_status_code =
             grpc_http2_status_to_grpc_status(abort_http_status_code);
       }
@@ -132,7 +137,8 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
   }
   // Section 2: Parse the delay injection config
   const auto* fault_delay =
-      envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
+      envoy_extensions_filters_http_fault_v3_HTTPFault_delay(
+          http_fault);
   if (fault_delay != nullptr) {
     // Parse the delay duration
     const auto* delay_duration =
@@ -178,21 +184,22 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_symtab* symtab) const {
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
-                                         upb_arena* arena) const {
+XdsHttpFaultFilter::GenerateFilterConfig(
+    upb_strview serialized_filter_config, upb_arena* arena) const {
   absl::StatusOr<Json> parse_result =
       ParseHttpFaultIntoJson(serialized_filter_config, arena);
   if (!parse_result.ok()) {
     return parse_result.status();
   }
-  return FilterConfig{kXdsHttpFaultFilterConfigName, std::move(*parse_result)};
+  return FilterConfig{kXdsHttpFaultFilterConfigName,
+                      std::move(*parse_result)};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
     upb_strview serialized_filter_config, upb_arena* arena) const {
-  // HTTPFault filter has the same message type in HTTP connection manager's
-  // filter config and in overriding filter config field.
+  // HTTPFault filter has the same message type in HTTP connection
+  // manager's filter config and in overriding filter config field.
   return GenerateFilterConfig(serialized_filter_config, arena);
 }
 
@@ -203,11 +210,12 @@ const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
 grpc_channel_args* XdsHttpFaultFilter::ModifyChannelArgs(
     grpc_channel_args* args) const {
   grpc_arg args_to_add = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG), 1);
+      const_cast<char*>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG),
+      1);
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(args, &args_to_add, 1);
-  // Since this function takes the ownership of the channel args, it needs to
-  // deallocate the old ones to prevent leak.
+  // Since this function takes the ownership of the channel args, it
+  // needs to deallocate the old ones to prevent leak.
   grpc_channel_args_destroy(args);
   return new_args;
 }
@@ -220,7 +228,8 @@ XdsHttpFaultFilter::GenerateServiceConfig(
                          ? filter_config_override->config
                          : hcm_filter_config.config;
   // The policy JSON may be empty, that's allowed.
-  return ServiceConfigJsonEntry{"faultInjectionPolicy", policy_json.Dump()};
+  return ServiceConfigJsonEntry{"faultInjectionPolicy",
+                                policy_json.Dump()};
 }
 
 }  // namespace grpc_core

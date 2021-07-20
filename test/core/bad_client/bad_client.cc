@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,11 +62,13 @@ static void set_done_write(void* arg, grpc_error_handle /*error*/) {
   gpr_event_set(done_write, reinterpret_cast<void*>(1));
 }
 
-static void server_setup_transport(void* ts, grpc_transport* transport) {
+static void server_setup_transport(void* ts,
+                                   grpc_transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
   a->server->core_server->SetupTransport(
-      transport, nullptr, a->server->core_server->channel_args(), nullptr);
+      transport, nullptr, a->server->core_server->channel_args(),
+      nullptr);
 }
 
 /* Sets the read_done event */
@@ -79,7 +81,8 @@ static void set_read_done(void* arg, grpc_error_handle /*error*/) {
 static void shutdown_client(grpc_endpoint** client_fd) {
   if (*client_fd != nullptr) {
     grpc_endpoint_shutdown(
-        *client_fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
+        *client_fd,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Disconnect"));
     grpc_endpoint_destroy(*client_fd);
     grpc_core::ExecCtx::Get()->Flush();
     *client_fd = nullptr;
@@ -87,7 +90,8 @@ static void shutdown_client(grpc_endpoint** client_fd) {
 }
 
 /* Runs client side validator */
-void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
+void grpc_run_client_side_validator(grpc_bad_client_arg* arg,
+                                    uint32_t flags,
                                     grpc_endpoint_pair* sfd,
                                     grpc_completion_queue* client_cq) {
   char* hex;
@@ -103,8 +107,8 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
             arg->client_payload_length);
   }
 
-  grpc_slice slice = grpc_slice_from_copied_buffer(arg->client_payload,
-                                                   arg->client_payload_length);
+  grpc_slice slice = grpc_slice_from_copied_buffer(
+      arg->client_payload, arg->client_payload_length);
   grpc_slice_buffer outgoing;
   grpc_closure done_write_closure;
   gpr_event_init(&done_write);
@@ -115,14 +119,15 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                     grpc_schedule_on_exec_ctx);
 
   /* Write data */
-  grpc_endpoint_write(sfd->client, &outgoing, &done_write_closure, nullptr);
+  grpc_endpoint_write(sfd->client, &outgoing, &done_write_closure,
+                      nullptr);
   grpc_core::ExecCtx::Get()->Flush();
 
-  /* Await completion, unless the request is large and write may not finish
-   * before the peer shuts down. */
+  /* Await completion, unless the request is large and write may not
+   * finish before the peer shuts down. */
   if (!(flags & GRPC_BAD_CLIENT_LARGE_REQUEST)) {
-    GPR_ASSERT(
-        gpr_event_wait(&done_write, grpc_timeout_seconds_to_deadline(5)));
+    GPR_ASSERT(gpr_event_wait(&done_write,
+                              grpc_timeout_seconds_to_deadline(5)));
   }
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
@@ -141,21 +146,24 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
         gpr_event read_done_event;
         gpr_event_init(&read_done_event);
         grpc_closure read_done_closure;
-        GRPC_CLOSURE_INIT(&read_done_closure, set_read_done, &read_done_event,
-                          grpc_schedule_on_exec_ctx);
+        GRPC_CLOSURE_INIT(&read_done_closure, set_read_done,
+                          &read_done_event, grpc_schedule_on_exec_ctx);
         grpc_endpoint_read(sfd->client, &incoming, &read_done_closure,
                            /*urgent=*/true);
         grpc_core::ExecCtx::Get()->Flush();
         do {
-          GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
-          /* Perform a cq next just to provide a thread that can read incoming
-           bytes on the client fd */
+          GPR_ASSERT(
+              gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+          /* Perform a cq next just to provide a thread that can read
+           incoming bytes on the client fd */
           GPR_ASSERT(grpc_completion_queue_next(
-                         client_cq, grpc_timeout_milliseconds_to_deadline(100),
+                         client_cq,
+                         grpc_timeout_milliseconds_to_deadline(100),
                          nullptr)
                          .type == GRPC_QUEUE_TIMEOUT);
         } while (!gpr_event_get(&read_done_event));
-        if (arg->client_validator(&incoming, arg->client_validator_arg)) break;
+        if (arg->client_validator(&incoming, arg->client_validator_arg))
+          break;
         gpr_log(GPR_INFO,
                 "client validator failed; trying additional read "
                 "in case we didn't get all the data");
@@ -165,18 +173,18 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
     grpc_core::ExecCtx::Get()->Flush();
   }
 
-  /* If the request was too large, then we need to forcefully shut down the
-   * client, so that the write can be considered completed */
+  /* If the request was too large, then we need to forcefully shut down
+   * the client, so that the write can be considered completed */
   if (flags & GRPC_BAD_CLIENT_LARGE_REQUEST) {
     shutdown_client(&sfd->client);
   }
 
   /* Make sure that the client is done writing */
   while (!gpr_event_get(&done_write)) {
-    GPR_ASSERT(
-        grpc_completion_queue_next(
-            client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-            .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(
+                   client_cq,
+                   grpc_timeout_milliseconds_to_deadline(100), nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 
   grpc_slice_buffer_destroy_internal(&outgoing);
@@ -205,14 +213,15 @@ void grpc_run_bad_client_test(
   client_cq = grpc_completion_queue_create_for_next(nullptr);
 
   grpc_server_register_completion_queue(a.server, a.cq, nullptr);
-  a.registered_method =
-      grpc_server_register_method(a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
-                                  GRPC_BAD_CLIENT_REGISTERED_HOST,
-                                  GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
+  a.registered_method = grpc_server_register_method(
+      a.server, GRPC_BAD_CLIENT_REGISTERED_METHOD,
+      GRPC_BAD_CLIENT_REGISTERED_HOST,
+      GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(nullptr, sfd.server, false);
   server_setup_transport(&a, transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                      nullptr);
 
   /* Bind fds to pollsets */
   grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(client_cq));
@@ -225,14 +234,16 @@ void grpc_run_bad_client_test(
   a.validator = server_validator;
   /* Start validator */
 
-  grpc_core::Thread server_validator_thd("grpc_bad_client", thd_func, &a);
+  grpc_core::Thread server_validator_thd("grpc_bad_client", thd_func,
+                                         &a);
   server_validator_thd.Start();
   for (int i = 0; i < num_args; i++) {
-    grpc_run_client_side_validator(&args[i], i == (num_args - 1) ? flags : 0,
-                                   &sfd, client_cq);
+    grpc_run_client_side_validator(
+        &args[i], i == (num_args - 1) ? flags : 0, &sfd, client_cq);
   }
   /* Wait for server thread to finish */
-  GPR_ASSERT(gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(1)));
+  GPR_ASSERT(
+      gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(1)));
 
   /* Shutdown. */
   shutdown_client(&sfd.client);
@@ -240,9 +251,9 @@ void grpc_run_bad_client_test(
 
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
-  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
-                                         grpc_timeout_seconds_to_deadline(1),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 shutdown_cq, nullptr,
+                 grpc_timeout_seconds_to_deadline(1), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);
@@ -273,9 +284,11 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
 
 grpc_bad_client_arg connection_preface_arg = {
     client_connection_preface_validator, nullptr,
-    CONNECTION_PREFACE_FROM_CLIENT, sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
+    CONNECTION_PREFACE_FROM_CLIENT,
+    sizeof(CONNECTION_PREFACE_FROM_CLIENT) - 1};
 
-bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
+bool rst_stream_client_validator(grpc_slice_buffer* incoming,
+                                 void* /*arg*/) {
   // Get last frame from incoming slice buffer.
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
@@ -319,7 +332,8 @@ void server_verifier_request_call(grpc_server* server,
   grpc_metadata_array_init(&request_metadata_recv);
 
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+                                   &request_metadata_recv, cq, cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);

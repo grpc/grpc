@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -21,16 +21,17 @@
 
 namespace grpc_core {
 
-// Used for tracking file and line where a call is made for debug builds.
-// No-op for non-debug builds.
-// Callers can use the DEBUG_LOCATION macro in either case.
+// Used for tracking file and line where a call is made for debug
+// builds. No-op for non-debug builds. Callers can use the
+// DEBUG_LOCATION macro in either case.
 #ifndef NDEBUG
 // TODO(roth): See if there's a way to automatically populate this,
 // similarly to how absl::SourceLocation::current() works, so that
 // callers don't need to explicitly pass DEBUG_LOCATION anywhere.
 class DebugLocation {
  public:
-  DebugLocation(const char* file, int line) : file_(file), line_(line) {}
+  DebugLocation(const char* file, int line)
+      : file_(file), line_(line) {}
   const char* file() const { return file_; }
   int line() const { return line_; }
 

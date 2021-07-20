@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,8 +32,10 @@ static void test_no_op(void) {
   GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
 }
 
-static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
-  gpr_event_set(static_cast<gpr_event*>(value), reinterpret_cast<void*>(1));
+static void set_event_to_true(void* value,
+                              grpc_error_handle /*error*/) {
+  gpr_event_set(static_cast<gpr_event*>(value),
+                reinterpret_cast<void*>(1));
 }
 
 static void test_execute_one(void) {
@@ -46,8 +48,8 @@ static void test_execute_one(void) {
   lock->Run(GRPC_CLOSURE_CREATE(set_event_to_true, &done, nullptr),
             GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
-             nullptr);
+  GPR_ASSERT(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(
+                                       5)) != nullptr);
   GRPC_COMBINER_UNREF(lock, "test_execute_one");
 }
 
@@ -82,12 +84,13 @@ static void execute_many_loop(void* a) {
                       GRPC_ERROR_NONE);
       grpc_core::ExecCtx::Get()->Flush();
     }
-    // sleep for a little bit, to test a combiner draining and another thread
-    // picking it up
+    // sleep for a little bit, to test a combiner draining and another
+    // thread picking it up
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   }
-  args->lock->Run(GRPC_CLOSURE_CREATE(set_event_to_true, &args->done, nullptr),
-                  GRPC_ERROR_NONE);
+  args->lock->Run(
+      GRPC_CLOSURE_CREATE(set_event_to_true, &args->done, nullptr),
+      GRPC_ERROR_NONE);
 }
 
 static void test_execute_many(void) {
@@ -100,12 +103,14 @@ static void test_execute_many(void) {
     ta[i].ctr = 0;
     ta[i].lock = lock;
     gpr_event_init(&ta[i].done);
-    thds[i] = grpc_core::Thread("grpc_execute_many", execute_many_loop, &ta[i]);
+    thds[i] = grpc_core::Thread("grpc_execute_many", execute_many_loop,
+                                &ta[i]);
     thds[i].Start();
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     GPR_ASSERT(gpr_event_wait(&ta[i].done,
-                              gpr_inf_future(GPR_CLOCK_REALTIME)) != nullptr);
+                              gpr_inf_future(GPR_CLOCK_REALTIME)) !=
+               nullptr);
     thds[i].Join();
   }
   grpc_core::ExecCtx exec_ctx;
@@ -129,10 +134,12 @@ static void test_execute_finally(void) {
   grpc_core::Combiner* lock = grpc_combiner_create();
   grpc_core::ExecCtx exec_ctx;
   gpr_event_init(&got_in_finally);
-  lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), GRPC_ERROR_NONE);
+  lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr),
+            GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&got_in_finally,
-                            grpc_timeout_seconds_to_deadline(5)) != nullptr);
+                            grpc_timeout_seconds_to_deadline(5)) !=
+             nullptr);
   GRPC_COMBINER_UNREF(lock, "test_execute_finally");
 }
 

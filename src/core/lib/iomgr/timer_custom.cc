@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ void grpc_custom_timer_callback(grpc_custom_timer* t,
   grpc_timer* timer = t->original;
   GPR_ASSERT(timer->pending);
   timer->pending = false;
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
+                          GRPC_ERROR_NONE);
   custom_timer_impl->stop(t);
   gpr_free(t);
 }
@@ -57,8 +58,8 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   }
   timer->pending = true;
   timer->closure = closure;
-  grpc_custom_timer* timer_wrapper =
-      static_cast<grpc_custom_timer*>(gpr_malloc(sizeof(grpc_custom_timer)));
+  grpc_custom_timer* timer_wrapper = static_cast<grpc_custom_timer*>(
+      gpr_malloc(sizeof(grpc_custom_timer)));
   timer_wrapper->timeout_ms = timeout;
   timer->custom_timer = timer_wrapper;
   timer_wrapper->original = timer;
@@ -67,7 +68,8 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 
 static void timer_cancel(grpc_timer* timer) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  grpc_custom_timer* tw = static_cast<grpc_custom_timer*>(timer->custom_timer);
+  grpc_custom_timer* tw =
+      static_cast<grpc_custom_timer*>(timer->custom_timer);
   if (timer->pending) {
     timer->pending = false;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,

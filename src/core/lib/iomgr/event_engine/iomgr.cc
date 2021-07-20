@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
@@ -44,7 +44,8 @@ using ::grpc_event_engine::experimental::DefaultEventEngineFactory;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Promise;
 
-// Note: This is a pointer to a shared_ptr, so it's trivially destructible.
+// Note: This is a pointer to a shared_ptr, so it's trivially
+// destructible.
 std::shared_ptr<EventEngine>* g_event_engine;
 
 void iomgr_platform_init(void) {
@@ -56,9 +57,10 @@ void iomgr_platform_flush(void) {}
 
 void iomgr_platform_shutdown(void) {
   Promise<absl::Status> shutdown_status_promise;
-  (*g_event_engine)->Shutdown([&shutdown_status_promise](absl::Status status) {
-    shutdown_status_promise.Set(std::move(status));
-  });
+  (*g_event_engine)
+      ->Shutdown([&shutdown_status_promise](absl::Status status) {
+        shutdown_status_promise.Set(std::move(status));
+      });
   auto shutdown_status = shutdown_status_promise.Get();
   GPR_ASSERT(shutdown_status.ok());
   delete g_event_engine;
@@ -98,7 +100,8 @@ void grpc_set_default_iomgr_platform() {
 
 bool grpc_iomgr_run_in_background() { return false; }
 
-grpc_event_engine::experimental::EventEngine* grpc_iomgr_event_engine() {
+grpc_event_engine::experimental::EventEngine*
+grpc_iomgr_event_engine() {
   return g_event_engine->get();
 }
 

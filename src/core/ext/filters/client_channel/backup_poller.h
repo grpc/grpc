@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,12 +25,14 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/global_config.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_client_channel_backup_poll_interval_ms);
+GPR_GLOBAL_CONFIG_DECLARE_INT32(
+    grpc_client_channel_backup_poll_interval_ms);
 
 /* Initializes backup polling. */
 void grpc_client_channel_global_init_backup_polling();
 
-/* Starts polling \a interested_parties periodically in the timer thread. */
+/* Starts polling \a interested_parties periodically in the timer
+ * thread. */
 void grpc_client_channel_start_backup_polling(
     grpc_pollset_set* interested_parties);
 

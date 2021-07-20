@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,8 +29,10 @@
 #import <grpcpp/support/client_interceptor.h>
 #import <src/proto/grpc/testing/echo.grpc.pb.h>
 
-const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
-const char* const kServerResponseStreamsToSend = "server_responses_to_send";
+const char* const kServerFinishAfterNReads =
+    "server_finish_after_n_reads";
+const char* const kServerResponseStreamsToSend =
+    "server_responses_to_send";
 const int kServerDefaultResponseStreamsToSend = 3;
 const char* const kDebugInfoTrailerKey = "debug-info-bin";
 
@@ -41,7 +43,8 @@ bool CheckIsLocalhost(const std::string& addr);
 class PhonyInterceptor : public grpc::experimental::Interceptor {
  public:
   PhonyInterceptor() {}
-  virtual void Intercept(grpc::experimental::InterceptorBatchMethods* methods);
+  virtual void Intercept(
+      grpc::experimental::InterceptorBatchMethods* methods);
   static void Reset();
   static int GetNumTimesRun();
 
@@ -69,7 +72,8 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
       grpc::ServerReader<grpc::testing::EchoRequest>* reader,
       grpc::testing::EchoResponse* response);
   grpc::Status ResponseStream(
-      grpc::ServerContext* context, const grpc::testing::EchoRequest* request,
+      grpc::ServerContext* context,
+      const grpc::testing::EchoRequest* request,
       grpc::ServerWriter<grpc::testing::EchoResponse>* writer);
 
   grpc::Status BidiStream(

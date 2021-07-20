@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
@@ -23,12 +23,15 @@ namespace grpc_core {
 
 TEST(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                       Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-      Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                      Rbac::Principal(Rbac::Principal::RuleType::kAny)));
-  Rbac::Policy policy2((Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-                       (Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+      Rbac::Permission(
+          Rbac::Permission::RuleType::kNot,
+          Rbac::Permission(Rbac::Permission::RuleType::kAny)),
+      Rbac::Principal(
+          Rbac::Principal::RuleType::kNot,
+          Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+  Rbac::Policy policy2(
+      (Rbac::Permission(Rbac::Permission::RuleType::kAny)),
+      (Rbac::Principal(Rbac::Principal::RuleType::kAny)));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   policies["policy2"] = std::move(policy2);
@@ -42,10 +45,12 @@ TEST(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
 
 TEST(GrpcAuthorizationEngineTest, AllowEngineWithNoMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                       Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-      Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                      Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+      Rbac::Permission(
+          Rbac::Permission::RuleType::kNot,
+          Rbac::Permission(Rbac::Permission::RuleType::kAny)),
+      Rbac::Principal(
+          Rbac::Principal::RuleType::kNot,
+          Rbac::Principal(Rbac::Principal::RuleType::kAny)));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(Rbac::Action::kAllow, std::move(policies));
@@ -66,12 +71,15 @@ TEST(GrpcAuthorizationEngineTest, AllowEngineWithEmptyPolicies) {
 
 TEST(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                       Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-      Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                      Rbac::Principal(Rbac::Principal::RuleType::kAny)));
-  Rbac::Policy policy2((Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-                       (Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+      Rbac::Permission(
+          Rbac::Permission::RuleType::kNot,
+          Rbac::Permission(Rbac::Permission::RuleType::kAny)),
+      Rbac::Principal(
+          Rbac::Principal::RuleType::kNot,
+          Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+  Rbac::Policy policy2(
+      (Rbac::Permission(Rbac::Permission::RuleType::kAny)),
+      (Rbac::Principal(Rbac::Principal::RuleType::kAny)));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   policies["policy2"] = std::move(policy2);
@@ -85,10 +93,12 @@ TEST(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
 
 TEST(GrpcAuthorizationEngineTest, DenyEngineWithNoMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                       Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-      Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                      Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+      Rbac::Permission(
+          Rbac::Permission::RuleType::kNot,
+          Rbac::Permission(Rbac::Permission::RuleType::kAny)),
+      Rbac::Principal(
+          Rbac::Principal::RuleType::kNot,
+          Rbac::Principal(Rbac::Principal::RuleType::kAny)));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(Rbac::Action::kDeny, std::move(policies));

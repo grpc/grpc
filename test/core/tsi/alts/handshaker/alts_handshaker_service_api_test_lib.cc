@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,14 +35,15 @@ bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
   grpc_gcp_HandshakerResult* result =
       grpc_gcp_HandshakerResp_mutable_result(resp, arena);
   grpc_gcp_RpcProtocolVersions* upb_versions =
-      grpc_gcp_HandshakerResult_mutable_peer_rpc_versions(result, arena);
+      grpc_gcp_HandshakerResult_mutable_peer_rpc_versions(result,
+                                                          arena);
   grpc_gcp_RpcProtocolVersions_assign_from_struct(upb_versions, arena,
                                                   &versions);
   return true;
 }
 
-grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
-                                                       upb_arena* arena) {
+grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(
+    grpc_slice slice, upb_arena* arena) {
   size_t buf_size = GPR_SLICE_LENGTH(slice);
   void* buf = upb_arena_malloc(arena, buf_size);
   memcpy(buf, reinterpret_cast<const char*>(GPR_SLICE_START_PTR(slice)),
@@ -102,8 +103,9 @@ static bool handshaker_rpc_versions_equals(
 }
 
 /* Check equality of a pair of ALTS handshake responses. */
-bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
-                                     const grpc_gcp_HandshakerResp* r_resp) {
+bool grpc_gcp_handshaker_resp_equals(
+    const grpc_gcp_HandshakerResp* l_resp,
+    const grpc_gcp_HandshakerResp* r_resp) {
   return upb_strview_eql(grpc_gcp_HandshakerResp_out_frames(l_resp),
                          grpc_gcp_HandshakerResp_out_frames(r_resp)) &&
          (grpc_gcp_HandshakerResp_bytes_consumed(l_resp) ==
@@ -128,11 +130,14 @@ bool grpc_gcp_handshaker_resp_result_equals(
   }
   return upb_strview_eql(
              grpc_gcp_HandshakerResult_application_protocol(l_result),
-             grpc_gcp_HandshakerResult_application_protocol(r_result)) &&
-         upb_strview_eql(grpc_gcp_HandshakerResult_record_protocol(l_result),
-                         grpc_gcp_HandshakerResult_record_protocol(r_result)) &&
-         upb_strview_eql(grpc_gcp_HandshakerResult_key_data(l_result),
-                         grpc_gcp_HandshakerResult_key_data(r_result)) &&
+             grpc_gcp_HandshakerResult_application_protocol(
+                 r_result)) &&
+         upb_strview_eql(
+             grpc_gcp_HandshakerResult_record_protocol(l_result),
+             grpc_gcp_HandshakerResult_record_protocol(r_result)) &&
+         upb_strview_eql(
+             grpc_gcp_HandshakerResult_key_data(l_result),
+             grpc_gcp_HandshakerResult_key_data(r_result)) &&
          handshaker_identity_equals(
              grpc_gcp_HandshakerResult_peer_identity(l_result),
              grpc_gcp_HandshakerResult_peer_identity(r_result)) &&

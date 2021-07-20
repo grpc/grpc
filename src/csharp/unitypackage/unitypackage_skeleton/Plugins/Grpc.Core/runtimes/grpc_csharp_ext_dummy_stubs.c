@@ -9,15 +9,15 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
-// When building for Unity Android with il2cpp backend, Unity tries to link
-// the __Internal PInvoke definitions (which are required by iOS) even though
-// the .so/.dll will be actually used. This file provides dummy stubs to
-// make il2cpp happy.
-// See https://github.com/grpc/grpc/issues/16012
+// When building for Unity Android with il2cpp backend, Unity tries to
+// link the __Internal PInvoke definitions (which are required by iOS)
+// even though the .so/.dll will be actually used. This file provides
+// dummy stubs to make il2cpp happy. See
+// https://github.com/grpc/grpc/issues/16012
 
 #include <stdio.h>
 #include <stdlib.h>

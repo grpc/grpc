@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,12 +62,13 @@ ServerUnaryReactor* CallbackStreamingTestService::Echo(
 }
 
 ServerBidiReactor<EchoRequest, EchoResponse>*
-CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
+CallbackStreamingTestService::BidiStream(
+    CallbackServerContext* context) {
   class Reactor : public ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
     explicit Reactor(CallbackServerContext* context) {
-      message_size_ = GetIntValueFromMetadata(kServerMessageSize,
-                                              context->client_metadata(), 0);
+      message_size_ = GetIntValueFromMetadata(
+          kServerMessageSize, context->client_metadata(), 0);
       StartRead(&request_);
     }
     void OnDone() override {

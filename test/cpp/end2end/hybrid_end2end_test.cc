@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,15 +57,18 @@ void Verify(CompletionQueue* cq, int i, bool expect_ok) {
   EXPECT_EQ(expect_ok, VerifyReturnSuccess(cq, i));
 }
 
-// Handlers to handle async request at a server. To be run in a separate thread.
+// Handlers to handle async request at a server. To be run in a separate
+// thread.
 template <class Service>
-void HandleEcho(Service* service, ServerCompletionQueue* cq, bool dup_service) {
+void HandleEcho(Service* service, ServerCompletionQueue* cq,
+                bool dup_service) {
   ServerContext srv_ctx;
-  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(
+      &srv_ctx);
   EchoRequest recv_request;
   EchoResponse send_response;
-  service->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq, cq,
-                       tag(1));
+  service->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq,
+                       cq, tag(1));
   Verify(cq, 1, true);
   send_response.set_message(recv_request.message());
   if (dup_service) {
@@ -76,8 +79,8 @@ void HandleEcho(Service* service, ServerCompletionQueue* cq, bool dup_service) {
 }
 
 // Handlers to handle raw request at a server. To be run in a
-// separate thread. Note that this is the same as the async version, except
-// that the req/resp are ByteBuffers
+// separate thread. Note that this is the same as the async version,
+// except that the req/resp are ByteBuffers
 template <class Service>
 void HandleRawEcho(Service* service, ServerCompletionQueue* cq,
                    bool /*dup_service*/) {
@@ -97,7 +100,8 @@ void HandleRawEcho(Service* service, ServerCompletionQueue* cq,
 }
 
 template <class Service>
-void HandleClientStreaming(Service* service, ServerCompletionQueue* cq) {
+void HandleClientStreaming(Service* service,
+                           ServerCompletionQueue* cq) {
   ServerContext srv_ctx;
   EchoRequest recv_request;
   EchoResponse send_response;
@@ -115,7 +119,8 @@ void HandleClientStreaming(Service* service, ServerCompletionQueue* cq) {
 }
 
 template <class Service>
-void HandleRawClientStreaming(Service* service, ServerCompletionQueue* cq) {
+void HandleRawClientStreaming(Service* service,
+                              ServerCompletionQueue* cq) {
   ServerContext srv_ctx;
   ByteBuffer recv_buffer;
   EchoRequest recv_request;
@@ -139,13 +144,14 @@ void HandleRawClientStreaming(Service* service, ServerCompletionQueue* cq) {
 }
 
 template <class Service>
-void HandleServerStreaming(Service* service, ServerCompletionQueue* cq) {
+void HandleServerStreaming(Service* service,
+                           ServerCompletionQueue* cq) {
   ServerContext srv_ctx;
   EchoRequest recv_request;
   EchoResponse send_response;
   ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
-  service->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream, cq, cq,
-                                 tag(1));
+  service->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
+                                 cq, cq, tag(1));
   Verify(cq, 1, true);
   send_response.set_message(recv_request.message() + "0");
   srv_stream.Write(send_response, tag(2));
@@ -256,8 +262,8 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              grpc::InsecureServerCredentials());
-    // Always add a sync unimplemented service: we rely on having at least one
-    // synchronous method to get a listening cq
+    // Always add a sync unimplemented service: we rely on having at
+    // least one synchronous method to get a listening cq
     builder.RegisterService(&unimplemented_service_);
     builder.RegisterService(service1);
     if (service2) {
@@ -280,10 +286,11 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
     }
     server_ = builder.BuildAndStart();
 
-    // If there is a generic callback service, this setup is only successful if
-    // we have an iomgr that can run in the background or are inprocess
-    return !callback_generic_service || grpc_iomgr_run_in_background() ||
-           inproc_;
+    // If there is a generic callback service, this setup is only
+    // successful if we have an iomgr that can run in the background or
+    // are inprocess
+    return !callback_generic_service ||
+           grpc_iomgr_run_in_background() || inproc_;
   }
 
   void TearDown() override {
@@ -321,7 +328,8 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
     ClientContext cli_ctx;
     cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
-    Status recv_status = stub_->Echo(&cli_ctx, send_request, &recv_response);
+    Status recv_status =
+        stub_->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message(), recv_response.message());
     EXPECT_TRUE(recv_status.ok());
   }
@@ -329,13 +337,15 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
   void SendEchoToDupService() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
-    auto stub = grpc::testing::duplicate::EchoTestService::NewStub(channel);
+    auto stub =
+        grpc::testing::duplicate::EchoTestService::NewStub(channel);
     EchoRequest send_request;
     EchoResponse recv_response;
     ClientContext cli_ctx;
     cli_ctx.set_wait_for_ready(true);
     send_request.set_message("Hello");
-    Status recv_status = stub->Echo(&cli_ctx, send_request, &recv_response);
+    Status recv_status =
+        stub->Echo(&cli_ctx, send_request, &recv_response);
     EXPECT_EQ(send_request.message() + "_dup", recv_response.message());
     EXPECT_TRUE(recv_status.ok());
   }
@@ -381,7 +391,8 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
   void SendSimpleServerStreamingToDupService() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
-    auto stub = grpc::testing::duplicate::EchoTestService::NewStub(channel);
+    auto stub =
+        grpc::testing::duplicate::EchoTestService::NewStub(channel);
     EchoRequest request;
     EchoResponse response;
     ClientContext context;
@@ -433,7 +444,8 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
     EXPECT_TRUE(s.ok());
   }
 
-  grpc::testing::UnimplementedEchoService::Service unimplemented_service_;
+  grpc::testing::UnimplementedEchoService::Service
+      unimplemented_service_;
   std::vector<std::unique_ptr<ServerCompletionQueue>> cqs_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
@@ -446,8 +458,8 @@ TEST_F(HybridEnd2endTest, AsyncEcho) {
   SType service;
   SetUpServer(&service, nullptr, nullptr, nullptr);
   ResetStub();
-  std::thread echo_handler_thread(HandleEcho<SType>, &service, cqs_[0].get(),
-                                  false);
+  std::thread echo_handler_thread(HandleEcho<SType>, &service,
+                                  cqs_[0].get(), false);
   TestAllMethods();
   echo_handler_thread.join();
 }
@@ -457,19 +469,20 @@ TEST_F(HybridEnd2endTest, RawEcho) {
   SType service;
   SetUpServer(&service, nullptr, nullptr, nullptr);
   ResetStub();
-  std::thread echo_handler_thread(HandleRawEcho<SType>, &service, cqs_[0].get(),
-                                  false);
+  std::thread echo_handler_thread(HandleRawEcho<SType>, &service,
+                                  cqs_[0].get(), false);
   TestAllMethods();
   echo_handler_thread.join();
 }
 
 TEST_F(HybridEnd2endTest, RawRequestStream) {
-  typedef EchoTestService::WithRawMethod_RequestStream<TestServiceImpl> SType;
+  typedef EchoTestService::WithRawMethod_RequestStream<TestServiceImpl>
+      SType;
   SType service;
   SetUpServer(&service, nullptr, nullptr, nullptr);
   ResetStub();
-  std::thread request_stream_handler_thread(HandleRawClientStreaming<SType>,
-                                            &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleRawClientStreaming<SType>, &service, cqs_[0].get());
   TestAllMethods();
   request_stream_handler_thread.join();
 }
@@ -481,10 +494,10 @@ TEST_F(HybridEnd2endTest, AsyncEchoRawRequestStream) {
   SType service;
   SetUpServer(&service, nullptr, nullptr, nullptr);
   ResetStub();
-  std::thread echo_handler_thread(HandleEcho<SType>, &service, cqs_[0].get(),
-                                  false);
-  std::thread request_stream_handler_thread(HandleRawClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread echo_handler_thread(HandleEcho<SType>, &service,
+                                  cqs_[0].get(), false);
+  std::thread request_stream_handler_thread(
+      HandleRawClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   request_stream_handler_thread.join();
   echo_handler_thread.join();
@@ -498,10 +511,10 @@ TEST_F(HybridEnd2endTest, GenericEchoRawRequestStream) {
   AsyncGenericService generic_service;
   SetUpServer(&service, nullptr, &generic_service, nullptr);
   ResetStub();
-  std::thread generic_handler_thread(HandleGenericCall, &generic_service,
-                                     cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleRawClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread generic_handler_thread(HandleGenericCall,
+                                     &generic_service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleRawClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   generic_handler_thread.join();
   request_stream_handler_thread.join();
@@ -514,10 +527,10 @@ TEST_F(HybridEnd2endTest, AsyncEchoRequestStream) {
   SType service;
   SetUpServer(&service, nullptr, nullptr, nullptr);
   ResetStub();
-  std::thread echo_handler_thread(HandleEcho<SType>, &service, cqs_[0].get(),
-                                  false);
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread echo_handler_thread(HandleEcho<SType>, &service,
+                                  cqs_[0].get(), false);
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   echo_handler_thread.join();
   request_stream_handler_thread.join();
@@ -530,17 +543,18 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream) {
   SType service;
   SetUpServer(&service, nullptr, nullptr, nullptr);
   ResetStub();
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   response_stream_handler_thread.join();
   request_stream_handler_thread.join();
 }
 
 // Add a second service with one sync method.
-TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncDupService) {
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_SyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -548,10 +562,10 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_SyncDupService) {
   TestServiceImplDupPkg dup_service;
   SetUpServer(&service, &dup_service, nullptr, nullptr);
   ResetStub();
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   SendEchoToDupService();
   response_stream_handler_thread.join();
@@ -570,7 +584,8 @@ class StreamedUnaryDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u",
+            next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
     GPR_ASSERT(stream->Write(resp));
@@ -587,10 +602,10 @@ TEST_F(HybridEnd2endTest,
   StreamedUnaryDupPkg dup_service;
   SetUpServer(&service, &dup_service, nullptr, nullptr, 8192);
   ResetStub();
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   SendEchoToDupService();
   response_stream_handler_thread.join();
@@ -608,7 +623,8 @@ class FullyStreamedUnaryDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u",
+            next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
     GPR_ASSERT(stream->Write(resp));
@@ -616,8 +632,9 @@ class FullyStreamedUnaryDupPkg
   }
 };
 
-TEST_F(HybridEnd2endTest,
-       AsyncRequestStreamResponseStream_SyncFullyStreamedUnaryDupService) {
+TEST_F(
+    HybridEnd2endTest,
+    AsyncRequestStreamResponseStream_SyncFullyStreamedUnaryDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -625,10 +642,10 @@ TEST_F(HybridEnd2endTest,
   FullyStreamedUnaryDupPkg dup_service;
   SetUpServer(&service, &dup_service, nullptr, nullptr, 8192);
   ResetStub();
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   SendEchoToDupService();
   response_stream_handler_thread.join();
@@ -638,7 +655,8 @@ TEST_F(HybridEnd2endTest,
 // Add a second service with one sync split server streaming method.
 class SplitResponseStreamDupPkg
     : public duplicate::EchoTestService::
-          WithSplitStreamingMethod_ResponseStream<TestServiceImplDupPkg> {
+          WithSplitStreamingMethod_ResponseStream<
+              TestServiceImplDupPkg> {
  public:
   Status StreamedResponseStream(
       ServerContext* /*context*/,
@@ -647,7 +665,8 @@ class SplitResponseStreamDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u",
+            next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
@@ -666,10 +685,10 @@ TEST_F(HybridEnd2endTest,
   SplitResponseStreamDupPkg dup_service;
   SetUpServer(&service, &dup_service, nullptr, nullptr, 8192);
   ResetStub();
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   SendSimpleServerStreamingToDupService();
   response_stream_handler_thread.join();
@@ -687,7 +706,8 @@ class FullySplitStreamedDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u",
+            next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
@@ -706,10 +726,10 @@ TEST_F(HybridEnd2endTest,
   FullySplitStreamedDupPkg dup_service;
   SetUpServer(&service, &dup_service, nullptr, nullptr, 8192);
   ResetStub();
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   SendSimpleServerStreamingToDupService();
   response_stream_handler_thread.join();
@@ -717,7 +737,8 @@ TEST_F(HybridEnd2endTest,
 }
 
 // Add a second service that is fully server streamed
-class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
+class FullyStreamedDupPkg
+    : public duplicate::EchoTestService::StreamedService {
  public:
   Status StreamedEcho(
       ServerContext* /*context*/,
@@ -726,7 +747,8 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u",
+            next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
     GPR_ASSERT(stream->Write(resp));
@@ -739,7 +761,8 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u",
+            next_msg_sz);
     GPR_ASSERT(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
@@ -758,10 +781,10 @@ TEST_F(HybridEnd2endTest,
   FullyStreamedDupPkg dup_service;
   SetUpServer(&service, &dup_service, nullptr, nullptr, 8192);
   ResetStub();
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   SendEchoToDupService();
   SendSimpleServerStreamingToDupService();
@@ -770,7 +793,8 @@ TEST_F(HybridEnd2endTest,
 }
 
 // Add a second service with one async method.
-TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_AsyncDupService) {
+TEST_F(HybridEnd2endTest,
+       AsyncRequestStreamResponseStream_AsyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>
       SType;
@@ -778,13 +802,13 @@ TEST_F(HybridEnd2endTest, AsyncRequestStreamResponseStream_AsyncDupService) {
   duplicate::EchoTestService::AsyncService dup_service;
   SetUpServer(&service, &dup_service, nullptr, nullptr);
   ResetStub();
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   std::thread echo_handler_thread(
-      HandleEcho<duplicate::EchoTestService::AsyncService>, &dup_service,
-      cqs_[2].get(), true);
+      HandleEcho<duplicate::EchoTestService::AsyncService>,
+      &dup_service, cqs_[2].get(), true);
   TestAllMethods();
   SendEchoToDupService();
   response_stream_handler_thread.join();
@@ -797,8 +821,8 @@ TEST_F(HybridEnd2endTest, GenericEcho) {
   AsyncGenericService generic_service;
   SetUpServer(&service, nullptr, &generic_service, nullptr);
   ResetStub();
-  std::thread generic_handler_thread(HandleGenericCall, &generic_service,
-                                     cqs_[0].get());
+  std::thread generic_handler_thread(HandleGenericCall,
+                                     &generic_service, cqs_[0].get());
   TestAllMethods();
   generic_handler_thread.join();
 }
@@ -809,9 +833,11 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
    private:
     ServerGenericBidiReactor* CreateReactor(
         GenericCallbackServerContext* context) override {
-      EXPECT_EQ(context->method(), "/grpc.testing.EchoTestService/Echo");
+      EXPECT_EQ(context->method(),
+                "/grpc.testing.EchoTestService/Echo");
       gpr_log(GPR_DEBUG, "Constructor of generic service %d",
-              static_cast<int>(context->deadline().time_since_epoch().count()));
+              static_cast<int>(
+                  context->deadline().time_since_epoch().count()));
 
       class Reactor : public ServerGenericBidiReactor {
        public:
@@ -830,8 +856,9 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
           }
         }
         void OnWriteDone(bool ok) override {
-          Finish(ok ? Status::OK
-                    : Status(StatusCode::UNKNOWN, "Unexpected failure"));
+          Finish(
+              ok ? Status::OK
+                 : Status(StatusCode::UNKNOWN, "Unexpected failure"));
         }
         ByteBuffer request_;
         ByteBuffer response_;
@@ -856,17 +883,18 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream) {
   AsyncGenericService generic_service;
   SetUpServer(&service, nullptr, &generic_service, nullptr);
   ResetStub();
-  std::thread generic_handler_thread(HandleGenericCall, &generic_service,
-                                     cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread generic_handler_thread(HandleGenericCall,
+                                     &generic_service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   generic_handler_thread.join();
   request_stream_handler_thread.join();
 }
 
 // Add a second service with one sync method.
-TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
+TEST_F(HybridEnd2endTest,
+       GenericEchoAsyncRequestStream_SyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<TestServiceImpl>>
       SType;
@@ -875,10 +903,10 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
   TestServiceImplDupPkg dup_service;
   SetUpServer(&service, &dup_service, &generic_service, nullptr);
   ResetStub();
-  std::thread generic_handler_thread(HandleGenericCall, &generic_service,
-                                     cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread generic_handler_thread(HandleGenericCall,
+                                     &generic_service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   TestAllMethods();
   SendEchoToDupService();
   generic_handler_thread.join();
@@ -886,7 +914,8 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_SyncDupService) {
 }
 
 // Add a second service with one async method.
-TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_AsyncDupService) {
+TEST_F(HybridEnd2endTest,
+       GenericEchoAsyncRequestStream_AsyncDupService) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<TestServiceImpl>>
       SType;
@@ -895,13 +924,13 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_AsyncDupService) {
   duplicate::EchoTestService::AsyncService dup_service;
   SetUpServer(&service, &dup_service, &generic_service, nullptr);
   ResetStub();
-  std::thread generic_handler_thread(HandleGenericCall, &generic_service,
-                                     cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
+  std::thread generic_handler_thread(HandleGenericCall,
+                                     &generic_service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
   std::thread echo_handler_thread(
-      HandleEcho<duplicate::EchoTestService::AsyncService>, &dup_service,
-      cqs_[2].get(), true);
+      HandleEcho<duplicate::EchoTestService::AsyncService>,
+      &dup_service, cqs_[2].get(), true);
   TestAllMethods();
   SendEchoToDupService();
   generic_handler_thread.join();
@@ -912,18 +941,19 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStream_AsyncDupService) {
 TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStreamResponseStream) {
   typedef EchoTestService::WithAsyncMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<
-          EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>>
+          EchoTestService::WithAsyncMethod_ResponseStream<
+              TestServiceImpl>>>
       SType;
   SType service;
   AsyncGenericService generic_service;
   SetUpServer(&service, nullptr, &generic_service, nullptr);
   ResetStub();
-  std::thread generic_handler_thread(HandleGenericCall, &generic_service,
-                                     cqs_[0].get());
-  std::thread request_stream_handler_thread(HandleClientStreaming<SType>,
-                                            &service, cqs_[1].get());
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[2].get());
+  std::thread generic_handler_thread(HandleGenericCall,
+                                     &generic_service, cqs_[0].get());
+  std::thread request_stream_handler_thread(
+      HandleClientStreaming<SType>, &service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[2].get());
   TestAllMethods();
   generic_handler_thread.join();
   request_stream_handler_thread.join();
@@ -933,30 +963,32 @@ TEST_F(HybridEnd2endTest, GenericEchoAsyncRequestStreamResponseStream) {
 TEST_F(HybridEnd2endTest, GenericEchoRequestStreamAsyncResponseStream) {
   typedef EchoTestService::WithGenericMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<
-          EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>>
+          EchoTestService::WithAsyncMethod_ResponseStream<
+              TestServiceImpl>>>
       SType;
   SType service;
   AsyncGenericService generic_service;
   SetUpServer(&service, nullptr, &generic_service, nullptr);
   ResetStub();
-  std::thread generic_handler_thread(HandleGenericCall, &generic_service,
-                                     cqs_[0].get());
-  std::thread generic_handler_thread2(HandleGenericCall, &generic_service,
-                                      cqs_[1].get());
-  std::thread response_stream_handler_thread(HandleServerStreaming<SType>,
-                                             &service, cqs_[2].get());
+  std::thread generic_handler_thread(HandleGenericCall,
+                                     &generic_service, cqs_[0].get());
+  std::thread generic_handler_thread2(HandleGenericCall,
+                                      &generic_service, cqs_[1].get());
+  std::thread response_stream_handler_thread(
+      HandleServerStreaming<SType>, &service, cqs_[2].get());
   TestAllMethods();
   generic_handler_thread.join();
   generic_handler_thread2.join();
   response_stream_handler_thread.join();
 }
 
-// If WithGenericMethod is called and no generic service is registered, the
-// server will fail to build.
+// If WithGenericMethod is called and no generic service is registered,
+// the server will fail to build.
 TEST_F(HybridEnd2endTest, GenericMethodWithoutGenericService) {
   EchoTestService::WithGenericMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<
-          EchoTestService::WithAsyncMethod_ResponseStream<TestServiceImpl>>>
+          EchoTestService::WithAsyncMethod_ResponseStream<
+              TestServiceImpl>>>
       service;
   SetUpServer(&service, nullptr, nullptr, nullptr);
   EXPECT_EQ(nullptr, server_.get());

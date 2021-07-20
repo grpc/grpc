@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,8 +45,8 @@ typedef enum {
   GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT
 } grpc_stream_compression_algorithm;
 
-/* Interfaces performing transformation between compression algorithms and
- * levels. */
+/* Interfaces performing transformation between compression algorithms
+ * and levels. */
 
 grpc_message_compression_algorithm
 grpc_compression_algorithm_to_message_compression_algorithm(
@@ -73,7 +73,8 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
 int grpc_message_compression_algorithm_name(
     grpc_message_compression_algorithm algorithm, const char** name);
 
-grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
+grpc_message_compression_algorithm
+grpc_message_compression_algorithm_for_level(
     grpc_compression_level level, uint32_t accepted_encodings);
 
 int grpc_message_compression_algorithm_parse(

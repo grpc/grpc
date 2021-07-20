@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <stdio.h>
@@ -28,69 +28,87 @@
 TEST(TimeUtilTest, ToGprTimeSpecFromAbslDurationWithRegularValues) {
   std::vector<int> times = {-10, -1, 0, 1, 10};
   for (int t : times) {
-    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_nanos(t, GPR_TIMESPAN),
-                              grpc_core::ToGprTimeSpec(absl::Nanoseconds(t))));
-    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_micros(t, GPR_TIMESPAN),
-                              grpc_core::ToGprTimeSpec(absl::Microseconds(t))));
-    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_millis(t, GPR_TIMESPAN),
-                              grpc_core::ToGprTimeSpec(absl::Milliseconds(t))));
-    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_seconds(t, GPR_TIMESPAN),
-                              grpc_core::ToGprTimeSpec(absl::Seconds(t))));
-    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_minutes(t, GPR_TIMESPAN),
-                              grpc_core::ToGprTimeSpec(absl::Minutes(t))));
-    EXPECT_EQ(0, gpr_time_cmp(gpr_time_from_hours(t, GPR_TIMESPAN),
-                              grpc_core::ToGprTimeSpec(absl::Hours(t))));
+    EXPECT_EQ(0, gpr_time_cmp(
+                     gpr_time_from_nanos(t, GPR_TIMESPAN),
+                     grpc_core::ToGprTimeSpec(absl::Nanoseconds(t))));
+    EXPECT_EQ(0, gpr_time_cmp(
+                     gpr_time_from_micros(t, GPR_TIMESPAN),
+                     grpc_core::ToGprTimeSpec(absl::Microseconds(t))));
+    EXPECT_EQ(0, gpr_time_cmp(
+                     gpr_time_from_millis(t, GPR_TIMESPAN),
+                     grpc_core::ToGprTimeSpec(absl::Milliseconds(t))));
+    EXPECT_EQ(0,
+              gpr_time_cmp(gpr_time_from_seconds(t, GPR_TIMESPAN),
+                           grpc_core::ToGprTimeSpec(absl::Seconds(t))));
+    EXPECT_EQ(0,
+              gpr_time_cmp(gpr_time_from_minutes(t, GPR_TIMESPAN),
+                           grpc_core::ToGprTimeSpec(absl::Minutes(t))));
+    EXPECT_EQ(0,
+              gpr_time_cmp(gpr_time_from_hours(t, GPR_TIMESPAN),
+                           grpc_core::ToGprTimeSpec(absl::Hours(t))));
   }
 }
 
 TEST(TimeUtilTest, ToGprTimeSpecFromAbslDurationWithInfinites) {
-  EXPECT_EQ(0,
-            gpr_time_cmp(gpr_inf_past(GPR_TIMESPAN),
-                         grpc_core::ToGprTimeSpec(-absl::InfiniteDuration())));
-  EXPECT_EQ(0, gpr_time_cmp(gpr_time_0(GPR_TIMESPAN),
-                            grpc_core::ToGprTimeSpec(absl::ZeroDuration())));
+  EXPECT_EQ(0, gpr_time_cmp(gpr_inf_past(GPR_TIMESPAN),
+                            grpc_core::ToGprTimeSpec(
+                                -absl::InfiniteDuration())));
+  EXPECT_EQ(
+      0, gpr_time_cmp(gpr_time_0(GPR_TIMESPAN),
+                      grpc_core::ToGprTimeSpec(absl::ZeroDuration())));
 }
 
 TEST(TimeUtilTest, ToGprTimeSpecFromAbslTimeWithRegularValues) {
   std::vector<int> times = {0, 10, 100000000};
   for (int t : times) {
+    EXPECT_EQ(0, gpr_time_cmp(
+                     gpr_time_from_nanos(t, GPR_CLOCK_REALTIME),
+                     grpc_core::ToGprTimeSpec(absl::FromUnixNanos(t))));
     EXPECT_EQ(0,
-              gpr_time_cmp(gpr_time_from_nanos(t, GPR_CLOCK_REALTIME),
-                           grpc_core::ToGprTimeSpec(absl::FromUnixNanos(t))));
+              gpr_time_cmp(
+                  gpr_time_from_micros(t, GPR_CLOCK_REALTIME),
+                  grpc_core::ToGprTimeSpec(absl::FromUnixMicros(t))));
     EXPECT_EQ(0,
-              gpr_time_cmp(gpr_time_from_micros(t, GPR_CLOCK_REALTIME),
-                           grpc_core::ToGprTimeSpec(absl::FromUnixMicros(t))));
+              gpr_time_cmp(
+                  gpr_time_from_millis(t, GPR_CLOCK_REALTIME),
+                  grpc_core::ToGprTimeSpec(absl::FromUnixMillis(t))));
     EXPECT_EQ(0,
-              gpr_time_cmp(gpr_time_from_millis(t, GPR_CLOCK_REALTIME),
-                           grpc_core::ToGprTimeSpec(absl::FromUnixMillis(t))));
-    EXPECT_EQ(0,
-              gpr_time_cmp(gpr_time_from_seconds(t, GPR_CLOCK_REALTIME),
-                           grpc_core::ToGprTimeSpec(absl::FromUnixSeconds(t))));
+              gpr_time_cmp(
+                  gpr_time_from_seconds(t, GPR_CLOCK_REALTIME),
+                  grpc_core::ToGprTimeSpec(absl::FromUnixSeconds(t))));
   }
 }
 
 TEST(TimeUtilTest, ToGprTimeSpecFromAbslTimeWithInfinites) {
-  EXPECT_EQ(0, gpr_time_cmp(gpr_inf_future(GPR_CLOCK_REALTIME),
-                            grpc_core::ToGprTimeSpec(absl::InfiniteFuture())));
-  EXPECT_EQ(0, gpr_time_cmp(gpr_inf_past(GPR_CLOCK_REALTIME),
-                            grpc_core::ToGprTimeSpec(absl::InfinitePast())));
+  EXPECT_EQ(0, gpr_time_cmp(
+                   gpr_inf_future(GPR_CLOCK_REALTIME),
+                   grpc_core::ToGprTimeSpec(absl::InfiniteFuture())));
+  EXPECT_EQ(
+      0, gpr_time_cmp(gpr_inf_past(GPR_CLOCK_REALTIME),
+                      grpc_core::ToGprTimeSpec(absl::InfinitePast())));
 }
 
 TEST(TimeUtilTest, ToAbslDurationWithRegularValues) {
   std::vector<int> times = {-10, -1, 0, 1, 10};
   for (int t : times) {
     EXPECT_EQ(absl::Nanoseconds(t),
-              grpc_core::ToAbslDuration(gpr_time_from_nanos(t, GPR_TIMESPAN)));
+              grpc_core::ToAbslDuration(
+                  gpr_time_from_nanos(t, GPR_TIMESPAN)));
     EXPECT_EQ(absl::Microseconds(t),
-              grpc_core::ToAbslDuration(gpr_time_from_micros(t, GPR_TIMESPAN)));
+              grpc_core::ToAbslDuration(
+                  gpr_time_from_micros(t, GPR_TIMESPAN)));
     EXPECT_EQ(absl::Milliseconds(t),
-              grpc_core::ToAbslDuration(gpr_time_from_millis(t, GPR_TIMESPAN)));
-    EXPECT_EQ(absl::Seconds(t), grpc_core::ToAbslDuration(
-                                    gpr_time_from_seconds(t, GPR_TIMESPAN)));
-    EXPECT_EQ(absl::Minutes(t), grpc_core::ToAbslDuration(
-                                    gpr_time_from_minutes(t, GPR_TIMESPAN)));
+              grpc_core::ToAbslDuration(
+                  gpr_time_from_millis(t, GPR_TIMESPAN)));
+    EXPECT_EQ(absl::Seconds(t),
+              grpc_core::ToAbslDuration(
+                  gpr_time_from_seconds(t, GPR_TIMESPAN)));
+    EXPECT_EQ(absl::Minutes(t),
+              grpc_core::ToAbslDuration(
+                  gpr_time_from_minutes(t, GPR_TIMESPAN)));
     EXPECT_EQ(absl::Hours(t),
-              grpc_core::ToAbslDuration(gpr_time_from_hours(t, GPR_TIMESPAN)));
+              grpc_core::ToAbslDuration(
+                  gpr_time_from_hours(t, GPR_TIMESPAN)));
   }
 }
 
@@ -104,17 +122,18 @@ TEST(TimeUtilTest, ToAbslDurationWithInfinites) {
 TEST(TimeUtilTest, ToAbslTimeWithRegularValues) {
   std::vector<int> times = {0, 10, 100000000};
   for (int t : times) {
-    EXPECT_EQ(absl::FromUnixNanos(t), grpc_core::ToAbslTime(gpr_time_from_nanos(
-                                          t, GPR_CLOCK_REALTIME)));
-    EXPECT_EQ(
-        absl::FromUnixMicros(t),
-        grpc_core::ToAbslTime(gpr_time_from_micros(t, GPR_CLOCK_REALTIME)));
-    EXPECT_EQ(
-        absl::FromUnixMillis(t),
-        grpc_core::ToAbslTime(gpr_time_from_millis(t, GPR_CLOCK_REALTIME)));
-    EXPECT_EQ(
-        absl::FromUnixSeconds(t),
-        grpc_core::ToAbslTime(gpr_time_from_seconds(t, GPR_CLOCK_REALTIME)));
+    EXPECT_EQ(absl::FromUnixNanos(t),
+              grpc_core::ToAbslTime(
+                  gpr_time_from_nanos(t, GPR_CLOCK_REALTIME)));
+    EXPECT_EQ(absl::FromUnixMicros(t),
+              grpc_core::ToAbslTime(
+                  gpr_time_from_micros(t, GPR_CLOCK_REALTIME)));
+    EXPECT_EQ(absl::FromUnixMillis(t),
+              grpc_core::ToAbslTime(
+                  gpr_time_from_millis(t, GPR_CLOCK_REALTIME)));
+    EXPECT_EQ(absl::FromUnixSeconds(t),
+              grpc_core::ToAbslTime(
+                  gpr_time_from_seconds(t, GPR_CLOCK_REALTIME)));
   }
 }
 

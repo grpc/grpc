@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,20 +29,20 @@
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */
 
-#define HEADER_STR                                                         \
-  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
-                                            simple_request.headers in this \
-                                            directory */                   \
-  "\x10\x05:path\x08/foo/bar"                                              \
-  "\x10\x07:scheme\x04http"                                                \
-  "\x10\x07:method\x04POST"                                                \
-  "\x10\x0a:authority\x09localhost"                                        \
-  "\x10\x0c"                                                               \
-  "content-type\x10"                                                       \
-  "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15"                                       \
-  "deflate,identity,gzip"                                                  \
-  "\x10\x02te\x08trailers"                                                 \
+#define HEADER_STR                                                    \
+  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from   \
+                                            simple_request.headers in \
+                                            this directory */                                                         \
+  "\x10\x05:path\x08/foo/bar"                                         \
+  "\x10\x07:scheme\x04http"                                           \
+  "\x10\x07:method\x04POST"                                           \
+  "\x10\x0a:authority\x09localhost"                                   \
+  "\x10\x0c"                                                          \
+  "content-type\x10"                                                  \
+  "application/grpc"                                                  \
+  "\x10\x14grpc-accept-encoding\x15"                                  \
+  "deflate,identity,gzip"                                             \
+  "\x10\x02te\x08trailers"                                            \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
 #define PAYLOAD_STR                      \
@@ -67,7 +67,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   grpc_metadata_array_init(&request_metadata_recv);
 
   error = grpc_server_request_call(server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101));
+                                   &request_metadata_recv, cq, cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -87,8 +88,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -109,8 +110,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
@@ -126,11 +127,11 @@ int main(int argc, char** argv) {
   grpc_init();
 
   /* Verify that sending multiple headers doesn't segfault */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR HEADER_STR HEADER_STR PAYLOAD_STR, 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR HEADER_STR HEADER_STR HEADER_STR PAYLOAD_STR,
-                           0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR HEADER_STR HEADER_STR PAYLOAD_STR, 0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr,
+      PFX_STR HEADER_STR HEADER_STR HEADER_STR PAYLOAD_STR, 0);
   grpc_shutdown();
   return 0;
 }

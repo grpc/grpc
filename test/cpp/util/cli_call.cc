@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,12 +35,12 @@ namespace {
 void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 }  // namespace
 
-Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const std::string& method, const std::string& request,
-                     std::string* response,
-                     const OutgoingMetadataContainer& metadata,
-                     IncomingMetadataContainer* server_initial_metadata,
-                     IncomingMetadataContainer* server_trailing_metadata) {
+Status CliCall::Call(
+    const std::shared_ptr<grpc::Channel>& channel,
+    const std::string& method, const std::string& request,
+    std::string* response, const OutgoingMetadataContainer& metadata,
+    IncomingMetadataContainer* server_initial_metadata,
+    IncomingMetadataContainer* server_trailing_metadata) {
   CliCall call(channel, method, metadata);
   call.Write(request);
   call.WritesDone();
@@ -52,18 +52,21 @@ Status CliCall::Call(const std::shared_ptr<grpc::Channel>& channel,
 
 CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
                  const std::string& method,
-                 const OutgoingMetadataContainer& metadata, CliArgs args)
+                 const OutgoingMetadataContainer& metadata,
+                 CliArgs args)
     : stub_(new grpc::GenericStub(channel)) {
   gpr_mu_init(&write_mu_);
   gpr_cv_init(&write_cv_);
   if (!metadata.empty()) {
-    for (OutgoingMetadataContainer::const_iterator iter = metadata.begin();
+    for (OutgoingMetadataContainer::const_iterator iter =
+             metadata.begin();
          iter != metadata.end(); ++iter) {
       ctx_.AddMetadata(iter->first, iter->second);
     }
   }
 
-  // Set deadline if timeout > 0 (default value -1 if no timeout specified)
+  // Set deadline if timeout > 0 (default value -1 if no timeout
+  // specified)
   if (args.timeout > 0) {
     int64_t timeout_in_ns = ceil(args.timeout * 1e9);
 
@@ -73,9 +76,9 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
                      gpr_time_from_nanos(timeout_in_ns, GPR_TIMESPAN));
     ctx_.set_deadline(deadline);
   } else if (args.timeout != -1) {
-    fprintf(
-        stderr,
-        "WARNING: Non-positive timeout value, skipping setting deadline.\n");
+    fprintf(stderr,
+            "WARNING: Non-positive timeout value, skipping setting "
+            "deadline.\n");
   }
 
   call_ = stub_->PrepareCall(&ctx_, method, &cq_);
@@ -95,7 +98,8 @@ void CliCall::Write(const std::string& request) {
   void* got_tag;
   bool ok;
 
-  gpr_slice s = gpr_slice_from_copied_buffer(request.data(), request.size());
+  gpr_slice s =
+      gpr_slice_from_copied_buffer(request.data(), request.size());
   grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
   call_->Write(send_buffer, tag(2));
@@ -145,7 +149,8 @@ void CliCall::WriteAndWait(const std::string& request) {
   call_->Write(send_buffer, tag(2));
   write_done_ = false;
   while (!write_done_) {
-    gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    gpr_cv_wait(&write_cv_, &write_mu_,
+                gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&write_mu_);
 }
@@ -155,13 +160,15 @@ void CliCall::WritesDoneAndWait() {
   call_->WritesDone(tag(4));
   write_done_ = false;
   while (!write_done_) {
-    gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    gpr_cv_wait(&write_cv_, &write_mu_,
+                gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&write_mu_);
 }
 
 bool CliCall::ReadAndMaybeNotifyWrite(
-    std::string* response, IncomingMetadataContainer* server_initial_metadata) {
+    std::string* response,
+    IncomingMetadataContainer* server_initial_metadata) {
   void* got_tag;
   bool ok;
   grpc::ByteBuffer recv_buffer;
@@ -182,8 +189,8 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   }
 
   if (!cq_result || !ok) {
-    // If the RPC is ended on the server side, we should still wait for the
-    // pending write on the client side to be done.
+    // If the RPC is ended on the server side, we should still wait for
+    // the pending write on the client side to be done.
     if (!ok) {
       gpr_mu_lock(&write_mu_);
       if (!write_done_) {
@@ -210,7 +217,8 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   return true;
 }
 
-Status CliCall::Finish(IncomingMetadataContainer* server_trailing_metadata) {
+Status CliCall::Finish(
+    IncomingMetadataContainer* server_trailing_metadata) {
   void* got_tag;
   bool ok;
   grpc::Status status;

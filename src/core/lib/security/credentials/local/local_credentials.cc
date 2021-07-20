@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,11 +31,13 @@
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_credentials::create_security_connector(
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials>
+        request_metadata_creds,
     const char* target_name, const grpc_channel_args* args,
     grpc_channel_args** /*new_args*/) {
   return grpc_local_channel_security_connector_create(
-      this->Ref(), std::move(request_metadata_creds), args, target_name);
+      this->Ref(), std::move(request_metadata_creds), args,
+      target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>

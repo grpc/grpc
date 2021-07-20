@@ -9,9 +9,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  */
 
 /*
@@ -27,20 +27,22 @@
 #include <stdint.h>
 
 enum grpc_chttp2_setting_id {
-  GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE = 0,               /* wire id 1 */
-  GRPC_CHTTP2_SETTINGS_ENABLE_PUSH = 1,                     /* wire id 2 */
-  GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS = 2,          /* wire id 3 */
-  GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE = 3,             /* wire id 4 */
-  GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE = 4,                  /* wire id 5 */
-  GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE = 5,            /* wire id 6 */
-  GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA = 6, /* wire id 65027 */
+  GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE = 0,      /* wire id 1 */
+  GRPC_CHTTP2_SETTINGS_ENABLE_PUSH = 1,            /* wire id 2 */
+  GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS = 2, /* wire id 3 */
+  GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE = 3,    /* wire id 4 */
+  GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE = 4,         /* wire id 5 */
+  GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE = 5,   /* wire id 6 */
+  GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA =
+      6, /* wire id 65027 */
 };
 
 #define GRPC_CHTTP2_NUM_SETTINGS 7
 
 extern const uint16_t grpc_setting_id_to_wire_id[];
 
-bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id* out);
+bool grpc_wire_id_to_setting_id(uint32_t wire_id,
+                                grpc_chttp2_setting_id* out);
 
 typedef enum {
   GRPC_CHTTP2_CLAMP_INVALID_VALUE,

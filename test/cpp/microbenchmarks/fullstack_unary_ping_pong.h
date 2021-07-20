@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,7 +37,8 @@ namespace testing {
 
 static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
-template <class Fixture, class ClientContextMutator, class ServerContextMutator>
+template <class Fixture, class ClientContextMutator,
+          class ServerContextMutator>
 static void BM_UnaryPingPong(benchmark::State& state) {
   EchoTestService::AsyncService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
@@ -60,7 +61,8 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   uint8_t server_env_buffer[2 * sizeof(ServerEnv)];
   ServerEnv* server_env[2] = {
       reinterpret_cast<ServerEnv*>(server_env_buffer),
-      reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
+      reinterpret_cast<ServerEnv*>(server_env_buffer +
+                                   sizeof(ServerEnv))};
   new (server_env[0]) ServerEnv;
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
@@ -76,8 +78,9 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
-    std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
-        stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
+    std::unique_ptr<ClientAsyncResponseReader<EchoResponse>>
+        response_reader(
+            stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     void* t;
     bool ok;
@@ -99,8 +102,9 @@ static void BM_UnaryPingPong(benchmark::State& state) {
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();
-    service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
-                        fixture->cq(), fixture->cq(), tag(slot));
+    service.RequestEcho(&senv->ctx, &senv->recv_request,
+                        &senv->response_writer, fixture->cq(),
+                        fixture->cq(), tag(slot));
   }
   fixture->Finish(state);
   fixture.reset();

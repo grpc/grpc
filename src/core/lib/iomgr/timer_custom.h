@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,6 +38,7 @@ typedef struct grpc_custom_timer_vtable {
 
 void grpc_custom_timer_init(grpc_custom_timer_vtable* impl);
 
-void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error_handle error);
+void grpc_custom_timer_callback(grpc_custom_timer* t,
+                                grpc_error_handle error);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_CUSTOM_H */

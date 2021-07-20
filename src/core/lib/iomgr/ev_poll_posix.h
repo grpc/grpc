@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,7 +23,9 @@
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
-const grpc_event_engine_vtable* grpc_init_poll_posix(bool explicit_request);
-const grpc_event_engine_vtable* grpc_init_poll_cv_posix(bool explicit_request);
+const grpc_event_engine_vtable* grpc_init_poll_posix(
+    bool explicit_request);
+const grpc_event_engine_vtable* grpc_init_poll_cv_posix(
+    bool explicit_request);
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POLL_POSIX_H */

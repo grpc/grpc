@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,8 +23,9 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-/* we offset status by a small amount when storing it into transport metadata
-   as metadata cannot store a 0 value (which is used as OK for grpc_status_codes
+/* we offset status by a small amount when storing it into transport
+   metadata as metadata cannot store a 0 value (which is used as OK for
+   grpc_status_codes
    */
 #define STATUS_OFFSET 1
 
@@ -42,15 +43,16 @@ grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md) {
   }
   void* user_data = grpc_mdelem_get_user_data(md, destroy_status);
   if (user_data != nullptr) {
-    return static_cast<grpc_status_code>(reinterpret_cast<intptr_t>(user_data) -
-                                         STATUS_OFFSET);
+    return static_cast<grpc_status_code>(
+        reinterpret_cast<intptr_t>(user_data) - STATUS_OFFSET);
   }
   uint32_t status;
   if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(md), &status)) {
     status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
   }
-  grpc_mdelem_set_user_data(md, destroy_status,
-                            reinterpret_cast<void*>(status + STATUS_OFFSET));
+  grpc_mdelem_set_user_data(
+      md, destroy_status,
+      reinterpret_cast<void*>(status + STATUS_OFFSET));
   return static_cast<grpc_status_code>(status);
 }
 

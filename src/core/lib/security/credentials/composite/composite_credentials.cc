@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,13 +36,15 @@
 
 /* -- Composite call credentials. -- */
 
-static void composite_call_metadata_cb(void* arg, grpc_error_handle error);
+static void composite_call_metadata_cb(void* arg,
+                                       grpc_error_handle error);
 
 namespace {
 struct grpc_composite_call_credentials_metadata_context {
   grpc_composite_call_credentials_metadata_context(
       grpc_composite_call_credentials* composite_creds,
-      grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
+      grpc_polling_entity* pollent,
+      grpc_auth_metadata_context auth_md_context,
       grpc_credentials_mdelem_array* md_array,
       grpc_closure* on_request_metadata)
       : composite_creds(composite_creds),
@@ -50,8 +52,9 @@ struct grpc_composite_call_credentials_metadata_context {
         auth_md_context(auth_md_context),
         md_array(md_array),
         on_request_metadata(on_request_metadata) {
-    GRPC_CLOSURE_INIT(&internal_on_request_metadata, composite_call_metadata_cb,
-                      this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&internal_on_request_metadata,
+                      composite_call_metadata_cb, this,
+                      grpc_schedule_on_exec_ctx);
   }
 
   grpc_composite_call_credentials* composite_creds;
@@ -64,9 +67,11 @@ struct grpc_composite_call_credentials_metadata_context {
 };
 }  // namespace
 
-static void composite_call_metadata_cb(void* arg, grpc_error_handle error) {
+static void composite_call_metadata_cb(void* arg,
+                                       grpc_error_handle error) {
   grpc_composite_call_credentials_metadata_context* ctx =
-      static_cast<grpc_composite_call_credentials_metadata_context*>(arg);
+      static_cast<grpc_composite_call_credentials_metadata_context*>(
+          arg);
   if (error == GRPC_ERROR_NONE) {
     const grpc_composite_call_credentials::CallCredentialsList& inner =
         ctx->composite_creds->inner();
@@ -89,9 +94,10 @@ static void composite_call_metadata_cb(void* arg, grpc_error_handle error) {
 }
 
 bool grpc_composite_call_credentials::get_request_metadata(
-    grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error_handle* error) {
+    grpc_polling_entity* pollent,
+    grpc_auth_metadata_context auth_md_context,
+    grpc_credentials_mdelem_array* md_array,
+    grpc_closure* on_request_metadata, grpc_error_handle* error) {
   grpc_composite_call_credentials_metadata_context* ctx;
   ctx = new grpc_composite_call_credentials_metadata_context(
       this, pollent, auth_md_context, md_array, on_request_metadata);
@@ -114,7 +120,8 @@ bool grpc_composite_call_credentials::get_request_metadata(
 void grpc_composite_call_credentials::cancel_get_request_metadata(
     grpc_credentials_mdelem_array* md_array, grpc_error_handle error) {
   for (size_t i = 0; i < inner_.size(); ++i) {
-    inner_[i]->cancel_get_request_metadata(md_array, GRPC_ERROR_REF(error));
+    inner_[i]->cancel_get_request_metadata(md_array,
+                                           GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -124,21 +131,23 @@ std::string grpc_composite_call_credentials::debug_string() {
   for (auto& inner_cred : inner_) {
     outputs.emplace_back(inner_cred->debug_string());
   }
-  return absl::StrCat("CompositeCallCredentials{", absl::StrJoin(outputs, ","),
-                      "}");
+  return absl::StrCat("CompositeCallCredentials{",
+                      absl::StrJoin(outputs, ","), "}");
 }
 
 static size_t get_creds_array_size(const grpc_call_credentials* creds,
                                    bool is_composite) {
   return is_composite
-             ? static_cast<const grpc_composite_call_credentials*>(creds)
+             ? static_cast<const grpc_composite_call_credentials*>(
+                   creds)
                    ->inner()
                    .size()
              : 1;
 }
 
 void grpc_composite_call_credentials::push_to_inner(
-    grpc_core::RefCountedPtr<grpc_call_credentials> creds, bool is_composite) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds,
+    bool is_composite) {
   if (!is_composite) {
     inner_.push_back(std::move(creds));
     return;
@@ -158,8 +167,9 @@ grpc_composite_call_credentials::grpc_composite_call_credentials(
       strcmp(creds1->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
   const bool creds2_is_composite =
       strcmp(creds2->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
-  const size_t size = get_creds_array_size(creds1.get(), creds1_is_composite) +
-                      get_creds_array_size(creds2.get(), creds2_is_composite);
+  const size_t size =
+      get_creds_array_size(creds1.get(), creds1_is_composite) +
+      get_creds_array_size(creds2.get(), creds2_is_composite);
   inner_.reserve(size);
   push_to_inner(std::move(creds1), creds1_is_composite);
   push_to_inner(std::move(creds2), creds2_is_composite);
@@ -207,17 +217,18 @@ grpc_composite_channel_credentials::create_security_connector(
      downstream. */
   if (call_creds != nullptr) {
     return inner_creds_->create_security_connector(
-        composite_call_credentials_create(call_creds_, std::move(call_creds)),
+        composite_call_credentials_create(call_creds_,
+                                          std::move(call_creds)),
         target, args, new_args);
   } else {
-    return inner_creds_->create_security_connector(call_creds_, target, args,
-                                                   new_args);
+    return inner_creds_->create_security_connector(call_creds_, target,
+                                                   args, new_args);
   }
 }
 
 grpc_channel_credentials* grpc_composite_channel_credentials_create(
-    grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
-    void* reserved) {
+    grpc_channel_credentials* channel_creds,
+    grpc_call_credentials* call_creds, void* reserved) {
   GPR_ASSERT(channel_creds != nullptr && call_creds != nullptr &&
              reserved == nullptr);
   GRPC_API_TRACE(

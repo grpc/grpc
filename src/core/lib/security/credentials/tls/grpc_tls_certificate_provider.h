@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
@@ -33,19 +33,23 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
-// Interface for a grpc_tls_certificate_provider that handles the process to
-// fetch credentials and validation contexts. Implementations are free to rely
-// on local or remote sources to fetch the latest secrets, and free to share any
-// state among different instances as they deem fit.
+// Interface for a grpc_tls_certificate_provider that handles the
+// process to fetch credentials and validation contexts. Implementations
+// are free to rely on local or remote sources to fetch the latest
+// secrets, and free to share any state among different instances as
+// they deem fit.
 //
 // On creation, grpc_tls_certificate_provider creates a
-// grpc_tls_certificate_distributor object. When the credentials and validation
-// contexts become valid or changed, a grpc_tls_certificate_provider should
-// notify its distributor so as to propagate the update to the watchers.
+// grpc_tls_certificate_distributor object. When the credentials and
+// validation contexts become valid or changed, a
+// grpc_tls_certificate_provider should notify its distributor so as to
+// propagate the update to the watchers.
 struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
-  virtual grpc_pollset_set* interested_parties() const { return nullptr; }
+  virtual grpc_pollset_set* interested_parties() const {
+    return nullptr;
+  }
 
   virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
   distributor() const = 0;
@@ -64,7 +68,8 @@ class StaticDataCertificateProvider final
 
   ~StaticDataCertificateProvider() override;
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor()
+      const override {
     return distributor_;
   }
 
@@ -78,12 +83,13 @@ class StaticDataCertificateProvider final
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
   grpc_core::Mutex mu_;
-  // Stores each cert_name we get from the distributor callback and its watcher
-  // information.
+  // Stores each cert_name we get from the distributor callback and its
+  // watcher information.
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 
-// A provider class that will watch the credential changes on the file system.
+// A provider class that will watch the credential changes on the file
+// system.
 class FileWatcherCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
@@ -94,7 +100,8 @@ class FileWatcherCertificateProvider final
 
   ~FileWatcherCertificateProvider() override;
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor()
+      const override {
     return distributor_;
   }
 
@@ -125,12 +132,12 @@ class FileWatcherCertificateProvider final
 
   // Guards members below.
   grpc_core::Mutex mu_;
-  // The most-recent credential data. It will be empty if the most recent read
-  // attempt failed.
+  // The most-recent credential data. It will be empty if the most
+  // recent read attempt failed.
   std::string root_certificate_;
   grpc_core::PemKeyCertPairList pem_key_cert_pairs_;
-  // Stores each cert_name we get from the distributor callback and its watcher
-  // information.
+  // Stores each cert_name we get from the distributor callback and its
+  // watcher information.
   std::map<std::string, WatcherInfo> watcher_info_;
 };
 

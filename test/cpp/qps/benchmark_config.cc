@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,7 +33,8 @@ ABSL_FLAG(std::string, scenario_result_file, "",
 
 ABSL_FLAG(std::string, hashed_id, "", "Hash of the user id");
 
-ABSL_FLAG(std::string, test_name, "", "Name of the test being executed");
+ABSL_FLAG(std::string, test_name, "",
+          "Name of the test being executed");
 
 ABSL_FLAG(std::string, sys_info, "", "System information");
 
@@ -45,12 +46,13 @@ ABSL_FLAG(std::string, tag, "", "Optional tag for the test");
 ABSL_FLAG(std::string, rpc_reporter_server_address, "",
           "Server address for rpc reporter to send results to");
 
-ABSL_FLAG(bool, enable_rpc_reporter, false, "Enable use of RPC reporter");
+ABSL_FLAG(bool, enable_rpc_reporter, false,
+          "Enable use of RPC reporter");
 
-ABSL_FLAG(
-    std::string, rpc_reporter_credential_type,
-    grpc::testing::kInsecureCredentialsType,
-    "Credential type for communication to the QPS benchmark report server");
+ABSL_FLAG(std::string, rpc_reporter_credential_type,
+          grpc::testing::kInsecureCredentialsType,
+          "Credential type for communication to the QPS benchmark "
+          "report server");
 
 namespace grpc {
 namespace testing {
@@ -69,12 +71,15 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
     ChannelArguments channel_args;
     std::shared_ptr<ChannelCredentials> channel_creds =
         testing::GetCredentialsProvider()->GetChannelCredentials(
-            absl::GetFlag(FLAGS_rpc_reporter_credential_type), &channel_args);
-    GPR_ASSERT(!absl::GetFlag(FLAGS_rpc_reporter_server_address).empty());
+            absl::GetFlag(FLAGS_rpc_reporter_credential_type),
+            &channel_args);
+    GPR_ASSERT(
+        !absl::GetFlag(FLAGS_rpc_reporter_server_address).empty());
     composite_reporter->add(std::unique_ptr<Reporter>(new RpcReporter(
         "RpcReporter",
-        grpc::CreateChannel(absl::GetFlag(FLAGS_rpc_reporter_server_address),
-                            channel_creds))));
+        grpc::CreateChannel(
+            absl::GetFlag(FLAGS_rpc_reporter_server_address),
+            channel_creds))));
   }
 
   return std::shared_ptr<Reporter>(composite_reporter);

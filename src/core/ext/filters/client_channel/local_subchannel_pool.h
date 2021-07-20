@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,26 +27,28 @@
 
 namespace grpc_core {
 
-// The local subchannel pool that is owned by a single channel. It doesn't
-// support subchannel sharing with other channels by nature. Nor does it support
-// subchannel retention when a subchannel is not used. The only real purpose of
-// using this subchannel pool is to allow subchannel reuse within the channel
-// when an incoming resolver update contains some addresses for which the
-// channel has already created subchannels.
-// Thread-unsafe.
+// The local subchannel pool that is owned by a single channel. It
+// doesn't support subchannel sharing with other channels by nature. Nor
+// does it support subchannel retention when a subchannel is not used.
+// The only real purpose of using this subchannel pool is to allow
+// subchannel reuse within the channel when an incoming resolver update
+// contains some addresses for which the channel has already created
+// subchannels. Thread-unsafe.
 class LocalSubchannelPool final : public SubchannelPoolInterface {
  public:
   LocalSubchannelPool() {}
   ~LocalSubchannelPool() override {}
 
   // Implements interface methods.
-  // Thread-unsafe. Intended to be invoked within the client_channel work
-  // serializer.
+  // Thread-unsafe. Intended to be invoked within the client_channel
+  // work serializer.
   RefCountedPtr<Subchannel> RegisterSubchannel(
-      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
+      const SubchannelKey& key,
+      RefCountedPtr<Subchannel> constructed) override;
   void UnregisterSubchannel(const SubchannelKey& key,
                             Subchannel* subchannel) override;
-  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override;
+  RefCountedPtr<Subchannel> FindSubchannel(
+      const SubchannelKey& key) override;
 
  private:
   // A map from subchannel key to subchannel.
@@ -55,4 +57,5 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LOCAL_SUBCHANNEL_POOL_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LOCAL_SUBCHANNEL_POOL_H \
+        */

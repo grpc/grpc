@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
@@ -40,7 +40,8 @@ void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
 }
 void pollset_destroy(grpc_pollset* pollset) {}
-grpc_error* pollset_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
+grpc_error* pollset_work(grpc_pollset* pollset,
+                         grpc_pollset_worker** worker,
                          grpc_millis deadline) {
   (void)worker;
   gpr_cv_wait(&g_cv, &g_mu,

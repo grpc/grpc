@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -112,7 +112,8 @@ int64_t NextPow2(int64_t v) {
 }
 }  // namespace
 
-class BdpEstimatorRandomTest : public ::testing::TestWithParam<size_t> {};
+class BdpEstimatorRandomTest : public ::testing::TestWithParam<size_t> {
+};
 
 TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
   BdpEstimator est("test");
@@ -132,8 +133,9 @@ TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
 }
 
 INSTANTIATE_TEST_SUITE_P(TooManyNames, BdpEstimatorRandomTest,
-                         ::testing::Values(3, 4, 6, 9, 13, 19, 28, 42, 63, 94,
-                                           141, 211, 316, 474, 711));
+                         ::testing::Values(3, 4, 6, 9, 13, 19, 28, 42,
+                                           63, 94, 141, 211, 316, 474,
+                                           711));
 
 }  // namespace testing
 }  // namespace grpc_core

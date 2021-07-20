@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -112,9 +112,9 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  error = grpc_call_start_batch(call, unary_ops,
-                                static_cast<size_t>(op - unary_ops),
-                                tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), nullptr);
+  error = grpc_call_start_batch(
+      call, unary_ops, static_cast<size_t>(op - unary_ops),
+      tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
 
@@ -124,7 +124,8 @@ static void send_initial_metadata(void) {
   grpc_metadata_array_init(&initial_metadata_send);
   metadata_send_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_send_op.data.send_initial_metadata.count = 0;
-  error = grpc_call_start_batch(call, &metadata_send_op, 1, tagarg, nullptr);
+  error = grpc_call_start_batch(call, &metadata_send_op, 1, tagarg,
+                                nullptr);
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -166,7 +167,8 @@ static void start_send_status(void) {
 }
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
-   When that is resolved, please remove the #include <unistd.h> above. */
+   When that is resolved, please remove the #include <unistd.h> above.
+ */
 static void sigint_handler(int /*x*/) { _exit(0); }
 
 int main(int argc, char** argv) {
@@ -199,7 +201,8 @@ int main(int argc, char** argv) {
   gpr_cmdline_destroy(cl);
 
   if (addr == nullptr) {
-    addr_buf = grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
+    addr_buf =
+        grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
     addr = addr_buf.c_str();
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
@@ -208,10 +211,12 @@ int main(int argc, char** argv) {
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
-    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-        nullptr, &pem_key_cert_pair, 1, 0, nullptr);
+    grpc_server_credentials* ssl_creds =
+        grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair,
+                                           1, 0, nullptr);
     server = grpc_server_create(nullptr, nullptr);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
+    GPR_ASSERT(
+        grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
     server = grpc_server_create(nullptr, nullptr);

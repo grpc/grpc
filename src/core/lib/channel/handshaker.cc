@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,10 +57,11 @@ HandshakeManager::HandshakeManager() {}
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
-        this, handshaker->name(), handshaker.get(), handshakers_.size());
+    gpr_log(GPR_INFO,
+            "handshake_manager %p: adding handshaker %s [%p] at index "
+            "%" PRIuPTR,
+            this, handshaker->name(), handshaker.get(),
+            handshakers_.size());
   }
   MutexLock lock(&mu_);
   handshakers_.push_back(std::move(handshaker));
@@ -83,22 +84,24 @@ void HandshakeManager::Shutdown(grpc_error_handle why) {
 // Helper function to call either the next handshaker or the
 // on_handshake_done callback.
 // Returns true if we've scheduled the on_handshake_done callback.
-bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
+bool HandshakeManager::CallNextHandshakerLocked(
+    grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
     gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
             ", args=%s",
-            this, grpc_error_std_string(error).c_str(), is_shutdown_, index_,
-            HandshakerArgsString(&args_).c_str());
+            this, grpc_error_std_string(error).c_str(), is_shutdown_,
+            index_, HandshakerArgsString(&args_).c_str());
   }
   GPR_ASSERT(index_ <= handshakers_.size());
-  // If we got an error or we've been shut down or we're exiting early or
-  // we've finished the last handshaker, invoke the on_handshake_done
+  // If we got an error or we've been shut down or we're exiting early
+  // or we've finished the last handshaker, invoke the on_handshake_done
   // callback.  Otherwise, call the next handshaker.
   if (error != GRPC_ERROR_NONE || is_shutdown_ || args_.exit_early ||
       index_ == handshakers_.size()) {
     if (error == GRPC_ERROR_NONE && is_shutdown_) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("handshaker shutdown");
+      error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("handshaker shutdown");
       // It is possible that the endpoint has already been destroyed by
       // a shutdown call while this callback was sitting on the ExecCtx
       // with no error.
@@ -118,10 +121,11 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
       }
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
-      gpr_log(GPR_INFO,
-              "handshake_manager %p: handshaking complete -- scheduling "
-              "on_handshake_done with error=%s",
-              this, grpc_error_std_string(error).c_str());
+      gpr_log(
+          GPR_INFO,
+          "handshake_manager %p: handshaking complete -- scheduling "
+          "on_handshake_done with error=%s",
+          this, grpc_error_std_string(error).c_str());
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
@@ -131,10 +135,10 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
   } else {
     auto handshaker = handshakers_[index_];
     if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "handshake_manager %p: calling handshaker %s [%p] at index %" PRIuPTR,
-          this, handshaker->name(), handshaker.get(), index_);
+      gpr_log(GPR_INFO,
+              "handshake_manager %p: calling handshaker %s [%p] at "
+              "index %" PRIuPTR,
+              this, handshaker->name(), handshaker.get(), index_);
     }
     handshaker->DoHandshake(acceptor_, &call_next_handshaker_, &args_);
   }
@@ -160,34 +164,36 @@ void HandshakeManager::CallNextHandshakerFn(void* arg,
 
 void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
   auto* mgr = static_cast<HandshakeManager*>(arg);
-  if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled
-    mgr->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));
+  if (error ==
+      GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled
+    mgr->Shutdown(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));
   }
   mgr->Unref();
 }
 
-void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
-                                   const grpc_channel_args* channel_args,
-                                   grpc_millis deadline,
-                                   grpc_tcp_server_acceptor* acceptor,
-                                   grpc_iomgr_cb_func on_handshake_done,
-                                   void* user_data) {
+void HandshakeManager::DoHandshake(
+    grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
+    grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
+    grpc_iomgr_cb_func on_handshake_done, void* user_data) {
   bool done;
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(index_ == 0);
     // Construct handshaker args.  These will be passed through all
-    // handshakers and eventually be freed by the on_handshake_done callback.
+    // handshakers and eventually be freed by the on_handshake_done
+    // callback.
     args_.endpoint = endpoint;
     args_.args = grpc_channel_args_copy(channel_args);
     args_.user_data = user_data;
-    args_.read_buffer =
-        static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(*args_.read_buffer)));
+    args_.read_buffer = static_cast<grpc_slice_buffer*>(
+        gpr_malloc(sizeof(*args_.read_buffer)));
     grpc_slice_buffer_init(args_.read_buffer);
     if (acceptor != nullptr && acceptor->external_connection &&
         acceptor->pending_data != nullptr) {
-      grpc_slice_buffer_swap(args_.read_buffer,
-                             &(acceptor->pending_data->data.raw.slice_buffer));
+      grpc_slice_buffer_swap(
+          args_.read_buffer,
+          &(acceptor->pending_data->data.raw.slice_buffer));
     }
     // Initialize state needed for calling handshakers.
     acceptor_ = acceptor;
@@ -198,8 +204,8 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
                       grpc_schedule_on_exec_ctx);
     // Start deadline timer, which owns a ref.
     Ref().release();
-    GRPC_CLOSURE_INIT(&on_timeout_, &HandshakeManager::OnTimeoutFn, this,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&on_timeout_, &HandshakeManager::OnTimeoutFn,
+                      this, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&deadline_timer_, deadline, &on_timeout_);
     // Start first handshaker, which also owns a ref.
     Ref().release();

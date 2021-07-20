@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,14 +57,16 @@ static void create_random_slice_buffer(grpc_slice_buffer* sb) {
   GPR_ASSERT(sb != nullptr);
   size_t slice_count = gsec_test_bias_random_uint32(kMaxSlices) + 1;
   for (size_t i = 0; i < slice_count; i++) {
-    size_t slice_length = gsec_test_bias_random_uint32(kMaxSliceLength) + 1;
+    size_t slice_length =
+        gsec_test_bias_random_uint32(kMaxSliceLength) + 1;
     grpc_slice slice = GRPC_SLICE_MALLOC(slice_length);
     gsec_test_random_bytes(GRPC_SLICE_START_PTR(slice), slice_length);
     grpc_slice_buffer_add(sb, slice);
   }
 }
 
-static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb, size_t index) {
+static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb,
+                                    size_t index) {
   GPR_ASSERT(sb != nullptr);
   GPR_ASSERT(index < sb->length);
   for (size_t i = 0; i < sb->count; i++) {
@@ -77,8 +79,8 @@ static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb, size_t index) {
   return nullptr;
 }
 
-/* Checks if two slice buffer contents are the same. It is not super efficient,
- * but OK for testing.  */
+/* Checks if two slice buffer contents are the same. It is not super
+ * efficient, but OK for testing.  */
 static bool are_slice_buffers_equal(grpc_slice_buffer* first,
                                     grpc_slice_buffer* second) {
   GPR_ASSERT(first != nullptr);
@@ -114,36 +116,37 @@ test_fixture_integrity_only_create(bool rekey, bool extra_copy) {
   alts_grpc_record_protocol_test_fixture* fixture =
       static_cast<alts_grpc_record_protocol_test_fixture*>(
           gpr_zalloc(sizeof(alts_grpc_record_protocol_test_fixture)));
-  size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
+  size_t key_length =
+      rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
   uint8_t* key;
   gsec_test_random_array(&key, key_length);
   gsec_aead_crypter* crypter = nullptr;
 
   /* Create client record protocol for protect. */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
+                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength,
+                 rekey, &crypter, nullptr) == GRPC_STATUS_OK);
   GPR_ASSERT(alts_grpc_integrity_only_record_protocol_create(
                  crypter, 8, /*is_client=*/true, /*is_protect=*/true,
                  extra_copy, &fixture->client_protect) == TSI_OK);
   /* Create client record protocol for unprotect.  */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
+                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength,
+                 rekey, &crypter, nullptr) == GRPC_STATUS_OK);
   GPR_ASSERT(alts_grpc_integrity_only_record_protocol_create(
                  crypter, 8, /*is_client=*/true, /*is_protect=*/false,
                  extra_copy, &fixture->client_unprotect) == TSI_OK);
   /* Create server record protocol for protect.  */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
+                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength,
+                 rekey, &crypter, nullptr) == GRPC_STATUS_OK);
   GPR_ASSERT(alts_grpc_integrity_only_record_protocol_create(
                  crypter, 8, /*is_client=*/false, /*is_protect=*/true,
                  extra_copy, &fixture->server_protect) == TSI_OK);
   /* Create server record protocol for unprotect.  */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
+                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength,
+                 rekey, &crypter, nullptr) == GRPC_STATUS_OK);
   GPR_ASSERT(alts_grpc_integrity_only_record_protocol_create(
                  crypter, 8, /*is_client=*/false, /*is_protect=*/false,
                  extra_copy, &fixture->server_unprotect) == TSI_OK);
@@ -172,36 +175,37 @@ test_fixture_privacy_integrity_create(bool rekey) {
   alts_grpc_record_protocol_test_fixture* fixture =
       static_cast<alts_grpc_record_protocol_test_fixture*>(
           gpr_zalloc(sizeof(alts_grpc_record_protocol_test_fixture)));
-  size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
+  size_t key_length =
+      rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
   uint8_t* key;
   gsec_test_random_array(&key, key_length);
   gsec_aead_crypter* crypter = nullptr;
 
   /* Create client record protocol for protect. */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
+                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength,
+                 rekey, &crypter, nullptr) == GRPC_STATUS_OK);
   GPR_ASSERT(alts_grpc_privacy_integrity_record_protocol_create(
                  crypter, 8, /*is_client=*/true, /*is_protect=*/true,
                  &fixture->client_protect) == TSI_OK);
   /* Create client record protocol for unprotect.  */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
+                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength,
+                 rekey, &crypter, nullptr) == GRPC_STATUS_OK);
   GPR_ASSERT(alts_grpc_privacy_integrity_record_protocol_create(
                  crypter, 8, /*is_client=*/true, /*is_protect=*/false,
                  &fixture->client_unprotect) == TSI_OK);
   /* Create server record protocol for protect.  */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
+                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength,
+                 rekey, &crypter, nullptr) == GRPC_STATUS_OK);
   GPR_ASSERT(alts_grpc_privacy_integrity_record_protocol_create(
                  crypter, 8, /*is_client=*/false, /*is_protect=*/true,
                  &fixture->server_protect) == TSI_OK);
   /* Create server record protocol for unprotect.  */
   GPR_ASSERT(gsec_aes_gcm_aead_crypter_create(
-                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength, rekey,
-                 &crypter, nullptr) == GRPC_STATUS_OK);
+                 key, key_length, kAesGcmNonceLength, kAesGcmTagLength,
+                 rekey, &crypter, nullptr) == GRPC_STATUS_OK);
   GPR_ASSERT(alts_grpc_privacy_integrity_record_protocol_create(
                  crypter, 8, /*is_client=*/false, /*is_protect=*/false,
                  &fixture->server_unprotect) == TSI_OK);
@@ -246,7 +250,8 @@ alts_grpc_record_protocol_test_var_create() {
   grpc_slice_buffer_init(&var->duplicate_sb);
   grpc_slice_buffer_init(&var->protected_sb);
   grpc_slice_buffer_init(&var->unprotected_sb);
-  /* Randomly sets content of original_sb, and copies into duplicate_sb.  */
+  /* Randomly sets content of original_sb, and copies into duplicate_sb.
+   */
   create_random_slice_buffer(&var->original_sb);
   for (size_t i = 0; i < var->original_sb.count; i++) {
     grpc_slice_buffer_add(&var->duplicate_sb,
@@ -282,11 +287,11 @@ static void random_seal_unseal(alts_grpc_record_protocol* sender,
     GPR_ASSERT(status == TSI_OK);
     GPR_ASSERT(var->protected_sb.length ==
                data_length + var->header_length + var->tag_length);
-    status = alts_grpc_record_protocol_unprotect(receiver, &var->protected_sb,
-                                                 &var->unprotected_sb);
+    status = alts_grpc_record_protocol_unprotect(
+        receiver, &var->protected_sb, &var->unprotected_sb);
     GPR_ASSERT(status == TSI_OK);
-    GPR_ASSERT(
-        are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
+    GPR_ASSERT(are_slice_buffers_equal(&var->unprotected_sb,
+                                       &var->duplicate_sb));
     alts_grpc_record_protocol_test_var_destroy(var);
   }
   grpc_core::ExecCtx::Get()->Flush();
@@ -306,11 +311,11 @@ static void empty_seal_unseal(alts_grpc_record_protocol* sender,
     GPR_ASSERT(status == TSI_OK);
     GPR_ASSERT(var->protected_sb.length ==
                var->header_length + var->tag_length);
-    status = alts_grpc_record_protocol_unprotect(receiver, &var->protected_sb,
-                                                 &var->unprotected_sb);
+    status = alts_grpc_record_protocol_unprotect(
+        receiver, &var->protected_sb, &var->unprotected_sb);
     GPR_ASSERT(status == TSI_OK);
-    GPR_ASSERT(
-        are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
+    GPR_ASSERT(are_slice_buffers_equal(&var->unprotected_sb,
+                                       &var->duplicate_sb));
     alts_grpc_record_protocol_test_var_destroy(var);
   }
   grpc_core::ExecCtx::Get()->Flush();
@@ -332,8 +337,8 @@ static void unsync_seal_unseal(alts_grpc_record_protocol* sender,
                                              &var->protected_sb);
   GPR_ASSERT(status == TSI_OK);
   /* Unseals the second frame.  */
-  status = alts_grpc_record_protocol_unprotect(receiver, &var->protected_sb,
-                                               &var->unprotected_sb);
+  status = alts_grpc_record_protocol_unprotect(
+      receiver, &var->protected_sb, &var->unprotected_sb);
   GPR_ASSERT(status == TSI_INTERNAL_ERROR);
   alts_grpc_record_protocol_test_var_destroy(var);
   grpc_core::ExecCtx::Get()->Flush();
@@ -351,8 +356,8 @@ static void corrupted_data(alts_grpc_record_protocol* sender,
   GPR_ASSERT(status == TSI_OK);
   /* Corrupts one byte in protected_sb and tries to unprotect.  */
   alter_random_byte(&var->protected_sb);
-  status = alts_grpc_record_protocol_unprotect(receiver, &var->protected_sb,
-                                               &var->unprotected_sb);
+  status = alts_grpc_record_protocol_unprotect(
+      receiver, &var->protected_sb, &var->unprotected_sb);
   GPR_ASSERT(status == TSI_INTERNAL_ERROR);
   alts_grpc_record_protocol_test_var_destroy(var);
   grpc_core::ExecCtx::Get()->Flush();
@@ -364,27 +369,31 @@ static void input_check(alts_grpc_record_protocol* rp) {
   alts_grpc_record_protocol_test_var* var =
       alts_grpc_record_protocol_test_var_create();
   /* Protects with nullptr input.  */
-  status = alts_grpc_record_protocol_protect(rp, nullptr, &var->protected_sb);
+  status = alts_grpc_record_protocol_protect(rp, nullptr,
+                                             &var->protected_sb);
   GPR_ASSERT(status == TSI_INVALID_ARGUMENT);
-  status = alts_grpc_record_protocol_protect(rp, &var->original_sb, nullptr);
+  status =
+      alts_grpc_record_protocol_protect(rp, &var->original_sb, nullptr);
   GPR_ASSERT(status == TSI_INVALID_ARGUMENT);
   /* Unprotects with nullptr input.  */
   status = alts_grpc_record_protocol_protect(rp, &var->original_sb,
                                              &var->protected_sb);
   GPR_ASSERT(status == TSI_OK);
-  status =
-      alts_grpc_record_protocol_unprotect(rp, nullptr, &var->unprotected_sb);
+  status = alts_grpc_record_protocol_unprotect(rp, nullptr,
+                                               &var->unprotected_sb);
   GPR_ASSERT(status == TSI_INVALID_ARGUMENT);
-  status = alts_grpc_record_protocol_unprotect(rp, &var->protected_sb, nullptr);
+  status = alts_grpc_record_protocol_unprotect(rp, &var->protected_sb,
+                                               nullptr);
   GPR_ASSERT(status == TSI_INVALID_ARGUMENT);
-  /* Unprotects on a temporary slice buffer which length is smaller than header
-   * length plus tag length.  */
+  /* Unprotects on a temporary slice buffer which length is smaller than
+   * header length plus tag length.  */
   grpc_slice_buffer temp_sb;
   grpc_slice_buffer_init(&temp_sb);
-  grpc_slice_buffer_move_first(
-      &var->protected_sb, var->header_length + var->tag_length - 1, &temp_sb);
-  status =
-      alts_grpc_record_protocol_unprotect(rp, &temp_sb, &var->unprotected_sb);
+  grpc_slice_buffer_move_first(&var->protected_sb,
+                               var->header_length + var->tag_length - 1,
+                               &temp_sb);
+  status = alts_grpc_record_protocol_unprotect(rp, &temp_sb,
+                                               &var->unprotected_sb);
   GPR_ASSERT(status == TSI_INVALID_ARGUMENT);
   grpc_slice_buffer_destroy_internal(&temp_sb);
   alts_grpc_record_protocol_test_var_destroy(var);
@@ -395,8 +404,10 @@ static void input_check(alts_grpc_record_protocol* rp) {
 
 static void alts_grpc_record_protocol_random_seal_unseal_tests(
     alts_grpc_record_protocol_test_fixture* fixture) {
-  random_seal_unseal(fixture->client_protect, fixture->server_unprotect);
-  random_seal_unseal(fixture->server_protect, fixture->client_unprotect);
+  random_seal_unseal(fixture->client_protect,
+                     fixture->server_unprotect);
+  random_seal_unseal(fixture->server_protect,
+                     fixture->client_unprotect);
 }
 
 static void alts_grpc_record_protocol_empty_seal_unseal_tests(
@@ -407,8 +418,10 @@ static void alts_grpc_record_protocol_empty_seal_unseal_tests(
 
 static void alts_grpc_record_protocol_unsync_seal_unseal_tests(
     alts_grpc_record_protocol_test_fixture* fixture) {
-  unsync_seal_unseal(fixture->client_protect, fixture->server_unprotect);
-  unsync_seal_unseal(fixture->server_protect, fixture->client_unprotect);
+  unsync_seal_unseal(fixture->client_protect,
+                     fixture->server_unprotect);
+  unsync_seal_unseal(fixture->server_protect,
+                     fixture->client_unprotect);
 }
 
 static void alts_grpc_record_protocol_corrupted_data_tests(
@@ -450,12 +463,14 @@ int main(int argc, char** argv) {
   grpc_init();
   alts_grpc_record_protocol_tests(
       &test_fixture_integrity_only_no_rekey_no_extra_copy_create);
-  alts_grpc_record_protocol_tests(&test_fixture_integrity_only_rekey_create);
+  alts_grpc_record_protocol_tests(
+      &test_fixture_integrity_only_rekey_create);
   alts_grpc_record_protocol_tests(
       &test_fixture_integrity_only_extra_copy_create);
   alts_grpc_record_protocol_tests(
       &test_fixture_privacy_integrity_no_rekey_create);
-  alts_grpc_record_protocol_tests(&test_fixture_privacy_integrity_rekey_create);
+  alts_grpc_record_protocol_tests(
+      &test_fixture_privacy_integrity_rekey_create);
   grpc_shutdown();
   return 0;
 }

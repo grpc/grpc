@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,12 +23,13 @@
 
 #include <grpc/slice.h>
 
-/* base64 encode a slice. Returns a new slice, does not take ownership of the
-   input */
+/* base64 encode a slice. Returns a new slice, does not take ownership
+   of the input */
 grpc_slice grpc_chttp2_base64_encode(const grpc_slice& input);
 
-/* Compress a slice with the static huffman encoder detailed in the hpack
-   standard. Returns a new slice, does not take ownership of the input */
+/* Compress a slice with the static huffman encoder detailed in the
+   hpack standard. Returns a new slice, does not take ownership of the
+   input */
 grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input);
 
 /* equivalent to:

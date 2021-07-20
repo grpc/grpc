@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,8 +31,8 @@ typedef struct grpc_custom_resolver grpc_custom_resolver;
 typedef struct grpc_custom_resolver_vtable {
   grpc_error_handle (*resolve)(const char* host, const char* port,
                                grpc_resolved_addresses** res);
-  void (*resolve_async)(grpc_custom_resolver* resolver, const char* host,
-                        const char* port);
+  void (*resolve_async)(grpc_custom_resolver* resolver,
+                        const char* host, const char* port);
 } grpc_custom_resolver_vtable;
 
 void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,15 +48,16 @@ struct ResolverArgs {
 
 class ResolverFactory {
  public:
-  /// Returns a bool indicating whether the input uri is valid to create a
-  /// resolver.
+  /// Returns a bool indicating whether the input uri is valid to create
+  /// a resolver.
   virtual bool IsValidUri(const URI& uri) const = 0;
 
   /// Returns a new resolver instance.
-  virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const = 0;
+  virtual OrphanablePtr<Resolver> CreateResolver(
+      ResolverArgs args) const = 0;
 
-  /// Returns a string representing the default authority to use for this
-  /// scheme.
+  /// Returns a string representing the default authority to use for
+  /// this scheme.
   virtual std::string GetDefaultAuthority(const URI& uri) const {
     return std::string(absl::StripPrefix(uri.path(), "/"));
   }

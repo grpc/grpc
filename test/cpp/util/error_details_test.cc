@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,8 +36,8 @@ TEST(ExtractTest, Success) {
 
   google::rpc::Status to;
   std::string error_details = expected.SerializeAsString();
-  Status from(static_cast<StatusCode>(expected.code()), expected.message(),
-              error_details);
+  Status from(static_cast<StatusCode>(expected.code()),
+              expected.message(), error_details);
   EXPECT_TRUE(ExtractErrorDetails(from, &to).ok());
   EXPECT_EQ(expected.code(), to.code());
   EXPECT_EQ(expected.message(), to.message());
@@ -77,8 +77,9 @@ TEST(SetTest, Success) {
 }
 
 TEST(SetTest, NullInput) {
-  EXPECT_EQ(StatusCode::FAILED_PRECONDITION,
-            SetErrorDetails(google::rpc::Status(), nullptr).error_code());
+  EXPECT_EQ(
+      StatusCode::FAILED_PRECONDITION,
+      SetErrorDetails(google::rpc::Status(), nullptr).error_code());
 }
 
 TEST(SetTest, OutOfScopeErrorCode) {

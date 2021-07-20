@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,53 +37,61 @@ struct CliArgs {
 
 namespace testing {
 
-// CliCall handles the sending and receiving of generic messages given the name
-// of the remote method. This class is only used by GrpcTool. Its thread-safe
-// and thread-unsafe methods should not be used together.
+// CliCall handles the sending and receiving of generic messages given
+// the name of the remote method. This class is only used by GrpcTool.
+// Its thread-safe and thread-unsafe methods should not be used
+// together.
 class CliCall final {
  public:
-  typedef std::multimap<std::string, std::string> OutgoingMetadataContainer;
+  typedef std::multimap<std::string, std::string>
+      OutgoingMetadataContainer;
   typedef std::multimap<grpc::string_ref, grpc::string_ref>
       IncomingMetadataContainer;
 
   CliCall(const std::shared_ptr<grpc::Channel>& channel,
-          const std::string& method, const OutgoingMetadataContainer& metadata,
-          CliArgs args);
+          const std::string& method,
+          const OutgoingMetadataContainer& metadata, CliArgs args);
   CliCall(const std::shared_ptr<grpc::Channel>& channel,
-          const std::string& method, const OutgoingMetadataContainer& metadata)
+          const std::string& method,
+          const OutgoingMetadataContainer& metadata)
       : CliCall(channel, method, metadata, CliArgs{}) {}
 
   ~CliCall();
 
   // Perform an unary generic RPC.
-  static Status Call(const std::shared_ptr<grpc::Channel>& channel,
-                     const std::string& method, const std::string& request,
-                     std::string* response,
-                     const OutgoingMetadataContainer& metadata,
-                     IncomingMetadataContainer* server_initial_metadata,
-                     IncomingMetadataContainer* server_trailing_metadata);
+  static Status Call(
+      const std::shared_ptr<grpc::Channel>& channel,
+      const std::string& method, const std::string& request,
+      std::string* response, const OutgoingMetadataContainer& metadata,
+      IncomingMetadataContainer* server_initial_metadata,
+      IncomingMetadataContainer* server_trailing_metadata);
 
-  // Send a generic request message in a synchronous manner. NOT thread-safe.
+  // Send a generic request message in a synchronous manner. NOT
+  // thread-safe.
   void Write(const std::string& request);
 
-  // Send a generic request message in a synchronous manner. NOT thread-safe.
+  // Send a generic request message in a synchronous manner. NOT
+  // thread-safe.
   void WritesDone();
 
-  // Receive a generic response message in a synchronous manner.NOT thread-safe.
+  // Receive a generic response message in a synchronous manner.NOT
+  // thread-safe.
   bool Read(std::string* response,
             IncomingMetadataContainer* server_initial_metadata);
 
-  // Thread-safe write. Must be used with ReadAndMaybeNotifyWrite. Send out a
-  // generic request message and wait for ReadAndMaybeNotifyWrite to finish it.
+  // Thread-safe write. Must be used with ReadAndMaybeNotifyWrite. Send
+  // out a generic request message and wait for ReadAndMaybeNotifyWrite
+  // to finish it.
   void WriteAndWait(const std::string& request);
 
-  // Thread-safe WritesDone. Must be used with ReadAndMaybeNotifyWrite. Send out
-  // WritesDone for gereneric request messages and wait for
+  // Thread-safe WritesDone. Must be used with ReadAndMaybeNotifyWrite.
+  // Send out WritesDone for gereneric request messages and wait for
   // ReadAndMaybeNotifyWrite to finish it.
   void WritesDoneAndWait();
 
-  // Thread-safe Read. Blockingly receive a generic response message. Notify
-  // writes if they are finished when this read is waiting for a resposne.
+  // Thread-safe Read. Blockingly receive a generic response message.
+  // Notify writes if they are finished when this read is waiting for a
+  // resposne.
   bool ReadAndMaybeNotifyWrite(
       std::string* response,
       IncomingMetadataContainer* server_initial_metadata);

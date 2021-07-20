@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
@@ -27,20 +27,25 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     case Rbac::Permission::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
       for (const auto& rule : permission.permissions) {
-        matchers.push_back(AuthorizationMatcher::Create(std::move(*rule)));
+        matchers.push_back(
+            AuthorizationMatcher::Create(std::move(*rule)));
       }
-      return absl::make_unique<AndAuthorizationMatcher>(std::move(matchers));
+      return absl::make_unique<AndAuthorizationMatcher>(
+          std::move(matchers));
     }
     case Rbac::Permission::RuleType::kOr: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
       for (const auto& rule : permission.permissions) {
-        matchers.push_back(AuthorizationMatcher::Create(std::move(*rule)));
+        matchers.push_back(
+            AuthorizationMatcher::Create(std::move(*rule)));
       }
-      return absl::make_unique<OrAuthorizationMatcher>(std::move(matchers));
+      return absl::make_unique<OrAuthorizationMatcher>(
+          std::move(matchers));
     }
     case Rbac::Permission::RuleType::kNot:
       return absl::make_unique<NotAuthorizationMatcher>(
-          AuthorizationMatcher::Create(std::move(*permission.permissions[0])));
+          AuthorizationMatcher::Create(
+              std::move(*permission.permissions[0])));
     case Rbac::Permission::RuleType::kAny:
       return absl::make_unique<AlwaysAuthorizationMatcher>();
     case Rbac::Permission::RuleType::kHeader:
@@ -51,9 +56,11 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
           std::move(permission.string_matcher));
     case Rbac::Permission::RuleType::kDestIp:
       return absl::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kDestIp, std::move(permission.ip));
+          IpAuthorizationMatcher::Type::kDestIp,
+          std::move(permission.ip));
     case Rbac::Permission::RuleType::kDestPort:
-      return absl::make_unique<PortAuthorizationMatcher>(permission.port);
+      return absl::make_unique<PortAuthorizationMatcher>(
+          permission.port);
     case Rbac::Permission::RuleType::kReqServerName:
       return absl::make_unique<ReqServerNameAuthorizationMatcher>(
           std::move(permission.string_matcher));
@@ -67,20 +74,25 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     case Rbac::Principal::RuleType::kAnd: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
       for (const auto& id : principal.principals) {
-        matchers.push_back(AuthorizationMatcher::Create(std::move(*id)));
+        matchers.push_back(
+            AuthorizationMatcher::Create(std::move(*id)));
       }
-      return absl::make_unique<AndAuthorizationMatcher>(std::move(matchers));
+      return absl::make_unique<AndAuthorizationMatcher>(
+          std::move(matchers));
     }
     case Rbac::Principal::RuleType::kOr: {
       std::vector<std::unique_ptr<AuthorizationMatcher>> matchers;
       for (const auto& id : principal.principals) {
-        matchers.push_back(AuthorizationMatcher::Create(std::move(*id)));
+        matchers.push_back(
+            AuthorizationMatcher::Create(std::move(*id)));
       }
-      return absl::make_unique<OrAuthorizationMatcher>(std::move(matchers));
+      return absl::make_unique<OrAuthorizationMatcher>(
+          std::move(matchers));
     }
     case Rbac::Principal::RuleType::kNot:
       return absl::make_unique<NotAuthorizationMatcher>(
-          AuthorizationMatcher::Create(std::move(*principal.principals[0])));
+          AuthorizationMatcher::Create(
+              std::move(*principal.principals[0])));
     case Rbac::Principal::RuleType::kAny:
       return absl::make_unique<AlwaysAuthorizationMatcher>();
     case Rbac::Principal::RuleType::kPrincipalName:
@@ -88,14 +100,16 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
           std::move(principal.string_matcher));
     case Rbac::Principal::RuleType::kSourceIp:
       return absl::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kSourceIp, std::move(principal.ip));
+          IpAuthorizationMatcher::Type::kSourceIp,
+          std::move(principal.ip));
     case Rbac::Principal::RuleType::kDirectRemoteIp:
       return absl::make_unique<IpAuthorizationMatcher>(
           IpAuthorizationMatcher::Type::kDirectRemoteIp,
           std::move(principal.ip));
     case Rbac::Principal::RuleType::kRemoteIp:
       return absl::make_unique<IpAuthorizationMatcher>(
-          IpAuthorizationMatcher::Type::kRemoteIp, std::move(principal.ip));
+          IpAuthorizationMatcher::Type::kRemoteIp,
+          std::move(principal.ip));
     case Rbac::Principal::RuleType::kHeader:
       return absl::make_unique<HeaderAuthorizationMatcher>(
           std::move(principal.header_matcher));
@@ -128,22 +142,26 @@ bool NotAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   return !matcher_->Matches(args);
 }
 
-bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
+bool HeaderAuthorizationMatcher::Matches(
+    const EvaluateArgs& args) const {
   std::string concatenated_value;
   return matcher_.Match(
       args.GetHeaderValue(matcher_.name(), &concatenated_value));
 }
 
-IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
+IpAuthorizationMatcher::IpAuthorizationMatcher(Type type,
+                                               Rbac::CidrRange range)
     : type_(type), prefix_len_(range.prefix_len) {
-  grpc_error_handle error =
-      grpc_string_to_sockaddr(&subnet_address_, range.address_prefix.c_str(),
-                              /*port does not matter here*/ 0);
+  grpc_error_handle error = grpc_string_to_sockaddr(
+      &subnet_address_, range.address_prefix.c_str(),
+      /*port does not matter here*/ 0);
   if (error == GRPC_ERROR_NONE) {
     grpc_sockaddr_mask_bits(&subnet_address_, prefix_len_);
   } else {
-    gpr_log(GPR_DEBUG, "CidrRange address %s is not IPv4/IPv6. Error: %s",
-            range.address_prefix.c_str(), grpc_error_std_string(error).c_str());
+    gpr_log(GPR_DEBUG,
+            "CidrRange address %s is not IPv4/IPv6. Error: %s",
+            range.address_prefix.c_str(),
+            grpc_error_std_string(error).c_str());
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -161,11 +179,13 @@ bool IpAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
       break;
     }
     default: {
-      // Currently we do not support matching rules containing "remote_ip".
+      // Currently we do not support matching rules containing
+      // "remote_ip".
       return false;
     }
   }
-  return grpc_sockaddr_match_subnet(&address, &subnet_address_, prefix_len_);
+  return grpc_sockaddr_match_subnet(&address, &subnet_address_,
+                                    prefix_len_);
 }
 
 bool PortAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
@@ -174,7 +194,8 @@ bool PortAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
 
 bool AuthenticatedAuthorizationMatcher::Matches(
     const EvaluateArgs& args) const {
-  if (args.GetTransportSecurityType() != GRPC_SSL_TRANSPORT_SECURITY_TYPE) {
+  if (args.GetTransportSecurityType() !=
+      GRPC_SSL_TRANSPORT_SECURITY_TYPE) {
     // Connection is not authenticated.
     return false;
   }
@@ -202,7 +223,8 @@ bool AuthenticatedAuthorizationMatcher::Matches(
   return false;
 }
 
-bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs&) const {
+bool ReqServerNameAuthorizationMatcher::Matches(
+    const EvaluateArgs&) const {
   // Currently we do not support matching rules containing
   // "requested_server_name".
   return false;
@@ -216,7 +238,8 @@ bool PathAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
   return false;
 }
 
-bool PolicyAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
+bool PolicyAuthorizationMatcher::Matches(
+    const EvaluateArgs& args) const {
   return permissions_->Matches(args) && principals_->Matches(args);
 }
 

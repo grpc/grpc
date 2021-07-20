@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -98,9 +98,12 @@ const char* grpc_status_code_to_string(grpc_status_code status) {
   }
 }
 
-bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
-  // The range of status code enum is [0, 16], 0 is OK, 16 is UNAUTHENTICATED.
-  if (status_int < GRPC_STATUS_OK || status_int > GRPC_STATUS_UNAUTHENTICATED) {
+bool grpc_status_code_from_int(int status_int,
+                               grpc_status_code* status) {
+  // The range of status code enum is [0, 16], 0 is OK, 16 is
+  // UNAUTHENTICATED.
+  if (status_int < GRPC_STATUS_OK ||
+      status_int > GRPC_STATUS_UNAUTHENTICATED) {
     *status = GRPC_STATUS_UNKNOWN;
     return false;
   }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,8 +36,8 @@ void SecurityRegisterHandshakerFactories();
 
 }  // namespace grpc_core
 
-// TODO(arjunroy): This is transitional to account for the new handshaker API
-// and will eventually be removed entirely.
+// TODO(arjunroy): This is transitional to account for the new
+// handshaker API and will eventually be removed entirely.
 grpc_handshaker* grpc_security_handshaker_create(
     tsi_handshaker* handshaker, grpc_security_connector* connector,
     const grpc_channel_args* args);

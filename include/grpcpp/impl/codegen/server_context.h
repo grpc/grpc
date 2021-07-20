@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -123,21 +123,23 @@ class ServerContextBase {
     return ::grpc::Timespec2Timepoint(deadline_);
   }
 
-  /// Return a \a gpr_timespec representation of the server call's deadline.
+  /// Return a \a gpr_timespec representation of the server call's
+  /// deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
 
   /// Add the (\a key, \a value) pair to the initial metadata
-  /// associated with a server call. These are made available at the client side
-  /// by the \a grpc::ClientContext::GetServerInitialMetadata() method.
+  /// associated with a server call. These are made available at the
+  /// client side by the \a
+  /// grpc::ClientContext::GetServerInitialMetadata() method.
   ///
-  /// \warning This method should only be called before sending initial metadata
-  /// to the client (which can happen explicitly, or implicitly when sending a
-  /// a response message or status to the client).
+  /// \warning This method should only be called before sending initial
+  /// metadata to the client (which can happen explicitly, or implicitly
+  /// when sending a a response message or status to the client).
   ///
   /// \param key The metadata key. If \a value is binary data, it must
   /// end in "-bin".
-  /// \param value The metadata value. If its value is binary, the key name
-  /// must end in "-bin".
+  /// \param value The metadata value. If its value is binary, the key
+  /// name must end in "-bin".
   ///
   /// Metadata must conform to the following format:
   /**
@@ -145,24 +147,26 @@ class ServerContextBase {
   Custom-Metadata -> Binary-Header / ASCII-Header
   Binary-Header -> {Header-Name "-bin" } {binary value}
   ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ -
+  . ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   \endverbatim
   **/
-  void AddInitialMetadata(const std::string& key, const std::string& value);
+  void AddInitialMetadata(const std::string& key,
+                          const std::string& value);
 
   /// Add the (\a key, \a value) pair to the initial metadata
-  /// associated with a server call. These are made available at the client
-  /// side by the \a grpc::ClientContext::GetServerTrailingMetadata() method.
+  /// associated with a server call. These are made available at the
+  /// client side by the \a
+  /// grpc::ClientContext::GetServerTrailingMetadata() method.
   ///
   /// \warning This method should only be called before sending trailing
-  /// metadata to the client (which happens when the call is finished and a
-  /// status is sent to the client).
+  /// metadata to the client (which happens when the call is finished
+  /// and a status is sent to the client).
   ///
   /// \param key The metadata key. If \a value is binary data,
   /// it must end in "-bin".
-  /// \param value The metadata value. If its value is binary, the key name
-  /// must end in "-bin".
+  /// \param value The metadata value. If its value is binary, the key
+  /// name must end in "-bin".
   ///
   /// Metadata must conform to the following format:
   /**
@@ -170,56 +174,62 @@ class ServerContextBase {
   Custom-Metadata -> Binary-Header / ASCII-Header
   Binary-Header -> {Header-Name "-bin" } {binary value}
   ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ -
+  . ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   \endverbatim
   **/
-  void AddTrailingMetadata(const std::string& key, const std::string& value);
+  void AddTrailingMetadata(const std::string& key,
+                           const std::string& value);
 
-  /// Return whether this RPC failed before the server could provide its status
-  /// back to the client. This could be because of explicit API cancellation
-  /// from the client-side or server-side, because of deadline exceeded, network
-  /// connection reset, HTTP/2 parameter configuration (e.g., max message size,
-  /// max connection age), etc. It does NOT include failure due to a non-OK
-  /// status return from the server application's request handler, including
-  /// Status::CANCELLED.
+  /// Return whether this RPC failed before the server could provide its
+  /// status back to the client. This could be because of explicit API
+  /// cancellation from the client-side or server-side, because of
+  /// deadline exceeded, network connection reset, HTTP/2 parameter
+  /// configuration (e.g., max message size, max connection age), etc.
+  /// It does NOT include failure due to a non-OK status return from the
+  /// server application's request handler, including Status::CANCELLED.
   ///
-  /// IsCancelled is always safe to call when using sync or callback API.
-  /// When using async API, it is only safe to call IsCancelled after
-  /// the AsyncNotifyWhenDone tag has been delivered. Thread-safe.
+  /// IsCancelled is always safe to call when using sync or callback
+  /// API. When using async API, it is only safe to call IsCancelled
+  /// after the AsyncNotifyWhenDone tag has been delivered. Thread-safe.
   bool IsCancelled() const;
 
   /// Cancel the Call from the server. This is a best-effort API and
-  /// depending on when it is called, the RPC may still appear successful to
-  /// the client. For example, if TryCancel() is called on a separate thread, it
-  /// might race with the server handler which might return success to the
-  /// client before TryCancel() was even started by the thread.
+  /// depending on when it is called, the RPC may still appear
+  /// successful to the client. For example, if TryCancel() is called on
+  /// a separate thread, it might race with the server handler which
+  /// might return success to the client before TryCancel() was even
+  /// started by the thread.
   ///
-  /// It is the caller's responsibility to prevent such races and ensure that if
-  /// TryCancel() is called, the serverhandler must return Status::CANCELLED.
-  /// The only exception is that if the serverhandler is already returning an
-  /// error status code, it is ok to not return Status::CANCELLED even if
-  /// TryCancel() was called.
+  /// It is the caller's responsibility to prevent such races and ensure
+  /// that if TryCancel() is called, the serverhandler must return
+  /// Status::CANCELLED. The only exception is that if the serverhandler
+  /// is already returning an error status code, it is ok to not return
+  /// Status::CANCELLED even if TryCancel() was called.
   ///
-  /// For reasons such as the above, it is generally preferred to explicitly
-  /// finish an RPC by returning Status::CANCELLED rather than using TryCancel.
+  /// For reasons such as the above, it is generally preferred to
+  /// explicitly finish an RPC by returning Status::CANCELLED rather
+  /// than using TryCancel.
   ///
-  /// Note that TryCancel() does not change any of the tags that are pending
-  /// on the completion queue. All pending tags will still be delivered
-  /// (though their ok result may reflect the effect of cancellation).
+  /// Note that TryCancel() does not change any of the tags that are
+  /// pending on the completion queue. All pending tags will still be
+  /// delivered (though their ok result may reflect the effect of
+  /// cancellation).
   void TryCancel() const;
 
-  /// Return a collection of initial metadata key-value pairs sent from the
-  /// client. Note that keys may happen more than
-  /// once (ie, a \a std::multimap is returned).
+  /// Return a collection of initial metadata key-value pairs sent from
+  /// the client. Note that keys may happen more than once (ie, a \a
+  /// std::multimap is returned).
   ///
-  /// It is safe to use this method after initial metadata has been received,
-  /// Calls always begin with the client sending initial metadata, so this is
-  /// safe to access as soon as the call has begun on the server side.
+  /// It is safe to use this method after initial metadata has been
+  /// received, Calls always begin with the client sending initial
+  /// metadata, so this is safe to access as soon as the call has begun
+  /// on the server side.
   ///
-  /// \return A multimap of initial metadata key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
-      const {
+  /// \return A multimap of initial metadata key-value pairs from the
+  /// server.
+  const std::multimap<grpc::string_ref, grpc::string_ref>&
+  client_metadata() const {
     return *client_metadata_.map();
   }
 
@@ -236,24 +246,28 @@ class ServerContextBase {
     compression_level_ = level;
   }
 
-  /// Return a bool indicating whether the compression level for this call
-  /// has been set (either implicitly or through a previous call to
+  /// Return a bool indicating whether the compression level for this
+  /// call has been set (either implicitly or through a previous call to
   /// \a set_compression_level.
   bool compression_level_set() const { return compression_level_set_; }
 
-  /// Return the compression algorithm the server call will request be used.
-  /// Note that the gRPC runtime may decide to ignore this request, for example,
-  /// due to resource constraints, or if the server is aware the client doesn't
-  /// support the requested algorithm.
+  /// Return the compression algorithm the server call will request be
+  /// used. Note that the gRPC runtime may decide to ignore this
+  /// request, for example, due to resource constraints, or if the
+  /// server is aware the client doesn't support the requested
+  /// algorithm.
   grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
   }
-  /// Set \a algorithm to be the compression algorithm used for the server call.
+  /// Set \a algorithm to be the compression algorithm used for the
+  /// server call.
   ///
-  /// \param algorithm The compression algorithm used for the server call.
+  /// \param algorithm The compression algorithm used for the server
+  /// call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
-  /// Set the serialized load reporting costs in \a cost_data for the call.
+  /// Set the serialized load reporting costs in \a cost_data for the
+  /// call.
   void SetLoadReportingCosts(const std::vector<std::string>& cost_data);
 
   /// Return the authentication context for this server call.
@@ -267,9 +281,9 @@ class ServerContextBase {
   }
 
   /// Return the peer uri in a string.
-  /// WARNING: this value is never authenticated or subject to any security
-  /// related code. It must not be used for any authentication related
-  /// functionality. Instead, use auth_context.
+  /// WARNING: this value is never authenticated or subject to any
+  /// security related code. It must not be used for any authentication
+  /// related functionality. Instead, use auth_context.
   std::string peer() const;
 
   /// Get the census context associated with this server call.
@@ -282,36 +296,41 @@ class ServerContextBase {
  protected:
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
-  /// IsCancelled() can then be called to check whether the rpc was cancelled.
-  /// TODO(vjpai): Fix this so that the tag is returned even if the call never
-  /// starts (https://github.com/grpc/grpc/issues/10136).
+  /// IsCancelled() can then be called to check whether the rpc was
+  /// cancelled.
+  /// TODO(vjpai): Fix this so that the tag is returned even if the call
+  /// never starts (https://github.com/grpc/grpc/issues/10136).
   void AsyncNotifyWhenDone(void* tag) {
     has_notify_when_done_tag_ = true;
     async_notify_when_done_tag_ = tag;
   }
 
-  /// NOTE: This is an API for advanced users who need custom allocators.
-  /// Get and maybe mutate the allocator state associated with the current RPC.
-  /// Currently only applicable for callback unary RPC methods.
-  RpcAllocatorState* GetRpcAllocatorState() { return message_allocator_state_; }
+  /// NOTE: This is an API for advanced users who need custom
+  /// allocators. Get and maybe mutate the allocator state associated
+  /// with the current RPC. Currently only applicable for callback unary
+  /// RPC methods.
+  RpcAllocatorState* GetRpcAllocatorState() {
+    return message_allocator_state_;
+  }
 
-  /// Get a library-owned default unary reactor for use in minimal reaction
-  /// cases. This supports typical unary RPC usage of providing a response and
-  /// status. It supports immediate Finish (finish from within the method
-  /// handler) or delayed Finish (finish called after the method handler
-  /// invocation). It does not support reacting to cancellation or completion,
-  /// or early sending of initial metadata. Since this is a library-owned
-  /// reactor, it should not be delete'd or freed in any way. This is more
-  /// efficient than creating a user-owned reactor both because of avoiding an
-  /// allocation and because its minimal reactions are optimized using a core
-  /// surface flag that allows their reactions to run inline without any
+  /// Get a library-owned default unary reactor for use in minimal
+  /// reaction cases. This supports typical unary RPC usage of providing
+  /// a response and status. It supports immediate Finish (finish from
+  /// within the method handler) or delayed Finish (finish called after
+  /// the method handler invocation). It does not support reacting to
+  /// cancellation or completion, or early sending of initial metadata.
+  /// Since this is a library-owned reactor, it should not be delete'd
+  /// or freed in any way. This is more efficient than creating a
+  /// user-owned reactor both because of avoiding an allocation and
+  /// because its minimal reactions are optimized using a core surface
+  /// flag that allows their reactions to run inline without any
   /// thread-hop.
   ///
-  /// This method should not be called more than once or called after return
-  /// from the method handler.
+  /// This method should not be called more than once or called after
+  /// return from the method handler.
   ::grpc::ServerUnaryReactor* DefaultReactor() {
-    // Short-circuit the case where a default reactor was already set up by
-    // the TestPeer.
+    // Short-circuit the case where a default reactor was already set up
+    // by the TestPeer.
     if (test_unary_ != nullptr) {
       return reinterpret_cast<Reactor*>(&default_reactor_);
     }
@@ -334,7 +353,9 @@ class ServerContextBase {
     context_allocator_ = context_allocator;
   }
 
-  ContextAllocator* context_allocator() const { return context_allocator_; }
+  ContextAllocator* context_allocator() const {
+    return context_allocator_;
+  }
 
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
@@ -358,8 +379,8 @@ class ServerContextBase {
   friend class ::grpc::internal::ServerReaderWriterBody;
   template <class ResponseType>
   friend void ::grpc::internal::UnaryRunHandlerHelper(
-      const internal::MethodHandler::HandlerParameter& param, ResponseType* rsp,
-      Status& status);
+      const internal::MethodHandler::HandlerParameter& param,
+      ResponseType* rsp, Status& status);
   template <class ServiceType, class RequestType, class ResponseType,
             class BaseRequestType, class BaseResponseType>
   friend class ::grpc::internal::RpcMethodHandler;
@@ -399,16 +420,19 @@ class ServerContextBase {
 
   void set_call(grpc_call* call) { call_.call = call; }
 
-  void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
+  void BindDeadlineAndMetadata(gpr_timespec deadline,
+                               grpc_metadata_array* arr);
 
   uint32_t initial_metadata_flags() const { return 0; }
 
   ::grpc::experimental::ServerRpcInfo* set_server_rpc_info(
       const char* method, ::grpc::internal::RpcMethod::RpcType type,
       const std::vector<std::unique_ptr<
-          ::grpc::experimental::ServerInterceptorFactoryInterface>>& creators) {
+          ::grpc::experimental::ServerInterceptorFactoryInterface>>&
+          creators) {
     if (!creators.empty()) {
-      rpc_info_ = new ::grpc::experimental::ServerRpcInfo(this, method, type);
+      rpc_info_ =
+          new ::grpc::experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
     }
     return rpc_info_;
@@ -426,10 +450,11 @@ class ServerContextBase {
     grpc_call* call = nullptr;
   };
 
-  // NOTE: call_ must be the first data member of this object so that its
-  //       destructor is the last to be called, since its destructor may unref
-  //       the underlying core call which holds the arena that may be used to
-  //       hold this object.
+  // NOTE: call_ must be the first data member of this object so that
+  // its
+  //       destructor is the last to be called, since its destructor may
+  //       unref the underlying core call which holds the arena that may
+  //       be used to hold this object.
   CallWrapper call_;
 
   CompletionOp* completion_op_ = nullptr;
@@ -449,8 +474,9 @@ class ServerContextBase {
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage>
+  ::grpc::internal::CallOpSet<
+      ::grpc::internal::CallOpSendInitialMetadata,
+      ::grpc::internal::CallOpSendMessage>
       pending_ops_;
   bool has_pending_ops_ = false;
 
@@ -462,16 +488,18 @@ class ServerContextBase {
    public:
     void OnCancel() override {}
     void OnDone() override {}
-    // Override InternalInlineable for this class since its reactions are
-    // trivial and thus do not need to be run from the executor (triggering a
-    // thread hop). This should only be used by internal reactors (thus the
-    // name) and not by user application code.
+    // Override InternalInlineable for this class since its reactions
+    // are trivial and thus do not need to be run from the executor
+    // (triggering a thread hop). This should only be used by internal
+    // reactors (thus the name) and not by user application code.
     bool InternalInlineable() override { return true; }
   };
 
-  void SetupTestDefaultReactor(std::function<void(::grpc::Status)> func) {
+  void SetupTestDefaultReactor(
+      std::function<void(::grpc::Status)> func) {
     // NOLINTNEXTLINE(modernize-make-unique)
-    test_unary_.reset(new TestServerCallbackUnary(this, std::move(func)));
+    test_unary_.reset(
+        new TestServerCallbackUnary(this, std::move(func)));
   }
   bool test_status_set() const {
     return (test_unary_ != nullptr) && test_unary_->status_set();
@@ -499,7 +527,9 @@ class ServerContextBase {
 
    private:
     void CallOnDone() override {}
-    ::grpc::internal::ServerReactor* reactor() override { return reactor_; }
+    ::grpc::internal::ServerReactor* reactor() override {
+      return reactor_;
+    }
 
     ::grpc::ServerUnaryReactor* const reactor_;
     std::atomic_bool status_set_{false};
@@ -516,8 +546,8 @@ class ServerContextBase {
   std::unique_ptr<TestServerCallbackUnary> test_unary_;
 };
 
-/// A ServerContext or CallbackServerContext allows the code implementing a
-/// service handler to:
+/// A ServerContext or CallbackServerContext allows the code
+/// implementing a service handler to:
 ///
 /// - Add custom initial and trailing metadata key-value pairs that will
 ///   propagated to the client side.
@@ -525,13 +555,15 @@ class ServerContextBase {
 /// - Access metadata coming from the client.
 /// - Get performance metrics (ie, census).
 ///
-/// Context settings are only relevant to the call handler they are supplied to,
-/// that is to say, they aren't sticky across multiple calls. Some of these
-/// settings, such as the compression options, can be made persistent at server
-/// construction time by specifying the appropriate \a ChannelArguments
-/// to a \a grpc::ServerBuilder, via \a ServerBuilder::AddChannelArgument.
+/// Context settings are only relevant to the call handler they are
+/// supplied to, that is to say, they aren't sticky across multiple
+/// calls. Some of these settings, such as the compression options, can
+/// be made persistent at server construction time by specifying the
+/// appropriate \a ChannelArguments to a \a grpc::ServerBuilder, via \a
+/// ServerBuilder::AddChannelArgument.
 ///
-/// \warning ServerContext instances should \em not be reused across rpcs.
+/// \warning ServerContext instances should \em not be reused across
+/// rpcs.
 class ServerContext : public ServerContextBase {
  public:
   ServerContext() {}  // for async calls
@@ -574,8 +606,8 @@ class ServerContext : public ServerContextBase {
 
 class CallbackServerContext : public ServerContextBase {
  public:
-  /// Public constructors are for direct use only by mocking tests. In practice,
-  /// these objects will be owned by the library.
+  /// Public constructors are for direct use only by mocking tests. In
+  /// practice, these objects will be owned by the library.
   CallbackServerContext() {}
 
   using ServerContextBase::AddInitialMetadata;
@@ -608,21 +640,25 @@ class CallbackServerContext : public ServerContextBase {
 
   /// Prevent copying.
   CallbackServerContext(const CallbackServerContext&) = delete;
-  CallbackServerContext& operator=(const CallbackServerContext&) = delete;
+  CallbackServerContext& operator=(const CallbackServerContext&) =
+      delete;
 };
 
 /// A CallbackServerContext allows users to use the contents of the
-/// CallbackServerContext or GenericCallbackServerContext structure for the
-/// callback API.
-/// The library will invoke the allocator any time a new call is initiated.
-/// and call the Release method after the server OnDone.
+/// CallbackServerContext or GenericCallbackServerContext structure for
+/// the callback API. The library will invoke the allocator any time a
+/// new call is initiated. and call the Release method after the server
+/// OnDone.
 class ContextAllocator {
  public:
   virtual ~ContextAllocator() {}
 
-  virtual CallbackServerContext* NewCallbackServerContext() { return nullptr; }
+  virtual CallbackServerContext* NewCallbackServerContext() {
+    return nullptr;
+  }
 
-  virtual GenericCallbackServerContext* NewGenericCallbackServerContext() {
+  virtual GenericCallbackServerContext*
+  NewGenericCallbackServerContext() {
     return nullptr;
   }
 
@@ -633,9 +669,9 @@ class ContextAllocator {
 
 }  // namespace grpc
 
-static_assert(
-    std::is_base_of<::grpc::ServerContextBase, ::grpc::ServerContext>::value,
-    "improper base class");
+static_assert(std::is_base_of<::grpc::ServerContextBase,
+                              ::grpc::ServerContext>::value,
+              "improper base class");
 static_assert(std::is_base_of<::grpc::ServerContextBase,
                               ::grpc::CallbackServerContext>::value,
               "improper base class");

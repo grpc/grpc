@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -49,13 +49,15 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     }
     Status recv_status;
     ServerContext svr_ctx;
-    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(
+        &svr_ctx);
     service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
                               fixture->cq(), tag(0));
     std::unique_ptr<EchoTestService::Stub> stub(
         EchoTestService::NewStub(fixture->channel()));
     ClientContext cli_ctx;
-    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+    auto request_rw =
+        stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);
     void* t;
     bool ok;
@@ -118,13 +120,15 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     }
     Status recv_status;
     ServerContext svr_ctx;
-    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(
+        &svr_ctx);
     service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
                               fixture->cq(), tag(0));
     std::unique_ptr<EchoTestService::Stub> stub(
         EchoTestService::NewStub(fixture->channel()));
     ClientContext cli_ctx;
-    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+    auto request_rw =
+        stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
     int need_tags = (1 << 0) | (1 << 1);
     void* t;
     bool ok;

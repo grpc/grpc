@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -53,10 +53,11 @@ void grpc_channel_init_register_stage(grpc_channel_stack_type type,
                                       void* stage_arg) {
   GPR_ASSERT(!g_finalized);
   if (g_slots[type].cap_slots == g_slots[type].num_slots) {
-    g_slots[type].cap_slots = GPR_MAX(8, 3 * g_slots[type].cap_slots / 2);
-    g_slots[type].slots = static_cast<stage_slot*>(
-        gpr_realloc(g_slots[type].slots,
-                    g_slots[type].cap_slots * sizeof(*g_slots[type].slots)));
+    g_slots[type].cap_slots =
+        GPR_MAX(8, 3 * g_slots[type].cap_slots / 2);
+    g_slots[type].slots = static_cast<stage_slot*>(gpr_realloc(
+        g_slots[type].slots,
+        g_slots[type].cap_slots * sizeof(*g_slots[type].slots)));
   }
   stage_slot* s = &g_slots[type].slots[g_slots[type].num_slots++];
   s->insertion_order = g_slots[type].num_slots;
@@ -77,8 +78,8 @@ static int compare_slots(const void* a, const void* b) {
 void grpc_channel_init_finalize(void) {
   GPR_ASSERT(!g_finalized);
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
-    qsort(g_slots[i].slots, g_slots[i].num_slots, sizeof(*g_slots[i].slots),
-          compare_slots);
+    qsort(g_slots[i].slots, g_slots[i].num_slots,
+          sizeof(*g_slots[i].slots), compare_slots);
   }
   g_finalized = true;
 }
@@ -95,8 +96,8 @@ bool grpc_channel_init_create_stack(grpc_channel_stack_builder* builder,
                                     grpc_channel_stack_type type) {
   GPR_ASSERT(g_finalized);
 
-  grpc_channel_stack_builder_set_name(builder,
-                                      grpc_channel_stack_type_string(type));
+  grpc_channel_stack_builder_set_name(
+      builder, grpc_channel_stack_type_string(type));
 
   for (size_t i = 0; i < g_slots[type].num_slots; i++) {
     const stage_slot* slot = &g_slots[type].slots[i];

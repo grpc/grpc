@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -54,8 +54,9 @@ size_t RetryServiceConfigParser::ParserIndex() {
 }
 
 void RetryServiceConfigParser::Register() {
-  g_retry_service_config_parser_index = ServiceConfigParser::RegisterParser(
-      absl::make_unique<RetryServiceConfigParser>());
+  g_retry_service_config_parser_index =
+      ServiceConfigParser::RegisterParser(
+          absl::make_unique<RetryServiceConfigParser>());
 }
 
 namespace {
@@ -79,7 +80,8 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
         "number"));
   } else {
     *max_milli_tokens =
-        gpr_parse_nonnegative_int(it->second.string_value().c_str()) * 1000;
+        gpr_parse_nonnegative_int(it->second.string_value().c_str()) *
+        1000;
     if (*max_milli_tokens <= 0) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:retryThrottling field:maxTokens error:should be "
@@ -112,7 +114,8 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:retryThrottling field:tokenRatio error:Failed "
             "parsing"));
-        return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
+        return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling",
+                                             &error_list);
       }
       uint32_t decimal_multiplier = 1;
       for (size_t i = 0; i < (3 - decimal_len); ++i) {
@@ -125,7 +128,8 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:retryThrottling field:tokenRatio error:Failed "
           "parsing"));
-      return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
+      return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling",
+                                           &error_list);
     }
     *milli_token_ratio =
         static_cast<int>((whole_value * multiplier) + decimal_value);
@@ -141,16 +145,16 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParseGlobalParams(const grpc_channel_args* /*args*/,
-                                            const Json& json,
-                                            grpc_error_handle* error) {
+RetryServiceConfigParser::ParseGlobalParams(
+    const grpc_channel_args* /*args*/, const Json& json,
+    grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   auto it = json.object_value().find("retryThrottling");
   if (it == json.object_value().end()) return nullptr;
   intptr_t max_milli_tokens = 0;
   intptr_t milli_token_ratio = 0;
-  *error =
-      ParseRetryThrottling(it->second, &max_milli_tokens, &milli_token_ratio);
+  *error = ParseRetryThrottling(it->second, &max_milli_tokens,
+                                &milli_token_ratio);
   if (*error != GRPC_ERROR_NONE) return nullptr;
   return absl::make_unique<RetryGlobalConfig>(max_milli_tokens,
                                               milli_token_ratio);
@@ -192,8 +196,9 @@ grpc_error_handle ParseRetryPolicy(
     }
   }
   // Parse initialBackoff.
-  if (ParseJsonObjectFieldAsDuration(json.object_value(), "initialBackoff",
-                                     initial_backoff, &error_list) &&
+  if (ParseJsonObjectFieldAsDuration(json.object_value(),
+                                     "initialBackoff", initial_backoff,
+                                     &error_list) &&
       *initial_backoff == 0) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:initialBackoff error:must be greater than 0"));
@@ -215,8 +220,8 @@ grpc_error_handle ParseRetryPolicy(
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:backoffMultiplier error:should be of type number"));
     } else {
-      if (sscanf(it->second.string_value().c_str(), "%f", backoff_multiplier) !=
-          1) {
+      if (sscanf(it->second.string_value().c_str(), "%f",
+                 backoff_multiplier) != 1) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:backoffMultiplier error:failed to parse"));
       } else if (*backoff_multiplier <= 0) {
@@ -235,15 +240,17 @@ grpc_error_handle ParseRetryPolicy(
       for (const Json& element : it->second.array_value()) {
         if (element.type() != Json::Type::STRING) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:retryableStatusCodes error:status codes should be of type "
+              "field:retryableStatusCodes error:status codes should be "
+              "of type "
               "string"));
           continue;
         }
         grpc_status_code status;
-        if (!grpc_status_code_from_string(element.string_value().c_str(),
-                                          &status)) {
+        if (!grpc_status_code_from_string(
+                element.string_value().c_str(), &status)) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:retryableStatusCodes error:failed to parse status code"));
+              "field:retryableStatusCodes error:failed to parse status "
+              "code"));
           continue;
         }
         retryable_status_codes->Add(status);
@@ -254,22 +261,26 @@ grpc_error_handle ParseRetryPolicy(
   it = json.object_value().find("perAttemptRecvTimeout");
   if (it != json.object_value().end()) {
     grpc_millis per_attempt_recv_timeout_value;
-    if (!ParseDurationFromJson(it->second, &per_attempt_recv_timeout_value)) {
+    if (!ParseDurationFromJson(it->second,
+                               &per_attempt_recv_timeout_value)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:perAttemptRecvTimeout error:type must be STRING of the "
+          "field:perAttemptRecvTimeout error:type must be STRING of "
+          "the "
           "form given by google.proto.Duration."));
     } else {
       *per_attempt_recv_timeout = per_attempt_recv_timeout_value;
-      // TODO(roth): As part of implementing hedging, relax this check such
-      // that we allow a value of 0 if a hedging policy is specified.
+      // TODO(roth): As part of implementing hedging, relax this check
+      // such that we allow a value of 0 if a hedging policy is
+      // specified.
       if (per_attempt_recv_timeout_value == 0) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:perAttemptRecvTimeout error:must be greater than 0"));
+            "field:perAttemptRecvTimeout error:must be greater than "
+            "0"));
       }
     }
   } else if (retryable_status_codes->Empty()) {
-    // If perAttemptRecvTimeout not present, retryableStatusCodes must be
-    // non-empty.
+    // If perAttemptRecvTimeout not present, retryableStatusCodes must
+    // be non-empty.
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:retryableStatusCodes error:must be non-empty if "
         "perAttemptRecvTimeout not present"));
@@ -295,7 +306,8 @@ RetryServiceConfigParser::ParsePerMethodParams(
   absl::optional<grpc_millis> per_attempt_recv_timeout;
   *error = ParseRetryPolicy(it->second, &max_attempts, &initial_backoff,
                             &max_backoff, &backoff_multiplier,
-                            &retryable_status_codes, &per_attempt_recv_timeout);
+                            &retryable_status_codes,
+                            &per_attempt_recv_timeout);
   if (*error != GRPC_ERROR_NONE) return nullptr;
   return absl::make_unique<RetryMethodConfig>(
       max_attempts, initial_backoff, max_backoff, backoff_multiplier,

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -72,7 +72,8 @@ static void get_cpu_usage(unsigned long long* total_cpu_time,
   // Use the parameters to avoid unused-parameter warning
   (void)total_cpu_time;
   (void)idle_cpu_time;
-  gpr_log(GPR_INFO, "get_cpu_usage(): Non-linux platform is not supported.");
+  gpr_log(GPR_INFO,
+          "get_cpu_usage(): Non-linux platform is not supported.");
 #endif
 }
 

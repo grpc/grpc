@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -59,7 +59,8 @@ static grpc_error_handle posix_blocking_resolve_address(
   if (host.empty()) {
     err = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+        GRPC_ERROR_STR_TARGET_ADDRESS,
+        grpc_slice_from_copied_string(name));
     goto done;
   }
 
@@ -67,7 +68,8 @@ static grpc_error_handle posix_blocking_resolve_address(
     if (default_port == nullptr) {
       err = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+          GRPC_ERROR_STR_TARGET_ADDRESS,
+          grpc_slice_from_copied_string(name));
       goto done;
     }
     port = default_port;
@@ -100,14 +102,15 @@ static grpc_error_handle posix_blocking_resolve_address(
     err = grpc_error_set_str(
         grpc_error_set_str(
             grpc_error_set_str(
-                grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
-                    GRPC_ERROR_INT_ERRNO, s),
+                grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                       gai_strerror(s)),
+                                   GRPC_ERROR_INT_ERRNO, s),
                 GRPC_ERROR_STR_OS_ERROR,
                 grpc_slice_from_static_string(gai_strerror(s))),
             GRPC_ERROR_STR_SYSCALL,
             grpc_slice_from_static_string("getaddrinfo")),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+        GRPC_ERROR_STR_TARGET_ADDRESS,
+        grpc_slice_from_copied_string(name));
     goto done;
   }
 
@@ -122,7 +125,8 @@ static grpc_error_handle posix_blocking_resolve_address(
       gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs));
   i = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
-    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
+    memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr,
+           resp->ai_addrlen);
     (*addresses)->addrs[i].len = resp->ai_addrlen;
     i++;
   }
@@ -147,18 +151,18 @@ struct request {
  * grpc_blocking_resolve_address */
 static void do_request_thread(void* rp, grpc_error_handle /*error*/) {
   request* r = static_cast<request*>(rp);
-  grpc_core::ExecCtx::Run(
-      DEBUG_LOCATION, r->on_done,
-      grpc_blocking_resolve_address(r->name, r->default_port, r->addrs_out));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
+                          grpc_blocking_resolve_address(
+                              r->name, r->default_port, r->addrs_out));
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r);
 }
 
-static void posix_resolve_address(const char* name, const char* default_port,
-                                  grpc_pollset_set* /*interested_parties*/,
-                                  grpc_closure* on_done,
-                                  grpc_resolved_addresses** addrs) {
+static void posix_resolve_address(
+    const char* name, const char* default_port,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
+    grpc_resolved_addresses** addrs) {
   request* r = static_cast<request*>(gpr_malloc(sizeof(request)));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r, nullptr);
   r->name = gpr_strdup(name);

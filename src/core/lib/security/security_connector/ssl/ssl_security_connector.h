@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,12 +40,14 @@ struct grpc_ssl_config {
 /* Creates an SSL channel_security_connector.
    - request_metadata_creds is the credentials object which metadata
      will be sent with each request. This parameter can be NULL.
-   - config is the SSL config to be used for the SSL channel establishment.
+   - config is the SSL config to be used for the SSL channel
+  establishment.
    - is_client should be 0 for a server or a non-0 value for a client.
    - secure_peer_name is the secure peer name that should be checked in
-     grpc_channel_security_connector_check_peer. This parameter may be NULL in
-     which case the peer name will not be checked. Note that if this parameter
-     is not NULL, then, pem_root_certs should not be NULL either.
+     grpc_channel_security_connector_check_peer. This parameter may be
+  NULL in which case the peer name will not be checked. Note that if
+  this parameter is not NULL, then, pem_root_certs should not be NULL
+  either.
    - sc is a pointer on the connector to be created.
   This function returns GRPC_SECURITY_OK in case of success or a
   specific error code otherwise.
@@ -53,7 +55,8 @@ struct grpc_ssl_config {
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials>
+        request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
     const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache);
@@ -69,14 +72,16 @@ struct grpc_ssl_server_config {
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
 };
 /* Creates an SSL server_security_connector.
-   - config is the SSL config to be used for the SSL channel establishment.
+   - config is the SSL config to be used for the SSL channel
+  establishment.
    - sc is a pointer on the connector to be created.
   This function returns GRPC_SECURITY_OK in case of success or a
   specific error code otherwise.
 */
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
-    grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials);
+    grpc_core::RefCountedPtr<grpc_server_credentials>
+        server_credentials);
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_SSL_SECURITY_CONNECTOR_H \
         */

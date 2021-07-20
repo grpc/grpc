@@ -9,9 +9,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,7 +47,8 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     Unref();
     return true;
   }
-  void Set(::grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+  void Set(::grpc::CompletionQueue* cq, gpr_timespec deadline,
+           void* tag) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
@@ -66,8 +67,8 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
           alarm->cq_ = nullptr;
           grpc_cq_end_op(
               cq, alarm, error,
-              [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, arg,
-              &alarm->completion_);
+              [](void* /*arg*/, grpc_cq_completion* /*completion*/) {},
+              arg, &alarm->completion_);
           GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
         },
         this, grpc_schedule_on_exec_ctx);
@@ -77,7 +78,8 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
-    // Don't use any CQ at all. Instead just use the timer to fire the function
+    // Don't use any CQ at all. Instead just use the timer to fire the
+    // function
     callback_ = std::move(f);
     Ref();
     GRPC_CLOSURE_INIT(
@@ -132,23 +134,25 @@ Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
   g_gli_initializer.summon();
 }
 
-void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
-                        void* tag) {
+void Alarm::SetInternal(::grpc::CompletionQueue* cq,
+                        gpr_timespec deadline, void* tag) {
   // Note that we know that alarm_ is actually an internal::AlarmImpl
-  // but we declared it as the base pointer to avoid a forward declaration
-  // or exposing core data structures in the C++ public headers.
-  // Thus it is safe to use a static_cast to the subclass here, and the
-  // C++ style guide allows us to do so in this case
+  // but we declared it as the base pointer to avoid a forward
+  // declaration or exposing core data structures in the C++ public
+  // headers. Thus it is safe to use a static_cast to the subclass here,
+  // and the C++ style guide allows us to do so in this case
   static_cast<internal::AlarmImpl*>(alarm_)->Set(cq, deadline, tag);
 }
 
-void Alarm::SetInternal(gpr_timespec deadline, std::function<void(bool)> f) {
+void Alarm::SetInternal(gpr_timespec deadline,
+                        std::function<void(bool)> f) {
   // Note that we know that alarm_ is actually an internal::AlarmImpl
-  // but we declared it as the base pointer to avoid a forward declaration
-  // or exposing core data structures in the C++ public headers.
-  // Thus it is safe to use a static_cast to the subclass here, and the
-  // C++ style guide allows us to do so in this case
-  static_cast<internal::AlarmImpl*>(alarm_)->Set(deadline, std::move(f));
+  // but we declared it as the base pointer to avoid a forward
+  // declaration or exposing core data structures in the C++ public
+  // headers. Thus it is safe to use a static_cast to the subclass here,
+  // and the C++ style guide allows us to do so in this case
+  static_cast<internal::AlarmImpl*>(alarm_)->Set(deadline,
+                                                 std::move(f));
 }
 
 Alarm::~Alarm() {
@@ -157,5 +161,7 @@ Alarm::~Alarm() {
   }
 }
 
-void Alarm::Cancel() { static_cast<internal::AlarmImpl*>(alarm_)->Cancel(); }
+void Alarm::Cancel() {
+  static_cast<internal::AlarmImpl*>(alarm_)->Cancel();
+}
 }  // namespace grpc

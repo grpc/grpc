@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,11 +43,11 @@ class KeyValueStoreClient {
   KeyValueStoreClient(std::shared_ptr<Channel> channel)
       : stub_(KeyValueStore::NewStub(channel)) {}
 
-  // Requests each key in the vector and displays the key and its corresponding
-  // value as a pair
+  // Requests each key in the vector and displays the key and its
+  // corresponding value as a pair
   void GetValues(const std::vector<std::string>& keys) {
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
+    // Context for the client. It could be used to convey extra
+    // information to the server and/or tweak certain RPC behaviors.
     ClientContext context;
     auto stream = stub_->GetValues(&context);
     for (const auto& key : keys) {
@@ -75,21 +75,23 @@ class KeyValueStoreClient {
 };
 
 int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
-  // In this example, we are using a cache which has been added in as an
-  // interceptor.
+  // Instantiate the client. It requires a channel, out of which the
+  // actual RPCs are created. This channel models a connection to an
+  // endpoint (in this case, localhost at port 50051). We indicate that
+  // the channel isn't authenticated (use of
+  // InsecureChannelCredentials()). In this example, we are using a
+  // cache which has been added in as an interceptor.
   grpc::ChannelArguments args;
-  std::vector<
-      std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+  std::vector<std::unique_ptr<
+      grpc::experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
-  interceptor_creators.push_back(std::unique_ptr<CachingInterceptorFactory>(
-      new CachingInterceptorFactory()));
-  auto channel = grpc::experimental::CreateCustomChannelWithInterceptors(
-      "localhost:50051", grpc::InsecureChannelCredentials(), args,
-      std::move(interceptor_creators));
+  interceptor_creators.push_back(
+      std::unique_ptr<CachingInterceptorFactory>(
+          new CachingInterceptorFactory()));
+  auto channel =
+      grpc::experimental::CreateCustomChannelWithInterceptors(
+          "localhost:50051", grpc::InsecureChannelCredentials(), args,
+          std::move(interceptor_creators));
   KeyValueStoreClient client(channel);
   std::vector<std::string> keys = {"key1", "key2", "key3", "key4",
                                    "key5", "key1", "key2", "key4"};

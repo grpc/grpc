@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -50,7 +50,8 @@ class Atomic {
   }
 
   T Exchange(T desired, MemoryOrder order) {
-    return storage_.exchange(desired, static_cast<std::memory_order>(order));
+    return storage_.exchange(desired,
+                             static_cast<std::memory_order>(order));
   }
 
   bool CompareExchangeWeak(T* expected, T desired, MemoryOrder success,
@@ -60,8 +61,8 @@ class Atomic {
         static_cast<std::memory_order>(failure)));
   }
 
-  bool CompareExchangeStrong(T* expected, T desired, MemoryOrder success,
-                             MemoryOrder failure) {
+  bool CompareExchangeStrong(T* expected, T desired,
+                             MemoryOrder success, MemoryOrder failure) {
     return GPR_ATM_INC_CAS_THEN(storage_.compare_exchange_strong(
         *expected, desired, static_cast<std::memory_order>(success),
         static_cast<std::memory_order>(failure)));
@@ -79,19 +80,20 @@ class Atomic {
         static_cast<Arg>(arg), static_cast<std::memory_order>(order)));
   }
 
-  // Atomically increment a counter only if the counter value is not zero.
-  // Returns true if increment took place; false if counter is zero.
+  // Atomically increment a counter only if the counter value is not
+  // zero. Returns true if increment took place; false if counter is
+  // zero.
   bool IncrementIfNonzero() {
     T count = storage_.load(std::memory_order_acquire);
     do {
-      // If zero, we are done (without an increment). If not, we must do a CAS
-      // to maintain the contract: do not increment the counter if it is already
-      // zero
+      // If zero, we are done (without an increment). If not, we must do
+      // a CAS to maintain the contract: do not increment the counter if
+      // it is already zero
       if (count == 0) {
         return false;
       }
-    } while (!CompareExchangeWeak(&count, count + 1, MemoryOrder::ACQ_REL,
-                                  MemoryOrder::ACQUIRE));
+    } while (!CompareExchangeWeak(
+        &count, count + 1, MemoryOrder::ACQ_REL, MemoryOrder::ACQUIRE));
     return true;
   }
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -21,7 +21,8 @@
 #include "src/core/lib/iomgr/time_averaged_stats.h"
 
 void grpc_time_averaged_stats_init(grpc_time_averaged_stats* stats,
-                                   double init_avg, double regress_weight,
+                                   double init_avg,
+                                   double regress_weight,
                                    double persistence_factor) {
   stats->init_avg = init_avg;
   stats->regress_weight = regress_weight;
@@ -32,8 +33,8 @@ void grpc_time_averaged_stats_init(grpc_time_averaged_stats* stats,
   stats->aggregate_weighted_avg = init_avg;
 }
 
-void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats* stats,
-                                         double value) {
+void grpc_time_averaged_stats_add_sample(
+    grpc_time_averaged_stats* stats, double value) {
   stats->batch_total_value += value;
   ++stats->batch_num_samples;
 }
@@ -55,8 +56,9 @@ double grpc_time_averaged_stats_update_average(
     weighted_sum += prev_sample_weight * stats->aggregate_weighted_avg;
     total_weight += prev_sample_weight;
   }
-  stats->aggregate_weighted_avg =
-      (total_weight > 0) ? (weighted_sum / total_weight) : stats->init_avg;
+  stats->aggregate_weighted_avg = (total_weight > 0)
+                                      ? (weighted_sum / total_weight)
+                                      : stats->init_avg;
   stats->aggregate_total_weight = total_weight;
   stats->batch_num_samples = 0;
   stats->batch_total_value = 0;

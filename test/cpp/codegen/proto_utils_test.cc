@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,9 +32,12 @@ namespace internal {
 // Provide access to ProtoBufferWriter internals.
 class ProtoBufferWriterPeer {
  public:
-  explicit ProtoBufferWriterPeer(ProtoBufferWriter* writer) : writer_(writer) {}
+  explicit ProtoBufferWriterPeer(ProtoBufferWriter* writer)
+      : writer_(writer) {}
   bool have_backup() const { return writer_->have_backup_; }
-  const grpc_slice& backup_slice() const { return writer_->backup_slice_; }
+  const grpc_slice& backup_slice() const {
+    return writer_->backup_slice_;
+  }
   const grpc_slice& slice() const { return writer_->slice_; }
 
  private:
@@ -65,9 +68,9 @@ class ProtoUtilsTest : public ::testing::Test {
 };
 
 // Regression test for a memory corruption bug where a series of
-// ProtoBufferWriter Next()/Backup() invocations could result in a dangling
-// pointer returned by Next() due to the interaction between grpc_slice inlining
-// and GRPC_SLICE_START_PTR.
+// ProtoBufferWriter Next()/Backup() invocations could result in a
+// dangling pointer returned by Next() due to the interaction between
+// grpc_slice inlining and GRPC_SLICE_START_PTR.
 TEST_F(ProtoUtilsTest, TinyBackupThenNext) {
   ByteBuffer bp;
   const int block_size = 1024;
@@ -168,17 +171,27 @@ TEST_F(WriterTest, TinyBlockTinyBackup) {
   }
 }
 
-TEST_F(WriterTest, SmallBlockTinyBackup) { BufferWriterTest(64, 256, 1); }
+TEST_F(WriterTest, SmallBlockTinyBackup) {
+  BufferWriterTest(64, 256, 1);
+}
 
 TEST_F(WriterTest, SmallBlockNoBackup) { BufferWriterTest(64, 256, 0); }
 
-TEST_F(WriterTest, SmallBlockFullBackup) { BufferWriterTest(64, 256, 64); }
+TEST_F(WriterTest, SmallBlockFullBackup) {
+  BufferWriterTest(64, 256, 64);
+}
 
-TEST_F(WriterTest, LargeBlockTinyBackup) { BufferWriterTest(4096, 8192, 1); }
+TEST_F(WriterTest, LargeBlockTinyBackup) {
+  BufferWriterTest(4096, 8192, 1);
+}
 
-TEST_F(WriterTest, LargeBlockNoBackup) { BufferWriterTest(4096, 8192, 0); }
+TEST_F(WriterTest, LargeBlockNoBackup) {
+  BufferWriterTest(4096, 8192, 0);
+}
 
-TEST_F(WriterTest, LargeBlockFullBackup) { BufferWriterTest(4096, 8192, 4096); }
+TEST_F(WriterTest, LargeBlockFullBackup) {
+  BufferWriterTest(4096, 8192, 4096);
+}
 
 TEST_F(WriterTest, LargeBlockLargeBackup) {
   BufferWriterTest(4096, 8192, 4095);

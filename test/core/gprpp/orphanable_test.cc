@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -82,13 +82,15 @@ TEST(OrphanablePtr, InternallyRefCounted) {
 class Baz : public InternallyRefCounted<Baz> {
  public:
   Baz() : Baz(0) {}
-  explicit Baz(int value) : InternallyRefCounted<Baz>("Baz"), value_(value) {}
+  explicit Baz(int value)
+      : InternallyRefCounted<Baz>("Baz"), value_(value) {}
   void Orphan() override { Unref(); }
   int value() const { return value_; }
 
   void StartWork() { self_ref_ = Ref(DEBUG_LOCATION, "work"); }
   void FinishWork() {
-    // This is a little ugly, but it makes the logged ref and unref match up.
+    // This is a little ugly, but it makes the logged ref and unref
+    // match up.
     self_ref_.release();
     Unref(DEBUG_LOCATION, "work");
   }

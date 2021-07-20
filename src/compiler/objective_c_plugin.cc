@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,7 +28,8 @@
 
 using ::google::protobuf::compiler::objectivec::
     IsProtobufLibraryBundledProtoFile;
-using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
+using ::google::protobuf::compiler::objectivec::
+    ProtobufLibraryFrameworkName;
 using ::grpc_objective_c_generator::FrameworkImport;
 using ::grpc_objective_c_generator::LocalImport;
 using ::grpc_objective_c_generator::PreprocIfElse;
@@ -41,7 +42,8 @@ inline ::std::string ImportProtoHeaders(
     const grpc::protobuf::FileDescriptor* dep, const char* indent,
     const ::std::string& framework,
     const ::std::string& pb_runtime_import_prefix) {
-  ::std::string header = grpc_objective_c_generator::MessageHeaderName(dep);
+  ::std::string header =
+      grpc_objective_c_generator::MessageHeaderName(dep);
 
   if (!IsProtobufLibraryBundledProtoFile(dep)) {
     if (framework.empty()) {
@@ -71,7 +73,8 @@ inline ::std::string ImportProtoHeaders(
 
 }  // namespace
 
-class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class ObjectiveCGrpcGenerator
+    : public grpc::protobuf::compiler::CodeGenerator {
  public:
   ObjectiveCGrpcGenerator() {}
   virtual ~ObjectiveCGrpcGenerator() {}
@@ -81,10 +84,11 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return FEATURE_PROTO3_OPTIONAL;
   }
 
-  virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
-                        const ::std::string& parameter,
-                        grpc::protobuf::compiler::GeneratorContext* context,
-                        ::std::string* error) const override {
+  virtual bool Generate(
+      const grpc::protobuf::FileDescriptor* file,
+      const ::std::string& parameter,
+      grpc::protobuf::compiler::GeneratorContext* context,
+      ::std::string* error) const override {
     if (file->service_count() == 0) {
       // No services.  Do nothing.
       return true;
@@ -96,18 +100,19 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     ::std::string grpc_local_import_prefix;
     std::vector<::std::string> params_list =
         grpc_generator::tokenize(parameter, ",");
-    for (auto param_str = params_list.begin(); param_str != params_list.end();
-         ++param_str) {
+    for (auto param_str = params_list.begin();
+         param_str != params_list.end(); ++param_str) {
       std::vector<::std::string> param =
           grpc_generator::tokenize(*param_str, "=");
       if (param[0] == "generate_for_named_framework") {
         if (param.size() != 2) {
-          *error =
-              std::string("Format: generate_for_named_framework=<Framework>");
+          *error = std::string(
+              "Format: generate_for_named_framework=<Framework>");
           return false;
         } else if (param[1].empty()) {
           *error =
-              std::string("Name of framework cannot be empty for parameter: ") +
+              std::string(
+                  "Name of framework cannot be empty for parameter: ") +
               param[0];
           return false;
         }
@@ -122,14 +127,16 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       } else if (param[0] == "grpc_local_import_prefix") {
         grpc_local_import = true;
         if (param.size() != 2) {
-          *error = grpc::string("Format: grpc_local_import_prefix=dir/");
+          *error =
+              grpc::string("Format: grpc_local_import_prefix=dir/");
           return false;
         }
         grpc_local_import_prefix = param[1];
       }
     }
 
-    static const ::std::string kNonNullBegin = "NS_ASSUME_NONNULL_BEGIN\n";
+    static const ::std::string kNonNullBegin =
+        "NS_ASSUME_NONNULL_BEGIN\n";
     static const ::std::string kNonNullEnd = "NS_ASSUME_NONNULL_END\n";
     static const ::std::string kProtocolOnly = "GPB_GRPC_PROTOCOL_ONLY";
     static const ::std::string kForwardDeclare =
@@ -145,7 +152,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       std::vector<std::string> parameters_list =
           grpc_generator::tokenize(parameter, ",");
       for (auto parameter_string = parameters_list.begin();
-           parameter_string != parameters_list.end(); parameter_string++) {
+           parameter_string != parameters_list.end();
+           parameter_string++) {
         std::vector<std::string> param =
             grpc_generator::tokenize(*parameter_string, "=");
         if (param[0] == "no_v1_compatibility") {
@@ -172,18 +180,18 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::std::string system_imports;
       if (grpc_local_import) {
-        system_imports =
-            LocalImport(grpc_local_import_prefix + "ProtoRPC/ProtoService.h");
+        system_imports = LocalImport(grpc_local_import_prefix +
+                                     "ProtoRPC/ProtoService.h");
         if (generator_params.no_v1_compatibility) {
-          system_imports +=
-              LocalImport(grpc_local_import_prefix + "ProtoRPC/ProtoRPC.h");
+          system_imports += LocalImport(grpc_local_import_prefix +
+                                        "ProtoRPC/ProtoRPC.h");
         } else {
           system_imports += LocalImport(grpc_local_import_prefix +
                                         "ProtoRPC/ProtoRPCLegacy.h");
           system_imports += LocalImport(grpc_local_import_prefix +
                                         "RxLibrary/GRXWriteable.h");
-          system_imports +=
-              LocalImport(grpc_local_import_prefix + "RxLibrary/GRXWriter.h");
+          system_imports += LocalImport(grpc_local_import_prefix +
+                                        "RxLibrary/GRXWriter.h");
         }
       } else {
         system_imports = SystemImport("ProtoRPC/ProtoService.h");
@@ -211,40 +219,45 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::std::string class_imports;
       for (int i = 0; i < file->dependency_count(); i++) {
-        class_imports += ImportProtoHeaders(
-            file->dependency(i), "  ", framework, pb_runtime_import_prefix);
+        class_imports +=
+            ImportProtoHeaders(file->dependency(i), "  ", framework,
+                               pb_runtime_import_prefix);
       }
 
       ::std::string ng_protocols;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
-        ng_protocols += grpc_objective_c_generator::GetV2Protocol(service);
+        const grpc::protobuf::ServiceDescriptor* service =
+            file->service(i);
+        ng_protocols +=
+            grpc_objective_c_generator::GetV2Protocol(service);
       }
 
       ::std::string protocols;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
-        protocols +=
-            grpc_objective_c_generator::GetProtocol(service, generator_params);
+        const grpc::protobuf::ServiceDescriptor* service =
+            file->service(i);
+        protocols += grpc_objective_c_generator::GetProtocol(
+            service, generator_params);
       }
 
       ::std::string interfaces;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
-        interfaces +=
-            grpc_objective_c_generator::GetInterface(service, generator_params);
+        const grpc::protobuf::ServiceDescriptor* service =
+            file->service(i);
+        interfaces += grpc_objective_c_generator::GetInterface(
+            service, generator_params);
       }
 
       Write(context, file_name + ".pbrpc.h",
-            file_header + SystemImport("Foundation/Foundation.h") + "\n" +
-                PreprocIfNot(kForwardDeclare, imports) + "\n" +
+            file_header + SystemImport("Foundation/Foundation.h") +
+                "\n" + PreprocIfNot(kForwardDeclare, imports) + "\n" +
                 PreprocIfNot(kProtocolOnly, system_imports) + "\n" +
                 class_declarations + "\n" +
                 PreprocIfNot(kForwardDeclare, class_imports) + "\n" +
                 forward_declarations + "\n" + kNonNullBegin + "\n" +
                 ng_protocols + protocols + "\n" +
-                PreprocIfNot(kProtocolOnly, interfaces) + "\n" + kNonNullEnd +
-                "\n");
+                PreprocIfNot(kProtocolOnly, interfaces) + "\n" +
+                kNonNullEnd + "\n");
     }
 
     {
@@ -261,8 +274,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       if (grpc_local_import) {
         if (generator_params.no_v1_compatibility) {
-          imports +=
-              LocalImport(grpc_local_import_prefix + "ProtoRPC/ProtoRPC.h");
+          imports += LocalImport(grpc_local_import_prefix +
+                                 "ProtoRPC/ProtoRPC.h");
         } else {
           imports += LocalImport(grpc_local_import_prefix +
                                  "ProtoRPC/ProtoRPCLegacy.h");
@@ -280,21 +293,23 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::std::string class_imports;
       for (int i = 0; i < file->dependency_count(); i++) {
-        class_imports += ImportProtoHeaders(file->dependency(i), "", framework,
-                                            pb_runtime_import_prefix);
+        class_imports +=
+            ImportProtoHeaders(file->dependency(i), "", framework,
+                               pb_runtime_import_prefix);
       }
 
       ::std::string definitions;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
-        definitions +=
-            grpc_objective_c_generator::GetSource(service, generator_params);
+        const grpc::protobuf::ServiceDescriptor* service =
+            file->service(i);
+        definitions += grpc_objective_c_generator::GetSource(
+            service, generator_params);
       }
 
       Write(context, file_name + ".pbrpc.m",
-            file_header +
-                PreprocIfNot(kProtocolOnly, imports + "\n" + class_imports +
-                                                "\n" + definitions));
+            file_header + PreprocIfNot(kProtocolOnly,
+                                       imports + "\n" + class_imports +
+                                           "\n" + definitions));
     }
 
     return true;
@@ -303,7 +318,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  private:
   // Write the given code into the given file.
   void Write(grpc::protobuf::compiler::GeneratorContext* context,
-             const ::std::string& filename, const ::std::string& code) const {
+             const ::std::string& filename,
+             const ::std::string& code) const {
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(filename));
     grpc::protobuf::io::CodedOutputStream coded_out(output.get());

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -95,11 +95,13 @@ struct grpc_http_parser {
   size_t cur_line_length;
   size_t cur_line_end_length;
 };
-void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
+void grpc_http_parser_init(grpc_http_parser* parser,
+                           grpc_http_type type,
                            void* request_or_response);
 void grpc_http_parser_destroy(grpc_http_parser* parser);
 
-/* Sets \a start_of_body to the offset in \a slice of the start of the body. */
+/* Sets \a start_of_body to the offset in \a slice of the start of the
+ * body. */
 grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
                                          const grpc_slice& slice,
                                          size_t* start_of_body);

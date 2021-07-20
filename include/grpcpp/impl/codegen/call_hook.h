@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,12 +25,13 @@ namespace internal {
 class CallOpSetInterface;
 class Call;
 
-/// This is an interface that Channel and Server implement to allow them to hook
-/// performing ops.
+/// This is an interface that Channel and Server implement to allow them
+/// to hook performing ops.
 class CallHook {
  public:
   virtual ~CallHook() {}
-  virtual void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) = 0;
+  virtual void PerformOpsOnCall(CallOpSetInterface* ops,
+                                Call* call) = 0;
 };
 }  // namespace internal
 

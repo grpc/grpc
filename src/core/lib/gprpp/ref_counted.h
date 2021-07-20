@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,11 +38,13 @@ namespace grpc_core {
 
 // RefCount is a simple atomic ref-count.
 //
-// This is a C++ implementation of gpr_refcount, with inline functions. Due to
-// inline functions, this class is significantly more efficient than
-// gpr_refcount and should be preferred over gpr_refcount whenever possible.
+// This is a C++ implementation of gpr_refcount, with inline functions.
+// Due to inline functions, this class is significantly more efficient
+// than gpr_refcount and should be preferred over gpr_refcount whenever
+// possible.
 //
-// TODO(soheil): Remove gpr_refcount after submitting the GRFC and the paragraph
+// TODO(soheil): Remove gpr_refcount after submitting the GRFC and the
+// paragraph
 //               above.
 class RefCount {
  public:
@@ -51,7 +53,8 @@ class RefCount {
   // `init` is the initial refcount stored in this object.
   //
   // `trace` is a string to be logged with trace events; if null, no
-  // trace logging will be done.  Tracing is a no-op in non-debug builds.
+  // trace logging will be done.  Tracing is a no-op in non-debug
+  // builds.
   explicit RefCount(
       Value init = 1,
       const char*
@@ -72,19 +75,21 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this,
-              prior, prior + n);
+      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_,
+              this, prior, prior + n);
     }
 #else
     value_.FetchAdd(n, MemoryOrder::RELAXED);
 #endif
   }
-  void Ref(const DebugLocation& location, const char* reason, Value n = 1) {
+  void Ref(const DebugLocation& location, const char* reason,
+           Value n = 1) {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_, this, location.file(), location.line(), prior, prior + n,
+      gpr_log(GPR_INFO,
+              "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s", trace_,
+              this, location.file(), location.line(), prior, prior + n,
               reason);
     }
 #else
@@ -100,8 +105,8 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_, this,
-              prior, prior + 1);
+      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR, trace_,
+              this, prior, prior + 1);
     }
     assert(prior > 0);
 #else
@@ -112,8 +117,9 @@ class RefCount {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
     if (trace_ != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_, this, location.file(), location.line(), prior, prior + 1,
+      gpr_log(GPR_INFO,
+              "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s", trace_,
+              this, location.file(), location.line(), prior, prior + 1,
               reason);
     }
     assert(prior > 0);
@@ -129,8 +135,9 @@ class RefCount {
 #ifndef NDEBUG
     if (trace_ != nullptr) {
       const Value prior = get();
-      gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR,
-              trace_, this, prior, prior + 1);
+      gpr_log(GPR_INFO,
+              "%s:%p ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR, trace_,
+              this, prior, prior + 1);
     }
 #endif
     return value_.IncrementIfNonzero();
@@ -140,9 +147,10 @@ class RefCount {
     if (trace_ != nullptr) {
       const Value prior = get();
       gpr_log(GPR_INFO,
-              "%s:%p %s:%d ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_, this, location.file(), location.line(), prior, prior + 1,
-              reason);
+              "%s:%p %s:%d ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR
+              " %s",
+              trace_, this, location.file(), location.line(), prior,
+              prior + 1, reason);
     }
 #endif
     // Avoid unused-parameter warnings for debug-only parameters
@@ -151,19 +159,21 @@ class RefCount {
     return value_.IncrementIfNonzero();
   }
 
-  // Decrements the ref-count and returns true if the ref-count reaches 0.
+  // Decrements the ref-count and returns true if the ref-count reaches
+  // 0.
   bool Unref() {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
     // will no longer be holding a ref afterwards and therefore can't
-    // safely access it, since another thread might free us in the interim.
+    // safely access it, since another thread might free us in the
+    // interim.
     auto* trace = trace_;
 #endif
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
     if (trace != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR, trace, this,
-              prior, prior - 1);
+      gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR, trace,
+              this, prior, prior - 1);
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #endif
@@ -173,15 +183,17 @@ class RefCount {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
     // will no longer be holding a ref afterwards and therefore can't
-    // safely access it, since another thread might free us in the interim.
+    // safely access it, since another thread might free us in the
+    // interim.
     auto* trace = trace_;
 #endif
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
     if (trace != nullptr) {
-      gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace, this, location.file(), location.line(), prior, prior - 1,
-              reason);
+      gpr_log(GPR_INFO,
+              "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
+              trace, this, location.file(), location.line(), prior,
+              prior - 1, reason);
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #else
@@ -208,8 +220,8 @@ class PolymorphicRefCount {
 };
 
 // NonPolymorphicRefCount does not enforce polymorphic destruction of
-// RefCounted. Please refer to grpc_core::RefCounted for more details, and
-// when in doubt use PolymorphicRefCount.
+// RefCounted. Please refer to grpc_core::RefCounted for more details,
+// and when in doubt use PolymorphicRefCount.
 class NonPolymorphicRefCount {
  public:
   ~NonPolymorphicRefCount() = default;
@@ -219,14 +231,19 @@ class NonPolymorphicRefCount {
 enum UnrefBehavior {
   // Default behavior: Delete the object.
   kUnrefDelete,
-  // Do not delete the object upon unref.  This is useful in cases where all
-  // existing objects must be tracked in a registry but the object's entry in
+  // Do not delete the object upon unref.  This is useful in cases where
+  // all
+  // existing objects must be tracked in a registry but the object's
+  // entry in
   // the registry cannot be removed from the object's dtor due to
-  // synchronization issues.  In this case, the registry can be cleaned up
+  // synchronization issues.  In this case, the registry can be cleaned
+  // up
   // later by identifying entries for which RefIfNonZero() returns null.
   kUnrefNoDelete,
-  // Call the object's dtor but do not delete it.  This is useful for cases
-  // where the object is stored in memory allocated elsewhere (e.g., the call
+  // Call the object's dtor but do not delete it.  This is useful for
+  // cases
+  // where the object is stored in memory allocated elsewhere (e.g., the
+  // call
   // arena).
   kUnrefCallDtor,
 };
@@ -255,24 +272,24 @@ class Delete<T, kUnrefCallDtor> {
 // New objects should be created via new and start with a refcount of 1.
 // When the refcount reaches 0, executes the specified UnrefBehavior.
 //
-// This will commonly be used by CRTP (curiously-recurring template pattern)
-// e.g., class MyClass : public RefCounted<MyClass>
+// This will commonly be used by CRTP (curiously-recurring template
+// pattern) e.g., class MyClass : public RefCounted<MyClass>
 //
 // Use PolymorphicRefCount and NonPolymorphicRefCount to select between
 // different implementations of RefCounted.
 //
-// Note that NonPolymorphicRefCount does not support polymorphic destruction.
-// So, use NonPolymorphicRefCount only when both of the following conditions
-// are guaranteed to hold:
-// (a) Child is a concrete leaf class in RefCounted<Child>, and
-// (b) you are guaranteed to call Unref only on concrete leaf classes and not
+// Note that NonPolymorphicRefCount does not support polymorphic
+// destruction. So, use NonPolymorphicRefCount only when both of the
+// following conditions are guaranteed to hold: (a) Child is a concrete
+// leaf class in RefCounted<Child>, and (b) you are guaranteed to call
+// Unref only on concrete leaf classes and not
 //     their parents.
 //
-// The following example is illegal, because calling Unref() will not call
-// the dtor of Child.
+// The following example is illegal, because calling Unref() will not
+// call the dtor of Child.
 //
-//    class Parent : public RefCounted<Parent, NonPolymorphicRefCount> {}
-//    class Child : public Parent {}
+//    class Parent : public RefCounted<Parent, NonPolymorphicRefCount>
+//    {} class Child : public Parent {}
 //
 //    Child* ch;
 //    ch->Unref();
@@ -281,7 +298,8 @@ template <typename Child, typename Impl = PolymorphicRefCount,
           UnrefBehavior UnrefBehaviorArg = kUnrefDelete>
 class RefCounted : public Impl {
  public:
-  // Note: Depending on the Impl used, this dtor can be implicitly virtual.
+  // Note: Depending on the Impl used, this dtor can be implicitly
+  // virtual.
   ~RefCounted() = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
@@ -301,21 +319,24 @@ class RefCounted : public Impl {
   // friend of this class.
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      internal::Delete<Child, UnrefBehaviorArg>(
+          static_cast<Child*>(this));
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      internal::Delete<Child, UnrefBehaviorArg>(static_cast<Child*>(this));
+      internal::Delete<Child, UnrefBehaviorArg>(
+          static_cast<Child*>(this));
     }
   }
 
   RefCountedPtr<Child> RefIfNonZero() GRPC_MUST_USE_RESULT {
-    return RefCountedPtr<Child>(refs_.RefIfNonZero() ? static_cast<Child*>(this)
-                                                     : nullptr);
+    return RefCountedPtr<Child>(
+        refs_.RefIfNonZero() ? static_cast<Child*>(this) : nullptr);
   }
   RefCountedPtr<Child> RefIfNonZero(const DebugLocation& location,
-                                    const char* reason) GRPC_MUST_USE_RESULT {
+                                    const char* reason)
+      GRPC_MUST_USE_RESULT {
     return RefCountedPtr<Child>(refs_.RefIfNonZero(location, reason)
                                     ? static_cast<Child*>(this)
                                     : nullptr);
@@ -337,7 +358,8 @@ class RefCounted : public Impl {
   friend class RefCountedPtr;
 
   void IncrementRefCount() { refs_.Ref(); }
-  void IncrementRefCount(const DebugLocation& location, const char* reason) {
+  void IncrementRefCount(const DebugLocation& location,
+                         const char* reason) {
     refs_.Ref(location, reason);
   }
 

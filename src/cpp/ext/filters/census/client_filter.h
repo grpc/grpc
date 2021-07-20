@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,10 +28,10 @@
 
 namespace grpc {
 
-// A CallData class will be created for every grpc call within a channel. It is
-// used to store data and methods specific to that call. CensusClientCallData is
-// thread-compatible, however typically only 1 thread should be interacting with
-// a call at a time.
+// A CallData class will be created for every grpc call within a
+// channel. It is used to store data and methods specific to that call.
+// CensusClientCallData is thread-compatible, however typically only 1
+// thread should be interacting with a call at a time.
 class CensusClientCallData : public CallData {
  public:
   // Maximum size of trace context is sent on the wire.
@@ -57,7 +57,8 @@ class CensusClientCallData : public CallData {
   grpc_error_handle Init(grpc_call_element* elem,
                          const grpc_call_element_args* args) override;
 
-  void Destroy(grpc_call_element* elem, const grpc_call_final_info* final_info,
+  void Destroy(grpc_call_element* elem,
+               const grpc_call_final_info* final_info,
                grpc_closure* then_call_closure) override;
 
   void StartTransportStreamOpBatch(grpc_call_element* elem,
@@ -69,7 +70,8 @@ class CensusClientCallData : public CallData {
   static void OnDoneSendInitialMetadataCb(void* user_data,
                                           grpc_error_handle error);
 
-  static void OnDoneRecvMessageCb(void* user_data, grpc_error_handle error);
+  static void OnDoneRecvMessageCb(void* user_data,
+                                  grpc_error_handle error);
 
  private:
   OpenCensusCallTracer tracer_;

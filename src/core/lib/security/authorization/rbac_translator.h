@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_TRANSLATOR_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_TRANSLATOR_H
@@ -28,9 +28,9 @@ struct RbacPolicies {
   Rbac allow_policy;
 };
 
-// Translates SDK authorization policy to Envoy RBAC policies. Returns error on
-// failure.
-// authz_policy: Authorization Policy string in JSON format.
+// Translates SDK authorization policy to Envoy RBAC policies. Returns
+// error on failure. authz_policy: Authorization Policy string in JSON
+// format.
 absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     absl::string_view authz_policy);
 

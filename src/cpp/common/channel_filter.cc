@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -77,8 +77,8 @@ bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
         grpc_channel_stack_builder_get_channel_arguments(builder);
     if (!filter.include_filter(*args)) return true;
   }
-  return grpc_channel_stack_builder_prepend_filter(builder, &filter.filter,
-                                                   nullptr, nullptr);
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, &filter.filter, nullptr, nullptr);
 }
 
 }  // namespace

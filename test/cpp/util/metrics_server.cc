@@ -10,10 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *is % allowed in string
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ *implied. See the License for the specific language governing
+ *permissions and limitations under the License. is % allowed in string
  */
 
 #include "test/cpp/util/metrics_server.h"
@@ -87,17 +86,18 @@ std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
   std::shared_ptr<QpsGauge> qps_gauge(new QpsGauge());
   const auto p = qps_gauges_.insert(std::make_pair(name, qps_gauge));
 
-  // p.first is an iterator pointing to <name, shared_ptr<QpsGauge>> pair.
-  // p.second is a boolean which is set to 'true' if the QpsGauge is
-  // successfully inserted in the guages_ map and 'false' if it is already
-  // present in the map
+  // p.first is an iterator pointing to <name, shared_ptr<QpsGauge>>
+  // pair. p.second is a boolean which is set to 'true' if the QpsGauge
+  // is successfully inserted in the guages_ map and 'false' if it is
+  // already present in the map
   *already_present = !p.second;
   return p.first->second;
 }
 
-// Starts the metrics server and returns the grpc::Server instance. Call Wait()
-// on the returned server instance.
-std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
+// Starts the metrics server and returns the grpc::Server instance. Call
+// Wait() on the returned server instance.
+std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(
+    int port) {
   gpr_log(GPR_INFO, "Building metrics server..");
 
   const std::string address = "0.0.0.0:" + std::to_string(port);
@@ -107,7 +107,8 @@ std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
   builder.RegisterService(this);
 
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Metrics server %s started. Ready to receive requests..",
+  gpr_log(GPR_INFO,
+          "Metrics server %s started. Ready to receive requests..",
           address.c_str());
 
   return server;

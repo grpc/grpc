@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_EXTERNAL_ACCOUNT_CREDENTIALS_H
@@ -27,10 +27,10 @@
 
 namespace grpc_core {
 
-// Base external account credentials. The base class implements common logic for
-// exchanging external account credentials for GCP access token to authorize
-// requests to GCP APIs. The specific logic of retrieving subject token is
-// implemented in subclasses.
+// Base external account credentials. The base class implements common
+// logic for exchanging external account credentials for GCP access
+// token to authorize requests to GCP APIs. The specific logic of
+// retrieving subject token is implemented in subclasses.
 class ExternalAccountCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
@@ -52,16 +52,18 @@ class ExternalAccountCredentials
       const Json& json, std::vector<std::string> scopes,
       grpc_error_handle* error);
 
-  ExternalAccountCredentials(Options options, std::vector<std::string> scopes);
+  ExternalAccountCredentials(Options options,
+                             std::vector<std::string> scopes);
   ~ExternalAccountCredentials() override;
   std::string debug_string() override;
 
  protected:
-  // This is a helper struct to pass information between multiple callback based
-  // asynchronous calls.
+  // This is a helper struct to pass information between multiple
+  // callback based asynchronous calls.
   struct HTTPRequestContext {
     HTTPRequestContext(grpc_httpcli_context* httpcli_context,
-                       grpc_polling_entity* pollent, grpc_millis deadline)
+                       grpc_polling_entity* pollent,
+                       grpc_millis deadline)
         : httpcli_context(httpcli_context),
           pollent(pollent),
           deadline(deadline) {}
@@ -78,9 +80,9 @@ class ExternalAccountCredentials
     grpc_http_response response;
   };
 
-  // Subclasses of base external account credentials need to override this
-  // method to implement the specific subject token retrieval logic.
-  // Once the subject token is ready, subclasses need to invoke
+  // Subclasses of base external account credentials need to override
+  // this method to implement the specific subject token retrieval
+  // logic. Once the subject token is ready, subclasses need to invoke
   // the callback function (cb) to pass the subject token (or error)
   // back.
   virtual void RetrieveSubjectToken(
@@ -88,8 +90,9 @@ class ExternalAccountCredentials
       std::function<void(std::string, grpc_error_handle)> cb) = 0;
 
  private:
-  // This method implements the common token fetch logic and it will be called
-  // when grpc_oauth2_token_fetcher_credentials request a new access token.
+  // This method implements the common token fetch logic and it will be
+  // called when grpc_oauth2_token_fetcher_credentials request a new
+  // access token.
   void fetch_oauth2(grpc_credentials_metadata_request* req,
                     grpc_httpcli_context* httpcli_context,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
@@ -103,7 +106,8 @@ class ExternalAccountCredentials
   void OnExchangeTokenInternal(grpc_error_handle error);
 
   void ImpersenateServiceAccount();
-  static void OnImpersenateServiceAccount(void* arg, grpc_error_handle error);
+  static void OnImpersenateServiceAccount(void* arg,
+                                          grpc_error_handle error);
   void OnImpersenateServiceAccountInternal(grpc_error_handle error);
 
   void FinishTokenFetch(grpc_error_handle error);

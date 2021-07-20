@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,13 +25,16 @@ namespace grpc {
 namespace {
 class InsecureServerCredentialsImpl final : public ServerCredentials {
  public:
-  int AddPortToServer(const std::string& addr, grpc_server* server) override {
+  int AddPortToServer(const std::string& addr,
+                      grpc_server* server) override {
     return grpc_server_add_insecure_http2_port(server, addr.c_str());
   }
   void SetAuthMetadataProcessor(
-      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) override {
+      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor)
+      override {
     (void)processor;
-    GPR_ASSERT(0);  // Should not be called on InsecureServerCredentials.
+    GPR_ASSERT(
+        0);  // Should not be called on InsecureServerCredentials.
   }
 
  private:

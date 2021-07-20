@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
@@ -23,7 +23,8 @@
 namespace grpc_core {
 
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
-StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
+StaticDataAuthorizationPolicyProvider::Create(
+    absl::string_view authz_policy) {
   auto policies_or = GenerateRbacPolicies(authz_policy);
   if (!policies_or.ok()) {
     return policies_or.status();
@@ -32,8 +33,8 @@ StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
       std::move(*policies_or));
 }
 
-StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
-    RbacPolicies policies)
+StaticDataAuthorizationPolicyProvider::
+    StaticDataAuthorizationPolicyProvider(RbacPolicies policies)
     : allow_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
           std::move(policies.allow_policy))),
       deny_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
@@ -49,7 +50,8 @@ grpc_authorization_policy_provider_static_data_create(
     const char** error_details) {
   GPR_ASSERT(authz_policy != nullptr);
   auto provider_or =
-      grpc_core::StaticDataAuthorizationPolicyProvider::Create(authz_policy);
+      grpc_core::StaticDataAuthorizationPolicyProvider::Create(
+          authz_policy);
   if (!provider_or.ok()) {
     *code = static_cast<grpc_status_code>(provider_or.status().code());
     *error_details =

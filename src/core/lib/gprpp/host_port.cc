@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,8 +60,8 @@ bool DoSplitHostPort(absl::string_view name, absl::string_view* host,
     }
     *host = name.substr(1, rbracket - 1);
     if (host->find(':') == absl::string_view::npos) {
-      /* Require all bracketed hosts to contain a colon, because a hostname or
-         IPv4 address should never use brackets. */
+      /* Require all bracketed hosts to contain a colon, because a
+         hostname or IPv4 address should never use brackets. */
       *host = absl::string_view();
       return false;
     }
@@ -96,11 +96,12 @@ bool SplitHostPort(absl::string_view name, std::string* host,
   absl::string_view host_view;
   absl::string_view port_view;
   bool has_port;
-  const bool ret = DoSplitHostPort(name, &host_view, &port_view, &has_port);
+  const bool ret =
+      DoSplitHostPort(name, &host_view, &port_view, &has_port);
   if (ret) {
-    // We always set the host, but port is set only when DoSplitHostPort find a
-    // port in the string, to remain backward compatible with the old
-    // gpr_split_host_port API.
+    // We always set the host, but port is set only when DoSplitHostPort
+    // find a port in the string, to remain backward compatible with the
+    // old gpr_split_host_port API.
     *host = std::string(host_view);
     if (has_port) {
       *port = std::string(port_view);

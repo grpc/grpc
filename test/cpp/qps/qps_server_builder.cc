@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,8 +30,8 @@ std::unique_ptr<ServerBuilder> DefaultCreateQpsServerBuilder() {
   return absl::make_unique<ServerBuilder>();
 }
 
-std::function<std::unique_ptr<ServerBuilder>()> g_create_qps_server_builder =
-    DefaultCreateQpsServerBuilder;
+std::function<std::unique_ptr<ServerBuilder>()>
+    g_create_qps_server_builder = DefaultCreateQpsServerBuilder;
 }  // namespace
 
 std::unique_ptr<ServerBuilder> CreateQpsServerBuilder() {
@@ -39,7 +39,8 @@ std::unique_ptr<ServerBuilder> CreateQpsServerBuilder() {
 }
 
 void SetCreateQpsServerBuilderFunc(
-    std::function<std::unique_ptr<ServerBuilder>()> create_qps_server_builder) {
+    std::function<std::unique_ptr<ServerBuilder>()>
+        create_qps_server_builder) {
   g_create_qps_server_builder = std::move(create_qps_server_builder);
 }
 

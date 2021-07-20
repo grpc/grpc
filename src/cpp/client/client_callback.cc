@@ -9,9 +9,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,8 +26,8 @@ namespace grpc {
 namespace internal {
 
 void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
-  // Unlike other uses of closure, do not Ref or Unref here since the reactor
-  // object's lifetime is controlled by user code.
+  // Unlike other uses of closure, do not Ref or Unref here since the
+  // reactor object's lifetime is controlled by user code.
   grpc_core::ExecCtx exec_ctx;
   struct ClosureWithArg {
     grpc_closure closure;
@@ -38,7 +38,8 @@ void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
       GRPC_CLOSURE_INIT(
           &closure,
           [](void* void_arg, grpc_error_handle) {
-            ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+            ClosureWithArg* arg =
+                static_cast<ClosureWithArg*>(void_arg);
             arg->reactor->OnDone(arg->status);
             delete arg;
           },

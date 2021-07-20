@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,20 +25,22 @@ typedef struct grpc_pick_port_functions {
   void (*recycle_unused_port_fn)(int port);
 } grpc_pick_port_functions;
 
-/* pick a port number that is currently unused by either tcp or udp. return
-   0 on failure. */
+/* pick a port number that is currently unused by either tcp or udp.
+   return 0 on failure. */
 int grpc_pick_unused_port(void);
-/* pick a port number that is currently unused by either tcp or udp. abort
-   on failure. */
+/* pick a port number that is currently unused by either tcp or udp.
+   abort on failure. */
 int grpc_pick_unused_port_or_die(void);
 
-/* Return a port which was previously returned by grpc_pick_unused_port().
- * Implementations of grpc_pick_unused_port() backed by a portserver may limit
- * the total number of ports available; this lets a binary return its allocated
- * ports back to the server if it is going to allocate a large number. */
+/* Return a port which was previously returned by
+ * grpc_pick_unused_port(). Implementations of grpc_pick_unused_port()
+ * backed by a portserver may limit the total number of ports available;
+ * this lets a binary return its allocated ports back to the server if
+ * it is going to allocate a large number. */
 void grpc_recycle_unused_port(int port);
 
-/** Request the family of pick_port functions in \a functions be used. */
+/** Request the family of pick_port functions in \a functions be used.
+ */
 void grpc_set_pick_port_functions(grpc_pick_port_functions functions);
 
 #endif /* GRPC_TEST_CORE_UTIL_PORT_H */

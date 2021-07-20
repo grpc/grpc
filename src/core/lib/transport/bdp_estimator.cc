@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -58,8 +58,8 @@ grpc_millis BdpEstimator::CompletePing() {
     estimate_ = GPR_MAX(accumulator_, estimate_ * 2);
     bw_est_ = bw;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_INFO, "bdp[%s]: estimate increased to %" PRId64, name_,
-              estimate_);
+      gpr_log(GPR_INFO, "bdp[%s]: estimate increased to %" PRId64,
+              name_, estimate_);
     }
     inter_ping_delay_ /= 2;  // if the ping estimate changes,
                              // exponentially get faster at probing
@@ -67,9 +67,10 @@ grpc_millis BdpEstimator::CompletePing() {
     stable_estimate_count_++;
     if (stable_estimate_count_ >= 2) {
       inter_ping_delay_ +=
-          100 + static_cast<int>(rand() * 100.0 /
-                                 RAND_MAX);  // if the ping estimate is steady,
-                                             // slowly ramp down the probe time
+          100 + static_cast<int>(
+                    rand() * 100.0 /
+                    RAND_MAX);  // if the ping estimate is steady,
+                                // slowly ramp down the probe time
     }
   }
   if (start_inter_ping_delay != inter_ping_delay_) {

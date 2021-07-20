@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -61,13 +61,11 @@ grpc_error_handle grpc_chttp2_data_parser_begin_frame(
     grpc_chttp2_data_parser* parser, uint8_t flags, uint32_t stream_id,
     grpc_chttp2_stream* s);
 
-/* handle a slice of a data frame - is_last indicates the last slice of a
-   frame */
-grpc_error_handle grpc_chttp2_data_parser_parse(void* parser,
-                                                grpc_chttp2_transport* t,
-                                                grpc_chttp2_stream* s,
-                                                const grpc_slice& slice,
-                                                int is_last);
+/* handle a slice of a data frame - is_last indicates the last slice of
+   a frame */
+grpc_error_handle grpc_chttp2_data_parser_parse(
+    void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    const grpc_slice& slice, int is_last);
 
 void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
                              uint32_t write_bytes, int is_eof,

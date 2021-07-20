@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #ifndef GRPC_TEST_CPP_PROTO_SERVER_REFLECTION_DATABSE_H
@@ -29,13 +29,15 @@
 
 namespace grpc {
 
-// ProtoReflectionDescriptorDatabase takes a stub of ServerReflection and
-// provides the methods defined by DescriptorDatabase interfaces. It can be used
-// to feed a DescriptorPool instance.
-class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
+// ProtoReflectionDescriptorDatabase takes a stub of ServerReflection
+// and provides the methods defined by DescriptorDatabase interfaces. It
+// can be used to feed a DescriptorPool instance.
+class ProtoReflectionDescriptorDatabase
+    : public protobuf::DescriptorDatabase {
  public:
   explicit ProtoReflectionDescriptorDatabase(
-      std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
+      std::unique_ptr<reflection::v1alpha::ServerReflection::Stub>
+          stub);
 
   explicit ProtoReflectionDescriptorDatabase(
       const std::shared_ptr<grpc::Channel>& channel);
@@ -44,21 +46,24 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
 
   // The following four methods implement DescriptorDatabase interfaces.
   //
-  // Find a file by file name.  Fills in *output and returns true if found.
-  // Otherwise, returns false, leaving the contents of *output undefined.
+  // Find a file by file name.  Fills in *output and returns true if
+  // found. Otherwise, returns false, leaving the contents of *output
+  // undefined.
   bool FindFileByName(const string& filename,
                       protobuf::FileDescriptorProto* output) override;
 
   // Find the file that declares the given fully-qualified symbol name.
-  // If found, fills in *output and returns true, otherwise returns false
-  // and leaves *output undefined.
-  bool FindFileContainingSymbol(const string& symbol_name,
-                                protobuf::FileDescriptorProto* output) override;
+  // If found, fills in *output and returns true, otherwise returns
+  // false and leaves *output undefined.
+  bool FindFileContainingSymbol(
+      const string& symbol_name,
+      protobuf::FileDescriptorProto* output) override;
 
-  // Find the file which defines an extension extending the given message type
-  // with the given field number.  If found, fills in *output and returns true,
-  // otherwise returns false and leaves *output undefined.  containing_type
-  // must be a fully-qualified type name.
+  // Find the file which defines an extension extending the given
+  // message type with the given field number.  If found, fills in
+  // *output and returns true, otherwise returns false and leaves
+  // *output undefined.  containing_type must be a fully-qualified type
+  // name.
   bool FindFileContainingExtension(
       const string& containing_type, int field_number,
       protobuf::FileDescriptorProto* output) override;
@@ -86,7 +91,8 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       const std::string& byte_fd_proto);
 
   void AddFileFromResponse(
-      const grpc::reflection::v1alpha::FileDescriptorResponse& response);
+      const grpc::reflection::v1alpha::FileDescriptorResponse&
+          response);
 
   std::shared_ptr<ClientStream> GetStream();
 
@@ -96,11 +102,14 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
 
   std::shared_ptr<ClientStream> stream_;
   grpc::ClientContext ctx_;
-  std::unique_ptr<grpc::reflection::v1alpha::ServerReflection::Stub> stub_;
+  std::unique_ptr<grpc::reflection::v1alpha::ServerReflection::Stub>
+      stub_;
   std::unordered_set<string> known_files_;
   std::unordered_set<string> missing_symbols_;
-  std::unordered_map<string, std::unordered_set<int>> missing_extensions_;
-  std::unordered_map<string, std::vector<int>> cached_extension_numbers_;
+  std::unordered_map<string, std::unordered_set<int>>
+      missing_extensions_;
+  std::unordered_map<string, std::vector<int>>
+      cached_extension_numbers_;
   std::mutex stream_mutex_;
 
   protobuf::SimpleDescriptorDatabase cached_db_;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,8 +28,8 @@
 #include "src/proto/grpc/gcp/handshaker.upb.h"
 
 /**
- * This method converts grpc_status_code code to the corresponding tsi_result
- * code.
+ * This method converts grpc_status_code code to the corresponding
+ * tsi_result code.
  *
  * - code: grpc_status_code code.
  *
@@ -38,14 +38,14 @@
 tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code);
 
 /**
- * This method deserializes a handshaker response returned from ALTS handshaker
- * service.
+ * This method deserializes a handshaker response returned from ALTS
+ * handshaker service.
  *
  * - bytes_received: data returned from ALTS handshaker service.
  * - arena: upb arena.
  *
- * It returns a deserialized handshaker response on success and nullptr on
- * failure.
+ * It returns a deserialized handshaker response on success and nullptr
+ * on failure.
  */
 grpc_gcp_HandshakerResp* alts_tsi_utils_deserialize_response(
     grpc_byte_buffer* resp_buffer, upb_arena* arena);

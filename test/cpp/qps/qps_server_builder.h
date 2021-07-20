@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,8 +35,8 @@ namespace testing {
 std::unique_ptr<ServerBuilder> CreateQpsServerBuilder();
 
 // SetCreateQpsServerBuilderFunc sets a function to use to create new
-// ServerBuilders in "CreateQpsServerBuilder". It can be used to modify options
-// that the server is built with.
+// ServerBuilders in "CreateQpsServerBuilder". It can be used to modify
+// options that the server is built with.
 void SetCreateQpsServerBuilderFunc(
     std::function<std::unique_ptr<ServerBuilder>()>);
 

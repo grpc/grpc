@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,13 +33,15 @@
 namespace grpc_core {
 namespace {
 /** Fills gpr_timespec gts based on values from timespec ts */
-void fill_gpr_from_timestamp(gpr_timespec* gts, const struct timespec* ts) {
+void fill_gpr_from_timestamp(gpr_timespec* gts,
+                             const struct timespec* ts) {
   gts->tv_sec = ts->tv_sec;
   gts->tv_nsec = static_cast<int32_t>(ts->tv_nsec);
   gts->clock_type = GPR_CLOCK_REALTIME;
 }
 
-void default_timestamps_callback(void* /*arg*/, grpc_core::Timestamps* /*ts*/,
+void default_timestamps_callback(void* /*arg*/,
+                                 grpc_core::Timestamps* /*ts*/,
                                  grpc_error_handle /*shudown_err*/) {
   gpr_log(GPR_DEBUG, "Timestamps callback has not been registered");
 }
@@ -50,8 +52,8 @@ void (*timestamps_callback)(void*, grpc_core::Timestamps*,
                             grpc_error_handle shutdown_err) =
     default_timestamps_callback;
 
-/* Used to extract individual opt stats from cmsg, so as to avoid troubles with
- * unaligned reads */
+/* Used to extract individual opt stats from cmsg, so as to avoid
+ * troubles with unaligned reads */
 template <typename T>
 T read_unaligned(const void* ptr) {
   T val;
@@ -65,7 +67,8 @@ void extract_opt_stats_from_tcp_info(ConnectionMetrics* metrics,
   if (info == nullptr) {
     return;
   }
-  if (info->length > offsetof(grpc_core::tcp_info, tcpi_sndbuf_limited)) {
+  if (info->length >
+      offsetof(grpc_core::tcp_info, tcpi_sndbuf_limited)) {
     metrics->recurring_retrans.emplace(info->tcpi_retransmits);
     metrics->is_delivery_rate_app_limited.emplace(
         info->tcpi_delivery_rate_app_limited);
@@ -90,8 +93,8 @@ void extract_opt_stats_from_tcp_info(ConnectionMetrics* metrics,
   }
 }
 
-/** Extracts opt stats from the given control message \a opt_stats to the
- * connection metrics \a metrics */
+/** Extracts opt stats from the given control message \a opt_stats to
+ * the connection metrics \a metrics */
 void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
                                  const cmsghdr* opt_stats) {
   if (opt_stats == nullptr) {
@@ -111,11 +114,13 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
         break;
       }
       case TCP_NLA_RWND_LIMITED: {
-        metrics->rwnd_limited_usec.emplace(read_unaligned<uint64_t>(val));
+        metrics->rwnd_limited_usec.emplace(
+            read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_SNDBUF_LIMITED: {
-        metrics->sndbuf_limited_usec.emplace(read_unaligned<uint64_t>(val));
+        metrics->sndbuf_limited_usec.emplace(
+            read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_PACING_RATE: {
@@ -132,7 +137,8 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
         break;
       }
       case TCP_NLA_SND_CWND: {
-        metrics->congestion_window.emplace(read_unaligned<uint32_t>(val));
+        metrics->congestion_window.emplace(
+            read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_MIN_RTT: {
@@ -144,7 +150,8 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
         break;
       }
       case TCP_NLA_RECUR_RETRANS: {
-        metrics->recurring_retrans.emplace(read_unaligned<uint8_t>(val));
+        metrics->recurring_retrans.emplace(
+            read_unaligned<uint8_t>(val));
         break;
       }
       case TCP_NLA_BYTES_SENT: {
@@ -160,11 +167,13 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
         break;
       }
       case TCP_NLA_DELIVERED: {
-        metrics->packet_delivered.emplace(read_unaligned<uint32_t>(val));
+        metrics->packet_delivered.emplace(
+            read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_DELIVERED_CE: {
-        metrics->packet_delivered_ce.emplace(read_unaligned<uint32_t>(val));
+        metrics->packet_delivered_ce.emplace(
+            read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_BYTES_RETRANS: {
@@ -172,7 +181,8 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
         break;
       }
       case TCP_NLA_DSACK_DUPS: {
-        metrics->packet_spurious_retx.emplace(read_unaligned<uint32_t>(val));
+        metrics->packet_spurious_retx.emplace(
+            read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_REORDERING: {
@@ -195,8 +205,8 @@ static int get_socket_tcp_info(grpc_core::tcp_info* info, int fd) {
 }
 } /* namespace */
 
-void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
-                               void* arg) {
+void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
+                               int fd, void* arg) {
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   /* Store the current time as the sendmsg time. */
@@ -229,31 +239,34 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
   TracedBuffer* elem = *head;
   TracedBuffer* next = nullptr;
   while (elem != nullptr) {
-    /* The byte number refers to the sequence number of the last byte which this
-     * timestamp relates to. */
+    /* The byte number refers to the sequence number of the last byte
+     * which this timestamp relates to. */
     if (serr->ee_data >= elem->seq_no_) {
       switch (serr->ee_info) {
         case SCM_TSTAMP_SCHED:
           fill_gpr_from_timestamp(&(elem->ts_.scheduled_time.time),
                                   &(tss->ts[0]));
-          extract_opt_stats_from_cmsg(&(elem->ts_.scheduled_time.metrics),
-                                      opt_stats);
+          extract_opt_stats_from_cmsg(
+              &(elem->ts_.scheduled_time.metrics), opt_stats);
           elem = elem->next_;
           break;
         case SCM_TSTAMP_SND:
-          fill_gpr_from_timestamp(&(elem->ts_.sent_time.time), &(tss->ts[0]));
+          fill_gpr_from_timestamp(&(elem->ts_.sent_time.time),
+                                  &(tss->ts[0]));
           extract_opt_stats_from_cmsg(&(elem->ts_.sent_time.metrics),
                                       opt_stats);
           elem = elem->next_;
           break;
         case SCM_TSTAMP_ACK:
-          fill_gpr_from_timestamp(&(elem->ts_.acked_time.time), &(tss->ts[0]));
+          fill_gpr_from_timestamp(&(elem->ts_.acked_time.time),
+                                  &(tss->ts[0]));
           extract_opt_stats_from_cmsg(&(elem->ts_.acked_time.metrics),
                                       opt_stats);
-          /* Got all timestamps. Do the callback and free this TracedBuffer.
-           * The thing below can be passed by value if we don't want the
-           * restriction on the lifetime. */
-          timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
+          /* Got all timestamps. Do the callback and free this
+           * TracedBuffer. The thing below can be passed by value if we
+           * don't want the restriction on the lifetime. */
+          timestamps_callback(elem->arg_, &(elem->ts_),
+                              GRPC_ERROR_NONE);
           next = elem->next_;
           delete static_cast<TracedBuffer*>(elem);
           *head = elem = next;
@@ -284,8 +297,8 @@ void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
   GRPC_ERROR_UNREF(shutdown_err);
 }
 
-void grpc_tcp_set_write_timestamps_callback(
-    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error)) {
+void grpc_tcp_set_write_timestamps_callback(void (*fn)(
+    void*, grpc_core::Timestamps*, grpc_error_handle error)) {
   timestamps_callback = fn;
 }
 } /* namespace grpc_core */
@@ -293,13 +306,14 @@ void grpc_tcp_set_write_timestamps_callback(
 #else /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {
-void grpc_tcp_set_write_timestamps_callback(
-    void (*fn)(void*, grpc_core::Timestamps*, grpc_error_handle error)) {
+void grpc_tcp_set_write_timestamps_callback(void (*fn)(
+    void*, grpc_core::Timestamps*, grpc_error_handle error)) {
   // Cast value of fn to void to avoid unused parameter warning.
-  // Can't comment out the name because some compilers and formatters don't
-  // like the sequence */* , which would arise from */*fn*/.
+  // Can't comment out the name because some compilers and formatters
+  // don't like the sequence */* , which would arise from */*fn*/.
   (void)fn;
-  gpr_log(GPR_DEBUG, "Timestamps callback is not enabled for this platform");
+  gpr_log(GPR_DEBUG,
+          "Timestamps callback is not enabled for this platform");
 }
 } /* namespace grpc_core */
 

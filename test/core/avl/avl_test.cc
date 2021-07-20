@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,8 +42,8 @@ static void* int_copy(void* p, void* /*unused*/) {
 
 static void destroy(void* p, void* /*unused*/) { gpr_free(p); }
 
-static const grpc_avl_vtable int_int_vtable = {destroy, int_copy, int_compare,
-                                               destroy, int_copy};
+static const grpc_avl_vtable int_int_vtable = {
+    destroy, int_copy, int_compare, destroy, int_copy};
 
 static void check_get(grpc_avl avl, int key, int value) {
   int* k = box(key);
@@ -249,7 +249,8 @@ static void test_stress(int amount_of_stress) {
 
   unsigned seed = static_cast<unsigned>(time(nullptr));
 
-  gpr_log(GPR_DEBUG, "test_stress amount=%d seed=%u", amount_of_stress, seed);
+  gpr_log(GPR_DEBUG, "test_stress amount=%d seed=%u", amount_of_stress,
+          seed);
 
   srand(static_cast<unsigned>(time(nullptr)));
   avl = grpc_avl_create(&int_int_vtable);
@@ -261,8 +262,10 @@ static void test_stress(int amount_of_stress) {
     GPR_ASSERT(i);
     if (rand() < RAND_MAX / 2) {
       added[idx] = i;
-      printf("avl = grpc_avl_add(avl, box(%d), box(%d), NULL); /* d=%d */\n",
-             idx, i, deletions);
+      printf(
+          "avl = grpc_avl_add(avl, box(%d), box(%d), NULL); /* d=%d "
+          "*/\n",
+          idx, i, deletions);
       avl = grpc_avl_add(avl, box(idx), box(i), nullptr);
     } else {
       deletions += (added[idx] != 0);

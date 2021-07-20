@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,52 +24,52 @@
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
 
-#define HEADER_FRAME_ID_1                                                  \
-  "\x00\x00\xc9\x01\x05\x00\x00\x00\x01" /* headers: generated from        \
-                                            simple_request.headers in this \
-                                            directory */                   \
-  "\x10\x05:path\x08/foo/bar"                                              \
-  "\x10\x07:scheme\x04http"                                                \
-  "\x10\x07:method\x04POST"                                                \
-  "\x10\x0a:authority\x09localhost"                                        \
-  "\x10\x0c"                                                               \
-  "content-type\x10"                                                       \
-  "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15"                                       \
-  "deflate,identity,gzip"                                                  \
-  "\x10\x02te\x08trailers"                                                 \
+#define HEADER_FRAME_ID_1                                             \
+  "\x00\x00\xc9\x01\x05\x00\x00\x00\x01" /* headers: generated from   \
+                                            simple_request.headers in \
+                                            this directory */                                                         \
+  "\x10\x05:path\x08/foo/bar"                                         \
+  "\x10\x07:scheme\x04http"                                           \
+  "\x10\x07:method\x04POST"                                           \
+  "\x10\x0a:authority\x09localhost"                                   \
+  "\x10\x0c"                                                          \
+  "content-type\x10"                                                  \
+  "application/grpc"                                                  \
+  "\x10\x14grpc-accept-encoding\x15"                                  \
+  "deflate,identity,gzip"                                             \
+  "\x10\x02te\x08trailers"                                            \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
-#define HEADER_FRAME_ID_2                                                  \
-  "\x00\x00\xc9\x01\x05\x00\x00\x00\x02" /* headers: generated from        \
-                                            simple_request.headers in this \
-                                            directory */                   \
-  "\x10\x05:path\x08/foo/bar"                                              \
-  "\x10\x07:scheme\x04http"                                                \
-  "\x10\x07:method\x04POST"                                                \
-  "\x10\x0a:authority\x09localhost"                                        \
-  "\x10\x0c"                                                               \
-  "content-type\x10"                                                       \
-  "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15"                                       \
-  "deflate,identity,gzip"                                                  \
-  "\x10\x02te\x08trailers"                                                 \
+#define HEADER_FRAME_ID_2                                             \
+  "\x00\x00\xc9\x01\x05\x00\x00\x00\x02" /* headers: generated from   \
+                                            simple_request.headers in \
+                                            this directory */                                                         \
+  "\x10\x05:path\x08/foo/bar"                                         \
+  "\x10\x07:scheme\x04http"                                           \
+  "\x10\x07:method\x04POST"                                           \
+  "\x10\x0a:authority\x09localhost"                                   \
+  "\x10\x0c"                                                          \
+  "content-type\x10"                                                  \
+  "application/grpc"                                                  \
+  "\x10\x14grpc-accept-encoding\x15"                                  \
+  "deflate,identity,gzip"                                             \
+  "\x10\x02te\x08trailers"                                            \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
-#define HEADER_FRAME_ID_3                                                  \
-  "\x00\x00\xc9\x01\x05\x00\x00\x00\x03" /* headers: generated from        \
-                                            simple_request.headers in this \
-                                            directory */                   \
-  "\x10\x05:path\x08/foo/bar"                                              \
-  "\x10\x07:scheme\x04http"                                                \
-  "\x10\x07:method\x04POST"                                                \
-  "\x10\x0a:authority\x09localhost"                                        \
-  "\x10\x0c"                                                               \
-  "content-type\x10"                                                       \
-  "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15"                                       \
-  "deflate,identity,gzip"                                                  \
-  "\x10\x02te\x08trailers"                                                 \
+#define HEADER_FRAME_ID_3                                             \
+  "\x00\x00\xc9\x01\x05\x00\x00\x00\x03" /* headers: generated from   \
+                                            simple_request.headers in \
+                                            this directory */                                                         \
+  "\x10\x05:path\x08/foo/bar"                                         \
+  "\x10\x07:scheme\x04http"                                           \
+  "\x10\x07:method\x04POST"                                           \
+  "\x10\x0a:authority\x09localhost"                                   \
+  "\x10\x0c"                                                          \
+  "content-type\x10"                                                  \
+  "application/grpc"                                                  \
+  "\x10\x14grpc-accept-encoding\x15"                                  \
+  "deflate,identity,gzip"                                             \
+  "\x10\x02te\x08trailers"                                            \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
 namespace {
@@ -77,9 +77,10 @@ namespace {
 void verifier(grpc_server* server, grpc_completion_queue* cq,
               void* /*registered_method*/) {
   while (server->core_server->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(
+            cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+            .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -89,7 +90,8 @@ TEST(BadStreamingId, RegularHeader) {
   args[1].client_validator = nullptr;
   args[1].client_payload = HEADER_FRAME_ID_1;
   args[1].client_payload_length = sizeof(HEADER_FRAME_ID_1) - 1;
-  grpc_run_bad_client_test(verifier, args, 2, GRPC_BAD_CLIENT_DISCONNECT);
+  grpc_run_bad_client_test(verifier, args, 2,
+                           GRPC_BAD_CLIENT_DISCONNECT);
 }
 
 TEST(BadStreamingId, NonClientStreamId) {
@@ -99,7 +101,8 @@ TEST(BadStreamingId, NonClientStreamId) {
   args[1].client_validator = nullptr;
   args[1].client_payload = HEADER_FRAME_ID_2;
   args[1].client_payload_length = sizeof(HEADER_FRAME_ID_2) - 1;
-  grpc_run_bad_client_test(verifier, args, 2, GRPC_BAD_CLIENT_DISCONNECT);
+  grpc_run_bad_client_test(verifier, args, 2,
+                           GRPC_BAD_CLIENT_DISCONNECT);
 }
 
 TEST(BadStreamingId, ClosedStreamId) {
@@ -117,7 +120,8 @@ TEST(BadStreamingId, ClosedStreamId) {
   args[3].client_validator = nullptr;
   args[3].client_payload = HEADER_FRAME_ID_1;
   args[3].client_payload_length = sizeof(HEADER_FRAME_ID_1) - 1;
-  grpc_run_bad_client_test(verifier, args, 4, GRPC_BAD_CLIENT_DISCONNECT);
+  grpc_run_bad_client_test(verifier, args, 4,
+                           GRPC_BAD_CLIENT_DISCONNECT);
 }
 
 }  // namespace

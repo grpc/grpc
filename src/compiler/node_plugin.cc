@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,7 +27,8 @@
 using grpc_node_generator::GenerateFile;
 using grpc_node_generator::GetJSServiceFilename;
 
-class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class NodeGrpcGenerator
+    : public grpc::protobuf::compiler::CodeGenerator {
  public:
   NodeGrpcGenerator() {}
   ~NodeGrpcGenerator() {}
@@ -47,14 +48,16 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       std::vector<std::string> parameters_list =
           grpc_generator::tokenize(parameter, ",");
       for (auto parameter_string = parameters_list.begin();
-           parameter_string != parameters_list.end(); parameter_string++) {
+           parameter_string != parameters_list.end();
+           parameter_string++) {
         std::vector<std::string> param =
             grpc_generator::tokenize(*parameter_string, "=");
         if (param[0] == "minimum_node_version") {
           sscanf(param[1].c_str(), "%d",
                  &generator_parameters.minimum_node_version);
         } else {
-          *error = std::string("Unknown parameter: ") + *parameter_string;
+          *error =
+              std::string("Unknown parameter: ") + *parameter_string;
           return false;
         }
       }

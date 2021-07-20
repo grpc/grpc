@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -80,14 +80,18 @@ static void do_basic_init(void) {
   g_initializations = 0;
 }
 
-static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
+static bool append_filter(grpc_channel_stack_builder* builder,
+                          void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr,
+      nullptr);
 }
 
-static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
+static bool prepend_filter(grpc_channel_stack_builder* builder,
+                           void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr,
+      nullptr);
 }
 
 static void register_builtin_channel_init() {
@@ -102,10 +106,12 @@ static void register_builtin_channel_init() {
                                    grpc_add_connected_filter, nullptr);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      append_filter, const_cast<grpc_channel_filter*>(&grpc_lame_filter));
+      append_filter,
+      const_cast<grpc_channel_filter*>(&grpc_lame_filter));
   grpc_channel_init_register_stage(
       GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-      const_cast<grpc_channel_filter*>(&grpc_core::Server::kServerTopFilter));
+      const_cast<grpc_channel_filter*>(
+          &grpc_core::Server::kServerTopFilter));
 }
 
 typedef struct grpc_plugin {
@@ -154,8 +160,8 @@ void grpc_init(void) {
         g_all_of_the_plugins[i].init();
       }
     }
-    /* register channel finalization AFTER all plugins, to ensure that it's run
-     * at the appropriate time */
+    /* register channel finalization AFTER all plugins, to ensure that
+     * it's run at the appropriate time */
     grpc_register_security_filters();
     register_builtin_channel_init();
     grpc_tracer_init();
@@ -173,7 +179,8 @@ void grpc_shutdown_internal_locked(void) {
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     {
-      grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
+      grpc_timer_manager_set_threading(
+          false);  // shutdown timer_manager thread
       for (i = g_number_of_plugins; i >= 0; i--) {
         if (g_all_of_the_plugins[i].destroy != nullptr) {
           g_all_of_the_plugins[i].destroy();
@@ -201,8 +208,9 @@ void grpc_shutdown_internal_locked(void) {
 void grpc_shutdown_internal(void* /*ignored*/) {
   GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
   grpc_core::MutexLock lock(g_init_mu);
-  // We have released lock from the shutdown thread and it is possible that
-  // another grpc_init has been called, and do nothing if that is the case.
+  // We have released lock from the shutdown thread and it is possible
+  // that another grpc_init has been called, and do nothing if that is
+  // the case.
   if (--g_initializations != 0) {
     return;
   }
@@ -218,21 +226,22 @@ void grpc_shutdown(void) {
         grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
         (acec == nullptr ||
-         (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
-             0)) {
+         (acec->Flags() &
+          GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) == 0)) {
       // just run clean-up when this is called on non-executor thread.
       gpr_log(GPR_DEBUG, "grpc_shutdown starts clean-up now");
       g_shutting_down = true;
       grpc_shutdown_internal_locked();
     } else {
-      // spawn a detached thread to do the actual clean up in case we are
-      // currently in an executor thread.
+      // spawn a detached thread to do the actual clean up in case we
+      // are currently in an executor thread.
       gpr_log(GPR_DEBUG, "grpc_shutdown spawns clean-up thread");
       g_initializations++;
       g_shutting_down = true;
       grpc_core::Thread cleanup_thread(
           "grpc_shutdown", grpc_shutdown_internal, nullptr, nullptr,
-          grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
+          grpc_core::Thread::Options().set_joinable(false).set_tracked(
+              false));
       cleanup_thread.Start();
     }
   }

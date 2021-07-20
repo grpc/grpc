@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,8 +28,8 @@ static void test_no_op(void) {
 static void expect_percentile(grpc_histogram* h, double percentile,
                               double min_expect, double max_expect) {
   double got = grpc_histogram_percentile(h, percentile);
-  gpr_log(GPR_INFO, "@%f%%, expect %f <= %f <= %f", percentile, min_expect, got,
-          max_expect);
+  gpr_log(GPR_INFO, "@%f%%, expect %f <= %f <= %f", percentile,
+          min_expect, got, max_expect);
   GPR_ASSERT(min_expect <= got);
   GPR_ASSERT(got <= max_expect);
 }

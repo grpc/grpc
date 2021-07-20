@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,7 +60,8 @@ std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
   } else {
     abort();
   }
-  GPR_ASSERT(inet_ntop(af, (void*)server.ip_addr, ip_str, 46) != nullptr);
+  GPR_ASSERT(inet_ntop(af, (void*)server.ip_addr, ip_str, 46) !=
+             nullptr);
   return ip_str;
 }
 
@@ -72,7 +73,8 @@ TEST_F(GrpclbTest, CreateRequest) {
       grpc_core::GrpcLbRequestCreate(service_name.c_str(), arena.ptr());
   const int num_bytes_written = GRPC_SLICE_LENGTH(slice);
   EXPECT_GT(num_bytes_written, 0);
-  request.ParseFromArray(GRPC_SLICE_START_PTR(slice), num_bytes_written);
+  request.ParseFromArray(GRPC_SLICE_START_PTR(slice),
+                         num_bytes_written);
   EXPECT_EQ(request.initial_request().name(), service_name);
   grpc_slice_unref(slice);
 }
@@ -91,8 +93,8 @@ TEST_F(GrpclbTest, ParseInitialResponse) {
   // Test parsing.
   grpc_core::GrpcLbResponse resp;
   upb::Arena arena;
-  ASSERT_TRUE(
-      grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
+  ASSERT_TRUE(grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(),
+                                             &resp));
   grpc_slice_unref(encoded_slice);
   EXPECT_EQ(resp.type, resp.INITIAL);
   EXPECT_EQ(resp.client_stats_report_interval, 123456);
@@ -119,8 +121,8 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   // Test parsing.
   grpc_core::GrpcLbResponse resp;
   upb::Arena arena;
-  ASSERT_TRUE(
-      grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
+  ASSERT_TRUE(grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(),
+                                             &resp));
   grpc_slice_unref(encoded_slice);
   EXPECT_EQ(resp.type, resp.SERVERLIST);
   EXPECT_EQ(resp.serverlist.size(), 2);

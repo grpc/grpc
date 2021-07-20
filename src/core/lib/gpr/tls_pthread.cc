@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -22,7 +22,8 @@
 
 #include "src/core/lib/gpr/tls.h"
 
-intptr_t gpr_tls_set(struct gpr_pthread_thread_local* tls, intptr_t value) {
+intptr_t gpr_tls_set(struct gpr_pthread_thread_local* tls,
+                     intptr_t value) {
   GPR_ASSERT(0 == pthread_setspecific(tls->key, (void*)value));
   return value;
 }

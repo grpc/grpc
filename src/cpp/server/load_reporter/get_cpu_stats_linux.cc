@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,8 +32,10 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   FILE* fp;
   fp = fopen("/proc/stat", "r");
   uint64_t user, nice, system, idle;
-  if (fscanf(fp, "cpu %lu %lu %lu %lu", &user, &nice, &system, &idle) != 4) {
-    // Something bad happened with the information, so assume it's all invalid
+  if (fscanf(fp, "cpu %lu %lu %lu %lu", &user, &nice, &system, &idle) !=
+      4) {
+    // Something bad happened with the information, so assume it's all
+    // invalid
     user = nice = system = idle = 0;
   }
   fclose(fp);

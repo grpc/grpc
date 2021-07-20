@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
@@ -30,7 +30,8 @@ class TimerState;
 // Must be the first field in the filter's call_data.
 struct grpc_deadline_state {
   grpc_deadline_state(grpc_call_element* elem,
-                      const grpc_call_element_args& args, grpc_millis deadline);
+                      const grpc_call_element_args& args,
+                      grpc_millis deadline);
   ~grpc_deadline_state();
 
   // We take a reference to the call stack for the timer callback.
@@ -41,8 +42,8 @@ struct grpc_deadline_state {
   // Closure to invoke when we receive trailing metadata.
   // We use this to cancel the timer.
   grpc_closure recv_trailing_metadata_ready;
-  // The original recv_trailing_metadata_ready closure, which we chain to
-  // after our own closure is invoked.
+  // The original recv_trailing_metadata_ready closure, which we chain
+  // to after our own closure is invoked.
   grpc_closure* original_recv_trailing_metadata_ready;
 };
 
@@ -63,12 +64,12 @@ struct grpc_deadline_state {
 void grpc_deadline_state_reset(grpc_call_element* elem,
                                grpc_millis new_deadline);
 
-// To be called from the client-side filter's start_transport_stream_op_batch()
-// method.  Ensures that the deadline timer is cancelled when the call
-// is completed.
+// To be called from the client-side filter's
+// start_transport_stream_op_batch() method.  Ensures that the deadline
+// timer is cancelled when the call is completed.
 //
-// Note: It is the caller's responsibility to chain to the next filter if
-// necessary after this function returns.
+// Note: It is the caller's responsibility to chain to the next filter
+// if necessary after this function returns.
 //
 // Note: Must be called while holding the call combiner.
 void grpc_deadline_state_client_start_transport_stream_op_batch(

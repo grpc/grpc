@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -49,10 +49,12 @@ struct SimpleConvergenceTestArgs {
   double start;
 };
 
-std::ostream& operator<<(std::ostream& out, SimpleConvergenceTestArgs args) {
+std::ostream& operator<<(std::ostream& out,
+                         SimpleConvergenceTestArgs args) {
   return out << "gain_p:" << args.gain_p << " gain_i:" << args.gain_i
              << " gain_d:" << args.gain_d << " dt:" << args.dt
-             << " set_point:" << args.set_point << " start:" << args.start;
+             << " set_point:" << args.set_point
+             << " start:" << args.start;
 }
 
 class SimpleConvergenceTest
@@ -66,7 +68,8 @@ TEST_P(SimpleConvergenceTest, Converges) {
                         .set_initial_control_value(GetParam().start));
 
   for (int i = 0; i < 100000; i++) {
-    pid.Update(GetParam().set_point - pid.last_control_value(), GetParam().dt);
+    pid.Update(GetParam().set_point - pid.last_control_value(),
+               GetParam().dt);
   }
 
   EXPECT_LT(fabs(GetParam().set_point - pid.last_control_value()), 0.1);
@@ -79,7 +82,8 @@ INSTANTIATE_TEST_SUITE_P(
     X, SimpleConvergenceTest,
     ::testing::Values(SimpleConvergenceTestArgs{0.2, 0, 0, 1, 100, 0},
                       SimpleConvergenceTestArgs{0.2, 0.1, 0, 1, 100, 0},
-                      SimpleConvergenceTestArgs{0.2, 0.1, 0.1, 1, 100, 0}));
+                      SimpleConvergenceTestArgs{0.2, 0.1, 0.1, 1, 100,
+                                                0}));
 
 }  // namespace testing
 }  // namespace grpc_core

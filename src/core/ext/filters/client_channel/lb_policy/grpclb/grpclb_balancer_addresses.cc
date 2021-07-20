@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -22,7 +22,8 @@
 #include "src/core/lib/gpr/useful.h"
 
 // Channel arg key for the list of balancer addresses.
-#define GRPC_ARG_GRPCLB_BALANCER_ADDRESSES "grpc.grpclb_balancer_addresses"
+#define GRPC_ARG_GRPCLB_BALANCER_ADDRESSES \
+  "grpc.grpclb_balancer_addresses"
 
 namespace grpc_core {
 

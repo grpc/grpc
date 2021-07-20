@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -45,8 +45,9 @@ class AdminServicesTest : public ::testing::Test {
     ::grpc::AddAdminServices(&builder);
     server_ = builder.BuildAndStart();
     // Create channel
-    auto reflection_stub = reflection::v1alpha::ServerReflection::NewStub(
-        CreateChannel(address, InsecureChannelCredentials()));
+    auto reflection_stub =
+        reflection::v1alpha::ServerReflection::NewStub(
+            CreateChannel(address, InsecureChannelCredentials()));
     stream_ = reflection_stub->ServerReflectionInfo(&reflection_ctx_);
   }
 
@@ -73,21 +74,23 @@ class AdminServicesTest : public ::testing::Test {
 };
 
 TEST_F(AdminServicesTest, ValidateRegisteredServices) {
-  // Using Contains here, because the server builder might register other
-  // services in certain environments.
+  // Using Contains here, because the server builder might register
+  // other services in certain environments.
+  EXPECT_THAT(GetServiceList(),
+              ::testing::AllOf(
+                  ::testing::Contains("grpc.channelz.v1.Channelz"),
+                  ::testing::Contains(
+                      "grpc.reflection.v1alpha.ServerReflection")));
+#if defined(GRPC_NO_XDS) || defined(DISABLED_XDS_PROTO_IN_CC)
   EXPECT_THAT(
       GetServiceList(),
-      ::testing::AllOf(
-          ::testing::Contains("grpc.channelz.v1.Channelz"),
-          ::testing::Contains("grpc.reflection.v1alpha.ServerReflection")));
-#if defined(GRPC_NO_XDS) || defined(DISABLED_XDS_PROTO_IN_CC)
-  EXPECT_THAT(GetServiceList(),
-              ::testing::Not(::testing::Contains(
-                  "envoy.service.status.v3.ClientStatusDiscoveryService")));
+      ::testing::Not(::testing::Contains(
+          "envoy.service.status.v3.ClientStatusDiscoveryService")));
 #else
-  EXPECT_THAT(GetServiceList(),
-              ::testing::Contains(
-                  "envoy.service.status.v3.ClientStatusDiscoveryService"));
+  EXPECT_THAT(
+      GetServiceList(),
+      ::testing::Contains(
+          "envoy.service.status.v3.ClientStatusDiscoveryService"));
 #endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
 }
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,14 +28,15 @@
 #ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
 
 /* This should be 0 in production, but it may be enabled for testing or
-   debugging purposes, to simulate an environment where IPv6 sockets can't
-   also speak IPv4. */
+   debugging purposes, to simulate an environment where IPv6 sockets
+   can't also speak IPv4. */
 int grpc_forbid_dualstack_sockets_for_testing = 0;
 
 int grpc_set_socket_dualstack(int fd) {
   if (!grpc_forbid_dualstack_sockets_for_testing) {
     const int off = 0;
-    return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
+    return 0 ==
+           setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
   } else {
     /* Force an IPv6-only socket, for testing purposes. */
     const int on = 1;

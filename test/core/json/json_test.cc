@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,7 +35,8 @@ namespace grpc_core {
 
 void ValidateValue(const Json& actual, const Json& expected);
 
-void ValidateObject(const Json::Object& actual, const Json::Object& expected) {
+void ValidateObject(const Json::Object& actual,
+                    const Json::Object& expected) {
   ASSERT_EQ(actual.size(), expected.size());
   auto actual_it = actual.begin();
   for (const auto& p : expected) {
@@ -45,7 +46,8 @@ void ValidateObject(const Json::Object& actual, const Json::Object& expected) {
   }
 }
 
-void ValidateArray(const Json::Array& actual, const Json::Array& expected) {
+void ValidateArray(const Json::Array& actual,
+                   const Json::Array& expected) {
   ASSERT_EQ(actual.size(), expected.size());
   for (size_t i = 0; i < expected.size(); ++i) {
     ValidateValue(actual[i], expected[i]);
@@ -92,14 +94,15 @@ TEST(Json, Whitespace) {
 }
 
 TEST(Json, Utf16) {
-  RunSuccessTest("\"\\u0020\\\\\\u0010\\u000a\\u000D\"", " \\\u0010\n\r",
-                 "\" \\\\\\u0010\\n\\r\"");
+  RunSuccessTest("\"\\u0020\\\\\\u0010\\u000a\\u000D\"",
+                 " \\\u0010\n\r", "\" \\\\\\u0010\\n\\r\"");
 }
 
 TEST(Json, Utf8) {
   RunSuccessTest("\"ßâñć௵⇒\"", "ßâñć௵⇒",
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
-  RunSuccessTest("\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"", "ßâñć௵⇒",
+  RunSuccessTest("\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"",
+                 "ßâñć௵⇒",
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
   // Testing UTF-8 character "𝄞", U+11D1E.
   RunSuccessTest("\"\xf0\x9d\x84\x9e\"", "\xf0\x9d\x84\x9e",
@@ -122,12 +125,13 @@ TEST(Json, NestedEmptyContainers) {
 }
 
 TEST(Json, EscapesAndControlCharactersInKeyStrings) {
-  RunSuccessTest(" { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",
-                 Json::Object{
-                     {"\u007f\u007f\n\r\"\f\b\\a , b", 1},
-                     {"", 0},
-                 },
-                 "{\"\":0,\"\\u007f\\u007f\\n\\r\\\"\\f\\b\\\\a , b\":1}");
+  RunSuccessTest(
+      " { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",
+      Json::Object{
+          {"\u007f\u007f\n\r\"\f\b\\a , b", 1},
+          {"", 0},
+      },
+      "{\"\":0,\"\\u007f\\u007f\\n\\r\\\"\\f\\b\\\\a , b\":1}");
 }
 
 TEST(Json, WriterCutsOffInvalidUtf8) {
@@ -234,7 +238,9 @@ TEST(Json, BadContainers) {
   RunParseFailureTest("{x=0,y}");
 }
 
-TEST(Json, DuplicateObjectKeys) { RunParseFailureTest("{\"x\": 1, \"x\": 1}"); }
+TEST(Json, DuplicateObjectKeys) {
+  RunParseFailureTest("{\"x\": 1, \"x\": 1}");
+}
 
 TEST(Json, TrailingComma) {
   RunParseFailureTest("{,}");
@@ -263,7 +269,8 @@ TEST(Json, Equality) {
   EXPECT_EQ(Json(1), Json(1));
   EXPECT_NE(Json(1), Json(2));
   EXPECT_EQ(Json(1), Json("1", /*is_number=*/true));
-  EXPECT_EQ(Json("-5e5", /*is_number=*/true), Json("-5e5", /*is_number=*/true));
+  EXPECT_EQ(Json("-5e5", /*is_number=*/true),
+            Json("-5e5", /*is_number=*/true));
   // Booleans.
   EXPECT_EQ(Json(true), Json(true));
   EXPECT_EQ(Json(false), Json(false));
@@ -275,9 +282,12 @@ TEST(Json, Equality) {
   EXPECT_EQ(Json(Json::Array{"foo"}), Json(Json::Array{"foo"}));
   EXPECT_NE(Json(Json::Array{"foo"}), Json(Json::Array{"bar"}));
   // Objects.
-  EXPECT_EQ(Json(Json::Object{{"foo", 1}}), Json(Json::Object{{"foo", 1}}));
-  EXPECT_NE(Json(Json::Object{{"foo", 1}}), Json(Json::Object{{"foo", 2}}));
-  EXPECT_NE(Json(Json::Object{{"foo", 1}}), Json(Json::Object{{"bar", 1}}));
+  EXPECT_EQ(Json(Json::Object{{"foo", 1}}),
+            Json(Json::Object{{"foo", 1}}));
+  EXPECT_NE(Json(Json::Object{{"foo", 1}}),
+            Json(Json::Object{{"foo", 2}}));
+  EXPECT_NE(Json(Json::Object{{"foo", 1}}),
+            Json(Json::Object{{"bar", 1}}));
   // Differing types.
   EXPECT_NE(Json(1), Json("foo"));
   EXPECT_NE(Json(1), Json(true));

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -21,8 +21,10 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-/* Fetch oauth2 access token with a credentials object. Does not take ownership.
-   Returns NULL on a failure. The caller should call gpr_free on the token. */
+/* Fetch oauth2 access token with a credentials object. Does not take
+   ownership.
+   Returns NULL on a failure. The caller should call gpr_free on the
+   token. */
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds);
 

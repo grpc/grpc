@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,7 +45,8 @@ struct grpc_tls_error_details
 
 /** TLS server authorization check config. **/
 struct grpc_tls_server_authorization_check_config
-    : public grpc_core::RefCounted<grpc_tls_server_authorization_check_config> {
+    : public grpc_core::RefCounted<
+          grpc_tls_server_authorization_check_config> {
  public:
   grpc_tls_server_authorization_check_config(
       const void* config_user_data,
@@ -66,27 +67,28 @@ struct grpc_tls_server_authorization_check_config
 
  private:
   /** This is a pointer to the wrapped language implementation of
-   * grpc_tls_server_authorization_check_config. It is necessary to implement
-   * the C schedule and cancel functions, given the schedule or cancel function
-   * in a wrapped language. **/
+   * grpc_tls_server_authorization_check_config. It is necessary to
+   * implement the C schedule and cancel functions, given the schedule
+   * or cancel function in a wrapped language. **/
   void* context_ = nullptr;
-  /** config-specific, read-only user data that works for all channels created
-     with a Credential using the config. */
+  /** config-specific, read-only user data that works for all channels
+     created with a Credential using the config. */
   void* config_user_data_;
 
   /** callback function for invoking server authorization check. The
-     implementation of this method has to be non-blocking, but can be performed
-     synchronously or asynchronously.
-     If processing occurs synchronously, it populates \a arg->result, \a
-     arg->status, and \a arg->error_details, and returns zero.
-     If processing occurs asynchronously, it returns a non-zero value.
-     Application then invokes \a arg->cb when processing is completed. Note that
-     \a arg->cb cannot be invoked before \a schedule() returns.
+     implementation of this method has to be non-blocking, but can be
+     performed synchronously or asynchronously. If processing occurs
+     synchronously, it populates \a arg->result, \a arg->status, and \a
+     arg->error_details, and returns zero. If processing occurs
+     asynchronously, it returns a non-zero value. Application then
+     invokes \a arg->cb when processing is completed. Note that \a
+     arg->cb cannot be invoked before \a schedule() returns.
   */
   int (*schedule_)(void* config_user_data,
                    grpc_tls_server_authorization_check_arg* arg);
 
-  /** callback function for canceling a server authorization check request. */
+  /** callback function for canceling a server authorization check
+   * request. */
   void (*cancel_)(void* config_user_data,
                   grpc_tls_server_authorization_check_arg* arg);
 
@@ -95,8 +97,8 @@ struct grpc_tls_server_authorization_check_config
   void (*destruct_)(void* config_user_data);
 };
 
-// Contains configurable options specified by callers to configure their certain
-// security features supported in TLS.
+// Contains configurable options specified by callers to configure their
+// certain security features supported in TLS.
 // TODO(ZhenLian): consider making this not ref-counted.
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
@@ -107,7 +109,8 @@ struct grpc_tls_credentials_options
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
-  grpc_tls_server_verification_option server_verification_option() const {
+  grpc_tls_server_verification_option server_verification_option()
+      const {
     return server_verification_option_;
   }
   grpc_tls_version min_tls_version() const { return min_tls_version_; }
@@ -116,7 +119,8 @@ struct grpc_tls_credentials_options
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
-  // Returns the distributor from provider_ if it is set, nullptr otherwise.
+  // Returns the distributor from provider_ if it is set, nullptr
+  // otherwise.
   grpc_tls_certificate_distributor* certificate_distributor() {
     if (provider_ != nullptr) return provider_->distributor().get();
     return nullptr;
@@ -124,7 +128,9 @@ struct grpc_tls_credentials_options
   bool watch_root_cert() { return watch_root_cert_; }
   const std::string& root_cert_name() { return root_cert_name_; }
   bool watch_identity_pair() { return watch_identity_pair_; }
-  const std::string& identity_cert_name() { return identity_cert_name_; }
+  const std::string& identity_cert_name() {
+    return identity_cert_name_;
+  }
 
   // Setters for member fields.
   void set_cert_request_type(
@@ -132,7 +138,8 @@ struct grpc_tls_credentials_options
     cert_request_type_ = type;
   }
   void set_server_verification_option(
-      const grpc_tls_server_verification_option server_verification_option) {
+      const grpc_tls_server_verification_option
+          server_verification_option) {
     server_verification_option_ = server_verification_option;
   }
   void set_min_tls_version(grpc_tls_version min_tls_version) {
@@ -142,22 +149,25 @@ struct grpc_tls_credentials_options
     max_tls_version_ = max_tls_version;
   }
   void set_server_authorization_check_config(
-      grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
+      grpc_core::RefCountedPtr<
+          grpc_tls_server_authorization_check_config>
           config) {
     server_authorization_check_config_ = std::move(config);
   }
   // Sets the provider in the options.
   void set_certificate_provider(
-      grpc_core::RefCountedPtr<grpc_tls_certificate_provider> provider) {
+      grpc_core::RefCountedPtr<grpc_tls_certificate_provider>
+          provider) {
     provider_ = std::move(provider);
   }
   // If need to watch the updates of root certificates with name
-  // |root_cert_name|. The default value is false. If used in tls_credentials,
-  // it should always be set to true unless the root certificates are not
-  // needed.
+  // |root_cert_name|. The default value is false. If used in
+  // tls_credentials, it should always be set to true unless the root
+  // certificates are not needed.
   void set_watch_root_cert(bool watch) { watch_root_cert_ = watch; }
-  // Sets the name of root certificates being watched, if |set_watch_root_cert|
-  // is called. If not set, an empty string will be used as the name.
+  // Sets the name of root certificates being watched, if
+  // |set_watch_root_cert| is called. If not set, an empty string will
+  // be used as the name.
   void set_root_cert_name(std::string root_cert_name) {
     root_cert_name_ = std::move(root_cert_name);
   }
@@ -166,10 +176,12 @@ struct grpc_tls_credentials_options
   // The default value is false.
   // If used in tls_credentials, it should always be set to true
   // unless the identity key-cert pairs are not needed.
-  void set_watch_identity_pair(bool watch) { watch_identity_pair_ = watch; }
+  void set_watch_identity_pair(bool watch) {
+    watch_identity_pair_ = watch;
+  }
   // Sets the name of identity key-cert pairs being watched, if
-  // |set_watch_identity_pair| is called. If not set, an empty string will
-  // be used as the name.
+  // |set_watch_identity_pair| is called. If not set, an empty string
+  // will be used as the name.
   void set_identity_cert_name(std::string identity_cert_name) {
     identity_cert_name_ = std::move(identity_cert_name);
   }

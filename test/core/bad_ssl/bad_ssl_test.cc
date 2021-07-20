@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,7 +48,8 @@ static void run_test(const char* target, size_t nops) {
   grpc_status_code status;
   grpc_call_error error;
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_completion_queue* cq =
+      grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
 
   grpc_op ops[6];
@@ -66,11 +67,13 @@ static void run_test(const char* target, size_t nops) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  channel = grpc_secure_channel_create(ssl_creds, target, &args, nullptr);
-  grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
-  c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, nullptr);
+  channel =
+      grpc_secure_channel_create(ssl_creds, target, &args, nullptr);
+  grpc_slice host =
+      grpc_slice_from_static_string("foo.test.google.fr:1234");
+  c = grpc_channel_create_call(
+      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/foo"), &host, deadline, nullptr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -80,14 +83,16 @@ static void run_test(const char* target, size_t nops) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;

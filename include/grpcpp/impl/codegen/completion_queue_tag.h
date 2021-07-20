@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,18 +33,20 @@ class CompletionQueueTag {
   ///
   ///   1. For the sync API - before returning from Pluck
   ///   2. For the CQ-based async API - before returning from Next
-  ///   3. For the callback-based API - before invoking the user callback
+  ///   3. For the callback-based API - before invoking the user
+  ///   callback
   ///
   /// This is the method that translates from core-side tag/status to
   /// C++ API-observable tag/status.
   ///
-  /// The return value is the status of the operation (returning status is the
-  /// general behavior of this function). If this function returns false, the
-  /// tag is dropped and not returned from the completion queue: this concept is
-  /// for events that are observed at core but not requested by the user
-  /// application (e.g., server shutdown, for server unimplemented method
-  /// responses, or for cases where a server-side RPC doesn't have a completion
-  /// notification registered using AsyncNotifyWhenDone)
+  /// The return value is the status of the operation (returning status
+  /// is the general behavior of this function). If this function
+  /// returns false, the tag is dropped and not returned from the
+  /// completion queue: this concept is for events that are observed at
+  /// core but not requested by the user application (e.g., server
+  /// shutdown, for server unimplemented method responses, or for cases
+  /// where a server-side RPC doesn't have a completion notification
+  /// registered using AsyncNotifyWhenDone)
   virtual bool FinalizeResult(void** tag, bool* status) = 0;
 };
 }  // namespace internal

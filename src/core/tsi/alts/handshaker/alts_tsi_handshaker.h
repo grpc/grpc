@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,29 +48,30 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
 /**
  * This method creates a ALTS TSI handshaker instance.
  *
- * - options: ALTS credentials options containing information passed from TSI
- *   caller (e.g., rpc protocol versions).
- * - target_name: the name of the endpoint that the channel is connecting to,
- *   and will be used for secure naming check.
- * - handshaker_service_url: address of ALTS handshaker service in the format of
- *   "host:port".
- * - is_client: boolean value indicating if the handshaker is used at the client
- *   (is_client = true) or server (is_client = false) side.
+ * - options: ALTS credentials options containing information passed
+ * from TSI caller (e.g., rpc protocol versions).
+ * - target_name: the name of the endpoint that the channel is
+ * connecting to, and will be used for secure naming check.
+ * - handshaker_service_url: address of ALTS handshaker service in the
+ * format of "host:port".
+ * - is_client: boolean value indicating if the handshaker is used at
+ * the client (is_client = true) or server (is_client = false) side.
  * - interested_parties: set of pollsets interested in this connection.
- * - self: address of ALTS TSI handshaker instance to be returned from the
- *   method.
- * - user_specified_max_frame_size: Determines the maximum frame size used by
- *   frame protector that is specified via user. If unspecified, the value is 0.
+ * - self: address of ALTS TSI handshaker instance to be returned from
+ * the method.
+ * - user_specified_max_frame_size: Determines the maximum frame size
+ * used by frame protector that is specified via user. If unspecified,
+ * the value is 0.
  *
- * It returns TSI_OK on success and an error status code on failure. Note that
- * if interested_parties is nullptr, a dedicated TSI thread will be created and
- * used.
+ * It returns TSI_OK on success and an error status code on failure.
+ * Note that if interested_parties is nullptr, a dedicated TSI thread
+ * will be created and used.
  */
 tsi_result alts_tsi_handshaker_create(
-    const grpc_alts_credentials_options* options, const char* target_name,
-    const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self,
-    size_t user_specified_max_frame_size);
+    const grpc_alts_credentials_options* options,
+    const char* target_name, const char* handshaker_service_url,
+    bool is_client, grpc_pollset_set* interested_parties,
+    tsi_handshaker** self, size_t user_specified_max_frame_size);
 
 /**
  * This method creates an ALTS TSI handshaker result instance.
@@ -80,9 +81,9 @@ tsi_result alts_tsi_handshaker_create(
  *   client or not.
  * - result: address of ALTS TSI handshaker result instance.
  */
-tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
-                                             bool is_client,
-                                             tsi_handshaker_result** result);
+tsi_result alts_tsi_handshaker_result_create(
+    grpc_gcp_HandshakerResp* resp, bool is_client,
+    tsi_handshaker_result** result);
 
 /**
  * This method sets unused bytes of ALTS TSI handshaker result instance.
@@ -91,13 +92,13 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
  * - recv_bytes: data received from the handshaker service.
  * - bytes_consumed: size of data consumed by the handshaker service.
  */
-void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
-                                                 grpc_slice* recv_bytes,
-                                                 size_t bytes_consumed);
+void alts_tsi_handshaker_result_set_unused_bytes(
+    tsi_handshaker_result* result, grpc_slice* recv_bytes,
+    size_t bytes_consumed);
 
 /**
- * This method returns a boolean value indicating if an ALTS TSI handshaker
- * has been shutdown or not.
+ * This method returns a boolean value indicating if an ALTS TSI
+ * handshaker has been shutdown or not.
  */
 bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker);
 

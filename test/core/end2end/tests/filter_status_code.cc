@@ -10,17 +10,17 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
 /* This test verifies -
- * 1) grpc_call_final_info passed to the filters on destroying a call contains
- * the proper status.
- * 2) If the response has both an HTTP status code and a gRPC status code, then
- * we should prefer the gRPC status code as mentioned in
+ * 1) grpc_call_final_info passed to the filters on destroying a call
+ * contains the proper status. 2) If the response has both an HTTP
+ * status code and a gRPC status code, then we should prefer the gRPC
+ * status code as mentioned in
  * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
  */
 
@@ -54,10 +54,9 @@ static grpc_status_code g_server_status_code;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -77,16 +76,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -108,7 +108,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Simple request via a server filter that saves the reported status code.
+// Simple request via a server filter that saves the reported status
+// code.
 static void test_request(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
@@ -134,9 +135,10 @@ static void test_request(grpc_end2end_test_config config) {
   gpr_mu_unlock(&g_mu);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
   gpr_mu_lock(&g_mu);
   g_client_call_stack = grpc_call_get_call_stack(c);
@@ -160,24 +162,26 @@ static void test_request(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -207,8 +211,8 @@ static void test_request(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -233,8 +237,8 @@ static void test_request(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 
   // Perform checks after test tear-down
-  // Guards against the case that there's outstanding channel-related work on a
-  // call prior to verification
+  // Guards against the case that there's outstanding channel-related
+  // work on a call prior to verification
   gpr_mu_lock(&g_mu);
   if (!g_client_code_recv) {
     GPR_ASSERT(gpr_cv_wait(&g_client_code_cv, &g_mu,
@@ -263,7 +267,8 @@ static void server_start_transport_stream_op_batch(
   gpr_mu_lock(&g_mu);
   if (data->call == g_server_call_stack) {
     if (op->send_initial_metadata) {
-      auto* batch = op->payload->send_initial_metadata.send_initial_metadata;
+      auto* batch =
+          op->payload->send_initial_metadata.send_initial_metadata;
       if (batch->idx.named.status != nullptr) {
         /* Replace the HTTP status with 404 */
         grpc_metadata_batch_substitute(batch, batch->idx.named.status,
@@ -275,17 +280,19 @@ static void server_start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
-static grpc_error_handle init_call_elem(grpc_call_element* elem,
-                                        const grpc_call_element_args* args) {
-  final_status_data* data = static_cast<final_status_data*>(elem->call_data);
+static grpc_error_handle init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
+  final_status_data* data =
+      static_cast<final_status_data*>(elem->call_data);
   data->call = args->call_stack;
   return GRPC_ERROR_NONE;
 }
 
-static void client_destroy_call_elem(grpc_call_element* elem,
-                                     const grpc_call_final_info* final_info,
-                                     grpc_closure* /*ignored*/) {
-  final_status_data* data = static_cast<final_status_data*>(elem->call_data);
+static void client_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* final_info,
+    grpc_closure* /*ignored*/) {
+  final_status_data* data =
+      static_cast<final_status_data*>(elem->call_data);
   gpr_mu_lock(&g_mu);
   // Some fixtures, like proxies, will spawn intermidiate calls
   // We only want the results from our explicit calls
@@ -297,10 +304,11 @@ static void client_destroy_call_elem(grpc_call_element* elem,
   gpr_mu_unlock(&g_mu);
 }
 
-static void server_destroy_call_elem(grpc_call_element* elem,
-                                     const grpc_call_final_info* final_info,
-                                     grpc_closure* /*ignored*/) {
-  final_status_data* data = static_cast<final_status_data*>(elem->call_data);
+static void server_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* final_info,
+    grpc_closure* /*ignored*/) {
+  final_status_data* data =
+      static_cast<final_status_data*>(elem->call_data);
   gpr_mu_lock(&g_mu);
   // Some fixtures, like proxies, will spawn intermidiate calls
   // We only want the results from our explicit calls
@@ -313,7 +321,8 @@ static void server_destroy_call_elem(grpc_call_element* elem,
 }
 
 static grpc_error_handle init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+    grpc_channel_element* /*elem*/,
+    grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -349,7 +358,8 @@ static const grpc_channel_filter test_server_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
+static bool maybe_add_filter(grpc_channel_stack_builder* builder,
+                             void* arg) {
   grpc_channel_filter* filter = static_cast<grpc_channel_filter*>(arg);
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make

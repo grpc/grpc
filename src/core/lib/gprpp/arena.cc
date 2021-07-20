@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -82,15 +82,16 @@ size_t Arena::Destroy() {
 }
 
 void* Arena::AllocZone(size_t size) {
-  // If the allocation isn't able to end in the initial zone, create a new
-  // zone for this allocation, and any unused space in the initial zone is
-  // wasted. This overflowing and wasting is uncommon because of our arena
-  // sizing hysteresis (that is, most calls should have a large enough initial
-  // zone and will not need to grow the arena).
+  // If the allocation isn't able to end in the initial zone, create a
+  // new zone for this allocation, and any unused space in the initial
+  // zone is wasted. This overflowing and wasting is uncommon because of
+  // our arena sizing hysteresis (that is, most calls should have a
+  // large enough initial zone and will not need to grow the arena).
   static constexpr size_t zone_base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
   size_t alloc_size = zone_base_size + size;
-  Zone* z = new (gpr_malloc_aligned(alloc_size, GPR_MAX_ALIGNMENT)) Zone();
+  Zone* z =
+      new (gpr_malloc_aligned(alloc_size, GPR_MAX_ALIGNMENT)) Zone();
   {
     gpr_spinlock_lock(&arena_growth_spinlock_);
     z->prev = last_zone_;

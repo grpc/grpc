@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,7 +60,9 @@ class RandomBinaryMetadata {
  public:
   static const std::string& Key() { return kKey; }
 
-  static const std::string& Value() { return kValues[rand() % kValues.size()]; }
+  static const std::string& Value() {
+    return kValues[rand() % kValues.size()];
+  }
 
  private:
   static const std::string kKey;
@@ -81,7 +83,9 @@ class RandomAsciiMetadata {
  public:
   static const std::string& Key() { return kKey; }
 
-  static const std::string& Value() { return kValues[rand() % kValues.size()]; }
+  static const std::string& Value() {
+    return kValues[rand() % kValues.size()];
+  }
 
  private:
   static const std::string kKey;
@@ -100,7 +104,8 @@ class RandomAsciiMetadata {
 template <class Generator, int kNumKeys>
 class Client_AddMetadata : public NoOpMutator {
  public:
-  explicit Client_AddMetadata(ClientContext* context) : NoOpMutator(context) {
+  explicit Client_AddMetadata(ClientContext* context)
+      : NoOpMutator(context) {
     for (int i = 0; i < kNumKeys; i++) {
       context->AddMetadata(Generator::Key(), Generator::Value());
     }

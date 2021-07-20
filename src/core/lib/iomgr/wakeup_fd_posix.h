@@ -10,36 +10,44 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
 /*
- * wakeup_fd abstracts the concept of a file descriptor for the purpose of
+ * wakeup_fd abstracts the concept of a file descriptor for the purpose
+ of
  * waking up a thread in select()/poll()/epoll_wait()/etc.
 
- * The poll() family of system calls provide a way for a thread to block until
+ * The poll() family of system calls provide a way for a thread to block
+ until
  * there is activity on one (or more) of a set of file descriptors. An
- * application may wish to wake up this thread to do non file related work. The
- * typical way to do this is to add a pipe to the set of file descriptors, then
+ * application may wish to wake up this thread to do non file related
+ work. The
+ * typical way to do this is to add a pipe to the set of file
+ descriptors, then
  * write to the pipe to wake up the thread in poll().
  *
- * Linux has a lighter weight eventfd specifically designed for this purpose.
+ * Linux has a lighter weight eventfd specifically designed for this
+ purpose.
  * wakeup_fd abstracts the difference between the two.
  *
  * Setup:
  * 1. Before calling anything, call global_init() at least once.
  * 1. Call grpc_wakeup_fd_init() to set up a wakeup_fd.
  * 2. Add the result of GRPC_WAKEUP_FD_FD to the set of monitored file
- *    descriptors for the poll() style API you are using. Monitor the file
+ *    descriptors for the poll() style API you are using. Monitor the
+ file
  *    descriptor for readability.
- * 3. To tear down, call grpc_wakeup_fd_destroy(). This closes the underlying
+ * 3. To tear down, call grpc_wakeup_fd_destroy(). This closes the
+ underlying
  *    file descriptor.
  *
  * Usage:
- * 1. To wake up a polling thread, call grpc_wakeup_fd_wakeup() on a wakeup_fd
+ * 1. To wake up a polling thread, call grpc_wakeup_fd_wakeup() on a
+ wakeup_fd
  *    it is monitoring.
  * 2. If the polling thread was awakened by a wakeup_fd event, call
  *    grpc_wakeup_fd_consume_wakeup() on it.

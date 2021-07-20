@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -20,8 +20,8 @@
 
 #include "src/core/ext/filters/client_channel/resolver.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
-                                                           "resolver_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(
+    false, "resolver_refcount");
 
 namespace grpc_core {
 
@@ -30,9 +30,10 @@ namespace grpc_core {
 //
 
 Resolver::Resolver()
-    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_trace_resolver_refcount)
-                               ? "Resolver"
-                               : nullptr) {}
+    : InternallyRefCounted(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_resolver_refcount)
+              ? "Resolver"
+              : nullptr) {}
 
 //
 // Resolver::Result

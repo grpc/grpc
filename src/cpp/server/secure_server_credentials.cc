@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,7 +36,8 @@ void AuthMetadataProcessorAyncWrapper::Destroy(void* wrapper) {
 
 void AuthMetadataProcessorAyncWrapper::Process(
     void* wrapper, grpc_auth_context* context, const grpc_metadata* md,
-    size_t num_md, grpc_process_auth_metadata_done_cb cb, void* user_data) {
+    size_t num_md, grpc_process_auth_metadata_done_cb cb,
+    void* user_data) {
   auto* w = static_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
   if (!w->processor_) {
     // Early exit.
@@ -45,8 +46,8 @@ void AuthMetadataProcessorAyncWrapper::Process(
   }
   if (w->processor_->IsBlocking()) {
     w->thread_pool_->Add([w, context, md, num_md, cb, user_data] {
-      w->AuthMetadataProcessorAyncWrapper::InvokeProcessor(context, md, num_md,
-                                                           cb, user_data);
+      w->AuthMetadataProcessorAyncWrapper::InvokeProcessor(
+          context, md, num_md, cb, user_data);
     });
   } else {
     // invoke directly.
@@ -66,8 +67,8 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
   AuthMetadataProcessor::OutputMetadata consumed_metadata;
   AuthMetadataProcessor::OutputMetadata response_metadata;
 
-  Status status = processor_->Process(metadata, &ctx, &consumed_metadata,
-                                      &response_metadata);
+  Status status = processor_->Process(
+      metadata, &ctx, &consumed_metadata, &response_metadata);
 
   std::vector<grpc_metadata> consumed_md;
   for (const auto& consumed : consumed_metadata) {
@@ -83,24 +84,29 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     md_entry.value = SliceReferencingString(response.second);
     response_md.push_back(md_entry);
   }
-  auto consumed_md_data = consumed_md.empty() ? nullptr : &consumed_md[0];
-  auto response_md_data = response_md.empty() ? nullptr : &response_md[0];
+  auto consumed_md_data =
+      consumed_md.empty() ? nullptr : &consumed_md[0];
+  auto response_md_data =
+      response_md.empty() ? nullptr : &response_md[0];
   cb(user_data, consumed_md_data, consumed_md.size(), response_md_data,
-     response_md.size(), static_cast<grpc_status_code>(status.error_code()),
+     response_md.size(),
+     static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
 }
 
 int SecureServerCredentials::AddPortToServer(const std::string& addr,
                                              grpc_server* server) {
-  return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
+  return grpc_server_add_secure_http2_port(server, addr.c_str(),
+                                           creds_);
 }
 
 void SecureServerCredentials::SetAuthMetadataProcessor(
     const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) {
   auto* wrapper = new grpc::AuthMetadataProcessorAyncWrapper(processor);
   grpc_server_credentials_set_auth_metadata_processor(
-      creds_, {grpc::AuthMetadataProcessorAyncWrapper::Process,
-               grpc::AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
+      creds_,
+      {grpc::AuthMetadataProcessorAyncWrapper::Process,
+       grpc::AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(
@@ -111,14 +117,17 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
                                     key_cert_pair.cert_chain.c_str()};
     pem_key_cert_pairs.push_back(p);
   }
-  grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create_ex(
-      options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      pem_key_cert_pairs.empty() ? nullptr : &pem_key_cert_pairs[0],
-      pem_key_cert_pairs.size(),
-      options.force_client_auth
-          ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-          : options.client_certificate_request,
-      nullptr);
+  grpc_server_credentials* c_creds =
+      grpc_ssl_server_credentials_create_ex(
+          options.pem_root_certs.empty()
+              ? nullptr
+              : options.pem_root_certs.c_str(),
+          pem_key_cert_pairs.empty() ? nullptr : &pem_key_cert_pairs[0],
+          pem_key_cert_pairs.size(),
+          options.force_client_auth
+              ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+              : options.client_certificate_request,
+          nullptr);
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(c_creds));
 }
@@ -138,14 +147,15 @@ std::shared_ptr<ServerCredentials> AltsServerCredentials(
 
 std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type) {
-  return std::shared_ptr<ServerCredentials>(
-      new SecureServerCredentials(grpc_local_server_credentials_create(type)));
+  return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
+      grpc_local_server_credentials_create(type)));
 }
 
 std::shared_ptr<ServerCredentials> TlsServerCredentials(
     const grpc::experimental::TlsServerCredentialsOptions& options) {
-  return std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
-      grpc_tls_server_credentials_create(options.c_credentials_options())));
+  return std::shared_ptr<ServerCredentials>(
+      new SecureServerCredentials(grpc_tls_server_credentials_create(
+          options.c_credentials_options())));
 }
 
 }  // namespace experimental

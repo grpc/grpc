@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <memory>
@@ -29,7 +29,8 @@ std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
   if (call == nullptr) {
     return std::shared_ptr<const AuthContext>();
   }
-  grpc_core::RefCountedPtr<grpc_auth_context> ctx(grpc_call_auth_context(call));
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx(
+      grpc_call_auth_context(call));
   return std::make_shared<SecureAuthContext>(ctx.get());
 }
 

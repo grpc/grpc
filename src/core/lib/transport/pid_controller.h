@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,9 +25,9 @@
 
 /* \file Simple PID controller.
    Implements a proportional-integral-derivative controller.
-   Used when we want to iteratively control a variable to converge some other
-   observed value to a 'set-point'.
-   Gains can be set to adjust sensitivity to current error (p), the integral
+   Used when we want to iteratively control a variable to converge some
+   other observed value to a 'set-point'. Gains can be set to adjust
+   sensitivity to current error (p), the integral
    of error (i), and the derivative of error (d). */
 
 namespace grpc_core {
@@ -39,7 +39,9 @@ class PidController {
     double gain_p() const { return gain_p_; }
     double gain_i() const { return gain_i_; }
     double gain_d() const { return gain_d_; }
-    double initial_control_value() const { return initial_control_value_; }
+    double initial_control_value() const {
+      return initial_control_value_;
+    }
     double min_control_value() const { return min_control_value_; }
     double max_control_value() const { return max_control_value_; }
     double integral_range() const { return integral_range_; }
@@ -85,16 +87,16 @@ class PidController {
 
   explicit PidController(const Args& args);
 
-  /// Reset the controller internal state: useful when the environment has
-  /// changed significantly
+  /// Reset the controller internal state: useful when the environment
+  /// has changed significantly
   void Reset() {
     last_error_ = 0.0;
     last_dc_dt_ = 0.0;
     error_integral_ = 0.0;
   }
 
-  /// Update the controller: given a current error estimate, and the time since
-  /// the last update, returns a new control value
+  /// Update the controller: given a current error estimate, and the
+  /// time since the last update, returns a new control value
   double Update(double error, double dt);
 
   /// Returns the last control value calculated

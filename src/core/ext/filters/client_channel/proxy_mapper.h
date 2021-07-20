@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,7 +35,8 @@ class ProxyMapperInterface {
   /// If no proxy is needed, returns false.
   /// Otherwise, sets \a name_to_resolve, optionally sets \a new_args,
   /// and returns true.
-  virtual bool MapName(const char* server_uri, const grpc_channel_args* args,
+  virtual bool MapName(const char* server_uri,
+                       const grpc_channel_args* args,
                        char** name_to_resolve,
                        grpc_channel_args** new_args) = 0;
 

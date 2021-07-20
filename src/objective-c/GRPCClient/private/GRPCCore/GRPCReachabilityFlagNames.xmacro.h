@@ -10,18 +10,19 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
 /**
- * "X-macro" file that lists the flags names of Apple's Network Reachability
-API, along with a nice
+ * "X-macro" file that lists the flags names of Apple's Network
+Reachability API, along with a nice
  * Objective-C method name used to query each of them.
  *
- * Example usage: To generate a dictionary from flag value to name, one can do:
+ * Example usage: To generate a dictionary from flag value to name, one
+can do:
 
   NSDictionary *flagNames = @{
 #define GRPC_XMACRO_ITEM(methodName, FlagName) \

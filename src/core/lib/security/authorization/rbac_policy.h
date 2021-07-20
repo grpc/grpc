@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_RBAC_POLICY_H
@@ -44,7 +44,8 @@ struct Rbac {
     uint32_t prefix_len;
   };
 
-  // TODO(ashithasantosh): Add metadata field to Permission and Principal.
+  // TODO(ashithasantosh): Add metadata field to Permission and
+  // Principal.
   struct Permission {
     enum class RuleType {
       kAnd,
@@ -85,8 +86,8 @@ struct Rbac {
     StringMatcher string_matcher;
     CidrRange ip;
     int port;
-    // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
-    // element.
+    // For type kAnd/kOr/kNot. For kNot type, the vector will have only
+    // one element.
     std::vector<std::unique_ptr<Permission>> permissions;
   };
 
@@ -128,8 +129,8 @@ struct Rbac {
     HeaderMatcher header_matcher;
     StringMatcher string_matcher;
     CidrRange ip;
-    // For type kAnd/kOr/kNot. For kNot type, the vector will have only one
-    // element.
+    // For type kAnd/kOr/kNot. For kNot type, the vector will have only
+    // one element.
     std::vector<std::unique_ptr<Principal>> principals;
   };
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,14 +24,15 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/iomgr/tcp_server.h"
 
-// test_tcp_server should be stack-allocated or new'ed, never gpr_malloc'ed
-// since it contains C++ objects.
+// test_tcp_server should be stack-allocated or new'ed, never
+// gpr_malloc'ed since it contains C++ objects.
 struct test_tcp_server {
   grpc_tcp_server* tcp_server = nullptr;
   grpc_closure shutdown_complete;
   bool shutdown = false;
   // mu is filled in by grpc_pollset_init and controls the pollset.
-  // TODO(unknown): Switch this to a Mutex once pollset_init can provide a Mutex
+  // TODO(unknown): Switch this to a Mutex once pollset_init can provide
+  // a Mutex
   gpr_mu* mu;
   std::vector<grpc_pollset*> pollset;
   grpc_tcp_server_cb on_connect;
@@ -39,7 +40,8 @@ struct test_tcp_server {
 };
 
 void test_tcp_server_init(test_tcp_server* server,
-                          grpc_tcp_server_cb on_connect, void* user_data);
+                          grpc_tcp_server_cb on_connect,
+                          void* user_data);
 void test_tcp_server_start(test_tcp_server* server, int port);
 void test_tcp_server_poll(test_tcp_server* server, int milliseconds);
 void test_tcp_server_destroy(test_tcp_server* server);

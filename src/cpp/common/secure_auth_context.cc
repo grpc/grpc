@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -22,7 +22,8 @@
 
 namespace grpc {
 
-std::vector<grpc::string_ref> SecureAuthContext::GetPeerIdentity() const {
+std::vector<grpc::string_ref> SecureAuthContext::GetPeerIdentity()
+    const {
   if (ctx_ == nullptr) {
     return std::vector<grpc::string_ref>();
   }
@@ -41,7 +42,8 @@ std::string SecureAuthContext::GetPeerIdentityPropertyName() const {
   if (ctx_ == nullptr) {
     return "";
   }
-  const char* name = grpc_auth_context_peer_identity_property_name(ctx_.get());
+  const char* name =
+      grpc_auth_context_peer_identity_property_name(ctx_.get());
   return name == nullptr ? "" : name;
 }
 
@@ -51,11 +53,13 @@ std::vector<grpc::string_ref> SecureAuthContext::FindPropertyValues(
     return std::vector<grpc::string_ref>();
   }
   grpc_auth_property_iterator iter =
-      grpc_auth_context_find_properties_by_name(ctx_.get(), name.c_str());
+      grpc_auth_context_find_properties_by_name(ctx_.get(),
+                                                name.c_str());
   const grpc_auth_property* property = nullptr;
   std::vector<grpc::string_ref> values;
   while ((property = grpc_auth_property_iterator_next(&iter))) {
-    values.push_back(grpc::string_ref(property->value, property->value_length));
+    values.push_back(
+        grpc::string_ref(property->value, property->value_length));
   }
   return values;
 }
@@ -83,10 +87,11 @@ void SecureAuthContext::AddProperty(const std::string& key,
                                  value.size());
 }
 
-bool SecureAuthContext::SetPeerIdentityPropertyName(const std::string& name) {
+bool SecureAuthContext::SetPeerIdentityPropertyName(
+    const std::string& name) {
   if (ctx_ == nullptr) return false;
-  return grpc_auth_context_set_peer_identity_property_name(ctx_.get(),
-                                                           name.c_str()) != 0;
+  return grpc_auth_context_set_peer_identity_property_name(
+             ctx_.get(), name.c_str()) != 0;
 }
 
 bool SecureAuthContext::IsPeerAuthenticated() const {

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,7 +24,8 @@
 grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
                                             double bytes_per_second);
 
-/* Allow up to \a bytes through the endpoint. Returns the new backlog. */
+/* Allow up to \a bytes through the endpoint. Returns the new backlog.
+ */
 size_t grpc_trickle_endpoint_trickle(grpc_endpoint* endpoint);
 
 size_t grpc_trickle_get_backlog(grpc_endpoint* endpoint);

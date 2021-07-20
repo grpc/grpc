@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,9 +41,9 @@ namespace internal {
 
 bool check_bios_data(const char* bios_data_file) {
   char* bios_data = read_bios_file(bios_data_file);
-  bool result =
-      bios_data && ((!strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GOOGLE)) ||
-                    (!strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GCE)));
+  bool result = bios_data &&
+                ((!strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GOOGLE)) ||
+                 (!strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GCE)));
   gpr_free(bios_data);
   return result;
 }
@@ -57,8 +57,8 @@ bool grpc_alts_is_running_on_gcp() {
   gpr_once_init(&g_once, init_mu);
   gpr_mu_lock(&g_mu);
   if (!g_compute_engine_detection_done) {
-    g_is_on_compute_engine =
-        grpc_core::internal::check_bios_data(GRPC_ALTS_PRODUCT_NAME_FILE);
+    g_is_on_compute_engine = grpc_core::internal::check_bios_data(
+        GRPC_ALTS_PRODUCT_NAME_FILE);
     g_compute_engine_detection_done = true;
   }
   gpr_mu_unlock(&g_mu);

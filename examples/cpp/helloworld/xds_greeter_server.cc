@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -69,19 +69,22 @@ void RunServer() {
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
   GreeterServiceImpl service;
-  // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
+  // Register "service" as the instance through which we'll communicate
+  // with clients. In this case it corresponds to an *synchronous*
+  // service.
   xds_builder.RegisterService(&service);
   if (absl::GetFlag(FLAGS_secure)) {
-    // Listen on the given address with XdsServerCredentials and a fallback of
-    // InsecureServerCredentials
-    xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                                 grpc::experimental::XdsServerCredentials(
-                                     grpc::InsecureServerCredentials()));
+    // Listen on the given address with XdsServerCredentials and a
+    // fallback of InsecureServerCredentials
+    xds_builder.AddListeningPort(
+        absl::StrCat("0.0.0.0:", port),
+        grpc::experimental::XdsServerCredentials(
+            grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
     grpc::AddAdminServices(&builder);
-    // For the maintenance server, do not use any authentication mechanism.
+    // For the maintenance server, do not use any authentication
+    // mechanism.
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
                              grpc::InsecureServerCredentials());
     server = builder.BuildAndStart();
@@ -96,8 +99,9 @@ void RunServer() {
     gpr_log(GPR_INFO, "Server listening on 0.0.0.0:%d", port);
   }
 
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
+  // Wait for the server to shutdown. Note that some other thread must
+  // be responsible for shutting down the server for this call to ever
+  // return.
   server->Wait();
 }
 

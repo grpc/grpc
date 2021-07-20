@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,7 +46,8 @@ class grpc_google_default_channel_credentials
   grpc_google_default_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> alts_creds,
       grpc_core::RefCountedPtr<grpc_channel_credentials> ssl_creds)
-      : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT),
+      : grpc_channel_credentials(
+            GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT),
         alts_creds_(std::move(alts_creds)),
         ssl_creds_(std::move(ssl_creds)) {}
 
@@ -63,7 +64,9 @@ class grpc_google_default_channel_credentials
   const grpc_channel_credentials* alts_creds() const {
     return alts_creds_.get();
   }
-  const grpc_channel_credentials* ssl_creds() const { return ssl_creds_.get(); }
+  const grpc_channel_credentials* ssl_creds() const {
+    return ssl_creds_.get();
+  }
 
  private:
   grpc_core::RefCountedPtr<grpc_channel_credentials> alts_creds_;
@@ -75,7 +78,8 @@ namespace internal {
 
 typedef bool (*grpc_gce_tenancy_checker)(void);
 
-void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker);
+void set_gce_tenancy_checker_for_testing(
+    grpc_gce_tenancy_checker checker);
 
 // TEST-ONLY. Reset the internal global state.
 void grpc_flush_cached_google_default_credentials(void);

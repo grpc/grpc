@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -55,7 +55,8 @@ Point MakePoint(long latitude, long longitude) {
   return p;
 }
 
-Feature MakeFeature(const std::string& name, long latitude, long longitude) {
+Feature MakeFeature(const std::string& name, long latitude,
+                    long longitude) {
   Feature f;
   f.set_name(name);
   f.mutable_location()->CopyFrom(MakePoint(latitude, longitude));
@@ -72,7 +73,8 @@ RouteNote MakeRouteNote(const std::string& message, long latitude,
 
 class RouteGuideClient {
  public:
-  RouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db)
+  RouteGuideClient(std::shared_ptr<Channel> channel,
+                   const std::string& db)
       : stub_(RouteGuide::NewStub(channel)) {
     routeguide::ParseDb(db, &feature_list_);
   }
@@ -108,8 +110,10 @@ class RouteGuideClient {
       }
       void OnReadDone(bool ok) override {
         if (ok) {
-          std::cout << "Found feature called " << feature_.name() << " at "
-                    << feature_.location().latitude() / coord_factor_ << ", "
+          std::cout << "Found feature called " << feature_.name()
+                    << " at "
+                    << feature_.location().latitude() / coord_factor_
+                    << ", "
                     << feature_.location().longitude() / coord_factor_
                     << std::endl;
           StartRead(&feature_);
@@ -152,24 +156,25 @@ class RouteGuideClient {
                const std::vector<Feature>* feature_list)
           : coord_factor_(coord_factor),
             feature_list_(feature_list),
-            generator_(
-                std::chrono::system_clock::now().time_since_epoch().count()),
+            generator_(std::chrono::system_clock::now()
+                           .time_since_epoch()
+                           .count()),
             feature_distribution_(0, feature_list->size() - 1),
             delay_distribution_(500, 1500) {
         stub->async()->RecordRoute(&context_, &stats_, this);
-        // Use a hold since some StartWrites are invoked indirectly from a
-        // delayed lambda in OnWriteDone rather than directly from the reaction
-        // itself
+        // Use a hold since some StartWrites are invoked indirectly from
+        // a delayed lambda in OnWriteDone rather than directly from the
+        // reaction itself
         AddHold();
         NextWrite();
         StartCall();
       }
       void OnWriteDone(bool ok) override {
         // Delay and then do the next write or WritesDone
-        alarm_.Set(
-            std::chrono::system_clock::now() +
-                std::chrono::milliseconds(delay_distribution_(generator_)),
-            [this](bool /*ok*/) { NextWrite(); });
+        alarm_.Set(std::chrono::system_clock::now() +
+                       std::chrono::milliseconds(
+                           delay_distribution_(generator_)),
+                   [this](bool /*ok*/) { NextWrite(); });
       }
       void OnDone(const Status& s) override {
         std::unique_lock<std::mutex> l(mu_);
@@ -191,7 +196,8 @@ class RouteGuideClient {
               (*feature_list_)[feature_distribution_(generator_)];
           std::cout << "Visiting point "
                     << f.location().latitude() / coord_factor_ << ", "
-                    << f.location().longitude() / coord_factor_ << std::endl;
+                    << f.location().longitude() / coord_factor_
+                    << std::endl;
           StartWrite(&f.location());
           points_remaining_--;
         } else {
@@ -218,7 +224,8 @@ class RouteGuideClient {
     RouteSummary stats;
     Status status = std::move(recorder.Await(&stats));
     if (status.ok()) {
-      std::cout << "Finished trip with " << stats.point_count() << " points\n"
+      std::cout << "Finished trip with " << stats.point_count()
+                << " points\n"
                 << "Passed " << stats.feature_count() << " features\n"
                 << "Travelled " << stats.distance() << " meters\n"
                 << "It took " << stats.elapsed_time() << " seconds"
@@ -229,7 +236,8 @@ class RouteGuideClient {
   }
 
   void RouteChat() {
-    class Chatter : public grpc::ClientBidiReactor<RouteNote, RouteNote> {
+    class Chatter
+        : public grpc::ClientBidiReactor<RouteNote, RouteNote> {
      public:
       explicit Chatter(RouteGuide::Stub* stub)
           : notes_{MakeRouteNote("First message", 0, 0),
@@ -245,9 +253,10 @@ class RouteGuideClient {
       void OnWriteDone(bool /*ok*/) override { NextWrite(); }
       void OnReadDone(bool ok) override {
         if (ok) {
-          std::cout << "Got message " << server_note_.message() << " at "
-                    << server_note_.location().latitude() << ", "
-                    << server_note_.location().longitude() << std::endl;
+          std::cout << "Got message " << server_note_.message()
+                    << " at " << server_note_.location().latitude()
+                    << ", " << server_note_.location().longitude()
+                    << std::endl;
           StartRead(&server_note_);
         }
       }
@@ -308,17 +317,21 @@ class RouteGuideClient {
             std::cout << "GetFeature rpc failed." << std::endl;
             ret = false;
           } else if (!feature->has_location()) {
-            std::cout << "Server returns incomplete feature." << std::endl;
+            std::cout << "Server returns incomplete feature."
+                      << std::endl;
             ret = false;
           } else if (feature->name().empty()) {
             std::cout << "Found no feature at "
-                      << feature->location().latitude() / kCoordFactor_ << ", "
+                      << feature->location().latitude() / kCoordFactor_
+                      << ", "
                       << feature->location().longitude() / kCoordFactor_
                       << std::endl;
             ret = true;
           } else {
-            std::cout << "Found feature called " << feature->name() << " at "
-                      << feature->location().latitude() / kCoordFactor_ << ", "
+            std::cout << "Found feature called " << feature->name()
+                      << " at "
+                      << feature->location().latitude() / kCoordFactor_
+                      << ", "
                       << feature->location().longitude() / kCoordFactor_
                       << std::endl;
             ret = true;
@@ -348,7 +361,8 @@ int main(int argc, char** argv) {
 
   std::cout << "-------------- GetFeature --------------" << std::endl;
   guide.GetFeature();
-  std::cout << "-------------- ListFeatures --------------" << std::endl;
+  std::cout << "-------------- ListFeatures --------------"
+            << std::endl;
   guide.ListFeatures();
   std::cout << "-------------- RecordRoute --------------" << std::endl;
   guide.RecordRoute();

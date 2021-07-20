@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,20 +40,23 @@ typedef struct freereq {
   int done = 0;
 } freereq;
 
-static void destroy_pops_and_shutdown(void* p, grpc_error_handle /*error*/) {
+static void destroy_pops_and_shutdown(void* p,
+                                      grpc_error_handle /*error*/) {
   grpc_pollset* pollset =
       grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p));
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
 }
 
-static void freed_port_from_server(void* arg, grpc_error_handle /*error*/) {
+static void freed_port_from_server(void* arg,
+                                   grpc_error_handle /*error*/) {
   freereq* pr = static_cast<freereq*>(arg);
   gpr_mu_lock(pr->mu);
   pr->done = 1;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), nullptr));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops),
+                        nullptr));
   gpr_mu_unlock(pr->mu);
 }
 
@@ -77,8 +80,8 @@ void grpc_free_port_using_server(int port) {
         static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &pr.mu);
     pr.pops = grpc_polling_entity_create_from_pollset(pollset);
-    shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
-                                           grpc_schedule_on_exec_ctx);
+    shutdown_closure = GRPC_CLOSURE_CREATE(
+        destroy_pops_and_shutdown, &pr.pops, grpc_schedule_on_exec_ctx);
 
     req.host = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     gpr_asprintf(&path, "/drop/%d", port);
@@ -87,11 +90,12 @@ void grpc_free_port_using_server(int port) {
     grpc_httpcli_context_init(&context);
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("port_server_client/free");
-    grpc_httpcli_get(&context, &pr.pops, resource_quota, &req,
-                     grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
-                     GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
-                                         grpc_schedule_on_exec_ctx),
-                     &rsp);
+    grpc_httpcli_get(
+        &context, &pr.pops, resource_quota, &req,
+        grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
+        GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
+                            grpc_schedule_on_exec_ctx),
+        &rsp);
     grpc_resource_quota_unref_internal(resource_quota);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
@@ -152,7 +156,8 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
       pr->port = 0;
       GRPC_LOG_IF_ERROR(
           "pollset_kick",
-          grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), nullptr));
+          grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops),
+                            nullptr));
       gpr_mu_unlock(pr->mu);
       return;
     }
@@ -160,8 +165,8 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     gpr_sleep_until(gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
         gpr_time_from_millis(
-            static_cast<int64_t>(
-                1000.0 * (1 + pow(1.3, pr->retries) * rand() / RAND_MAX)),
+            static_cast<int64_t>(1000.0 * (1 + pow(1.3, pr->retries) *
+                                                   rand() / RAND_MAX)),
             GPR_TIMESPAN)));
     pr->retries++;
     req.host = pr->server;
@@ -170,11 +175,12 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     pr->response = {};
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("port_server_client/pick_retry");
-    grpc_httpcli_get(pr->ctx, &pr->pops, resource_quota, &req,
-                     grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
-                     GRPC_CLOSURE_CREATE(got_port_from_server, pr,
-                                         grpc_schedule_on_exec_ctx),
-                     &pr->response);
+    grpc_httpcli_get(
+        pr->ctx, &pr->pops, resource_quota, &req,
+        grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
+        GRPC_CLOSURE_CREATE(got_port_from_server, pr,
+                            grpc_schedule_on_exec_ctx),
+        &pr->response);
     grpc_resource_quota_unref_internal(resource_quota);
     return;
   }
@@ -189,7 +195,8 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   pr->port = port;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops), nullptr));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&pr->pops),
+                        nullptr));
   gpr_mu_unlock(pr->mu);
 }
 
@@ -208,8 +215,8 @@ int grpc_pick_port_using_server(void) {
         static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &pr.mu);
     pr.pops = grpc_polling_entity_create_from_pollset(pollset);
-    shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
-                                           grpc_schedule_on_exec_ctx);
+    shutdown_closure = GRPC_CLOSURE_CREATE(
+        destroy_pops_and_shutdown, &pr.pops, grpc_schedule_on_exec_ctx);
     pr.port = -1;
     pr.server = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     pr.ctx = &context;
@@ -220,11 +227,12 @@ int grpc_pick_port_using_server(void) {
     grpc_httpcli_context_init(&context);
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("port_server_client/pick");
-    grpc_httpcli_get(&context, &pr.pops, resource_quota, &req,
-                     grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
-                     GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
-                                         grpc_schedule_on_exec_ctx),
-                     &pr.response);
+    grpc_httpcli_get(
+        &context, &pr.pops, resource_quota, &req,
+        grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
+        GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
+                            grpc_schedule_on_exec_ctx),
+        &pr.response);
     grpc_resource_quota_unref_internal(resource_quota);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);

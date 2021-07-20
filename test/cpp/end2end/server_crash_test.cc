@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,7 +46,8 @@ namespace testing {
 
 namespace {
 
-class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
+class ServiceImpl final
+    : public ::grpc::testing::EchoTestService::Service {
  public:
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 
@@ -60,8 +61,9 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
       gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
       response.set_message(request.message());
       stream->Write(response);
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
+      gpr_sleep_until(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_seconds(1, GPR_TIMESPAN)));
     }
     return Status::OK;
   }
@@ -76,8 +78,9 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
       msg << "Hello " << i;
       response.set_message(msg.str());
       if (!writer->Write(response)) break;
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                   gpr_time_from_seconds(1, GPR_TIMESPAN)));
+      gpr_sleep_until(
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_seconds(1, GPR_TIMESPAN)));
     }
     return Status::OK;
   }
@@ -95,14 +98,15 @@ class CrashTest : public ::testing::Test {
  protected:
   CrashTest() {}
 
-  std::unique_ptr<Server> CreateServerAndClient(const std::string& mode) {
+  std::unique_ptr<Server> CreateServerAndClient(
+      const std::string& mode) {
     auto port = grpc_pick_unused_port_or_die();
     std::ostringstream addr_stream;
     addr_stream << "localhost:" << port;
     auto addr = addr_stream.str();
-    client_ = absl::make_unique<SubProcess>(
-        std::vector<std::string>({g_root + "/server_crash_test_client",
-                                  "--address=" + addr, "--mode=" + mode}));
+    client_ = absl::make_unique<SubProcess>(std::vector<std::string>(
+        {g_root + "/server_crash_test_client", "--address=" + addr,
+         "--mode=" + mode}));
     GPR_ASSERT(client_);
 
     ServerBuilder builder;
@@ -115,7 +119,9 @@ class CrashTest : public ::testing::Test {
 
   bool HadOneBidiStream() { return service_.bidi_stream_count() == 1; }
 
-  bool HadOneResponseStream() { return service_.response_stream_count() == 1; }
+  bool HadOneResponseStream() {
+    return service_.response_stream_count() == 1;
+  }
 
  private:
   std::unique_ptr<SubProcess> client_;
@@ -125,8 +131,9 @@ class CrashTest : public ::testing::Test {
 TEST_F(CrashTest, ResponseStream) {
   auto server = CreateServerAndClient("response");
 
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_seconds(60, GPR_TIMESPAN)));
+  gpr_sleep_until(
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_seconds(60, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
   GPR_ASSERT(HadOneResponseStream());
@@ -135,8 +142,9 @@ TEST_F(CrashTest, ResponseStream) {
 TEST_F(CrashTest, BidiStream) {
   auto server = CreateServerAndClient("bidi");
 
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_seconds(60, GPR_TIMESPAN)));
+  gpr_sleep_until(
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_seconds(60, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
   GPR_ASSERT(HadOneBidiStream());

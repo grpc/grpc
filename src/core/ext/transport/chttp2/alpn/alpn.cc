@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,7 +26,8 @@
 /* in order of preference */
 static const char* const supported_versions[] = {"grpc-exp", "h2"};
 
-int grpc_chttp2_is_alpn_version_supported(const char* version, size_t size) {
+int grpc_chttp2_is_alpn_version_supported(const char* version,
+                                          size_t size) {
   size_t i;
   for (i = 0; i < GPR_ARRAY_SIZE(supported_versions); i++) {
     if (!strncmp(version, supported_versions[i], size)) return 1;

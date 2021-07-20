@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,12 +33,14 @@ typedef std::string (*gpr_current_stack_trace_func)();
 // Returns a current_stack_trace_provider.
 gpr_current_stack_trace_func GetCurrentStackTraceProvider();
 
-// Sets current_stack_trace_provider which provides a current-stack trace.
+// Sets current_stack_trace_provider which provides a current-stack
+// trace.
 void SetCurrentStackTraceProvider(
     gpr_current_stack_trace_func current_stack_trace_provider);
 
-// Returns the current stack trace as a string via current_stack_trace_provider
-// If current_stack_trace_provider is not set, it returns absl::nullopt.
+// Returns the current stack trace as a string via
+// current_stack_trace_provider If current_stack_trace_provider is not
+// set, it returns absl::nullopt.
 absl::optional<std::string> GetCurrentStackTrace();
 
 }  // namespace grpc_core

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,20 +47,21 @@ class CensusViewProvider {
       std::unordered_map<std::string, ::opencensus::stats::ViewData>;
   // Maps from the view name to the view descriptor.
   using ViewDescriptorMap =
-      std::unordered_map<std::string, ::opencensus::stats::ViewDescriptor>;
+      std::unordered_map<std::string,
+                         ::opencensus::stats::ViewDescriptor>;
 
   CensusViewProvider();
   virtual ~CensusViewProvider() = default;
 
-  // Fetches the view data accumulated since last fetching, and returns it as a
-  // map from the view name to the view data.
+  // Fetches the view data accumulated since last fetching, and returns
+  // it as a map from the view name to the view data.
   virtual ViewDataMap FetchViewData() = 0;
 
-  // A helper function that gets a row with the input tag values from the view
-  // data. Only used when we know that row must exist because we have seen a row
-  // with the same tag values in a related view data. Several ViewData's are
-  // considered related if their views are based on the measures that are always
-  // recorded at the same time.
+  // A helper function that gets a row with the input tag values from
+  // the view data. Only used when we know that row must exist because
+  // we have seen a row with the same tag values in a related view data.
+  // Several ViewData's are considered related if their views are based
+  // on the measures that are always recorded at the same time.
   static double GetRelatedViewDataRowDouble(
       const ViewDataMap& view_data_map, const char* view_name,
       size_t view_name_len, const std::vector<std::string>& tag_values);
@@ -106,8 +107,8 @@ class CpuStatsProvider {
   virtual CpuStatsSample GetCpuStats() = 0;
 };
 
-// The default implementation reads CPU jiffies from the system to calculate CPU
-// utilization.
+// The default implementation reads CPU jiffies from the system to
+// calculate CPU utilization.
 class CpuStatsProviderDefaultImpl : public CpuStatsProvider {
  public:
   CpuStatsSample GetCpuStats() override;
@@ -123,29 +124,30 @@ class LoadReporter {
       : feedback_sample_window_seconds_(feedback_sample_window_seconds),
         census_view_provider_(std::move(census_view_provider)),
         cpu_stats_provider_(std::move(cpu_stats_provider)) {
-    // Append the initial record so that the next real record can have a base.
+    // Append the initial record so that the next real record can have a
+    // base.
     AppendNewFeedbackRecord(0, 0);
   }
 
-  // Fetches the latest data from Census and merge it into the data store.
-  // Also adds a new sample to the LB feedback sliding window.
-  // Thread-unsafe. (1). The access to the load data store and feedback records
-  // has locking. (2). The access to the Census view provider and CPU stats
-  // provider lacks locking, but we only access these two members in this method
-  // (in testing, we also access them when setting up expectation). So the
-  // invocations of this method must be serialized.
+  // Fetches the latest data from Census and merge it into the data
+  // store. Also adds a new sample to the LB feedback sliding window.
+  // Thread-unsafe. (1). The access to the load data store and feedback
+  // records has locking. (2). The access to the Census view provider
+  // and CPU stats provider lacks locking, but we only access these two
+  // members in this method (in testing, we also access them when
+  // setting up expectation). So the invocations of this method must be
+  // serialized.
   void FetchAndSample();
 
   // Generates a report for that host and balancer. The report contains
-  // all the stats data accumulated between the last report (i.e., the last
-  // consumption) and the last fetch from Census (i.e., the last production).
-  // Thread-safe.
-  ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> GenerateLoads(
-      const std::string& hostname, const std::string& lb_id);
+  // all the stats data accumulated between the last report (i.e., the
+  // last consumption) and the last fetch from Census (i.e., the last
+  // production). Thread-safe.
+  ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load>
+  GenerateLoads(const std::string& hostname, const std::string& lb_id);
 
-  // The feedback is calculated from the stats data recorded in the sliding
-  // window. Outdated records are discarded.
-  // Thread-safe.
+  // The feedback is calculated from the stats data recorded in the
+  // sliding window. Outdated records are discarded. Thread-safe.
   ::grpc::lb::v1::LoadBalancingFeedback GenerateLoadBalancingFeedback();
 
   // Wrapper around LoadDataStore::ReportStreamCreated.
@@ -159,15 +161,17 @@ class LoadReporter {
   void ReportStreamClosed(const std::string& hostname,
                           const std::string& lb_id);
 
-  // Generates a unique LB ID of length kLbIdLength. Returns an empty string
-  // upon failure. Thread-safe.
+  // Generates a unique LB ID of length kLbIdLength. Returns an empty
+  // string upon failure. Thread-safe.
   std::string GenerateLbId();
 
   // Accessors only for testing.
   CensusViewProvider* census_view_provider() {
     return census_view_provider_.get();
   }
-  CpuStatsProvider* cpu_stats_provider() { return cpu_stats_provider_.get(); }
+  CpuStatsProvider* cpu_stats_provider() {
+    return cpu_stats_provider_.get();
+  }
 
  private:
   struct LoadBalancingFeedbackRecord {
@@ -178,8 +182,9 @@ class LoadReporter {
     uint64_t cpu_limit;
 
     LoadBalancingFeedbackRecord(
-        const std::chrono::system_clock::time_point& end_time, uint64_t rpcs,
-        uint64_t errors, uint64_t cpu_usage, uint64_t cpu_limit)
+        const std::chrono::system_clock::time_point& end_time,
+        uint64_t rpcs, uint64_t errors, uint64_t cpu_usage,
+        uint64_t cpu_limit)
         : end_time(end_time),
           rpcs(rpcs),
           errors(errors),
@@ -187,12 +192,12 @@ class LoadReporter {
           cpu_limit(cpu_limit) {}
   };
 
-  // Finds the view data about starting call from the view_data_map and merges
-  // the data to the load data store.
+  // Finds the view data about starting call from the view_data_map and
+  // merges the data to the load data store.
   void ProcessViewDataCallStart(
       const CensusViewProvider::ViewDataMap& view_data_map);
-  // Finds the view data about ending call from the view_data_map and merges the
-  // data to the load data store.
+  // Finds the view data about ending call from the view_data_map and
+  // merges the data to the load data store.
   void ProcessViewDataCallEnd(
       const CensusViewProvider::ViewDataMap& view_data_map);
   // Finds the view data about the customized call metrics from the
@@ -207,8 +212,8 @@ class LoadReporter {
 
   void AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors);
 
-  // Extracts an OrphanedLoadIdentifier from the per-balancer store and attaches
-  // it to the load.
+  // Extracts an OrphanedLoadIdentifier from the per-balancer store and
+  // attaches it to the load.
   void AttachOrphanLoadId(::grpc::lb::v1::Load* load,
                           const PerBalancerStore& per_balancer_store);
 
@@ -216,8 +221,8 @@ class LoadReporter {
   const std::chrono::seconds feedback_sample_window_seconds_;
   grpc_core::Mutex feedback_mu_;
   std::deque<LoadBalancingFeedbackRecord> feedback_records_;
-  // TODO(juanlishen): Lock in finer grain. Locking the whole store may be
-  // too expensive.
+  // TODO(juanlishen): Lock in finer grain. Locking the whole store may
+  // be too expensive.
   grpc_core::Mutex store_mu_;
   LoadDataStore load_data_store_;
   std::unique_ptr<CensusViewProvider> census_view_provider_;

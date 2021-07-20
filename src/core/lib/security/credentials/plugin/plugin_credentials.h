@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,9 +25,9 @@
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 
-// This type is forward declared as a C struct and we cannot define it as a
-// class. Otherwise, compiler will complain about type mismatch due to
-// -Wmismatched-tags.
+// This type is forward declared as a C struct and we cannot define it
+// as a class. Otherwise, compiler will complain about type mismatch due
+// to -Wmismatched-tags.
 struct grpc_plugin_credentials final : public grpc_call_credentials {
  public:
   struct pending_request {
@@ -39,8 +39,9 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
     struct pending_request* next;
   };
 
-  explicit grpc_plugin_credentials(grpc_metadata_credentials_plugin plugin,
-                                   grpc_security_level min_security_level);
+  explicit grpc_plugin_credentials(
+      grpc_metadata_credentials_plugin plugin,
+      grpc_security_level min_security_level);
   ~grpc_plugin_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
@@ -49,8 +50,9 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  void cancel_get_request_metadata(
+      grpc_credentials_mdelem_array* md_array,
+      grpc_error_handle error) override;
 
   // Checks if the request has been cancelled.
   // If not, removes it from the pending list, so that it cannot be
@@ -69,4 +71,5 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   pending_request* pending_requests_ = nullptr;
 };
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H */
+#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H \
+        */

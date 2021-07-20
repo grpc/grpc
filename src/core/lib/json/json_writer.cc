@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,16 +32,16 @@ namespace grpc_core {
 
 namespace {
 
-/* The idea of the writer is basically symmetrical of the reader. While the
- * reader emits various calls to your code, the writer takes basically the
- * same calls and emit json out of it. It doesn't try to make any check on
- * the order of the calls you do on it. Meaning you can theorically force
- * it to generate invalid json.
+/* The idea of the writer is basically symmetrical of the reader. While
+ * the reader emits various calls to your code, the writer takes
+ * basically the same calls and emit json out of it. It doesn't try to
+ * make any check on the order of the calls you do on it. Meaning you
+ * can theorically force it to generate invalid json.
  *
- * Also, unlike the reader, the writer expects UTF-8 encoded input strings.
- * These strings will be UTF-8 validated, and any invalid character will
- * cut the conversion short, before any invalid UTF-8 sequence, thus forming
- * a valid UTF-8 string overall.
+ * Also, unlike the reader, the writer expects UTF-8 encoded input
+ * strings. These strings will be UTF-8 validated, and any invalid
+ * character will cut the conversion short, before any invalid UTF-8
+ * sequence, thus forming a valid UTF-8 string overall.
  */
 class JsonWriter {
  public:
@@ -74,9 +74,9 @@ class JsonWriter {
   std::string output_;
 };
 
-/* This function checks if there's enough space left in the output buffer,
- * and will enlarge it if necessary. We're only allocating chunks of 256
- * bytes at a time (or multiples thereof).
+/* This function checks if there's enough space left in the output
+ * buffer, and will enlarge it if necessary. We're only allocating
+ * chunks of 256 bytes at a time (or multiples thereof).
  */
 void JsonWriter::OutputCheck(size_t needed) {
   size_t free_space = output_.capacity() - output_.size();
@@ -114,8 +114,8 @@ void JsonWriter::OutputIndent() {
     spaces -= static_cast<unsigned>(sizeof(spacesstr) - 1);
   }
   if (spaces == 0) return;
-  OutputString(
-      absl::string_view(spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
+  OutputString(absl::string_view(
+      spacesstr + sizeof(spacesstr) - 1 - spaces, spaces));
 }
 
 void JsonWriter::ValueEnd() {
@@ -195,7 +195,8 @@ void JsonWriter::EscapeString(const std::string& string) {
           break;
         }
         c = static_cast<uint8_t>(string[idx]);
-        /* Breaks out and bail on any invalid UTF-8 sequence, including \0. */
+        /* Breaks out and bail on any invalid UTF-8 sequence, including
+         * \0. */
         if ((c & 0xc0) != 0x80) {
           valid = 0;
           break;
@@ -203,29 +204,32 @@ void JsonWriter::EscapeString(const std::string& string) {
         utf32 |= c & 0x3f;
       }
       if (!valid) break;
-      /* The range 0xd800 - 0xdfff is reserved by the surrogates ad vitam.
-       * Any other range is technically reserved for future usage, so if we
-       * don't want the software to break in the future, we have to allow
+      /* The range 0xd800 - 0xdfff is reserved by the surrogates ad
+       * vitam. Any other range is technically reserved for future
+       * usage, so if we don't want the software to break in the future,
+       * we have to allow
        * anything else. The first non-unicode character is 0x110000. */
-      if (((utf32 >= 0xd800) && (utf32 <= 0xdfff)) || (utf32 >= 0x110000)) {
+      if (((utf32 >= 0xd800) && (utf32 <= 0xdfff)) ||
+          (utf32 >= 0x110000)) {
         break;
       }
       if (utf32 >= 0x10000) {
-        /* If utf32 contains a character that is above 0xffff, it needs to be
-         * broken down into a utf-16 surrogate pair. A surrogate pair is first
-         * a high surrogate, followed by a low surrogate. Each surrogate holds
-         * 10 bits of usable data, thus allowing a total of 20 bits of data.
-         * The high surrogate marker is 0xd800, while the low surrogate marker
-         * is 0xdc00. The low 10 bits of each will be the usable data.
+        /* If utf32 contains a character that is above 0xffff, it needs
+         * to be broken down into a utf-16 surrogate pair. A surrogate
+         * pair is first a high surrogate, followed by a low surrogate.
+         * Each surrogate holds 10 bits of usable data, thus allowing a
+         * total of 20 bits of data. The high surrogate marker is
+         * 0xd800, while the low surrogate marker is 0xdc00. The low 10
+         * bits of each will be the usable data.
          *
-         * After re-combining the 20 bits of data, one has to add 0x10000 to
-         * the resulting value, in order to obtain the original character.
-         * This is obviously because the range 0x0000 - 0xffff can be written
-         * without any special trick.
+         * After re-combining the 20 bits of data, one has to add
+         * 0x10000 to the resulting value, in order to obtain the
+         * original character. This is obviously because the range
+         * 0x0000 - 0xffff can be written without any special trick.
          *
-         * Since 0x10ffff is the highest allowed character, we're working in
-         * the range 0x00000 - 0xfffff after we decrement it by 0x10000.
-         * That range is exactly 20 bits.
+         * Since 0x10ffff is the highest allowed character, we're
+         * working in the range 0x00000 - 0xfffff after we decrement it
+         * by 0x10000. That range is exactly 20 bits.
          */
         utf32 -= 0x10000;
         EscapeUtf16(static_cast<uint16_t>(0xd800 | (utf32 >> 10)));

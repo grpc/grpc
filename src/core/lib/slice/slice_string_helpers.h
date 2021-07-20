@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,15 +32,17 @@
 /* Calls gpr_dump on a slice. */
 char* grpc_dump_slice(const grpc_slice& slice, uint32_t flags);
 /* Calls gpr_dump on a slice and returns the result as a slice. */
-grpc_slice grpc_dump_slice_to_slice(const grpc_slice& slice, uint32_t flags);
+grpc_slice grpc_dump_slice_to_slice(const grpc_slice& slice,
+                                    uint32_t flags);
 
-/** Split \a str by the separator \a sep. Results are stored in \a dst, which
- * should be a properly initialized instance. */
-void grpc_slice_split(grpc_slice str, const char* sep, grpc_slice_buffer* dst);
+/** Split \a str by the separator \a sep. Results are stored in \a dst,
+ * which should be a properly initialized instance. */
+void grpc_slice_split(grpc_slice str, const char* sep,
+                      grpc_slice_buffer* dst);
 
-/** Split \a str by the separator \a sep and remove the leading and trailing
- * spaces of each resulting token. Results are stored in \a dst, which should be
- * a properly initialized instance. */
+/** Split \a str by the separator \a sep and remove the leading and
+ * trailing spaces of each resulting token. Results are stored in \a
+ * dst, which should be a properly initialized instance. */
 void grpc_slice_split_without_space(grpc_slice str, const char* sep,
                                     grpc_slice_buffer* dst);
 

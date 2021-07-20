@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,7 +32,8 @@
 
 extern "C" {
 static const char engine_id[] = "libengine_passthrough";
-static const char engine_name[] = "A passthrough engine for private keys";
+static const char engine_name[] =
+    "A passthrough engine for private keys";
 static int e_passthrough_idx = -1;
 
 static int e_passthrough_init(ENGINE* e) {
@@ -58,10 +59,12 @@ int passthrough_bind_helper(ENGINE* e, const char* id) {
   if (id && strcmp(id, engine_id)) {
     return 0;
   }
-  if (!ENGINE_set_id(e, engine_id) || !ENGINE_set_name(e, engine_name) ||
+  if (!ENGINE_set_id(e, engine_id) ||
+      !ENGINE_set_name(e, engine_name) ||
       !ENGINE_set_flags(e, ENGINE_FLAGS_NO_REGISTER_ALL) ||
       !ENGINE_set_init_function(e, e_passthrough_init) ||
-      !ENGINE_set_load_privkey_function(e, e_passthrough_load_privkey)) {
+      !ENGINE_set_load_privkey_function(e,
+                                        e_passthrough_load_privkey)) {
     return 0;
   }
   return 1;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,13 +28,14 @@
 
 namespace grpc_core {
 
-// A function to modify channel args for a listening addr:port. Note that this
-// is used to create a security connector for listeners when the servers are
-// configured with a config fetcher. Not invoked if there is no config fetcher
-// added to the server. Takes ownership of the args.  Caller takes ownership of
-// returned args. On failure, the error parameter will be set.
-using Chttp2ServerArgsModifier =
-    std::function<grpc_channel_args*(grpc_channel_args*, grpc_error_handle*)>;
+// A function to modify channel args for a listening addr:port. Note
+// that this is used to create a security connector for listeners when
+// the servers are configured with a config fetcher. Not invoked if
+// there is no config fetcher added to the server. Takes ownership of
+// the args.  Caller takes ownership of returned args. On failure, the
+// error parameter will be set.
+using Chttp2ServerArgsModifier = std::function<grpc_channel_args*(
+    grpc_channel_args*, grpc_error_handle*)>;
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.

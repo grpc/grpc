@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,8 +35,8 @@
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);
 
 static void test_slice_malloc_returns_something_sensible(void) {
-  /* Calls grpc_slice_create for various lengths and verifies the internals for
-     consistency. */
+  /* Calls grpc_slice_create for various lengths and verifies the
+     internals for consistency. */
   size_t length;
   size_t i;
   grpc_slice slice;
@@ -45,8 +45,8 @@ static void test_slice_malloc_returns_something_sensible(void) {
 
   for (length = 0; length <= 1024; length++) {
     slice = grpc_slice_malloc(length);
-    /* If there is a length, slice.data must be non-NULL. If length is zero
-       we don't care. */
+    /* If there is a length, slice.data must be non-NULL. If length is
+       zero we don't care. */
     if (length > GRPC_SLICE_INLINED_SIZE) {
       GPR_ASSERT(slice.data.refcounted.bytes);
     }
@@ -103,25 +103,30 @@ static void do_nothing_with_len_1(void* /*ignored*/, size_t len) {
 
 static void test_slice_new_with_len_returns_something_sensible(void) {
   uint8_t x;
-  int num_refs = 5; /* To test adding/removing an arbitrary number of refs */
+  int num_refs =
+      5; /* To test adding/removing an arbitrary number of refs */
   int i;
 
-  grpc_slice slice = grpc_slice_new_with_len(&x, 1, do_nothing_with_len_1);
-  GPR_ASSERT(slice.refcount); /* ref count is initialized to 1 at this point */
+  grpc_slice slice =
+      grpc_slice_new_with_len(&x, 1, do_nothing_with_len_1);
+  GPR_ASSERT(
+      slice.refcount); /* ref count is initialized to 1 at this point */
   GPR_ASSERT(slice.data.refcounted.bytes == &x);
   GPR_ASSERT(slice.data.refcounted.length == 1);
   GPR_ASSERT(do_nothing_with_len_1_calls == 0);
 
-  /* Add an arbitrary number of refs to the slice and remoe the refs. This is to
-     make sure that that the destroy callback (i.e do_nothing_with_len_1()) is
-     not called until the last unref operation */
+  /* Add an arbitrary number of refs to the slice and remoe the refs.
+     This is to make sure that that the destroy callback (i.e
+     do_nothing_with_len_1()) is not called until the last unref
+     operation */
   for (i = 0; i < num_refs; i++) {
     grpc_slice_ref(slice);
   }
   for (i = 0; i < num_refs; i++) {
     grpc_slice_unref(slice);
   }
-  GPR_ASSERT(do_nothing_with_len_1_calls == 0); /* Shouldn't be called yet */
+  GPR_ASSERT(do_nothing_with_len_1_calls ==
+             0); /* Shouldn't be called yet */
 
   /* last unref */
   grpc_slice_unref(slice);
@@ -136,15 +141,15 @@ static void test_slice_sub_works(unsigned length) {
   LOG_TEST_NAME("test_slice_sub_works");
   gpr_log(GPR_INFO, "length=%d", length);
 
-  /* Create a slice in which each byte is equal to the distance from it to the
-     beginning of the slice. */
+  /* Create a slice in which each byte is equal to the distance from it
+     to the beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
     GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
-  /* Ensure that for all subsets length is correct and that we start on the
-     correct byte. Additionally check that no copies were made. */
+  /* Ensure that for all subsets length is correct and that we start on
+     the correct byte. Additionally check that no copies were made. */
   for (i = 0; i < length; i++) {
     for (j = i; j < length; j++) {
       sub = grpc_slice_sub(slice, i, j);
@@ -163,9 +168,11 @@ static void check_head_tail(grpc_slice slice, grpc_slice head,
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) ==
              GRPC_SLICE_LENGTH(head) + GRPC_SLICE_LENGTH(tail));
   GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice),
-                         GRPC_SLICE_START_PTR(head), GRPC_SLICE_LENGTH(head)));
-  GPR_ASSERT(0 == memcmp(GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(head),
-                         GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
+                         GRPC_SLICE_START_PTR(head),
+                         GRPC_SLICE_LENGTH(head)));
+  GPR_ASSERT(
+      0 == memcmp(GRPC_SLICE_START_PTR(slice) + GRPC_SLICE_LENGTH(head),
+                  GRPC_SLICE_START_PTR(tail), GRPC_SLICE_LENGTH(tail)));
 }
 
 static void test_slice_split_head_works(size_t length) {
@@ -176,15 +183,15 @@ static void test_slice_split_head_works(size_t length) {
   LOG_TEST_NAME("test_slice_split_head_works");
   gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
 
-  /* Create a slice in which each byte is equal to the distance from it to the
-     beginning of the slice. */
+  /* Create a slice in which each byte is equal to the distance from it
+     to the beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
     GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
-  /* Ensure that for all subsets length is correct and that we start on the
-     correct byte. Additionally check that no copies were made. */
+  /* Ensure that for all subsets length is correct and that we start on
+     the correct byte. Additionally check that no copies were made. */
   for (i = 0; i < length; i++) {
     tail = grpc_slice_ref(slice);
     head = grpc_slice_split_head(&tail, i);
@@ -204,15 +211,15 @@ static void test_slice_split_tail_works(size_t length) {
   LOG_TEST_NAME("test_slice_split_tail_works");
   gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
 
-  /* Create a slice in which each byte is equal to the distance from it to the
-     beginning of the slice. */
+  /* Create a slice in which each byte is equal to the distance from it
+     to the beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
     GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
-  /* Ensure that for all subsets length is correct and that we start on the
-     correct byte. Additionally check that no copies were made. */
+  /* Ensure that for all subsets length is correct and that we start on
+     the correct byte. Additionally check that no copies were made. */
   for (i = 0; i < length; i++) {
     head = grpc_slice_ref(slice);
     tail = grpc_slice_split_tail(&head, i);
@@ -232,8 +239,8 @@ static void test_slice_from_copied_string_works(void) {
 
   slice = grpc_slice_from_copied_string(text);
   GPR_ASSERT(strlen(text) == GRPC_SLICE_LENGTH(slice));
-  GPR_ASSERT(
-      0 == memcmp(text, GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice)));
+  GPR_ASSERT(0 == memcmp(text, GRPC_SLICE_START_PTR(slice),
+                         GRPC_SLICE_LENGTH(slice)));
   grpc_slice_unref(slice);
 }
 
@@ -241,12 +248,14 @@ static void test_slice_interning(void) {
   LOG_TEST_NAME("test_slice_interning");
 
   grpc_init();
-  grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
-  grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
+  grpc_slice src1 =
+      grpc_slice_from_copied_string("hello123456789123456789");
+  grpc_slice src2 =
+      grpc_slice_from_copied_string("hello123456789123456789");
 
-  // Explicitly checking that the slices are at different addresses prevents
-  // failure with windows opt 64bit build.
-  // See https://github.com/grpc/grpc/issues/20519
+  // Explicitly checking that the slices are at different addresses
+  // prevents failure with windows opt 64bit build. See
+  // https://github.com/grpc/grpc/issues/20519
   GPR_ASSERT(&src1 != &src2);
   GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
 
@@ -254,8 +263,10 @@ static void test_slice_interning(void) {
   grpc_slice interned2 = grpc_slice_intern(src2);
   GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
              GRPC_SLICE_START_PTR(interned2));
-  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) != GRPC_SLICE_START_PTR(src1));
-  GPR_ASSERT(GRPC_SLICE_START_PTR(interned2) != GRPC_SLICE_START_PTR(src2));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) !=
+             GRPC_SLICE_START_PTR(src1));
+  GPR_ASSERT(GRPC_SLICE_START_PTR(interned2) !=
+             GRPC_SLICE_START_PTR(src2));
   grpc_slice_unref(src1);
   grpc_slice_unref(src2);
   grpc_slice_unref(interned1);
@@ -266,8 +277,8 @@ static void test_slice_interning(void) {
 static void test_static_slice_interning(void) {
   LOG_TEST_NAME("test_static_slice_interning");
 
-  // grpc_init/grpc_shutdown deliberately omitted: they should not be necessary
-  // to intern a static slice
+  // grpc_init/grpc_shutdown deliberately omitted: they should not be
+  // necessary to intern a static slice
 
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
     GPR_ASSERT(grpc_slice_is_equivalent(
@@ -300,8 +311,8 @@ static void test_moved_string_slice(void) {
   // Small string should be inlined.
   constexpr char kSmallStr[] = "hello12345";
   char* small_ptr = strdup(kSmallStr);
-  grpc_slice small =
-      grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(small_ptr));
+  grpc_slice small = grpc_slice_from_moved_string(
+      grpc_core::UniquePtr<char>(small_ptr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
              reinterpret_cast<uint8_t*>(small_ptr));
@@ -310,18 +321,18 @@ static void test_moved_string_slice(void) {
   // Large string should be move the reference.
   constexpr char kSLargeStr[] = "hello123456789123456789123456789";
   char* large_ptr = strdup(kSLargeStr);
-  grpc_slice large =
-      grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(large_ptr));
+  grpc_slice large = grpc_slice_from_moved_string(
+      grpc_core::UniquePtr<char>(large_ptr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(large) == strlen(kSLargeStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(large) ==
              reinterpret_cast<uint8_t*>(large_ptr));
   grpc_slice_unref(large);
 
-  // Moved buffer must respect the provided length not the actual length of the
-  // string.
+  // Moved buffer must respect the provided length not the actual length
+  // of the string.
   large_ptr = strdup(kSLargeStr);
-  small = grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char>(large_ptr),
-                                       strlen(kSmallStr));
+  small = grpc_slice_from_moved_buffer(
+      grpc_core::UniquePtr<char>(large_ptr), strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
              reinterpret_cast<uint8_t*>(large_ptr));
@@ -332,8 +343,8 @@ static void test_moved_string_slice(void) {
 
 void test_string_view_from_slice() {
   constexpr char kStr[] = "foo";
-  absl::string_view sv(
-      grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
+  absl::string_view sv(grpc_core::StringViewFromSlice(
+      grpc_slice_from_static_string(kStr)));
   GPR_ASSERT(std::string(sv) == kStr);
 }
 

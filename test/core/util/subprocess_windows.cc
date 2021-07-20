@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -87,7 +87,8 @@ int gpr_subprocess_join(gpr_subprocess* p) {
   DWORD dwExitCode;
   if (GetExitCodeProcess(p->pi.hProcess, &dwExitCode)) {
     if (dwExitCode == STILL_ACTIVE) {
-      if (WaitForSingleObject(p->pi.hProcess, INFINITE) == WAIT_OBJECT_0) {
+      if (WaitForSingleObject(p->pi.hProcess, INFINITE) ==
+          WAIT_OBJECT_0) {
         p->joined = 1;
         goto getExitCode;
       }

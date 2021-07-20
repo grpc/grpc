@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -23,7 +23,8 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
-#define GRPC_ARG_HIERARCHICAL_PATH "grpc.internal.address.hierarchical_path"
+#define GRPC_ARG_HIERARCHICAL_PATH \
+  "grpc.internal.address.hierarchical_path"
 
 namespace grpc_core {
 
@@ -31,7 +32,8 @@ const char* kHierarchicalPathAttributeKey = "hierarchical_path";
 
 namespace {
 
-class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
+class HierarchicalPathAttribute
+    : public ServerAddress::AttributeInterface {
  public:
   explicit HierarchicalPathAttribute(std::vector<std::string> path)
       : path_(std::move(path)) {}

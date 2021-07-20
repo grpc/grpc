@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,20 +60,22 @@ static void init_thread_id_key(void) {
 }
 
 unsigned gpr_cpu_current_cpu(void) {
-  /* NOTE: there's no way I know to return the actual cpu index portably...
-     most code that's using this is using it to shard across work queues though,
-     so here we use thread identity instead to achieve a similar though not
-     identical effect */
+  /* NOTE: there's no way I know to return the actual cpu index
+     portably... most code that's using this is using it to shard across
+     work queues though, so here we use thread identity instead to
+     achieve a similar though not identical effect */
   static gpr_once once = GPR_ONCE_INIT;
   gpr_once_init(&once, init_thread_id_key);
 
   unsigned int* thread_id =
       static_cast<unsigned int*>(pthread_getspecific(thread_id_key));
   if (thread_id == nullptr) {
-    // Note we cannot use gpr_malloc here because this allocation can happen in
-    // a main thread and will only be free'd when the main thread exits, which
-    // will cause our internal memory counters to believe it is a leak.
-    thread_id = static_cast<unsigned int*>(malloc(sizeof(unsigned int)));
+    // Note we cannot use gpr_malloc here because this allocation can
+    // happen in a main thread and will only be free'd when the main
+    // thread exits, which will cause our internal memory counters to
+    // believe it is a leak.
+    thread_id =
+        static_cast<unsigned int*>(malloc(sizeof(unsigned int)));
     pthread_setspecific(thread_id_key, thread_id);
   }
 

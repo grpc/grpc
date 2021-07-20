@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -56,11 +56,12 @@ std::string gpr_format_timespec(gpr_timespec tm) {
   char time_buffer[35];
   char ns_buffer[11];  // '.' + 9 digits of precision
   struct tm* tm_info = localtime(reinterpret_cast<time_t*>(&tm.tv_sec));
-  strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
+  strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S",
+           tm_info);
   snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
-  // This loop trims off trailing zeros by inserting a null character that the
-  // right point. We iterate in chunks of three because we want 0, 3, 6, or 9
-  // fractional digits.
+  // This loop trims off trailing zeros by inserting a null character
+  // that the right point. We iterate in chunks of three because we want
+  // 0, 3, 6, or 9 fractional digits.
   for (int i = 7; i >= 1; i -= 3) {
     if (ns_buffer[i] == '0' && ns_buffer[i + 1] == '0' &&
         ns_buffer[i + 2] == '0') {
@@ -90,7 +91,8 @@ static dump_out dump_out_create(void) {
 static void dump_out_append(dump_out* out, char c) {
   if (out->length == out->capacity) {
     out->capacity = GPR_MAX(8, 2 * out->capacity);
-    out->data = static_cast<char*>(gpr_realloc(out->data, out->capacity));
+    out->data =
+        static_cast<char*>(gpr_realloc(out->data, out->capacity));
   }
   out->data[out->length++] = c;
 }
@@ -120,7 +122,8 @@ static void asciidump(dump_out* out, const char* buf, size_t len) {
   }
   for (cur = beg; cur != end; ++cur) {
     dump_out_append(
-        out, (isprint(*cur) ? *reinterpret_cast<const char*>(cur) : '.'));
+        out,
+        (isprint(*cur) ? *reinterpret_cast<const char*>(cur) : '.'));
   }
   if (!out_was_empty) {
     dump_out_append(out, '\'');
@@ -146,7 +149,8 @@ char* gpr_dump(const char* buf, size_t len, uint32_t flags) {
   return gpr_dump_return_len(buf, len, flags, &unused);
 }
 
-int gpr_parse_bytes_to_uint32(const char* buf, size_t len, uint32_t* result) {
+int gpr_parse_bytes_to_uint32(const char* buf, size_t len,
+                              uint32_t* result) {
   uint32_t out = 0;
   uint32_t new_val;
   size_t i;
@@ -232,7 +236,8 @@ char* gpr_leftpad(const char* str, char flag, size_t length) {
   return out;
 }
 
-char* gpr_strjoin(const char** strs, size_t nstrs, size_t* final_length) {
+char* gpr_strjoin(const char** strs, size_t nstrs,
+                  size_t* final_length) {
   return gpr_strjoin_sep(strs, nstrs, "", final_length);
 }
 
@@ -283,15 +288,17 @@ int gpr_stricmp(const char* a, const char* b) {
   return gpr_strincmp(a, b, SIZE_MAX);
 }
 
-static void add_string_to_split(const char* beg, const char* end, char*** strs,
-                                size_t* nstrs, size_t* capstrs) {
-  char* out =
-      static_cast<char*>(gpr_malloc(static_cast<size_t>(end - beg) + 1));
+static void add_string_to_split(const char* beg, const char* end,
+                                char*** strs, size_t* nstrs,
+                                size_t* capstrs) {
+  char* out = static_cast<char*>(
+      gpr_malloc(static_cast<size_t>(end - beg) + 1));
   memcpy(out, beg, static_cast<size_t>(end - beg));
   out[end - beg] = 0;
   if (*nstrs == *capstrs) {
     *capstrs = GPR_MAX(8, 2 * *capstrs);
-    *strs = static_cast<char**>(gpr_realloc(*strs, sizeof(*strs) * *capstrs));
+    *strs = static_cast<char**>(
+        gpr_realloc(*strs, sizeof(*strs) * *capstrs));
   }
   (*strs)[*nstrs] = out;
   ++*nstrs;
@@ -307,7 +314,8 @@ void gpr_string_split(const char* input, const char* sep, char*** strs,
     add_string_to_split(input, next, strs, nstrs, &capstrs);
     input = next + strlen(sep);
   }
-  add_string_to_split(input, input + strlen(input), strs, nstrs, &capstrs);
+  add_string_to_split(input, input + strlen(input), strs, nstrs,
+                      &capstrs);
 }
 
 void* gpr_memrchr(const void* s, int c, size_t n) {

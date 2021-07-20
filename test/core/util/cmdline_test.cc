@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,13 +25,14 @@
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
-#define LOG_TEST() gpr_log(GPR_INFO, "test at %s:%d", __FILE__, __LINE__)
+#define LOG_TEST() \
+  gpr_log(GPR_INFO, "test at %s:%d", __FILE__, __LINE__)
 
 static void test_simple_int(void) {
   int x = 1;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo"),
-                  const_cast<char*>("3")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("-foo"), const_cast<char*>("3")};
 
   LOG_TEST();
 
@@ -46,7 +47,8 @@ static void test_simple_int(void) {
 static void test_eq_int(void) {
   int x = 1;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo=3")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("-foo=3")};
 
   LOG_TEST();
 
@@ -61,8 +63,8 @@ static void test_eq_int(void) {
 static void test_2dash_int(void) {
   int x = 1;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo"),
-                  const_cast<char*>("3")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--foo"), const_cast<char*>("3")};
 
   LOG_TEST();
 
@@ -77,7 +79,8 @@ static void test_2dash_int(void) {
 static void test_2dash_eq_int(void) {
   int x = 1;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=3")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--foo=3")};
 
   LOG_TEST();
 
@@ -92,8 +95,8 @@ static void test_2dash_eq_int(void) {
 static void test_simple_string(void) {
   const char* x = nullptr;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo"),
-                  const_cast<char*>("3")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("-foo"), const_cast<char*>("3")};
 
   LOG_TEST();
 
@@ -108,7 +111,8 @@ static void test_simple_string(void) {
 static void test_eq_string(void) {
   const char* x = nullptr;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo=3")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("-foo=3")};
 
   LOG_TEST();
 
@@ -123,8 +127,8 @@ static void test_eq_string(void) {
 static void test_2dash_string(void) {
   const char* x = nullptr;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo"),
-                  const_cast<char*>("3")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--foo"), const_cast<char*>("3")};
 
   LOG_TEST();
 
@@ -139,7 +143,8 @@ static void test_2dash_string(void) {
 static void test_2dash_eq_string(void) {
   const char* x = nullptr;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=3")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--foo=3")};
 
   LOG_TEST();
 
@@ -154,7 +159,8 @@ static void test_2dash_eq_string(void) {
 static void test_flag_on(void) {
   int x = 2;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--foo")};
 
   LOG_TEST();
 
@@ -169,7 +175,8 @@ static void test_flag_on(void) {
 static void test_flag_no(void) {
   int x = 2;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--no-foo")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--no-foo")};
 
   LOG_TEST();
 
@@ -184,7 +191,8 @@ static void test_flag_no(void) {
 static void test_flag_val_1(void) {
   int x = 2;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=1")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--foo=1")};
 
   LOG_TEST();
 
@@ -199,7 +207,8 @@ static void test_flag_val_1(void) {
 static void test_flag_val_0(void) {
   int x = 2;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=0")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--foo=0")};
 
   LOG_TEST();
 
@@ -214,7 +223,8 @@ static void test_flag_val_0(void) {
 static void test_flag_val_true(void) {
   int x = 2;
   gpr_cmdline* cl;
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=true")};
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--foo=true")};
 
   LOG_TEST();
 
@@ -248,7 +258,8 @@ static void test_many(void) {
   int flag = 2;
   gpr_cmdline* cl;
 
-  char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--str"),
+  char* args[] = {const_cast<char*>(__FILE__),
+                  const_cast<char*>("--str"),
                   const_cast<char*>("hello"), const_cast<char*>("-x=4"),
                   const_cast<char*>("-no-flag")};
 
@@ -282,8 +293,8 @@ static void test_extra(void) {
   LOG_TEST();
 
   cl = gpr_cmdline_create(nullptr);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           &count);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process",
+                           extra_arg_cb, &count);
   gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(args), args);
   GPR_ASSERT(count == 3);
   gpr_cmdline_destroy(cl);
@@ -299,8 +310,8 @@ static void test_extra_dashdash(void) {
   LOG_TEST();
 
   cl = gpr_cmdline_create(nullptr);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           &count);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process",
+                           extra_arg_cb, &count);
   gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(args), args);
   GPR_ASSERT(count == 3);
   gpr_cmdline_destroy(cl);
@@ -319,8 +330,8 @@ static void test_usage(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process",
+                           extra_arg_cb, nullptr);
 
   std::string usage = gpr_cmdline_usage_string(cl, "test");
   GPR_ASSERT(usage ==
@@ -351,8 +362,8 @@ static void test_help(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process",
+                           extra_arg_cb, nullptr);
 
   GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(help), help));
 
@@ -376,11 +387,11 @@ static void test_badargs1(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process",
+                           extra_arg_cb, nullptr);
 
-  GPR_ASSERT(0 ==
-             gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_arg_name), bad_arg_name));
+  GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_arg_name),
+                                    bad_arg_name));
 
   gpr_cmdline_destroy(cl);
 }
@@ -403,11 +414,11 @@ static void test_badargs2(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process",
+                           extra_arg_cb, nullptr);
 
-  GPR_ASSERT(
-      0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_int_value), bad_int_value));
+  GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_int_value),
+                                    bad_int_value));
 
   gpr_cmdline_destroy(cl);
 }
@@ -429,8 +440,8 @@ static void test_badargs3(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process",
+                           extra_arg_cb, nullptr);
 
   GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value),
                                     bad_bool_value));
@@ -455,8 +466,8 @@ static void test_badargs4(void) {
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
   gpr_cmdline_add_int(cl, "x", nullptr, &x);
   gpr_cmdline_add_flag(cl, "flag", nullptr, &flag);
-  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
-                           nullptr);
+  gpr_cmdline_on_extra_arg(cl, "file", "filenames to process",
+                           extra_arg_cb, nullptr);
 
   GPR_ASSERT(0 == gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value),
                                     bad_bool_value));

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,9 +29,9 @@
 #include "src/core/lib/gpr/string.h"
 
 bool grpc_ares_query_ipv6() {
-  /* The libuv grpc code currently does not have the code to probe for this,
-   * so we assume for now that IPv6 is always available in contexts where this
-   * code will be used. */
+  /* The libuv grpc code currently does not have the code to probe for
+   * this, so we assume for now that IPv6 is always available in
+   * contexts where this code will be used. */
   return true;
 }
 

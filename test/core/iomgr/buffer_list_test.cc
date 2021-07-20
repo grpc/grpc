@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,9 +26,8 @@
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
-static void TestShutdownFlushesListVerifier(void* arg,
-                                            grpc_core::Timestamps* /*ts*/,
-                                            grpc_error_handle error) {
+static void TestShutdownFlushesListVerifier(
+    void* arg, grpc_core::Timestamps* /*ts*/, grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(arg != nullptr);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
@@ -86,8 +85,10 @@ static void TestVerifierCalledOnAck() {
   gpr_atm verifier_called;
   gpr_atm_rel_store(&verifier_called, static_cast<gpr_atm>(0));
   grpc_core::TracedBuffer::AddNewEntry(&list, 213, 0, &verifier_called);
-  grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr, &tss);
-  GPR_ASSERT(gpr_atm_acq_load(&verifier_called) == static_cast<gpr_atm>(1));
+  grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr,
+                                            &tss);
+  GPR_ASSERT(gpr_atm_acq_load(&verifier_called) ==
+             static_cast<gpr_atm>(1));
   GPR_ASSERT(list == nullptr);
   grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
 }
@@ -107,8 +108,10 @@ static void TestRepeatedShutdown() {
   gpr_atm verifier_called;
   gpr_atm_rel_store(&verifier_called, static_cast<gpr_atm>(0));
   grpc_core::TracedBuffer::AddNewEntry(&list, 213, 0, &verifier_called);
-  grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr, &tss);
-  GPR_ASSERT(gpr_atm_acq_load(&verifier_called) == static_cast<gpr_atm>(1));
+  grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr,
+                                            &tss);
+  GPR_ASSERT(gpr_atm_acq_load(&verifier_called) ==
+             static_cast<gpr_atm>(1));
   GPR_ASSERT(list == nullptr);
   grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
   grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);

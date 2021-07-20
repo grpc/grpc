@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,13 +27,17 @@ namespace grpc {
 namespace testing {
 
 int ChannelTestPeer::registered_calls() const {
-  grpc_core::MutexLock lock(&channel_->c_channel_->registration_table->mu);
-  return static_cast<int>(channel_->c_channel_->registration_table->map.size());
+  grpc_core::MutexLock lock(
+      &channel_->c_channel_->registration_table->mu);
+  return static_cast<int>(
+      channel_->c_channel_->registration_table->map.size());
 }
 
 int ChannelTestPeer::registration_attempts() const {
-  grpc_core::MutexLock lock(&channel_->c_channel_->registration_table->mu);
-  return channel_->c_channel_->registration_table->method_registration_attempts;
+  grpc_core::MutexLock lock(
+      &channel_->c_channel_->registration_table->mu);
+  return channel_->c_channel_->registration_table
+      ->method_registration_attempts;
 }
 
 }  // namespace testing

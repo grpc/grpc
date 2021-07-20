@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/endpoint_config.h>
@@ -27,7 +27,8 @@ namespace experimental {
 
 EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
     absl::string_view key) const {
-  const grpc_arg* arg = grpc_channel_args_find(args_, std::string(key).c_str());
+  const grpc_arg* arg =
+      grpc_channel_args_find(args_, std::string(key).c_str());
   if (arg == nullptr) {
     return absl::monostate();
   }

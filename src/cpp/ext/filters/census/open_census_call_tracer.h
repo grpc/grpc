@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -39,14 +39,15 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordSendMessage(
         const grpc_core::ByteStream& /* send_message */) override {}
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /* recv_initial_metadata */, uint32_t /* flags */,
-        gpr_atm* /* peer_string */) override {}
+        grpc_metadata_batch* /* recv_initial_metadata */,
+        uint32_t /* flags */, gpr_atm* /* peer_string */) override {}
     void RecordReceivedMessage(
         const grpc_core::ByteStream& /* recv_message */) override {}
     void RecordReceivedTrailingMetadata(
         grpc_metadata_batch* /* recv_trailing_metadata */) override {}
     void RecordCancel(grpc_error_handle /* cancel_error */) override {}
-    void RecordEnd(const grpc_call_final_info& /* final_info */) override {}
+    void RecordEnd(
+        const grpc_call_final_info& /* final_info */) override {}
 
     CensusContext* context() { return &context_; }
 

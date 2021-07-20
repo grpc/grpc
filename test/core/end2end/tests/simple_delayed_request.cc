@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,16 +40,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -94,8 +95,9 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   config.init_server(f, server_args);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
-                               f->cq, grpc_slice_from_static_string("/foo"),
+  c = grpc_channel_create_call(f->client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f->cq,
+                               grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
@@ -116,24 +118,26 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
+  error = grpc_server_request_call(f->server, &s, &call_details,
+                                   &request_metadata_recv, f->cq, f->cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -158,8 +162,8 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -183,7 +187,8 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
   cq_verifier_destroy(cqv);
 }
 
-static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
+static void test_simple_delayed_request_short(
+    grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
   grpc_channel_args client_args;
   grpc_arg arg_array[1];
@@ -194,16 +199,18 @@ static void test_simple_delayed_request_short(grpc_end2end_test_config config) {
   client_args.args = arg_array;
   client_args.num_args = 1;
 
-  gpr_log(GPR_INFO, "Running test: %s/%s", "test_simple_delayed_request_short",
-          config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s",
+          "test_simple_delayed_request_short", config.name);
   f = config.create_fixture(nullptr, nullptr);
 
-  simple_delayed_request_body(config, &f, &client_args, nullptr, 100000);
+  simple_delayed_request_body(config, &f, &client_args, nullptr,
+                              100000);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
+static void test_simple_delayed_request_long(
+    grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
   grpc_channel_args client_args;
   grpc_arg arg_array[1];
@@ -214,17 +221,19 @@ static void test_simple_delayed_request_long(grpc_end2end_test_config config) {
   client_args.args = arg_array;
   client_args.num_args = 1;
 
-  gpr_log(GPR_INFO, "Running test: %s/%s", "test_simple_delayed_request_long",
-          config.name);
+  gpr_log(GPR_INFO, "Running test: %s/%s",
+          "test_simple_delayed_request_long", config.name);
   f = config.create_fixture(nullptr, nullptr);
   /* This timeout should be longer than a single retry */
-  simple_delayed_request_body(config, &f, &client_args, nullptr, 1500000);
+  simple_delayed_request_body(config, &f, &client_args, nullptr,
+                              1500000);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void simple_delayed_request(grpc_end2end_test_config config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
+  GPR_ASSERT(config.feature_mask &
+             FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_simple_delayed_request_short(config);
   test_simple_delayed_request_long(config);
 }

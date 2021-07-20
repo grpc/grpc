@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -58,7 +58,8 @@ static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 
 static grpc_ssl_roots_override_callback ssl_roots_override_cb = nullptr;
 
-void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
+void grpc_set_ssl_roots_override_callback(
+    grpc_ssl_roots_override_callback cb) {
   ssl_roots_override_cb = cb;
 }
 
@@ -102,7 +103,8 @@ grpc_security_level grpc_tsi_security_level_string_to_enum(
   return GRPC_SECURITY_NONE;
 }
 
-const char* grpc_security_level_to_string(grpc_security_level security_level) {
+const char* grpc_security_level_to_string(
+    grpc_security_level security_level) {
   if (security_level == GRPC_PRIVACY_AND_INTEGRITY) {
     return "GRPC_PRIVACY_AND_INTEGRITY";
   } else if (security_level == GRPC_INTEGRITY_ONLY) {
@@ -113,7 +115,8 @@ const char* grpc_security_level_to_string(grpc_security_level security_level) {
 
 bool grpc_check_security_level(grpc_security_level channel_level,
                                grpc_security_level call_cred_level) {
-  return static_cast<int>(channel_level) >= static_cast<int>(call_cred_level);
+  return static_cast<int>(channel_level) >=
+         static_cast<int>(call_cred_level);
 }
 
 tsi_client_certificate_request_type
@@ -155,13 +158,14 @@ tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
 grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   /* Check the ALPN if ALPN is supported. */
-  const tsi_peer_property* p =
-      tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
+  const tsi_peer_property* p = tsi_peer_get_property_by_name(
+      peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Cannot check peer: missing selected ALPN property.");
   }
-  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
+  if (!grpc_chttp2_is_alpn_version_supported(p->value.data,
+                                             p->value.length)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Cannot check peer: invalid ALPN value.");
   }
@@ -172,9 +176,11 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
 grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
                                            const tsi_peer* peer) {
   /* Check the peer name if specified. */
-  if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
+  if (!peer_name.empty() &&
+      !grpc_ssl_host_matches_name(peer, peer_name)) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Peer name ", peer_name, " is not in peer certificate")
+        absl::StrCat("Peer name ", peer_name,
+                     " is not in peer certificate")
             .c_str());
   }
   return GRPC_ERROR_NONE;
@@ -187,10 +193,11 @@ bool grpc_ssl_check_call_host(absl::string_view host,
                               grpc_error_handle* error) {
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
-  if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
-  /* If the target name was overridden, then the original target_name was
-   'checked' transitively during the previous peer check at the end of the
-   handshake. */
+  if (grpc_ssl_host_matches_name(&peer, host))
+    status = GRPC_SECURITY_OK;
+  /* If the target name was overridden, then the original target_name
+   was 'checked' transitively during the previous peer check at the end
+   of the handshake. */
   if (!overridden_target_name.empty() && host == target_name) {
     status = GRPC_SECURITY_OK;
   }
@@ -202,7 +209,8 @@ bool grpc_ssl_check_call_host(absl::string_view host,
   return true;
 }
 
-const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
+const char** grpc_fill_alpn_protocol_strings(
+    size_t* num_alpn_protocols) {
   GPR_ASSERT(num_alpn_protocols != nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char** alpn_protocol_strings = static_cast<const char**>(
@@ -228,10 +236,10 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
   return tsi_ssl_peer_matches_name(peer, allocated_name);
 }
 
-int grpc_ssl_cmp_target_name(absl::string_view target_name,
-                             absl::string_view other_target_name,
-                             absl::string_view overridden_target_name,
-                             absl::string_view other_overridden_target_name) {
+int grpc_ssl_cmp_target_name(
+    absl::string_view target_name, absl::string_view other_target_name,
+    absl::string_view overridden_target_name,
+    absl::string_view other_overridden_target_name) {
   int c = target_name.compare(other_target_name);
   if (c != 0) return c;
   return overridden_target_name.compare(other_overridden_target_name);
@@ -252,14 +260,16 @@ static bool IsSpiffeId(absl::string_view uri) {
     return false;
   }
   if (splits[2].size() > 255) {
-    gpr_log(GPR_INFO, "Invalid SPIFFE ID: domain longer than 255 characters.");
+    gpr_log(GPR_INFO,
+            "Invalid SPIFFE ID: domain longer than 255 characters.");
     return false;
   }
   return true;
 }
 
-grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
-    const tsi_peer* peer, const char* transport_security_type) {
+grpc_core::RefCountedPtr<grpc_auth_context>
+grpc_ssl_peer_to_auth_context(const tsi_peer* peer,
+                              const char* transport_security_type) {
   size_t i;
   const char* peer_identity_property_name = nullptr;
 
@@ -277,40 +287,51 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;
-    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
-      /* If there is no subject alt name, have the CN as the identity. */
+    if (strcmp(prop->name,
+               TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+      /* If there is no subject alt name, have the CN as the identity.
+       */
       if (peer_identity_property_name == nullptr) {
         peer_identity_property_name = GRPC_X509_CN_PROPERTY_NAME;
       }
-      grpc_auth_context_add_property(ctx.get(), GRPC_X509_CN_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name,
-                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_X509_CN_PROPERTY_NAME, prop->value.data,
+          prop->value.length);
+    } else if (strcmp(
+                   prop->name,
+                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
+               0) {
       peer_identity_property_name = GRPC_X509_SAN_PROPERTY_NAME;
-      grpc_auth_context_add_property(ctx.get(), GRPC_X509_SAN_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_X509_SAN_PROPERTY_NAME, prop->value.data,
+          prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(),
-                                     GRPC_X509_PEM_CERT_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(),
-                                     GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_SSL_SESSION_REUSED_PEER_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(),
-                                     GRPC_SSL_SESSION_REUSED_PROPERTY,
-                                     prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_X509_PEM_CERT_PROPERTY_NAME, prop->value.data,
+          prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) ==
+               0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME,
+          prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name,
+                      TSI_SSL_SESSION_REUSED_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_SSL_SESSION_REUSED_PROPERTY, prop->value.data,
+          prop->value.length);
+    } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) ==
+               0) {
       grpc_auth_context_add_property(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
           prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_DNS_PEER_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(), GRPC_PEER_DNS_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_PEER_DNS_PROPERTY_NAME, prop->value.data,
+          prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(), GRPC_PEER_URI_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_PEER_URI_PROPERTY_NAME, prop->value.data,
+          prop->value.length);
       uri_count++;
       absl::string_view spiffe_id(prop->value.data, prop->value.length);
       if (IsSpiffeId(spiffe_id)) {
@@ -319,11 +340,13 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
         has_spiffe_id = true;
       }
     } else if (strcmp(prop->name, TSI_X509_EMAIL_PEER_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(), GRPC_PEER_EMAIL_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_PEER_EMAIL_PROPERTY_NAME, prop->value.data,
+          prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_IP_PEER_PROPERTY) == 0) {
-      grpc_auth_context_add_property(ctx.get(), GRPC_PEER_IP_PROPERTY_NAME,
-                                     prop->value.data, prop->value.length);
+      grpc_auth_context_add_property(
+          ctx.get(), GRPC_PEER_IP_PROPERTY_NAME, prop->value.data,
+          prop->value.length);
     }
   }
   if (peer_identity_property_name != nullptr) {
@@ -345,10 +368,11 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   return ctx;
 }
 
-static void add_shallow_auth_property_to_peer(tsi_peer* peer,
-                                              const grpc_auth_property* prop,
-                                              const char* tsi_prop_name) {
-  tsi_peer_property* tsi_prop = &peer->properties[peer->property_count++];
+static void add_shallow_auth_property_to_peer(
+    tsi_peer* peer, const grpc_auth_property* prop,
+    const char* tsi_prop_name) {
+  tsi_peer_property* tsi_prop =
+      &peer->properties[peer->property_count++];
   tsi_prop->name = const_cast<char*>(tsi_prop_name);
   tsi_prop->value.data = prop->value;
   tsi_prop->value.length = prop->value_length;
@@ -363,7 +387,8 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
   memset(&peer, 0, sizeof(peer));
 
   it = grpc_auth_context_property_iterator(auth_context);
-  while (grpc_auth_property_iterator_next(&it) != nullptr) max_num_props++;
+  while (grpc_auth_property_iterator_next(&it) != nullptr)
+    max_num_props++;
 
   if (max_num_props > 0) {
     peer.properties = static_cast<tsi_peer_property*>(
@@ -372,31 +397,36 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     while ((prop = grpc_auth_property_iterator_next(&it)) != nullptr) {
       if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(
-            &peer, prop, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY);
+            &peer, prop,
+            TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_X509_CN_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(
             &peer, prop, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
-      } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_PROPERTY_NAME) == 0) {
+      } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_PROPERTY_NAME) ==
+                 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_PEM_CERT_PROPERTY);
       } else if (strcmp(prop->name,
-                        GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME) == 0) {
-        add_shallow_auth_property_to_peer(&peer, prop,
-                                          TSI_SECURITY_LEVEL_PEER_PROPERTY);
-      } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME) ==
+                        GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME) ==
                  0) {
-        add_shallow_auth_property_to_peer(&peer, prop,
-                                          TSI_X509_PEM_CERT_CHAIN_PROPERTY);
+        add_shallow_auth_property_to_peer(
+            &peer, prop, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+      } else if (strcmp(prop->name,
+                        GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(
+            &peer, prop, TSI_X509_PEM_CERT_CHAIN_PROPERTY);
       } else if (strcmp(prop->name, GRPC_PEER_DNS_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_DNS_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_PEER_URI_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_URI_PEER_PROPERTY);
-      } else if (strcmp(prop->name, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME) == 0) {
+      } else if (strcmp(prop->name,
+                        GRPC_PEER_SPIFFE_ID_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_URI_PEER_PROPERTY);
-      } else if (strcmp(prop->name, GRPC_PEER_EMAIL_PROPERTY_NAME) == 0) {
+      } else if (strcmp(prop->name, GRPC_PEER_EMAIL_PROPERTY_NAME) ==
+                 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_EMAIL_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_PEER_IP_PROPERTY_NAME) == 0) {
@@ -413,15 +443,18 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 }
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
-    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
-    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
+    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const char* pem_root_certs,
+    bool skip_server_certificate_verification,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
+    tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
   if (pem_root_certs == nullptr) {
     gpr_log(GPR_INFO,
-            "No root certificates specified; use ones stored in system default "
+            "No root certificates specified; use ones stored in system "
+            "default "
             "locations instead");
     // Use default root certificates.
     root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
@@ -453,8 +486,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.min_tls_version = min_tls_version;
   options.max_tls_version = max_tls_version;
   const tsi_result result =
-      tsi_create_ssl_client_handshaker_factory_with_options(&options,
-                                                            handshaker_factory);
+      tsi_create_ssl_client_handshaker_factory_with_options(
+          &options, handshaker_factory);
   gpr_free(options.alpn_protocols);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
@@ -465,8 +498,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 }
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
-    const char* pem_root_certs,
+    tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
+    size_t num_key_cert_pairs, const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
@@ -478,15 +511,17 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.num_key_cert_pairs = num_key_cert_pairs;
   options.pem_client_root_certs = pem_root_certs;
   options.client_certificate_request =
-      grpc_get_tsi_client_certificate_request_type(client_certificate_request);
+      grpc_get_tsi_client_certificate_request_type(
+          client_certificate_request);
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.alpn_protocols = alpn_protocol_strings;
-  options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+  options.num_alpn_protocols =
+      static_cast<uint16_t>(num_alpn_protocols);
   options.min_tls_version = min_tls_version;
   options.max_tls_version = max_tls_version;
   const tsi_result result =
-      tsi_create_ssl_server_handshaker_factory_with_options(&options,
-                                                            handshaker_factory);
+      tsi_create_ssl_server_handshaker_factory_with_options(
+          &options, handshaker_factory);
   gpr_free(alpn_protocol_strings);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
@@ -498,8 +533,10 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
 
 /* --- Ssl cache implementation. --- */
 
-grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(size_t capacity) {
-  tsi_ssl_session_cache* cache = tsi_ssl_session_cache_create_lru(capacity);
+grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(
+    size_t capacity) {
+  tsi_ssl_session_cache* cache =
+      tsi_ssl_session_cache_create_lru(capacity);
   return reinterpret_cast<grpc_ssl_session_cache*>(cache);
 }
 
@@ -567,10 +604,12 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
       GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
   if (strlen(default_root_certs_path.get()) > 0) {
     GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(default_root_certs_path.get(), 1, &result));
+        "load_file",
+        grpc_load_file(default_root_certs_path.get(), 1, &result));
   }
   // Try overridden roots if needed.
-  grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+  grpc_ssl_roots_override_result ovrd_res =
+      GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != nullptr) {
     char* pem_root_certs = nullptr;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);

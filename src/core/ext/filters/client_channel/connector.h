@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,7 +32,8 @@ namespace grpc_core {
 // Interface for connection-establishment functionality.
 // Each transport that supports client channels (e.g., not inproc) must
 // supply an implementation of this.
-class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
+class SubchannelConnector
+    : public InternallyRefCounted<SubchannelConnector> {
  public:
   struct Args {
     // Set of pollsets interested in this connection.
@@ -69,7 +70,8 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
   virtual void Shutdown(grpc_error_handle error) = 0;
 
   void Orphan() override {
-    Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subchannel disconnected"));
+    Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Subchannel disconnected"));
     Unref();
   }
 };

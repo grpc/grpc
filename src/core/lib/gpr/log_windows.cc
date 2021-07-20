@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -90,8 +90,8 @@ void gpr_default_log(gpr_log_func_args* args) {
 
   if (localtime_s(&tm, &timer)) {
     strcpy(time_buffer, "error:localtime");
-  } else if (0 ==
-             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
+  } else if (0 == strftime(time_buffer, sizeof(time_buffer),
+                           "%m%d %H:%M:%S", &tm)) {
     strcpy(time_buffer, "error:strftime");
   }
 
@@ -102,13 +102,13 @@ void gpr_default_log(gpr_log_func_args* args) {
   if (stack_trace) {
     fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n%s\n",
             gpr_log_severity_string(args->severity), time_buffer,
-            (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
-            args->message, stack_trace->c_str());
+            (int)(now.tv_nsec), GetCurrentThreadId(), display_file,
+            args->line, args->message, stack_trace->c_str());
   } else {
     fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n",
             gpr_log_severity_string(args->severity), time_buffer,
-            (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
-            args->message);
+            (int)(now.tv_nsec), GetCurrentThreadId(), display_file,
+            args->line, args->message);
   }
   fflush(stderr);
 }

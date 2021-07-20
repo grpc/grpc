@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,8 +57,8 @@ static void create_sockets(SOCKET sv[2]) {
                        grpc_get_default_wsa_socket_flags());
   GPR_ASSERT(cli_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL,
-                        NULL, NULL) == 0);
+  GPR_ASSERT(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL,
+                        NULL, NULL, NULL) == 0);
   svr_sock = accept(lst_sock, (grpc_sockaddr*)&addr, &addr_len);
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
@@ -76,10 +76,12 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
   grpc_endpoint_pair p;
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
-  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
-                             channel_args, "endpoint:server");
-  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
-                             channel_args, "endpoint:client");
+  p.client =
+      grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
+                      channel_args, "endpoint:server");
+  p.server =
+      grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
+                      channel_args, "endpoint:client");
 
   return p;
 }

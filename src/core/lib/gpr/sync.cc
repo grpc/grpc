@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,7 +48,8 @@ static void event_initialize(void) {
 
 /* Hash ev into an element of sync_array[]. */
 static struct sync_array_s* hash(gpr_event* ev) {
-  return &sync_array[reinterpret_cast<uintptr_t>(ev) % event_sync_partitions];
+  return &sync_array[reinterpret_cast<uintptr_t>(ev) %
+                     event_sync_partitions];
 }
 
 void gpr_event_init(gpr_event* ev) {
@@ -77,15 +78,20 @@ void* gpr_event_wait(gpr_event* ev, gpr_timespec abs_deadline) {
     gpr_mu_lock(&s->mu);
     do {
       result = reinterpret_cast<void*>(gpr_atm_acq_load(&ev->state));
-    } while (result == nullptr && !gpr_cv_wait(&s->cv, &s->mu, abs_deadline));
+    } while (result == nullptr &&
+             !gpr_cv_wait(&s->cv, &s->mu, abs_deadline));
     gpr_mu_unlock(&s->mu);
   }
   return result;
 }
 
-void gpr_ref_init(gpr_refcount* r, int n) { gpr_atm_rel_store(&r->count, n); }
+void gpr_ref_init(gpr_refcount* r, int n) {
+  gpr_atm_rel_store(&r->count, n);
+}
 
-void gpr_ref(gpr_refcount* r) { gpr_atm_no_barrier_fetch_add(&r->count, 1); }
+void gpr_ref(gpr_refcount* r) {
+  gpr_atm_no_barrier_fetch_add(&r->count, 1);
+}
 
 void gpr_ref_non_zero(gpr_refcount* r) {
 #ifndef NDEBUG

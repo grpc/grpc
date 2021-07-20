@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,7 +27,8 @@
 #include <stdio.h>
 #include <string.h>
 
-static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
+static android_LogPriority severity_to_log_priority(
+    gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
       return ANDROID_LOG_DEBUG;
@@ -65,9 +66,11 @@ void gpr_default_log(gpr_log_func_args* args) {
   else
     display_file = final_slash + 1;
 
-  asprintf(&output, "%s:%d] %s", display_file, args->line, args->message);
+  asprintf(&output, "%s:%d] %s", display_file, args->line,
+           args->message);
 
-  __android_log_write(severity_to_log_priority(args->severity), "GRPC", output);
+  __android_log_write(severity_to_log_priority(args->severity), "GRPC",
+                      output);
 
   /* allocated by asprintf => use free, not gpr_free */
   free(output);

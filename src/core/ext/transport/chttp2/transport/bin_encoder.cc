@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -100,15 +100,15 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
   uint32_t temp_length = 0;
 
   nbits = 0;
-  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input);
-       ++in) {
+  for (in = GRPC_SLICE_START_PTR(input);
+       in != GRPC_SLICE_END_PTR(input); ++in) {
     nbits += grpc_chttp2_huffsyms[*in].length;
   }
 
   output = GRPC_SLICE_MALLOC(nbits / 8 + (nbits % 8 != 0));
   out = GRPC_SLICE_START_PTR(output);
-  for (in = GRPC_SLICE_START_PTR(input); in != GRPC_SLICE_END_PTR(input);
-       ++in) {
+  for (in = GRPC_SLICE_START_PTR(input);
+       in != GRPC_SLICE_END_PTR(input); ++in) {
     int sym = *in;
     temp <<= grpc_chttp2_huffsyms[sym].length;
     temp |= grpc_chttp2_huffsyms[sym].bits;
@@ -122,12 +122,12 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
 
   if (temp_length) {
     /* NB: the following integer arithmetic operation needs to be in its
-     * expanded form due to the "integral promotion" performed (see section
-     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
-     * is then required to avoid the compiler warning */
-    *out++ =
-        static_cast<uint8_t>(static_cast<uint8_t>(temp << (8u - temp_length)) |
-                             static_cast<uint8_t>(0xffu >> temp_length));
+     * expanded form due to the "integral promotion" performed (see
+     * section 3.2.1.1 of the C89 draft standard). A cast to the smaller
+     * container type is then required to avoid the compiler warning */
+    *out++ = static_cast<uint8_t>(
+        static_cast<uint8_t>(temp << (8u - temp_length)) |
+        static_cast<uint8_t>(0xffu >> temp_length));
   }
 
   GPR_ASSERT(out == GRPC_SLICE_END_PTR(output));
@@ -152,8 +152,8 @@ static void enc_add2(huff_out* out, uint8_t a, uint8_t b) {
   b64_huff_sym sb = huff_alphabet[b];
   out->temp = (out->temp << (sa.length + sb.length)) |
               (static_cast<uint32_t>(sa.bits) << sb.length) | sb.bits;
-  out->temp_length +=
-      static_cast<uint32_t>(sa.length) + static_cast<uint32_t>(sb.length);
+  out->temp_length += static_cast<uint32_t>(sa.length) +
+                      static_cast<uint32_t>(sb.length);
   enc_flush_some(out);
 }
 
@@ -171,7 +171,8 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
   size_t tail_case = input_length % 3;
   size_t output_syms = input_triplets * 4 + tail_xtra[tail_case];
   size_t max_output_bits = 11 * output_syms;
-  size_t max_output_length = max_output_bits / 8 + (max_output_bits % 8 != 0);
+  size_t max_output_length =
+      max_output_bits / 8 + (max_output_bits % 8 != 0);
   grpc_slice output = GRPC_SLICE_MALLOC(max_output_length);
   const uint8_t* in = GRPC_SLICE_START_PTR(input);
   uint8_t* start_out = GRPC_SLICE_START_PTR(output);
@@ -184,7 +185,8 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
 
   /* encode full triplets */
   for (i = 0; i < input_triplets; i++) {
-    const uint8_t low_to_high = static_cast<uint8_t>((in[0] & 0x3) << 4);
+    const uint8_t low_to_high =
+        static_cast<uint8_t>((in[0] & 0x3) << 4);
     const uint8_t high_to_low = in[1] >> 4;
     enc_add2(&out, in[0] >> 2, low_to_high | high_to_low);
 
@@ -199,11 +201,13 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
     case 0:
       break;
     case 1:
-      enc_add2(&out, in[0] >> 2, static_cast<uint8_t>((in[0] & 0x3) << 4));
+      enc_add2(&out, in[0] >> 2,
+               static_cast<uint8_t>((in[0] & 0x3) << 4));
       in += 1;
       break;
     case 2: {
-      const uint8_t low_to_high = static_cast<uint8_t>((in[0] & 0x3) << 4);
+      const uint8_t low_to_high =
+          static_cast<uint8_t>((in[0] & 0x3) << 4);
       const uint8_t high_to_low = in[1] >> 4;
       enc_add2(&out, in[0] >> 2, low_to_high | high_to_low);
       enc_add1(&out, static_cast<uint8_t>((in[1] & 0xf) << 2));
@@ -214,9 +218,9 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
 
   if (out.temp_length) {
     /* NB: the following integer arithmetic operation needs to be in its
-     * expanded form due to the "integral promotion" performed (see section
-     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
-     * is then required to avoid the compiler warning */
+     * expanded form due to the "integral promotion" performed (see
+     * section 3.2.1.1 of the C89 draft standard). A cast to the smaller
+     * container type is then required to avoid the compiler warning */
     *out.out++ = static_cast<uint8_t>(
         static_cast<uint8_t>(out.temp << (8u - out.temp_length)) |
         static_cast<uint8_t>(0xffu >> out.temp_length));

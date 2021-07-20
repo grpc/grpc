@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,51 +48,55 @@ class ServerLoadReportingCallData : public CallData {
   grpc_error_handle Init(grpc_call_element* elem,
                          const grpc_call_element_args* args) override;
 
-  void Destroy(grpc_call_element* elem, const grpc_call_final_info* final_info,
+  void Destroy(grpc_call_element* elem,
+               const grpc_call_final_info* final_info,
                grpc_closure* then_call_closure) override;
 
   void StartTransportStreamOpBatch(grpc_call_element* elem,
                                    TransportStreamOpBatch* op) override;
 
  private:
-  // From the peer_string_ in calld, extracts the client IP string (owned by
-  // caller), e.g., "01020a0b". Upon failure, returns empty string.
+  // From the peer_string_ in calld, extracts the client IP string
+  // (owned by caller), e.g., "01020a0b". Upon failure, returns empty
+  // string.
   std::string GetCensusSafeClientIpString();
 
-  // Concatenates the client IP address and the load reporting token, then
-  // stores the result into the call data.
-  void StoreClientIpAndLrToken(const char* lr_token, size_t lr_token_len);
+  // Concatenates the client IP address and the load reporting token,
+  // then stores the result into the call data.
+  void StoreClientIpAndLrToken(const char* lr_token,
+                               size_t lr_token_len);
 
   // This matches the classification of the status codes in
   // googleapis/google/rpc/code.proto.
   static const char* GetStatusTagForStatus(grpc_status_code status);
 
   // Records the call start.
-  static void RecvInitialMetadataReady(void* arg, grpc_error_handle err);
+  static void RecvInitialMetadataReady(void* arg,
+                                       grpc_error_handle err);
 
-  // From the initial metadata, extracts the service_method_, target_host_, and
-  // client_ip_and_lr_token_.
+  // From the initial metadata, extracts the service_method_,
+  // target_host_, and client_ip_and_lr_token_.
   static grpc_filtered_mdelem RecvInitialMetadataFilter(void* user_data,
                                                         grpc_mdelem md);
 
   // Records the other call metrics.
-  static grpc_filtered_mdelem SendTrailingMetadataFilter(void* user_data,
-                                                         grpc_mdelem md);
+  static grpc_filtered_mdelem SendTrailingMetadataFilter(
+      void* user_data, grpc_mdelem md);
 
-  // The peer string (a member of the recv_initial_metadata op). Note that
-  // gpr_atm itself is a pointer type here, making "peer_string_" effectively a
-  // double pointer.
+  // The peer string (a member of the recv_initial_metadata op). Note
+  // that gpr_atm itself is a pointer type here, making "peer_string_"
+  // effectively a double pointer.
   const gpr_atm* peer_string_;
 
-  // The received initial metadata (a member of the recv_initial_metadata op).
-  // When it is ready, we will extract some data from it via
-  // recv_initial_metadata_ready_ closure, before the original
-  // recv_initial_metadata_ready closure.
+  // The received initial metadata (a member of the
+  // recv_initial_metadata op). When it is ready, we will extract some
+  // data from it via recv_initial_metadata_ready_ closure, before the
+  // original recv_initial_metadata_ready closure.
   grpc_metadata_batch* recv_initial_metadata_;
 
-  // The original recv_initial_metadata closure, which is wrapped by our own
-  // closure (recv_initial_metadata_ready_) to capture the incoming initial
-  // metadata.
+  // The original recv_initial_metadata closure, which is wrapped by our
+  // own closure (recv_initial_metadata_ready_) to capture the incoming
+  // initial metadata.
   grpc_closure* original_recv_initial_metadata_ready_;
 
   // The closure that wraps the original closure. Scheduled when
@@ -102,15 +106,15 @@ class ServerLoadReportingCallData : public CallData {
   // Corresponds to the :path header.
   grpc_slice service_method_;
 
-  // The backend host that the client thinks it's talking to. This may be
-  // different from the actual backend in the case of, for example,
-  // load-balanced targets. We store a copy of the metadata slice in order to
-  // lowercase it. */
+  // The backend host that the client thinks it's talking to. This may
+  // be different from the actual backend in the case of, for example,
+  // load-balanced targets. We store a copy of the metadata slice in
+  // order to lowercase it. */
   char* target_host_;
   size_t target_host_len_;
 
-  // The client IP address (including a length prefix) and the load reporting
-  // token.
+  // The client IP address (including a length prefix) and the load
+  // reporting token.
   char* client_ip_and_lr_token_;
   size_t client_ip_and_lr_token_len_;
 };

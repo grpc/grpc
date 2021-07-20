@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -42,11 +42,12 @@ bool XdsVerifySubjectAlternativeNames(
     for (const auto& matcher : matchers) {
       if (matcher.type() == StringMatcher::Type::kExact) {
         // For Exact match, use DNS rules for verifying SANs
-        // TODO(zhenlian): Right now, the SSL layer does not save the type of
-        // the SAN, so we are doing a DNS style verification for all SANs when
-        // the type is EXACT. When we expose the SAN type, change this to only
-        // do this verification when the SAN type is DNS and match type is
-        // kExact. For all other cases, we should use matcher.Match().
+        // TODO(zhenlian): Right now, the SSL layer does not save the
+        // type of the SAN, so we are doing a DNS style verification for
+        // all SANs when the type is EXACT. When we expose the SAN type,
+        // change this to only do this verification when the SAN type is
+        // DNS and match type is kExact. For all other cases, we should
+        // use matcher.Match().
         if (VerifySubjectAlternativeName(subject_alternative_names[i],
                                          matcher.string_matcher())) {
           return true;
@@ -71,7 +72,8 @@ class ServerAuthCheck {
 
   static int Schedule(void* config_user_data,
                       grpc_tls_server_authorization_check_arg* arg) {
-    return static_cast<ServerAuthCheck*>(config_user_data)->ScheduleImpl(arg);
+    return static_cast<ServerAuthCheck*>(config_user_data)
+        ->ScheduleImpl(arg);
   }
 
   static void Destroy(void* config_user_data) {
@@ -81,7 +83,8 @@ class ServerAuthCheck {
  private:
   int ScheduleImpl(grpc_tls_server_authorization_check_arg* arg) {
     if (XdsVerifySubjectAlternativeNames(
-            arg->subject_alternative_names, arg->subject_alternative_names_size,
+            arg->subject_alternative_names,
+            arg->subject_alternative_names_size,
             xds_certificate_provider_->GetSanMatchers(cluster_name_))) {
       arg->success = 1;
       arg->status = GRPC_STATUS_OK;
@@ -90,7 +93,8 @@ class ServerAuthCheck {
       arg->status = GRPC_STATUS_UNAUTHENTICATED;
       if (arg->error_details) {
         arg->error_details->set_error_details(
-            "SANs from certificate did not match SANs from xDS control plane");
+            "SANs from certificate did not match SANs from xDS control "
+            "plane");
       }
     }
     return 0; /* synchronous check */
@@ -107,7 +111,8 @@ bool TestOnlyXdsVerifySubjectAlternativeNames(
     size_t subject_alternative_names_size,
     const std::vector<StringMatcher>& matchers) {
   return XdsVerifySubjectAlternativeNames(
-      subject_alternative_names, subject_alternative_names_size, matchers);
+      subject_alternative_names, subject_alternative_names_size,
+      matchers);
 }
 
 //
@@ -116,8 +121,9 @@ bool TestOnlyXdsVerifySubjectAlternativeNames(
 
 RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(
-    RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
-    const grpc_channel_args* args, grpc_channel_args** new_args) {
+    RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target_name, const grpc_channel_args* args,
+    grpc_channel_args** new_args) {
   struct ChannelArgsDeleter {
     const grpc_channel_args* args;
     bool owned;
@@ -126,8 +132,8 @@ XdsCredentials::create_security_connector(
     }
   };
   ChannelArgsDeleter temp_args{args, false};
-  // TODO(yashykt): This arg will no longer need to be added after b/173119596
-  // is fixed.
+  // TODO(yashykt): This arg will no longer need to be added after
+  // b/173119596 is fixed.
   grpc_arg override_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       const_cast<char*>(target_name));
@@ -163,27 +169,28 @@ XdsCredentials::create_security_connector(
       }
       tls_credentials_options->set_server_verification_option(
           GRPC_TLS_SKIP_HOSTNAME_VERIFICATION);
-      auto* server_auth_check = new ServerAuthCheck(xds_certificate_provider,
-                                                    std::move(cluster_name));
+      auto* server_auth_check = new ServerAuthCheck(
+          xds_certificate_provider, std::move(cluster_name));
       tls_credentials_options->set_server_authorization_check_config(
           MakeRefCounted<grpc_tls_server_authorization_check_config>(
               server_auth_check, ServerAuthCheck::Schedule, nullptr,
               ServerAuthCheck::Destroy));
-      // TODO(yashkt): Creating a new TlsCreds object each time we create a
-      // security connector means that the security connector's cmp() method
-      // returns unequal for each instance, which means that every time an LB
-      // policy updates, all the subchannels will be recreated.  This is
-      // going to lead to a lot of connection churn.  Instead, we should
-      // either (a) change the TLS security connector's cmp() method to be
-      // smarter somehow, so that it compares unequal only when the
-      // tls_credentials_options have changed, or (b) cache the TlsCreds
-      // objects in the XdsCredentials object so that we can reuse the
-      // same one when creating new security connectors, swapping out the
-      // TlsCreds object only when the tls_credentials_options change.
-      // Option (a) would probably be better, although it may require some
+      // TODO(yashkt): Creating a new TlsCreds object each time we
+      // create a security connector means that the security connector's
+      // cmp() method returns unequal for each instance, which means
+      // that every time an LB policy updates, all the subchannels will
+      // be recreated.  This is going to lead to a lot of connection
+      // churn.  Instead, we should either (a) change the TLS security
+      // connector's cmp() method to be smarter somehow, so that it
+      // compares unequal only when the tls_credentials_options have
+      // changed, or (b) cache the TlsCreds objects in the
+      // XdsCredentials object so that we can reuse the same one when
+      // creating new security connectors, swapping out the TlsCreds
+      // object only when the tls_credentials_options change. Option (a)
+      // would probably be better, although it may require some
       // structural changes to the security connector API.
-      auto tls_credentials =
-          MakeRefCounted<TlsCredentials>(std::move(tls_credentials_options));
+      auto tls_credentials = MakeRefCounted<TlsCredentials>(
+          std::move(tls_credentials_options));
       return tls_credentials->create_security_connector(
           std::move(call_creds), target_name, temp_args.args, new_args);
     }
@@ -198,7 +205,8 @@ XdsCredentials::create_security_connector(
 //
 
 RefCountedPtr<grpc_server_security_connector>
-XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
+XdsServerCredentials::create_security_connector(
+    const grpc_channel_args* args) {
   auto xds_certificate_provider =
       XdsCertificateProvider::GetFromChannelArgs(args);
   // Identity certs are a must for TLS.
@@ -207,7 +215,8 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
     auto tls_credentials_options =
         MakeRefCounted<grpc_tls_credentials_options>();
     tls_credentials_options->set_watch_identity_pair(true);
-    tls_credentials_options->set_certificate_provider(xds_certificate_provider);
+    tls_credentials_options->set_certificate_provider(
+        xds_certificate_provider);
     if (xds_certificate_provider->ProvidesRootCerts("")) {
       tls_credentials_options->set_watch_root_cert(true);
       if (xds_certificate_provider->GetRequireClientCertificate("")) {
@@ -240,5 +249,6 @@ grpc_channel_credentials* grpc_xds_credentials_create(
 grpc_server_credentials* grpc_xds_server_credentials_create(
     grpc_server_credentials* fallback_credentials) {
   GPR_ASSERT(fallback_credentials != nullptr);
-  return new grpc_core::XdsServerCredentials(fallback_credentials->Ref());
+  return new grpc_core::XdsServerCredentials(
+      fallback_credentials->Ref());
 }

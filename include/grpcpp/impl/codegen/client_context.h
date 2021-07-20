@@ -10,26 +10,27 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
 /// A ClientContext allows the person implementing a service client to:
 ///
-/// - Add custom metadata key-value pairs that will propagated to the server
-/// side.
+/// - Add custom metadata key-value pairs that will propagated to the
+/// server side.
 /// - Control call settings such as compression and authentication.
 /// - Initial and trailing metadata coming from the server.
 /// - Get performance metrics (ie, census).
 ///
-/// Context settings are only relevant to the call they are invoked with, that
-/// is to say, they aren't sticky. Some of these settings, such as the
-/// compression options, can be made persistent at channel construction time
-/// (see \a grpc::CreateCustomChannel).
+/// Context settings are only relevant to the call they are invoked
+/// with, that is to say, they aren't sticky. Some of these settings,
+/// such as the compression options, can be made persistent at channel
+/// construction time (see \a grpc::CreateCustomChannel).
 ///
-/// \warning ClientContext instances should \em not be reused across rpcs.
+/// \warning ClientContext instances should \em not be reused across
+/// rpcs.
 
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
@@ -119,9 +120,9 @@ class Channel;
 class ChannelInterface;
 class CompletionQueue;
 
-/// Options for \a ClientContext::FromServerContext specifying which traits from
-/// the \a ServerContext to propagate (copy) from it into a new \a
-/// ClientContext.
+/// Options for \a ClientContext::FromServerContext specifying which
+/// traits from the \a ServerContext to propagate (copy) from it into a
+/// new \a ClientContext.
 ///
 /// \see ClientContext::FromServerContext
 class PropagationOptions {
@@ -176,35 +177,37 @@ class PropagationOptions {
 
 /// A ClientContext allows the person implementing a service client to:
 ///
-/// - Add custom metadata key-value pairs that will propagated to the server
+/// - Add custom metadata key-value pairs that will propagated to the
+/// server
 ///   side.
 /// - Control call settings such as compression and authentication.
 /// - Initial and trailing metadata coming from the server.
 /// - Get performance metrics (ie, census).
 ///
-/// Context settings are only relevant to the call they are invoked with, that
-/// is to say, they aren't sticky. Some of these settings, such as the
-/// compression options, can be made persistent at channel construction time
-/// (see \a grpc::CreateCustomChannel).
+/// Context settings are only relevant to the call they are invoked
+/// with, that is to say, they aren't sticky. Some of these settings,
+/// such as the compression options, can be made persistent at channel
+/// construction time (see \a grpc::CreateCustomChannel).
 ///
-/// \warning ClientContext instances should \em not be reused across rpcs.
-/// \warning The ClientContext instance used for creating an rpc must remain
+/// \warning ClientContext instances should \em not be reused across
+/// rpcs. \warning The ClientContext instance used for creating an rpc
+/// must remain
 ///          alive and valid for the lifetime of the rpc.
 class ClientContext {
  public:
   ClientContext();
   ~ClientContext();
 
-  /// Create a new \a ClientContext as a child of an incoming server call,
-  /// according to \a options (\see PropagationOptions).
+  /// Create a new \a ClientContext as a child of an incoming server
+  /// call, according to \a options (\see PropagationOptions).
   ///
-  /// \param server_context The source server context to use as the basis for
-  /// constructing the client context.
-  /// \param options The options controlling what to copy from the \a
-  /// server_context.
+  /// \param server_context The source server context to use as the
+  /// basis for constructing the client context. \param options The
+  /// options controlling what to copy from the \a server_context.
   ///
   /// \return A newly constructed \a ClientContext instance based on \a
-  /// server_context, with traits propagated (copied) according to \a options.
+  /// server_context, with traits propagated (copied) according to \a
+  /// options.
   static std::unique_ptr<ClientContext> FromServerContext(
       const grpc::ServerContextBase& server_context,
       PropagationOptions options = PropagationOptions());
@@ -212,16 +215,17 @@ class ClientContext {
       const grpc::CallbackServerContext& server_context,
       PropagationOptions options = PropagationOptions());
 
-  /// Add the (\a meta_key, \a meta_value) pair to the metadata associated with
-  /// a client call. These are made available at the server side by the \a
-  /// grpc::ServerContext::client_metadata() method.
+  /// Add the (\a meta_key, \a meta_value) pair to the metadata
+  /// associated with a client call. These are made available at the
+  /// server side by the \a grpc::ServerContext::client_metadata()
+  /// method.
   ///
-  /// \warning This method should only be called before invoking the rpc.
+  /// \warning This method should only be called before invoking the
+  /// rpc.
   ///
-  /// \param meta_key The metadata key. If \a meta_value is binary data, it must
-  /// end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, the key name
-  /// must end in "-bin".
+  /// \param meta_key The metadata key. If \a meta_value is binary data,
+  /// it must end in "-bin". \param meta_value The metadata value. If
+  /// its value is binary, the key name must end in "-bin".
   ///
   /// Metadata must conform to the following format:
   /**
@@ -229,33 +233,39 @@ class ClientContext {
   Custom-Metadata -> Binary-Header / ASCII-Header
   Binary-Header -> {Header-Name "-bin" } {binary value}
   ASCII-Header -> Header-Name ASCII-Value
-  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
-  ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
+  Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ -
+  . ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   Custom-Metadata -> Binary-Header / ASCII-Header
   \endverbatim
   **/
-  void AddMetadata(const std::string& meta_key, const std::string& meta_value);
+  void AddMetadata(const std::string& meta_key,
+                   const std::string& meta_value);
 
-  /// Return a collection of initial metadata key-value pairs. Note that keys
-  /// may happen more than once (ie, a \a std::multimap is returned).
+  /// Return a collection of initial metadata key-value pairs. Note that
+  /// keys may happen more than once (ie, a \a std::multimap is
+  /// returned).
   ///
-  /// \warning This method should only be called after initial metadata has been
-  /// received. For streaming calls, see \a
+  /// \warning This method should only be called after initial metadata
+  /// has been received. For streaming calls, see \a
   /// ClientReaderInterface::WaitForInitialMetadata().
   ///
-  /// \return A multimap of initial metadata key-value pairs from the server.
+  /// \return A multimap of initial metadata key-value pairs from the
+  /// server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
     return *recv_initial_metadata_.map();
   }
 
-  /// Return a collection of trailing metadata key-value pairs. Note that keys
-  /// may happen more than once (ie, a \a std::multimap is returned).
+  /// Return a collection of trailing metadata key-value pairs. Note
+  /// that keys may happen more than once (ie, a \a std::multimap is
+  /// returned).
   ///
-  /// \warning This method is only callable once the stream has finished.
+  /// \warning This method is only callable once the stream has
+  /// finished.
   ///
-  /// \return A multimap of metadata trailing key-value pairs from the server.
+  /// \return A multimap of metadata trailing key-value pairs from the
+  /// server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
@@ -264,10 +274,12 @@ class ClientContext {
 
   /// Set the deadline for the client call.
   ///
-  /// \warning This method should only be called before invoking the rpc.
+  /// \warning This method should only be called before invoking the
+  /// rpc.
   ///
-  /// \param deadline the deadline for the client call. Units are determined by
-  /// the type used. The deadline is an absolute (not relative) time.
+  /// \param deadline the deadline for the client call. Units are
+  /// determined by the type used. The deadline is an absolute (not
+  /// relative) time.
   template <typename T>
   void set_deadline(const T& deadline) {
     grpc::TimePoint<T> deadline_tp(deadline);
@@ -282,16 +294,17 @@ class ClientContext {
   void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
 
   /// EXPERIMENTAL: Set this request to be cacheable.
-  /// If set, grpc is free to use the HTTP GET verb for sending the request,
-  /// with the possibility of receiving a cached response.
+  /// If set, grpc is free to use the HTTP GET verb for sending the
+  /// request, with the possibility of receiving a cached response.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
   /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
-  /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
-  /// If set, if an RPC is made when a channel's connectivity state is
+  /// See
+  /// https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md. If
+  /// set, if an RPC is made when a channel's connectivity state is
   /// TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast",
-  /// and the channel will wait until the channel is READY before making the
-  /// call.
+  /// and the channel will wait until the channel is READY before making
+  /// the call.
   void set_wait_for_ready(bool wait_for_ready) {
     wait_for_ready_ = wait_for_ready;
     wait_for_ready_explicitly_set_ = true;
@@ -305,15 +318,19 @@ class ClientContext {
     return grpc::Timespec2Timepoint(deadline_);
   }
 
-  /// Return a \a gpr_timespec representation of the client call's deadline.
+  /// Return a \a gpr_timespec representation of the client call's
+  /// deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
 
   /// Set the per call authority header (see
   /// https://tools.ietf.org/html/rfc7540#section-8.1.2.3).
-  void set_authority(const std::string& authority) { authority_ = authority; }
+  void set_authority(const std::string& authority) {
+    authority_ = authority;
+  }
 
   /// Return the authentication context for the associated client call.
-  /// It is only valid to call this during the lifetime of the client call.
+  /// It is only valid to call this during the lifetime of the client
+  /// call.
   ///
   /// \see grpc::AuthContext.
   std::shared_ptr<const grpc::AuthContext> auth_context() const {
@@ -325,79 +342,89 @@ class ClientContext {
 
   /// Set credentials for the client call.
   ///
-  /// A credentials object encapsulates all the state needed by a client to
-  /// authenticate with a server and make various assertions, e.g., about the
-  /// client’s identity, role, or whether it is authorized to make a particular
-  /// call.
+  /// A credentials object encapsulates all the state needed by a client
+  /// to authenticate with a server and make various assertions, e.g.,
+  /// about the client’s identity, role, or whether it is authorized to
+  /// make a particular call.
   ///
   /// It is legal to call this only before initial metadata is sent.
   ///
   /// \see  https://grpc.io/docs/guides/auth.html
-  void set_credentials(const std::shared_ptr<grpc::CallCredentials>& creds);
+  void set_credentials(
+      const std::shared_ptr<grpc::CallCredentials>& creds);
 
   /// EXPERIMENTAL debugging API
   ///
-  /// Returns the credentials for the client call. This should be used only in
-  /// tests and for diagnostic purposes, and should not be used by application
-  /// logic.
-  std::shared_ptr<grpc::CallCredentials> credentials() { return creds_; }
+  /// Returns the credentials for the client call. This should be used
+  /// only in tests and for diagnostic purposes, and should not be used
+  /// by application logic.
+  std::shared_ptr<grpc::CallCredentials> credentials() {
+    return creds_;
+  }
 
-  /// Return the compression algorithm the client call will request be used.
-  /// Note that the gRPC runtime may decide to ignore this request, for example,
-  /// due to resource constraints.
+  /// Return the compression algorithm the client call will request be
+  /// used. Note that the gRPC runtime may decide to ignore this
+  /// request, for example, due to resource constraints.
   grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
   }
 
-  /// Set \a algorithm to be the compression algorithm used for the client call.
+  /// Set \a algorithm to be the compression algorithm used for the
+  /// client call.
   ///
-  /// \param algorithm The compression algorithm used for the client call.
+  /// \param algorithm The compression algorithm used for the client
+  /// call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
   /// Flag whether the initial metadata should be \a corked
   ///
-  /// If \a corked is true, then the initial metadata will be coalesced with the
-  /// write of first message in the stream. As a result, any tag set for the
-  /// initial metadata operation (starting a client-streaming or bidi-streaming
-  /// RPC) will not actually be sent to the completion queue or delivered
-  /// via Next.
+  /// If \a corked is true, then the initial metadata will be coalesced
+  /// with the write of first message in the stream. As a result, any
+  /// tag set for the initial metadata operation (starting a
+  /// client-streaming or bidi-streaming RPC) will not actually be sent
+  /// to the completion queue or delivered via Next.
   ///
-  /// \param corked The flag indicating whether the initial metadata is to be
-  /// corked or not.
+  /// \param corked The flag indicating whether the initial metadata is
+  /// to be corked or not.
   void set_initial_metadata_corked(bool corked) {
     initial_metadata_corked_ = corked;
   }
 
   /// Return the peer uri in a string.
-  /// It is only valid to call this during the lifetime of the client call.
+  /// It is only valid to call this during the lifetime of the client
+  /// call.
   ///
-  /// \warning This value is never authenticated or subject to any security
-  /// related code. It must not be used for any authentication related
-  /// functionality. Instead, use auth_context.
+  /// \warning This value is never authenticated or subject to any
+  /// security related code. It must not be used for any authentication
+  /// related functionality. Instead, use auth_context.
   ///
   /// \return The call's peer URI.
   std::string peer() const;
 
   /// Sets the census context.
-  /// It is only valid to call this before the client call is created. A common
-  /// place of setting census context is from within the DefaultConstructor
-  /// method of GlobalCallbacks.
-  void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
+  /// It is only valid to call this before the client call is created. A
+  /// common place of setting census context is from within the
+  /// DefaultConstructor method of GlobalCallbacks.
+  void set_census_context(struct census_context* ccp) {
+    census_context_ = ccp;
+  }
 
-  /// Returns the census context that has been set, or nullptr if not set.
+  /// Returns the census context that has been set, or nullptr if not
+  /// set.
   struct census_context* census_context() const {
     return census_context_;
   }
 
   /// Send a best-effort out-of-band cancel on the call associated with
-  /// this client context.  The call could be in any stage; e.g., if it is
-  /// already finished, it may still return success.
+  /// this client context.  The call could be in any stage; e.g., if it
+  /// is already finished, it may still return success.
   ///
   /// There is no guarantee the call will be cancelled.
   ///
-  /// Note that TryCancel() does not change any of the tags that are pending
-  /// on the completion queue. All pending tags will still be delivered
-  /// (though their ok result may reflect the effect of cancellation).
+  /// Note that TryCancel() does not change any of the tags that are
+  /// pending on the completion queue. All pending tags will still be
+  /// delivered (though their ok result may reflect the effect of
+  /// cancellation).
   void TryCancel();
 
   /// Global Callbacks
@@ -418,9 +445,10 @@ class ClientContext {
 
   /// EXPERIMENTAL debugging API
   ///
-  /// if status is not ok() for an RPC, this will return a detailed string
-  /// of the gRPC Core error that led to the failure. It should not be relied
-  /// upon for anything other than gaining more debug data in failure cases.
+  /// if status is not ok() for an RPC, this will return a detailed
+  /// string of the gRPC Core error that led to the failure. It should
+  /// not be relied upon for anything other than gaining more debug data
+  /// in failure cases.
   std::string debug_error_string() const { return debug_error_string_; }
 
  private:
@@ -472,24 +500,29 @@ class ClientContext {
 
   grpc::experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, const char* suffix_for_stats,
-      grpc::internal::RpcMethod::RpcType type, grpc::ChannelInterface* channel,
+      grpc::internal::RpcMethod::RpcType type,
+      grpc::ChannelInterface* channel,
       const std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>& creators,
+          grpc::experimental::ClientInterceptorFactoryInterface>>&
+          creators,
       size_t interceptor_pos) {
-    rpc_info_ = grpc::experimental::ClientRpcInfo(this, type, method,
-                                                  suffix_for_stats, channel);
+    rpc_info_ = grpc::experimental::ClientRpcInfo(
+        this, type, method, suffix_for_stats, channel);
     rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }
 
   uint32_t initial_metadata_flags() const {
-    return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
-           (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
+    return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST
+                        : 0) |
+           (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY
+                            : 0) |
            (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0) |
            (wait_for_ready_explicitly_set_
                 ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
                 : 0) |
-           (initial_metadata_corked_ ? GRPC_INITIAL_METADATA_CORKED : 0);
+           (initial_metadata_corked_ ? GRPC_INITIAL_METADATA_CORKED
+                                     : 0);
   }
 
   std::string authority() { return authority_; }

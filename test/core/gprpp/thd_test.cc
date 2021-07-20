@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ struct test {
   gpr_cv done_cv;
 };
 
-/* A Thread body.   Decrement t->n, and if is becomes zero, set t->done. */
+/* A Thread body.   Decrement t->n, and if is becomes zero, set t->done.
+ */
 static void thd_body1(void* v) {
   struct test* t = static_cast<struct test*>(v);
   gpr_mu_lock(&t->mu);
@@ -50,7 +51,8 @@ static void thd_body1(void* v) {
   gpr_mu_unlock(&t->mu);
 }
 
-/* Test that we can create a number of threads, wait for them, and join them. */
+/* Test that we can create a number of threads, wait for them, and join
+ * them. */
 static void test1(void) {
   grpc_core::Thread thds[NUM_THREADS];
   struct test t;
@@ -82,7 +84,8 @@ static void test2(void) {
   grpc_core::Thread thds[NUM_THREADS];
   for (auto& th : thds) {
     bool ok;
-    th = grpc_core::Thread("grpc_thread_body2_test", &thd_body2, nullptr, &ok);
+    th = grpc_core::Thread("grpc_thread_body2_test", &thd_body2,
+                           nullptr, &ok);
     GPR_ASSERT(ok);
     th.Start();
   }

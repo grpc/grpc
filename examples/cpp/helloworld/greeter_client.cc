@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,8 +40,8 @@ class GreeterClient {
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
+  // Assembles the client's payload, sends it and presents the response
+  // back from the server.
   std::string SayHello(const std::string& user) {
     // Data we are sending to the server.
     HelloRequest request;
@@ -50,8 +50,8 @@ class GreeterClient {
     // Container for the data we expect from the server.
     HelloReply reply;
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
+    // Context for the client. It could be used to convey extra
+    // information to the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
     // The actual RPC.
@@ -72,11 +72,11 @@ class GreeterClient {
 };
 
 int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint specified by
-  // the argument "--target=" which is the only expected argument.
-  // We indicate that the channel isn't authenticated (use of
-  // InsecureChannelCredentials()).
+  // Instantiate the client. It requires a channel, out of which the
+  // actual RPCs are created. This channel models a connection to an
+  // endpoint specified by the argument "--target=" which is the only
+  // expected argument. We indicate that the channel isn't authenticated
+  // (use of InsecureChannelCredentials()).
   std::string target_str;
   std::string arg_str("--target");
   if (argc > 1) {
@@ -92,14 +92,15 @@ int main(int argc, char** argv) {
         return 0;
       }
     } else {
-      std::cout << "The only acceptable argument is --target=" << std::endl;
+      std::cout << "The only acceptable argument is --target="
+                << std::endl;
       return 0;
     }
   } else {
     target_str = "localhost:50051";
   }
-  GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+  GreeterClient greeter(grpc::CreateChannel(
+      target_str, grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;

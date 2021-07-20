@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,8 +24,10 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
-// a polling engine that utilizes a singleton epoll set and turnstile polling
+// a polling engine that utilizes a singleton epoll set and turnstile
+// polling
 
-const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request);
+const grpc_event_engine_vtable* grpc_init_epoll1_linux(
+    bool explicit_request);
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLL1_LINUX_H */

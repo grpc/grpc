@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -111,8 +111,8 @@ TEST(ServerRetryThrottleMap, Replacement) {
   // Max token count is 10, so threshold for retrying is 5.
   // Token count starts at 7.5 (ratio inherited from old_throttle_data).
   // Each failure decrements by 1.  Each success increments by 3.
-  auto throttle_data =
-      ServerRetryThrottleMap::GetDataForServer(kServerName, 10000, 3000);
+  auto throttle_data = ServerRetryThrottleMap::GetDataForServer(
+      kServerName, 10000, 3000);
   // Failure via old_throttle_data: token_count=6.5.
   EXPECT_TRUE(old_throttle_data->RecordFailure());
   // Failure: token_count=5.5.

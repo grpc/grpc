@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_ACTIVATION_H
@@ -24,8 +24,9 @@
 namespace grpc_core {
 namespace mock_cel {
 
-// Base class for an activation. This is a temporary stub implementation of CEL
-// APIs. Once gRPC imports the CEL library, this class will be removed.
+// Base class for an activation. This is a temporary stub implementation
+// of CEL APIs. Once gRPC imports the CEL library, this class will be
+// removed.
 class BaseActivation {
  public:
   BaseActivation() = default;
@@ -37,8 +38,8 @@ class BaseActivation {
 
 // Instance of Activation class is used by evaluator.
 // It provides binding between references used in expressions
-// and actual values. This is a temporary stub implementation of CEL APIs.
-// Once gRPC imports the CEL library, this class will be removed.
+// and actual values. This is a temporary stub implementation of CEL
+// APIs. Once gRPC imports the CEL library, this class will be removed.
 class Activation : public BaseActivation {
  public:
   Activation() = default;
@@ -48,7 +49,8 @@ class Activation : public BaseActivation {
   Activation& operator=(const Activation&) = delete;
 
   // Insert value into Activation.
-  void InsertValue(absl::string_view /*name*/, const CelValue& /*value*/) {}
+  void InsertValue(absl::string_view /*name*/,
+                   const CelValue& /*value*/) {}
 };
 
 }  // namespace mock_cel

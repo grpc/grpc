@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -76,20 +76,25 @@ class ChannelInterface {
   virtual grpc_connectivity_state GetState(bool try_to_connect) = 0;
 
   /// Return the \a tag on \a cq when the channel state is changed or \a
-  /// deadline expires. \a GetState needs to called to get the current state.
+  /// deadline expires. \a GetState needs to called to get the current
+  /// state.
   template <typename T>
-  void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline,
-                           ::grpc::CompletionQueue* cq, void* tag) {
+  void NotifyOnStateChange(grpc_connectivity_state last_observed,
+                           T deadline, ::grpc::CompletionQueue* cq,
+                           void* tag) {
     TimePoint<T> deadline_tp(deadline);
-    NotifyOnStateChangeImpl(last_observed, deadline_tp.raw_time(), cq, tag);
+    NotifyOnStateChangeImpl(last_observed, deadline_tp.raw_time(), cq,
+                            tag);
   }
 
   /// Blocking wait for channel state change or \a deadline expiration.
   /// \a GetState needs to called to get the current state.
   template <typename T>
-  bool WaitForStateChange(grpc_connectivity_state last_observed, T deadline) {
+  bool WaitForStateChange(grpc_connectivity_state last_observed,
+                          T deadline) {
     TimePoint<T> deadline_tp(deadline);
-    return WaitForStateChangeImpl(last_observed, deadline_tp.raw_time());
+    return WaitForStateChangeImpl(last_observed,
+                                  deadline_tp.raw_time());
   }
 
   /// Wait for this channel to be connected
@@ -136,33 +141,33 @@ class ChannelInterface {
   virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                                 internal::Call* call) = 0;
   virtual void* RegisterMethod(const char* method) = 0;
-  virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                                       gpr_timespec deadline,
-                                       ::grpc::CompletionQueue* cq,
-                                       void* tag) = 0;
-  virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
-                                      gpr_timespec deadline) = 0;
+  virtual void NotifyOnStateChangeImpl(
+      grpc_connectivity_state last_observed, gpr_timespec deadline,
+      ::grpc::CompletionQueue* cq, void* tag) = 0;
+  virtual bool WaitForStateChangeImpl(
+      grpc_connectivity_state last_observed, gpr_timespec deadline) = 0;
 
   // EXPERIMENTAL
-  // This is needed to keep codegen_test_minimal happy. InterceptedChannel needs
-  // to make use of this but can't directly call Channel's implementation
-  // because of the test.
-  // Returns an empty Call object (rather than being pure) since this is a new
-  // method and adding a new pure method to an interface would be a breaking
-  // change (even though this is private and non-API)
+  // This is needed to keep codegen_test_minimal happy.
+  // InterceptedChannel needs to make use of this but can't directly
+  // call Channel's implementation because of the test. Returns an empty
+  // Call object (rather than being pure) since this is a new method and
+  // adding a new pure method to an interface would be a breaking change
+  // (even though this is private and non-API)
   virtual internal::Call CreateCallInternal(
-      const internal::RpcMethod& /*method*/, ::grpc::ClientContext* /*context*/,
+      const internal::RpcMethod& /*method*/,
+      ::grpc::ClientContext* /*context*/,
       ::grpc::CompletionQueue* /*cq*/, size_t /*interceptor_pos*/) {
     return internal::Call();
   }
 
-  // A method to get the callbackable completion queue associated with this
-  // channel. If the return value is nullptr, this channel doesn't support
-  // callback operations.
+  // A method to get the callbackable completion queue associated with
+  // this channel. If the return value is nullptr, this channel doesn't
+  // support callback operations.
   // TODO(vjpai): Consider a better default like using a global CQ
-  // Returns nullptr (rather than being pure) since this is a post-1.0 method
-  // and adding a new pure method to an interface would be a breaking change
-  // (even though this is private and non-API)
+  // Returns nullptr (rather than being pure) since this is a post-1.0
+  // method and adding a new pure method to an interface would be a
+  // breaking change (even though this is private and non-API)
   virtual ::grpc::CompletionQueue* CallbackCQ() { return nullptr; }
 };
 }  // namespace grpc

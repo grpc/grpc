@@ -10,16 +10,17 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
-/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-   using that endpoint. Because of various transitive includes in uv.h,
-   including windows.h on Windows, uv.h must be included before other system
-   headers. Therefore, sockaddr.h must always be included first */
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h
+   when using that endpoint. Because of various transitive includes in
+   uv.h, including windows.h on Windows, uv.h must be included before
+   other system headers. Therefore, sockaddr.h must always be included
+   first */
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include <inttypes.h>
@@ -80,9 +81,10 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
-                            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                "Endpoint Shutdown", &why, 1));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, m->on_read,
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "Endpoint Shutdown", &why, 1));
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->mu);
@@ -128,13 +130,16 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_get_fd,
                                             me_can_track_err};
 
-grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
-                                         grpc_resource_quota* resource_quota) {
-  mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
+grpc_endpoint* grpc_mock_endpoint_create(
+    void (*on_write)(grpc_slice slice),
+    grpc_resource_quota* resource_quota) {
+  mock_endpoint* m =
+      static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
   m->base.vtable = &vtable;
-  std::string name =
-      absl::StrFormat("mock_endpoint_%" PRIxPTR, reinterpret_cast<intptr_t>(m));
-  m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
+  std::string name = absl::StrFormat("mock_endpoint_%" PRIxPTR,
+                                     reinterpret_cast<intptr_t>(m));
+  m->resource_user =
+      grpc_resource_user_create(resource_quota, name.c_str());
   grpc_slice_buffer_init(&m->read_buffer);
   gpr_mu_init(&m->mu);
   m->on_write = on_write;
@@ -147,7 +152,8 @@ void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice) {
   gpr_mu_lock(&m->mu);
   if (m->on_read != nullptr) {
     grpc_slice_buffer_add(m->on_read_out, slice);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
+                            GRPC_ERROR_NONE);
     m->on_read = nullptr;
   } else {
     grpc_slice_buffer_add(&m->read_buffer, slice);

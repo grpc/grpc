@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -59,10 +59,13 @@ int grpc_socket_factory_socket(grpc_socket_factory* factory, int domain,
 int grpc_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
                              const grpc_resolved_address* addr);
 
-/** Compare if \a a and \a b are the same factory or have same settings */
-int grpc_socket_factory_compare(grpc_socket_factory* a, grpc_socket_factory* b);
+/** Compare if \a a and \a b are the same factory or have same settings
+ */
+int grpc_socket_factory_compare(grpc_socket_factory* a,
+                                grpc_socket_factory* b);
 
-grpc_socket_factory* grpc_socket_factory_ref(grpc_socket_factory* factory);
+grpc_socket_factory* grpc_socket_factory_ref(
+    grpc_socket_factory* factory);
 void grpc_socket_factory_unref(grpc_socket_factory* factory);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_FACTORY_POSIX_H */

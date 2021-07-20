@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,8 +39,8 @@ namespace {
 
 Aggregation BytesDistributionAggregation() {
   return Aggregation::Distribution(BucketBoundaries::Explicit(
-      {0, 1024, 2048, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216,
-       67108864, 268435456, 1073741824, 4294967296}));
+      {0, 1024, 2048, 4096, 16384, 65536, 262144, 1048576, 4194304,
+       16777216, 67108864, 268435456, 1073741824, 4294967296}));
 }
 
 Aggregation MillisDistributionAggregation() {
@@ -52,7 +52,8 @@ Aggregation MillisDistributionAggregation() {
 }
 
 Aggregation CountDistributionAggregation() {
-  return Aggregation::Distribution(BucketBoundaries::Exponential(17, 1.0, 2.0));
+  return Aggregation::Distribution(
+      BucketBoundaries::Exponential(17, 1.0, 2.0));
 }
 
 ViewDescriptor MinuteDescriptor() {
@@ -141,7 +142,8 @@ const ViewDescriptor& ClientCompletedRpcsCumulative() {
 const ViewDescriptor& ClientSentMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
-          .set_name("grpc.io/client/received_messages_per_rpc/cumulative")
+          .set_name(
+              "grpc.io/client/received_messages_per_rpc/cumulative")
           .set_measure(kRpcClientSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
           .add_column(ClientMethodTagKey());
@@ -203,7 +205,8 @@ const ViewDescriptor& ServerCompletedRpcsCumulative() {
 const ViewDescriptor& ServerSentMessagesPerRpcCumulative() {
   const static ViewDescriptor descriptor =
       ViewDescriptor()
-          .set_name("grpc.io/server/received_messages_per_rpc/cumulative")
+          .set_name(
+              "grpc.io/server/received_messages_per_rpc/cumulative")
           .set_measure(kRpcServerSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
           .add_column(ServerMethodTagKey());

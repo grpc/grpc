@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,13 +42,13 @@ struct grpc_auth_json_key {
 /* Returns 1 if the object is valid, 0 otherwise. */
 int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key);
 
-/* Creates a json_key object from string. Returns an invalid object if a parsing
-   error has been encountered. */
+/* Creates a json_key object from string. Returns an invalid object if a
+   parsing error has been encountered. */
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string);
 
-/* Creates a json_key object from parsed json. Returns an invalid object if a
-   parsing error has been encountered. */
+/* Creates a json_key object from parsed json. Returns an invalid object
+   if a parsing error has been encountered. */
 grpc_auth_json_key grpc_auth_json_key_create_from_json(
     const grpc_core::Json& json);
 
@@ -57,11 +57,12 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key);
 
 /* --- json token encoding and signing. --- */
 
-/* Caller is responsible for calling gpr_free on the returned value. May return
-   NULL on invalid input. The scope parameter may be NULL. */
+/* Caller is responsible for calling gpr_free on the returned value. May
+   return NULL on invalid input. The scope parameter may be NULL. */
 char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key,
                                const char* audience,
-                               gpr_timespec token_lifetime, const char* scope);
+                               gpr_timespec token_lifetime,
+                               const char* scope);
 
 /* Override encode_and_sign function for testing. */
 typedef char* (*grpc_jwt_encode_and_sign_override)(

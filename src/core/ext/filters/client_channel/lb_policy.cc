@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,13 +25,15 @@
 
 namespace grpc_core {
 
-DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
+DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false,
+                                                 "lb_policy_refcount");
 
 //
 // LoadBalancingPolicy
 //
 
-LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
+LoadBalancingPolicy::LoadBalancingPolicy(Args args,
+                                         intptr_t initial_refcount)
     : InternallyRefCounted(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
               ? "LoadBalancingPolicy"
@@ -60,7 +62,8 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
   args = grpc_channel_args_copy(other.args);
 }
 
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(
+    UpdateArgs&& other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
   // TODO(roth): Use std::move() once channel args is converted to C++.
@@ -68,8 +71,8 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
   other.args = nullptr;
 }
 
-LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
-    const UpdateArgs& other) {
+LoadBalancingPolicy::UpdateArgs&
+LoadBalancingPolicy::UpdateArgs::operator=(const UpdateArgs& other) {
   if (&other == this) {
     return *this;
   }
@@ -80,7 +83,8 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
   return *this;
 }
 
-LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+LoadBalancingPolicy::UpdateArgs&
+LoadBalancingPolicy::UpdateArgs::operator=(
     UpdateArgs&& other) noexcept {
   addresses = std::move(other.addresses);
   config = std::move(other.config);
@@ -114,7 +118,8 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_CREATE(
                      [](void* arg, grpc_error_handle /*error*/) {
-                       auto* parent = static_cast<LoadBalancingPolicy*>(arg);
+                       auto* parent =
+                           static_cast<LoadBalancingPolicy*>(arg);
                        parent->work_serializer()->Run(
                            [parent]() {
                              parent->ExitIdleLocked();

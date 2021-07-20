@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,23 +45,25 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
 typedef struct grpc_ares_request grpc_ares_request;
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
-   designated in \a name, otherwise use the port in \a name. grpc_ares_init()
-   must be called at least once before this function. \a on_done may be
-   called directly in this function without being scheduled with \a exec_ctx,
-   so it must not try to acquire locks that are being held by the caller. */
-extern void (*grpc_resolve_address_ares)(const char* name,
-                                         const char* default_port,
-                                         grpc_pollset_set* interested_parties,
-                                         grpc_closure* on_done,
-                                         grpc_resolved_addresses** addresses);
+   designated in \a name, otherwise use the port in \a name.
+   grpc_ares_init() must be called at least once before this function.
+   \a on_done may be called directly in this function without being
+   scheduled with \a exec_ctx,
+   so it must not try to acquire locks that are being held by the
+   caller. */
+extern void (*grpc_resolve_address_ares)(
+    const char* name, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_resolved_addresses** addresses);
 
-/* Asynchronously resolve \a name. It will try to resolve grpclb SRV records in
-  addition to the normal address records. For normal address records, it uses
-  \a default_port if a port isn't designated in \a name, otherwise it uses the
-  port in \a name. grpc_ares_init() must be called at least once before this
-  function. \a on_done may be called directly in this function without being
-  scheduled with \a exec_ctx, so it must not try to acquire locks that are
-  being held by the caller. The returned grpc_ares_request object is owned
+/* Asynchronously resolve \a name. It will try to resolve grpclb SRV
+  records in addition to the normal address records. For normal address
+  records, it uses \a default_port if a port isn't designated in \a
+  name, otherwise it uses the port in \a name. grpc_ares_init() must be
+  called at least once before this function. \a on_done may be called
+  directly in this function without being scheduled with \a exec_ctx, so
+  it must not try to acquire locks that are being held by the caller.
+  The returned grpc_ares_request object is owned
   by the caller and it is safe to free after on_done is called back. */
 extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
@@ -72,15 +74,17 @@ extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 /* Cancel the pending grpc_ares_request \a request */
-extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
+extern void (*grpc_cancel_ares_request_locked)(
+    grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
 grpc_error_handle grpc_ares_init(void);
 
-/* Uninitialized gRPC ares wrapper. If there was more than one previous call to
-   grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if
-   it has been called the same number of times as grpc_ares_init(). */
+/* Uninitialized gRPC ares wrapper. If there was more than one previous
+   call to grpc_ares_init(), this function uninitializes the gRPC ares
+   wrapper only if it has been called the same number of times as
+   grpc_ares_init(). */
 void grpc_ares_cleanup(void);
 
 /** Schedules the desired callback for request completion
@@ -93,7 +97,8 @@ bool grpc_ares_query_ipv6();
 
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(
-    const grpc_ares_request* request, grpc_core::ServerAddressList* addresses);
+    const grpc_ares_request* request,
+    grpc_core::ServerAddressList* addresses);
 
 /* Exposed in this header for C-core tests only */
 extern void (*grpc_ares_test_only_inject_config)(ares_channel channel);

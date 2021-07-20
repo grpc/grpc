@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -79,7 +79,8 @@ static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   gpr_mu_unlock(&te->mu);
 }
 
-static void te_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {
+static void te_add_to_pollset(grpc_endpoint* ep,
+                              grpc_pollset* pollset) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   grpc_endpoint_add_to_pollset(te->wrapped, pollset);
 }
@@ -177,7 +178,8 @@ grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
 }
 
 static double ts2dbl(gpr_timespec s) {
-  return static_cast<double>(s.tv_sec) + 1e-9 * static_cast<double>(s.tv_nsec);
+  return static_cast<double>(s.tv_sec) +
+         1e-9 * static_cast<double>(s.tv_nsec);
 }
 
 size_t grpc_trickle_endpoint_trickle(grpc_endpoint* ep) {
@@ -187,16 +189,18 @@ size_t grpc_trickle_endpoint_trickle(grpc_endpoint* ep) {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     double elapsed = ts2dbl(gpr_time_sub(now, te->last_write));
     size_t bytes = static_cast<size_t>(te->bytes_per_second * elapsed);
-    // gpr_log(GPR_DEBUG, "%lf elapsed --> %" PRIdPTR " bytes", elapsed, bytes);
+    // gpr_log(GPR_DEBUG, "%lf elapsed --> %" PRIdPTR " bytes", elapsed,
+    // bytes);
     if (bytes > 0) {
-      grpc_slice_buffer_move_first(&te->write_buffer,
-                                   GPR_MIN(bytes, te->write_buffer.length),
-                                   &te->writing_buffer);
+      grpc_slice_buffer_move_first(
+          &te->write_buffer, GPR_MIN(bytes, te->write_buffer.length),
+          &te->writing_buffer);
       te->writing = true;
       te->last_write = now;
       grpc_endpoint_write(
           te->wrapped, &te->writing_buffer,
-          GRPC_CLOSURE_CREATE(te_finish_write, te, grpc_schedule_on_exec_ctx),
+          GRPC_CLOSURE_CREATE(te_finish_write, te,
+                              grpc_schedule_on_exec_ctx),
           nullptr);
       maybe_call_write_cb_locked(te);
     }

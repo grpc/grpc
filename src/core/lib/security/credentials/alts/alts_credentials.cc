@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,16 +31,18 @@
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
 #define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
-#define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal.:8080"
+#define GRPC_ALTS_HANDSHAKER_SERVICE_URL \
+  "metadata.google.internal.:8080"
 
 grpc_alts_credentials::grpc_alts_credentials(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url)
     : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_ALTS),
       options_(grpc_alts_credentials_options_copy(options)),
-      handshaker_service_url_(handshaker_service_url == nullptr
-                                  ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
-                                  : gpr_strdup(handshaker_service_url)) {
+      handshaker_service_url_(
+          handshaker_service_url == nullptr
+              ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
+              : gpr_strdup(handshaker_service_url)) {
   grpc_alts_set_rpc_protocol_versions(&options_->rpc_versions);
 }
 
@@ -63,9 +65,10 @@ grpc_alts_server_credentials::grpc_alts_server_credentials(
     const char* handshaker_service_url)
     : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_ALTS),
       options_(grpc_alts_credentials_options_copy(options)),
-      handshaker_service_url_(handshaker_service_url == nullptr
-                                  ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
-                                  : gpr_strdup(handshaker_service_url)) {
+      handshaker_service_url_(
+          handshaker_service_url == nullptr
+              ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
+              : gpr_strdup(handshaker_service_url)) {
   grpc_alts_set_rpc_protocol_versions(&options_->rpc_versions);
 }
 
@@ -95,7 +98,8 @@ grpc_server_credentials* grpc_alts_server_credentials_create_customized(
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
-  return new grpc_alts_server_credentials(options, handshaker_service_url);
+  return new grpc_alts_server_credentials(options,
+                                          handshaker_service_url);
 }
 
 grpc_channel_credentials* grpc_alts_credentials_create(

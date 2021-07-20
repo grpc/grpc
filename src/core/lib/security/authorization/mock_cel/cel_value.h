@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_VALUE_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MOCK_CEL_CEL_VALUE_H
@@ -19,12 +19,11 @@
 // supported by CEL.
 // CelValue defines explicitly typed/named getters/setters.
 // When storing pointers to objects, CelValue does not accept ownership
-// to them and does not control their lifecycle. Instead objects are expected
-// to be either external to expression evaluation, and controlled beyond the
-// scope or to be allocated and associated with some allocation/ownership
-// controller (Arena).
-// Usage examples:
-// (a) For primitive types:
+// to them and does not control their lifecycle. Instead objects are
+// expected to be either external to expression evaluation, and
+// controlled beyond the scope or to be allocated and associated with
+// some allocation/ownership controller (Arena). Usage examples: (a) For
+// primitive types:
 //    CelValue value = CelValue::CreateInt64(1);
 // (b) For string:
 //    std::string* msg("test");
@@ -61,9 +60,13 @@ class CelValue {
   // We rely on copy elision to avoid extra copying.
   static CelValue CreateNull() { return CelValue(nullptr); }
 
-  static CelValue CreateInt64(int64_t /*value*/) { return CreateNull(); }
+  static CelValue CreateInt64(int64_t /*value*/) {
+    return CreateNull();
+  }
 
-  static CelValue CreateUint64(uint64_t /*value*/) { return CreateNull(); }
+  static CelValue CreateUint64(uint64_t /*value*/) {
+    return CreateNull();
+  }
 
   static CelValue CreateStringView(absl::string_view /*value*/) {
     return CreateNull();
@@ -73,7 +76,9 @@ class CelValue {
     return CreateNull();
   }
 
-  static CelValue CreateMap(const CelMap* /*value*/) { return CreateNull(); }
+  static CelValue CreateMap(const CelMap* /*value*/) {
+    return CreateNull();
+  }
 
  private:
   // Constructs CelValue wrapping value supplied as argument.

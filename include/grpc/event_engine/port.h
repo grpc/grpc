@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #ifndef GRPC_EVENT_ENGINE_PORT_H
 #define GRPC_EVENT_ENGINE_PORT_H
 
@@ -19,9 +19,10 @@
 // Platform-specific sockaddr includes
 #ifdef GRPC_UV
 #include <uv.h>
-#elif defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
-    defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
-    defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
+#elif defined(GPR_ANDROID) || defined(GPR_LINUX) ||                  \
+    defined(GPR_APPLE) || defined(GPR_FREEBSD) ||                    \
+    defined(GPR_OPENBSD) || defined(GPR_SOLARIS) ||                  \
+    defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) || \
     defined(GRPC_POSIX_SOCKET)
 #define GRPC_EVENT_ENGINE_POSIX
 #include <arpa/inet.h>

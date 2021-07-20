@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -21,9 +21,9 @@
 
 /// Call object context pointers.
 
-/// Call context is represented as an array of \a grpc_call_context_elements.
-/// This enum represents the indexes into the array, where each index
-/// contains a different type of value.
+/// Call context is represented as an array of \a
+/// grpc_call_context_elements. This enum represents the indexes into
+/// the array, where each index contains a different type of value.
 typedef enum {
   /// Value is either a \a grpc_client_security_context or a
   /// \a grpc_server_security_context.
@@ -35,7 +35,8 @@ typedef enum {
   /// Reserved for traffic_class_context.
   GRPC_CONTEXT_TRAFFIC,
 
-  /// Holds a pointer to ServiceConfigCallData associated with this call.
+  /// Holds a pointer to ServiceConfigCallData associated with this
+  /// call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
   GRPC_CONTEXT_COUNT

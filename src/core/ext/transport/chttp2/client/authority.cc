@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,17 +23,20 @@
 grpc_channel_args* grpc_default_authority_add_if_not_present(
     const grpc_channel_args* args) {
   const bool has_default_authority =
-      grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY) != nullptr;
+      grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY) !=
+      nullptr;
   grpc_arg new_args[1];
   size_t num_new_args = 0;
   std::string default_authority;
   if (!has_default_authority) {
     const grpc_arg* server_uri_arg =
         grpc_channel_args_find(args, GRPC_ARG_SERVER_URI);
-    const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
+    const char* server_uri_str =
+        grpc_channel_arg_get_string(server_uri_arg);
     GPR_ASSERT(server_uri_str != nullptr);
     default_authority =
-        grpc_core::ResolverRegistry::GetDefaultAuthority(server_uri_str);
+        grpc_core::ResolverRegistry::GetDefaultAuthority(
+            server_uri_str);
     new_args[num_new_args++] = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>(default_authority.c_str()));

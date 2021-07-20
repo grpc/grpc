@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,14 +33,15 @@ extern "C" {
    If allocation fails or if src is NULL, returns NULL. */
 GPRAPI char* gpr_strdup(const char* src);
 
-/** printf to a newly-allocated string.  The set of supported formats may vary
-   between platforms.
+/** printf to a newly-allocated string.  The set of supported formats
+   may vary between platforms.
 
-   On success, returns the number of bytes printed (excluding the final '\0'),
-   and *strp points to a string which must later be destroyed with gpr_free().
+   On success, returns the number of bytes printed (excluding the final
+   '\0'), and *strp points to a string which must later be destroyed
+   with gpr_free().
 
-   On error, returns -1 and sets *strp to NULL. If the format string is bad,
-   the result is undefined. */
+   On error, returns -1 and sets *strp to NULL. If the format string is
+   bad, the result is undefined. */
 GPRAPI int gpr_asprintf(char** strp, const char* format, ...)
     GPR_PRINT_FORMAT_CHECK(2, 3);
 

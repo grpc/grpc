@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,7 +41,8 @@ class RpcMethod {
         method_type_(type),
         channel_tag_(nullptr) {}
 
-  RpcMethod(const char* name, const char* suffix_for_stats, RpcType type)
+  RpcMethod(const char* name, const char* suffix_for_stats,
+            RpcType type)
       : name_(name),
         suffix_for_stats_(suffix_for_stats),
         method_type_(type),
@@ -54,7 +55,8 @@ class RpcMethod {
         method_type_(type),
         channel_tag_(channel->RegisterMethod(name)) {}
 
-  RpcMethod(const char* name, const char* suffix_for_stats, RpcType type,
+  RpcMethod(const char* name, const char* suffix_for_stats,
+            RpcType type,
             const std::shared_ptr<ChannelInterface>& channel)
       : name_(name),
         suffix_for_stats_(suffix_for_stats),

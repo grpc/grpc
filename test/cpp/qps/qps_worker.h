@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,7 +45,8 @@ class QpsWorker {
   bool Done() const;
   void MarkDone();
 
-  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args) {
+  std::shared_ptr<Channel> InProcessChannel(
+      const ChannelArguments& args) {
     return server_->InProcessChannel(args);
   }
 

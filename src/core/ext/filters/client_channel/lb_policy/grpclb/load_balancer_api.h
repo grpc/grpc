@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,13 +35,14 @@
 
 namespace grpc_core {
 
-// Contains server information. When the drop field is not true, use the other
-// fields.
+// Contains server information. When the drop field is not true, use the
+// other fields.
 struct GrpcLbServer {
   int32_t ip_size;
   char ip_addr[GRPC_GRPCLB_SERVER_IP_ADDRESS_MAX_SIZE];
   int32_t port;
-  char load_balance_token[GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE];
+  char load_balance_token
+      [GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE];
   bool drop;
 
   bool operator==(const GrpcLbServer& other) const;
@@ -54,7 +55,8 @@ struct GrpcLbResponse {
 };
 
 // Creates a serialized grpclb request.
-grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_arena* arena);
+grpc_slice GrpcLbRequestCreate(const char* lb_service_name,
+                               upb_arena* arena);
 
 // Creates a serialized grpclb load report request.
 grpc_slice GrpcLbLoadReportRequestCreate(

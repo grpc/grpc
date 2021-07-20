@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,7 +32,8 @@ namespace grpc {
 
 class ThreadManager {
  public:
-  explicit ThreadManager(const char* name, grpc_resource_quota* resource_quota,
+  explicit ThreadManager(const char* name,
+                         grpc_resource_quota* resource_quota,
                          int min_pollers, int max_pollers);
   virtual ~ThreadManager();
 
@@ -44,13 +45,16 @@ class ThreadManager {
 
   // "Polls" for new work.
   // If the return value is WORK_FOUND:
-  //  - The implementaion of PollForWork() MAY set some opaque identifier to
+  //  - The implementaion of PollForWork() MAY set some opaque
+  //  identifier to
   //    (identify the work item found) via the '*tag' parameter
-  //  - The implementaion MUST set the value of 'ok' to 'true' or 'false'. A
-  //    value of 'false' indicates some implemenation specific error (that is
-  //    neither SHUTDOWN nor TIMEOUT)
+  //  - The implementaion MUST set the value of 'ok' to 'true' or
+  //  'false'. A
+  //    value of 'false' indicates some implemenation specific error
+  //    (that is neither SHUTDOWN nor TIMEOUT)
   //  - ThreadManager does not interpret the values of 'tag' and 'ok'
-  //  - ThreadManager WILL call DoWork() and pass '*tag' and 'ok' as input to
+  //  - ThreadManager WILL call DoWork() and pass '*tag' and 'ok' as
+  //  input to
   //    DoWork()
   //
   // If the return value is SHUTDOWN:,
@@ -58,65 +62,72 @@ class ThreadManager {
   //
   // If the return value is TIMEOUT:,
   //  - ThreadManager WILL NOT call DoWork()
-  //  - ThreadManager MAY terminate the thread depending on the current number
+  //  - ThreadManager MAY terminate the thread depending on the current
+  //  number
   //    of active poller threads and mix_pollers/max_pollers settings
   //  - Also, the value of timeout is specific to the derived class
   //    implementation
   virtual WorkStatus PollForWork(void** tag, bool* ok) = 0;
 
-  // The implementation of DoWork() is supposed to perform the work found by
-  // PollForWork(). The tag and ok parameters are the same as returned by
-  // PollForWork(). The resources parameter indicates that the call actually
-  // has the resources available for performing the RPC's work. If it doesn't,
-  // the implementation should fail it appropriately.
+  // The implementation of DoWork() is supposed to perform the work
+  // found by PollForWork(). The tag and ok parameters are the same as
+  // returned by PollForWork(). The resources parameter indicates that
+  // the call actually has the resources available for performing the
+  // RPC's work. If it doesn't, the implementation should fail it
+  // appropriately.
   //
-  // The implementation of DoWork() should also do any setup needed to ensure
-  // that the next call to PollForWork() (not necessarily by the current thread)
-  // actually finds some work
+  // The implementation of DoWork() should also do any setup needed to
+  // ensure that the next call to PollForWork() (not necessarily by the
+  // current thread) actually finds some work
   virtual void DoWork(void* tag, bool ok, bool resources) = 0;
 
-  // Mark the ThreadManager as shutdown and begin draining the work. This is a
-  // non-blocking call and the caller should call Wait(), a blocking call which
-  // returns only once the shutdown is complete
+  // Mark the ThreadManager as shutdown and begin draining the work.
+  // This is a non-blocking call and the caller should call Wait(), a
+  // blocking call which returns only once the shutdown is complete
   virtual void Shutdown();
 
   // Has Shutdown() been called
   bool IsShutdown();
 
-  // A blocking call that returns only after the ThreadManager has shutdown and
-  // all the threads have drained all the outstanding work
+  // A blocking call that returns only after the ThreadManager has
+  // shutdown and all the threads have drained all the outstanding work
   virtual void Wait();
 
-  // Max number of concurrent threads that were ever active in this thread
-  // manager so far. This is useful for debugging purposes (and in unit tests)
-  // to check if resource_quota is properly being enforced.
+  // Max number of concurrent threads that were ever active in this
+  // thread manager so far. This is useful for debugging purposes (and
+  // in unit tests) to check if resource_quota is properly being
+  // enforced.
   int GetMaxActiveThreadsSoFar();
 
  private:
-  // Helper wrapper class around grpc_core::Thread. Takes a ThreadManager object
-  // and starts a new grpc_core::Thread to calls the Run() function.
+  // Helper wrapper class around grpc_core::Thread. Takes a
+  // ThreadManager object and starts a new grpc_core::Thread to calls
+  // the Run() function.
   //
-  // The Run() function calls ThreadManager::MainWorkLoop() function and once
-  // that completes, it marks the WorkerThread completed by calling
+  // The Run() function calls ThreadManager::MainWorkLoop() function and
+  // once that completes, it marks the WorkerThread completed by calling
   // ThreadManager::MarkAsCompleted()
   //
   // WHY IS THIS NEEDED?:
-  // When a thread terminates, some other thread *must* call Join() on that
-  // thread so that the resources are released. Having a WorkerThread wrapper
-  // will make this easier. Once Run() completes, each thread calls the
-  // following two functions:
+  // When a thread terminates, some other thread *must* call Join() on
+  // that thread so that the resources are released. Having a
+  // WorkerThread wrapper will make this easier. Once Run() completes,
+  // each thread calls the following two functions:
   //    ThreadManager::CleanupCompletedThreads()
   //    ThreadManager::MarkAsCompleted()
   //
-  //  - MarkAsCompleted() puts the WorkerThread object in the ThreadManger's
+  //  - MarkAsCompleted() puts the WorkerThread object in the
+  //  ThreadManger's
   //    completed_threads_ list
-  //  - CleanupCompletedThreads() calls "Join()" on the threads that are already
-  //    in the completed_threads_ list  (since a thread cannot call Join() on
-  //    itself, it calls CleanupCompletedThreads() *before* calling
-  //    MarkAsCompleted())
+  //  - CleanupCompletedThreads() calls "Join()" on the threads that are
+  //  already
+  //    in the completed_threads_ list  (since a thread cannot call
+  //    Join() on itself, it calls CleanupCompletedThreads() *before*
+  //    calling MarkAsCompleted())
   //
-  // TODO(sreek): Consider creating the threads 'detached' so that Join() need
-  // not be called (and the need for this WorkerThread class is eliminated)
+  // TODO(sreek): Consider creating the threads 'detached' so that
+  // Join() need not be called (and the need for this WorkerThread class
+  // is eliminated)
   class WorkerThread {
    public:
     explicit WorkerThread(ThreadManager* thd_mgr);
@@ -148,28 +159,30 @@ class ThreadManager {
   bool shutdown_;
   grpc_core::CondVar shutdown_cv_;
 
-  // The resource user object to use when requesting quota to create threads
+  // The resource user object to use when requesting quota to create
+  // threads
   //
-  // Note: The user of this ThreadManager object must create grpc_resource_quota
-  // object (that contains the actual max thread quota) and a grpc_resource_user
-  // object through which quota is requested whenever new threads need to be
-  // created
+  // Note: The user of this ThreadManager object must create
+  // grpc_resource_quota object (that contains the actual max thread
+  // quota) and a grpc_resource_user object through which quota is
+  // requested whenever new threads need to be created
   grpc_resource_user* resource_user_;
 
   // Number of threads doing polling
   int num_pollers_;
 
-  // The minimum and maximum number of threads that should be doing polling
+  // The minimum and maximum number of threads that should be doing
+  // polling
   int min_pollers_;
   int max_pollers_;
 
-  // The total number of threads currently active (includes threads includes the
-  // threads that are currently polling i.e num_pollers_)
+  // The total number of threads currently active (includes threads
+  // includes the threads that are currently polling i.e num_pollers_)
   int num_threads_;
 
   // See GetMaxActiveThreadsSoFar()'s description.
-  // To be more specific, this variable tracks the max value num_threads_ was
-  // ever set so far
+  // To be more specific, this variable tracks the max value
+  // num_threads_ was ever set so far
   int max_active_threads_sofar_;
 
   grpc_core::Mutex list_mu_;

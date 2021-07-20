@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,10 +41,10 @@ constexpr size_t kMaxFrameLength = 16 * 1024 * 1024;
 
 /**
  * Main struct for alts_zero_copy_grpc_protector.
- * We choose to have two alts_grpc_record_protocol objects and two sets of slice
- * buffers: one for protect and the other for unprotect, so that protect and
- * unprotect can be executed in parallel. Implementations of this object must be
- * thread compatible.
+ * We choose to have two alts_grpc_record_protocol objects and two sets
+ * of slice buffers: one for protect and the other for unprotect, so
+ * that protect and unprotect can be executed in parallel.
+ * Implementations of this object must be thread compatible.
  */
 typedef struct alts_zero_copy_grpc_protector {
   tsi_zero_copy_grpc_protector base;
@@ -59,10 +59,10 @@ typedef struct alts_zero_copy_grpc_protector {
 } alts_zero_copy_grpc_protector;
 
 /**
- * Given a slice buffer, parses the first 4 bytes little-endian unsigned frame
- * size and returns the total frame size including the frame field. Caller
- * needs to make sure the input slice buffer has at least 4 bytes. Returns true
- * on success and false on failure.
+ * Given a slice buffer, parses the first 4 bytes little-endian unsigned
+ * frame size and returns the total frame size including the frame
+ * field. Caller needs to make sure the input slice buffer has at least
+ * 4 bytes. Returns true on success and false on failure.
  */
 static bool read_frame_size(const grpc_slice_buffer* sb,
                             uint32_t* total_frame_size) {
@@ -87,10 +87,11 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
   }
   GPR_ASSERT(remaining == 0);
   /* Gets little-endian frame size.  */
-  uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
-                        (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
-                        (static_cast<uint32_t>(frame_size_buffer[1]) << 8) |
-                        static_cast<uint32_t>(frame_size_buffer[0]);
+  uint32_t frame_size =
+      (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
+      (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
+      (static_cast<uint32_t>(frame_size_buffer[1]) << 8) |
+      static_cast<uint32_t>(frame_size_buffer[0]);
   if (frame_size > kMaxFrameLength) {
     gpr_log(GPR_ERROR, "Frame size is larger than maximum frame size");
     return false;
@@ -102,11 +103,11 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
 }
 
 /**
- * Creates an alts_grpc_record_protocol object, given key, key size, and flags
- * to indicate whether the record_protocol object uses the rekeying AEAD,
- * whether the object is for client or server, whether the object is for
- * integrity-only or privacy-integrity mode, and whether the object is used
- * for protect or unprotect.
+ * Creates an alts_grpc_record_protocol object, given key, key size, and
+ * flags to indicate whether the record_protocol object uses the
+ * rekeying AEAD, whether the object is for client or server, whether
+ * the object is for integrity-only or privacy-integrity mode, and
+ * whether the object is used for protect or unprotect.
  */
 static tsi_result create_alts_grpc_record_protocol(
     const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,
@@ -118,25 +119,28 @@ static tsi_result create_alts_grpc_record_protocol(
   grpc_status_code status;
   gsec_aead_crypter* crypter = nullptr;
   char* error_details = nullptr;
-  status = gsec_aes_gcm_aead_crypter_create(key, key_size, kAesGcmNonceLength,
-                                            kAesGcmTagLength, is_rekey,
-                                            &crypter, &error_details);
+  status = gsec_aes_gcm_aead_crypter_create(
+      key, key_size, kAesGcmNonceLength, kAesGcmTagLength, is_rekey,
+      &crypter, &error_details);
   if (status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "Failed to create AEAD crypter, %s", error_details);
+    gpr_log(GPR_ERROR, "Failed to create AEAD crypter, %s",
+            error_details);
     gpr_free(error_details);
     return TSI_INTERNAL_ERROR;
   }
   size_t overflow_limit = is_rekey ? kAltsRecordProtocolRekeyFrameLimit
                                    : kAltsRecordProtocolFrameLimit;
-  /* Creates alts_grpc_record_protocol with AEAD crypter ownership transferred.
+  /* Creates alts_grpc_record_protocol with AEAD crypter ownership
+   * transferred.
    */
-  tsi_result result = is_integrity_only
-                          ? alts_grpc_integrity_only_record_protocol_create(
-                                crypter, overflow_limit, is_client, is_protect,
-                                enable_extra_copy, record_protocol)
-                          : alts_grpc_privacy_integrity_record_protocol_create(
-                                crypter, overflow_limit, is_client, is_protect,
-                                record_protocol);
+  tsi_result result =
+      is_integrity_only
+          ? alts_grpc_integrity_only_record_protocol_create(
+                crypter, overflow_limit, is_client, is_protect,
+                enable_extra_copy, record_protocol)
+          : alts_grpc_privacy_integrity_record_protocol_create(
+                crypter, overflow_limit, is_client, is_protect,
+                record_protocol);
   if (result != TSI_OK) {
     gsec_aead_crypter_destroy(crypter);
     return result;
@@ -147,17 +151,20 @@ static tsi_result create_alts_grpc_record_protocol(
 /* --- tsi_zero_copy_grpc_protector methods implementation. --- */
 
 static tsi_result alts_zero_copy_grpc_protector_protect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
+    tsi_zero_copy_grpc_protector* self,
+    grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid nullptr arguments to zero-copy grpc protect.");
+    gpr_log(GPR_ERROR,
+            "Invalid nullptr arguments to zero-copy grpc protect.");
     return TSI_INVALID_ARGUMENT;
   }
   alts_zero_copy_grpc_protector* protector =
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
   /* Calls alts_grpc_record_protocol protect repeatly.  */
-  while (unprotected_slices->length > protector->max_unprotected_data_size) {
+  while (unprotected_slices->length >
+         protector->max_unprotected_data_size) {
     grpc_slice_buffer_move_first(unprotected_slices,
                                  protector->max_unprotected_data_size,
                                  &protector->unprotected_staging_sb);
@@ -173,7 +180,8 @@ static tsi_result alts_zero_copy_grpc_protector_protect(
 }
 
 static tsi_result alts_zero_copy_grpc_protector_unprotect(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    tsi_zero_copy_grpc_protector* self,
+    grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
@@ -183,35 +191,42 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
   }
   alts_zero_copy_grpc_protector* protector =
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
-  grpc_slice_buffer_move_into(protected_slices, &protector->protected_sb);
+  grpc_slice_buffer_move_into(protected_slices,
+                              &protector->protected_sb);
   /* Keep unprotecting each frame if possible.  */
-  while (protector->protected_sb.length >= kZeroCopyFrameLengthFieldSize) {
+  while (protector->protected_sb.length >=
+         kZeroCopyFrameLengthFieldSize) {
     if (protector->parsed_frame_size == 0) {
       /* We have not parsed frame size yet. Parses frame size.  */
       if (!read_frame_size(&protector->protected_sb,
                            &protector->parsed_frame_size)) {
-        grpc_slice_buffer_reset_and_unref_internal(&protector->protected_sb);
+        grpc_slice_buffer_reset_and_unref_internal(
+            &protector->protected_sb);
         return TSI_DATA_CORRUPTED;
       }
     }
-    if (protector->protected_sb.length < protector->parsed_frame_size) break;
-    /* At this point, protected_sb contains at least one frame of data.  */
+    if (protector->protected_sb.length < protector->parsed_frame_size)
+      break;
+    /* At this point, protected_sb contains at least one frame of data.
+     */
     tsi_result status;
-    if (protector->protected_sb.length == protector->parsed_frame_size) {
-      status = alts_grpc_record_protocol_unprotect(protector->unrecord_protocol,
-                                                   &protector->protected_sb,
-                                                   unprotected_slices);
+    if (protector->protected_sb.length ==
+        protector->parsed_frame_size) {
+      status = alts_grpc_record_protocol_unprotect(
+          protector->unrecord_protocol, &protector->protected_sb,
+          unprotected_slices);
     } else {
       grpc_slice_buffer_move_first(&protector->protected_sb,
                                    protector->parsed_frame_size,
                                    &protector->protected_staging_sb);
       status = alts_grpc_record_protocol_unprotect(
-          protector->unrecord_protocol, &protector->protected_staging_sb,
-          unprotected_slices);
+          protector->unrecord_protocol,
+          &protector->protected_staging_sb, unprotected_slices);
     }
     protector->parsed_frame_size = 0;
     if (status != TSI_OK) {
-      grpc_slice_buffer_reset_and_unref_internal(&protector->protected_sb);
+      grpc_slice_buffer_reset_and_unref_internal(
+          &protector->protected_sb);
       return status;
     }
   }
@@ -227,7 +242,8 @@ static void alts_zero_copy_grpc_protector_destroy(
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
   alts_grpc_record_protocol_destroy(protector->record_protocol);
   alts_grpc_record_protocol_destroy(protector->unrecord_protocol);
-  grpc_slice_buffer_destroy_internal(&protector->unprotected_staging_sb);
+  grpc_slice_buffer_destroy_internal(
+      &protector->unprotected_staging_sb);
   grpc_slice_buffer_destroy_internal(&protector->protected_sb);
   grpc_slice_buffer_destroy_internal(&protector->protected_staging_sb);
   gpr_free(protector);
@@ -235,7 +251,8 @@ static void alts_zero_copy_grpc_protector_destroy(
 
 static tsi_result alts_zero_copy_grpc_protector_max_frame_size(
     tsi_zero_copy_grpc_protector* self, size_t* max_frame_size) {
-  if (self == nullptr || max_frame_size == nullptr) return TSI_INVALID_ARGUMENT;
+  if (self == nullptr || max_frame_size == nullptr)
+    return TSI_INVALID_ARGUMENT;
   alts_zero_copy_grpc_protector* protector =
       reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
   *max_frame_size = protector->max_protected_frame_size;
@@ -256,9 +273,9 @@ tsi_result alts_zero_copy_grpc_protector_create(
     tsi_zero_copy_grpc_protector** protector) {
   if (grpc_core::ExecCtx::Get() == nullptr || key == nullptr ||
       protector == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid nullptr arguments to alts_zero_copy_grpc_protector create.");
+    gpr_log(GPR_ERROR,
+            "Invalid nullptr arguments to "
+            "alts_zero_copy_grpc_protector create.");
     return TSI_INVALID_ARGUMENT;
   }
   /* Creates alts_zero_copy_protector.  */
@@ -272,7 +289,8 @@ tsi_result alts_zero_copy_grpc_protector_create(
   if (status == TSI_OK) {
     status = create_alts_grpc_record_protocol(
         key, key_size, is_rekey, is_client, is_integrity_only,
-        /*is_protect=*/false, enable_extra_copy, &impl->unrecord_protocol);
+        /*is_protect=*/false, enable_extra_copy,
+        &impl->unrecord_protocol);
     if (status == TSI_OK) {
       /* Sets maximum frame size.  */
       size_t max_protected_frame_size_to_set = kDefaultFrameLength;

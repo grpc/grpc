@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
@@ -48,10 +48,12 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
     return;
   }
-  SliceBuffer* read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
+  SliceBuffer* read_buffer =
+      new (&eeep->read_buffer) SliceBuffer(slices);
   eeep->endpoint->Read(
       [eeep, cb](absl::Status status) {
-        auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
+        auto* read_buffer =
+            reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
         read_buffer->~SliceBuffer();
         grpc_core::ExecCtx exec_ctx;
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
@@ -71,7 +73,8 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
     return;
   }
-  SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
+  SliceBuffer* write_buffer =
+      new (&eeep->write_buffer) SliceBuffer(slices);
   eeep->endpoint->Write(
       [eeep, cb](absl::Status status) {
         auto* write_buffer =
@@ -90,17 +93,18 @@ void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
 void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
                                  grpc_pollset_set* /* pollset */) {}
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
-                                      grpc_pollset_set* /* pollset */) {}
+                                      grpc_pollset_set* /* pollset */) {
+}
 /// After shutdown, all endpoint operations except destroy are no-op,
-/// and will return some kind of sane default (empty strings, nullptrs, etc). It
-/// is the caller's responsibility to ensure that calls to endpoint_shutdown are
-/// synchronized.
+/// and will return some kind of sane default (empty strings, nullptrs,
+/// etc). It is the caller's responsibility to ensure that calls to
+/// endpoint_shutdown are synchronized.
 void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(why);
-    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint.get(),
-            str);
+    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s",
+            eeep->endpoint.get(), str);
   }
   grpc_resource_user_shutdown(eeep->ru);
   eeep->endpoint.reset();
@@ -123,7 +127,8 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
     return "";
   }
   if (eeep->peer_address.empty()) {
-    const EventEngine::ResolvedAddress* addr = eeep->endpoint->GetPeerAddress();
+    const EventEngine::ResolvedAddress* addr =
+        eeep->endpoint->GetPeerAddress();
     GPR_ASSERT(addr != nullptr);
     eeep->peer_address = ResolvedAddressToURI(*addr);
   }
@@ -185,8 +190,8 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
   } else {
     resource_quota = grpc_resource_quota_create(nullptr);
   }
-  endpoint->ru = grpc_resource_user_create(resource_quota,
-                                           std::string(peer_address).c_str());
+  endpoint->ru = grpc_resource_user_create(
+      resource_quota, std::string(peer_address).c_str());
   grpc_resource_quota_unref_internal(resource_quota);
   return &endpoint->base;
 }

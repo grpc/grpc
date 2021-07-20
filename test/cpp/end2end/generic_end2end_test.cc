@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -71,9 +71,9 @@ class GenericEnd2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
-    // Include a second call to RegisterAsyncGenericService to make sure that
-    // we get an error in the log, since it is not allowed to have 2 async
-    // generic services
+    // Include a second call to RegisterAsyncGenericService to make sure
+    // that we get an error in the log, since it is not allowed to have
+    // 2 async generic services
     builder.RegisterAsyncGenericService(&generic_service_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -111,8 +111,10 @@ class GenericEnd2endTest : public ::testing::Test {
     SendRpc(num_rpcs, false, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
 
-  void SendRpc(int num_rpcs, bool check_deadline, gpr_timespec deadline) {
-    const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  void SendRpc(int num_rpcs, bool check_deadline,
+               gpr_timespec deadline) {
+    const std::string kMethodName(
+        "/grpc.cpp.test.util.EchoTestService/Echo");
     for (int i = 0; i < num_rpcs; i++) {
       EchoRequest send_request;
       EchoRequest recv_request;
@@ -125,7 +127,8 @@ class GenericEnd2endTest : public ::testing::Test {
       GenericServerAsyncReaderWriter stream(&srv_ctx);
 
       // The string needs to be long enough to test heap-based slice.
-      send_request.set_message("Hello world. Hello world. Hello world.");
+      send_request.set_message(
+          "Hello world. Hello world. Hello world.");
 
       if (check_deadline) {
         cli_ctx.set_deadline(deadline);
@@ -139,7 +142,8 @@ class GenericEnd2endTest : public ::testing::Test {
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
           generic_stub_->PrepareCall(&cli_ctx, *method_name, &cli_cq_);
 
-      delete method_name;  // Make sure that this is not needed after invocation
+      delete method_name;  // Make sure that this is not needed after
+                           // invocation
 
       std::thread request_call([this]() { server_ok(4); });
       call->StartCall(tag(1));
@@ -157,12 +161,14 @@ class GenericEnd2endTest : public ::testing::Test {
                                    srv_cq_.get(), tag(4));
 
       request_call.join();
-      EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
+      EXPECT_EQ(server_host_,
+                srv_ctx.host().substr(0, server_host_.length()));
       EXPECT_EQ(kMethodName, srv_ctx.method());
 
       if (check_deadline) {
-        EXPECT_TRUE(gpr_time_similar(deadline, srv_ctx.raw_deadline(),
-                                     gpr_time_from_millis(1000, GPR_TIMESPAN)));
+        EXPECT_TRUE(
+            gpr_time_similar(deadline, srv_ctx.raw_deadline(),
+                             gpr_time_from_millis(1000, GPR_TIMESPAN)));
       }
 
       ByteBuffer recv_buffer;
@@ -193,9 +199,9 @@ class GenericEnd2endTest : public ::testing::Test {
     }
   }
 
-  // Return errors to up to one call that comes in on the supplied completion
-  // queue, until the CQ is being shut down (and therefore we can no longer
-  // enqueue further events).
+  // Return errors to up to one call that comes in on the supplied
+  // completion queue, until the CQ is being shut down (and therefore we
+  // can no longer enqueue further events).
   void DriveCompletionQueue() {
     enum class Event : uintptr_t {
       kCallReceived,
@@ -210,7 +216,8 @@ class GenericEnd2endTest : public ::testing::Test {
       std::lock_guard<std::mutex> lock(shutting_down_mu_);
       if (!shutting_down_) {
         generic_service_.RequestCall(
-            &server_context, &reader_writer, srv_cq_.get(), srv_cq_.get(),
+            &server_context, &reader_writer, srv_cq_.get(),
+            srv_cq_.get(),
             reinterpret_cast<void*>(Event::kCallReceived));
       }
     }
@@ -221,15 +228,16 @@ class GenericEnd2endTest : public ::testing::Test {
       while (srv_cq_->Next(reinterpret_cast<void**>(&event), &ok)) {
         std::lock_guard<std::mutex> lock(shutting_down_mu_);
         if (shutting_down_) {
-          // The main thread has started shutting down. Simply continue to drain
-          // events.
+          // The main thread has started shutting down. Simply continue
+          // to drain events.
           continue;
         }
 
         switch (event) {
           case Event::kCallReceived:
             reader_writer.Finish(
-                ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "go away"),
+                ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED,
+                               "go away"),
                 reinterpret_cast<void*>(Event::kResponseSent));
             break;
 
@@ -267,7 +275,8 @@ TEST_F(GenericEnd2endTest, SequentialRpcs) {
 TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
   ResetStub();
   const int num_rpcs = 10;
-  const std::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  const std::string kMethodName(
+      "/grpc.cpp.test.util.EchoTestService/Echo");
   for (int i = 0; i < num_rpcs; i++) {
     EchoRequest send_request;
     EchoRequest recv_request;
@@ -286,8 +295,8 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
         SerializeToByteBuffer(&send_request);
     std::thread request_call([this]() { server_ok(4); });
     std::unique_ptr<GenericClientAsyncResponseReader> call =
-        generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName, *cli_send_buffer,
-                                        &cli_cq_);
+        generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName,
+                                        *cli_send_buffer, &cli_cq_);
     call->StartCall();
     ByteBuffer cli_recv_buffer;
     call->Finish(&cli_recv_buffer, &recv_status, tag(1));
@@ -296,7 +305,8 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
     generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
                                  srv_cq_.get(), tag(4));
     request_call.join();
-    EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
+    EXPECT_EQ(server_host_,
+              srv_ctx.host().substr(0, server_host_.length()));
     EXPECT_EQ(kMethodName, srv_ctx.method());
 
     ByteBuffer srv_recv_buffer;
@@ -348,7 +358,8 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
                                srv_cq_.get(), tag(2));
   request_call.join();
 
-  EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
+  EXPECT_EQ(server_host_,
+            srv_ctx.host().substr(0, server_host_.length()));
   EXPECT_EQ(kMethodName, srv_ctx.method());
 
   std::unique_ptr<ByteBuffer> send_buffer =
@@ -408,8 +419,9 @@ TEST_F(GenericEnd2endTest, ShortDeadline) {
   std::thread driver([this] { DriveCompletionQueue(); });
 
   request.set_message("");
-  cli_ctx.set_deadline(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                    gpr_time_from_micros(500, GPR_TIMESPAN)));
+  cli_ctx.set_deadline(
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                   gpr_time_from_micros(500, GPR_TIMESPAN)));
   Status s = stub_->Echo(&cli_ctx, request, &response);
   EXPECT_FALSE(s.ok());
   {

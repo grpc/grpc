@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include "test/core/end2end/end2end_tests.h"
@@ -37,10 +37,9 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -60,16 +59,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -93,7 +93,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Tests perAttemptRecvTimeout:
 // - 2 retries allowed for ABORTED status
-// - first attempt does not receive a response until after perAttemptRecvTimeout
+// - first attempt does not receive a response until after
+// perAttemptRecvTimeout
 // - second attempt returns ABORTED
 // - third attempt returns OK
 static void test_retry_per_attempt_recv_timeout(
@@ -107,8 +108,10 @@ static void test_retry_per_attempt_recv_timeout(
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
-  grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
-  grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_static_string("foo");
+  grpc_slice response_payload_slice =
+      grpc_slice_from_static_string("bar");
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
@@ -130,7 +133,8 @@ static void test_retry_per_attempt_recv_timeout(
               "{\n"
               "  \"methodConfig\": [ {\n"
               "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "      { \"service\": \"service\", \"method\": "
+              "\"method\" }\n"
               "    ],\n"
               "    \"retryPolicy\": {\n"
               "      \"maxAttempts\": 3,\n"
@@ -150,9 +154,10 @@ static void test_retry_per_attempt_recv_timeout(
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
+  c = grpc_channel_create_call(
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"), nullptr,
+      deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -175,27 +180,29 @@ static void test_retry_per_attempt_recv_timeout(
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server gets a call but does not respond to the call.
-  error =
-      grpc_server_request_call(f.server, &s0, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s0, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
-  // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
-  // initial attempt.
+  // Make sure the "grpc-previous-rpc-attempts" header was not sent in
+  // the initial attempt.
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
     GPR_ASSERT(!grpc_slice_eq(request_metadata_recv.metadata[i].key,
                               GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS));
@@ -207,9 +214,9 @@ static void test_retry_per_attempt_recv_timeout(
   grpc_call_details_init(&call_details);
 
   // Server gets a second call.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(201));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(201), true);
   cq_verify(cqv);
@@ -217,13 +224,14 @@ static void test_retry_per_attempt_recv_timeout(
   // Now we can unref the first call.
   grpc_call_unref(s0);
 
-  // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
+  // Make sure the "grpc-previous-rpc-attempts" header was sent in the
+  // retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
     if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
                       GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_1));
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               GRPC_MDSTR_1));
       found_retry_header = true;
       break;
     }
@@ -253,8 +261,8 @@ static void test_retry_per_attempt_recv_timeout(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(202), true);
   cq_verify(cqv);
@@ -266,20 +274,21 @@ static void test_retry_per_attempt_recv_timeout(
   grpc_call_details_init(&call_details);
 
   // Server gets a third call.
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(301));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(301));
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(301), true);
   cq_verify(cqv);
 
-  // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
+  // Make sure the "grpc-previous-rpc-attempts" header was sent in the
+  // retry.
   found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
     if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
                       GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_2));
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               GRPC_MDSTR_2));
       found_retry_header = true;
       break;
     }
@@ -306,8 +315,8 @@ static void test_retry_per_attempt_recv_timeout(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(302),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(302), true);
@@ -316,7 +325,8 @@ static void test_retry_per_attempt_recv_timeout(
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
+  GPR_ASSERT(
+      0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
 
@@ -340,7 +350,8 @@ static void test_retry_per_attempt_recv_timeout(
 }
 
 void retry_per_attempt_recv_timeout(grpc_end2end_test_config config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
+  GPR_ASSERT(config.feature_mask &
+             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_per_attempt_recv_timeout(config);
 }
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -44,7 +44,8 @@ int gpr_asprintf(char** strp, const char* format, ...) {
 
   /* Allocate a new buffer, with space for the NUL terminator. */
   strp_buflen = static_cast<size_t>(ret) + 1;
-  if ((*strp = static_cast<char*>(gpr_malloc(strp_buflen))) == nullptr) {
+  if ((*strp = static_cast<char*>(gpr_malloc(strp_buflen))) ==
+      nullptr) {
     /* This shouldn't happen, because gpr_malloc() calls abort(). */
     return -1;
   }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,9 +24,9 @@
 /* The test credentials being used for HTTP Proxy Authorization */
 #define GRPC_TEST_HTTP_PROXY_AUTH_CREDS "aladdin:opensesame"
 
-/* A channel arg key used to indicate that the channel uses proxy authorization.
- * The value (string) should be the proxy auth credentials that should be
- * checked.
+/* A channel arg key used to indicate that the channel uses proxy
+ * authorization. The value (string) should be the proxy auth
+ * credentials that should be checked.
  */
 #define GRPC_ARG_HTTP_PROXY_AUTH_CREDS "grpc.test.proxy_auth"
 

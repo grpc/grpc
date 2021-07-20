@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,20 +48,22 @@ class SubchannelKey {
   bool operator<(const SubchannelKey& other) const;
 
  private:
-  // Initializes the subchannel key with the given \a args and the function to
-  // copy channel args.
-  void Init(
-      const grpc_channel_args* args,
-      grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args));
+  // Initializes the subchannel key with the given \a args and the
+  // function to copy channel args.
+  void Init(const grpc_channel_args* args,
+            grpc_channel_args* (*copy_channel_args)(
+                const grpc_channel_args* args));
 
   const grpc_channel_args* args_;
 };
 
 // Interface for subchannel pool.
 // TODO(juanlishen): This refcounting mechanism may lead to memory leak.
-// To solve that, we should force polling to flush any pending callbacks, then
-// shut down safely. See https://github.com/grpc/grpc/issues/12560.
-class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
+// To solve that, we should force polling to flush any pending
+// callbacks, then shut down safely. See
+// https://github.com/grpc/grpc/issues/12560.
+class SubchannelPoolInterface
+    : public RefCounted<SubchannelPoolInterface> {
  public:
   SubchannelPoolInterface()
       : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_subchannel_pool_trace)
@@ -69,23 +71,26 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
                        : nullptr) {}
   ~SubchannelPoolInterface() override {}
 
-  // Registers a subchannel against a key. Returns the subchannel registered
-  // with \a key, which may be different from \a constructed because we reuse
-  // (instead of update) any existing subchannel already registered with \a key.
+  // Registers a subchannel against a key. Returns the subchannel
+  // registered with \a key, which may be different from \a constructed
+  // because we reuse (instead of update) any existing subchannel
+  // already registered with \a key.
   virtual RefCountedPtr<Subchannel> RegisterSubchannel(
-      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) = 0;
+      const SubchannelKey& key,
+      RefCountedPtr<Subchannel> constructed) = 0;
 
   // Removes the registered subchannel found by \a key.
   virtual void UnregisterSubchannel(const SubchannelKey& key,
                                     Subchannel* subchannel) = 0;
 
-  // Finds the subchannel registered for the given subchannel key. Returns NULL
-  // if no such channel exists. Thread-safe.
+  // Finds the subchannel registered for the given subchannel key.
+  // Returns NULL if no such channel exists. Thread-safe.
   virtual RefCountedPtr<Subchannel> FindSubchannel(
       const SubchannelKey& key) = 0;
 
   // Creates a channel arg from \a subchannel pool.
-  static grpc_arg CreateChannelArg(SubchannelPoolInterface* subchannel_pool);
+  static grpc_arg CreateChannelArg(
+      SubchannelPoolInterface* subchannel_pool);
 
   // Gets the subchannel pool from the channel args.
   static SubchannelPoolInterface* GetSubchannelPoolFromChannelArgs(
@@ -94,4 +99,5 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_POOL_INTERFACE_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_POOL_INTERFACE_H \
+        */

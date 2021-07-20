@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
@@ -35,8 +35,8 @@ using ::grpc_event_engine::experimental::Promise;
 
 /// A fire-and-forget class representing an individual DNS request.
 ///
-/// This provides a place to store the ownership of the DNSResolver object until
-/// the request is complete.
+/// This provides a place to store the ownership of the DNSResolver
+/// object until the request is complete.
 class DnsRequest {
  public:
   DnsRequest(std::unique_ptr<EventEngine::DNSResolver> dns_resolver,
@@ -52,7 +52,8 @@ class DnsRequest {
 
  private:
   void OnLookupComplete(
-      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+          addresses) {
     grpc_core::ExecCtx exec_ctx;
     // Convert addresses to iomgr form.
     *addresses_ = static_cast<grpc_resolved_addresses*>(
@@ -61,12 +62,14 @@ class DnsRequest {
     (*addresses_)->addrs = static_cast<grpc_resolved_address*>(
         gpr_malloc(sizeof(grpc_resolved_address) * addresses->size()));
     for (size_t i = 0; i < addresses->size(); ++i) {
-      (*addresses_)->addrs[i] = CreateGRPCResolvedAddress((*addresses)[i]);
+      (*addresses_)->addrs[i] =
+          CreateGRPCResolvedAddress((*addresses)[i]);
     }
     grpc_closure* cb = cb_;
     delete this;
-    grpc_core::Closure::Run(DEBUG_LOCATION, cb,
-                            absl_status_to_grpc_error(addresses.status()));
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION, cb,
+        absl_status_to_grpc_error(addresses.status()));
   }
 
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver_;
@@ -80,20 +83,23 @@ void resolve_address(const char* addr, const char* default_port,
                      grpc_resolved_addresses** addresses) {
   auto dns_resolver = grpc_iomgr_event_engine()->GetDNSResolver();
   if (!dns_resolver.ok()) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done,
-                            absl_status_to_grpc_error(dns_resolver.status()));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, on_done,
+        absl_status_to_grpc_error(dns_resolver.status()));
     return;
   }
   new DnsRequest(std::move(*dns_resolver), addr, default_port, on_done,
                  addresses);
 }
 
-void blocking_handle_async_resolve_done(void* arg, grpc_error_handle error) {
+void blocking_handle_async_resolve_done(void* arg,
+                                        grpc_error_handle error) {
   static_cast<Promise<grpc_error_handle>*>(arg)->Set(std::move(error));
 }
 
-grpc_error* blocking_resolve_address(const char* name, const char* default_port,
-                                     grpc_resolved_addresses** addresses) {
+grpc_error* blocking_resolve_address(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
   grpc_closure on_done;
   Promise<grpc_error_handle> evt;
   GRPC_CLOSURE_INIT(&on_done, blocking_handle_async_resolve_done, &evt,

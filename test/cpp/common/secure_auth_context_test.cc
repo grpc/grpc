@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -51,7 +51,8 @@ TEST_F(SecureAuthContextTest, Properties) {
   context.AddProperty("foo", "bar");
   EXPECT_TRUE(context.SetPeerIdentityPropertyName("name"));
 
-  std::vector<grpc::string_ref> peer_identity = context.GetPeerIdentity();
+  std::vector<grpc::string_ref> peer_identity =
+      context.GetPeerIdentity();
   EXPECT_EQ(2u, peer_identity.size());
   EXPECT_EQ("chapi", ToString(peer_identity[0]));
   EXPECT_EQ("chapo", ToString(peer_identity[1]));

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,7 +37,8 @@ std::string AbseilCurrentStackTraceProvider() {
   constexpr int kNumStackFrames = 10;
   void* stack[kNumStackFrames];
   int frame_sizes[kNumStackFrames];
-  int depth = absl::GetStackFrames(stack, frame_sizes, kNumStackFrames, 1);
+  int depth =
+      absl::GetStackFrames(stack, frame_sizes, kNumStackFrames, 1);
   for (int i = 0; i < depth; i++) {
     char tmp[1024];
     const char* symbol = "(unknown)";
@@ -59,20 +60,23 @@ TEST(ExamineStackTest, NullStackProvider) {
 }
 
 TEST(ExamineStackTest, SimpleStackProvider) {
-  grpc_core::SetCurrentStackTraceProvider(&SimpleCurrentStackTraceProvider);
+  grpc_core::SetCurrentStackTraceProvider(
+      &SimpleCurrentStackTraceProvider);
   EXPECT_NE(grpc_core::GetCurrentStackTraceProvider(), nullptr);
   EXPECT_EQ(grpc_core::GetCurrentStackTrace(), "stacktrace");
 }
 
 TEST(ExamineStackTest, AbseilStackProvider) {
-  grpc_core::SetCurrentStackTraceProvider(&AbseilCurrentStackTraceProvider);
+  grpc_core::SetCurrentStackTraceProvider(
+      &AbseilCurrentStackTraceProvider);
   EXPECT_NE(grpc_core::GetCurrentStackTraceProvider(), nullptr);
   const absl::optional<std::string> stack_trace =
       grpc_core::GetCurrentStackTrace();
   EXPECT_NE(stack_trace, absl::nullopt);
   gpr_log(GPR_INFO, "stack_trace=%s", stack_trace->c_str());
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
-  EXPECT_TRUE(stack_trace->find("GetCurrentStackTrace") != std::string::npos);
+  EXPECT_TRUE(stack_trace->find("GetCurrentStackTrace") !=
+              std::string::npos);
 #endif
 }
 

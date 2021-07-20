@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -63,9 +63,12 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     }
   }
 
-  void Finish(ServerInitializer* /*si*/) override { finish_is_called_ = true; }
+  void Finish(ServerInitializer* /*si*/) override {
+    finish_is_called_ = true;
+  }
 
-  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {
+  void ChangeArguments(const std::string& /*name*/,
+                       void* /*value*/) override {
     change_arguments_is_called_ = true;
   }
 
@@ -87,7 +90,9 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
 
   bool init_server_is_called() { return init_server_is_called_; }
   bool finish_is_called() { return finish_is_called_; }
-  bool change_arguments_is_called() { return change_arguments_is_called_; }
+  bool change_arguments_is_called() {
+    return change_arguments_is_called_;
+  }
 
  private:
   bool init_server_is_called_;
@@ -103,8 +108,8 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
 
   void UpdateArguments(ChannelArguments* /*arg*/) override {}
 
-  void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
+  void UpdatePlugins(std::vector<std::unique_ptr<ServerBuilderPlugin>>*
+                         plugins) override {
     plugins->clear();
 
     std::unique_ptr<TestServerBuilderPlugin> plugin(
@@ -120,10 +125,12 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
 };
 
 std::unique_ptr<ServerBuilderPlugin> CreateTestServerBuilderPlugin() {
-  return std::unique_ptr<ServerBuilderPlugin>(new TestServerBuilderPlugin());
+  return std::unique_ptr<ServerBuilderPlugin>(
+      new TestServerBuilderPlugin());
 }
 
-// Force AddServerBuilderPlugin() to be called at static initialization time.
+// Force AddServerBuilderPlugin() to be called at static initialization
+// time.
 struct StaticTestPluginInitializer {
   StaticTestPluginInitializer() {
     ::grpc::ServerBuilder::InternalAddPluginFactory(
@@ -131,9 +138,9 @@ struct StaticTestPluginInitializer {
   }
 } static_plugin_initializer_test_;
 
-// When the param boolean is true, the ServerBuilder plugin will be added at the
-// time of static initialization. When it's false, the ServerBuilder plugin will
-// be added using ServerBuilder::SetOption().
+// When the param boolean is true, the ServerBuilder plugin will be
+// added at the time of static initialization. When it's false, the
+// ServerBuilder plugin will be added using ServerBuilder::SetOption().
 class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
  public:
   ServerBuilderPluginTest() {}
@@ -171,9 +178,10 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void StartServer() {
     std::string server_address = "localhost:" + to_string(port_);
-    builder_->AddListeningPort(server_address, InsecureServerCredentials());
-    // we run some tests without a service, and for those we need to supply a
-    // frequently polled completion queue
+    builder_->AddListeningPort(server_address,
+                               InsecureServerCredentials());
+    // we run some tests without a service, and for those we need to
+    // supply a frequently polled completion queue
     cq_ = builder_->AddCompletionQueue();
     cq_thread_ = new std::thread(&ServerBuilderPluginTest::RunCQ, this);
     server_ = builder_->BuildAndStart();
@@ -182,7 +190,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
-    channel_ = grpc::CreateChannel(target, InsecureChannelCredentials());
+    channel_ =
+        grpc::CreateChannel(target, InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -254,7 +263,8 @@ TEST_P(ServerBuilderPluginTest, PluginWithServiceTest) {
   EXPECT_TRUE(s.ok());
 }
 
-INSTANTIATE_TEST_SUITE_P(ServerBuilderPluginTest, ServerBuilderPluginTest,
+INSTANTIATE_TEST_SUITE_P(ServerBuilderPluginTest,
+                         ServerBuilderPluginTest,
                          ::testing::Values(false, true));
 
 }  // namespace testing

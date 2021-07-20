@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,8 +57,8 @@ gpr_timespec grpc_max_auth_token_lifetime() {
 
 /* --- Override for testing. --- */
 
-static grpc_jwt_encode_and_sign_override g_jwt_encode_and_sign_override =
-    nullptr;
+static grpc_jwt_encode_and_sign_override
+    g_jwt_encode_and_sign_override = nullptr;
 
 /* --- grpc_auth_json_key. --- */
 
@@ -67,7 +67,8 @@ int grpc_auth_json_key_is_valid(const grpc_auth_json_key* json_key) {
          strcmp(json_key->type, GRPC_AUTH_JSON_TYPE_INVALID) != 0;
 }
 
-grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
+grpc_auth_json_key grpc_auth_json_key_create_from_json(
+    const Json& json) {
   grpc_auth_json_key result;
   BIO* bio = nullptr;
   const char* prop_value;
@@ -91,25 +92,28 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
 
   if (!grpc_copy_json_string_property(json, "private_key_id",
                                       &result.private_key_id) ||
-      !grpc_copy_json_string_property(json, "client_id", &result.client_id) ||
+      !grpc_copy_json_string_property(json, "client_id",
+                                      &result.client_id) ||
       !grpc_copy_json_string_property(json, "client_email",
                                       &result.client_email)) {
     goto end;
   }
 
-  prop_value = grpc_json_get_string_property(json, "private_key", &error);
+  prop_value =
+      grpc_json_get_string_property(json, "private_key", &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
   if (prop_value == nullptr) {
     goto end;
   }
   bio = BIO_new(BIO_s_mem());
   success = BIO_puts(bio, prop_value);
-  if ((success < 0) || (static_cast<size_t>(success) != strlen(prop_value))) {
+  if ((success < 0) ||
+      (static_cast<size_t>(success) != strlen(prop_value))) {
     gpr_log(GPR_ERROR, "Could not write into openssl BIO.");
     goto end;
   }
-  result.private_key =
-      PEM_read_bio_RSAPrivateKey(bio, nullptr, nullptr, const_cast<char*>(""));
+  result.private_key = PEM_read_bio_RSAPrivateKey(
+      bio, nullptr, nullptr, const_cast<char*>(""));
   if (result.private_key == nullptr) {
     gpr_log(GPR_ERROR, "Could not deserialize private key.");
     goto end;
@@ -153,7 +157,8 @@ void grpc_auth_json_key_destruct(grpc_auth_json_key* json_key) {
 
 /* --- jwt encoding and signature. --- */
 
-static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
+static char* encoded_jwt_header(const char* key_id,
+                                const char* algorithm) {
   Json json = Json::Object{
       {"alg", algorithm},
       {"typ", GRPC_JWT_TYPE},
@@ -165,11 +170,14 @@ static char* encoded_jwt_header(const char* key_id, const char* algorithm) {
 
 static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
                                const char* audience,
-                               gpr_timespec token_lifetime, const char* scope) {
+                               gpr_timespec token_lifetime,
+                               const char* scope) {
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
-  if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) > 0) {
-    gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
+  if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) >
+      0) {
+    gpr_log(GPR_INFO,
+            "Cropping token lifetime to maximum allowed value.");
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime());
   }
 
@@ -195,8 +203,8 @@ static char* dot_concat_and_free_strings(char* str1, char* str2) {
   size_t str1_len = strlen(str1);
   size_t str2_len = strlen(str2);
   size_t result_len = str1_len + 1 /* dot */ + str2_len;
-  char* result =
-      static_cast<char*>(gpr_malloc(result_len + 1 /* NULL terminated */));
+  char* result = static_cast<char*>(
+      gpr_malloc(result_len + 1 /* NULL terminated */));
   char* current = result;
   memcpy(current, str1, str1_len);
   current += str1_len;
@@ -264,16 +272,18 @@ end:
 
 char* grpc_jwt_encode_and_sign(const grpc_auth_json_key* json_key,
                                const char* audience,
-                               gpr_timespec token_lifetime, const char* scope) {
+                               gpr_timespec token_lifetime,
+                               const char* scope) {
   if (g_jwt_encode_and_sign_override != nullptr) {
-    return g_jwt_encode_and_sign_override(json_key, audience, token_lifetime,
-                                          scope);
+    return g_jwt_encode_and_sign_override(json_key, audience,
+                                          token_lifetime, scope);
   } else {
     const char* sig_algo = GRPC_JWT_RSA_SHA256_ALGORITHM;
     char* to_sign = dot_concat_and_free_strings(
         encoded_jwt_header(json_key->private_key_id, sig_algo),
         encoded_jwt_claim(json_key, audience, token_lifetime, scope));
-    char* sig = compute_and_encode_signature(json_key, sig_algo, to_sign);
+    char* sig =
+        compute_and_encode_signature(json_key, sig_algo, to_sign);
     if (sig == nullptr) {
       gpr_free(to_sign);
       return nullptr;

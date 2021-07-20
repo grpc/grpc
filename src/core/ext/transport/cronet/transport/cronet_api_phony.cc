@@ -10,14 +10,14 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
-/* This file has empty implementation of all the functions exposed by the cronet
-library, so we can build it in all environments */
+/* This file has empty implementation of all the functions exposed by
+the cronet library, so we can build it in all environments */
 
 #include <grpc/support/port_platform.h>
 
@@ -44,8 +44,8 @@ int bidirectional_stream_destroy(bidirectional_stream* /*stream*/) {
 }
 
 int bidirectional_stream_start(
-    bidirectional_stream* /*stream*/, const char* /*url*/, int /*priority*/,
-    const char* /*method*/,
+    bidirectional_stream* /*stream*/, const char* /*url*/,
+    int /*priority*/, const char* /*method*/,
     const bidirectional_stream_header_array* /*headers*/,
     bool /*end_of_stream*/) {
   GPR_ASSERT(0);
@@ -69,13 +69,14 @@ void bidirectional_stream_cancel(bidirectional_stream* /*stream*/) {
   GPR_ASSERT(0);
 }
 
-void bidirectional_stream_disable_auto_flush(bidirectional_stream* /*stream*/,
-                                             bool /*disable_auto_flush*/) {
+void bidirectional_stream_disable_auto_flush(
+    bidirectional_stream* /*stream*/, bool /*disable_auto_flush*/) {
   GPR_ASSERT(0);
 }
 
 void bidirectional_stream_delay_request_headers_until_flush(
-    bidirectional_stream* /*stream*/, bool /*delay_headers_until_flush*/) {
+    bidirectional_stream* /*stream*/,
+    bool /*delay_headers_until_flush*/) {
   GPR_ASSERT(0);
 }
 

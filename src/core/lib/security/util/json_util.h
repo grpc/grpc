@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,6 +40,7 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
 // Copies the value of the json child property specified by prop_name.
 // Returns false if the property was not found.
 bool grpc_copy_json_string_property(const grpc_core::Json& json,
-                                    const char* prop_name, char** copied_value);
+                                    const char* prop_name,
+                                    char** copied_value);
 
 #endif /* GRPC_CORE_LIB_SECURITY_UTIL_JSON_UTIL_H */

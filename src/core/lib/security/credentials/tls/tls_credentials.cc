@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,22 +34,26 @@
 
 namespace {
 
-bool CredentialOptionSanityCheck(const grpc_tls_credentials_options* options,
-                                 bool is_client) {
+bool CredentialOptionSanityCheck(
+    const grpc_tls_credentials_options* options, bool is_client) {
   if (options == nullptr) {
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
   }
-  // TODO(ZhenLian): remove this when it is also supported on server side.
-  if (!is_client && options->server_authorization_check_config() != nullptr) {
+  // TODO(ZhenLian): remove this when it is also supported on server
+  // side.
+  if (!is_client &&
+      options->server_authorization_check_config() != nullptr) {
     gpr_log(GPR_INFO,
             "Server's credentials options should not contain server "
             "authorization check config.");
   }
-  if (options->server_verification_option() != GRPC_TLS_SERVER_VERIFICATION &&
+  if (options->server_verification_option() !=
+          GRPC_TLS_SERVER_VERIFICATION &&
       options->server_authorization_check_config() == nullptr) {
     gpr_log(GPR_ERROR,
-            "Should provider custom verifications if bypassing default ones.");
+            "Should provider custom verifications if bypassing default "
+            "ones.");
     return false;
   }
   return true;
@@ -84,15 +88,17 @@ TlsCredentials::create_security_connector(
     }
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
-      grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
-          this->Ref(), options_, std::move(call_creds), target_name,
-          overridden_target_name, ssl_session_cache);
+      grpc_core::TlsChannelSecurityConnector::
+          CreateTlsChannelSecurityConnector(
+              this->Ref(), options_, std::move(call_creds), target_name,
+              overridden_target_name, ssl_session_cache);
   if (sc == nullptr) {
     return nullptr;
   }
   if (args != nullptr) {
     grpc_arg new_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
+        const_cast<char*>(GRPC_ARG_HTTP2_SCHEME),
+        const_cast<char*>("https"));
     *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   }
   return sc;

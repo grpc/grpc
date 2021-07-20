@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -44,18 +44,22 @@ static void test_dump_slice(void) {
   static const char* text = "HELLO WORLD!";
   static const char* long_text =
       "It was a bright cold day in April, and the clocks were striking "
-      "thirteen. Winston Smith, his chin nuzzled into his breast in an effort "
-      "to escape the vile wind, slipped quickly through the glass doors of "
-      "Victory Mansions, though not quickly enough to prevent a swirl of "
+      "thirteen. Winston Smith, his chin nuzzled into his breast in an "
+      "effort "
+      "to escape the vile wind, slipped quickly through the glass "
+      "doors of "
+      "Victory Mansions, though not quickly enough to prevent a swirl "
+      "of "
       "gritty dust from entering along with him.";
 
   LOG_TEST_NAME("test_dump_slice");
 
-  expect_slice_dump(grpc_slice_from_copied_string(text), GPR_DUMP_ASCII, text);
-  expect_slice_dump(grpc_slice_from_copied_string(long_text), GPR_DUMP_ASCII,
-                    long_text);
-  expect_slice_dump(grpc_slice_from_copied_buffer("\x01", 1), GPR_DUMP_HEX,
-                    "01");
+  expect_slice_dump(grpc_slice_from_copied_string(text), GPR_DUMP_ASCII,
+                    text);
+  expect_slice_dump(grpc_slice_from_copied_string(long_text),
+                    GPR_DUMP_ASCII, long_text);
+  expect_slice_dump(grpc_slice_from_copied_buffer("\x01", 1),
+                    GPR_DUMP_HEX, "01");
   expect_slice_dump(grpc_slice_from_copied_buffer("\x01", 1),
                     GPR_DUMP_HEX | GPR_DUMP_ASCII, "01 '.'");
 }
@@ -66,8 +70,8 @@ static void test_strsplit(void) {
 
   LOG_TEST_NAME("test_strsplit");
 
-  parts =
-      static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(grpc_slice_buffer)));
+  parts = static_cast<grpc_slice_buffer*>(
+      gpr_malloc(sizeof(grpc_slice_buffer)));
   grpc_slice_buffer_init(parts);
 
   str = grpc_slice_from_copied_string("one, two, three, four");
@@ -84,7 +88,8 @@ static void test_strsplit(void) {
   str = grpc_slice_from_copied_string("one two three four");
   grpc_slice_split(str, ", ", parts);
   GPR_ASSERT(1 == parts->count);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[0], "one two three four"));
+  GPR_ASSERT(
+      0 == grpc_slice_str_cmp(parts->slices[0], "one two three four"));
   grpc_slice_buffer_reset_and_unref(parts);
   grpc_slice_unref(str);
 
@@ -133,8 +138,8 @@ static void test_strsplit_nospace(void) {
 
   LOG_TEST_NAME("test_strsplit_nospace");
 
-  parts =
-      static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(grpc_slice_buffer)));
+  parts = static_cast<grpc_slice_buffer*>(
+      gpr_malloc(sizeof(grpc_slice_buffer)));
   grpc_slice_buffer_init(parts);
 
   str = grpc_slice_from_copied_string("one  ,two,   three  , four");
@@ -151,7 +156,8 @@ static void test_strsplit_nospace(void) {
   str = grpc_slice_from_copied_string("one two three four ");
   grpc_slice_split_without_space(str, ",", parts);
   GPR_ASSERT(1 == parts->count);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[0], "one two three four"));
+  GPR_ASSERT(
+      0 == grpc_slice_str_cmp(parts->slices[0], "one two three four"));
   grpc_slice_buffer_reset_and_unref(parts);
   grpc_slice_unref(str);
 

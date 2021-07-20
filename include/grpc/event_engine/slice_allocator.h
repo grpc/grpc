@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #ifndef GRPC_EVENT_ENGINE_SLICE_ALLOCATOR_H
 #define GRPC_EVENT_ENGINE_SLICE_ALLOCATOR_H
 
@@ -28,7 +28,8 @@ struct grpc_slice_buffer;
 namespace grpc_event_engine {
 namespace experimental {
 
-// TODO(hork): stubbed out here, to be replaced with a real version in next PR.
+// TODO(hork): stubbed out here, to be replaced with a real version in
+// next PR.
 class SliceBuffer {
  public:
   SliceBuffer() { abort(); }
@@ -49,14 +50,15 @@ class SliceAllocator {
 
   using AllocateCallback =
       std::function<void(absl::Status, SliceBuffer* buffer)>;
-  /// Requests \a size bytes from gRPC, and populates \a dest with the allocated
-  /// slices. Ownership of the \a SliceBuffer is not transferred.
+  /// Requests \a size bytes from gRPC, and populates \a dest with the
+  /// allocated slices. Ownership of the \a SliceBuffer is not
+  /// transferred.
   ///
-  /// gRPC provides a ResourceQuota system to cap the amount of memory used by
-  /// the library. When a memory limit has been reached, slice allocation is
-  /// interrupted to attempt to reclaim memory from participating gRPC
-  /// internals. When there is sufficient memory available, slice allocation
-  /// proceeds as normal.
+  /// gRPC provides a ResourceQuota system to cap the amount of memory
+  /// used by the library. When a memory limit has been reached, slice
+  /// allocation is interrupted to attempt to reclaim memory from
+  /// participating gRPC internals. When there is sufficient memory
+  /// available, slice allocation proceeds as normal.
   absl::Status Allocate(size_t size, SliceBuffer* dest,
                         SliceAllocator::AllocateCallback cb);
 
@@ -70,15 +72,17 @@ class SliceAllocatorFactory {
   explicit SliceAllocatorFactory(grpc_resource_quota* quota);
   // Not copyable
   SliceAllocatorFactory(SliceAllocatorFactory& other) = delete;
-  SliceAllocatorFactory& operator=(const SliceAllocatorFactory& other) = delete;
+  SliceAllocatorFactory& operator=(const SliceAllocatorFactory& other) =
+      delete;
   // Moveable
   SliceAllocatorFactory(SliceAllocatorFactory&& other) noexcept;
-  SliceAllocatorFactory& operator=(SliceAllocatorFactory&& other) noexcept;
+  SliceAllocatorFactory& operator=(
+      SliceAllocatorFactory&& other) noexcept;
   ~SliceAllocatorFactory();
 
-  /// On Endpoint creation, call \a CreateSliceAllocator with the name of the
-  /// endpoint peer (a URI string, most likely). Note: \a peer_name must outlive
-  /// the Endpoint.
+  /// On Endpoint creation, call \a CreateSliceAllocator with the name
+  /// of the endpoint peer (a URI string, most likely). Note: \a
+  /// peer_name must outlive the Endpoint.
   SliceAllocator CreateSliceAllocator(absl::string_view peer_name);
 
  private:

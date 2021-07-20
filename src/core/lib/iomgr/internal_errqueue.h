@@ -10,16 +10,16 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
 /* This file contains constants defined in <linux/errqueue.h> and
- * <linux/net_tstamp.h> so as to allow collecting network timestamps in the
- * kernel. This file allows tcp_posix.cc to compile on platforms that do not
- * have <linux/errqueue.h> and <linux/net_tstamp.h>.
+ * <linux/net_tstamp.h> so as to allow collecting network timestamps in
+ * the kernel. This file allows tcp_posix.cc to compile on platforms
+ * that do not have <linux/errqueue.h> and <linux/net_tstamp.h>.
  */
 
 #ifndef GRPC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
@@ -45,8 +45,8 @@ namespace grpc_core {
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
-/* Redefining scm_timestamping in the same way that <linux/errqueue.h> defines
- * it, so that code compiles on systems that don't have it. */
+/* Redefining scm_timestamping in the same way that <linux/errqueue.h>
+ * defines it, so that code compiles on systems that don't have it. */
 struct scm_timestamping {
   struct timespec ts[3];
 };
@@ -92,18 +92,20 @@ enum TCPOptStats {
   TCP_NLA_SND_CWND,       /* Sending congestion window. */
   TCP_NLA_REORDERING,     /* Reordering metric. */
   TCP_NLA_MIN_RTT,        /* minimum RTT. */
-  TCP_NLA_RECUR_RETRANS,  /* Recurring retransmits for the current pkt. */
-  TCP_NLA_DELIVERY_RATE_APP_LMT, /* Delivery rate application limited? */
-  TCP_NLA_SNDQ_SIZE,             /* Data (bytes) pending in send queue */
-  TCP_NLA_CA_STATE,              /* ca_state of socket */
-  TCP_NLA_SND_SSTHRESH,          /* Slow start size threshold */
-  TCP_NLA_DELIVERED,             /* Data pkts delivered incl. out-of-order */
-  TCP_NLA_DELIVERED_CE,          /* Like above but only ones w/ CE marks */
-  TCP_NLA_BYTES_SENT,            /* Data bytes sent including retransmission */
-  TCP_NLA_BYTES_RETRANS,         /* Data bytes retransmitted */
-  TCP_NLA_DSACK_DUPS,            /* DSACK blocks received */
-  TCP_NLA_REORD_SEEN,            /* reordering events seen */
-  TCP_NLA_SRTT,                  /* smoothed RTT in usecs */
+  TCP_NLA_RECUR_RETRANS,  /* Recurring retransmits for the current pkt.
+                           */
+  TCP_NLA_DELIVERY_RATE_APP_LMT, /* Delivery rate application limited?
+                                  */
+  TCP_NLA_SNDQ_SIZE,     /* Data (bytes) pending in send queue */
+  TCP_NLA_CA_STATE,      /* ca_state of socket */
+  TCP_NLA_SND_SSTHRESH,  /* Slow start size threshold */
+  TCP_NLA_DELIVERED,     /* Data pkts delivered incl. out-of-order */
+  TCP_NLA_DELIVERED_CE,  /* Like above but only ones w/ CE marks */
+  TCP_NLA_BYTES_SENT,    /* Data bytes sent including retransmission */
+  TCP_NLA_BYTES_RETRANS, /* Data bytes retransmitted */
+  TCP_NLA_DSACK_DUPS,    /* DSACK blocks received */
+  TCP_NLA_REORD_SEEN,    /* reordering events seen */
+  TCP_NLA_SRTT,          /* smoothed RTT in usecs */
 };
 
 /* tcp_info from from linux/tcp.h */
@@ -144,8 +146,9 @@ struct tcp_info {
   uint32_t tcpi_total_retrans;
   uint64_t tcpi_pacing_rate;
   uint64_t tcpi_max_pacing_rate;
-  uint64_t tcpi_bytes_acked;    /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
-  uint64_t tcpi_bytes_received; /* RFC4898 tcpEStatsAppHCThruOctetsReceived */
+  uint64_t tcpi_bytes_acked; /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
+  uint64_t tcpi_bytes_received; /* RFC4898
+                                   tcpEStatsAppHCThruOctetsReceived */
 
   uint32_t tcpi_segs_out; /* RFC4898 tcpEStatsPerfSegsOut */
   uint32_t tcpi_segs_in;  /* RFC4898 tcpEStatsPerfSegsIn */
@@ -156,13 +159,14 @@ struct tcp_info {
   uint32_t tcpi_data_segs_out; /* RFC4898 tcpEStatsDataSegsOut */
 
   uint64_t tcpi_delivery_rate;
-  uint64_t tcpi_busy_time;      /* Time (usec) busy sending data */
-  uint64_t tcpi_rwnd_limited;   /* Time (usec) limited by receive window */
+  uint64_t tcpi_busy_time; /* Time (usec) busy sending data */
+  uint64_t
+      tcpi_rwnd_limited; /* Time (usec) limited by receive window */
   uint64_t tcpi_sndbuf_limited; /* Time (usec) limited by send buffer */
 
   uint32_t tcpi_delivered;
   uint32_t tcpi_delivered_ce;
-  uint64_t tcpi_bytes_sent;    /* RFC4898 tcpEStatsPerfHCDataOctetsOut */
+  uint64_t tcpi_bytes_sent; /* RFC4898 tcpEStatsPerfHCDataOctetsOut */
   uint64_t tcpi_bytes_retrans; /* RFC4898 tcpEStatsPerfOctetsRetrans */
   uint32_t tcpi_dsack_dups;    /* RFC4898 tcpEStatsStackDSACKDups */
   uint32_t tcpi_reord_seen;    /* reordering events seen */
@@ -174,8 +178,8 @@ struct tcp_info {
 #endif
 #endif /* GRPC_LINUX_ERRQUEUE */
 
-/* Returns true if kernel is capable of supporting errqueue and timestamping.
- * Currently allowing only linux kernels above 4.0.0
+/* Returns true if kernel is capable of supporting errqueue and
+ * timestamping. Currently allowing only linux kernels above 4.0.0
  */
 bool kernel_supports_errqueue();
 

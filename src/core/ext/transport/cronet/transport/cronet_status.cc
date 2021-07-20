@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -20,7 +20,8 @@
 
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 
-const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
+const char* cronet_net_error_as_string(
+    cronet_net_error_code net_error) {
   switch (net_error) {
     case OK:
       return "OK";
@@ -149,7 +150,8 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
     case CRONET_NET_ERROR_PRECONNECT_MAX_SOCKET_LIMIT:
       return "CRONET_NET_ERROR_PRECONNECT_MAX_SOCKET_LIMIT";
     case CRONET_NET_ERROR_SSL_CLIENT_AUTH_PRIVATE_KEY_ACCESS_DENIED:
-      return "CRONET_NET_ERROR_SSL_CLIENT_AUTH_PRIVATE_KEY_ACCESS_DENIED";
+      return "CRONET_NET_ERROR_SSL_CLIENT_AUTH_PRIVATE_KEY_ACCESS_"
+             "DENIED";
     case CRONET_NET_ERROR_SSL_CLIENT_AUTH_CERT_NO_PRIVATE_KEY:
       return "CRONET_NET_ERROR_SSL_CLIENT_AUTH_CERT_NO_PRIVATE_KEY";
     case CRONET_NET_ERROR_PROXY_CERTIFICATE_INVALID:
@@ -205,7 +207,8 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
     case CRONET_NET_ERROR_CT_STH_INCOMPLETE:
       return "CRONET_NET_ERROR_CT_STH_INCOMPLETE";
     case CRONET_NET_ERROR_UNABLE_TO_REUSE_CONNECTION_FOR_PROXY_AUTH:
-      return "CRONET_NET_ERROR_UNABLE_TO_REUSE_CONNECTION_FOR_PROXY_AUTH";
+      return "CRONET_NET_ERROR_UNABLE_TO_REUSE_CONNECTION_FOR_PROXY_"
+             "AUTH";
     case CRONET_NET_ERROR_CT_CONSISTENCY_PROOF_PARSING_FAILED:
       return "CRONET_NET_ERROR_CT_CONSISTENCY_PROOF_PARSING_FAILED";
     case CRONET_NET_ERROR_SSL_OBSOLETE_CIPHER:
@@ -303,7 +306,8 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
     case CRONET_NET_ERROR_ENCODING_CONVERSION_FAILED:
       return "CRONET_NET_ERROR_ENCODING_CONVERSION_FAILED";
     case CRONET_NET_ERROR_UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT:
-      return "CRONET_NET_ERROR_UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT";
+      return "CRONET_NET_ERROR_UNRECOGNIZED_FTP_DIRECTORY_LISTING_"
+             "FORMAT";
       return "CRONET_NET_ERROR_INVALID_SPDY_STREAM";
     case CRONET_NET_ERROR_NO_SUPPORTED_PROXIES:
       return "CRONET_NET_ERROR_NO_SUPPORTED_PROXIES";
@@ -326,13 +330,15 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
     case CRONET_NET_ERROR_RESPONSE_BODY_TOO_BIG_TO_DRAIN:
       return "CRONET_NET_ERROR_RESPONSE_BODY_TOO_BIG_TO_DRAIN";
     case CRONET_NET_ERROR_RESPONSE_HEADERS_MULTIPLE_CONTENT_LENGTH:
-      return "CRONET_NET_ERROR_RESPONSE_HEADERS_MULTIPLE_CONTENT_LENGTH";
+      return "CRONET_NET_ERROR_RESPONSE_HEADERS_MULTIPLE_CONTENT_"
+             "LENGTH";
     case CRONET_NET_ERROR_INCOMPLETE_HTTP2_HEADERS:
       return "CRONET_NET_ERROR_INCOMPLETE_HTTP2_HEADERS";
     case CRONET_NET_ERROR_PAC_NOT_IN_DHCP:
       return "CRONET_NET_ERROR_PAC_NOT_IN_DHCP";
     case CRONET_NET_ERROR_RESPONSE_HEADERS_MULTIPLE_CONTENT_DISPOSITION:
-      return "CRONET_NET_ERROR_RESPONSE_HEADERS_MULTIPLE_CONTENT_DISPOSITION";
+      return "CRONET_NET_ERROR_RESPONSE_HEADERS_MULTIPLE_CONTENT_"
+             "DISPOSITION";
     case CRONET_NET_ERROR_RESPONSE_HEADERS_MULTIPLE_LOCATION:
       return "CRONET_NET_ERROR_RESPONSE_HEADERS_MULTIPLE_LOCATION";
     case CRONET_NET_ERROR_HTTP2_SERVER_REFUSED_STREAM:
@@ -350,7 +356,8 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
       return "CRONET_NET_ERROR_RESPONSE_HEADERS_TRUNCATED";
     case CRONET_NET_ERROR_QUIC_HANDSHAKE_FAILED:
       return "CRONET_NET_ERROR_QUIC_HANDSHAKE_FAILED";
-      return "CRONET_NET_ERROR_REQUEST_FOR_SECURE_RESOURCE_OVER_INSECURE_QUIC";
+      return "CRONET_NET_ERROR_REQUEST_FOR_SECURE_RESOURCE_OVER_"
+             "INSECURE_QUIC";
     case CRONET_NET_ERROR_HTTP2_INADEQUATE_TRANSPORT_SECURITY:
       return "CRONET_NET_ERROR_HTTP2_INADEQUATE_TRANSPORT_SECURITY";
     case CRONET_NET_ERROR_HTTP2_FLOW_CONTROL_ERROR:
@@ -377,7 +384,8 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
     case CRONET_NET_ERROR_HTTP2_PUSHED_STREAM_NOT_AVAILABLE:
       return "CRONET_NET_ERROR_HTTP2_PUSHED_STREAM_NOT_AVAILABLE";
     case CRONET_NET_ERROR_HTTP2_CLAIMED_PUSHED_STREAM_RESET_BY_SERVER:
-      return "CRONET_NET_ERROR_HTTP2_CLAIMED_PUSHED_STREAM_RESET_BY_SERVER";
+      return "CRONET_NET_ERROR_HTTP2_CLAIMED_PUSHED_STREAM_RESET_BY_"
+             "SERVER";
     case CRONET_NET_ERROR_TOO_MANY_RETRIES:
       return "CRONET_NET_ERROR_TOO_MANY_RETRIES";
     case CRONET_NET_ERROR_HTTP2_STREAM_CLOSED:
@@ -487,7 +495,8 @@ const char* cronet_net_error_as_string(cronet_net_error_code net_error) {
     case CRONET_NET_ERROR_DNS_SORT_ERROR:
       return "CRONET_NET_ERROR_DNS_SORT_ERROR";
     case CRONET_NET_ERROR_DNS_SECURE_RESOLVER_HOSTNAME_RESOLUTION_FAILED:
-      return "CRONET_NET_ERROR_DNS_SECURE_RESOLVER_HOSTNAME_RESOLUTION_FAILED";
+      return "CRONET_NET_ERROR_DNS_SECURE_RESOLVER_HOSTNAME_RESOLUTION_"
+             "FAILED";
   }
   return "UNAVAILABLE.";
 }

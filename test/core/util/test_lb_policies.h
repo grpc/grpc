@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
@@ -30,10 +30,11 @@ struct PickArgsSeen {
 
 using TestPickArgsCallback = std::function<void(const PickArgsSeen&)>;
 
-// Registers an LB policy called "test_pick_args_lb" that passes the args
-// passed to SubchannelPicker::Pick() to cb.
+// Registers an LB policy called "test_pick_args_lb" that passes the
+// args passed to SubchannelPicker::Pick() to cb.
 void RegisterTestPickArgsLoadBalancingPolicy(
-    TestPickArgsCallback cb, const char* delegate_policy_name = "pick_first");
+    TestPickArgsCallback cb,
+    const char* delegate_policy_name = "pick_first");
 
 struct TrailingMetadataArgsSeen {
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data;
@@ -50,8 +51,8 @@ void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
 
 using AddressTestCallback = std::function<void(const ServerAddress&)>;
 
-// Registers an LB policy called "address_test_lb" that invokes cb for each
-// address used to create a subchannel.
+// Registers an LB policy called "address_test_lb" that invokes cb for
+// each address used to create a subchannel.
 void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb);
 
 }  // namespace grpc_core

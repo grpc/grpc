@@ -10,16 +10,17 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
-/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-   using that endpoint. Because of various transitive includes in uv.h,
-   including windows.h on Windows, uv.h must be included before other system
-   headers. Therefore, sockaddr.h must always be included first */
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h
+   when using that endpoint. Because of various transitive includes in
+   uv.h, including windows.h on Windows, uv.h must be included before
+   other system headers. Therefore, sockaddr.h must always be included
+   first */
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include "test/core/util/passthru_endpoint.h"
@@ -85,14 +86,18 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   half* m = other_half(reinterpret_cast<half*>(ep));
   gpr_mu_lock(&m->parent->mu);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
+  gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes,
+                               (gpr_atm)1);
   if (m->parent->shutdown) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Endpoint already shutdown");
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Endpoint already shutdown");
   } else if (m->on_read != nullptr) {
     for (size_t i = 0; i < slices->count; i++) {
-      grpc_slice_buffer_add(m->on_read_out, grpc_slice_copy(slices->slices[i]));
+      grpc_slice_buffer_add(m->on_read_out,
+                            grpc_slice_copy(slices->slices[i]));
     }
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read,
+                            GRPC_ERROR_NONE);
     m->on_read = nullptr;
   } else {
     for (size_t i = 0; i < slices->count; i++) {
@@ -120,14 +125,16 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   if (m->on_read) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown",
+                                                         &why, 1));
     m->on_read = nullptr;
   }
   m = other_half(m);
   if (m->on_read) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown",
+                                                         &why, 1));
     m->on_read = nullptr;
   }
   gpr_mu_unlock(&m->parent->mu);
@@ -199,13 +206,14 @@ static void half_init(half* m, passthru_endpoint* parent,
   m->on_read = nullptr;
   std::string name =
       absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
-  m->resource_user = grpc_resource_user_create(resource_quota, name.c_str());
+  m->resource_user =
+      grpc_resource_user_create(resource_quota, name.c_str());
 }
 
-void grpc_passthru_endpoint_create(grpc_endpoint** client,
-                                   grpc_endpoint** server,
-                                   grpc_resource_quota* resource_quota,
-                                   grpc_passthru_endpoint_stats* stats) {
+void grpc_passthru_endpoint_create(
+    grpc_endpoint** client, grpc_endpoint** server,
+    grpc_resource_quota* resource_quota,
+    grpc_passthru_endpoint_stats* stats) {
   passthru_endpoint* m =
       static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
   m->halves = 2;
@@ -232,7 +240,8 @@ grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create() {
   return stats;
 }
 
-void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats) {
+void grpc_passthru_endpoint_stats_destroy(
+    grpc_passthru_endpoint_stats* stats) {
   if (gpr_unref(&stats->refs)) {
     gpr_free(stats);
   }

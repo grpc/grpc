@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,9 +25,10 @@
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (server->core_server->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(
+            cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+            .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -48,13 +49,17 @@ int main(int argc, char** argv) {
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x06",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x04",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x04",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x04\x00",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x04\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x04\x01",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x04\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x04\xff",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x04\xff",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x04\x00\x00",
@@ -66,32 +71,42 @@ int main(int argc, char** argv) {
                            PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   /* must not send frames with stream id != 0 */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00\x01", 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x04\x00\x40\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00\x01",
+      0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x00\x04\x00\x40\x00\x00\x00",
+      0);
   /* settings frame must be a multiple of six bytes long */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x01\x04\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x02\x04\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x03\x04\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x04\x04\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x05\x04\x00\x00\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x01\x04\x00\x00\x00\x00\x00",
+      0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x02\x04\x00\x00\x00\x00\x00",
+      0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x03\x04\x00\x00\x00\x00\x00",
+      0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x04\x04\x00\x00\x00\x00\x00",
+      0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x05\x04\x00\x00\x00\x00\x00",
+      0);
   /* some settings values are illegal */
   /* max frame size = 0 */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR ONE_SETTING_HDR "\x00\x05\x00\x00\x00\x00",
+                           PFX_STR ONE_SETTING_HDR
+                           "\x00\x05\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR ONE_SETTING_HDR "\x00\x06\xff\xff\xff\xff",
+                           PFX_STR ONE_SETTING_HDR
+                           "\x00\x06\xff\xff\xff\xff",
                            GRPC_BAD_CLIENT_DISCONNECT);
   /* update intiial window size */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR ONE_SETTING_HDR "\x00\x04\x00\x01\x00\x00",
+                           PFX_STR ONE_SETTING_HDR
+                           "\x00\x04\x00\x01\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   /* ack with data */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
@@ -100,11 +115,13 @@ int main(int argc, char** argv) {
                            "\x00\x00\x01\x04\x01\x00\x00\x00\x00",
                            0);
   /* settings frame with invalid flags */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x04\x10\x00\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x00\x04\x10\x00\x00\x00\x00",
+      0);
   /* unknown settings should be ignored */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR ONE_SETTING_HDR "\x00\x99\x00\x00\x00\x00",
+                           PFX_STR ONE_SETTING_HDR
+                           "\x00\x99\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
 
   grpc_shutdown();

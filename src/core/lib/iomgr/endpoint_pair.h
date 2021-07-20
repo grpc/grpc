@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,7 +27,7 @@ struct grpc_endpoint_pair {
   grpc_endpoint* client;
   grpc_endpoint* server;
 };
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
-                                                   grpc_channel_args* args);
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
+    const char* name, grpc_channel_args* args);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_PAIR_H */

@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -53,8 +53,9 @@ typedef struct metadata {
 
 // details what we expect to find on a single event
 struct Expectation {
-  Expectation(const char* f, int l, grpc_completion_type t, void* tag_arg,
-              bool check_success_arg, int success_arg, bool* seen_arg)
+  Expectation(const char* f, int l, grpc_completion_type t,
+              void* tag_arg, bool check_success_arg, int success_arg,
+              bool* seen_arg)
       : file(f),
         line(l),
         type(t),
@@ -93,8 +94,8 @@ void cq_verifier_destroy(cq_verifier* v) {
   delete v;
 }
 
-static int has_metadata(const grpc_metadata* md, size_t count, const char* key,
-                        const char* value) {
+static int has_metadata(const grpc_metadata* md, size_t count,
+                        const char* key, const char* value) {
   size_t i;
   for (i = 0; i < count; i++) {
     if (0 == grpc_slice_str_cmp(md[i].key, key) &&
@@ -114,7 +115,8 @@ static int has_metadata_slices(const grpc_metadata* md, size_t count,
                                grpc_slice key, grpc_slice value) {
   size_t i;
   for (i = 0; i < count; i++) {
-    if (grpc_slice_eq(md[i].key, key) && grpc_slice_eq(md[i].value, value)) {
+    if (grpc_slice_eq(md[i].key, key) &&
+        grpc_slice_eq(md[i].value, value)) {
       return 1;
     }
   }
@@ -268,9 +270,11 @@ bool FindExpectations(std::list<Expectation>* expectations,
 }
 
 void cq_verify(cq_verifier* v, int timeout_sec) {
-  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(timeout_sec);
+  const gpr_timespec deadline =
+      grpc_timeout_seconds_to_deadline(timeout_sec);
   while (!v->expectations.empty()) {
-    grpc_event ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
+    grpc_event ev =
+        grpc_completion_queue_next(v->cq, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       fail_no_event_received(v);
       break;
@@ -279,7 +283,8 @@ void cq_verify(cq_verifier* v, int timeout_sec) {
     if (FindExpectations(&v->maybe_expectations, ev)) continue;
     gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
             grpc_event_string(&ev).c_str());
-    gpr_log(GPR_ERROR, "expected tags:\n%s", ExpectationsString(*v).c_str());
+    gpr_log(GPR_ERROR, "expected tags:\n%s",
+            ExpectationsString(*v).c_str());
     abort();
   }
   v->maybe_expectations.clear();
@@ -291,7 +296,8 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
                    gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 
-  GPR_ASSERT(v->expectations.empty() && "expectation queue must be empty");
+  GPR_ASSERT(v->expectations.empty() &&
+             "expectation queue must be empty");
 
   ev = grpc_completion_queue_next(v->cq, deadline, nullptr);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
@@ -303,25 +309,27 @@ void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
 
 void cq_verify_empty(cq_verifier* v) { cq_verify_empty_timeout(v, 1); }
 
-void cq_maybe_expect_completion(cq_verifier* v, const char* file, int line,
-                                void* tag, bool success, bool* seen) {
+void cq_maybe_expect_completion(cq_verifier* v, const char* file,
+                                int line, void* tag, bool success,
+                                bool* seen) {
   v->maybe_expectations.emplace_back(file, line, GRPC_OP_COMPLETE, tag,
-                                     true /* check_success */, success, seen);
+                                     true /* check_success */, success,
+                                     seen);
 }
 
 static void add(cq_verifier* v, const char* file, int line,
-                grpc_completion_type type, void* tag, bool check_success,
-                bool success) {
-  v->expectations.emplace_back(file, line, type, tag, check_success, success,
-                               nullptr);
+                grpc_completion_type type, void* tag,
+                bool check_success, bool success) {
+  v->expectations.emplace_back(file, line, type, tag, check_success,
+                               success, nullptr);
 }
 
-void cq_expect_completion(cq_verifier* v, const char* file, int line, void* tag,
-                          bool success) {
+void cq_expect_completion(cq_verifier* v, const char* file, int line,
+                          void* tag, bool success) {
   add(v, file, line, GRPC_OP_COMPLETE, tag, true, success);
 }
 
-void cq_expect_completion_any_status(cq_verifier* v, const char* file, int line,
-                                     void* tag) {
+void cq_expect_completion_any_status(cq_verifier* v, const char* file,
+                                     int line, void* tag) {
   add(v, file, line, GRPC_OP_COMPLETE, tag, false, false);
 }

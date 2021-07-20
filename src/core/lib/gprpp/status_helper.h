@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -37,17 +37,20 @@ struct upb_arena;
 namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
-// TODO(veblush): Use camel-case names once migration to absl::Status is done.
+// TODO(veblush): Use camel-case names once migration to absl::Status is
+// done.
 enum class StatusIntProperty {
   /// 'errno' from the operating system
   kErrorNo,
   /// __LINE__ from the call site creating the error
   kFileLine,
-  /// stream identifier: for errors that are associated with an individual
+  /// stream identifier: for errors that are associated with an
+  /// individual
   /// wire stream
   kStreamId,
   /// grpc status code representing this error
-  // TODO(veblush): Remove this after grpc_error is replaced with absl::Status
+  // TODO(veblush): Remove this after grpc_error is replaced with
+  // absl::Status
   kRpcStatus,
   /// offset into some binary blob (usually represented by
   /// RAW_BYTES) where the error occurred
@@ -75,7 +78,8 @@ enum class StatusIntProperty {
 };
 
 /// This enum should have the same value of grpc_error_strs
-// TODO(veblush): Use camel-case names once migration to absl::Status is done.
+// TODO(veblush): Use camel-case names once migration to absl::Status is
+// done.
 enum class StatusStrProperty {
   /// top-level textual description of this error
   kDescription,
@@ -93,7 +97,8 @@ enum class StatusStrProperty {
   kRawBytes,
   /// tsi error string associated with this error
   kTsiError,
-  /// filename that we were trying to read/write when this error occurred
+  /// filename that we were trying to read/write when this error
+  /// occurred
   kFilename,
   /// key associated with the error
   kKey,
@@ -108,32 +113,37 @@ enum class StatusTimeProperty {
 };
 
 /// Creates a status with given additional information
-absl::Status StatusCreate(
-    absl::StatusCode code, absl::string_view msg, const DebugLocation& location,
-    std::initializer_list<absl::Status> children) GRPC_MUST_USE_RESULT;
+absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
+                          const DebugLocation& location,
+                          std::initializer_list<absl::Status> children)
+    GRPC_MUST_USE_RESULT;
 
 /// Sets the int property to the status
-void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value);
+void StatusSetInt(absl::Status* status, StatusIntProperty key,
+                  intptr_t value);
 
 /// Gets the int property from the status
-absl::optional<intptr_t> StatusGetInt(
-    const absl::Status& status, StatusIntProperty key) GRPC_MUST_USE_RESULT;
+absl::optional<intptr_t> StatusGetInt(const absl::Status& status,
+                                      StatusIntProperty key)
+    GRPC_MUST_USE_RESULT;
 
 /// Sets the str property to the status
 void StatusSetStr(absl::Status* status, StatusStrProperty key,
                   absl::string_view value);
 
 /// Gets the str property from the status
-absl::optional<std::string> StatusGetStr(
-    const absl::Status& status, StatusStrProperty key) GRPC_MUST_USE_RESULT;
+absl::optional<std::string> StatusGetStr(const absl::Status& status,
+                                         StatusStrProperty key)
+    GRPC_MUST_USE_RESULT;
 
 /// Sets the time property to the status
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time);
 
 /// Gets the time property from the status
-absl::optional<absl::Time> StatusGetTime(
-    const absl::Status& status, StatusTimeProperty key) GRPC_MUST_USE_RESULT;
+absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
+                                         StatusTimeProperty key)
+    GRPC_MUST_USE_RESULT;
 
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
@@ -146,8 +156,10 @@ std::vector<absl::Status> StatusGetChildren(absl::Status status)
 /// Error status will be like
 ///   STATUS[:MESSAGE] [{PAYLOADS[, children:[CHILDREN-STATUS-LISTS]]}]
 /// e.g.
-///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
-std::string StatusToString(const absl::Status& status) GRPC_MUST_USE_RESULT;
+///   CANCELLATION:SampleMessage {errno:'2021', line:'54',
+///   children:[ABORTED]}
+std::string StatusToString(const absl::Status& status)
+    GRPC_MUST_USE_RESULT;
 
 namespace internal {
 
@@ -158,9 +170,11 @@ google_rpc_Status* StatusToProto(absl::Status status,
 
 /// Builds a status from a upb message, google_rpc_Status
 /// This is for internal implementation & test only
-absl::Status StatusFromProto(google_rpc_Status* msg) GRPC_MUST_USE_RESULT;
+absl::Status StatusFromProto(google_rpc_Status* msg)
+    GRPC_MUST_USE_RESULT;
 
-/// The same value of grpc_core::internal::StatusAllocPtr(absl::OkStatus())
+/// The same value of
+/// grpc_core::internal::StatusAllocPtr(absl::OkStatus())
 static constexpr uintptr_t kOkStatusPtr = 0;
 
 /// Returns ptr where the given status is copied into.

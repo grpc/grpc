@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,9 +23,10 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
-/* The struct is refcounted, always use grpc_passthru_endpoint_stats_create and
- * grpc_passthru_endpoint_stats_destroy, rather then embedding it in your
- * objects by value. */
+/* The struct is refcounted, always use
+ * grpc_passthru_endpoint_stats_create and
+ * grpc_passthru_endpoint_stats_destroy, rather then embedding it in
+ * your objects by value. */
 typedef struct {
   gpr_refcount refs;
   gpr_atm num_writes;
@@ -38,6 +39,7 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
 
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create();
 
-void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats);
+void grpc_passthru_endpoint_stats_destroy(
+    grpc_passthru_endpoint_stats* stats);
 
 #endif

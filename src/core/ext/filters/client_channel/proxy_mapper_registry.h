@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,8 +36,10 @@ class ProxyMapperRegistry {
   static void Register(bool at_start,
                        std::unique_ptr<ProxyMapperInterface> mapper);
 
-  static bool MapName(const char* server_uri, const grpc_channel_args* args,
-                      char** name_to_resolve, grpc_channel_args** new_args);
+  static bool MapName(const char* server_uri,
+                      const grpc_channel_args* args,
+                      char** name_to_resolve,
+                      grpc_channel_args** new_args);
 
   static bool MapAddress(const grpc_resolved_address& address,
                          const grpc_channel_args* args,
@@ -47,4 +49,5 @@ class ProxyMapperRegistry {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H \
+        */

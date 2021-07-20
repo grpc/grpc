@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,7 +57,8 @@ namespace testing {
 namespace {
 
 struct TestScenario {
-  TestScenario(const std::string& creds_type, const std::string& content)
+  TestScenario(const std::string& creds_type,
+               const std::string& content)
       : credentials_type(creds_type), message_content(content) {}
   const std::string credentials_type;
   const std::string message_content;
@@ -74,14 +75,16 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   void InterfaceUp() {
     std::ostringstream cmd;
     // create interface_ with address ipv4_address_
-    cmd << "ip addr add " << ipv4_address_ << netmask_ << " dev " << interface_;
+    cmd << "ip addr add " << ipv4_address_ << netmask_ << " dev "
+        << interface_;
     std::system(cmd.str().c_str());
   }
 
   void InterfaceDown() {
     std::ostringstream cmd;
     // remove interface_
-    cmd << "ip addr del " << ipv4_address_ << netmask_ << " dev " << interface_;
+    cmd << "ip addr del " << ipv4_address_ << netmask_ << " dev "
+        << interface_;
     std::system(cmd.str().c_str());
   }
 
@@ -96,11 +99,12 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   void DNSDown() {
     std::ostringstream cmd;
     // Remove DNS entry for server_host_ from /etc/hosts
-    // NOTE: we can't do this in one step with sed -i because when we are
-    // running under docker, the file is mounted by docker so we can't change
-    // its inode from within the container (sed -i creates a new file and
-    // replaces the old file, which changes the inode)
-    cmd << "sed  '/" << server_host_ << "/d' /etc/hosts > /etc/hosts.orig";
+    // NOTE: we can't do this in one step with sed -i because when we
+    // are running under docker, the file is mounted by docker so we
+    // can't change its inode from within the container (sed -i creates
+    // a new file and replaces the old file, which changes the inode)
+    cmd << "sed  '/" << server_host_
+        << "/d' /etc/hosts > /etc/hosts.orig";
     std::system(cmd.str().c_str());
 
     // clear the stream
@@ -136,8 +140,10 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
 
   void FlakeNetwork() {
     std::ostringstream cmd;
-    // Emulate a flaky network connection over interface_. Add a delay of 100ms
-    // +/- 20ms, 0.1% packet loss, 1% duplicates and 0.01% corrupt packets.
+    // Emulate a flaky network connection over interface_. Add a delay
+    // of 100ms
+    // +/- 20ms, 0.1% packet loss, 1% duplicates and 0.01% corrupt
+    // packets.
     cmd << "tc qdisc replace dev " << interface_
         << " root netem delay 100ms 20ms distribution normal loss 0.1% "
            "duplicate "
@@ -175,13 +181,15 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void StartServer() {
-    // TODO (pjaikumar): Ideally, we should allocate the port dynamically using
-    // grpc_pick_unused_port_or_die(). That doesn't work inside some docker
-    // containers because port_server listens on localhost which maps to
-    // ip6-looopback, but ipv6 support is not enabled by default in docker.
+    // TODO (pjaikumar): Ideally, we should allocate the port
+    // dynamically using grpc_pick_unused_port_or_die(). That doesn't
+    // work inside some docker containers because port_server listens on
+    // localhost which maps to ip6-looopback, but ipv6 support is not
+    // enabled by default in docker.
     port_ = SERVER_PORT;
 
-    server_ = absl::make_unique<ServerData>(port_, GetParam().credentials_type);
+    server_ = absl::make_unique<ServerData>(
+        port_, GetParam().credentials_type);
     server_->Start(server_host_);
   }
   void StopServer() { server_->Shutdown(); }
@@ -197,11 +205,13 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(
+            GetParam().credentials_type, &args);
     std::ostringstream server_address;
     server_address << server_host_ << ":" << port_;
-    return CreateCustomChannel(server_address.str(), channel_creds, args);
+    return CreateCustomChannel(server_address.str(), channel_creds,
+                               args);
   }
 
   bool SendRpc(
@@ -213,13 +223,15 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     request.set_message(msg);
     ClientContext context;
     if (timeout_ms > 0) {
-      context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
-      // Allow an RPC to be canceled (for deadline exceeded) after it has
-      // reached the server.
+      context.set_deadline(
+          grpc_timeout_milliseconds_to_deadline(timeout_ms));
+      // Allow an RPC to be canceled (for deadline exceeded) after it
+      // has reached the server.
       request.mutable_param()->set_skip_cancelled_check(true);
     }
-    // See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md for
-    // details of wait-for-ready semantics
+    // See
+    // https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md
+    // for details of wait-for-ready semantics
     if (wait_for_ready) {
       context.set_wait_for_ready(true);
     }
@@ -228,7 +240,8 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     if (ok) {
       gpr_log(GPR_DEBUG, "RPC succeeded");
     } else {
-      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
+      gpr_log(GPR_DEBUG, "RPC failed: %s",
+              status.error_message().c_str());
     }
     return ok;
   }
@@ -277,7 +290,8 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     }
   };
 
-  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+  bool WaitForChannelNotReady(Channel* channel,
+                              int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
@@ -316,13 +330,15 @@ std::vector<TestScenario> CreateTestScenarios() {
   std::vector<std::string> messages;
 
   credentials_types.push_back(kInsecureCredentialsType);
-  auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
+  auto sec_list =
+      GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
 
   messages.push_back("🖖");
-  for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024; k *= 32) {
+  for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024;
+       k *= 32) {
     std::string big_msg;
     for (size_t i = 0; i < k * 1024; ++i) {
       char c = 'a' + (i % 26);
@@ -330,8 +346,8 @@ std::vector<TestScenario> CreateTestScenarios() {
     }
     messages.push_back(big_msg);
   }
-  for (auto cred = credentials_types.begin(); cred != credentials_types.end();
-       ++cred) {
+  for (auto cred = credentials_types.begin();
+       cred != credentials_types.end(); ++cred) {
     for (auto msg = messages.begin(); msg != messages.end(); msg++) {
       scenarios.emplace_back(*cred, *msg);
     }
@@ -384,7 +400,8 @@ TEST_P(FlakyNetworkTest, NetworkTransition) {
   sender.join();
 }
 
-// Traffic to server server is blackholed temporarily with keepalives enabled
+// Traffic to server server is blackholed temporarily with keepalives
+// enabled
 TEST_P(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   const int kKeepAliveTimeMs = 1000;
   const int kKeepAliveTimeoutMs = 1000;
@@ -399,7 +416,8 @@ TEST_P(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   // max time between reconnect attempts
   args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, kReconnectBackoffMs);
 
-  gpr_log(GPR_DEBUG, "FlakyNetworkTest.ServerUnreachableWithKeepalive start");
+  gpr_log(GPR_DEBUG,
+          "FlakyNetworkTest.ServerUnreachableWithKeepalive start");
   auto channel = BuildChannel("pick_first", args);
   auto stub = BuildStub(channel);
   // Channel should be in READY state after we send an RPC
@@ -429,11 +447,13 @@ TEST_P(FlakyNetworkTest, ServerUnreachableWithKeepalive) {
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   shutdown.store(true);
   sender.join();
-  gpr_log(GPR_DEBUG, "FlakyNetworkTest.ServerUnreachableWithKeepalive end");
+  gpr_log(GPR_DEBUG,
+          "FlakyNetworkTest.ServerUnreachableWithKeepalive end");
 }
 
 //
-// Traffic to server server is blackholed temporarily with keepalives disabled
+// Traffic to server server is blackholed temporarily with keepalives
+// disabled
 TEST_P(FlakyNetworkTest, ServerUnreachableNoKeepalive) {
   auto channel = BuildChannel("pick_first", ChannelArguments());
   auto stub = BuildStub(channel);
@@ -446,9 +466,11 @@ TEST_P(FlakyNetworkTest, ServerUnreachableNoKeepalive) {
 
   std::thread sender = std::thread([this, &stub]() {
     // RPC with deadline should timeout
-    EXPECT_FALSE(SendRpc(stub, /*timeout_ms=*/500, /*wait_for_ready=*/true));
+    EXPECT_FALSE(
+        SendRpc(stub, /*timeout_ms=*/500, /*wait_for_ready=*/true));
     // RPC without deadline forever until call finishes
-    EXPECT_TRUE(SendRpc(stub, /*timeout_ms=*/0, /*wait_for_ready=*/true));
+    EXPECT_TRUE(
+        SendRpc(stub, /*timeout_ms=*/0, /*wait_for_ready=*/true));
   });
 
   std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -486,7 +508,8 @@ TEST_P(FlakyNetworkTest, FlakyNetwork) {
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
 }
 
-// Server is shutdown gracefully and restarted. Client keepalives are enabled
+// Server is shutdown gracefully and restarted. Client keepalives are
+// enabled
 TEST_P(FlakyNetworkTest, ServerRestartKeepaliveEnabled) {
   const int kKeepAliveTimeMs = 1000;
   const int kKeepAliveTimeoutMs = 1000;
@@ -502,8 +525,8 @@ TEST_P(FlakyNetworkTest, ServerRestartKeepaliveEnabled) {
   EXPECT_TRUE(SendRpc(stub));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
 
-  // server goes down, client should detect server going down and calls should
-  // fail
+  // server goes down, client should detect server going down and calls
+  // should fail
   StopServer();
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   EXPECT_FALSE(SendRpc(stub));
@@ -516,7 +539,8 @@ TEST_P(FlakyNetworkTest, ServerRestartKeepaliveEnabled) {
   // EXPECT_TRUE(SendRpc(stub));
 }
 
-// Server is shutdown gracefully and restarted. Client keepalives are enabled
+// Server is shutdown gracefully and restarted. Client keepalives are
+// enabled
 TEST_P(FlakyNetworkTest, ServerRestartKeepaliveDisabled) {
   auto channel = BuildChannel("pick_first", ChannelArguments());
   auto stub = BuildStub(channel);
@@ -524,7 +548,8 @@ TEST_P(FlakyNetworkTest, ServerRestartKeepaliveDisabled) {
   EXPECT_TRUE(SendRpc(stub));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
 
-  // server sends GOAWAY when it's shutdown, so client attempts to reconnect
+  // server sends GOAWAY when it's shutdown, so client attempts to
+  // reconnect
   StopServer();
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 

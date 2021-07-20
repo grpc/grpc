@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -50,7 +50,8 @@ static void on_oauth2_response(void* arg, grpc_error_handle error) {
   } else {
     GPR_ASSERT(request->md_array.size == 1);
     token_slice = GRPC_MDVALUE(request->md_array.md[0]);
-    token = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1));
+    token = static_cast<char*>(
+        gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1));
     memcpy(token, GRPC_SLICE_START_PTR(token_slice),
            GRPC_SLICE_LENGTH(token_slice));
     token[GRPC_SLICE_LENGTH(token_slice)] = '\0';
@@ -61,7 +62,8 @@ static void on_oauth2_response(void* arg, grpc_error_handle error) {
   request->token = token;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&request->pops), nullptr));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&request->pops),
+                        nullptr));
   gpr_mu_unlock(request->mu);
 }
 
@@ -88,8 +90,9 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
                     grpc_schedule_on_exec_ctx);
 
   grpc_error_handle error = GRPC_ERROR_NONE;
-  if (creds->get_request_metadata(&request.pops, null_ctx, &request.md_array,
-                                  &request.closure, &error)) {
+  if (creds->get_request_metadata(&request.pops, null_ctx,
+                                  &request.md_array, &request.closure,
+                                  &error)) {
     // Synchronous result; invoke callback directly.
     on_oauth2_response(&request, error);
     GRPC_ERROR_UNREF(error);
@@ -101,8 +104,9 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(grpc_polling_entity_pollset(&request.pops),
-                              &worker, GRPC_MILLIS_INF_FUTURE))) {
+            grpc_pollset_work(
+                grpc_polling_entity_pollset(&request.pops), &worker,
+                GRPC_MILLIS_INF_FUTURE))) {
       request.is_done = true;
     }
   }

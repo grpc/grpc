@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -51,15 +51,16 @@
 namespace {
 
 void TryConnectAndDestroy() {
-  auto response_generator =
-      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  // Return a grpclb address with an IP address on the IPv6 discard prefix
-  // (https://tools.ietf.org/html/rfc6666). This is important because
-  // the behavior we want in this test is for a TCP connect attempt to "freeze",
-  // i.e. we want to send SYN, and then *not* receive SYN-ACK or RST.
-  // The precise behavior is dependant on the test runtime environment though,
-  // since connect() attempts on this address may unfortunately result in
-  // "network unreachable" errors in some test runtime environments.
+  auto response_generator = grpc_core::MakeRefCounted<
+      grpc_core::FakeResolverResponseGenerator>();
+  // Return a grpclb address with an IP address on the IPv6 discard
+  // prefix (https://tools.ietf.org/html/rfc6666). This is important
+  // because the behavior we want in this test is for a TCP connect
+  // attempt to "freeze", i.e. we want to send SYN, and then *not*
+  // receive SYN-ACK or RST. The precise behavior is dependant on the
+  // test runtime environment though, since connect() attempts on this
+  // address may unfortunately result in "network unreachable" errors in
+  // some test runtime environments.
   absl::StatusOr<grpc_core::URI> lb_uri =
       grpc_core::URI::Parse("ipv6:[0100::1234]:443");
   ASSERT_TRUE(lb_uri.ok());
@@ -72,8 +73,10 @@ void TryConnectAndDestroy() {
   lb_address_result.service_config = grpc_core::ServiceConfig::Create(
       nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
-  grpc_arg arg = grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);
-  lb_address_result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+  grpc_arg arg =
+      grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);
+  lb_address_result.args =
+      grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   response_generator->SetResponse(lb_address_result);
   grpc::ChannelArguments args;
   args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -88,12 +91,13 @@ void TryConnectAndDestroy() {
   uri << "fake:///servername_not_used";
   auto channel = ::grpc::CreateCustomChannel(
       uri.str(), grpc::InsecureChannelCredentials(), args);
-  // Start connecting, and give some time for the TCP connection attempt to the
-  // unreachable balancer to begin. The connection should never become ready
-  // because the LB we're trying to connect to is unreachable.
+  // Start connecting, and give some time for the TCP connection attempt
+  // to the unreachable balancer to begin. The connection should never
+  // become ready because the LB we're trying to connect to is
+  // unreachable.
   channel->GetState(true /* try_to_connect */);
-  ASSERT_FALSE(
-      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  ASSERT_FALSE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(100)));
   ASSERT_EQ("grpclb", channel->GetLoadBalancingPolicyName());
   channel.reset();
 };

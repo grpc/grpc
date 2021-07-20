@@ -10,15 +10,15 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
-// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
-// headers in include/grpcpp instead. This header exists only for backwards
-// compatibility.
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please
+// include the headers in include/grpcpp instead. This header exists
+// only for backwards compatibility.
 
 #ifndef GRPCXX_CLIENT_CONTEXT_H
 #define GRPCXX_CLIENT_CONTEXT_H

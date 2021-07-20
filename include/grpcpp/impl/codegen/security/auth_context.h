@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,7 +35,8 @@ class SecureAuthContext;
 typedef std::pair<string_ref, string_ref> AuthProperty;
 
 class AuthPropertyIterator
-    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
+    : public std::iterator<std::input_iterator_tag,
+                           const AuthProperty> {
  public:
   ~AuthPropertyIterator();
   AuthPropertyIterator& operator++();
@@ -60,8 +61,9 @@ class AuthPropertyIterator
 
 /// Class encapsulating the Authentication Information.
 ///
-/// It includes the secure identity of the peer, the type of secure transport
-/// used as well as any other properties required by the authorization layer.
+/// It includes the secure identity of the peer, the type of secure
+/// transport used as well as any other properties required by the
+/// authorization layer.
 class AuthContext {
  public:
   virtual ~AuthContext() {}
@@ -71,8 +73,8 @@ class AuthContext {
 
   /// A peer identity.
   ///
-  /// It is, in general, comprised of one or more properties (in which case they
-  /// have the same name).
+  /// It is, in general, comprised of one or more properties (in which
+  /// case they have the same name).
   virtual std::vector<grpc::string_ref> GetPeerIdentity() const = 0;
   virtual std::string GetPeerIdentityPropertyName() const = 0;
 
@@ -84,8 +86,10 @@ class AuthContext {
   virtual AuthPropertyIterator begin() const = 0;
   virtual AuthPropertyIterator end() const = 0;
 
-  /// Mutation functions: should only be used by an AuthMetadataProcessor.
-  virtual void AddProperty(const std::string& key, const string_ref& value) = 0;
+  /// Mutation functions: should only be used by an
+  /// AuthMetadataProcessor.
+  virtual void AddProperty(const std::string& key,
+                           const string_ref& value) = 0;
   virtual bool SetPeerIdentityPropertyName(const std::string& name) = 0;
 };
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -111,7 +111,8 @@ int main(int argc, char** argv) {
   grpc_core::ResolverFactory* uds =
       grpc_core::ResolverRegistry::LookupResolverFactory("unix");
   grpc_core::ResolverFactory* uds_abstract =
-      grpc_core::ResolverRegistry::LookupResolverFactory("unix-abstract");
+      grpc_core::ResolverRegistry::LookupResolverFactory(
+          "unix-abstract");
 
   test_succeeds(uds, "unix:///tmp/sockaddr_resolver_test");
   test_succeeds(uds_abstract, "unix-abstract:sockaddr_resolver_test");

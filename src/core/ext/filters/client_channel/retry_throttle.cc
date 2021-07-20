@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,7 +57,8 @@ ServerRetryThrottleData::ServerRetryThrottleData(
     initial_milli_tokens =
         static_cast<intptr_t>(token_fraction * max_milli_tokens);
   }
-  gpr_atm_rel_store(&milli_tokens_, static_cast<gpr_atm>(initial_milli_tokens));
+  gpr_atm_rel_store(&milli_tokens_,
+                    static_cast<gpr_atm>(initial_milli_tokens));
   // If there was a pre-existing entry, mark it as stale and give it a
   // pointer to the new entry, which is its replacement.
   if (old_throttle_data != nullptr) {
@@ -125,7 +126,8 @@ void* copy_server_name(void* key, void* /*unused*/) {
 }
 
 long compare_server_name(void* key1, void* key2, void* /*unused*/) {
-  return strcmp(static_cast<const char*>(key1), static_cast<const char*>(key2));
+  return strcmp(static_cast<const char*>(key1),
+                static_cast<const char*>(key2));
 }
 
 void destroy_server_retry_throttle_data(void* value, void* /*unused*/) {
@@ -144,7 +146,8 @@ void destroy_server_name(void* key, void* /*unused*/) { gpr_free(key); }
 
 const grpc_avl_vtable avl_vtable = {
     destroy_server_name, copy_server_name, compare_server_name,
-    destroy_server_retry_throttle_data, copy_server_retry_throttle_data};
+    destroy_server_retry_throttle_data,
+    copy_server_retry_throttle_data};
 
 }  // namespace
 
@@ -165,14 +168,15 @@ void ServerRetryThrottleMap::Shutdown() {
   grpc_avl_unref(g_avl, nullptr);
 }
 
-RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
-    const std::string& server_name, intptr_t max_milli_tokens,
-    intptr_t milli_token_ratio) {
+RefCountedPtr<ServerRetryThrottleData>
+ServerRetryThrottleMap::GetDataForServer(const std::string& server_name,
+                                         intptr_t max_milli_tokens,
+                                         intptr_t milli_token_ratio) {
   RefCountedPtr<ServerRetryThrottleData> result;
   gpr_mu_lock(&g_mu);
   ServerRetryThrottleData* throttle_data =
-      static_cast<ServerRetryThrottleData*>(
-          grpc_avl_get(g_avl, const_cast<char*>(server_name.c_str()), nullptr));
+      static_cast<ServerRetryThrottleData*>(grpc_avl_get(
+          g_avl, const_cast<char*>(server_name.c_str()), nullptr));
   if (throttle_data == nullptr ||
       throttle_data->max_milli_tokens() != max_milli_tokens ||
       throttle_data->milli_token_ratio() != milli_token_ratio) {

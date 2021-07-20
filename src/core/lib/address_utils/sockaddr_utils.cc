@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,15 +43,17 @@
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                           0, 0, 0, 0, 0xff, 0xff};
 
-int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
-                              grpc_resolved_address* resolved_addr4_out) {
+int grpc_sockaddr_is_v4mapped(
+    const grpc_resolved_address* resolved_addr,
+    grpc_resolved_address* resolved_addr4_out) {
   GPR_ASSERT(resolved_addr != resolved_addr4_out);
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   grpc_sockaddr_in* addr4_out =
       resolved_addr4_out == nullptr
           ? nullptr
-          : reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4_out->addr);
+          : reinterpret_cast<grpc_sockaddr_in*>(
+                resolved_addr4_out->addr);
   if (addr->sa_family == GRPC_AF_INET6) {
     const grpc_sockaddr_in6* addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(addr);
@@ -73,8 +75,9 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
   return 0;
 }
 
-int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* resolved_addr,
-                              grpc_resolved_address* resolved_addr6_out) {
+int grpc_sockaddr_to_v4mapped(
+    const grpc_resolved_address* resolved_addr,
+    grpc_resolved_address* resolved_addr6_out) {
   GPR_ASSERT(resolved_addr != resolved_addr6_out);
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
@@ -88,14 +91,15 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* resolved_addr,
     memcpy(&addr6_out->sin6_addr.s6_addr[0], kV4MappedPrefix, 12);
     memcpy(&addr6_out->sin6_addr.s6_addr[12], &addr4->sin_addr, 4);
     addr6_out->sin6_port = addr4->sin_port;
-    resolved_addr6_out->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
+    resolved_addr6_out->len =
+        static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
     return 1;
   }
   return 0;
 }
 
-int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
-                              int* port_out) {
+int grpc_sockaddr_is_wildcard(
+    const grpc_resolved_address* resolved_addr, int* port_out) {
   const grpc_sockaddr* addr;
   grpc_resolved_address addr4_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
@@ -128,39 +132,43 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
   }
 }
 
-void grpc_sockaddr_make_wildcards(int port, grpc_resolved_address* wild4_out,
+void grpc_sockaddr_make_wildcards(int port,
+                                  grpc_resolved_address* wild4_out,
                                   grpc_resolved_address* wild6_out) {
   grpc_sockaddr_make_wildcard4(port, wild4_out);
   grpc_sockaddr_make_wildcard6(port, wild6_out);
 }
 
-void grpc_sockaddr_make_wildcard4(int port,
-                                  grpc_resolved_address* resolved_wild_out) {
+void grpc_sockaddr_make_wildcard4(
+    int port, grpc_resolved_address* resolved_wild_out) {
   grpc_sockaddr_in* wild_out =
       reinterpret_cast<grpc_sockaddr_in*>(resolved_wild_out->addr);
   GPR_ASSERT(port >= 0 && port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin_family = GRPC_AF_INET;
   wild_out->sin_port = grpc_htons(static_cast<uint16_t>(port));
-  resolved_wild_out->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
+  resolved_wild_out->len =
+      static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 }
 
-void grpc_sockaddr_make_wildcard6(int port,
-                                  grpc_resolved_address* resolved_wild_out) {
+void grpc_sockaddr_make_wildcard6(
+    int port, grpc_resolved_address* resolved_wild_out) {
   grpc_sockaddr_in6* wild_out =
       reinterpret_cast<grpc_sockaddr_in6*>(resolved_wild_out->addr);
   GPR_ASSERT(port >= 0 && port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin6_family = GRPC_AF_INET6;
   wild_out->sin6_port = grpc_htons(static_cast<uint16_t>(port));
-  resolved_wild_out->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
+  resolved_wild_out->len =
+      static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
 }
 
-std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
-                                    bool normalize) {
+std::string grpc_sockaddr_to_string(
+    const grpc_resolved_address* resolved_addr, bool normalize) {
   const int save_errno = errno;
   grpc_resolved_address addr_normalized;
-  if (normalize && grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
+  if (normalize &&
+      grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
     resolved_addr = &addr_normalized;
   }
   const grpc_sockaddr* addr =
@@ -185,7 +193,8 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
   if (ip != nullptr && grpc_inet_ntop(addr->sa_family, ip, ntop_buf,
                                       sizeof(ntop_buf)) != nullptr) {
     if (sin6_scope_id != 0) {
-      // Enclose sin6_scope_id with the format defined in RFC 6874 section 2.
+      // Enclose sin6_scope_id with the format defined in RFC 6874
+      // section 2.
       std::string host_with_scope =
           absl::StrFormat("%s%%25%" PRIu32, ntop_buf, sin6_scope_id);
       out = grpc_core::JoinHostPort(host_with_scope, port);
@@ -195,7 +204,8 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
   } else {
     out = absl::StrFormat("(sockaddr family=%d)", addr->sa_family);
   }
-  /* This is probably redundant, but we wouldn't want to log the wrong error. */
+  /* This is probably redundant, but we wouldn't want to log the wrong
+   * error. */
   errno = save_errno;
   return out;
 }
@@ -203,12 +213,15 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
 grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
                                           const char* addr, int port) {
   memset(out, 0, sizeof(grpc_resolved_address));
-  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
-  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);
+  grpc_sockaddr_in6* addr6 =
+      reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
+  grpc_sockaddr_in* addr4 =
+      reinterpret_cast<grpc_sockaddr_in*>(out->addr);
   if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
     addr6->sin6_family = GRPC_AF_INET6;
     out->len = sizeof(grpc_sockaddr_in6);
-  } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) == 1) {
+  } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) ==
+             1) {
     addr4->sin_family = GRPC_AF_INET;
     out->len = sizeof(grpc_sockaddr_in);
   } else {
@@ -219,7 +232,8 @@ grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
   return GRPC_ERROR_NONE;
 }
 
-std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
+std::string grpc_sockaddr_to_uri(
+    const grpc_resolved_address* resolved_addr) {
   if (resolved_addr->len == 0) return "";
   grpc_resolved_address addr_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
@@ -253,7 +267,8 @@ const char* grpc_sockaddr_get_uri_scheme(
   return nullptr;
 }
 
-int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr) {
+int grpc_sockaddr_get_family(
+    const grpc_resolved_address* resolved_addr) {
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   return addr->sa_family;
@@ -268,19 +283,23 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
           (reinterpret_cast<const grpc_sockaddr_in*>(addr))->sin_port);
     case GRPC_AF_INET6:
       return grpc_ntohs(
-          (reinterpret_cast<const grpc_sockaddr_in6*>(addr))->sin6_port);
+          (reinterpret_cast<const grpc_sockaddr_in6*>(addr))
+              ->sin6_port);
     default:
       if (grpc_is_unix_socket(resolved_addr)) {
         return 1;
       }
-      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
+      gpr_log(GPR_ERROR,
+              "Unknown socket family %d in grpc_sockaddr_get_port",
               addr->sa_family);
       return 0;
   }
 }
 
-int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
-  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr);
+int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr,
+                           int port) {
+  grpc_sockaddr* addr =
+      reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case GRPC_AF_INET:
       GPR_ASSERT(port >= 0 && port < 65536);
@@ -293,7 +312,8 @@ int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
+      gpr_log(GPR_ERROR,
+              "Unknown socket family %d in grpc_sockaddr_set_port",
               addr->sa_family);
       return 0;
   }
@@ -306,12 +326,14 @@ std::string grpc_sockaddr_get_packed_host(
   if (addr->sa_family == GRPC_AF_INET) {
     const grpc_sockaddr_in* addr4 =
         reinterpret_cast<const grpc_sockaddr_in*>(addr);
-    const char* addr_bytes = reinterpret_cast<const char*>(&addr4->sin_addr);
+    const char* addr_bytes =
+        reinterpret_cast<const char*>(&addr4->sin_addr);
     return std::string(addr_bytes, 4);
   } else if (addr->sa_family == GRPC_AF_INET6) {
     const grpc_sockaddr_in6* addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(addr);
-    const char* addr_bytes = reinterpret_cast<const char*>(&addr6->sin6_addr);
+    const char* addr_bytes =
+        reinterpret_cast<const char*>(&addr6->sin6_addr);
     return std::string(addr_bytes, 16);
   } else {
     GPR_ASSERT(false);
@@ -332,15 +354,16 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
     uint32_t mask_ip_addr = (~(uint32_t(0))) << (32 - mask_bits);
     addr4->sin_addr.s_addr &= grpc_htonl(mask_ip_addr);
   } else if (addr->sa_family == GRPC_AF_INET6) {
-    grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr);
+    grpc_sockaddr_in6* addr6 =
+        reinterpret_cast<grpc_sockaddr_in6*>(addr);
     if (mask_bits == 0) {
       memset(&addr6->sin6_addr, 0, sizeof(addr6->sin6_addr));
       return;
     } else if (mask_bits >= 128) {
       return;
     }
-    // We cannot use s6_addr32 since it is not defined on all platforms that we
-    // need it on.
+    // We cannot use s6_addr32 since it is not defined on all platforms
+    // that we need it on.
     uint32_t address_parts[4];
     GPR_ASSERT(sizeof(addr6->sin6_addr) == sizeof(address_parts));
     memcpy(address_parts, &addr6->sin6_addr, sizeof(grpc_in6_addr));
@@ -370,9 +393,9 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
   }
 }
 
-bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
-                                const grpc_resolved_address* subnet_address,
-                                uint32_t mask_bits) {
+bool grpc_sockaddr_match_subnet(
+    const grpc_resolved_address* address,
+    const grpc_resolved_address* subnet_address, uint32_t mask_bits) {
   auto* addr = reinterpret_cast<const grpc_sockaddr*>(address->addr);
   auto* subnet_addr =
       reinterpret_cast<const grpc_sockaddr*>(subnet_address->addr);
@@ -383,7 +406,8 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
   grpc_sockaddr_mask_bits(&masked_address, mask_bits);
   if (addr->sa_family == GRPC_AF_INET) {
     auto* addr4 = reinterpret_cast<const grpc_sockaddr_in*>(addr);
-    auto* subnet_addr4 = reinterpret_cast<const grpc_sockaddr_in*>(subnet_addr);
+    auto* subnet_addr4 =
+        reinterpret_cast<const grpc_sockaddr_in*>(subnet_addr);
     if (memcmp(&addr4->sin_addr, &subnet_addr4->sin_addr,
                sizeof(addr4->sin_addr)) == 0) {
       return true;
@@ -403,7 +427,8 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
 namespace grpc_event_engine {
 namespace experimental {
 
-std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr) {
+std::string ResolvedAddressToURI(
+    const EventEngine::ResolvedAddress& addr) {
   auto gra = CreateGRPCResolvedAddress(addr);
   return grpc_sockaddr_to_uri(&gra);
 }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,8 +35,8 @@ grpc_byte_buffer* grpc_raw_compressed_byte_buffer_create(
     grpc_slice* slices, size_t nslices,
     grpc_compression_algorithm compression) {
   size_t i;
-  grpc_byte_buffer* bb =
-      static_cast<grpc_byte_buffer*>(gpr_malloc(sizeof(grpc_byte_buffer)));
+  grpc_byte_buffer* bb = static_cast<grpc_byte_buffer*>(
+      gpr_malloc(sizeof(grpc_byte_buffer)));
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = compression;
   grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
@@ -49,8 +49,8 @@ grpc_byte_buffer* grpc_raw_compressed_byte_buffer_create(
 
 grpc_byte_buffer* grpc_raw_byte_buffer_from_reader(
     grpc_byte_buffer_reader* reader) {
-  grpc_byte_buffer* bb =
-      static_cast<grpc_byte_buffer*>(gpr_malloc(sizeof(grpc_byte_buffer)));
+  grpc_byte_buffer* bb = static_cast<grpc_byte_buffer*>(
+      gpr_malloc(sizeof(grpc_byte_buffer)));
   grpc_slice slice;
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = GRPC_COMPRESS_NONE;
@@ -66,8 +66,8 @@ grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) {
   switch (bb->type) {
     case GRPC_BB_RAW:
       return grpc_raw_compressed_byte_buffer_create(
-          bb->data.raw.slice_buffer.slices, bb->data.raw.slice_buffer.count,
-          bb->data.raw.compression);
+          bb->data.raw.slice_buffer.slices,
+          bb->data.raw.slice_buffer.count, bb->data.raw.compression);
   }
   GPR_UNREACHABLE_CODE(return nullptr);
 }

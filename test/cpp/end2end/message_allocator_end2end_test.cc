@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -49,7 +49,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class CallbackTestServiceImpl : public EchoTestService::CallbackService {
+class CallbackTestServiceImpl
+    : public EchoTestService::CallbackService {
  public:
   explicit CallbackTestServiceImpl() {}
 
@@ -65,7 +66,8 @@ class CallbackTestServiceImpl : public EchoTestService::CallbackService {
                            EchoResponse* response) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
-      allocator_mutator_(context->GetRpcAllocatorState(), request, response);
+      allocator_mutator_(context->GetRpcAllocatorState(), request,
+                         response);
     }
     auto* reactor = context->DefaultReactor();
     reactor->Finish(Status::OK);
@@ -73,8 +75,8 @@ class CallbackTestServiceImpl : public EchoTestService::CallbackService {
   }
 
  private:
-  std::function<void(RpcAllocatorState* allocator_state, const EchoRequest* req,
-                     EchoResponse* resp)>
+  std::function<void(RpcAllocatorState* allocator_state,
+                     const EchoRequest* req, EchoResponse* resp)>
       allocator_mutator_;
 };
 
@@ -92,7 +94,8 @@ class TestScenario {
 static std::ostream& operator<<(std::ostream& out,
                                 const TestScenario& scenario) {
   return out << "TestScenario{protocol="
-             << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
+             << (scenario.protocol == Protocol::INPROC ? "INPROC"
+                                                       : "TCP")
              << "," << scenario.credentials_type << "}";
 }
 
@@ -109,7 +112,8 @@ class MessageAllocatorEnd2endTestBase
 
   ~MessageAllocatorEnd2endTestBase() override = default;
 
-  void CreateServer(MessageAllocator<EchoRequest, EchoResponse>* allocator) {
+  void CreateServer(
+      MessageAllocator<EchoRequest, EchoResponse>* allocator) {
     ServerBuilder builder;
 
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -134,8 +138,9 @@ class MessageAllocatorEnd2endTestBase
 
   void ResetStub() {
     ChannelArguments args;
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(
+            GetParam().credentials_type, &args);
     switch (GetParam().protocol) {
       case Protocol::TCP:
         channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
@@ -207,9 +212,11 @@ TEST_P(NullAllocatorTest, SimpleRpc) {
 
 class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class SimpleAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
+  class SimpleAllocator
+      : public MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
+    class MessageHolderImpl
+        : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl(std::atomic_int* request_deallocation_count,
                         std::atomic_int* messages_deallocation_count)
@@ -240,7 +247,8 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
       std::atomic_int* const request_deallocation_count_;
       std::atomic_int* const messages_deallocation_count_;
     };
-    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
+    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
+        override {
       allocation_count++;
       return new MessageHolderImpl(&request_deallocation_count,
                                    &messages_deallocation_count);
@@ -257,8 +265,8 @@ TEST_P(SimpleAllocatorTest, SimpleRpc) {
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
-  // messages_deallocaton_count is updated in Release after server side OnDone.
-  // Destroy server to make sure it has been updated.
+  // messages_deallocaton_count is updated in Release after server side
+  // OnDone. Destroy server to make sure it has been updated.
   DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
@@ -268,10 +276,10 @@ TEST_P(SimpleAllocatorTest, SimpleRpc) {
 TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
-  auto mutator = [](RpcAllocatorState* allocator_state, const EchoRequest* req,
-                    EchoResponse* resp) {
-    auto* info =
-        static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
+  auto mutator = [](RpcAllocatorState* allocator_state,
+                    const EchoRequest* req, EchoResponse* resp) {
+    auto* info = static_cast<SimpleAllocator::MessageHolderImpl*>(
+        allocator_state);
     EXPECT_EQ(req, info->request());
     EXPECT_EQ(resp, info->response());
     allocator_state->FreeRequest();
@@ -281,8 +289,8 @@ TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
-  // messages_deallocaton_count is updated in Release after server side OnDone.
-  // Destroy server to make sure it has been updated.
+  // messages_deallocaton_count is updated in Release after server side
+  // OnDone. Destroy server to make sure it has been updated.
   DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
@@ -293,11 +301,11 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   std::vector<EchoRequest*> released_requests;
-  auto mutator = [&released_requests](RpcAllocatorState* allocator_state,
-                                      const EchoRequest* req,
-                                      EchoResponse* resp) {
-    auto* info =
-        static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
+  auto mutator = [&released_requests](
+                     RpcAllocatorState* allocator_state,
+                     const EchoRequest* req, EchoResponse* resp) {
+    auto* info = static_cast<SimpleAllocator::MessageHolderImpl*>(
+        allocator_state);
     EXPECT_EQ(req, info->request());
     EXPECT_EQ(resp, info->response());
     released_requests.push_back(info->ReleaseRequest());
@@ -307,8 +315,8 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   CreateServer(allocator.get());
   ResetStub();
   SendRpcs(kRpcCount);
-  // messages_deallocaton_count is updated in Release after server side OnDone.
-  // Destroy server to make sure it has been updated.
+  // messages_deallocaton_count is updated in Release after server side
+  // OnDone. Destroy server to make sure it has been updated.
   DestroyServer();
   EXPECT_EQ(kRpcCount, allocator->allocation_count);
   EXPECT_EQ(kRpcCount, allocator->messages_deallocation_count);
@@ -321,15 +329,18 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
 
 class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class ArenaAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
+  class ArenaAllocator
+      : public MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
+    class MessageHolderImpl
+        : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl() {
-        set_request(
-            google::protobuf::Arena::CreateMessage<EchoRequest>(&arena_));
+        set_request(google::protobuf::Arena::CreateMessage<EchoRequest>(
+            &arena_));
         set_response(
-            google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_));
+            google::protobuf::Arena::CreateMessage<EchoResponse>(
+                &arena_));
       }
       void Release() override { delete this; }
       void FreeRequest() override { GPR_ASSERT(0); }
@@ -337,7 +348,8 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
      private:
       google::protobuf::Arena arena_;
     };
-    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
+    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
+        override {
       allocation_count++;
       return new MessageHolderImpl;
     }
@@ -359,8 +371,9 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   std::vector<std::string> credentials_types{
       GetCredentialsProvider()->GetSecureCredentialsTypeList()};
   auto insec_ok = [] {
-    // Only allow insecure credentials type when it is registered with the
-    // provider. User may create providers that do not have insecure.
+    // Only allow insecure credentials type when it is registered with
+    // the provider. User may create providers that do not have
+    // insecure.
     return GetCredentialsProvider()->GetChannelCredentials(
                kInsecureCredentialsType, nullptr) != nullptr;
   };
@@ -383,12 +396,15 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   return scenarios;
 }
 
-INSTANTIATE_TEST_SUITE_P(NullAllocatorTest, NullAllocatorTest,
-                         ::testing::ValuesIn(CreateTestScenarios(true)));
-INSTANTIATE_TEST_SUITE_P(SimpleAllocatorTest, SimpleAllocatorTest,
-                         ::testing::ValuesIn(CreateTestScenarios(true)));
-INSTANTIATE_TEST_SUITE_P(ArenaAllocatorTest, ArenaAllocatorTest,
-                         ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(
+    NullAllocatorTest, NullAllocatorTest,
+    ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(
+    SimpleAllocatorTest, SimpleAllocatorTest,
+    ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(
+    ArenaAllocatorTest, ArenaAllocatorTest,
+    ::testing::ValuesIn(CreateTestScenarios(true)));
 
 }  // namespace
 }  // namespace testing

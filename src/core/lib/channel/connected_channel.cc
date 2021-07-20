@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -55,11 +55,13 @@ typedef struct connected_channel_call_data {
 
 static void run_in_call_combiner(void* arg, grpc_error_handle error) {
   callback_state* state = static_cast<callback_state*>(arg);
-  GRPC_CALL_COMBINER_START(state->call_combiner, state->original_closure,
+  GRPC_CALL_COMBINER_START(state->call_combiner,
+                           state->original_closure,
                            GRPC_ERROR_REF(error), state->reason);
 }
 
-static void run_cancel_in_call_combiner(void* arg, grpc_error_handle error) {
+static void run_cancel_in_call_combiner(void* arg,
+                                        grpc_error_handle error) {
   run_in_call_combiner(arg, error);
   gpr_free(arg);
 }
@@ -70,10 +72,11 @@ static void intercept_callback(call_data* calld, callback_state* state,
   state->original_closure = *original_closure;
   state->call_combiner = calld->call_combiner;
   state->reason = reason;
-  *original_closure = GRPC_CLOSURE_INIT(
-      &state->closure,
-      free_when_done ? run_cancel_in_call_combiner : run_in_call_combiner,
-      state, grpc_schedule_on_exec_ctx);
+  *original_closure =
+      GRPC_CLOSURE_INIT(&state->closure,
+                        free_when_done ? run_cancel_in_call_combiner
+                                       : run_in_call_combiner,
+                        state, grpc_schedule_on_exec_ctx);
 }
 
 static callback_state* get_state_for_batch(
@@ -87,9 +90,9 @@ static callback_state* get_state_for_batch(
   GPR_UNREACHABLE_CODE(return nullptr);
 }
 
-/* We perform a small hack to locate transport data alongside the connected
-   channel data in call allocations, to allow everything to be pulled in minimal
-   cache line requests */
+/* We perform a small hack to locate transport data alongside the
+   connected channel data in call allocations, to allow everything to be
+   pulled in minimal cache line requests */
 #define TRANSPORT_STREAM_FROM_CALL_DATA(calld) \
   ((grpc_stream*)(((char*)(calld)) +           \
                   GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
@@ -97,28 +100,31 @@ static callback_state* get_state_for_batch(
   ((call_data*)(((char*)(transport_stream)) -             \
                 GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(call_data))))
 
-/* Intercept a call operation and either push it directly up or translate it
-   into transport stream operations */
+/* Intercept a call operation and either push it directly up or
+   translate it into transport stream operations */
 static void connected_channel_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   if (batch->recv_initial_metadata) {
     callback_state* state = &calld->recv_initial_metadata_ready;
-    intercept_callback(
-        calld, state, false, "recv_initial_metadata_ready",
-        &batch->payload->recv_initial_metadata.recv_initial_metadata_ready);
+    intercept_callback(calld, state, false,
+                       "recv_initial_metadata_ready",
+                       &batch->payload->recv_initial_metadata
+                            .recv_initial_metadata_ready);
   }
   if (batch->recv_message) {
     callback_state* state = &calld->recv_message_ready;
-    intercept_callback(calld, state, false, "recv_message_ready",
-                       &batch->payload->recv_message.recv_message_ready);
+    intercept_callback(
+        calld, state, false, "recv_message_ready",
+        &batch->payload->recv_message.recv_message_ready);
   }
   if (batch->recv_trailing_metadata) {
     callback_state* state = &calld->recv_trailing_metadata_ready;
-    intercept_callback(
-        calld, state, false, "recv_trailing_metadata_ready",
-        &batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready);
+    intercept_callback(calld, state, false,
+                       "recv_trailing_metadata_ready",
+                       &batch->payload->recv_trailing_metadata
+                            .recv_trailing_metadata_ready);
   }
   if (batch->cancel_stream) {
     // There can be more than one cancellation batch in flight at any
@@ -128,19 +134,22 @@ static void connected_channel_start_transport_stream_op_batch(
     // closure for each one.
     callback_state* state =
         static_cast<callback_state*>(gpr_malloc(sizeof(*state)));
-    intercept_callback(calld, state, true, "on_complete (cancel_stream)",
+    intercept_callback(calld, state, true,
+                       "on_complete (cancel_stream)",
                        &batch->on_complete);
   } else if (batch->on_complete != nullptr) {
     callback_state* state = get_state_for_batch(calld, batch);
-    intercept_callback(calld, state, false, "on_complete", &batch->on_complete);
+    intercept_callback(calld, state, false, "on_complete",
+                       &batch->on_complete);
   }
   grpc_transport_perform_stream_op(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld), batch);
-  GRPC_CALL_COMBINER_STOP(calld->call_combiner, "passed batch to transport");
+  GRPC_CALL_COMBINER_STOP(calld->call_combiner,
+                          "passed batch to transport");
 }
 
-static void connected_channel_start_transport_op(grpc_channel_element* elem,
-                                                 grpc_transport_op* op) {
+static void connected_channel_start_transport_op(
+    grpc_channel_element* elem, grpc_transport_op* op) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_transport_perform_op(chand->transport, op);
 }
@@ -153,7 +162,8 @@ static grpc_error_handle connected_channel_init_call_elem(
   calld->call_combiner = args->call_combiner;
   int r = grpc_transport_init_stream(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-      &args->call_stack->refcount, args->server_transport_data, args->arena);
+      &args->call_stack->refcount, args->server_transport_data,
+      args->arena);
   return r == 0 ? GRPC_ERROR_NONE
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "transport stream initialization failed");
@@ -164,7 +174,8 @@ static void set_pollset_or_pollset_set(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_transport_set_pops(chand->transport,
-                          TRANSPORT_STREAM_FROM_CALL_DATA(calld), pollent);
+                          TRANSPORT_STREAM_FROM_CALL_DATA(calld),
+                          pollent);
 }
 
 /* Destructor for call_data */
@@ -188,7 +199,8 @@ static grpc_error_handle connected_channel_init_channel_elem(
 }
 
 /* Destructor for channel_data */
-static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
+static void connected_channel_destroy_channel_elem(
+    grpc_channel_element* elem) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   if (cd->transport) {
     grpc_transport_destroy(cd->transport);
@@ -197,8 +209,8 @@ static void connected_channel_destroy_channel_elem(grpc_channel_element* elem) {
 
 /* No-op. */
 static void connected_channel_get_channel_info(
-    grpc_channel_element* /*elem*/, const grpc_channel_info* /*channel_info*/) {
-}
+    grpc_channel_element* /*elem*/,
+    const grpc_channel_info* /*channel_info*/) {}
 
 const grpc_channel_filter grpc_connected_filter = {
     connected_channel_start_transport_stream_op_batch,
@@ -221,12 +233,12 @@ static void bind_transport(grpc_channel_stack* channel_stack,
   GPR_ASSERT(cd->transport == nullptr);
   cd->transport = static_cast<grpc_transport*>(t);
 
-  /* HACK(ctiller): increase call stack size for the channel to make space
-     for channel data. We need a cleaner (but performant) way to do this,
-     and I'm not sure what that is yet.
-     This is only "safe" because call stacks place no additional data after
-     the last call element, and the last call element MUST be the connected
-     channel. */
+  /* HACK(ctiller): increase call stack size for the channel to make
+     space for channel data. We need a cleaner (but performant) way to
+     do this, and I'm not sure what that is yet. This is only "safe"
+     because call stacks place no additional data after the last call
+     element, and the last call element MUST be the connected channel.
+   */
   channel_stack->call_stack_size +=
       grpc_transport_stream_size(static_cast<grpc_transport*>(t));
 }
@@ -240,7 +252,8 @@ bool grpc_add_connected_filter(grpc_channel_stack_builder* builder,
       builder, &grpc_connected_filter, bind_transport, t);
 }
 
-grpc_stream* grpc_connected_channel_get_stream(grpc_call_element* elem) {
+grpc_stream* grpc_connected_channel_get_stream(
+    grpc_call_element* elem) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   return TRANSPORT_STREAM_FROM_CALL_DATA(calld);
 }

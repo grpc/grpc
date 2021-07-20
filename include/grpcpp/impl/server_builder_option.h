@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,9 +33,11 @@ class ServerBuilderOption {
   virtual ~ServerBuilderOption() {}
   /// Alter the \a ChannelArguments used to create the gRPC server.
   virtual void UpdateArguments(grpc::ChannelArguments* args) = 0;
-  /// Alter the ServerBuilderPlugin map that will be added into ServerBuilder.
+  /// Alter the ServerBuilderPlugin map that will be added into
+  /// ServerBuilder.
   virtual void UpdatePlugins(
-      std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* plugins) = 0;
+      std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>*
+          plugins) = 0;
 };
 
 }  // namespace grpc

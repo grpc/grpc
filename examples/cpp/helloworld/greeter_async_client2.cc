@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -54,20 +54,22 @@ class GreeterClient {
     AsyncClientCall* call = new AsyncClientCall;
 
     // stub_->PrepareAsyncSayHello() creates an RPC object, returning
-    // an instance to store in "call" but does not actually start the RPC
-    // Because we are using the asynchronous API, we need to hold on to
-    // the "call" instance in order to get updates on the ongoing RPC.
+    // an instance to store in "call" but does not actually start the
+    // RPC Because we are using the asynchronous API, we need to hold on
+    // to the "call" instance in order to get updates on the ongoing
+    // RPC.
     call->response_reader =
         stub_->PrepareAsyncSayHello(&call->context, request, &cq_);
 
     // StartCall initiates the RPC call
     call->response_reader->StartCall();
 
-    // Request that, upon completion of the RPC, "reply" be updated with the
-    // server's response; "status" with the indication of whether the operation
-    // was successful. Tag the request with the memory address of the call
-    // object.
-    call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+    // Request that, upon completion of the RPC, "reply" be updated with
+    // the server's response; "status" with the indication of whether
+    // the operation was successful. Tag the request with the memory
+    // address of the call object.
+    call->response_reader->Finish(&call->reply, &call->status,
+                                  (void*)call);
   }
 
   // Loop while listening for completed responses.
@@ -76,17 +78,21 @@ class GreeterClient {
     void* got_tag;
     bool ok = false;
 
-    // Block until the next result is available in the completion queue "cq".
+    // Block until the next result is available in the completion queue
+    // "cq".
     while (cq_.Next(&got_tag, &ok)) {
-      // The tag in this example is the memory location of the call object
+      // The tag in this example is the memory location of the call
+      // object
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
 
-      // Verify that the request was completed successfully. Note that "ok"
-      // corresponds solely to the request for updates introduced by Finish().
+      // Verify that the request was completed successfully. Note that
+      // "ok" corresponds solely to the request for updates introduced
+      // by Finish().
       GPR_ASSERT(ok);
 
       if (call->status.ok())
-        std::cout << "Greeter received: " << call->reply.message() << std::endl;
+        std::cout << "Greeter received: " << call->reply.message()
+                  << std::endl;
       else
         std::cout << "RPC failed" << std::endl;
 
@@ -101,35 +107,38 @@ class GreeterClient {
     // Container for the data we expect from the server.
     HelloReply reply;
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
+    // Context for the client. It could be used to convey extra
+    // information to the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
     // Storage for the status of the RPC upon completion.
     Status status;
 
-    std::unique_ptr<ClientAsyncResponseReader<HelloReply>> response_reader;
+    std::unique_ptr<ClientAsyncResponseReader<HelloReply>>
+        response_reader;
   };
 
-  // Out of the passed in Channel comes the stub, stored here, our view of the
-  // server's exposed services.
+  // Out of the passed in Channel comes the stub, stored here, our view
+  // of the server's exposed services.
   std::unique_ptr<Greeter::Stub> stub_;
 
-  // The producer-consumer queue we use to communicate asynchronously with the
-  // gRPC runtime.
+  // The producer-consumer queue we use to communicate asynchronously
+  // with the gRPC runtime.
   CompletionQueue cq_;
 };
 
 int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
+  // Instantiate the client. It requires a channel, out of which the
+  // actual RPCs are created. This channel models a connection to an
+  // endpoint (in this case, localhost at port 50051). We indicate that
+  // the channel isn't authenticated (use of
+  // InsecureChannelCredentials()).
   GreeterClient greeter(grpc::CreateChannel(
       "localhost:50051", grpc::InsecureChannelCredentials()));
 
   // Spawn reader thread that loops indefinitely
-  std::thread thread_ = std::thread(&GreeterClient::AsyncCompleteRpc, &greeter);
+  std::thread thread_ =
+      std::thread(&GreeterClient::AsyncCompleteRpc, &greeter);
 
   for (int i = 0; i < 100; i++) {
     std::string user("world " + std::to_string(i));

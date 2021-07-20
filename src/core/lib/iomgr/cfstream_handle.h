@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,10 +41,11 @@ class GrpcLibraryInitHolder {
 
 class CFStreamHandle : public GrpcLibraryInitHolder {
  public:
-  static CFStreamHandle* CreateStreamHandle(CFReadStreamRef read_stream,
-                                            CFWriteStreamRef write_stream);
+  static CFStreamHandle* CreateStreamHandle(
+      CFReadStreamRef read_stream, CFWriteStreamRef write_stream);
   /** Use CreateStreamHandle function instead of using this directly. */
-  CFStreamHandle(CFReadStreamRef read_stream, CFWriteStreamRef write_stream);
+  CFStreamHandle(CFReadStreamRef read_stream,
+                 CFWriteStreamRef write_stream);
   CFStreamHandle(const CFStreamHandle& ref) = delete;
   CFStreamHandle(CFStreamHandle&& ref) = delete;
   CFStreamHandle& operator=(const CFStreamHandle& rhs) = delete;
@@ -55,13 +56,17 @@ class CFStreamHandle : public GrpcLibraryInitHolder {
   void NotifyOnWrite(grpc_closure* closure);
   void Shutdown(grpc_error_handle error);
 
-  void Ref(const char* file = "", int line = 0, const char* reason = nullptr);
-  void Unref(const char* file = "", int line = 0, const char* reason = nullptr);
+  void Ref(const char* file = "", int line = 0,
+           const char* reason = nullptr);
+  void Unref(const char* file = "", int line = 0,
+             const char* reason = nullptr);
 
  private:
-  static void ReadCallback(CFReadStreamRef stream, CFStreamEventType type,
+  static void ReadCallback(CFReadStreamRef stream,
+                           CFStreamEventType type,
                            void* client_callback_info);
-  static void WriteCallback(CFWriteStreamRef stream, CFStreamEventType type,
+  static void WriteCallback(CFWriteStreamRef stream,
+                            CFStreamEventType type,
                             void* client_callback_info);
   static void* Retain(void* info);
   static void Release(void* info);

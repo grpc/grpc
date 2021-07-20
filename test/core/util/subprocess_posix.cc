@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -58,11 +58,13 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
     exec_args[argc] = nullptr;
     execv(exec_args[0], exec_args);
     /* if we reach here, an error has occurred */
-    gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0], strerror(errno));
+    gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0],
+            strerror(errno));
     _exit(1);
     return nullptr;
   } else {
-    r = static_cast<gpr_subprocess*>(gpr_zalloc(sizeof(gpr_subprocess)));
+    r = static_cast<gpr_subprocess*>(
+        gpr_zalloc(sizeof(gpr_subprocess)));
     r->pid = pid;
     return r;
   }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,8 +26,8 @@
 namespace grpc {
 namespace load_reporter {
 
-// Reads the CPU stats (in a pair of busy and total numbers) from the system.
-// The units of the stats should be the same.
+// Reads the CPU stats (in a pair of busy and total numbers) from the
+// system. The units of the stats should be the same.
 std::pair<uint64_t, uint64_t> GetCpuStatsImpl();
 
 }  // namespace load_reporter

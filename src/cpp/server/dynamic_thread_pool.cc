@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,7 +30,8 @@ DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
       thd_(
           "grpcpp_dynamic_pool",
           [](void* th) {
-            static_cast<DynamicThreadPool::DynamicThread*>(th)->ThreadFunc();
+            static_cast<DynamicThreadPool::DynamicThread*>(th)
+                ->ThreadFunc();
           },
           this) {
   thd_.Start();
@@ -39,7 +40,8 @@ DynamicThreadPool::DynamicThread::~DynamicThread() { thd_.Join(); }
 
 void DynamicThreadPool::DynamicThread::ThreadFunc() {
   pool_->ThreadFunc();
-  // Now that we have killed ourselves, we should reduce the thread count
+  // Now that we have killed ourselves, we should reduce the thread
+  // count
   grpc_core::MutexLock lock(&pool_->mu_);
   pool_->nthreads_--;
   // Move ourselves to dead list
@@ -89,7 +91,8 @@ DynamicThreadPool::DynamicThreadPool(int reserve_threads)
 }
 
 void DynamicThreadPool::ReapThreads(std::list<DynamicThread*>* tlist) {
-  for (auto t = tlist->begin(); t != tlist->end(); t = tlist->erase(t)) {
+  for (auto t = tlist->begin(); t != tlist->end();
+       t = tlist->erase(t)) {
     delete *t;
   }
 }

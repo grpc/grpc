@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -70,8 +70,9 @@ BENCHMARK(BM_CreateDestroyPollset);
 
 #ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
 static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
-  // equivalent to BM_PollEmptyPollset, but just use the OS primitives to guage
-  // what the speed of light would be if we abstracted perfectly
+  // equivalent to BM_PollEmptyPollset, but just use the OS primitives
+  // to guage what the speed of light would be if we abstracted
+  // perfectly
   TrackCounters track_counters;
   int epfd = epoll_create1(0);
   GPR_ASSERT(epfd != -1);
@@ -138,8 +139,8 @@ static void BM_PollAddFd(benchmark::State& state) {
   grpc_pollset_init(ps, &mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init",
+                               grpc_wakeup_fd_init(&wakeup_fd)));
   grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx", false);
   for (auto _ : state) {
     grpc_pollset_add_fd(ps, fd);
@@ -166,7 +167,9 @@ class TestClosure : public grpc_closure {
 template <class F>
 TestClosure* MakeTestClosure(F f) {
   struct C : public TestClosure {
-    explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
+    explicit C(F f) : f_(f) {
+      GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr);
+    }
     static void cbfn(void* arg, grpc_error_handle /*error*/) {
       C* p = static_cast<C*>(arg);
       p->f_();
@@ -177,9 +180,11 @@ TestClosure* MakeTestClosure(F f) {
 }
 
 #ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
-static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
-  // equivalent to BM_PollEmptyPollset, but just use the OS primitives to guage
-  // what the speed of light would be if we abstracted perfectly
+static void BM_SingleThreadPollOneFd_SpeedOfLight(
+    benchmark::State& state) {
+  // equivalent to BM_PollEmptyPollset, but just use the OS primitives
+  // to guage what the speed of light would be if we abstracted
+  // perfectly
   TrackCounters track_counters;
   int epfd = epoll_create1(0);
   GPR_ASSERT(epfd != -1);
@@ -219,7 +224,8 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
   GRPC_ERROR_UNREF(grpc_wakeup_fd_init(&wakeup_fd));
-  grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
+  grpc_fd* wakeup =
+      grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
   grpc_pollset_add_fd(ps, wakeup);
   bool done = false;
   TestClosure* continue_closure = MakeTestClosure([&]() {
@@ -235,7 +241,8 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd_notify_on_read(wakeup, continue_closure);
   gpr_mu_lock(mu);
   while (!done) {
-    GRPC_ERROR_UNREF(grpc_pollset_work(ps, nullptr, GRPC_MILLIS_INF_FUTURE));
+    GRPC_ERROR_UNREF(
+        grpc_pollset_work(ps, nullptr, GRPC_MILLIS_INF_FUTURE));
   }
   grpc_fd_orphan(wakeup, nullptr, nullptr, "done");
   wakeup_fd.read_fd = 0;
@@ -252,8 +259,8 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
 }
 BENCHMARK(BM_SingleThreadPollOneFd);
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

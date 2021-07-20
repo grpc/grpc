@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,8 +40,8 @@ class CustomHeaderClient {
   CustomHeaderClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
+  // Assembles the client's payload, sends it and presents the response
+  // back from the server.
   std::string SayHello(const std::string& user) {
     // Data we are sending to the server.
     HelloRequest request;
@@ -50,8 +50,8 @@ class CustomHeaderClient {
     // Container for the data we expect from the server.
     HelloReply reply;
 
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
+    // Context for the client. It could be used to convey extra
+    // information to the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
     // Setting custom metadata to be sent to the server
@@ -89,10 +89,11 @@ class CustomHeaderClient {
 };
 
 int main(int argc, char** argv) {
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint (in this case,
-  // localhost at port 50051). We indicate that the channel isn't authenticated
-  // (use of InsecureChannelCredentials()).
+  // Instantiate the client. It requires a channel, out of which the
+  // actual RPCs are created. This channel models a connection to an
+  // endpoint (in this case, localhost at port 50051). We indicate that
+  // the channel isn't authenticated (use of
+  // InsecureChannelCredentials()).
   CustomHeaderClient greeter(grpc::CreateChannel(
       "localhost:50051", grpc::InsecureChannelCredentials()));
   std::string user("world");

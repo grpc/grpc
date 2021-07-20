@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,9 +41,9 @@
 
 #ifdef GRPC_POSIX_SOCKET
 // Thread-local variable to so that only polls from this test assert
-// non-blocking (not polls from resolver, timer thread, etc), and only when the
-// thread is waiting on polls caused by CompletionQueue::AsyncNext (not for
-// picking a port or other reasons).
+// non-blocking (not polls from resolver, timer thread, etc), and only
+// when the thread is waiting on polls caused by
+// CompletionQueue::AsyncNext (not for picking a port or other reasons).
 GPR_TLS_DECL(g_is_nonblocking_poll);
 
 namespace {
@@ -64,8 +64,12 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return reinterpret_cast<void*>(static_cast<intptr_t>(i)); }
-int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
+void* tag(int i) {
+  return reinterpret_cast<void*>(static_cast<intptr_t>(i));
+}
+int detag(void* p) {
+  return static_cast<int>(reinterpret_cast<intptr_t>(p));
+}
 
 class NonblockingTest : public ::testing::Test {
  protected:
@@ -80,8 +84,9 @@ class NonblockingTest : public ::testing::Test {
   }
 
   bool LoopForTag(void** tag, bool* ok) {
-    // Temporarily set the thread-local nonblocking poll flag so that the polls
-    // caused by this loop are indeed sent by the library with zero timeout.
+    // Temporarily set the thread-local nonblocking poll flag so that
+    // the polls caused by this loop are indeed sent by the library with
+    // zero timeout.
     intptr_t orig_val = gpr_tls_get(&g_is_nonblocking_poll);
     gpr_tls_set(&g_is_nonblocking_poll, static_cast<intptr_t>(true));
     for (;;) {
@@ -111,8 +116,8 @@ class NonblockingTest : public ::testing::Test {
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
                              grpc::InsecureServerCredentials());
-    service_ =
-        absl::make_unique<grpc::testing::EchoTestService::AsyncService>();
+    service_ = absl::make_unique<
+        grpc::testing::EchoTestService::AsyncService>();
     builder.RegisterService(service_.get());
     cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -134,11 +139,13 @@ class NonblockingTest : public ::testing::Test {
 
       ClientContext cli_ctx;
       ServerContext srv_ctx;
-      grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+      grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(
+          &srv_ctx);
 
       send_request.set_message("hello non-blocking world");
-      std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
-          stub_->PrepareAsyncEcho(&cli_ctx, send_request, cq_.get()));
+      std::unique_ptr<ClientAsyncResponseReader<EchoResponse>>
+          response_reader(stub_->PrepareAsyncEcho(
+              &cli_ctx, send_request, cq_.get()));
 
       response_reader->StartCall();
       response_reader->Finish(&recv_response, &recv_status, tag(4));
@@ -178,7 +185,8 @@ class NonblockingTest : public ::testing::Test {
   std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<Server> server_;
-  std::unique_ptr<grpc::testing::EchoTestService::AsyncService> service_;
+  std::unique_ptr<grpc::testing::EchoTestService::AsyncService>
+      service_;
   std::ostringstream server_address_;
   int port_;
 };
@@ -203,9 +211,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   gpr_tls_init(&g_is_nonblocking_poll);
 
-  // Start the nonblocking poll thread-local variable as false because the
-  // thread that issues RPCs starts by picking a port (which has non-zero
-  // timeout).
+  // Start the nonblocking poll thread-local variable as false because
+  // the thread that issues RPCs starts by picking a port (which has
+  // non-zero timeout).
   gpr_tls_set(&g_is_nonblocking_poll, static_cast<intptr_t>(false));
 
   int ret = RUN_ALL_TESTS();

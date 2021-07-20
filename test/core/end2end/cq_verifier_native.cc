@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,7 +32,8 @@ struct cq_verifier {
 };
 
 cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
-  cq_verifier* v = static_cast<cq_verifier*>(gpr_malloc(sizeof(cq_verifier)));
+  cq_verifier* v =
+      static_cast<cq_verifier*>(gpr_malloc(sizeof(cq_verifier)));
   v->cq = cq;
   cq_verifier_set_first_expectation(v, nullptr);
   return v;

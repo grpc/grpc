@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -73,17 +73,18 @@ class CallbackClient
     //  Don't divide the fixed load among threads as the user threads
     //  only bootstrap the RPCs
     SetupLoadTest(config, 1);
-    total_outstanding_rpcs_ =
-        config.client_channels() * config.outstanding_rpcs_per_channel();
+    total_outstanding_rpcs_ = config.client_channels() *
+                              config.outstanding_rpcs_per_channel();
   }
 
   ~CallbackClient() override {}
 
   /**
-   * The main thread of the benchmark will be waiting on DestroyMultithreading.
-   * Increment the rpcs_done_ variable to signify that the Callback RPC
-   * after thread completion is done. When the last outstanding rpc increments
-   * the counter it should also signal the main thread's conditional variable.
+   * The main thread of the benchmark will be waiting on
+   * DestroyMultithreading. Increment the rpcs_done_ variable to signify
+   * that the Callback RPC after thread completion is done. When the
+   * last outstanding rpc increments the counter it should also signal
+   * the main thread's conditional variable.
    */
   void NotifyMainThreadOfThreadCompletion() {
     std::lock_guard<std::mutex> l(shutdown_mu_);
@@ -101,8 +102,8 @@ class CallbackClient
  protected:
   size_t num_threads_;
   size_t total_outstanding_rpcs_;
-  // The below mutex and condition variable is used by main benchmark thread to
-  // wait on completion of all RPCs before shutdown
+  // The below mutex and condition variable is used by main benchmark
+  // thread to wait on completion of all RPCs before shutdown
   std::mutex shutdown_mu_;
   std::condition_variable shutdown_cv_;
   // Number of rpcs done after thread completion
@@ -125,7 +126,8 @@ class CallbackClient
     int num_threads = config.async_client_threads();
     if (num_threads <= 0) {  // Use dynamic sizing
       num_threads = cores_;
-      gpr_log(GPR_INFO, "Sizing callback client to %d threads", num_threads);
+      gpr_log(GPR_INFO, "Sizing callback client to %d threads",
+              num_threads);
     }
     return num_threads;
   }
@@ -158,7 +160,8 @@ class CallbackUnaryClient final : public CallbackClient {
 
  protected:
   bool ThreadFuncImpl(Thread* t, size_t thread_idx) override {
-    for (size_t vector_idx = thread_idx; vector_idx < total_outstanding_rpcs_;
+    for (size_t vector_idx = thread_idx;
+         vector_idx < total_outstanding_rpcs_;
          vector_idx += num_threads_) {
       ScheduleRpc(t, vector_idx);
     }
@@ -176,10 +179,10 @@ class CallbackUnaryClient final : public CallbackClient {
       if (ctx_[vector_idx]->alarm_ == nullptr) {
         ctx_[vector_idx]->alarm_ = absl::make_unique<Alarm>();
       }
-      ctx_[vector_idx]->alarm_->Set(next_issue_time,
-                                    [this, t, vector_idx](bool /*ok*/) {
-                                      IssueUnaryCallbackRpc(t, vector_idx);
-                                    });
+      ctx_[vector_idx]->alarm_->Set(
+          next_issue_time, [this, t, vector_idx](bool /*ok*/) {
+            IssueUnaryCallbackRpc(t, vector_idx);
+          });
     } else {
       IssueUnaryCallbackRpc(t, vector_idx);
     }
@@ -189,7 +192,8 @@ class CallbackUnaryClient final : public CallbackClient {
     GPR_TIMER_SCOPE("CallbackUnaryClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
     ctx_[vector_idx]->stub_->async()->UnaryCall(
-        (&ctx_[vector_idx]->context_), &request_, &ctx_[vector_idx]->response_,
+        (&ctx_[vector_idx]->context_), &request_,
+        &ctx_[vector_idx]->response_,
         [this, t, start, vector_idx](grpc::Status s) {
           // Update Histogram with data from the callback run
           HistogramEntry entry;
@@ -204,8 +208,9 @@ class CallbackUnaryClient final : public CallbackClient {
             NotifyMainThreadOfThreadCompletion();
           } else {
             // Reallocate ctx for next RPC
-            ctx_[vector_idx] = absl::make_unique<CallbackClientRpcContext>(
-                ctx_[vector_idx]->stub_);
+            ctx_[vector_idx] =
+                absl::make_unique<CallbackClientRpcContext>(
+                    ctx_[vector_idx]->stub_);
             // Schedule a new RPC
             ScheduleRpc(t, vector_idx);
           }
@@ -342,17 +347,19 @@ class CallbackStreamingPingPongReactor final
 class CallbackStreamingPingPongClientImpl final
     : public CallbackStreamingPingPongClient {
  public:
-  explicit CallbackStreamingPingPongClientImpl(const ClientConfig& config)
+  explicit CallbackStreamingPingPongClientImpl(
+      const ClientConfig& config)
       : CallbackStreamingPingPongClient(config) {
     for (size_t i = 0; i < total_outstanding_rpcs_; i++) {
-      reactor_.emplace_back(
-          new CallbackStreamingPingPongReactor(this, std::move(ctx_[i])));
+      reactor_.emplace_back(new CallbackStreamingPingPongReactor(
+          this, std::move(ctx_[i])));
     }
   }
   ~CallbackStreamingPingPongClientImpl() override {}
 
   bool ThreadFuncImpl(Client::Thread* t, size_t thread_idx) override {
-    for (size_t vector_idx = thread_idx; vector_idx < total_outstanding_rpcs_;
+    for (size_t vector_idx = thread_idx;
+         vector_idx < total_outstanding_rpcs_;
          vector_idx += num_threads_) {
       reactor_[vector_idx]->set_thread_ptr(t);
       reactor_[vector_idx]->ScheduleRpc();
@@ -363,12 +370,14 @@ class CallbackStreamingPingPongClientImpl final
   void InitThreadFuncImpl(size_t /*thread_idx*/) override {}
 
  private:
-  std::vector<std::unique_ptr<CallbackStreamingPingPongReactor>> reactor_;
+  std::vector<std::unique_ptr<CallbackStreamingPingPongReactor>>
+      reactor_;
 };
 
 // TODO(mhaidry) : Implement Streaming from client, server and both ways
 
-std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& config) {
+std::unique_ptr<Client> CreateCallbackClient(
+    const ClientConfig& config) {
   switch (config.rpc_type()) {
     case UNARY:
       return std::unique_ptr<Client>(new CallbackUnaryClient(config));

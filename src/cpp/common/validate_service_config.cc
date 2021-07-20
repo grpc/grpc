@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,7 +23,8 @@
 
 namespace grpc {
 namespace experimental {
-std::string ValidateServiceConfigJSON(const std::string& service_config_json) {
+std::string ValidateServiceConfigJSON(
+    const std::string& service_config_json) {
   grpc_init();
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::ServiceConfig::Create(/*args=*/nullptr,

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -84,13 +84,13 @@ typedef enum {
       (b) Use ABORTED if the client should retry at a higher-level
           (e.g., restarting a read-modify-write sequence).
       (c) Use FAILED_PRECONDITION if the client should not retry until
-          the system state has been explicitly fixed.  E.g., if an "rmdir"
-          fails because the directory is non-empty, FAILED_PRECONDITION
-          should be returned since the client should not retry unless
-          they have first fixed up the directory by deleting files from it.
-      (d) Use FAILED_PRECONDITION if the client performs conditional
-          REST Get/Update/Delete on a resource and the resource on the
-          server does not match the condition. E.g., conflicting
+          the system state has been explicitly fixed.  E.g., if an
+     "rmdir" fails because the directory is non-empty,
+     FAILED_PRECONDITION should be returned since the client should not
+     retry unless they have first fixed up the directory by deleting
+     files from it. (d) Use FAILED_PRECONDITION if the client performs
+     conditional REST Get/Update/Delete on a resource and the resource
+     on the server does not match the condition. E.g., conflicting
           read-modify-write on the same resource. */
   GRPC_STATUS_FAILED_PRECONDITION = 9,
 
@@ -118,7 +118,8 @@ typedef enum {
      they are done. */
   GRPC_STATUS_OUT_OF_RANGE = 11,
 
-  /** Operation is not implemented or not supported/enabled in this service. */
+  /** Operation is not implemented or not supported/enabled in this
+     service. */
   GRPC_STATUS_UNIMPLEMENTED = 12,
 
   /** Internal errors.  Means some invariants expected by underlying
@@ -132,9 +133,9 @@ typedef enum {
      operations.
 
      WARNING: Although data MIGHT not have been transmitted when this
-     status occurs, there is NOT A GUARANTEE that the server has not seen
-     anything. So in general it is unsafe to retry on this status code
-     if the call is non-idempotent.
+     status occurs, there is NOT A GUARANTEE that the server has not
+     seen anything. So in general it is unsafe to retry on this status
+     code if the call is non-idempotent.
 
      See litmus test above for deciding between FAILED_PRECONDITION,
      ABORTED, and UNAVAILABLE. */

@@ -10,16 +10,17 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
-/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-   using that endpoint. Because of various transitive includes in uv.h,
-   including windows.h on Windows, uv.h must be included before other system
-   headers. Therefore, sockaddr.h must always be included first */
+/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h
+   when using that endpoint. Because of various transitive includes in
+   uv.h, including windows.h on Windows, uv.h must be included before
+   other system headers. Therefore, sockaddr.h must always be included
+   first */
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include <memory.h>
@@ -44,8 +45,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-/* TODO(yashykt): When our macos testing infrastructure becomes good enough, we
- * wouldn't need to reduce the number of threads on MacOS */
+/* TODO(yashykt): When our macos testing infrastructure becomes good
+ * enough, we wouldn't need to reduce the number of threads on MacOS */
 #ifdef __APPLE__
 #define NUM_THREADS 10
 #else
@@ -60,8 +61,8 @@
 #define NUM_OUTER_LOOPS_SHORT_TIMEOUTS 10
 #define NUM_INNER_LOOPS_SHORT_TIMEOUTS 100
 #define DELAY_MILLIS_SHORT_TIMEOUTS 1
-// in a successful test run, POLL_MILLIS should never be reached because all
-// runs should end after the shorter delay_millis
+// in a successful test run, POLL_MILLIS should never be reached because
+// all runs should end after the shorter delay_millis
 #define POLL_MILLIS_SHORT_TIMEOUTS 30000
 // it should never take longer that this to shutdown the server
 #define SERVER_SHUTDOWN_TIMEOUT 30000
@@ -70,9 +71,10 @@ static void* tag(int n) { return reinterpret_cast<void*>(n); }
 
 void create_loop_destroy(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
-    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan = grpc_insecure_channel_create(static_cast<char*>(addr),
-                                                      nullptr, nullptr);
+    grpc_completion_queue* cq =
+        grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel* chan = grpc_insecure_channel_create(
+        static_cast<char*>(addr), nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
       gpr_timespec later_time =
@@ -83,18 +85,20 @@ void create_loop_destroy(void* addr) {
                                             nullptr);
       gpr_timespec poll_time =
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
-      GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, nullptr).type ==
-                 GRPC_OP_COMPLETE);
+      GPR_ASSERT(
+          grpc_completion_queue_next(cq, poll_time, nullptr).type ==
+          GRPC_OP_COMPLETE);
       /* check that the watcher from "watch state" was free'd */
-      GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
+      GPR_ASSERT(
+          grpc_channel_num_external_connectivity_watchers(chan) == 0);
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);
   }
 }
 
-// Always stack-allocate or new ServerThreadArgs; never use gpr_malloc since
-// this contains C++ objects.
+// Always stack-allocate or new ServerThreadArgs; never use gpr_malloc
+// since this contains C++ objects.
 struct ServerThreadArgs {
   std::string addr;
   grpc_server* server = nullptr;
@@ -106,7 +110,8 @@ struct ServerThreadArgs {
 };
 
 void server_thread(void* vargs) {
-  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
+  struct ServerThreadArgs* args =
+      static_cast<struct ServerThreadArgs*>(vargs);
   grpc_event ev;
   gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(SERVER_SHUTDOWN_TIMEOUT);
@@ -119,9 +124,10 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
                        grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
-  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
-  grpc_endpoint_shutdown(tcp,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
+  struct ServerThreadArgs* args =
+      static_cast<struct ServerThreadArgs*>(vargs);
+  grpc_endpoint_shutdown(
+      tcp, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
   grpc_endpoint_destroy(tcp);
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick",
@@ -130,14 +136,17 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
 }
 
 void bad_server_thread(void* vargs) {
-  struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
+  struct ServerThreadArgs* args =
+      static_cast<struct ServerThreadArgs*>(vargs);
 
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
+  grpc_sockaddr* addr =
+      reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
-  grpc_error_handle error = grpc_tcp_server_create(nullptr, nullptr, &s);
+  grpc_error_handle error =
+      grpc_tcp_server_create(nullptr, nullptr, &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
@@ -168,7 +177,8 @@ void bad_server_thread(void* vargs) {
   grpc_tcp_server_unref(s);
 }
 
-static void done_pollset_shutdown(void* pollset, grpc_error_handle /*error*/) {
+static void done_pollset_shutdown(void* pollset,
+                                  grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }
@@ -201,9 +211,11 @@ int run_concurrent_connectivity_test() {
     args.server = grpc_server_create(nullptr, nullptr);
     grpc_server_add_insecure_http2_port(args.server, args.addr.c_str());
     args.cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_server_register_completion_queue(args.server, args.cq, nullptr);
+    grpc_server_register_completion_queue(args.server, args.cq,
+                                          nullptr);
     grpc_server_start(args.server);
-    grpc_core::Thread server2("grpc_wave_2_server", server_thread, &args);
+    grpc_core::Thread server2("grpc_wave_2_server", server_thread,
+                              &args);
     server2.Start();
 
     grpc_core::Thread threads[NUM_THREADS];
@@ -225,11 +237,13 @@ int run_concurrent_connectivity_test() {
   {
     /* Third round, bogus tcp server */
     gpr_log(GPR_DEBUG, "Wave 3");
-    auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    auto* pollset =
+        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &args.mu);
     args.pollset.push_back(pollset);
     gpr_event_init(&args.ready);
-    grpc_core::Thread server3("grpc_wave_3_server", bad_server_thread, &args);
+    grpc_core::Thread server3("grpc_wave_3_server", bad_server_thread,
+                              &args);
     server3.Start();
     gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
@@ -260,25 +274,28 @@ int run_concurrent_connectivity_test() {
 
 void watches_with_short_timeouts(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS_SHORT_TIMEOUTS; ++i) {
-    grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan = grpc_insecure_channel_create(static_cast<char*>(addr),
-                                                      nullptr, nullptr);
+    grpc_completion_queue* cq =
+        grpc_completion_queue_create_for_next(nullptr);
+    grpc_channel* chan = grpc_insecure_channel_create(
+        static_cast<char*>(addr), nullptr, nullptr);
 
     for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {
-      gpr_timespec later_time =
-          grpc_timeout_milliseconds_to_deadline(DELAY_MILLIS_SHORT_TIMEOUTS);
+      gpr_timespec later_time = grpc_timeout_milliseconds_to_deadline(
+          DELAY_MILLIS_SHORT_TIMEOUTS);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 0);
       GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
       grpc_channel_watch_connectivity_state(chan, state, later_time, cq,
                                             nullptr);
-      gpr_timespec poll_time =
-          grpc_timeout_milliseconds_to_deadline(POLL_MILLIS_SHORT_TIMEOUTS);
-      grpc_event ev = grpc_completion_queue_next(cq, poll_time, nullptr);
+      gpr_timespec poll_time = grpc_timeout_milliseconds_to_deadline(
+          POLL_MILLIS_SHORT_TIMEOUTS);
+      grpc_event ev =
+          grpc_completion_queue_next(cq, poll_time, nullptr);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       GPR_ASSERT(ev.success == false);
       /* check that the watcher from "watch state" was free'd */
-      GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
+      GPR_ASSERT(
+          grpc_channel_num_external_connectivity_watchers(chan) == 0);
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);
@@ -294,7 +311,8 @@ int run_concurrent_watches_with_short_timeouts_test() {
   grpc_core::Thread threads[NUM_THREADS];
 
   for (auto& th : threads) {
-    th = grpc_core::Thread("grpc_short_watches", watches_with_short_timeouts,
+    th = grpc_core::Thread("grpc_short_watches",
+                           watches_with_short_timeouts,
                            const_cast<char*>("localhost:54321"));
     th.Start();
   }

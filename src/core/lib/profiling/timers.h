@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -22,10 +22,10 @@
 void gpr_timers_global_init(void);
 void gpr_timers_global_destroy(void);
 
-void gpr_timer_add_mark(const char* tagstr, int important, const char* file,
-                        int line);
-void gpr_timer_begin(const char* tagstr, int important, const char* file,
-                     int line);
+void gpr_timer_add_mark(const char* tagstr, int important,
+                        const char* file, int line);
+void gpr_timer_begin(const char* tagstr, int important,
+                     const char* file, int line);
 void gpr_timer_end(const char* tagstr, int important, const char* file,
                    int line);
 
@@ -47,13 +47,16 @@ void gpr_timer_set_enabled(int enabled);
 #else /* at least one profiler requested... */
 /* ... hopefully only one. */
 #if defined(GRPC_STAP_PROFILER) && defined(GRPC_BASIC_PROFILER)
-#error "GRPC_STAP_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
+#error \
+    "GRPC_STAP_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
 #endif
 #if defined(GRPC_STAP_PROFILER) && defined(GRPC_CUSTOM_PROFILER)
-#error "GRPC_STAP_PROFILER and GRPC_CUSTOM_PROFILER are mutually exclusive."
+#error \
+    "GRPC_STAP_PROFILER and GRPC_CUSTOM_PROFILER are mutually exclusive."
 #endif
 #if defined(GRPC_CUSTOM_PROFILER) && defined(GRPC_BASIC_PROFILER)
-#error "GRPC_CUSTOM_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
+#error \
+    "GRPC_CUSTOM_PROFILER and GRPC_BASIC_PROFILER are mutually exclusive."
 #endif
 
 /* Generic profiling interface. */
@@ -71,7 +74,8 @@ void gpr_timer_set_enabled(int enabled);
 namespace grpc {
 class ProfileScope {
  public:
-  ProfileScope(const char* desc, bool important, const char* file, int line)
+  ProfileScope(const char* desc, bool important, const char* file,
+               int line)
       : desc_(desc) {
     gpr_timer_begin(desc_, important ? 1 : 0, file, line);
   }
@@ -85,9 +89,10 @@ class ProfileScope {
 #define GPR_TIMER_SCOPE_NAME_INTERNAL(prefix, line) prefix##line
 #define GPR_TIMER_SCOPE_NAME(prefix, line) \
   GPR_TIMER_SCOPE_NAME_INTERNAL(prefix, line)
-#define GPR_TIMER_SCOPE(tag, important)                                 \
-  ::grpc::ProfileScope GPR_TIMER_SCOPE_NAME(_profile_scope_, __LINE__)( \
-      (tag), (important), __FILE__, __LINE__)
+#define GPR_TIMER_SCOPE(tag, important)                        \
+  ::grpc::ProfileScope GPR_TIMER_SCOPE_NAME(                   \
+      _profile_scope_, __LINE__)((tag), (important), __FILE__, \
+                                 __LINE__)
 
 #endif /* at least one profiler requested. */
 

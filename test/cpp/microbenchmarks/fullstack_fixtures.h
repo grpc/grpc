@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -114,7 +114,8 @@ class TCP : public FullstackFixture {
   explicit TCP(Service* service,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
-      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
+      : FullstackFixture(service, fixture_configuration,
+                         MakeAddress(&port_)) {}
 
   ~TCP() override { grpc_recycle_unused_port(port_); }
 
@@ -134,7 +135,8 @@ class UDS : public FullstackFixture {
   explicit UDS(Service* service,
                const FixtureConfiguration& fixture_configuration =
                    FixtureConfiguration())
-      : FullstackFixture(service, fixture_configuration, MakeAddress(&port_)) {}
+      : FullstackFixture(service, fixture_configuration,
+                         MakeAddress(&port_)) {}
 
   ~UDS() override { grpc_recycle_unused_port(port_); }
 
@@ -142,8 +144,8 @@ class UDS : public FullstackFixture {
   int port_;
 
   static std::string MakeAddress(int* port) {
-    *port = grpc_pick_unused_port_or_die();  // just for a unique id - not a
-                                             // real port
+    *port = grpc_pick_unused_port_or_die();  // just for a unique id -
+                                             // not a real port
     std::stringstream addr;
     addr << "unix:/tmp/bm_fullstack." << *port;
     return addr.str();
@@ -187,8 +189,8 @@ class EndpointPairFixture : public BaseFixture {
 
       server_->c_server()->core_server->SetupTransport(
           server_transport_, nullptr, server_args, nullptr);
-      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
-                                          nullptr);
+      grpc_chttp2_transport_start_reading(server_transport_, nullptr,
+                                          nullptr, nullptr);
     }
 
     /* create channel */
@@ -202,9 +204,10 @@ class EndpointPairFixture : public BaseFixture {
           grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
       grpc_channel* channel = grpc_channel_create(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
-      grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
-                                          nullptr);
+          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL,
+          client_transport_);
+      grpc_chttp2_transport_start_reading(client_transport_, nullptr,
+                                          nullptr, nullptr);
 
       channel_ = ::grpc::CreateChannelInternal(
           "", channel,
@@ -248,15 +251,15 @@ class SockPair : public EndpointPairFixture {
   explicit SockPair(Service* service,
                     const FixtureConfiguration& fixture_configuration =
                         FixtureConfiguration())
-      : EndpointPairFixture(service,
-                            grpc_iomgr_create_endpoint_pair("test", nullptr),
-                            fixture_configuration) {}
+      : EndpointPairFixture(
+            service, grpc_iomgr_create_endpoint_pair("test", nullptr),
+            fixture_configuration) {}
 };
 
-/* Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
-   is here only to be able to initialize both the base class and stats_ with the
-   same stats instance without accessing the stats_ fields before the object is
-   properly initialized. */
+/* Use InProcessCHTTP2 instead. This class (with stats as an explicit
+   parameter) is here only to be able to initialize both the base class
+   and stats_ with the same stats instance without accessing the stats_
+   fields before the object is properly initialized. */
 class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
   InProcessCHTTP2WithExplicitStats(
@@ -275,29 +278,32 @@ class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) override {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
+        << static_cast<double>(
+               gpr_atm_no_barrier_load(&stats_->num_writes)) /
                static_cast<double>(state.iterations());
   }
 
  private:
   grpc_passthru_endpoint_stats* stats_;
 
-  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
+  static grpc_endpoint_pair MakeEndpoints(
+      grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server,
-                                  LibraryInitializer::get().rq(), stats);
+    grpc_passthru_endpoint_create(
+        &p.client, &p.server, LibraryInitializer::get().rq(), stats);
     return p;
   }
 };
 
 class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
  public:
-  explicit InProcessCHTTP2(Service* service,
-                           const FixtureConfiguration& fixture_configuration =
-                               FixtureConfiguration())
-      : InProcessCHTTP2WithExplicitStats(service,
-                                         grpc_passthru_endpoint_stats_create(),
-                                         fixture_configuration) {}
+  explicit InProcessCHTTP2(
+      Service* service,
+      const FixtureConfiguration& fixture_configuration =
+          FixtureConfiguration())
+      : InProcessCHTTP2WithExplicitStats(
+            service, grpc_passthru_endpoint_stats_create(),
+            fixture_configuration) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////

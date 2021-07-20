@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,9 +36,9 @@
  * grpc_call_credentials */
 static VALUE grpc_rb_cCallCredentials = Qnil;
 
-/* grpc_rb_call_credentials wraps a grpc_call_credentials. It provides a mark
- * object that is used to hold references to any objects used to create the
- * credentials. */
+/* grpc_rb_call_credentials wraps a grpc_call_credentials. It provides a
+ * mark object that is used to hold references to any objects used to
+ * create the credentials. */
 typedef struct grpc_rb_call_credentials {
   /* Holder of ruby objects involved in contructing the credentials */
   VALUE mark;
@@ -60,8 +60,10 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
   VALUE callback_args = rb_ary_entry(args, 1);
   VALUE md_ary_obj = rb_ary_entry(args, 2);
   if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    VALUE callback_func_str = rb_funcall(callback_func, rb_intern("to_s"), 0);
-    VALUE callback_args_str = rb_funcall(callback_args, rb_intern("to_s"), 0);
+    VALUE callback_func_str =
+        rb_funcall(callback_func, rb_intern("to_s"), 0);
+    VALUE callback_args_str =
+        rb_funcall(callback_args, rb_intern("to_s"), 0);
     VALUE callback_source_info =
         rb_funcall(callback_func, rb_intern("source_location"), 0);
     if (callback_source_info != Qnil) {
@@ -69,7 +71,8 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
       VALUE source_line_number = rb_funcall(
           rb_ary_entry(callback_source_info, 1), rb_intern("to_s"), 0);
       gpr_log(GPR_DEBUG,
-              "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
+              "GRPC_RUBY: grpc_rb_call_credentials invoking user "
+              "callback:|%s| "
               "source_filename:%s line_number:%s with arguments:|%s|",
               StringValueCStr(callback_func_str),
               StringValueCStr(source_filename),
@@ -77,8 +80,10 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
               StringValueCStr(callback_args_str));
     } else {
       gpr_log(GPR_DEBUG,
-              "GRPC_RUBY: grpc_rb_call_credentials invoking user callback:|%s| "
-              "(failed to get source filename and line) with arguments:|%s|",
+              "GRPC_RUBY: grpc_rb_call_credentials invoking user "
+              "callback:|%s| "
+              "(failed to get source filename and line) with "
+              "arguments:|%s|",
               StringValueCStr(callback_func_str),
               StringValueCStr(callback_args_str));
     }
@@ -95,26 +100,30 @@ static VALUE grpc_rb_call_credentials_callback(VALUE args) {
   return result;
 }
 
-static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
-                                                      VALUE exception_object) {
+static VALUE grpc_rb_call_credentials_callback_rescue(
+    VALUE args, VALUE exception_object) {
   VALUE result = rb_hash_new();
-  VALUE backtrace = rb_funcall(exception_object, rb_intern("backtrace"), 0);
+  VALUE backtrace =
+      rb_funcall(exception_object, rb_intern("backtrace"), 0);
   VALUE backtrace_str;
   if (backtrace != Qnil) {
-    backtrace_str =
-        rb_funcall(backtrace, rb_intern("join"), 1, rb_str_new2("\n\tfrom "));
+    backtrace_str = rb_funcall(backtrace, rb_intern("join"), 1,
+                               rb_str_new2("\n\tfrom "));
   } else {
     backtrace_str = rb_str_new2(
-        "failed to get backtrace, this exception was likely thrown from native "
+        "failed to get backtrace, this exception was likely thrown "
+        "from native "
         "code");
   }
   VALUE rb_exception_info =
       rb_funcall(exception_object, rb_intern("inspect"), 0);
   (void)args;
   gpr_log(GPR_INFO,
-          "GRPC_RUBY call credentials callback failed, exception inspect:|%s| "
+          "GRPC_RUBY call credentials callback failed, exception "
+          "inspect:|%s| "
           "backtrace:|%s|",
-          StringValueCStr(rb_exception_info), StringValueCStr(backtrace_str));
+          StringValueCStr(rb_exception_info),
+          StringValueCStr(backtrace_str));
   rb_hash_aset(result, rb_str_new2("metadata"), Qnil);
   rb_hash_aset(result, rb_str_new2("status"),
                INT2NUM(GRPC_STATUS_UNAUTHENTICATED));
@@ -125,8 +134,8 @@ static VALUE grpc_rb_call_credentials_callback_rescue(VALUE args,
 static void grpc_rb_call_credentials_callback_with_gil(void* param) {
   callback_params* const params = (callback_params*)param;
   VALUE auth_uri = rb_str_new_cstr(params->context.service_url);
-  /* Pass the arguments to the proc in a hash, which currently only has they key
-     'auth_uri' */
+  /* Pass the arguments to the proc in a hash, which currently only has
+     they key 'auth_uri' */
   VALUE callback_args = rb_ary_new();
   VALUE args = rb_hash_new();
   VALUE result;
@@ -138,20 +147,20 @@ static void grpc_rb_call_credentials_callback_with_gil(void* param) {
   rb_hash_aset(args, ID2SYM(rb_intern("jwt_aud_uri")), auth_uri);
   rb_ary_push(callback_args, params->get_metadata);
   rb_ary_push(callback_args, args);
-  // Wrap up the grpc_metadata_array into a ruby object and do the conversion
-  // from hash to grpc_metadata_array within the rescue block, because the
-  // conversion can throw exceptions.
+  // Wrap up the grpc_metadata_array into a ruby object and do the
+  // conversion from hash to grpc_metadata_array within the rescue
+  // block, because the conversion can throw exceptions.
   rb_ary_push(callback_args,
-              TypedData_Wrap_Struct(grpc_rb_cMdAry, &grpc_rb_md_ary_data_type,
-                                    &md_ary));
+              TypedData_Wrap_Struct(
+                  grpc_rb_cMdAry, &grpc_rb_md_ary_data_type, &md_ary));
   result = rb_rescue(grpc_rb_call_credentials_callback, callback_args,
                      grpc_rb_call_credentials_callback_rescue, Qnil);
   // Both callbacks return a hash, so result should be a hash
   status = NUM2INT(rb_hash_aref(result, rb_str_new2("status")));
   details = rb_hash_aref(result, rb_str_new2("details"));
   error_details = StringValueCStr(details);
-  params->callback(params->user_data, md_ary.metadata, md_ary.count, status,
-                   error_details);
+  params->callback(params->user_data, md_ary.metadata, md_ary.count,
+                   status, error_details);
   grpc_rb_metadata_array_destroy_including_entries(&md_ary);
   grpc_auth_metadata_context_reset(&params->context);
   gpr_free(params);
@@ -169,8 +178,8 @@ static int grpc_rb_call_credentials_plugin_get_metadata(
   params->user_data = user_data;
   params->callback = cb;
 
-  grpc_rb_event_queue_enqueue(grpc_rb_call_credentials_callback_with_gil,
-                              (void*)(params));
+  grpc_rb_event_queue_enqueue(
+      grpc_rb_call_credentials_callback_with_gil, (void*)(params));
   return 0;  // Async return.
 }
 
@@ -232,10 +241,11 @@ static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
                                wrapper);
 }
 
-/* Creates a wrapping object for a given call credentials. This should only be
- * called with grpc_call_credentials objects that are not already associated
- * with any Ruby object */
-VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials* c, VALUE mark) {
+/* Creates a wrapping object for a given call credentials. This should
+ * only be called with grpc_call_credentials objects that are not
+ * already associated with any Ruby object */
+VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials* c,
+                                    VALUE mark) {
   VALUE rb_wrapper;
   grpc_rb_call_credentials* wrapper;
   if (c == NULL) {
@@ -268,18 +278,21 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
   plugin.get_metadata = grpc_rb_call_credentials_plugin_get_metadata;
   plugin.destroy = grpc_rb_call_credentials_plugin_destroy;
   if (!rb_obj_is_proc(proc)) {
-    rb_raise(rb_eTypeError, "Argument to CallCredentials#new must be a proc");
+    rb_raise(rb_eTypeError,
+             "Argument to CallCredentials#new must be a proc");
     return Qnil;
   }
   plugin.state = (void*)proc;
   plugin.type = "";
 
-  // TODO(yihuazhang): Expose min_security_level via the Ruby API so that
-  // applications can decide what minimum security level their plugins require.
+  // TODO(yihuazhang): Expose min_security_level via the Ruby API so
+  // that applications can decide what minimum security level their
+  // plugins require.
   creds = grpc_metadata_credentials_create_from_plugin(
       plugin, GRPC_PRIVACY_AND_INTEGRITY, NULL);
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
+    rb_raise(rb_eRuntimeError,
+             "could not create a credentials, not sure why");
     return Qnil;
   }
 
@@ -314,8 +327,8 @@ static VALUE grpc_rb_call_credentials_compose(int argc, VALUE* argv,
 }
 
 void Init_grpc_call_credentials() {
-  grpc_rb_cCallCredentials =
-      rb_define_class_under(grpc_rb_mGrpcCore, "CallCredentials", rb_cObject);
+  grpc_rb_cCallCredentials = rb_define_class_under(
+      grpc_rb_mGrpcCore, "CallCredentials", rb_cObject);
 
   /* Allocates an object managed by the ruby runtime */
   rb_define_alloc_func(grpc_rb_cCallCredentials,

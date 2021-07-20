@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,23 +35,23 @@ using ::std::string;
 // Returns forward declaration of classes in the generated header file.
 string GetAllMessageClasses(const FileDescriptor* file);
 
-// Returns the content to be included defining the @protocol segment at the
-// insertion point of the generated implementation file. This interface is
-// legacy and for backwards compatibility.
+// Returns the content to be included defining the @protocol segment at
+// the insertion point of the generated implementation file. This
+// interface is legacy and for backwards compatibility.
 string GetProtocol(const ServiceDescriptor* service,
                    const Parameters& generator_params);
 
-// Returns the content to be included defining the @protocol segment at the
-// insertion point of the generated implementation file.
+// Returns the content to be included defining the @protocol segment at
+// the insertion point of the generated implementation file.
 string GetV2Protocol(const ServiceDescriptor* service);
 
-// Returns the content to be included defining the @interface segment at the
-// insertion point of the generated implementation file.
+// Returns the content to be included defining the @interface segment at
+// the insertion point of the generated implementation file.
 string GetInterface(const ServiceDescriptor* service,
                     const Parameters& generator_params);
 
-// Returns the content to be included in the "global_scope" insertion point of
-// the generated implementation file.
+// Returns the content to be included in the "global_scope" insertion
+// point of the generated implementation file.
 string GetSource(const ServiceDescriptor* service,
                  const Parameters& generator_params);
 

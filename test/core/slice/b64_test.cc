@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,8 +33,10 @@ static int buffers_are_equal(const unsigned char* buf1,
   size_t i;
   for (i = 0; i < size; i++) {
     if (buf1[i] != buf2[i]) {
-      gpr_log(GPR_ERROR, "buf1 and buf2 differ: buf1[%d] = %x vs buf2[%d] = %x",
-              static_cast<int>(i), buf1[i], static_cast<int>(i), buf2[i]);
+      gpr_log(GPR_ERROR,
+              "buf1 and buf2 differ: buf1[%d] = %x vs buf2[%d] = %x",
+              static_cast<int>(i), buf1[i], static_cast<int>(i),
+              buf2[i]);
       return 0;
     }
   }
@@ -48,15 +50,16 @@ static void test_simple_encode_decode_b64(int url_safe, int multiline) {
   grpc_core::ExecCtx exec_ctx;
   grpc_slice hello_slice = grpc_base64_decode(hello_b64, url_safe);
   GPR_ASSERT(GRPC_SLICE_LENGTH(hello_slice) == strlen(hello));
-  GPR_ASSERT(strncmp((const char*)GRPC_SLICE_START_PTR(hello_slice), hello,
-                     GRPC_SLICE_LENGTH(hello_slice)) == 0);
+  GPR_ASSERT(strncmp((const char*)GRPC_SLICE_START_PTR(hello_slice),
+                     hello, GRPC_SLICE_LENGTH(hello_slice)) == 0);
 
   grpc_slice_unref_internal(hello_slice);
 
   gpr_free(hello_b64);
 }
 
-static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
+static void test_full_range_encode_decode_b64(int url_safe,
+                                              int multiline) {
   unsigned char orig[256];
   size_t i;
   char* b64;
@@ -66,11 +69,12 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
   /* Try all the different paddings. */
   for (i = 0; i < 3; i++) {
     grpc_core::ExecCtx exec_ctx;
-    b64 = grpc_base64_encode(orig, sizeof(orig) - i, url_safe, multiline);
+    b64 =
+        grpc_base64_encode(orig, sizeof(orig) - i, url_safe, multiline);
     orig_decoded = grpc_base64_decode(b64, url_safe);
     GPR_ASSERT(GRPC_SLICE_LENGTH(orig_decoded) == (sizeof(orig) - i));
-    GPR_ASSERT(buffers_are_equal(orig, GRPC_SLICE_START_PTR(orig_decoded),
-                                 sizeof(orig) - i));
+    GPR_ASSERT(buffers_are_equal(
+        orig, GRPC_SLICE_START_PTR(orig_decoded), sizeof(orig) - i));
     grpc_slice_unref_internal(orig_decoded);
     gpr_free(b64);
   }
@@ -100,7 +104,8 @@ static void test_full_range_encode_decode_b64_multiline(void) {
   test_full_range_encode_decode_b64(0, 1);
 }
 
-static void test_full_range_encode_decode_b64_urlsafe_no_multiline(void) {
+static void test_full_range_encode_decode_b64_urlsafe_no_multiline(
+    void) {
   test_full_range_encode_decode_b64(1, 0);
 }
 

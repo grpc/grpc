@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -30,7 +30,8 @@ bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
   if (field.type() != Json::Type::STRING) return false;
   size_t len = field.string_value().size();
   if (field.string_value()[len - 1] != 's') return false;
-  grpc_core::UniquePtr<char> buf(gpr_strdup(field.string_value().c_str()));
+  grpc_core::UniquePtr<char> buf(
+      gpr_strdup(field.string_value().c_str()));
   *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
   char* decimal_point = strchr(buf.get(), '.');
   int nanos = 0;
@@ -41,15 +42,17 @@ bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
       return false;
     }
     int num_digits = static_cast<int>(strlen(decimal_point + 1));
-    if (num_digits > 9) {  // We don't accept greater precision than nanos.
+    if (num_digits >
+        9) {  // We don't accept greater precision than nanos.
       return false;
     }
     for (int i = 0; i < (9 - num_digits); ++i) {
       nanos *= 10;
     }
   }
-  int seconds =
-      decimal_point == buf.get() ? 0 : gpr_parse_nonnegative_int(buf.get());
+  int seconds = decimal_point == buf.get()
+                    ? 0
+                    : gpr_parse_nonnegative_int(buf.get());
   if (seconds == -1) return false;
   *duration = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
   return true;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,8 +29,9 @@
 
 #include <uv.h>
 
-/* Indicates that grpc_pollset_work should run an iteration of the UV loop
-   before running callbacks. This defaults to 1, and should be disabled if
+/* Indicates that grpc_pollset_work should run an iteration of the UV
+   loop before running callbacks. This defaults to 1, and should be
+   disabled if
    grpc_pollset_work will be called within the callstack of uv_run */
 int grpc_pollset_work_run_loop = 1;
 
@@ -90,6 +91,7 @@ static void shutdown() {
   }
 }
 
-grpc_custom_poller_vtable uv_pollset_vtable = {init, run_loop, kick, shutdown};
+grpc_custom_poller_vtable uv_pollset_vtable = {init, run_loop, kick,
+                                               shutdown};
 
 #endif /* GRPC_UV */

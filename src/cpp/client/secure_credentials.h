@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,7 +45,9 @@ class SecureChannelCredentials final : public ChannelCredentials {
   std::shared_ptr<Channel> CreateChannelImpl(
       const std::string& target, const ChannelArguments& args) override;
 
-  SecureChannelCredentials* AsSecureCredentials() override { return this; }
+  SecureChannelCredentials* AsSecureCredentials() override {
+    return this;
+  }
 
  private:
   std::shared_ptr<Channel> CreateChannelWithInterceptors(
@@ -84,15 +86,17 @@ std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
 
 namespace experimental {
 
-// Transforms C++ STS Credentials options to core options. The pointers of the
-// resulting core options point to the memory held by the C++ options so C++
-// options need to be kept alive until after the core credentials creation.
+// Transforms C++ STS Credentials options to core options. The pointers
+// of the resulting core options point to the memory held by the C++
+// options so C++ options need to be kept alive until after the core
+// credentials creation.
 grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
     const StsCredentialsOptions& options);
 
 }  // namespace experimental
 
-class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
+class MetadataCredentialsPluginWrapper final
+    : private GrpcLibraryCodegen {
  public:
   static void Destroy(void* wrapper);
   static int GetMetadata(

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,8 +23,9 @@
 
 #include "src/core/lib/transport/transport.h"
 
-grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
-                                             const grpc_channel_args* args,
-                                             void* reserved);
+grpc_transport* grpc_create_cronet_transport(
+    void* engine, const char* target, const grpc_channel_args* args,
+    void* reserved);
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H */
+#endif /* GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H \
+        */

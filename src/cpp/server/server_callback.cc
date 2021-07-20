@@ -9,9 +9,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,17 +28,20 @@ void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
   if (inline_ondone) {
     CallOnDone();
   } else {
-    // Unlike other uses of closure, do not Ref or Unref here since at this
-    // point, all the Ref'fing and Unref'fing is done for this call.
+    // Unlike other uses of closure, do not Ref or Unref here since at
+    // this point, all the Ref'fing and Unref'fing is done for this
+    // call.
     grpc_core::ExecCtx exec_ctx;
     struct ClosureWithArg {
       grpc_closure closure;
       ServerCallbackCall* call;
-      explicit ClosureWithArg(ServerCallbackCall* call_arg) : call(call_arg) {
+      explicit ClosureWithArg(ServerCallbackCall* call_arg)
+          : call(call_arg) {
         GRPC_CLOSURE_INIT(
             &closure,
             [](void* void_arg, grpc_error_handle) {
-              ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+              ClosureWithArg* arg =
+                  static_cast<ClosureWithArg*>(void_arg);
               arg->call->CallOnDone();
               delete arg;
             },
@@ -54,20 +57,22 @@ void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
   if (reactor->InternalInlineable()) {
     reactor->OnCancel();
   } else {
-    // Ref to make sure that the closure executes before the whole call gets
-    // destructed, and Unref within the closure.
+    // Ref to make sure that the closure executes before the whole call
+    // gets destructed, and Unref within the closure.
     Ref();
     grpc_core::ExecCtx exec_ctx;
     struct ClosureWithArg {
       grpc_closure closure;
       ServerCallbackCall* call;
       ServerReactor* reactor;
-      ClosureWithArg(ServerCallbackCall* call_arg, ServerReactor* reactor_arg)
+      ClosureWithArg(ServerCallbackCall* call_arg,
+                     ServerReactor* reactor_arg)
           : call(call_arg), reactor(reactor_arg) {
         GRPC_CLOSURE_INIT(
             &closure,
             [](void* void_arg, grpc_error_handle) {
-              ClosureWithArg* arg = static_cast<ClosureWithArg*>(void_arg);
+              ClosureWithArg* arg =
+                  static_cast<ClosureWithArg*>(void_arg);
               arg->reactor->OnCancel();
               arg->call->MaybeDone();
               delete arg;

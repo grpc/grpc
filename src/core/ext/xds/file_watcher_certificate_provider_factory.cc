@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -38,24 +38,26 @@ const char* kFileWatcherPlugin = "file_watcher";
 // FileWatcherCertificateProviderFactory::Config
 //
 
-const char* FileWatcherCertificateProviderFactory::Config::name() const {
+const char* FileWatcherCertificateProviderFactory::Config::name()
+    const {
   return kFileWatcherPlugin;
 }
 
-std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
+std::string FileWatcherCertificateProviderFactory::Config::ToString()
+    const {
   std::vector<std::string> parts;
   parts.push_back("{");
   if (!identity_cert_file_.empty()) {
-    parts.push_back(
-        absl::StrFormat("certificate_file=\"%s\", ", identity_cert_file_));
+    parts.push_back(absl::StrFormat("certificate_file=\"%s\", ",
+                                    identity_cert_file_));
   }
   if (!identity_cert_file_.empty()) {
-    parts.push_back(
-        absl::StrFormat("private_key_file=\"%s\", ", private_key_file_));
+    parts.push_back(absl::StrFormat("private_key_file=\"%s\", ",
+                                    private_key_file_));
   }
   if (!identity_cert_file_.empty()) {
-    parts.push_back(
-        absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
+    parts.push_back(absl::StrFormat("ca_certificate_file=\"%s\", ",
+                                    root_cert_file_));
   }
   parts.push_back(
       absl::StrFormat("refresh_interval=%ldms}", refresh_interval_ms_));
@@ -63,9 +65,10 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
 }
 
 RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
-FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
-                                                     grpc_error_handle* error) {
-  auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
+FileWatcherCertificateProviderFactory::Config::Parse(
+    const Json& config_json, grpc_error_handle* error) {
+  auto config =
+      MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "error:config type should be OBJECT.");
@@ -73,30 +76,37 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
   }
   std::vector<grpc_error_handle> error_list;
   ParseJsonObjectField(config_json.object_value(), "certificate_file",
-                       &config->identity_cert_file_, &error_list, false);
+                       &config->identity_cert_file_, &error_list,
+                       false);
   ParseJsonObjectField(config_json.object_value(), "private_key_file",
                        &config->private_key_file_, &error_list, false);
   if (config->identity_cert_file_.empty() !=
       config->private_key_file_.empty()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "fields \"certificate_file\" and \"private_key_file\" must be both set "
+        "fields \"certificate_file\" and \"private_key_file\" must be "
+        "both set "
         "or both unset."));
   }
-  ParseJsonObjectField(config_json.object_value(), "ca_certificate_file",
-                       &config->root_cert_file_, &error_list, false);
-  if (config->identity_cert_file_.empty() && config->root_cert_file_.empty()) {
+  ParseJsonObjectField(config_json.object_value(),
+                       "ca_certificate_file", &config->root_cert_file_,
+                       &error_list, false);
+  if (config->identity_cert_file_.empty() &&
+      config->root_cert_file_.empty()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "At least one of \"certificate_file\" and \"ca_certificate_file\" must "
+        "At least one of \"certificate_file\" and "
+        "\"ca_certificate_file\" must "
         "be specified."));
   }
   if (!ParseJsonObjectFieldAsDuration(
           config_json.object_value(), "refresh_interval",
           &config->refresh_interval_ms_, &error_list, false)) {
-    config->refresh_interval_ms_ = 10 * 60 * 1000;  // 10 minutes default
+    config->refresh_interval_ms_ =
+        10 * 60 * 1000;  // 10 minutes default
   }
   if (!error_list.empty()) {
     *error = GRPC_ERROR_CREATE_FROM_VECTOR(
-        "Error parsing file watcher certificate provider config", &error_list);
+        "Error parsing file watcher certificate provider config",
+        &error_list);
     return nullptr;
   }
   return config;
@@ -113,8 +123,8 @@ const char* FileWatcherCertificateProviderFactory::name() const {
 RefCountedPtr<CertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::CreateCertificateProviderConfig(
     const Json& config_json, grpc_error_handle* error) {
-  return FileWatcherCertificateProviderFactory::Config::Parse(config_json,
-                                                              error);
+  return FileWatcherCertificateProviderFactory::Config::Parse(
+      config_json, error);
 }
 
 RefCountedPtr<grpc_tls_certificate_provider>
@@ -126,7 +136,8 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
     return nullptr;
   }
   auto* file_watcher_config =
-      static_cast<FileWatcherCertificateProviderFactory::Config*>(config.get());
+      static_cast<FileWatcherCertificateProviderFactory::Config*>(
+          config.get());
   return MakeRefCounted<FileWatcherCertificateProvider>(
       file_watcher_config->private_key_file(),
       file_watcher_config->identity_cert_file(),

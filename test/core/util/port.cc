@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -49,8 +49,8 @@ static int free_chosen_port_locked(int port) {
   size_t i;
   int found = 0;
   size_t found_at = 0;
-  /* Find the port and erase it from the list, then tell the server it can be
-     freed. */
+  /* Find the port and erase it from the list, then tell the server it
+     can be freed. */
   for (i = 0; i < num_chosen_ports; i++) {
     if (chosen_ports[i] == port) {
       GPR_ASSERT(found == 0);
@@ -101,11 +101,13 @@ static int grpc_pick_unused_port_impl(void) {
 static int grpc_pick_unused_port_or_die_impl(void) {
   int port = grpc_pick_unused_port();
   if (port == 0) {
-    fprintf(stderr,
-            "gRPC tests require a helper port server to allocate ports used \n"
-            "during the test.\n\n"
-            "This server is not currently running.\n\n"
-            "To start it, run tools/run_tests/start_port_server.py\n\n");
+    fprintf(
+        stderr,
+        "gRPC tests require a helper port server to allocate ports "
+        "used \n"
+        "during the test.\n\n"
+        "This server is not currently running.\n\n"
+        "To start it, run tools/run_tests/start_port_server.py\n\n");
     exit(1);
   }
   return port;

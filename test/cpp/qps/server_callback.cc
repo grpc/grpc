@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <grpc/grpc.h>
@@ -33,9 +33,9 @@ namespace testing {
 class BenchmarkCallbackServiceImpl final
     : public BenchmarkService::CallbackService {
  public:
-  ::grpc::ServerUnaryReactor* UnaryCall(::grpc::CallbackServerContext* context,
-                                        const SimpleRequest* request,
-                                        SimpleResponse* response) override {
+  ::grpc::ServerUnaryReactor* UnaryCall(
+      ::grpc::CallbackServerContext* context,
+      const SimpleRequest* request, SimpleResponse* response) override {
     auto* reactor = context->DefaultReactor();
     reactor->Finish(SetResponse(request, response));
     return reactor;
@@ -44,9 +44,9 @@ class BenchmarkCallbackServiceImpl final
   ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
                             ::grpc::testing::SimpleResponse>*
   StreamingCall(::grpc::CallbackServerContext*) override {
-    class Reactor
-        : public ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                                           ::grpc::testing::SimpleResponse> {
+    class Reactor : public ::grpc::ServerBidiReactor<
+                        ::grpc::testing::SimpleRequest,
+                        ::grpc::testing::SimpleResponse> {
      public:
       Reactor() { StartRead(&request_); }
 
@@ -87,7 +87,8 @@ class BenchmarkCallbackServiceImpl final
       if (!Server::SetPayload(request->response_type(),
                               request->response_size(),
                               response->mutable_payload())) {
-        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+        return Status(grpc::StatusCode::INTERNAL,
+                      "Error creating payload.");
       }
     }
     return Status::OK;
@@ -100,9 +101,11 @@ class CallbackServer final : public grpc::testing::Server {
     std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
 
     auto port_num = port();
-    // Negative port number means inproc server, so no listen port needed
+    // Negative port number means inproc server, so no listen port
+    // needed
     if (port_num >= 0) {
-      std::string server_address = grpc_core::JoinHostPort("::", port_num);
+      std::string server_address =
+          grpc_core::JoinHostPort("::", port_num);
       builder->AddListeningPort(server_address.c_str(),
                                 Server::CreateServerCredentials(config),
                                 &port_num);
@@ -114,7 +117,8 @@ class CallbackServer final : public grpc::testing::Server {
 
     impl_ = builder->BuildAndStart();
     if (impl_ == nullptr) {
-      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)",
+              port_num);
     } else {
       gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
     }

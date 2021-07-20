@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,9 +35,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* /*data*/,
   if (squelch) gpr_set_log_function(dont_log);
   // TODO(veblush): Convert this to upb.
   /*
-  grpc_slice slice = grpc_slice_from_copied_buffer((const char*)data, size);
-  grpc_core::grpc_grpclb_serverlist* serverlist;
-  if ((serverlist = grpc_core::grpc_grpclb_response_parse_serverlist(slice))) {
+  grpc_slice slice = grpc_slice_from_copied_buffer((const char*)data,
+  size); grpc_core::grpc_grpclb_serverlist* serverlist; if ((serverlist
+  = grpc_core::grpc_grpclb_response_parse_serverlist(slice))) {
     grpc_grpclb_destroy_serverlist(serverlist);
   }
   grpc_slice_unref(slice);

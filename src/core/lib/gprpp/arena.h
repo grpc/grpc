@@ -10,17 +10,17 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
 // \file Arena based allocator
-// Allows very fast allocation of memory, but that memory cannot be freed until
-// the arena as a whole is freed
-// Tracks the total memory allocated against it, so that future arenas can
-// pre-allocate the right amount of memory
+// Allows very fast allocation of memory, but that memory cannot be
+// freed until the arena as a whole is freed Tracks the total memory
+// allocated against it, so that future arenas can pre-allocate the
+// right amount of memory
 
 #ifndef GRPC_CORE_LIB_GPRPP_ARENA_H
 #define GRPC_CORE_LIB_GPRPP_ARENA_H
@@ -43,12 +43,13 @@ namespace grpc_core {
 
 class Arena {
  public:
-  // Create an arena, with \a initial_size bytes in the first allocated buffer.
+  // Create an arena, with \a initial_size bytes in the first allocated
+  // buffer.
   static Arena* Create(size_t initial_size);
 
-  // Create an arena, with \a initial_size bytes in the first allocated buffer,
-  // and return both a void pointer to the returned arena and a void* with the
-  // first allocation.
+  // Create an arena, with \a initial_size bytes in the first allocated
+  // buffer, and return both a void pointer to the returned arena and a
+  // void* with the first allocation.
   static std::pair<Arena*, void*> CreateWithAlloc(size_t initial_size,
                                                   size_t alloc_size);
 
@@ -67,10 +68,10 @@ class Arena {
     }
   }
 
-  // TODO(roth): We currently assume that all callers need alignment of 16
-  // bytes, which may be wrong in some cases. When we have time, we should
-  // change this to instead use the alignment of the type being allocated by
-  // this method.
+  // TODO(roth): We currently assume that all callers need alignment of
+  // 16 bytes, which may be wrong in some cases. When we have time, we
+  // should change this to instead use the alignment of the type being
+  // allocated by this method.
   template <typename T, typename... Args>
   T* New(Args&&... args) {
     T* t = static_cast<T*>(Alloc(sizeof(T)));
@@ -85,16 +86,17 @@ class Arena {
 
   // Initialize an arena.
   // Parameters:
-  //   initial_size: The initial size of the whole arena in bytes. These bytes
-  //   are contained within 'zone 0'. If the arena user ends up requiring more
-  //   memory than the arena contains in zone 0, subsequent zones are allocated
-  //   on demand and maintained in a tail-linked list.
+  //   initial_size: The initial size of the whole arena in bytes. These
+  //   bytes are contained within 'zone 0'. If the arena user ends up
+  //   requiring more memory than the arena contains in zone 0,
+  //   subsequent zones are allocated on demand and maintained in a
+  //   tail-linked list.
   //
-  //   initial_alloc: Optionally, construct the arena as though a call to
-  //   Alloc() had already been made for initial_alloc bytes. This provides a
-  //   quick optimization (avoiding an atomic fetch-add) for the common case
-  //   where we wish to create an arena and then perform an immediate
-  //   allocation.
+  //   initial_alloc: Optionally, construct the arena as though a call
+  //   to Alloc() had already been made for initial_alloc bytes. This
+  //   provides a quick optimization (avoiding an atomic fetch-add) for
+  //   the common case where we wish to create an arena and then perform
+  //   an immediate allocation.
   explicit Arena(size_t initial_size, size_t initial_alloc = 0)
       : total_used_(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc)),
         initial_zone_size_(initial_size) {}
@@ -108,11 +110,12 @@ class Arena {
   Atomic<size_t> total_used_;
   const size_t initial_zone_size_;
   gpr_spinlock arena_growth_spinlock_ = GPR_SPINLOCK_STATIC_INITIALIZER;
-  // If the initial arena allocation wasn't enough, we allocate additional zones
-  // in a reverse linked list. Each additional zone consists of (1) a pointer to
-  // the zone added before this zone (null if this is the first additional zone)
-  // and (2) the allocated memory. The arena itself maintains a pointer to the
-  // last zone; the zone list is reverse-walked during arena destruction only.
+  // If the initial arena allocation wasn't enough, we allocate
+  // additional zones in a reverse linked list. Each additional zone
+  // consists of (1) a pointer to the zone added before this zone (null
+  // if this is the first additional zone) and (2) the allocated memory.
+  // The arena itself maintains a pointer to the last zone; the zone
+  // list is reverse-walked during arena destruction only.
   Zone* last_zone_ = nullptr;
 };
 

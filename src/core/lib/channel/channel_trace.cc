@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,25 +41,31 @@
 namespace grpc_core {
 namespace channelz {
 
-ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data,
-                                     RefCountedPtr<BaseNode> referenced_entity)
+ChannelTrace::TraceEvent::TraceEvent(
+    Severity severity, const grpc_slice& data,
+    RefCountedPtr<BaseNode> referenced_entity)
     : severity_(severity),
       data_(data),
-      timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
-                                         GPR_CLOCK_REALTIME)),
+      timestamp_(grpc_millis_to_timespec(
+          grpc_core::ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME)),
       next_(nullptr),
       referenced_entity_(std::move(referenced_entity)),
-      memory_usage_(sizeof(TraceEvent) + grpc_slice_memory_usage(data)) {}
+      memory_usage_(sizeof(TraceEvent) +
+                    grpc_slice_memory_usage(data)) {}
 
-ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data)
+ChannelTrace::TraceEvent::TraceEvent(Severity severity,
+                                     const grpc_slice& data)
     : severity_(severity),
       data_(data),
-      timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
-                                         GPR_CLOCK_REALTIME)),
+      timestamp_(grpc_millis_to_timespec(
+          grpc_core::ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME)),
       next_(nullptr),
-      memory_usage_(sizeof(TraceEvent) + grpc_slice_memory_usage(data)) {}
+      memory_usage_(sizeof(TraceEvent) +
+                    grpc_slice_memory_usage(data)) {}
 
-ChannelTrace::TraceEvent::~TraceEvent() { grpc_slice_unref_internal(data_); }
+ChannelTrace::TraceEvent::~TraceEvent() {
+  grpc_slice_unref_internal(data_);
+}
 
 ChannelTrace::ChannelTrace(size_t max_event_memory)
     : num_events_logged_(0),
@@ -71,8 +77,8 @@ ChannelTrace::ChannelTrace(size_t max_event_memory)
     return;  // tracing is disabled if max_event_memory_ == 0
   }
   gpr_mu_init(&tracer_mu_);
-  time_created_ = grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
-                                          GPR_CLOCK_REALTIME);
+  time_created_ = grpc_millis_to_timespec(
+      grpc_core::ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
 }
 
 ChannelTrace::~ChannelTrace() {
@@ -109,7 +115,8 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   }
 }
 
-void ChannelTrace::AddTraceEvent(Severity severity, const grpc_slice& data) {
+void ChannelTrace::AddTraceEvent(Severity severity,
+                                 const grpc_slice& data) {
   if (max_event_memory_ == 0) {
     grpc_slice_unref_internal(data);
     return;  // tracing is disabled if max_event_memory_ == 0
@@ -156,8 +163,10 @@ Json ChannelTrace::TraceEvent::RenderTraceEvent() const {
   gpr_free(description);
   if (referenced_entity_ != nullptr) {
     const bool is_channel =
-        (referenced_entity_->type() == BaseNode::EntityType::kTopLevelChannel ||
-         referenced_entity_->type() == BaseNode::EntityType::kInternalChannel);
+        (referenced_entity_->type() ==
+             BaseNode::EntityType::kTopLevelChannel ||
+         referenced_entity_->type() ==
+             BaseNode::EntityType::kInternalChannel);
     object[is_channel ? "channelRef" : "subchannelRef"] = Json::Object{
         {(is_channel ? "channelId" : "subchannelId"),
          std::to_string(referenced_entity_->uuid())},

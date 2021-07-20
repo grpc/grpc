@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ const uint32_t kByteOffset = 123;
 
 void* PhonyArgsCopier(void* arg) { return arg; }
 
-void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts,
+void TestExecuteFlushesListVerifier(void* arg,
+                                    grpc_core::Timestamps* ts,
                                     grpc_error_handle error) {
   ASSERT_NE(arg, nullptr);
   EXPECT_EQ(error, GRPC_ERROR_NONE);
@@ -54,7 +55,8 @@ void discard_write(grpc_slice /*slice*/) {}
 class ContextListTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    grpc_http2_set_write_timestamps_callback(TestExecuteFlushesListVerifier);
+    grpc_http2_set_write_timestamps_callback(
+        TestExecuteFlushesListVerifier);
     grpc_http2_set_fn_get_copied_context(PhonyArgsCopier);
   }
 };
@@ -82,8 +84,8 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
     s.push_back(static_cast<grpc_chttp2_stream*>(
         gpr_malloc(grpc_transport_stream_size(t))));
     grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
-                               reinterpret_cast<grpc_stream*>(s[i]), &ref,
-                               nullptr, nullptr);
+                               reinterpret_cast<grpc_stream*>(s[i]),
+                               &ref, nullptr, nullptr);
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
@@ -92,7 +94,8 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   grpc_core::Timestamps ts;
   grpc_core::ContextList::Execute(list, &ts, GRPC_ERROR_NONE);
   for (auto i = 0; i < kNumElems; i++) {
-    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
+    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]),
+              static_cast<gpr_atm>(1));
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
                                   reinterpret_cast<grpc_stream*>(s[i]),
                                   nullptr);
@@ -138,8 +141,8 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
     s.push_back(static_cast<grpc_chttp2_stream*>(
         gpr_malloc(grpc_transport_stream_size(t))));
     grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
-                               reinterpret_cast<grpc_stream*>(s[i]), &ref,
-                               nullptr, nullptr);
+                               reinterpret_cast<grpc_stream*>(s[i]),
+                               &ref, nullptr, nullptr);
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
@@ -147,7 +150,8 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   }
   grpc_core::ContextList::Execute(list, nullptr, GRPC_ERROR_NONE);
   for (auto i = 0; i < kNumElems; i++) {
-    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
+    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]),
+              static_cast<gpr_atm>(1));
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
                                   reinterpret_cast<grpc_stream*>(s[i]),
                                   nullptr);

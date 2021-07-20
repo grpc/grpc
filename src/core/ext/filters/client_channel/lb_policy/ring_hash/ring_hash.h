@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_RING_HASH_RING_HASH_H
@@ -27,8 +27,8 @@
 namespace grpc_core {
 extern const char* kRequestRingHashAttribute;
 
-// Helper Parsing method to parse ring hash policy configs; for example, ring
-// hash size validity.
+// Helper Parsing method to parse ring hash policy configs; for example,
+// ring hash size validity.
 void ParseRingHashLbConfig(const Json& json, size_t* min_ring_size,
                            size_t* max_ring_size,
                            std::vector<grpc_error_handle>* error_list);

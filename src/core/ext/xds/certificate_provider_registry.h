@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -35,8 +35,8 @@ class CertificateProviderRegistry {
       absl::string_view name);
 
   // The following methods are used to create and populate the
-  // CertificateProviderRegistry. NOT THREAD SAFE -- to be used only during
-  // global gRPC initialization and shutdown.
+  // CertificateProviderRegistry. NOT THREAD SAFE -- to be used only
+  // during global gRPC initialization and shutdown.
 
   // Global initialization of the registry.
   static void InitRegistry();
@@ -44,10 +44,10 @@ class CertificateProviderRegistry {
   // Global shutdown of the registry.
   static void ShutdownRegistry();
 
-  // Register a provider with the registry. Can only be called after calling
-  // InitRegistry(). The key of the factory is extracted from factory
-  // parameter with method CertificateProviderFactory::name. If the same key
-  // is registered twice, an exception is raised.
+  // Register a provider with the registry. Can only be called after
+  // calling InitRegistry(). The key of the factory is extracted from
+  // factory parameter with method CertificateProviderFactory::name. If
+  // the same key is registered twice, an exception is raised.
   static void RegisterCertificateProviderFactory(
       std::unique_ptr<CertificateProviderFactory> factory);
 };

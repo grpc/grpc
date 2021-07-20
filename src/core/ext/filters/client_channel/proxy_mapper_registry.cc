@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,7 +27,8 @@ namespace grpc_core {
 
 namespace {
 
-using ProxyMapperList = std::vector<std::unique_ptr<ProxyMapperInterface>>;
+using ProxyMapperList =
+    std::vector<std::unique_ptr<ProxyMapperInterface>>;
 ProxyMapperList* g_proxy_mapper_list;
 
 }  // namespace
@@ -41,11 +42,11 @@ void ProxyMapperRegistry::Init() {
 void ProxyMapperRegistry::Shutdown() {
   delete g_proxy_mapper_list;
   // Clean up in case we re-initialze later.
-  // TODO(roth): This should ideally live in Init().  However, if we did this
-  // there, then we would do it AFTER we start registering proxy mappers from
-  // third-party plugins, so they'd never show up (and would leak memory).
-  // We probably need some sort of dependency system for plugins to fix
-  // this.
+  // TODO(roth): This should ideally live in Init().  However, if we did
+  // this there, then we would do it AFTER we start registering proxy
+  // mappers from third-party plugins, so they'd never show up (and
+  // would leak memory). We probably need some sort of dependency system
+  // for plugins to fix this.
   g_proxy_mapper_list = nullptr;
 }
 
@@ -73,10 +74,9 @@ bool ProxyMapperRegistry::MapName(const char* server_uri,
   return false;
 }
 
-bool ProxyMapperRegistry::MapAddress(const grpc_resolved_address& address,
-                                     const grpc_channel_args* args,
-                                     grpc_resolved_address** new_address,
-                                     grpc_channel_args** new_args) {
+bool ProxyMapperRegistry::MapAddress(
+    const grpc_resolved_address& address, const grpc_channel_args* args,
+    grpc_resolved_address** new_address, grpc_channel_args** new_args) {
   Init();
   for (const auto& mapper : *g_proxy_mapper_list) {
     if (mapper->MapAddress(address, args, new_address, new_args)) {

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,10 +33,11 @@ namespace grpc_core {
 /// Takes ownership of \a args.
 ///
 /// Caller takes ownership of the returned args.
-grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args);
+grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
+    grpc_channel_args* args);
 
-grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
-                                          const grpc_channel_args& args);
+grpc_channel* CreateGrpclbBalancerChannel(
+    const char* target_uri, const grpc_channel_args& args);
 
 }  // namespace grpc_core
 

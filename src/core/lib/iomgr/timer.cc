@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,7 +32,9 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
   grpc_timer_impl->init(timer, deadline, closure);
 }
 
-void grpc_timer_cancel(grpc_timer* timer) { grpc_timer_impl->cancel(timer); }
+void grpc_timer_cancel(grpc_timer* timer) {
+  grpc_timer_impl->cancel(timer);
+}
 
 grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
   return grpc_timer_impl->check(next);

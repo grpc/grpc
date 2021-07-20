@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -109,8 +109,8 @@ void MakeAsyncCQCall(const std::shared_ptr<Channel>& channel) {
 
   send_request.set_message("Hello");
   cli_ctx.AddMetadata("testkey", "testvalue");
-  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
-      stub->AsyncEcho(&cli_ctx, send_request, &cq));
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>>
+      response_reader(stub->AsyncEcho(&cli_ctx, send_request, &cq));
   response_reader->Finish(&recv_response, &recv_status, tag(1));
   Verifier().Expect(1, true).Verify(&cq);
   EXPECT_EQ(send_request.message(), recv_response.message());
@@ -122,7 +122,8 @@ void MakeAsyncCQClientStreamingCall(
   // TODO(yashykt) : Fill this out
 }
 
-void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeAsyncCQServerStreamingCall(
+    const std::shared_ptr<Channel>& channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   CompletionQueue cq;
   EchoRequest send_request;
@@ -150,7 +151,8 @@ void MakeAsyncCQServerStreamingCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_TRUE(recv_status.ok());
 }
 
-void MakeAsyncCQBidiStreamingCall(const std::shared_ptr<Channel>& /*channel*/) {
+void MakeAsyncCQBidiStreamingCall(
+    const std::shared_ptr<Channel>& /*channel*/) {
   // TODO(yashykt) : Fill this out
 }
 
@@ -165,21 +167,23 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
   ctx.AddMetadata("testkey", "testvalue");
   req.set_message("Hello");
   EchoResponse resp;
-  stub->async()->Echo(&ctx, &req, &resp, [&resp, &mu, &done, &cv](Status s) {
-    EXPECT_EQ(s.ok(), true);
-    EXPECT_EQ(resp.message(), "Hello");
-    std::lock_guard<std::mutex> l(mu);
-    done = true;
-    cv.notify_one();
-  });
+  stub->async()->Echo(&ctx, &req, &resp,
+                      [&resp, &mu, &done, &cv](Status s) {
+                        EXPECT_EQ(s.ok(), true);
+                        EXPECT_EQ(resp.message(), "Hello");
+                        std::lock_guard<std::mutex> l(mu);
+                        done = true;
+                        cv.notify_one();
+                      });
   std::unique_lock<std::mutex> l(mu);
   while (!done) {
     cv.wait(l);
   }
 }
 
-bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
-                   const string& key, const string& value) {
+bool CheckMetadata(
+    const std::multimap<grpc::string_ref, grpc::string_ref>& map,
+    const string& key, const string& value) {
   for (const auto& pair : map) {
     if (pair.first.starts_with(key) && pair.second.starts_with(value)) {
       return true;
@@ -198,9 +202,11 @@ bool CheckMetadata(const std::multimap<std::string, std::string>& map,
   return false;
 }
 
-std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+std::vector<
+    std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreatePhonyClientInterceptors() {
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 phony interceptors before hijacking interceptor
   creators.reserve(20);

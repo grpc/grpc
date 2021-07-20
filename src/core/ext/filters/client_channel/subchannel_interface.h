@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,7 +29,8 @@
 
 namespace grpc_core {
 
-// The interface for subchannels that is exposed to LB policy implementations.
+// The interface for subchannels that is exposed to LB policy
+// implementations.
 class SubchannelInterface : public RefCounted<SubchannelInterface> {
  public:
   class ConnectivityStateWatcherInterface {
@@ -75,16 +76,17 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   virtual void CancelConnectivityStateWatch(
       ConnectivityStateWatcherInterface* watcher) = 0;
 
-  // Attempt to connect to the backend.  Has no effect if already connected.
-  // If the subchannel is currently in backoff delay due to a previously
-  // failed attempt, the new connection attempt will not start until the
-  // backoff delay has elapsed.
+  // Attempt to connect to the backend.  Has no effect if already
+  // connected. If the subchannel is currently in backoff delay due to a
+  // previously failed attempt, the new connection attempt will not
+  // start until the backoff delay has elapsed.
   virtual void AttemptToConnect() = 0;
 
-  // Resets the subchannel's connection backoff state.  If AttemptToConnect()
-  // has been called since the subchannel entered TRANSIENT_FAILURE state,
-  // starts a new connection attempt immediately; otherwise, a new connection
-  // attempt will be started as soon as AttemptToConnect() is called.
+  // Resets the subchannel's connection backoff state.  If
+  // AttemptToConnect() has been called since the subchannel entered
+  // TRANSIENT_FAILURE state, starts a new connection attempt
+  // immediately; otherwise, a new connection attempt will be started as
+  // soon as AttemptToConnect() is called.
   virtual void ResetBackoff() = 0;
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
@@ -95,7 +97,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 // where an LB policy needs to wrap a subchannel.
 class DelegatingSubchannel : public SubchannelInterface {
  public:
-  explicit DelegatingSubchannel(RefCountedPtr<SubchannelInterface> subchannel)
+  explicit DelegatingSubchannel(
+      RefCountedPtr<SubchannelInterface> subchannel)
       : wrapped_subchannel_(std::move(subchannel)) {}
 
   RefCountedPtr<SubchannelInterface> wrapped_subchannel() const {
@@ -107,15 +110,18 @@ class DelegatingSubchannel : public SubchannelInterface {
   }
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
-    return wrapped_subchannel_->WatchConnectivityState(initial_state,
-                                                       std::move(watcher));
+      std::unique_ptr<ConnectivityStateWatcherInterface> watcher)
+      override {
+    return wrapped_subchannel_->WatchConnectivityState(
+        initial_state, std::move(watcher));
   }
   void CancelConnectivityStateWatch(
       ConnectivityStateWatcherInterface* watcher) override {
     return wrapped_subchannel_->CancelConnectivityStateWatch(watcher);
   }
-  void AttemptToConnect() override { wrapped_subchannel_->AttemptToConnect(); }
+  void AttemptToConnect() override {
+    wrapped_subchannel_->AttemptToConnect();
+  }
   void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
   const grpc_channel_args* channel_args() override {
     return wrapped_subchannel_->channel_args();
@@ -127,4 +133,5 @@ class DelegatingSubchannel : public SubchannelInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H \
+        */

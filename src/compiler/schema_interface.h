@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,8 +45,10 @@ namespace grpc_generator {
 // Return formatted comments to be inserted in generated code.
 struct CommentHolder {
   virtual ~CommentHolder() {}
-  virtual std::string GetLeadingComments(const std::string prefix) const = 0;
-  virtual std::string GetTrailingComments(const std::string prefix) const = 0;
+  virtual std::string GetLeadingComments(
+      const std::string prefix) const = 0;
+  virtual std::string GetTrailingComments(
+      const std::string prefix) const = 0;
   virtual std::vector<std::string> GetAllComments() const = 0;
 };
 
@@ -97,8 +99,8 @@ struct Printer {
   virtual void Outdent() = 0;
 };
 
-// An interface that allows the source generated to be output using various
-// libraries/idls/serializers.
+// An interface that allows the source generated to be output using
+// various libraries/idls/serializers.
 struct File : public CommentHolder {
   virtual ~File() {}
 
@@ -112,7 +114,8 @@ struct File : public CommentHolder {
   virtual int service_count() const = 0;
   virtual std::unique_ptr<const Service> service(int i) const = 0;
 
-  virtual std::unique_ptr<Printer> CreatePrinter(std::string* str) const = 0;
+  virtual std::unique_ptr<Printer> CreatePrinter(
+      std::string* str) const = 0;
 };
 }  // namespace grpc_generator
 

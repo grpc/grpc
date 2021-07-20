@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -65,7 +65,8 @@ typedef struct uv_socket_t {
 
 } uv_socket_t;
 
-static grpc_error_handle tcp_error_create(const char* desc, int status) {
+static grpc_error_handle tcp_error_create(const char* desc,
+                                          int status) {
   if (status == 0) {
     return GRPC_ERROR_NONE;
   }
@@ -74,8 +75,9 @@ static grpc_error_handle tcp_error_create(const char* desc, int status) {
    * choose to retry. */
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                              GRPC_STATUS_UNAVAILABLE);
-  return grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                            grpc_slice_from_static_string(uv_strerror(status)));
+  return grpc_error_set_str(
+      error, GRPC_ERROR_STR_OS_ERROR,
+      grpc_slice_from_static_string(uv_strerror(status)));
 }
 
 static void uv_socket_destroy(grpc_custom_socket* socket) {
@@ -116,14 +118,16 @@ static void uv_close_callback(uv_handle_t* handle) {
   grpc_custom_socket* socket = (grpc_custom_socket*)handle->data;
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
   if (uv_socket->accept_socket) {
-    uv_socket->accept_cb(socket, uv_socket->accept_socket,
-                         GRPC_ERROR_CREATE_FROM_STATIC_STRING("socket closed"));
+    uv_socket->accept_cb(
+        socket, uv_socket->accept_socket,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("socket closed"));
   }
   uv_socket->close_cb(socket);
 }
 
 static void uv_socket_read(grpc_custom_socket* socket, char* buffer,
-                           size_t length, grpc_custom_read_callback read_cb) {
+                           size_t length,
+                           grpc_custom_read_callback read_cb) {
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
   int status;
   grpc_error_handle error;
@@ -131,9 +135,9 @@ static void uv_socket_read(grpc_custom_socket* socket, char* buffer,
   uv_socket->read_buf = buffer;
   uv_socket->read_len = length;
   // TODO(murgatroid99): figure out what the return value here means
-  status =
-      uv_read_start((uv_stream_t*)uv_socket->handle, (uv_alloc_cb)alloc_uv_buf,
-                    (uv_read_cb)uv_read_callback);
+  status = uv_read_start((uv_stream_t*)uv_socket->handle,
+                         (uv_alloc_cb)alloc_uv_buf,
+                         (uv_read_cb)uv_read_callback);
   if (status != 0) {
     error = tcp_error_create("TCP Read failed at start", status);
     uv_socket->read_cb(socket, 0, error);
@@ -144,7 +148,8 @@ static void uv_write_callback(uv_write_t* req, int status) {
   grpc_custom_socket* socket = (grpc_custom_socket*)req->data;
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
   gpr_free(uv_socket->write_buffers);
-  uv_socket->write_cb(socket, tcp_error_create("TCP Write failed", status));
+  uv_socket->write_cb(socket,
+                      tcp_error_create("TCP Write failed", status));
 }
 
 void uv_socket_write(grpc_custom_socket* socket,
@@ -155,9 +160,11 @@ void uv_socket_write(grpc_custom_socket* socket,
   uv_buf_t* uv_buffers;
   uv_write_t* write_req;
 
-  uv_buffers = (uv_buf_t*)gpr_malloc(sizeof(uv_buf_t) * write_slices->count);
+  uv_buffers =
+      (uv_buf_t*)gpr_malloc(sizeof(uv_buf_t) * write_slices->count);
   for (size_t i = 0; i < write_slices->count; i++) {
-    uv_buffers[i].base = (char*)GRPC_SLICE_START_PTR(write_slices->slices[i]);
+    uv_buffers[i].base =
+        (char*)GRPC_SLICE_START_PTR(write_slices->slices[i]);
     uv_buffers[i].len = GRPC_SLICE_LENGTH(write_slices->slices[i]);
   }
 
@@ -188,9 +195,11 @@ static grpc_error_handle uv_socket_init_helper(uv_socket_t* uv_socket,
                                                int domain) {
   uv_tcp_t* tcp = (uv_tcp_t*)gpr_malloc(sizeof(uv_tcp_t));
   uv_socket->handle = tcp;
-  int status = uv_tcp_init_ex(uv_default_loop(), tcp, (unsigned int)domain);
+  int status =
+      uv_tcp_init_ex(uv_default_loop(), tcp, (unsigned int)domain);
   if (status != 0) {
-    return tcp_error_create("Failed to initialize UV tcp handle", status);
+    return tcp_error_create("Failed to initialize UV tcp handle",
+                            status);
   }
 #if defined(GPR_LINUX) && defined(SO_REUSEPORT)
   if (domain == AF_INET || domain == AF_INET6) {
@@ -215,7 +224,8 @@ static grpc_error_handle uv_socket_init_helper(uv_socket_t* uv_socket,
 
 static grpc_error_handle uv_socket_init(grpc_custom_socket* socket,
                                         int domain) {
-  uv_socket_t* uv_socket = (uv_socket_t*)gpr_malloc(sizeof(uv_socket_t));
+  uv_socket_t* uv_socket =
+      (uv_socket_t*)gpr_malloc(sizeof(uv_socket_t));
   grpc_error_handle error = uv_socket_init_helper(uv_socket, domain);
   if (error != GRPC_ERROR_NONE) {
     return error;
@@ -225,27 +235,30 @@ static grpc_error_handle uv_socket_init(grpc_custom_socket* socket,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error_handle uv_socket_getpeername(grpc_custom_socket* socket,
-                                               const grpc_sockaddr* addr,
-                                               int* addr_len) {
+static grpc_error_handle uv_socket_getpeername(
+    grpc_custom_socket* socket, const grpc_sockaddr* addr,
+    int* addr_len) {
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
   int err = uv_tcp_getpeername(uv_socket->handle,
-                               (struct sockaddr*)IGNORE_CONST(addr), addr_len);
+                               (struct sockaddr*)IGNORE_CONST(addr),
+                               addr_len);
   return tcp_error_create("getpeername failed", err);
 }
 
-static grpc_error_handle uv_socket_getsockname(grpc_custom_socket* socket,
-                                               const grpc_sockaddr* addr,
-                                               int* addr_len) {
+static grpc_error_handle uv_socket_getsockname(
+    grpc_custom_socket* socket, const grpc_sockaddr* addr,
+    int* addr_len) {
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
   int err = uv_tcp_getsockname(uv_socket->handle,
-                               (struct sockaddr*)IGNORE_CONST(addr), addr_len);
+                               (struct sockaddr*)IGNORE_CONST(addr),
+                               addr_len);
   return tcp_error_create("getsockname failed", err);
 }
 
 static void accept_new_connection(grpc_custom_socket* socket) {
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-  if (uv_socket->pending_connections == 0 || !uv_socket->accept_socket) {
+  if (uv_socket->pending_connections == 0 ||
+      !uv_socket->accept_socket) {
     return;
   }
   grpc_custom_socket* new_socket = uv_socket->accept_socket;
@@ -258,7 +271,8 @@ static void accept_new_connection(grpc_custom_socket* socket) {
     uv_accept((uv_stream_t*)uv_socket->handle, &phony_handle);
     uv_socket->accept_cb(socket, new_socket, error);
   } else {
-    uv_socket_t* uv_new_socket = (uv_socket_t*)gpr_malloc(sizeof(uv_socket_t));
+    uv_socket_t* uv_new_socket =
+        (uv_socket_t*)gpr_malloc(sizeof(uv_socket_t));
     uv_socket_init_helper(uv_new_socket, AF_UNSPEC);
     // UV documentation says this is guaranteed to succeed
     GPR_ASSERT(uv_accept((uv_stream_t*)uv_socket->handle,
@@ -278,7 +292,8 @@ static void uv_on_connect(uv_stream_t* server, int status) {
       case UV_EAGAIN:
         return;
       default:
-        uv_socket->accept_error = tcp_error_create("accept failed", status);
+        uv_socket->accept_error =
+            tcp_error_create("accept failed", status);
     }
   }
   uv_socket->pending_connections += 1;
@@ -296,18 +311,18 @@ void uv_socket_accept(grpc_custom_socket* socket,
 }
 
 static grpc_error_handle uv_socket_bind(grpc_custom_socket* socket,
-                                        const grpc_sockaddr* addr, size_t len,
-                                        int flags) {
+                                        const grpc_sockaddr* addr,
+                                        size_t len, int flags) {
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-  int status =
-      uv_tcp_bind((uv_tcp_t*)uv_socket->handle, (struct sockaddr*)addr, 0);
+  int status = uv_tcp_bind((uv_tcp_t*)uv_socket->handle,
+                           (struct sockaddr*)addr, 0);
   return tcp_error_create("Failed to bind to port", status);
 }
 
 static grpc_error_handle uv_socket_listen(grpc_custom_socket* socket) {
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-  int status =
-      uv_listen((uv_stream_t*)uv_socket->handle, SOMAXCONN, uv_on_connect);
+  int status = uv_listen((uv_stream_t*)uv_socket->handle, SOMAXCONN,
+                         uv_on_connect);
   return tcp_error_create("Failed to listen to port", status);
 }
 
@@ -319,7 +334,8 @@ static void uv_tc_on_connect(uv_connect_t* req, int status) {
     // This should only happen if the handle is already closed
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timeout occurred");
   } else {
-    error = tcp_error_create("Failed to connect to remote host", status);
+    error =
+        tcp_error_create("Failed to connect to remote host", status);
   }
   uv_socket->connect_cb(socket, error);
 }
@@ -330,11 +346,13 @@ static void uv_socket_connect(grpc_custom_socket* socket,
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
   uv_socket->connect_cb = connect_cb;
   uv_socket->connect_req.data = socket;
-  int status = uv_tcp_connect(&uv_socket->connect_req, uv_socket->handle,
-                              (struct sockaddr*)addr, uv_tc_on_connect);
+  int status =
+      uv_tcp_connect(&uv_socket->connect_req, uv_socket->handle,
+                     (struct sockaddr*)addr, uv_tc_on_connect);
   if (status != 0) {
     // The callback will not be called
-    uv_socket->connect_cb(socket, tcp_error_create("connect failed", status));
+    uv_socket->connect_cb(socket,
+                          tcp_error_create("connect failed", status));
   }
 }
 
@@ -343,14 +361,16 @@ static grpc_resolved_addresses* handle_addrinfo_result(
   struct addrinfo* resp;
   size_t i;
   grpc_resolved_addresses* addresses =
-      (grpc_resolved_addresses*)gpr_malloc(sizeof(grpc_resolved_addresses));
+      (grpc_resolved_addresses*)gpr_malloc(
+          sizeof(grpc_resolved_addresses));
   addresses->naddrs = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
     addresses->naddrs++;
   }
   addresses->addrs = (grpc_resolved_address*)gpr_malloc(
       sizeof(grpc_resolved_address) * addresses->naddrs);
-  for (resp = result, i = 0; resp != nullptr; resp = resp->ai_next, i++) {
+  for (resp = result, i = 0; resp != nullptr;
+       resp = resp->ai_next, i++) {
     memcpy(&addresses->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
     addresses->addrs[i].len = resp->ai_addrlen;
   }
@@ -368,8 +388,8 @@ static void uv_resolve_callback(uv_getaddrinfo_t* req, int status,
   if (status == 0) {
     result = handle_addrinfo_result(res);
   }
-  grpc_custom_resolve_callback(r, result,
-                               tcp_error_create("getaddrinfo failed", status));
+  grpc_custom_resolve_callback(
+      r, result, tcp_error_create("getaddrinfo failed", status));
 }
 
 static grpc_error_handle uv_resolve(const char* host, const char* port,
@@ -381,7 +401,8 @@ static grpc_error_handle uv_resolve(const char* host, const char* port,
   hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
-  status = uv_getaddrinfo(uv_default_loop(), &req, NULL, host, port, &hints);
+  status =
+      uv_getaddrinfo(uv_default_loop(), &req, NULL, host, port, &hints);
   if (status != 0) {
     *result = nullptr;
   } else {
@@ -401,16 +422,18 @@ static void uv_resolve_async(grpc_custom_resolver* r, const char* host,
   hints.ai_family = GRPC_AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = GRPC_SOCK_STREAM; /* stream socket */
   hints.ai_flags = GRPC_AI_PASSIVE;     /* for wildcard IP address */
-  status = uv_getaddrinfo(uv_default_loop(), req, uv_resolve_callback, host,
-                          port, &hints);
+  status = uv_getaddrinfo(uv_default_loop(), req, uv_resolve_callback,
+                          host, port, &hints);
   if (status != 0) {
     gpr_free(req);
-    grpc_error_handle error = tcp_error_create("getaddrinfo failed", status);
+    grpc_error_handle error =
+        tcp_error_create("getaddrinfo failed", status);
     grpc_custom_resolve_callback(r, NULL, error);
   }
 }
 
-grpc_custom_resolver_vtable uv_resolver_vtable = {uv_resolve, uv_resolve_async};
+grpc_custom_resolver_vtable uv_resolver_vtable = {uv_resolve,
+                                                  uv_resolve_async};
 
 grpc_socket_vtable grpc_uv_socket_vtable = {
     uv_socket_init,     uv_socket_connect,     uv_socket_destroy,

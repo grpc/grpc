@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,19 +45,21 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
 
   const grpc_channel_args* server_args = core_server->channel_args();
   std::string name = absl::StrCat("fd:", fd);
-  grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name.c_str(), true), server_args, name.c_str());
+  grpc_endpoint* server_endpoint =
+      grpc_tcp_create(grpc_fd_create(fd, name.c_str(), true),
+                      server_args, name.c_str());
 
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */);
 
-  grpc_error_handle error =
-      core_server->SetupTransport(transport, nullptr, server_args, nullptr);
+  grpc_error_handle error = core_server->SetupTransport(
+      transport, nullptr, server_args, nullptr);
   if (error == GRPC_ERROR_NONE) {
     for (grpc_pollset* pollset : core_server->pollsets()) {
       grpc_endpoint_add_to_pollset(server_endpoint, pollset);
     }
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                        nullptr);
   } else {
     gpr_log(GPR_ERROR, "Failed to create channel: %s",
             grpc_error_std_string(error).c_str());

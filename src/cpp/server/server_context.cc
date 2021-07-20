@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,9 +47,11 @@ class ServerContextBase::CompletionOp final
     : public internal::CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  // must ref the call before calling constructor and after deleting this
-  CompletionOp(internal::Call* call,
-               ::grpc::internal::ServerCallbackCall* callback_controller)
+  // must ref the call before calling constructor and after deleting
+  // this
+  CompletionOp(
+      internal::Call* call,
+      ::grpc::internal::ServerCallbackCall* callback_controller)
       : call_(*call),
         callback_controller_(callback_controller),
         has_tag_(false),
@@ -74,21 +76,23 @@ class ServerContextBase::CompletionOp final
 
   void FillOps(internal::Call* call) override;
 
-  // This should always be arena allocated in the call, so override delete.
-  // But this class is not trivially destructible, so must actually call delete
-  // before allowing the arena to be freed
+  // This should always be arena allocated in the call, so override
+  // delete. But this class is not trivially destructible, so must
+  // actually call delete before allowing the arena to be freed
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    // Use size to avoid unused-parameter warning since assert seems to be
-    // compiled out and treated as unused in some gcc optimized versions.
+    // Use size to avoid unused-parameter warning since assert seems to
+    // be compiled out and treated as unused in some gcc optimized
+    // versions.
     (void)size;
     assert(size == sizeof(CompletionOp));
   }
 
-  // This operator should never be called as the memory should be freed as part
-  // of the arena destruction. It only exists to provide a matching operator
-  // delete to the operator new so that some compilers will not complain (see
-  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
-  // there are no tests catching the compiler warning.
+  // This operator should never be called as the memory should be freed
+  // as part of the arena destruction. It only exists to provide a
+  // matching operator delete to the operator new so that some compilers
+  // will not complain (see https://github.com/grpc/grpc/issues/11301)
+  // Note at the time of adding this there are no tests catching the
+  // compiler warning.
   static void operator delete(void*, void*) { assert(0); }
 
   bool FinalizeResult(void** tag, bool* status) override;
@@ -104,14 +108,16 @@ class ServerContextBase::CompletionOp final
     tag_ = tag;
   }
 
-  void set_core_cq_tag(void* core_cq_tag) { core_cq_tag_ = core_cq_tag; }
+  void set_core_cq_tag(void* core_cq_tag) {
+    core_cq_tag_ = core_cq_tag;
+  }
 
   void* core_cq_tag() override { return core_cq_tag_; }
 
   void Unref();
 
-  // This will be called while interceptors are run if the RPC is a hijacked
-  // RPC. This should set hijacking state for each of the ops.
+  // This will be called while interceptors are run if the RPC is a
+  // hijacked RPC. This should set hijacking state for each of the ops.
   void SetHijackingState() override {
     /* Servers don't allow hijacking */
     GPR_ASSERT(false);
@@ -120,18 +126,20 @@ class ServerContextBase::CompletionOp final
   /* Should be called after interceptors are done running */
   void ContinueFillOpsAfterInterception() override {}
 
-  /* Should be called after interceptors are done running on the finalize result
-   * path */
+  /* Should be called after interceptors are done running on the
+   * finalize result path */
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
     if (!has_tag_) {
       // We don't have a tag to return.
       Unref();
-      // Unref can delete this, so do not access anything from this afterward.
+      // Unref can delete this, so do not access anything from this
+      // afterward.
       return;
     }
     /* Start a phony op so that we can return the tag */
-    GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_,
+    GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0,
+                                     core_cq_tag_,
                                      nullptr) == GRPC_CALL_OK);
   }
 
@@ -149,7 +157,8 @@ class ServerContextBase::CompletionOp final
   grpc_core::RefCount refs_;
   grpc_core::Mutex mu_;
   bool finalized_;
-  int cancelled_;  // This is an int (not bool) because it is passed to core
+  int cancelled_;  // This is an int (not bool) because it is passed to
+                   // core
   bool done_intercepting_;
   internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
@@ -171,15 +180,17 @@ void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
   interceptor_methods_.SetCall(&call_);
   interceptor_methods_.SetReverse();
   interceptor_methods_.SetCallOpSetInterface(this);
-  // The following call_start_batch is internally-generated so no need for an
-  // explanatory log on failure.
+  // The following call_start_batch is internally-generated so no need
+  // for an explanatory log on failure.
   GPR_ASSERT(grpc_call_start_batch(call->call(), &ops, 1, core_cq_tag_,
                                    nullptr) == GRPC_CALL_OK);
   /* No interceptors to run here */
 }
 
-bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
-  // Decide whether to do the unref or call the cancel callback within the lock
+bool ServerContextBase::CompletionOp::FinalizeResult(void** tag,
+                                                     bool* status) {
+  // Decide whether to do the unref or call the cancel callback within
+  // the lock
   bool do_unref = false;
   bool has_tag = false;
   bool call_cancel = false;
@@ -192,7 +203,8 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
       if (has_tag) {
         *tag = tag_;
       }
-      // Release the lock before unreffing as Unref may delete this object
+      // Release the lock before unreffing as Unref may delete this
+      // object
       do_unref = true;
     } else {
       finalized_ = true;
@@ -211,7 +223,8 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 
   if (do_unref) {
     Unref();
-    // Unref can delete this, so do not access anything from this afterward.
+    // Unref can delete this, so do not access anything from this
+    // afterward.
     return has_tag;
   }
   if (call_cancel && callback_controller_ != nullptr) {
@@ -227,7 +240,8 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
       *tag = tag_;
     }
     Unref();
-    // Unref can delete this, so do not access anything from this afterward.
+    // Unref can delete this, so do not access anything from this
+    // afterward.
     return has_tag;
   }
   // There are interceptors to be run. Return false for now.
@@ -247,8 +261,8 @@ ServerContextBase::ServerContextBase(gpr_timespec deadline,
   std::swap(*client_metadata_.arr(), *arr);
 }
 
-void ServerContextBase::BindDeadlineAndMetadata(gpr_timespec deadline,
-                                                grpc_metadata_array* arr) {
+void ServerContextBase::BindDeadlineAndMetadata(
+    gpr_timespec deadline, grpc_metadata_array* arr) {
   deadline_ = deadline;
   std::swap(*client_metadata_.arr(), *arr);
 }
@@ -268,8 +282,8 @@ ServerContextBase::~ServerContextBase() {
 
 ServerContextBase::CallWrapper::~CallWrapper() {
   if (call) {
-    // If the ServerContext is part of the call's arena, this could free the
-    // object itself.
+    // If the ServerContext is part of the call's arena, this could free
+    // the object itself.
     grpc_call_unref(call);
   }
 }
@@ -286,8 +300,8 @@ void ServerContextBase::BeginCompletionOp(
       new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
           CompletionOp(call, callback_controller);
   if (callback_controller != nullptr) {
-    completion_tag_.Set(call->call(), std::move(callback), completion_op_,
-                        true);
+    completion_tag_.Set(call->call(), std::move(callback),
+                        completion_op_, true);
     completion_op_->set_core_cq_tag(&completion_tag_);
     completion_op_->set_tag(completion_op_);
   } else if (has_notify_when_done_tag_) {
@@ -317,9 +331,9 @@ void ServerContextBase::TryCancel() const {
       rpc_info_->RunInterceptor(&cancel_methods, i);
     }
   }
-  grpc_call_error err =
-      grpc_call_cancel_with_status(call_.call, GRPC_STATUS_CANCELLED,
-                                   "Cancelled on the server side", nullptr);
+  grpc_call_error err = grpc_call_cancel_with_status(
+      call_.call, GRPC_STATUS_CANCELLED, "Cancelled on the server side",
+      nullptr);
   if (err != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
@@ -356,7 +370,8 @@ void ServerContextBase::set_compression_algorithm(
     abort();
   }
   GPR_ASSERT(algorithm_name != nullptr);
-  AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
+  AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+                     algorithm_name);
 }
 
 std::string ServerContextBase::peer() const {
@@ -370,8 +385,9 @@ std::string ServerContextBase::peer() const {
 }
 
 const struct census_context* ServerContextBase::census_context() const {
-  return call_.call == nullptr ? nullptr
-                               : grpc_census_call_get_context(call_.call);
+  return call_.call == nullptr
+             ? nullptr
+             : grpc_census_call_get_context(call_.call);
 }
 
 void ServerContextBase::SetLoadReportingCosts(

@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #ifdef GRPC_USE_EVENT_ENGINE
@@ -32,10 +32,11 @@ EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure,
     closure->scheduled = false;
     if (grpc_trace_closure.enabled()) {
       gpr_log(GPR_DEBUG,
-              "EventEngine: running closure %p: created [%s:%d]: %s [%s:%d]",
+              "EventEngine: running closure %p: created [%s:%d]: %s "
+              "[%s:%d]",
               closure, closure->file_created, closure->line_created,
-              closure->run ? "run" : "scheduled", closure->file_initiated,
-              closure->line_initiated);
+              closure->run ? "run" : "scheduled",
+              closure->file_initiated, closure->line_initiated);
     }
 #endif
     closure->cb(closure->cb_arg, new_error);

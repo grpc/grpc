@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,9 +34,11 @@ void create_jwt(const char* json_key_file_path, const char* service_url,
   char* jwt;
   grpc_slice json_key_data;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(json_key_file_path, 1, &json_key_data)));
+      "load_file",
+      grpc_load_file(json_key_file_path, 1, &json_key_data)));
   key = grpc_auth_json_key_create_from_string(
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(json_key_data));
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(
+          json_key_data));
   grpc_slice_unref(json_key_data);
   if (!grpc_auth_json_key_is_valid(&key)) {
     fprintf(stderr, "Could not parse json key.\n");
@@ -44,7 +46,8 @@ void create_jwt(const char* json_key_file_path, const char* service_url,
     exit(1);
   }
   jwt = grpc_jwt_encode_and_sign(
-      &key, service_url == nullptr ? GRPC_JWT_OAUTH2_AUDIENCE : service_url,
+      &key,
+      service_url == nullptr ? GRPC_JWT_OAUTH2_AUDIENCE : service_url,
       grpc_max_auth_token_lifetime(), scope);
   grpc_auth_json_key_destruct(&key);
   if (jwt == nullptr) {
@@ -64,13 +67,15 @@ int main(int argc, char** argv) {
   gpr_cmdline* cl = gpr_cmdline_create("create_jwt");
   gpr_cmdline_add_string(cl, "json_key", "File path of the json key.",
                          &json_key_file_path);
-  gpr_cmdline_add_string(cl, "scope",
-                         "OPTIONAL Space delimited permissions. Mutually "
-                         "exclusive with service_url",
-                         &scope);
-  gpr_cmdline_add_string(cl, "service_url",
-                         "OPTIONAL service URL. Mutually exclusive with scope.",
-                         &service_url);
+  gpr_cmdline_add_string(
+      cl, "scope",
+      "OPTIONAL Space delimited permissions. Mutually "
+      "exclusive with service_url",
+      &scope);
+  gpr_cmdline_add_string(
+      cl, "service_url",
+      "OPTIONAL service URL. Mutually exclusive with scope.",
+      &service_url);
   gpr_cmdline_parse(cl, argc, argv);
 
   if (json_key_file_path == nullptr) {
@@ -81,7 +86,8 @@ int main(int argc, char** argv) {
   if (scope != nullptr) {
     if (service_url != nullptr) {
       fprintf(stderr,
-              "Options --scope and --service_url are mutually exclusive.\n");
+              "Options --scope and --service_url are mutually "
+              "exclusive.\n");
       fflush(stderr);
       exit(1);
     }

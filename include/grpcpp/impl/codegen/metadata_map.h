@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,17 +46,18 @@ class MetadataMap {
     }
     // if not yet filled, take the O(n) lookup to avoid allocating the
     // multimap until it is requested.
-    // TODO(ncteisen): plumb this through core as a first class object, just
-    // like code and message.
+    // TODO(ncteisen): plumb this through core as a first class object,
+    // just like code and message.
     else {
       for (size_t i = 0; i < arr_.count; i++) {
         if (strncmp(reinterpret_cast<const char*>(
                         GRPC_SLICE_START_PTR(arr_.metadata[i].key)),
                     kBinaryErrorDetailsKey,
                     GRPC_SLICE_LENGTH(arr_.metadata[i].key)) == 0) {
-          return std::string(reinterpret_cast<const char*>(
-                                 GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
-                             GRPC_SLICE_LENGTH(arr_.metadata[i].value));
+          return std::string(
+              reinterpret_cast<const char*>(
+                  GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
+              GRPC_SLICE_LENGTH(arr_.metadata[i].value));
         }
       }
     }

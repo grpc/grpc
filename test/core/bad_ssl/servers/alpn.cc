@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,13 +31,15 @@
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
-/* This test starts a server that is configured to advertise (via alpn and npn)
- * a protocol that the connecting client does not support. It does this by
- * overriding the functions declared in alpn.c from the core library. */
+/* This test starts a server that is configured to advertise (via alpn
+ * and npn) a protocol that the connecting client does not support. It
+ * does this by overriding the functions declared in alpn.c from the
+ * core library. */
 
 static const char* const fake_versions[] = {"not-h2"};
 
-int grpc_chttp2_is_alpn_version_supported(const char* version, size_t size) {
+int grpc_chttp2_is_alpn_version_supported(const char* version,
+                                          size_t size) {
   size_t i;
   for (i = 0; i < GPR_ARRAY_SIZE(fake_versions); i++) {
     if (!strncmp(version, fake_versions[i], size)) return 1;
@@ -59,21 +61,23 @@ int main(int argc, char** argv) {
   grpc_slice cert_slice, key_slice;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
   const char* server_cert =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
   const char* server_key =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key,
+                                                  server_cert};
   grpc_server_credentials* ssl_creds;
   grpc_server* server;
 
   grpc_init();
-  ssl_creds = grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair, 1,
-                                                 0, nullptr);
+  ssl_creds = grpc_ssl_server_credentials_create(
+      nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
+  GPR_ASSERT(
+      grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
 
   bad_ssl_run(server);

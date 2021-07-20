@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,11 +23,12 @@
 
 #include <string.h>
 
-typedef uint32_t (*hash_func)(const void* key, size_t len, uint32_t seed);
+typedef uint32_t (*hash_func)(const void* key, size_t len,
+                              uint32_t seed);
 
 /* From smhasher:
-   This should hopefully be a thorough and uambiguous test of whether a hash
-   is correctly implemented on a given platform */
+   This should hopefully be a thorough and uambiguous test of whether a
+   hash is correctly implemented on a given platform */
 
 static void verification_test(hash_func hash, uint32_t expected) {
   uint8_t key[256];
@@ -38,8 +39,8 @@ static void verification_test(hash_func hash, uint32_t expected) {
   memset(key, 0, sizeof(key));
   memset(hashes, 0, sizeof(hashes));
 
-  /* Hash keys of the form {0}, {0,1}, {0,1,2}... up to N=255,using 256-N as
-     the seed */
+  /* Hash keys of the form {0}, {0,1}, {0,1,2}... up to N=255,using
+     256-N as the seed */
 
   for (i = 0; i < 256; i++) {
     key[i] = static_cast<uint8_t>(i);
@@ -50,12 +51,12 @@ static void verification_test(hash_func hash, uint32_t expected) {
 
   final = hash(hashes, sizeof(hashes), 0);
 
-  /* The first four bytes of that hash, interpreted as a little-endian integer,
-     is our
-     verification value */
+  /* The first four bytes of that hash, interpreted as a little-endian
+     integer, is our verification value */
 
   if (expected != final) {
-    gpr_log(GPR_INFO, "Verification value 0x%08X : Failed! (Expected 0x%08x)",
+    gpr_log(GPR_INFO,
+            "Verification value 0x%08X : Failed! (Expected 0x%08x)",
             final, expected);
     abort();
   } else {

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -47,9 +47,10 @@ ABSL_FLAG(int32_t, maintenance_port, 8081,
           "Server port for maintenance if --security is \"secure\".");
 ABSL_FLAG(std::string, server_id, "cpp_server",
           "Server ID to include in responses.");
-ABSL_FLAG(bool, secure_mode, false,
-          "If true, XdsServerCredentials are used, InsecureServerCredentials "
-          "otherwise");
+ABSL_FLAG(
+    bool, secure_mode, false,
+    "If true, XdsServerCredentials are used, InsecureServerCredentials "
+    "otherwise");
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -65,9 +66,11 @@ using grpc::testing::XdsUpdateHealthService;
 
 class TestServiceImpl : public TestService::Service {
  public:
-  explicit TestServiceImpl(const std::string& hostname) : hostname_(hostname) {}
+  explicit TestServiceImpl(const std::string& hostname)
+      : hostname_(hostname) {}
 
-  Status UnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
+  Status UnaryCall(ServerContext* context,
+                   const SimpleRequest* /*request*/,
                    SimpleResponse* response) override {
     response->set_server_id(absl::GetFlag(FLAGS_server_id));
     response->set_hostname(hostname_);
@@ -85,20 +88,23 @@ class TestServiceImpl : public TestService::Service {
   std::string hostname_;
 };
 
-class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
+class XdsUpdateHealthServiceImpl
+    : public XdsUpdateHealthService::Service {
  public:
   explicit XdsUpdateHealthServiceImpl(
       HealthCheckServiceImpl* health_check_service)
       : health_check_service_(health_check_service) {}
 
-  Status SetServing(ServerContext* /* context */, const Empty* /* request */,
+  Status SetServing(ServerContext* /* context */,
+                    const Empty* /* request */,
                     Empty* /* response */) override {
     health_check_service_->SetAll(
         grpc::health::v1::HealthCheckResponse::SERVING);
     return Status::OK;
   }
 
-  Status SetNotServing(ServerContext* /* context */, const Empty* /* request */,
+  Status SetNotServing(ServerContext* /* context */,
+                       const Empty* /* request */,
                        Empty* /* response */) override {
     health_check_service_->SetAll(
         grpc::health::v1::HealthCheckResponse::NOT_SERVING);
@@ -109,7 +115,8 @@ class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
   HealthCheckServiceImpl* const health_check_service_;
 };
 
-void RunServer(bool secure_mode, const int port, const int maintenance_port,
+void RunServer(bool secure_mode, const int port,
+               const int maintenance_port,
                const std::string& hostname) {
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
@@ -123,16 +130,18 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
   health_check_service.SetStatus(
       "grpc.testing.XdsUpdateHealthService",
       grpc::health::v1::HealthCheckResponse::SERVING);
-  XdsUpdateHealthServiceImpl update_health_service(&health_check_service);
+  XdsUpdateHealthServiceImpl update_health_service(
+      &health_check_service);
 
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   if (secure_mode) {
     grpc::XdsServerBuilder xds_builder;
     xds_builder.RegisterService(&service);
-    xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                                 grpc::experimental::XdsServerCredentials(
-                                     grpc::InsecureServerCredentials()));
+    xds_builder.AddListeningPort(
+        absl::StrCat("0.0.0.0:", port),
+        grpc::experimental::XdsServerCredentials(
+            grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
     builder.RegisterService(&health_check_service);
@@ -176,7 +185,8 @@ int main(int argc, char** argv) {
     return 1;
   }
   grpc::EnableDefaultHealthCheckService(false);
-  RunServer(absl::GetFlag(FLAGS_secure_mode), port, maintenance_port, hostname);
+  RunServer(absl::GetFlag(FLAGS_secure_mode), port, maintenance_port,
+            hostname);
 
   return 0;
 }

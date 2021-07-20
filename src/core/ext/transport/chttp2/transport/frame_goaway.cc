@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,7 +40,8 @@ grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
     grpc_chttp2_goaway_parser* p, uint32_t length, uint8_t /*flags*/) {
   if (length < 8) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("goaway frame too short (%d bytes)", length).c_str());
+        absl::StrFormat("goaway frame too short (%d bytes)", length)
+            .c_str());
   }
 
   gpr_free(p->debug_data);
@@ -51,11 +52,9 @@ grpc_error_handle grpc_chttp2_goaway_parser_begin_frame(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
-                                                  grpc_chttp2_transport* t,
-                                                  grpc_chttp2_stream* /*s*/,
-                                                  const grpc_slice& slice,
-                                                  int is_last) {
+grpc_error_handle grpc_chttp2_goaway_parser_parse(
+    void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* /*s*/,
+    const grpc_slice& slice, int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
@@ -143,18 +142,20 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
       }
       return GRPC_ERROR_NONE;
   }
-  GPR_UNREACHABLE_CODE(
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Should never reach here"));
+  GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Should never reach here"));
 }
 
-void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
+void grpc_chttp2_goaway_append(uint32_t last_stream_id,
+                               uint32_t error_code,
                                const grpc_slice& debug_data,
                                grpc_slice_buffer* slice_buffer) {
   grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
   uint8_t* p = GRPC_SLICE_START_PTR(header);
   uint32_t frame_length;
   GPR_ASSERT(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
-  frame_length = 4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
+  frame_length =
+      4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
 
   /* frame header: length */
   *p++ = static_cast<uint8_t>(frame_length >> 16);

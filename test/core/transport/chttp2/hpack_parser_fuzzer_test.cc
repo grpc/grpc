@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,7 +36,8 @@ static grpc_error_handle onhdr(grpc_mdelem md) {
 }
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data,
+                                      size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
@@ -45,7 +46,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::HPackParser parser;
     parser.BeginFrame(onhdr, grpc_core::HPackParser::Boundary::None,
                       grpc_core::HPackParser::Priority::None);
-    GRPC_ERROR_UNREF(parser.Parse(grpc_slice_from_static_buffer(data, size)));
+    GRPC_ERROR_UNREF(
+        parser.Parse(grpc_slice_from_static_buffer(data, size)));
   }
   grpc_shutdown();
   return 0;

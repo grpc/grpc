@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -49,7 +49,8 @@ TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* filename = "doesnotexist.txt";
   char result_path[MAXPATHLEN];
   grpc_core::GetAbsoluteFilePath(directory, filename, result_path);
-  EXPECT_STREQ(result_path, "nonexistent/test/directory/doesnotexist.txt");
+  EXPECT_STREQ(result_path,
+               "nonexistent/test/directory/doesnotexist.txt");
 }
 
 TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
@@ -66,12 +67,12 @@ TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   // Test that CreateRootCertsBundle returns a correct slice.
   grpc_slice roots_bundle = grpc_empty_slice();
-  GRPC_LOG_IF_ERROR(
-      "load_file",
-      grpc_load_file("test/core/security/etc/bundle.pem", 1, &roots_bundle));
+  GRPC_LOG_IF_ERROR("load_file",
+                    grpc_load_file("test/core/security/etc/bundle.pem",
+                                   1, &roots_bundle));
   // result_slice should have the same content as roots_bundle.
-  grpc_slice result_slice =
-      grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
+  grpc_slice result_slice = grpc_core::CreateRootCertsBundle(
+      "test/core/security/etc/test_roots");
   char* result_str = grpc_slice_to_c_string(result_slice);
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);
   EXPECT_STREQ(result_str, bundle_str);
@@ -92,7 +93,9 @@ int main(int argc, char** argv) {
 }
 #else
 int main() {
-  printf("*** WARNING: this test is only supported on Linux systems ***\n");
+  printf(
+      "*** WARNING: this test is only supported on Linux systems "
+      "***\n");
   return 0;
 }
 #endif  // GPR_LINUX

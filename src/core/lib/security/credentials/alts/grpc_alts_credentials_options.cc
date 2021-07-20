@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,7 +38,8 @@ grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
 void grpc_alts_credentials_options_destroy(
     grpc_alts_credentials_options* options) {
   if (options != nullptr) {
-    if (options->vtable != nullptr && options->vtable->destruct != nullptr) {
+    if (options->vtable != nullptr &&
+        options->vtable->destruct != nullptr) {
       options->vtable->destruct(options);
     }
     gpr_free(options);

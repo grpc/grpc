@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -107,9 +107,11 @@ static void test_load_small_file(void) {
 
   error = grpc_load_file(tmp_name, 1, &slice_with_null_term);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(GRPC_SLICE_LENGTH(slice_with_null_term) == (strlen(blah) + 1));
-  GPR_ASSERT(strcmp((const char*)GRPC_SLICE_START_PTR(slice_with_null_term),
-                    blah) == 0);
+  GPR_ASSERT(GRPC_SLICE_LENGTH(slice_with_null_term) ==
+             (strlen(blah) + 1));
+  GPR_ASSERT(
+      strcmp((const char*)GRPC_SLICE_START_PTR(slice_with_null_term),
+             blah) == 0);
 
   remove(tmp_name);
   gpr_free(tmp_name);
@@ -123,7 +125,8 @@ static void test_load_big_file(void) {
   grpc_error_handle error;
   char* tmp_name;
   static const size_t buffer_size = 124631;
-  unsigned char* buffer = static_cast<unsigned char*>(gpr_malloc(buffer_size));
+  unsigned char* buffer =
+      static_cast<unsigned char*>(gpr_malloc(buffer_size));
   unsigned char* current;
   size_t i;
 

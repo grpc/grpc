@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <grpc/support/port_platform.h>
@@ -42,8 +42,10 @@ namespace grpc_core {
 
 class GrpcPolledFdPosix : public GrpcPolledFd {
  public:
-  GrpcPolledFdPosix(ares_socket_t as, grpc_pollset_set* driver_pollset_set)
-      : name_(absl::StrCat("c-ares fd: ", static_cast<int>(as))), as_(as) {
+  GrpcPolledFdPosix(ares_socket_t as,
+                    grpc_pollset_set* driver_pollset_set)
+      : name_(absl::StrCat("c-ares fd: ", static_cast<int>(as))),
+        as_(as) {
     fd_ = grpc_fd_create(static_cast<int>(as), name_.c_str(), false);
     driver_pollset_set_ = driver_pollset_set;
     grpc_pollset_set_add_fd(driver_pollset_set_, fd_);
@@ -51,24 +53,28 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   ~GrpcPolledFdPosix() override {
     grpc_pollset_set_del_fd(driver_pollset_set_, fd_);
-    /* c-ares library will close the fd inside grpc_fd. This fd may be picked up
-       immediately by another thread, and should not be closed by the following
-       grpc_fd_orphan. */
+    /* c-ares library will close the fd inside grpc_fd. This fd may be
+       picked up immediately by another thread, and should not be closed
+       by the following grpc_fd_orphan. */
     int phony_release_fd;
-    grpc_fd_orphan(fd_, nullptr, &phony_release_fd, "c-ares query finished");
+    grpc_fd_orphan(fd_, nullptr, &phony_release_fd,
+                   "c-ares query finished");
   }
 
-  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
+  void RegisterForOnReadableLocked(
+      grpc_closure* read_closure) override {
     grpc_fd_notify_on_read(fd_, read_closure);
   }
 
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
+  void RegisterForOnWriteableLocked(
+      grpc_closure* write_closure) override {
     grpc_fd_notify_on_write(fd_, write_closure);
   }
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return ioctl(grpc_fd_wrapped_fd(fd_), FIONREAD, &bytes_available) == 0 &&
+    return ioctl(grpc_fd_wrapped_fd(fd_), FIONREAD, &bytes_available) ==
+               0 &&
            bytes_available > 0;
   }
 
@@ -106,4 +112,5 @@ std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
 
 }  // namespace grpc_core
 
-#endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) */
+#endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) \
+        */

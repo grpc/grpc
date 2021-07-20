@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -73,12 +73,15 @@ using BackendServiceImpl = TestServiceImpl;
 
 class BalancerServiceImpl : public LoadBalancer::Service {
  public:
-  using Stream = ServerReaderWriter<LoadBalanceResponse, LoadBalanceRequest>;
+  using Stream =
+      ServerReaderWriter<LoadBalanceResponse, LoadBalanceRequest>;
 
-  explicit BalancerServiceImpl(const std::vector<int>& all_backend_ports)
+  explicit BalancerServiceImpl(
+      const std::vector<int>& all_backend_ports)
       : all_backend_ports_(all_backend_ports) {}
 
-  Status BalanceLoad(ServerContext* /*context*/, Stream* stream) override {
+  Status BalanceLoad(ServerContext* /*context*/,
+                     Stream* stream) override {
     gpr_log(GPR_INFO, "LB[%p]: Start BalanceLoad.", this);
     LoadBalanceRequest request;
     stream->Read(&request);
@@ -97,7 +100,8 @@ class BalancerServiceImpl : public LoadBalancer::Service {
   std::string Ip4ToPackedString(const char* ip_str) {
     struct in_addr ip4;
     GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
-    return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
+    return std::string(reinterpret_cast<const char*>(&ip4),
+                       sizeof(ip4));
   }
 
   LoadBalanceResponse BuildRandomResponseForBackends() {
@@ -106,15 +110,18 @@ class BalancerServiceImpl : public LoadBalancer::Service {
     // num_drop_entry is in [0, N]), order, duplicate, and drop rate.
     size_t num_non_drop_entry =
         std::rand() % (all_backend_ports_.size() * 2 + 1);
-    size_t num_drop_entry = std::rand() % (all_backend_ports_.size() + 1);
+    size_t num_drop_entry =
+        std::rand() % (all_backend_ports_.size() + 1);
     std::vector<int> random_backend_indices;
     for (size_t i = 0; i < num_non_drop_entry; ++i) {
-      random_backend_indices.push_back(std::rand() % all_backend_ports_.size());
+      random_backend_indices.push_back(std::rand() %
+                                       all_backend_ports_.size());
     }
     for (size_t i = 0; i < num_drop_entry; ++i) {
       random_backend_indices.push_back(-1);
     }
-    std::shuffle(random_backend_indices.begin(), random_backend_indices.end(),
+    std::shuffle(random_backend_indices.begin(),
+                 random_backend_indices.end(),
                  std::mt19937(std::random_device()()));
     // Build the response according to the random list generated above.
     LoadBalanceResponse response;
@@ -156,7 +163,8 @@ class ClientChannelStressTest {
       for (const auto& balancer_server : balancer_servers_) {
         // Select each address with probability of 0.8.
         if (std::rand() % 10 < 8) {
-          addresses.emplace_back(AddressData{balancer_server.port_, ""});
+          addresses.emplace_back(
+              AddressData{balancer_server.port_, ""});
         }
       }
       std::shuffle(addresses.begin(), addresses.end(),
@@ -175,22 +183,26 @@ class ClientChannelStressTest {
                           const std::string& server_host, T* service)
         : type_(type), service_(service) {
       grpc::internal::Mutex mu;
-      // We need to acquire the lock here in order to prevent the notify_one
-      // by ServerThread::Start from firing before the wait below is hit.
+      // We need to acquire the lock here in order to prevent the
+      // notify_one by ServerThread::Start from firing before the wait
+      // below is hit.
       grpc::internal::MutexLock lock(&mu);
       port_ = grpc_pick_unused_port_or_die();
-      gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
+      gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(),
+              port_);
       grpc::internal::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
-          std::bind(&ServerThread::Start, this, server_host, &mu, &cond));
+      thread_ = absl::make_unique<std::thread>(std::bind(
+          &ServerThread::Start, this, server_host, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Start(const std::string& server_host, grpc::internal::Mutex* mu,
+    void Start(const std::string& server_host,
+               grpc::internal::Mutex* mu,
                grpc::internal::CondVar* cond) {
-      // We need to acquire the lock here in order to prevent the notify_one
-      // below from firing before its corresponding wait is executed.
+      // We need to acquire the lock here in order to prevent the
+      // notify_one below from firing before its corresponding wait is
+      // executed.
       grpc::internal::MutexLock lock(mu);
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
@@ -221,12 +233,15 @@ class ClientChannelStressTest {
     std::string balancer_name;
   };
 
-  static grpc_core::ServerAddressList CreateAddressListFromAddressDataList(
+  static grpc_core::ServerAddressList
+  CreateAddressListFromAddressDataList(
       const std::vector<AddressData>& address_data) {
     grpc_core::ServerAddressList addresses;
     for (const auto& addr : address_data) {
-      std::string lb_uri_str = absl::StrCat("ipv4:127.0.0.1:", addr.port);
-      absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(lb_uri_str);
+      std::string lb_uri_str =
+          absl::StrCat("ipv4:127.0.0.1:", addr.port);
+      absl::StatusOr<grpc_core::URI> lb_uri =
+          grpc_core::URI::Parse(lb_uri_str);
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
@@ -248,14 +263,16 @@ class ClientChannelStressTest {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     grpc_core::ServerAddressList balancer_addresses =
         CreateAddressListFromAddressDataList(balancer_address_data);
-    grpc_arg arg = CreateGrpclbBalancerAddressesArg(&balancer_addresses);
+    grpc_arg arg =
+        CreateGrpclbBalancerAddressesArg(&balancer_addresses);
     result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
     return result;
   }
 
   void SetNextResolution(const std::vector<AddressData>& address_data) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::Resolver::Result result = MakeResolverResult(address_data);
+    grpc_core::Resolver::Result result =
+        MakeResolverResult(address_data);
     response_generator_->SetResponse(std::move(result));
   }
 
@@ -277,14 +294,14 @@ class ClientChannelStressTest {
 
   void CreateStub() {
     ChannelArguments args;
-    response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    response_generator_ = grpc_core::MakeRefCounted<
+        grpc_core::FakeResolverResponseGenerator>();
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
-    channel_ = ::grpc::CreateCustomChannel(uri.str(),
-                                           InsecureChannelCredentials(), args);
+    channel_ = ::grpc::CreateCustomChannel(
+        uri.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -306,8 +323,8 @@ class ClientChannelStressTest {
     // Start sending RPCs in multiple threads.
     CreateStub();
     for (size_t i = 0; i < kNumClientThreads; ++i) {
-      client_threads_.emplace_back(
-          std::thread(&ClientChannelStressTest::KeepSendingRequests, this));
+      client_threads_.emplace_back(std::thread(
+          &ClientChannelStressTest::KeepSendingRequests, this));
     }
   }
 

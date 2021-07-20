@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,11 +33,10 @@
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            size_t num_ops,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    size_t num_ops, grpc_channel_args* client_args,
+    grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s [%" PRIdPTR " ops]", test_name,
           config.name, num_ops);
@@ -58,7 +57,8 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -90,7 +90,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 static void simple_request_body(grpc_end2end_test_config /*config*/,
-                                grpc_end2end_test_fixture f, size_t num_ops) {
+                                grpc_end2end_test_fixture f,
+                                size_t num_ops) {
   grpc_call* c;
   cq_verifier* cqv = cq_verifier_create(f.cq);
   grpc_op ops[6];
@@ -104,9 +105,10 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -115,14 +117,16 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -140,8 +144,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   char* dynamic_string = gpr_strdup("xyz");
-  grpc_call_cancel_with_status(c, GRPC_STATUS_UNIMPLEMENTED, dynamic_string,
-                               nullptr);
+  grpc_call_cancel_with_status(c, GRPC_STATUS_UNIMPLEMENTED,
+                               dynamic_string, nullptr);
   // The API of \a description allows for it to be a dynamic/non-const
   // string, test this guarantee.
   gpr_free(dynamic_string);

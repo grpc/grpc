@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -45,27 +45,32 @@ class CertificateProviderStore
   // Maps plugin instance (opaque) name to plugin defition.
   typedef std::map<std::string, PluginDefinition> PluginDefinitionMap;
 
-  explicit CertificateProviderStore(PluginDefinitionMap plugin_config_map)
+  explicit CertificateProviderStore(
+      PluginDefinitionMap plugin_config_map)
       : plugin_config_map_(std::move(plugin_config_map)) {}
 
-  // If a certificate provider corresponding to the instance name \a key is
-  // found, a ref to the grpc_tls_certificate_provider is returned. If no
-  // provider is found for the key, a new provider is created from the plugin
-  // definition map.
-  // Returns nullptr on failure to get or create a new certificate provider.
-  RefCountedPtr<grpc_tls_certificate_provider> CreateOrGetCertificateProvider(
-      absl::string_view key);
+  // If a certificate provider corresponding to the instance name \a key
+  // is found, a ref to the grpc_tls_certificate_provider is returned.
+  // If no provider is found for the key, a new provider is created from
+  // the plugin definition map. Returns nullptr on failure to get or
+  // create a new certificate provider.
+  RefCountedPtr<grpc_tls_certificate_provider>
+  CreateOrGetCertificateProvider(absl::string_view key);
 
   void Orphan() override { Unref(); }
 
  private:
-  // A thin wrapper around `grpc_tls_certificate_provider` which allows removing
-  // the entry from the CertificateProviderStore when the refcount reaches zero.
-  class CertificateProviderWrapper : public grpc_tls_certificate_provider {
+  // A thin wrapper around `grpc_tls_certificate_provider` which allows
+  // removing the entry from the CertificateProviderStore when the
+  // refcount reaches zero.
+  class CertificateProviderWrapper
+      : public grpc_tls_certificate_provider {
    public:
     CertificateProviderWrapper(
-        RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
-        RefCountedPtr<CertificateProviderStore> store, absl::string_view key)
+        RefCountedPtr<grpc_tls_certificate_provider>
+            certificate_provider,
+        RefCountedPtr<CertificateProviderStore> store,
+        absl::string_view key)
         : certificate_provider_(std::move(certificate_provider)),
           store_(std::move(store)),
           key_(key) {}
@@ -74,8 +79,8 @@ class CertificateProviderStore
       store_->ReleaseCertificateProvider(key_, this);
     }
 
-    grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-        const override {
+    grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
+    distributor() const override {
       return certificate_provider_->distributor();
     }
 
@@ -91,11 +96,12 @@ class CertificateProviderStore
     absl::string_view key_;
   };
 
-  RefCountedPtr<CertificateProviderWrapper> CreateCertificateProviderLocked(
-      absl::string_view key) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  RefCountedPtr<CertificateProviderWrapper>
+  CreateCertificateProviderLocked(absl::string_view key)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  // Releases a previously created certificate provider from the certificate
-  // provider map if the value matches \a wrapper.
+  // Releases a previously created certificate provider from the
+  // certificate provider map if the value matches \a wrapper.
   void ReleaseCertificateProvider(absl::string_view key,
                                   CertificateProviderWrapper* wrapper);
 

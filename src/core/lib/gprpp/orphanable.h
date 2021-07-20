@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,8 +42,8 @@ namespace grpc_core {
 class Orphanable {
  public:
   // Gives up ownership of the object.  The implementation must arrange
-  // to eventually destroy the object without further interaction from the
-  // caller.
+  // to eventually destroy the object without further interaction from
+  // the caller.
   virtual void Orphan() = 0;
 
   // Not copyable or movable.
@@ -113,7 +113,8 @@ class InternallyRefCounted : public Orphanable {
 
  private:
   void IncrementRefCount() { refs_.Ref(); }
-  void IncrementRefCount(const DebugLocation& location, const char* reason) {
+  void IncrementRefCount(const DebugLocation& location,
+                         const char* reason) {
     refs_.Ref(location, reason);
   }
 

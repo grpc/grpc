@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -58,7 +58,8 @@ static void on_metadata_response(void* arg, grpc_error_handle error) {
   sync->is_done = true;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), nullptr));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops),
+                        nullptr));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -69,11 +70,13 @@ int main(int argc, char** argv) {
   grpc_channel_credentials* creds = nullptr;
   const char* service_url = "https://test.foo.google.com/Foo";
   grpc_auth_metadata_context context;
-  gpr_cmdline* cl = gpr_cmdline_create("print_google_default_creds_token");
+  gpr_cmdline* cl =
+      gpr_cmdline_create("print_google_default_creds_token");
   grpc_pollset* pollset = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
   gpr_cmdline_add_string(cl, "service_url",
-                         "Service URL for the token request.", &service_url);
+                         "Service URL for the token request.",
+                         &service_url);
   gpr_cmdline_parse(cl, argc, argv);
   memset(&context, 0, sizeof(context));
   context.service_url = service_url;
@@ -93,8 +96,8 @@ int main(int argc, char** argv) {
   grpc_pollset_init(pollset, &sync.mu);
   sync.pops = grpc_polling_entity_create_from_pollset(pollset);
   sync.is_done = false;
-  GRPC_CLOSURE_INIT(&sync.on_request_metadata, on_metadata_response, &sync,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&sync.on_request_metadata, on_metadata_response,
+                    &sync, grpc_schedule_on_exec_ctx);
 
   error = GRPC_ERROR_NONE;
   if (reinterpret_cast<grpc_composite_channel_credentials*>(creds)
@@ -111,8 +114,8 @@ int main(int argc, char** argv) {
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,
-                              GRPC_MILLIS_INF_FUTURE)))
+            grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops),
+                              &worker, GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
     grpc_core::ExecCtx::Get()->Flush();

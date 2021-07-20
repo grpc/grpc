@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -153,7 +153,8 @@ static void test_mt_multipop(void) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    thds[i] = grpc_core::Thread("grpc_multipop_test", test_thread, &ta[i]);
+    thds[i] =
+        grpc_core::Thread("grpc_multipop_test", test_thread, &ta[i]);
     thds[i].Start();
   }
   pull_args pa;
@@ -165,7 +166,8 @@ static void test_mt_multipop(void) {
   pa.start = &start;
   gpr_mu_init(&pa.mu);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
-    pull_thds[i] = grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
+    pull_thds[i] =
+        grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
     pull_thds[i].Start();
   }
   gpr_event_set(&start, reinterpret_cast<void*>(1));

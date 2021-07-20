@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -98,15 +98,16 @@ static void on_connect(void* acp, grpc_error_handle error) {
     if (socket != NULL) {
       DWORD transfered_bytes = 0;
       DWORD flags;
-      BOOL wsa_success =
-          WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
-                                 &transfered_bytes, FALSE, &flags);
+      BOOL wsa_success = WSAGetOverlappedResult(
+          socket->socket, &socket->write_info.overlapped,
+          &transfered_bytes, FALSE, &flags);
       GPR_ASSERT(transfered_bytes == 0);
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
       } else {
-        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name.c_str());
+        *ep = grpc_tcp_create(socket, ac->channel_args,
+                              ac->addr_name.c_str());
         socket = NULL;
       }
     } else {
@@ -161,20 +162,21 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
   /* Grab the function pointer for ConnectEx for that specific socket.
      It may change depending on the interface. */
-  status =
-      WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
-               &ConnectEx, sizeof(ConnectEx), &ioctl_num_bytes, NULL, NULL);
+  status = WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid,
+                    sizeof(guid), &ConnectEx, sizeof(ConnectEx),
+                    &ioctl_num_bytes, NULL, NULL);
 
   if (status != 0) {
-    error = GRPC_WSA_ERROR(WSAGetLastError(),
-                           "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)");
+    error =
+        GRPC_WSA_ERROR(WSAGetLastError(),
+                       "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)");
     goto failure;
   }
 
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
-  status =
-      bind(sock, (grpc_sockaddr*)&local_address.addr, (int)local_address.len);
+  status = bind(sock, (grpc_sockaddr*)&local_address.addr,
+                (int)local_address.len);
   if (status != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
@@ -182,11 +184,11 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
   socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
-  success = ConnectEx(sock, (grpc_sockaddr*)&addr->addr, (int)addr->len, NULL,
-                      0, NULL, &info->overlapped);
+  success = ConnectEx(sock, (grpc_sockaddr*)&addr->addr, (int)addr->len,
+                      NULL, 0, NULL, &info->overlapped);
 
-  /* It wouldn't be unusual to get a success immediately. But we'll still get
-     an IOCP notification, so let's ignore it. */
+  /* It wouldn't be unusual to get a success immediately. But we'll
+     still get an IOCP notification, so let's ignore it. */
   if (!success) {
     int last_error = WSAGetLastError();
     if (last_error != ERROR_IO_PENDING) {
@@ -203,9 +205,11 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->endpoint = endpoint;
   ac->channel_args = grpc_channel_args_copy(channel_args);
-  GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac,
+                    grpc_schedule_on_exec_ctx);
 
-  GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac,
+                    grpc_schedule_on_exec_ctx);
   gpr_mu_lock(&ac->mu);
   grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
   grpc_socket_notify_on_write(socket, &ac->on_connect);
@@ -215,11 +219,11 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   std::string target_uri = grpc_sockaddr_to_uri(addr);
-  grpc_error_handle final_error =
-      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Failed to connect", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_cpp_string(std::move(target_uri)));
+  grpc_error_handle final_error = grpc_error_set_str(
+      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "Failed to connect", &error, 1),
+      GRPC_ERROR_STR_TARGET_ADDRESS,
+      grpc_slice_from_cpp_string(std::move(target_uri)));
   GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

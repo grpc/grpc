@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,7 +52,8 @@ static void on_jwt_verification_done(void* user_data,
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
     GPR_ASSERT(claims != nullptr);
-    std::string claims_str = grpc_jwt_claims_json(claims)->Dump(/*indent=*/2);
+    std::string claims_str =
+        grpc_jwt_claims_json(claims)->Dump(/*indent=*/2);
     printf("Claims: \n\n%s\n", claims_str.c_str());
     grpc_jwt_claims_destroy(claims);
   } else {
@@ -64,7 +65,8 @@ static void on_jwt_verification_done(void* user_data,
 
   gpr_mu_lock(sync->mu);
   sync->is_done = 1;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(sync->pollset, nullptr));
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(sync->pollset, nullptr));
   gpr_mu_unlock(sync->mu);
 }
 
@@ -89,7 +91,8 @@ int main(int argc, char** argv) {
 
   grpc_init();
 
-  sync.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  sync.pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(sync.pollset, &sync.mu);
   sync.is_done = 0;
 
@@ -99,9 +102,9 @@ int main(int argc, char** argv) {
   gpr_mu_lock(sync.mu);
   while (!sync.is_done) {
     grpc_pollset_worker* worker = nullptr;
-    if (!GRPC_LOG_IF_ERROR(
-            "pollset_work",
-            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE))) {
+    if (!GRPC_LOG_IF_ERROR("pollset_work",
+                           grpc_pollset_work(sync.pollset, &worker,
+                                             GRPC_MILLIS_INF_FUTURE))) {
       sync.is_done = true;
     }
     gpr_mu_unlock(sync.mu);

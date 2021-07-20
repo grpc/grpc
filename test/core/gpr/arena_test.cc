@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,8 +38,8 @@ using grpc_core::Arena;
 
 static void test_noop(void) { Arena::Create(1)->Destroy(); }
 
-static void test(const char* name, size_t init_size, const size_t* allocs,
-                 size_t nallocs) {
+static void test(const char* name, size_t init_size,
+                 const size_t* allocs, size_t nallocs) {
   std::vector<std::string> parts;
   parts.push_back(
       absl::StrFormat("test '%s': %" PRIdPTR " <- {", name, init_size));
@@ -101,8 +101,8 @@ static void concurrent_test(void) {
   grpc_core::Thread thds[CONCURRENT_TEST_THREADS];
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    thds[i] =
-        grpc_core::Thread("grpc_concurrent_test", concurrent_test_body, &args);
+    thds[i] = grpc_core::Thread("grpc_concurrent_test",
+                                concurrent_test_body, &args);
     thds[i].Start();
   }
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,19 +36,20 @@ namespace grpc_core {
 struct ConnectionMetrics {
   /* Delivery rate in Bytes/s. */
   absl::optional<uint64_t> delivery_rate;
-  /* If the delivery rate is limited by the application, this is set to true. */
+  /* If the delivery rate is limited by the application, this is set to
+   * true. */
   absl::optional<bool> is_delivery_rate_app_limited;
   /* Total packets retransmitted. */
   absl::optional<uint32_t> packet_retx;
-  /* Total packets retransmitted spuriously. This metric is smaller than or
-  equal to packet_retx. */
+  /* Total packets retransmitted spuriously. This metric is smaller than
+  or equal to packet_retx. */
   absl::optional<uint32_t> packet_spurious_retx;
   /* Total packets sent. */
   absl::optional<uint32_t> packet_sent;
   /* Total packets delivered. */
   absl::optional<uint32_t> packet_delivered;
-  /* Total packets delivered with ECE marked. This metric is smaller than or
-  equal to packet_delivered. */
+  /* Total packets delivered with ECE marked. This metric is smaller
+  than or equal to packet_delivered. */
   absl::optional<uint32_t> packet_delivered_ce;
   /* Total bytes lost so far. */
   absl::optional<uint64_t> data_retx;
@@ -66,20 +67,20 @@ struct ConnectionMetrics {
   absl::optional<uint32_t> congestion_window;
   /* Slow start threshold in packets. */
   absl::optional<uint32_t> snd_ssthresh;
-  /* Maximum degree of reordering (i.e., maximum number of packets reodered)
-   on the connection. */
+  /* Maximum degree of reordering (i.e., maximum number of packets
+   reodered) on the connection. */
   absl::optional<uint32_t> reordering;
-  /* Represents the number of recurring retransmissions of the first sequence
-  that is not acknowledged yet. */
+  /* Represents the number of recurring retransmissions of the first
+  sequence that is not acknowledged yet. */
   absl::optional<uint8_t> recurring_retrans;
   /* The cumulative time (in usec) that the transport protocol was busy
    sending data. */
   absl::optional<uint64_t> busy_usec;
-  /* The cumulative time (in usec) that the transport protocol was limited by
-   the receive window size. */
+  /* The cumulative time (in usec) that the transport protocol was
+   limited by the receive window size. */
   absl::optional<uint64_t> rwnd_limited_usec;
-  /* The cumulative time (in usec) that the transport protocol was limited by
-   the send buffer size. */
+  /* The cumulative time (in usec) that the transport protocol was
+   limited by the send buffer size. */
   absl::optional<uint64_t> sndbuf_limited_usec;
 };
 
@@ -94,23 +95,25 @@ struct Timestamps {
   Timestamp sent_time;
   Timestamp acked_time;
 
-  uint32_t byte_offset; /* byte offset relative to the start of the RPC */
+  uint32_t
+      byte_offset; /* byte offset relative to the start of the RPC */
 
 #ifdef GRPC_LINUX_ERRQUEUE
   grpc_core::tcp_info info; /* tcp_info collected on sendmsg */
 #endif                      /* GRPC_LINUX_ERRQUEUE */
 };
 
-/** TracedBuffer is a class to keep track of timestamps for a specific buffer in
- * the TCP layer. We are only tracking timestamps for Linux kernels and hence
- * this class would only be used by Linux platforms. For all other platforms,
- * TracedBuffer would be an empty class.
+/** TracedBuffer is a class to keep track of timestamps for a specific
+ * buffer in the TCP layer. We are only tracking timestamps for Linux
+ * kernels and hence this class would only be used by Linux platforms.
+ * For all other platforms, TracedBuffer would be an empty class.
  *
- * The timestamps collected are according to grpc_core::Timestamps declared
- * above.
+ * The timestamps collected are according to grpc_core::Timestamps
+ * declared above.
  *
- * A TracedBuffer list is kept track of using the head element of the list. If
- * the head element of the list is nullptr, then the list is empty.
+ * A TracedBuffer list is kept track of using the head element of the
+ * list. If the head element of the list is nullptr, then the list is
+ * empty.
  */
 #ifdef GRPC_LINUX_ERRQUEUE
 class TracedBuffer {
@@ -119,35 +122,39 @@ class TracedBuffer {
   TracedBuffer(uint32_t seq_no, void* arg)
       : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
 
-  /** Add a new entry in the TracedBuffer list pointed to by head. Also saves
-   * sendmsg_time with the current timestamp. */
-  static void AddNewEntry(grpc_core::TracedBuffer** head, uint32_t seq_no,
-                          int fd, void* arg);
+  /** Add a new entry in the TracedBuffer list pointed to by head. Also
+   * saves sendmsg_time with the current timestamp. */
+  static void AddNewEntry(grpc_core::TracedBuffer** head,
+                          uint32_t seq_no, int fd, void* arg);
 
   /** Processes a received timestamp based on sock_extended_err and
-   * scm_timestamping structures. It will invoke the timestamps callback if the
-   * timestamp type is SCM_TSTAMP_ACK. */
+   * scm_timestamping structures. It will invoke the timestamps callback
+   * if the timestamp type is SCM_TSTAMP_ACK. */
   static void ProcessTimestamp(grpc_core::TracedBuffer** head,
                                struct sock_extended_err* serr,
                                struct cmsghdr* opt_stats,
                                struct scm_timestamping* tss);
 
-  /** Cleans the list by calling the callback for each traced buffer in the list
-   * with timestamps that it has. */
+  /** Cleans the list by calling the callback for each traced buffer in
+   * the list with timestamps that it has. */
   static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
                        grpc_error_handle shutdown_err);
 
  private:
-  uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
-  void* arg_;       /* The arg to pass to timestamps_callback */
-  grpc_core::Timestamps ts_; /* The timestamps corresponding to this buffer */
-  grpc_core::TracedBuffer* next_; /* The next TracedBuffer in the list */
+  uint32_t
+      seq_no_; /* The sequence number for the last byte in the buffer */
+  void* arg_;  /* The arg to pass to timestamps_callback */
+  grpc_core::Timestamps
+      ts_; /* The timestamps corresponding to this buffer */
+  grpc_core::TracedBuffer*
+      next_; /* The next TracedBuffer in the list */
 };
 #else  /* GRPC_LINUX_ERRQUEUE */
 class TracedBuffer {
  public:
   /* Phony shutdown function */
-  static void Shutdown(grpc_core::TracedBuffer** /*head*/, void* /*remaining*/,
+  static void Shutdown(grpc_core::TracedBuffer** /*head*/,
+                       void* /*remaining*/,
                        grpc_error_handle shutdown_err) {
     GRPC_ERROR_UNREF(shutdown_err);
   }

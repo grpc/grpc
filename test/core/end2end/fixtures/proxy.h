@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,12 +32,14 @@ typedef struct grpc_end2end_proxy_def {
                                  grpc_channel_args* client_args);
 } grpc_end2end_proxy_def;
 
-grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
-                                              grpc_channel_args* client_args,
-                                              grpc_channel_args* server_args);
+grpc_end2end_proxy* grpc_end2end_proxy_create(
+    const grpc_end2end_proxy_def* def, grpc_channel_args* client_args,
+    grpc_channel_args* server_args);
 void grpc_end2end_proxy_destroy(grpc_end2end_proxy* proxy);
 
-const char* grpc_end2end_proxy_get_client_target(grpc_end2end_proxy* proxy);
-const char* grpc_end2end_proxy_get_server_port(grpc_end2end_proxy* proxy);
+const char* grpc_end2end_proxy_get_client_target(
+    grpc_end2end_proxy* proxy);
+const char* grpc_end2end_proxy_get_server_port(
+    grpc_end2end_proxy* proxy);
 
 #endif /* GRPC_TEST_CORE_END2END_FIXTURES_PROXY_H */

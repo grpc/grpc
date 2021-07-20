@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,7 +35,8 @@ TlsServerAuthorizationCheckArg::TlsServerAuthorizationCheckArg(
     gpr_log(GPR_ERROR, "c_arg context has already been set");
   }
   c_arg_->context = static_cast<void*>(this);
-  c_arg_->destroy_context = &TlsServerAuthorizationCheckArgDestroyContext;
+  c_arg_->destroy_context =
+      &TlsServerAuthorizationCheckArgDestroyContext;
 }
 
 TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {}
@@ -44,7 +45,9 @@ void* TlsServerAuthorizationCheckArg::cb_user_data() const {
   return c_arg_->cb_user_data;
 }
 
-int TlsServerAuthorizationCheckArg::success() const { return c_arg_->success; }
+int TlsServerAuthorizationCheckArg::success() const {
+  return c_arg_->success;
+}
 
 std::string TlsServerAuthorizationCheckArg::target_name() const {
   std::string cpp_target_name(c_arg_->target_name);
@@ -56,7 +59,8 @@ std::string TlsServerAuthorizationCheckArg::peer_cert() const {
   return cpp_peer_cert;
 }
 
-std::string TlsServerAuthorizationCheckArg::peer_cert_full_chain() const {
+std::string TlsServerAuthorizationCheckArg::peer_cert_full_chain()
+    const {
   std::string cpp_peer_cert_full_chain(c_arg_->peer_cert_full_chain);
   return cpp_peer_cert_full_chain;
 }
@@ -69,7 +73,8 @@ std::string TlsServerAuthorizationCheckArg::error_details() const {
   return c_arg_->error_details->error_details();
 }
 
-void TlsServerAuthorizationCheckArg::set_cb_user_data(void* cb_user_data) {
+void TlsServerAuthorizationCheckArg::set_cb_user_data(
+    void* cb_user_data) {
   c_arg_->cb_user_data = cb_user_data;
 }
 
@@ -89,10 +94,12 @@ void TlsServerAuthorizationCheckArg::set_peer_cert(
 
 void TlsServerAuthorizationCheckArg::set_peer_cert_full_chain(
     const std::string& peer_cert_full_chain) {
-  c_arg_->peer_cert_full_chain = gpr_strdup(peer_cert_full_chain.c_str());
+  c_arg_->peer_cert_full_chain =
+      gpr_strdup(peer_cert_full_chain.c_str());
 }
 
-void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
+void TlsServerAuthorizationCheckArg::set_status(
+    grpc_status_code status) {
   c_arg_->status = status;
 }
 
@@ -101,9 +108,11 @@ void TlsServerAuthorizationCheckArg::set_error_details(
   c_arg_->error_details->set_error_details(error_details.c_str());
 }
 
-void TlsServerAuthorizationCheckArg::OnServerAuthorizationCheckDoneCallback() {
+void TlsServerAuthorizationCheckArg::
+    OnServerAuthorizationCheckDoneCallback() {
   if (c_arg_->cb == nullptr) {
-    gpr_log(GPR_ERROR, "server authorizaton check arg callback API is nullptr");
+    gpr_log(GPR_ERROR,
+            "server authorizaton check arg callback API is nullptr");
     return;
   }
   c_arg_->cb(c_arg_);
@@ -120,7 +129,8 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
   c_config_->set_context(static_cast<void*>(this));
 }
 
-TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
+TlsServerAuthorizationCheckConfig::
+    ~TlsServerAuthorizationCheckConfig() {
   grpc_tls_server_authorization_check_config_release(c_config_);
 }
 
@@ -129,7 +139,8 @@ TlsCredentialsOptions::TlsCredentialsOptions() {
 }
 
 void TlsCredentialsOptions::set_certificate_provider(
-    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+    std::shared_ptr<CertificateProviderInterface>
+        certificate_provider) {
   certificate_provider_ = std::move(certificate_provider);
   if (certificate_provider_ != nullptr) {
     grpc_tls_credentials_options_set_certificate_provider(
@@ -143,8 +154,8 @@ void TlsCredentialsOptions::watch_root_certs() {
 
 void TlsCredentialsOptions::set_root_cert_name(
     const std::string& root_cert_name) {
-  grpc_tls_credentials_options_set_root_cert_name(c_credentials_options_,
-                                                  root_cert_name.c_str());
+  grpc_tls_credentials_options_set_root_cert_name(
+      c_credentials_options_, root_cert_name.c_str());
 }
 
 void TlsCredentialsOptions::watch_identity_key_cert_pairs() {
@@ -166,8 +177,9 @@ void TlsChannelCredentialsOptions::set_server_verification_option(
       options, server_verification_option);
 }
 
-void TlsChannelCredentialsOptions::set_server_authorization_check_config(
-    std::shared_ptr<TlsServerAuthorizationCheckConfig> config) {
+void TlsChannelCredentialsOptions::
+    set_server_authorization_check_config(
+        std::shared_ptr<TlsServerAuthorizationCheckConfig> config) {
   grpc_tls_credentials_options* options = c_credentials_options();
   GPR_ASSERT(options != nullptr);
   if (config != nullptr) {

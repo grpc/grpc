@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -30,29 +30,34 @@ namespace testing {
 namespace {
 
 StringMatcher ExactMatcher(const char* string) {
-  return StringMatcher::Create(StringMatcher::Type::kExact, string).value();
+  return StringMatcher::Create(StringMatcher::Type::kExact, string)
+      .value();
 }
 
-StringMatcher PrefixMatcher(const char* string, bool case_sensitive = true) {
+StringMatcher PrefixMatcher(const char* string,
+                            bool case_sensitive = true) {
   return StringMatcher::Create(StringMatcher::Type::kPrefix, string,
                                case_sensitive)
       .value();
 }
 
-StringMatcher SuffixMatcher(const char* string, bool case_sensitive = true) {
+StringMatcher SuffixMatcher(const char* string,
+                            bool case_sensitive = true) {
   return StringMatcher::Create(StringMatcher::Type::kSuffix, string,
                                case_sensitive)
       .value();
 }
 
-StringMatcher ContainsMatcher(const char* string, bool case_sensitive = true) {
+StringMatcher ContainsMatcher(const char* string,
+                              bool case_sensitive = true) {
   return StringMatcher::Create(StringMatcher::Type::kContains, string,
                                case_sensitive)
       .value();
 }
 
 StringMatcher SafeRegexMatcher(const char* string) {
-  return StringMatcher::Create(StringMatcher::Type::kSafeRegex, string).value();
+  return StringMatcher::Create(StringMatcher::Type::kSafeRegex, string)
+      .value();
 }
 
 TEST(XdsSanMatchingTest, EmptySansList) {
@@ -64,8 +69,8 @@ TEST(XdsSanMatchingTest, EmptySansList) {
 
 TEST(XdsSanMatchingTest, EmptyMatchersList) {
   std::vector<const char*> sans = {"a.example.com", "foo.example.com"};
-  EXPECT_TRUE(
-      TestOnlyXdsVerifySubjectAlternativeNames(sans.data(), sans.size(), {}));
+  EXPECT_TRUE(TestOnlyXdsVerifySubjectAlternativeNames(
+      sans.data(), sans.size(), {}));
 }
 
 TEST(XdsSanMatchingTest, ExactMatchIllegalValues) {
@@ -148,7 +153,8 @@ TEST(XdsSanMatchingTest, ExactMatchWildCard) {
       sans.data(), sans.size(), {ExactMatcher("foo.bar.com")}));
 }
 
-TEST(XdsSanMatchingTest, ExactMatchWildCardDoesNotMatchSingleLabelDomain) {
+TEST(XdsSanMatchingTest,
+     ExactMatchWildCardDoesNotMatchSingleLabelDomain) {
   std::vector<const char*> sans = {"*"};
   EXPECT_FALSE(TestOnlyXdsVerifySubjectAlternativeNames(
       sans.data(), sans.size(), {ExactMatcher("abc")}));
@@ -165,7 +171,8 @@ TEST(XdsSanMatchingTest, ExactMatchWildCardDoesNotMatchSingleLabelDomain) {
       sans.data(), sans.size(), {ExactMatcher("bar.baz.com")}));
 }
 
-TEST(XdsSanMatchingTest, ExactMatchAsteriskOnlyPermittedInLeftMostDomainName) {
+TEST(XdsSanMatchingTest,
+     ExactMatchAsteriskOnlyPermittedInLeftMostDomainName) {
   std::vector<const char*> sans = {"*.example.*.com"};
   EXPECT_FALSE(TestOnlyXdsVerifySubjectAlternativeNames(
       sans.data(), sans.size(), {ExactMatcher("abc.example.xyz.com")}));
@@ -194,8 +201,8 @@ TEST(XdsSanMatchingTest,
 
 TEST(XdsSanMatchingTest, PrefixMatch) {
   std::vector<const char*> sans = {"abc.com"};
-  EXPECT_TRUE(TestOnlyXdsVerifySubjectAlternativeNames(sans.data(), sans.size(),
-                                                       {PrefixMatcher("abc")}));
+  EXPECT_TRUE(TestOnlyXdsVerifySubjectAlternativeNames(
+      sans.data(), sans.size(), {PrefixMatcher("abc")}));
   sans = {"AbC.CoM"};
   EXPECT_FALSE(TestOnlyXdsVerifySubjectAlternativeNames(
       sans.data(), sans.size(), {PrefixMatcher("abc")}));
@@ -280,13 +287,16 @@ TEST(XdsSanMatchingTest, ContainsMatchIgnoresCase) {
 TEST(XdsSanMatchingTest, RegexMatch) {
   std::vector<const char*> sans = {"abc.example.com"};
   EXPECT_TRUE(TestOnlyXdsVerifySubjectAlternativeNames(
-      sans.data(), sans.size(), {SafeRegexMatcher("(abc|xyz).example.com")}));
+      sans.data(), sans.size(),
+      {SafeRegexMatcher("(abc|xyz).example.com")}));
   sans = {"xyz.example.com"};
   EXPECT_TRUE(TestOnlyXdsVerifySubjectAlternativeNames(
-      sans.data(), sans.size(), {SafeRegexMatcher("(abc|xyz).example.com")}));
+      sans.data(), sans.size(),
+      {SafeRegexMatcher("(abc|xyz).example.com")}));
   sans = {"foo.example.com"};
   EXPECT_FALSE(TestOnlyXdsVerifySubjectAlternativeNames(
-      sans.data(), sans.size(), {SafeRegexMatcher("(abc|xyz).example.com")}));
+      sans.data(), sans.size(),
+      {SafeRegexMatcher("(abc|xyz).example.com")}));
 }
 
 }  // namespace

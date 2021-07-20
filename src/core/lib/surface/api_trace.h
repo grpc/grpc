@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,8 +26,8 @@
 
 extern grpc_core::TraceFlag grpc_api_trace;
 
-/* Provide unwrapping macros because we're in C89 and variadic macros weren't
-   introduced until C99... */
+/* Provide unwrapping macros because we're in C89 and variadic macros
+   weren't introduced until C99... */
 #define GRPC_API_TRACE_UNWRAP0()
 #define GRPC_API_TRACE_UNWRAP1(a) , a
 #define GRPC_API_TRACE_UNWRAP2(a, b) , a, b
@@ -35,15 +35,17 @@ extern grpc_core::TraceFlag grpc_api_trace;
 #define GRPC_API_TRACE_UNWRAP4(a, b, c, d) , a, b, c, d
 #define GRPC_API_TRACE_UNWRAP5(a, b, c, d, e) , a, b, c, d, e
 #define GRPC_API_TRACE_UNWRAP6(a, b, c, d, e, f) , a, b, c, d, e, f
-#define GRPC_API_TRACE_UNWRAP7(a, b, c, d, e, f, g) , a, b, c, d, e, f, g
-#define GRPC_API_TRACE_UNWRAP8(a, b, c, d, e, f, g, h) , a, b, c, d, e, f, g, h
+#define GRPC_API_TRACE_UNWRAP7(a, b, c, d, e, f, g) \
+  , a, b, c, d, e, f, g
+#define GRPC_API_TRACE_UNWRAP8(a, b, c, d, e, f, g, h) \
+  , a, b, c, d, e, f, g, h
 #define GRPC_API_TRACE_UNWRAP9(a, b, c, d, e, f, g, h, i) \
   , a, b, c, d, e, f, g, h, i
 #define GRPC_API_TRACE_UNWRAP10(a, b, c, d, e, f, g, h, i, j) \
   , a, b, c, d, e, f, g, h, i, j
 
-/* Due to the limitations of C89's preprocessor, the arity of the var-arg list
-   'nargs' must be specified. */
+/* Due to the limitations of C89's preprocessor, the arity of the
+   var-arg list 'nargs' must be specified. */
 #define GRPC_API_TRACE(fmt, nargs, args)                      \
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {              \
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \

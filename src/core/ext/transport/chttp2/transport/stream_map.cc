@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,8 +28,8 @@
 void grpc_chttp2_stream_map_init(grpc_chttp2_stream_map* map,
                                  size_t initial_capacity) {
   GPR_DEBUG_ASSERT(initial_capacity > 1);
-  map->keys =
-      static_cast<uint32_t*>(gpr_malloc(sizeof(uint32_t) * initial_capacity));
+  map->keys = static_cast<uint32_t*>(
+      gpr_malloc(sizeof(uint32_t) * initial_capacity));
   map->values =
       static_cast<void**>(gpr_malloc(sizeof(void*) * initial_capacity));
   map->count = 0;
@@ -56,23 +56,25 @@ static size_t compact(uint32_t* keys, void** values, size_t count) {
   return out;
 }
 
-void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
-                                void* value) {
+void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map,
+                                uint32_t key, void* value) {
   size_t count = map->count;
   size_t capacity = map->capacity;
   uint32_t* keys = map->keys;
   void** values = map->values;
 
-  // The first assertion ensures that the table is monotonically increasing.
+  // The first assertion ensures that the table is monotonically
+  // increasing.
   GPR_ASSERT(count == 0 || keys[count - 1] < key);
   GPR_DEBUG_ASSERT(value);
-  // Asserting that the key is not already in the map can be a debug assertion.
-  // Why: we're already checking that the map elements are monotonically
-  // increasing. If we re-add a key, i.e. if the key is already present, then
-  // either it is the most recently added key in the map (in which case the
-  // first assertion fails due to key == last_key) or there is a more recently
-  // added (larger) key at the end of the map: in which case the first assertion
-  // still fails due to key < last_key.
+  // Asserting that the key is not already in the map can be a debug
+  // assertion. Why: we're already checking that the map elements are
+  // monotonically increasing. If we re-add a key, i.e. if the key is
+  // already present, then either it is the most recently added key in
+  // the map (in which case the first assertion fails due to key ==
+  // last_key) or there is a more recently added (larger) key at the end
+  // of the map: in which case the first assertion still fails due to
+  // key < last_key.
   GPR_DEBUG_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
 
   if (count == capacity) {
@@ -80,13 +82,13 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
       count = compact(keys, values, count);
       map->free = 0;
     } else {
-      /* resize when less than 25% of the table is free, because compaction
-         won't help much */
+      /* resize when less than 25% of the table is free, because
+         compaction won't help much */
       map->capacity = capacity = 2 * capacity;
       map->keys = keys = static_cast<uint32_t*>(
           gpr_realloc(keys, capacity * sizeof(uint32_t)));
-      map->values = values =
-          static_cast<void**>(gpr_realloc(values, capacity * sizeof(void*)));
+      map->values = values = static_cast<void**>(
+          gpr_realloc(values, capacity * sizeof(void*)));
     }
   }
 
@@ -126,7 +128,8 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
   return nullptr;
 }
 
-void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
+void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map,
+                                    uint32_t key) {
   void** pvalue = find<true>(map, key);
   GPR_DEBUG_ASSERT(pvalue != nullptr);
   void* out = *pvalue;
@@ -142,7 +145,8 @@ void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
   return out;
 }
 
-void* grpc_chttp2_stream_map_find(grpc_chttp2_stream_map* map, uint32_t key) {
+void* grpc_chttp2_stream_map_find(grpc_chttp2_stream_map* map,
+                                  uint32_t key) {
   void** pvalue = find<false>(map, key);
   return pvalue != nullptr ? *pvalue : nullptr;
 }
@@ -164,7 +168,8 @@ void* grpc_chttp2_stream_map_rand(grpc_chttp2_stream_map* map) {
 }
 
 void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map* map,
-                                     void (*f)(void* user_data, uint32_t key,
+                                     void (*f)(void* user_data,
+                                               uint32_t key,
                                                void* value),
                                      void* user_data) {
   size_t i;

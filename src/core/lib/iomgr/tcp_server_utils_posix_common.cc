@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -68,36 +68,39 @@ static void init_max_accept_queue_size(void) {
   s_max_accept_queue_size = n;
 
   if (s_max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    gpr_log(GPR_INFO,
-            "Suspiciously small accept queue (%d) will probably lead to "
-            "connection drops",
-            s_max_accept_queue_size);
+    gpr_log(
+        GPR_INFO,
+        "Suspiciously small accept queue (%d) will probably lead to "
+        "connection drops",
+        s_max_accept_queue_size);
   }
 }
 
 static int get_max_accept_queue_size(void) {
-  gpr_once_init(&s_init_max_accept_queue_size, init_max_accept_queue_size);
+  gpr_once_init(&s_init_max_accept_queue_size,
+                init_max_accept_queue_size);
   return s_max_accept_queue_size;
 }
 
-static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
-                                              const grpc_resolved_address* addr,
-                                              unsigned port_index,
-                                              unsigned fd_index,
-                                              grpc_tcp_listener** listener) {
+static grpc_error_handle add_socket_to_server(
+    grpc_tcp_server* s, int fd, const grpc_resolved_address* addr,
+    unsigned port_index, unsigned fd_index,
+    grpc_tcp_listener** listener) {
   grpc_tcp_listener* sp = nullptr;
   int port = -1;
 
-  grpc_error_handle err =
-      grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
+  grpc_error_handle err = grpc_tcp_server_prepare_socket(
+      s, fd, addr, s->so_reuseport, &port);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(port > 0);
     std::string addr_str = grpc_sockaddr_to_string(addr, true);
     std::string name = absl::StrCat("tcp-server-listener:", addr_str);
     gpr_mu_lock(&s->mu);
     s->nports++;
-    GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-    sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
+    GPR_ASSERT(!s->on_accept_cb &&
+               "must add ports before starting server");
+    sp = static_cast<grpc_tcp_listener*>(
+        gpr_malloc(sizeof(grpc_tcp_listener)));
     sp->next = nullptr;
     if (s->head == nullptr) {
       s->head = sp;
@@ -122,14 +125,12 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   return err;
 }
 
-/* If successful, add a listener to s for addr, set *dsmode for the socket, and
-   return the *listener. */
-grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
-                                           const grpc_resolved_address* addr,
-                                           unsigned port_index,
-                                           unsigned fd_index,
-                                           grpc_dualstack_mode* dsmode,
-                                           grpc_tcp_listener** listener) {
+/* If successful, add a listener to s for addr, set *dsmode for the
+   socket, and return the *listener. */
+grpc_error_handle grpc_tcp_server_add_addr(
+    grpc_tcp_server* s, const grpc_resolved_address* addr,
+    unsigned port_index, unsigned fd_index, grpc_dualstack_mode* dsmode,
+    grpc_tcp_listener** listener) {
   grpc_resolved_address addr4_copy;
   int fd;
   grpc_error_handle err =
@@ -141,7 +142,8 @@ grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
       grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
     addr = &addr4_copy;
   }
-  return add_socket_to_server(s, fd, addr, port_index, fd_index, listener);
+  return add_socket_to_server(s, fd, addr, port_index, fd_index,
+                              listener);
 }
 
 /* Prepare a recently-created socket for listening. */
@@ -162,7 +164,8 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
   err = grpc_set_socket_zerocopy(fd);
   if (err != GRPC_ERROR_NONE) {
     /* it's not fatal, so just log it. */
-    gpr_log(GPR_DEBUG, "Node does not support SO_ZEROCOPY, continuing.");
+    gpr_log(GPR_DEBUG,
+            "Node does not support SO_ZEROCOPY, continuing.");
     GRPC_ERROR_UNREF(err);
   }
 #endif
@@ -182,11 +185,13 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_LISTENER_USAGE,
-                                          s->channel_args);
+  err = grpc_apply_socket_mutator_in_args(
+      fd, GRPC_FD_SERVER_LISTENER_USAGE, s->channel_args);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
+  if (bind(fd,
+           reinterpret_cast<grpc_sockaddr*>(
+               const_cast<char*>(addr->addr)),
            addr->len) < 0) {
     err = GRPC_OS_ERROR(errno, "bind");
     goto error;
@@ -197,9 +202,11 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
     goto error;
   }
 
-  sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+  sockname_temp.len =
+      static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
+  if (getsockname(fd,
+                  reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
                   &sockname_temp.len) < 0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     goto error;
@@ -213,10 +220,10 @@ error:
   if (fd >= 0) {
     close(fd);
   }
-  grpc_error_handle ret =
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Unable to configure socket", &err, 1),
-                         GRPC_ERROR_INT_FD, fd);
+  grpc_error_handle ret = grpc_error_set_int(
+      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "Unable to configure socket", &err, 1),
+      GRPC_ERROR_INT_FD, fd);
   GRPC_ERROR_UNREF(err);
   return ret;
 }

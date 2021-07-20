@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,12 +57,14 @@ int grpc_tls_server_authorization_check_config::Schedule(
     if (arg != nullptr) {
       arg->status = GRPC_STATUS_NOT_FOUND;
       arg->error_details->set_error_details(
-          "schedule API in server authorization check config is nullptr");
+          "schedule API in server authorization check config is "
+          "nullptr");
     }
     return 1;
   }
   if (arg != nullptr && context_ != nullptr) {
-    arg->config = const_cast<grpc_tls_server_authorization_check_config*>(this);
+    arg->config =
+        const_cast<grpc_tls_server_authorization_check_config*>(this);
   }
   return schedule_(config_user_data_, arg);
 }
@@ -74,12 +76,14 @@ void grpc_tls_server_authorization_check_config::Cancel(
     if (arg != nullptr) {
       arg->status = GRPC_STATUS_NOT_FOUND;
       arg->error_details->set_error_details(
-          "schedule API in server authorization check config is nullptr");
+          "schedule API in server authorization check config is "
+          "nullptr");
     }
     return;
   }
   if (arg != nullptr) {
-    arg->config = const_cast<grpc_tls_server_authorization_check_config*>(this);
+    arg->config =
+        const_cast<grpc_tls_server_authorization_check_config*>(this);
   }
   cancel_(config_user_data_, arg);
 }
@@ -134,7 +138,8 @@ void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
 }
 
 void grpc_tls_credentials_options_set_identity_cert_name(
-    grpc_tls_credentials_options* options, const char* identity_cert_name) {
+    grpc_tls_credentials_options* options,
+    const char* identity_cert_name) {
   GPR_ASSERT(options != nullptr);
   options->set_identity_cert_name(identity_cert_name);
 }
@@ -157,9 +162,10 @@ grpc_tls_server_authorization_check_config_create(
                    grpc_tls_server_authorization_check_arg* arg),
     void (*destruct)(void* config_user_data)) {
   if (schedule == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Schedule API is nullptr in creating TLS server authorization "
-            "check config.");
+    gpr_log(
+        GPR_ERROR,
+        "Schedule API is nullptr in creating TLS server authorization "
+        "check config.");
     return nullptr;
   }
   grpc_core::ExecCtx exec_ctx;
@@ -170,8 +176,8 @@ grpc_tls_server_authorization_check_config_create(
 void grpc_tls_server_authorization_check_config_release(
     grpc_tls_server_authorization_check_config* config) {
   GRPC_API_TRACE(
-      "grpc_tls_server_authorization_check_config_release(config=%p)", 1,
-      (config));
+      "grpc_tls_server_authorization_check_config_release(config=%p)",
+      1, (config));
   grpc_core::ExecCtx exec_ctx;
   if (config != nullptr) config->Unref();
 }

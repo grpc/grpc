@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,9 +40,11 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
     return GetCredentialsProvider()->GetServerCredentials(
         absl::GetFlag(FLAGS_custom_credentials_type));
   } else if (absl::GetFlag(FLAGS_use_alts)) {
-    return GetCredentialsProvider()->GetServerCredentials(kAltsCredentialsType);
+    return GetCredentialsProvider()->GetServerCredentials(
+        kAltsCredentialsType);
   } else if (absl::GetFlag(FLAGS_use_tls)) {
-    return GetCredentialsProvider()->GetServerCredentials(kTlsCredentialsType);
+    return GetCredentialsProvider()->GetServerCredentials(
+        kTlsCredentialsType);
   } else {
     return GetCredentialsProvider()->GetServerCredentials(
         kInsecureCredentialsType);
@@ -55,10 +57,12 @@ InteropServerContextInspector::InteropServerContextInspector(
 
 grpc_compression_algorithm
 InteropServerContextInspector::GetCallCompressionAlgorithm() const {
-  return grpc_call_test_only_get_compression_algorithm(context_.call_.call);
+  return grpc_call_test_only_get_compression_algorithm(
+      context_.call_.call);
 }
 
-uint32_t InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
+uint32_t InteropServerContextInspector::GetEncodingsAcceptedByClient()
+    const {
   return grpc_call_test_only_get_encodings_accepted_by_peer(
       context_.call_.call);
 }

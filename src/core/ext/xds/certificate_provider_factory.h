@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -27,8 +27,9 @@
 
 namespace grpc_core {
 
-// Factories for plugins. Each plugin implementation should create its own
-// factory implementation and register an instance with the registry.
+// Factories for plugins. Each plugin implementation should create its
+// own factory implementation and register an instance with the
+// registry.
 class CertificateProviderFactory {
  public:
   // Interface for configs for CertificateProviders.
@@ -36,8 +37,8 @@ class CertificateProviderFactory {
    public:
     ~Config() override = default;
 
-    // Name of the type of the CertificateProvider. Unique to each type of
-    // config.
+    // Name of the type of the CertificateProvider. Unique to each type
+    // of config.
     virtual const char* name() const = 0;
 
     virtual std::string ToString() const = 0;

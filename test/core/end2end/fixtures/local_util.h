@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,7 +27,8 @@ struct grpc_end2end_local_fullstack_fixture_data {
 };
 
 /* Utility functions shared by h2_local tests. */
-grpc_end2end_test_fixture grpc_end2end_local_chttp2_create_fixture_fullstack();
+grpc_end2end_test_fixture
+grpc_end2end_local_chttp2_create_fixture_fullstack();
 
 void grpc_end2end_local_chttp2_init_client_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args,

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,13 +38,15 @@ using grpc::testing::EchoResponse;
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl
+    : public ::grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     if (!context->client_metadata().empty()) {
-      for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
-               iter = context->client_metadata().begin();
+      for (std::multimap<grpc::string_ref,
+                         grpc::string_ref>::const_iterator iter =
+               context->client_metadata().begin();
            iter != context->client_metadata().end(); ++iter) {
         context->AddInitialMetadata(ToString(iter->first),
                                     ToString(iter->second));
@@ -105,17 +107,20 @@ TEST_F(CliCallTest, SimpleRpc) {
   EXPECT_TRUE(request.SerializeToString(&request_bin));
   EXPECT_TRUE(response.SerializeToString(&expected_response_bin));
   std::multimap<std::string, std::string> client_metadata;
-  std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
-      server_trailing_metadata;
-  client_metadata.insert(std::pair<std::string, std::string>("key1", "val1"));
-  Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin,
-                            client_metadata, &server_initial_metadata,
-                            &server_trailing_metadata);
+  std::multimap<grpc::string_ref, grpc::string_ref>
+      server_initial_metadata, server_trailing_metadata;
+  client_metadata.insert(
+      std::pair<std::string, std::string>("key1", "val1"));
+  Status s2 = CliCall::Call(
+      channel_, kMethod, request_bin, &response_bin, client_metadata,
+      &server_initial_metadata, &server_trailing_metadata);
   EXPECT_TRUE(s2.ok());
 
   EXPECT_EQ(expected_response_bin, response_bin);
-  EXPECT_EQ(context.GetServerInitialMetadata(), server_initial_metadata);
-  EXPECT_EQ(context.GetServerTrailingMetadata(), server_trailing_metadata);
+  EXPECT_EQ(context.GetServerInitialMetadata(),
+            server_initial_metadata);
+  EXPECT_EQ(context.GetServerTrailingMetadata(),
+            server_trailing_metadata);
 }
 
 }  // namespace testing

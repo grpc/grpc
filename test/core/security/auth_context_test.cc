@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,8 +40,8 @@ static void test_empty_context(void) {
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == nullptr);
   it = grpc_auth_context_find_properties_by_name(ctx.get(), "foo");
   GPR_ASSERT(grpc_auth_property_iterator_next(&it) == nullptr);
-  GPR_ASSERT(
-      grpc_auth_context_set_peer_identity_property_name(ctx.get(), "bar") == 0);
+  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
+                 ctx.get(), "bar") == 0);
   GPR_ASSERT(grpc_auth_context_peer_identity_property_name(ctx.get()) ==
              nullptr);
   ctx.reset(DEBUG_LOCATION, "test");
@@ -59,11 +59,12 @@ static void test_simple_context(void) {
   grpc_auth_context_add_cstring_property(ctx.get(), "name", "chapo");
   grpc_auth_context_add_cstring_property(ctx.get(), "foo", "bar");
   GPR_ASSERT(ctx->properties().count == 3);
-  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(ctx.get(),
-                                                               "name") == 1);
+  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
+                 ctx.get(), "name") == 1);
 
-  GPR_ASSERT(strcmp(grpc_auth_context_peer_identity_property_name(ctx.get()),
-                    "name") == 0);
+  GPR_ASSERT(
+      strcmp(grpc_auth_context_peer_identity_property_name(ctx.get()),
+             "name") == 0);
   it = grpc_auth_context_property_iterator(ctx.get());
   for (i = 0; i < ctx->properties().count; i++) {
     const grpc_auth_property* p = grpc_auth_property_iterator_next(&it);
@@ -102,11 +103,12 @@ static void test_chained_context(void) {
   grpc_auth_context_add_cstring_property(ctx.get(), "name", "chapi");
   grpc_auth_context_add_cstring_property(ctx.get(), "name", "chap0");
   grpc_auth_context_add_cstring_property(ctx.get(), "foo", "bar");
-  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(ctx.get(),
-                                                               "name") == 1);
+  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
+                 ctx.get(), "name") == 1);
 
-  GPR_ASSERT(strcmp(grpc_auth_context_peer_identity_property_name(ctx.get()),
-                    "name") == 0);
+  GPR_ASSERT(
+      strcmp(grpc_auth_context_peer_identity_property_name(ctx.get()),
+             "name") == 0);
   it = grpc_auth_context_property_iterator(ctx.get());
   for (i = 0; i < ctx->properties().count; i++) {
     const grpc_auth_property* p = grpc_auth_property_iterator_next(&it);

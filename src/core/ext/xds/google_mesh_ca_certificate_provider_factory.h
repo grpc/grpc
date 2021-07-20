@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -54,9 +54,13 @@ class GoogleMeshCaCertificateProviderFactory
 
     grpc_millis timeout() const { return timeout_; }
 
-    grpc_millis certificate_lifetime() const { return certificate_lifetime_; }
+    grpc_millis certificate_lifetime() const {
+      return certificate_lifetime_;
+    }
 
-    grpc_millis renewal_grace_period() const { return renewal_grace_period_; }
+    grpc_millis renewal_grace_period() const {
+      return renewal_grace_period_;
+    }
 
     uint32_t key_size() const { return key_size_; }
 
@@ -93,8 +97,10 @@ class GoogleMeshCaCertificateProviderFactory
   CreateCertificateProviderConfig(const Json& config_json,
                                   grpc_error_handle* error) override;
 
-  RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {
+  RefCountedPtr<grpc_tls_certificate_provider>
+  CreateCertificateProvider(
+      RefCountedPtr<CertificateProviderFactory::Config> /*config*/)
+      override {
     // TODO(yashykt) : To be implemented
     return nullptr;
   }

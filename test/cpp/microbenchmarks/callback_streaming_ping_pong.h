@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,7 +34,8 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
+class BidiClient
+    : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
   BidiClient(benchmark::State* state, EchoTestService::Stub* stub,
              ClientContext* cli_ctx, EchoRequest* request,
@@ -82,7 +83,8 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
   void StartNewRpc() {
     cli_ctx_->~ClientContext();
     new (cli_ctx_) ClientContext();
-    cli_ctx_->AddMetadata(kServerMessageSize, std::to_string(msgs_size_));
+    cli_ctx_->AddMetadata(kServerMessageSize,
+                          std::to_string(msgs_size_));
     stub_->async()->BidiStream(cli_ctx_, this);
     MaybeWrite();
     StartCall();
@@ -117,7 +119,8 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
   bool done = false;
 };
 
-template <class Fixture, class ClientContextMutator, class ServerContextMutator>
+template <class Fixture, class ClientContextMutator,
+          class ServerContextMutator>
 static void BM_CallbackBidiStreaming(benchmark::State& state) {
   int message_size = state.range(0);
   int max_ping_pongs = state.range(1);

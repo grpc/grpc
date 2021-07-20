@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,7 +48,8 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
 static void maybe_append_error_msg(const char* appendix, char** dst) {
   if (dst != nullptr && appendix != nullptr) {
     int dst_len = static_cast<int>(strlen(*dst));
-    *dst = static_cast<char*>(realloc(*dst, dst_len + strlen(appendix) + 1));
+    *dst = static_cast<char*>(
+        realloc(*dst, dst_len + strlen(appendix) + 1));
     assert(*dst != nullptr);
     memcpy(*dst + dst_len, appendix, strlen(appendix) + 1);
   }
@@ -81,7 +82,8 @@ static grpc_status_code ensure_header_and_tag_length(
     maybe_copy_error_msg("Header is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
-  if (header.iov_len != alts_iovec_record_protocol_get_header_length()) {
+  if (header.iov_len !=
+      alts_iovec_record_protocol_get_header_length()) {
     maybe_copy_error_msg("Header length is incorrect.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
@@ -109,7 +111,8 @@ static grpc_status_code increment_counter(alts_counter* counter,
     return status;
   }
   if (is_overflow) {
-    maybe_copy_error_msg("Crypter counter is overflowed.", error_details);
+    maybe_copy_error_msg("Crypter counter is overflowed.",
+                         error_details);
     return GRPC_STATUS_INTERNAL;
   }
   return GRPC_STATUS_OK;
@@ -132,7 +135,8 @@ static grpc_status_code write_frame_header(size_t data_length,
     maybe_copy_error_msg("Header is nullptr.", error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
-  size_t frame_length = kZeroCopyFrameMessageTypeFieldSize + data_length;
+  size_t frame_length =
+      kZeroCopyFrameMessageTypeFieldSize + data_length;
   store_32_le(static_cast<uint32_t>(frame_length), header);
   store_32_le(kZeroCopyFrameMessageType,
               header + kZeroCopyFrameLengthFieldSize);
@@ -148,11 +152,13 @@ static grpc_status_code verify_frame_header(size_t data_length,
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   size_t frame_length = load_32_le(header);
-  if (frame_length != kZeroCopyFrameMessageTypeFieldSize + data_length) {
+  if (frame_length !=
+      kZeroCopyFrameMessageTypeFieldSize + data_length) {
     maybe_copy_error_msg("Bad frame length.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
-  size_t message_type = load_32_le(header + kZeroCopyFrameLengthFieldSize);
+  size_t message_type =
+      load_32_le(header + kZeroCopyFrameLengthFieldSize);
   if (message_type != kZeroCopyFrameMessageType) {
     maybe_copy_error_msg("Unsupported message type.", error_details);
     return GRPC_STATUS_INTERNAL;
@@ -175,7 +181,8 @@ size_t alts_iovec_record_protocol_get_tag_length(
 }
 
 size_t alts_iovec_record_protocol_max_unprotected_data_size(
-    const alts_iovec_record_protocol* rp, size_t max_protected_frame_size) {
+    const alts_iovec_record_protocol* rp,
+    size_t max_protected_frame_size) {
   if (rp == nullptr) {
     return 0;
   }
@@ -202,8 +209,9 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_protect(
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   if (!rp->is_protect) {
-    maybe_copy_error_msg("Protect operations are not allowed for this object.",
-                         error_details);
+    maybe_copy_error_msg(
+        "Protect operations are not allowed for this object.",
+        error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   grpc_status_code status =
@@ -215,9 +223,9 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_protect(
   size_t data_length =
       get_total_length(unprotected_vec, unprotected_vec_length);
   /* Sets frame header.  */
-  status = write_frame_header(data_length + rp->tag_length,
-                              static_cast<unsigned char*>(header.iov_base),
-                              error_details);
+  status = write_frame_header(
+      data_length + rp->tag_length,
+      static_cast<unsigned char*>(header.iov_base), error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
@@ -225,15 +233,17 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_protect(
   size_t bytes_written = 0;
   status = gsec_aead_crypter_encrypt_iovec(
       rp->crypter, alts_counter_get_counter(rp->ctr),
-      alts_counter_get_size(rp->ctr), unprotected_vec, unprotected_vec_length,
-      /* plaintext_vec = */ nullptr, /* plaintext_vec_length = */ 0, tag,
-      &bytes_written, error_details);
+      alts_counter_get_size(rp->ctr), unprotected_vec,
+      unprotected_vec_length,
+      /* plaintext_vec = */ nullptr, /* plaintext_vec_length = */ 0,
+      tag, &bytes_written, error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
   if (bytes_written != rp->tag_length) {
-    maybe_copy_error_msg("Bytes written expects to be the same as tag length.",
-                         error_details);
+    maybe_copy_error_msg(
+        "Bytes written expects to be the same as tag length.",
+        error_details);
     return GRPC_STATUS_INTERNAL;
   }
   /* Increments the crypter counter.  */
@@ -258,18 +268,20 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_unprotect(
   }
   if (rp->is_protect) {
     maybe_copy_error_msg(
-        "Unprotect operations are not allowed for this object.", error_details);
+        "Unprotect operations are not allowed for this object.",
+        error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   grpc_status_code status =
       ensure_header_and_tag_length(rp, header, tag, error_details);
   if (status != GRPC_STATUS_OK) return status;
   /* Protected data should not be zero length.  */
-  size_t data_length = get_total_length(protected_vec, protected_vec_length);
+  size_t data_length =
+      get_total_length(protected_vec, protected_vec_length);
   /* Verifies frame header.  */
-  status = verify_frame_header(data_length + rp->tag_length,
-                               static_cast<unsigned char*>(header.iov_base),
-                               error_details);
+  status = verify_frame_header(
+      data_length + rp->tag_length,
+      static_cast<unsigned char*>(header.iov_base), error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
@@ -278,10 +290,12 @@ grpc_status_code alts_iovec_record_protocol_integrity_only_unprotect(
   size_t bytes_written = 0;
   status = gsec_aead_crypter_decrypt_iovec(
       rp->crypter, alts_counter_get_counter(rp->ctr),
-      alts_counter_get_size(rp->ctr), protected_vec, protected_vec_length, &tag,
-      1, plaintext, &bytes_written, error_details);
+      alts_counter_get_size(rp->ctr), protected_vec,
+      protected_vec_length, &tag, 1, plaintext, &bytes_written,
+      error_details);
   if (status != GRPC_STATUS_OK || bytes_written != 0) {
-    maybe_append_error_msg(" Frame tag verification failed.", error_details);
+    maybe_append_error_msg(" Frame tag verification failed.",
+                           error_details);
     return GRPC_STATUS_INTERNAL;
   }
   /* Increments the crypter counter.  */
@@ -305,8 +319,9 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_protect(
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   if (!rp->is_protect) {
-    maybe_copy_error_msg("Protect operations are not allowed for this object.",
-                         error_details);
+    maybe_copy_error_msg(
+        "Protect operations are not allowed for this object.",
+        error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   /* Unprotected data should not be zero length.  */
@@ -320,13 +335,15 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_protect(
   if (protected_frame.iov_len !=
       alts_iovec_record_protocol_get_header_length() + data_length +
           rp->tag_length) {
-    maybe_copy_error_msg("Protected frame size is incorrect.", error_details);
+    maybe_copy_error_msg("Protected frame size is incorrect.",
+                         error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   /* Writer frame header.  */
   grpc_status_code status = write_frame_header(
       data_length + rp->tag_length,
-      static_cast<unsigned char*>(protected_frame.iov_base), error_details);
+      static_cast<unsigned char*>(protected_frame.iov_base),
+      error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
@@ -334,7 +351,8 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_protect(
   unsigned char* ciphertext_buffer =
       static_cast<unsigned char*>(protected_frame.iov_base) +
       alts_iovec_record_protocol_get_header_length();
-  iovec_t ciphertext = {ciphertext_buffer, data_length + rp->tag_length};
+  iovec_t ciphertext = {ciphertext_buffer,
+                        data_length + rp->tag_length};
   size_t bytes_written = 0;
   status = gsec_aead_crypter_encrypt_iovec(
       rp->crypter, alts_counter_get_counter(rp->ctr),
@@ -372,7 +390,8 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
   }
   if (rp->is_protect) {
     maybe_copy_error_msg(
-        "Unprotect operations are not allowed for this object.", error_details);
+        "Unprotect operations are not allowed for this object.",
+        error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   /* Protected data size should be no less than tag size.  */
@@ -389,19 +408,22 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
     maybe_copy_error_msg("Header is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
-  if (header.iov_len != alts_iovec_record_protocol_get_header_length()) {
+  if (header.iov_len !=
+      alts_iovec_record_protocol_get_header_length()) {
     maybe_copy_error_msg("Header length is incorrect.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   /* Ensures unprotected data iovec has sufficient size.  */
-  if (unprotected_data.iov_len != protected_data_length - rp->tag_length) {
-    maybe_copy_error_msg("Unprotected data size is incorrect.", error_details);
+  if (unprotected_data.iov_len !=
+      protected_data_length - rp->tag_length) {
+    maybe_copy_error_msg("Unprotected data size is incorrect.",
+                         error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   /* Verify frame header.  */
   grpc_status_code status = verify_frame_header(
-      protected_data_length, static_cast<unsigned char*>(header.iov_base),
-      error_details);
+      protected_data_length,
+      static_cast<unsigned char*>(header.iov_base), error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
@@ -418,7 +440,8 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
   }
   if (bytes_written != protected_data_length - rp->tag_length) {
     maybe_copy_error_msg(
-        "Bytes written expects to be protected data length minus tag length.",
+        "Bytes written expects to be protected data length minus tag "
+        "length.",
         error_details);
     return GRPC_STATUS_INTERNAL;
   }
@@ -428,33 +451,35 @@ grpc_status_code alts_iovec_record_protocol_privacy_integrity_unprotect(
 
 grpc_status_code alts_iovec_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
-    bool is_integrity_only, bool is_protect, alts_iovec_record_protocol** rp,
-    char** error_details) {
+    bool is_integrity_only, bool is_protect,
+    alts_iovec_record_protocol** rp, char** error_details) {
   if (crypter == nullptr || rp == nullptr) {
     maybe_copy_error_msg(
-        "Invalid nullptr arguments to alts_iovec_record_protocol create.",
+        "Invalid nullptr arguments to alts_iovec_record_protocol "
+        "create.",
         error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
-  alts_iovec_record_protocol* impl = static_cast<alts_iovec_record_protocol*>(
-      gpr_zalloc(sizeof(alts_iovec_record_protocol)));
+  alts_iovec_record_protocol* impl =
+      static_cast<alts_iovec_record_protocol*>(
+          gpr_zalloc(sizeof(alts_iovec_record_protocol)));
   /* Gets counter length.  */
   size_t counter_length = 0;
-  grpc_status_code status =
-      gsec_aead_crypter_nonce_length(crypter, &counter_length, error_details);
+  grpc_status_code status = gsec_aead_crypter_nonce_length(
+      crypter, &counter_length, error_details);
   if (status != GRPC_STATUS_OK) {
     goto cleanup;
   }
   /* Creates counters.  */
-  status =
-      alts_counter_create(is_protect ? !is_client : is_client, counter_length,
-                          overflow_size, &impl->ctr, error_details);
+  status = alts_counter_create(is_protect ? !is_client : is_client,
+                               counter_length, overflow_size,
+                               &impl->ctr, error_details);
   if (status != GRPC_STATUS_OK) {
     goto cleanup;
   }
   /* Gets tag length.  */
-  status =
-      gsec_aead_crypter_tag_length(crypter, &impl->tag_length, error_details);
+  status = gsec_aead_crypter_tag_length(crypter, &impl->tag_length,
+                                        error_details);
   if (status != GRPC_STATUS_OK) {
     goto cleanup;
   }
@@ -469,7 +494,8 @@ cleanup:
   return GRPC_STATUS_FAILED_PRECONDITION;
 }
 
-void alts_iovec_record_protocol_destroy(alts_iovec_record_protocol* rp) {
+void alts_iovec_record_protocol_destroy(
+    alts_iovec_record_protocol* rp) {
   if (rp != nullptr) {
     alts_counter_destroy(rp->ctr);
     gsec_aead_crypter_destroy(rp->crypter);

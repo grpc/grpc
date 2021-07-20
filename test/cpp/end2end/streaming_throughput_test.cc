@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -84,7 +84,8 @@ const char* kLargeString =
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl
+    : public ::grpc::testing::EchoTestService::Service {
  public:
   static void BidiStream_Sender(
       ServerReaderWriter<EchoResponse, EchoRequest>* stream,
@@ -111,8 +112,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
     gpr_atm should_exit;
     gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
 
-    std::thread sender(
-        std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
+    std::thread sender(std::bind(&TestServiceImpl::BidiStream_Sender,
+                                 stream, &should_exit));
 
     while (stream->Read(&request)) {
       struct timespec tv = {0, 3000000};  // 3 ms
@@ -155,7 +156,8 @@ class End2endTest : public ::testing::Test {
   TestServiceImpl service_;
 };
 
-static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
+static void Drainer(
+    ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
   EchoResponse response;
   while (reader->Read(&response)) {
     // Just drain out the responses as fast as possible.

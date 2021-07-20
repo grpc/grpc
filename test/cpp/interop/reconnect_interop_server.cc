@@ -10,13 +10,14 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
-// Test description at doc/connection-backoff-interop-test-description.md
+// Test description at
+// doc/connection-backoff-interop-test-description.md
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -37,7 +38,8 @@
 #include "test/core/util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(int32_t, control_port, 0, "Server port for controlling the server.");
+ABSL_FLAG(int32_t, control_port, 0,
+          "Server port for controlling the server.");
 ABSL_FLAG(int32_t, retry_port, 0,
           "Server port for raw tcp connections. All incoming "
           "connections will be closed immediately.");
@@ -69,9 +71,12 @@ class ReconnectServiceImpl : public ReconnectService::Service {
     }
   }
 
-  void Poll(int seconds) { reconnect_server_poll(&tcp_server_, seconds); }
+  void Poll(int seconds) {
+    reconnect_server_poll(&tcp_server_, seconds);
+  }
 
-  Status Start(ServerContext* /*context*/, const ReconnectParams* request,
+  Status Start(ServerContext* /*context*/,
+               const ReconnectParams* request,
                Empty* /*response*/) override {
     bool start_server = true;
     std::unique_lock<std::mutex> lock(mu_);
@@ -131,8 +136,9 @@ class ReconnectServiceImpl : public ReconnectService::Service {
       }
       response->add_backoff_ms(static_cast<int32_t>(backoff));
       expected_backoff *= kBackoffMultiplier;
-      expected_backoff =
-          expected_backoff > kMaxBackoffMs ? kMaxBackoffMs : expected_backoff;
+      expected_backoff = expected_backoff > kMaxBackoffMs
+                             ? kMaxBackoffMs
+                             : expected_backoff;
     }
     response->set_passed(passed);
   }
@@ -163,7 +169,8 @@ void RunServer() {
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
+  gpr_log(GPR_INFO, "Server listening on %s",
+          server_address.str().c_str());
   while (!got_sigint) {
     service.Poll(5);
   }

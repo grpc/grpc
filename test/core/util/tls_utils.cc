@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include "test/core/util/tls_utils.h"
@@ -44,7 +44,8 @@ void TmpFile::RewriteFile(absl::string_view credential_data) {
 std::string TmpFile::CreateTmpFileAndWriteData(
     absl::string_view credential_data) {
   char* name = nullptr;
-  FILE* file_descriptor = gpr_tmpfile("GrpcTlsCertificateProviderTest", &name);
+  FILE* file_descriptor =
+      gpr_tmpfile("GrpcTlsCertificateProviderTest", &name);
   GPR_ASSERT(fwrite(credential_data.data(), 1, credential_data.size(),
                     file_descriptor) == credential_data.size());
   GPR_ASSERT(fclose(file_descriptor) == 0);
@@ -65,7 +66,8 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
 
 std::string GetFileContents(const char* path) {
   grpc_slice slice = grpc_empty_slice();
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(path, 0, &slice)));
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(path, 0, &slice)));
   std::string credential = std::string(StringViewFromSlice(slice));
   grpc_slice_unref(slice);
   return credential;

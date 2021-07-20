@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,10 +32,9 @@ namespace {
 
 static constexpr int kPrintfPointerFieldWidth = 2 + 2 * sizeof(void*);
 
-static void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char*, void*),
-                                        void* writerfn_arg, void* pc,
-                                        void* symbolize_pc, int framesize,
-                                        const char* const prefix) {
+static void DumpPCAndFrameSizeAndSymbol(
+    void (*writerfn)(const char*, void*), void* writerfn_arg, void* pc,
+    void* symbolize_pc, int framesize, const char* const prefix) {
   char tmp[1024];
   const char* symbol = "(unknown)";
   if (absl::Symbolize(symbolize_pc, tmp, sizeof(tmp))) {
@@ -53,7 +52,8 @@ static void DumpPCAndFrameSizeAndSymbol(void (*writerfn)(const char*, void*),
 }
 
 static void DumpPCAndFrameSize(void (*writerfn)(const char*, void*),
-                               void* writerfn_arg, void* pc, int framesize,
+                               void* writerfn_arg, void* pc,
+                               int framesize,
                                const char* const prefix) {
   char buf[100];
   if (framesize <= 0) {
@@ -66,8 +66,8 @@ static void DumpPCAndFrameSize(void (*writerfn)(const char*, void*),
   writerfn(buf, writerfn_arg);
 }
 
-static void DumpStackTrace(void* const stack[], int frame_sizes[], int depth,
-                           bool symbolize_stacktrace,
+static void DumpStackTrace(void* const stack[], int frame_sizes[],
+                           int depth, bool symbolize_stacktrace,
                            void (*writerfn)(const char*, void*),
                            void* writerfn_arg) {
   for (int i = 0; i < depth; i++) {
@@ -76,8 +76,8 @@ static void DumpStackTrace(void* const stack[], int frame_sizes[], int depth,
                                   reinterpret_cast<char*>(stack[i]) - 1,
                                   frame_sizes[i], "    ");
     } else {
-      DumpPCAndFrameSize(writerfn, writerfn_arg, stack[i], frame_sizes[i],
-                         "    ");
+      DumpPCAndFrameSize(writerfn, writerfn_arg, stack[i],
+                         frame_sizes[i], "    ");
     }
   }
 }
@@ -96,8 +96,10 @@ std::string GetCurrentStackTrace() {
   constexpr int kNumStackFrames = 32;
   void* stack[kNumStackFrames];
   int frame_sizes[kNumStackFrames];
-  int depth = absl::GetStackFrames(stack, frame_sizes, kNumStackFrames, 1);
-  DumpStackTrace(stack, frame_sizes, depth, true, DebugWriteToString, &result);
+  int depth =
+      absl::GetStackFrames(stack, frame_sizes, kNumStackFrames, 1);
+  DumpStackTrace(stack, frame_sizes, depth, true, DebugWriteToString,
+                 &result);
   return result;
 }
 

@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -28,8 +28,10 @@ gpr_timespec ToGprTimeSpec(absl::Duration duration) {
   } else if (duration == -absl::InfiniteDuration()) {
     return gpr_inf_past(GPR_TIMESPAN);
   } else {
-    int64_t s = absl::IDivDuration(duration, absl::Seconds(1), &duration);
-    int64_t n = absl::IDivDuration(duration, absl::Nanoseconds(1), &duration);
+    int64_t s =
+        absl::IDivDuration(duration, absl::Seconds(1), &duration);
+    int64_t n =
+        absl::IDivDuration(duration, absl::Nanoseconds(1), &duration);
     return gpr_time_add(gpr_time_from_seconds(s, GPR_TIMESPAN),
                         gpr_time_from_nanos(n, GPR_TIMESPAN));
   }

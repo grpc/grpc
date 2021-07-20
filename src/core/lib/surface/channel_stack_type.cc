@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,7 +39,8 @@ bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
   GPR_UNREACHABLE_CODE(return true;);
 }
 
-const char* grpc_channel_stack_type_string(grpc_channel_stack_type type) {
+const char* grpc_channel_stack_type_string(
+    grpc_channel_stack_type type) {
   switch (type) {
     case GRPC_CLIENT_CHANNEL:
       return "CLIENT_CHANNEL";

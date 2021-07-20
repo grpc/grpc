@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,10 +26,11 @@
 #include "keyvaluestore.grpc.pb.h"
 #endif
 
-// This is a naive implementation of a cache. A new cache is for each call. For
-// each new key request, the key is first searched in the map and if found, the
-// interceptor fills in the return value without making a request to the server.
-// Only if the key is not found in the cache do we make a request.
+// This is a naive implementation of a cache. A new cache is for each
+// call. For each new key request, the key is first searched in the map
+// and if found, the interceptor fills in the return value without
+// making a request to the server. Only if the key is not found in the
+// cache do we make a request.
 class CachingInterceptor : public grpc::experimental::Interceptor {
  public:
   CachingInterceptor(grpc::experimental::ClientRpcInfo* info) {}
@@ -48,24 +49,25 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
       stream_ = stub_->GetValues(&context_);
     }
     if (methods->QueryInterceptionHookPoint(
-            grpc::experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
-      // We know that clients perform a Read and a Write in a loop, so we don't
-      // need to maintain a list of the responses.
+            grpc::experimental::InterceptionHookPoints::
+                PRE_SEND_MESSAGE)) {
+      // We know that clients perform a Read and a Write in a loop, so
+      // we don't need to maintain a list of the responses.
       std::string requested_key;
       const keyvaluestore::Request* req_msg =
-          static_cast<const keyvaluestore::Request*>(methods->GetSendMessage());
+          static_cast<const keyvaluestore::Request*>(
+              methods->GetSendMessage());
       if (req_msg != nullptr) {
         requested_key = req_msg->key();
       } else {
-        // The non-serialized form would not be available in certain scenarios,
-        // so add a fallback
+        // The non-serialized form would not be available in certain
+        // scenarios, so add a fallback
         keyvaluestore::Request req_msg;
         auto* buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
-        GPR_ASSERT(
-            grpc::SerializationTraits<keyvaluestore::Request>::Deserialize(
-                &copied_buffer, &req_msg)
-                .ok());
+        GPR_ASSERT(grpc::SerializationTraits<keyvaluestore::Request>::
+                       Deserialize(&copied_buffer, &req_msg)
+                           .ok());
         requested_key = req_msg.key();
       }
 
@@ -88,28 +90,33 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
       }
     }
     if (methods->QueryInterceptionHookPoint(
-            grpc::experimental::InterceptionHookPoints::PRE_SEND_CLOSE)) {
+            grpc::experimental::InterceptionHookPoints::
+                PRE_SEND_CLOSE)) {
       stream_->WritesDone();
     }
     if (methods->QueryInterceptionHookPoint(
-            grpc::experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
+            grpc::experimental::InterceptionHookPoints::
+                PRE_RECV_MESSAGE)) {
       keyvaluestore::Response* resp =
-          static_cast<keyvaluestore::Response*>(methods->GetRecvMessage());
+          static_cast<keyvaluestore::Response*>(
+              methods->GetRecvMessage());
       resp->set_value(response_);
     }
     if (methods->QueryInterceptionHookPoint(
-            grpc::experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
+            grpc::experimental::InterceptionHookPoints::
+                PRE_RECV_STATUS)) {
       auto* status = methods->GetRecvStatus();
       *status = grpc::Status::OK;
     }
-    // One of Hijack or Proceed always needs to be called to make progress.
+    // One of Hijack or Proceed always needs to be called to make
+    // progress.
     if (hijack) {
-      // Hijack is called only once when PRE_SEND_INITIAL_METADATA is present in
-      // the hook points
+      // Hijack is called only once when PRE_SEND_INITIAL_METADATA is
+      // present in the hook points
       methods->Hijack();
     } else {
-      // Proceed is an indicator that the interceptor is done intercepting the
-      // batch.
+      // Proceed is an indicator that the interceptor is done
+      // intercepting the batch.
       methods->Proceed();
     }
   }
@@ -117,8 +124,8 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
  private:
   grpc::ClientContext context_;
   std::unique_ptr<keyvaluestore::KeyValueStore::Stub> stub_;
-  std::unique_ptr<
-      grpc::ClientReaderWriter<keyvaluestore::Request, keyvaluestore::Response>>
+  std::unique_ptr<grpc::ClientReaderWriter<keyvaluestore::Request,
+                                           keyvaluestore::Response>>
       stream_;
   std::map<std::string, std::string> cached_map_;
   std::string response_;

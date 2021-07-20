@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,7 +39,8 @@
 
 namespace grpc_core {
 
-grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args) {
+grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
+    grpc_channel_args* args) {
   absl::InlinedVector<const char*, 1> args_to_remove;
   absl::InlinedVector<grpc_arg, 1> args_to_add;
   // Substitute the channel credentials with a version without call
@@ -57,15 +58,15 @@ grpc_channel_args* ModifyGrpclbBalancerChannelArgs(grpc_channel_args* args) {
         grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
   }
   grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
-      args_to_add.size());
+      args, args_to_remove.data(), args_to_remove.size(),
+      args_to_add.data(), args_to_add.size());
   // Clean up.
   grpc_channel_args_destroy(args);
   return result;
 }
 
-grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
-                                          const grpc_channel_args& args) {
+grpc_channel* CreateGrpclbBalancerChannel(
+    const char* target_uri, const grpc_channel_args& args) {
   grpc_channel_credentials* creds =
       grpc_channel_credentials_find_in_args(&args);
   if (creds == nullptr) {

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,9 +29,9 @@ struct tsi_zero_copy_grpc_protector;
 
 extern grpc_core::TraceFlag grpc_trace_secure_endpoint;
 
-/* Takes ownership of protector, zero_copy_protector, and to_wrap, and refs
- * leftover_slices. If zero_copy_protector is not NULL, protector will never be
- * used. */
+/* Takes ownership of protector, zero_copy_protector, and to_wrap, and
+ * refs leftover_slices. If zero_copy_protector is not NULL, protector
+ * will never be used. */
 grpc_endpoint* grpc_secure_endpoint_create(
     struct tsi_frame_protector* protector,
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,

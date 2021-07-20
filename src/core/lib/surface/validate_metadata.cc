@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,11 +41,12 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
     int bit = idx % 8;
     if ((legal_bits[byte] & (1 << bit)) == 0) {
       grpc_error_handle error = grpc_error_set_str(
-          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
-                             GRPC_ERROR_INT_OFFSET,
-                             p - GRPC_SLICE_START_PTR(slice)),
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
+              GRPC_ERROR_INT_OFFSET, p - GRPC_SLICE_START_PTR(slice)),
           GRPC_ERROR_STR_RAW_BYTES,
-          grpc_dump_slice_to_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+          grpc_dump_slice_to_slice(slice,
+                                   GPR_DUMP_HEX | GPR_DUMP_ASCII));
       return error;
     }
   }
@@ -58,7 +59,8 @@ static int error2int(grpc_error_handle error) {
   return r;
 }
 
-grpc_error_handle grpc_validate_header_key_is_legal(const grpc_slice& slice) {
+grpc_error_handle grpc_validate_header_key_is_legal(
+    const grpc_slice& slice) {
   static const uint8_t legal_header_bits[256 / 8] = {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x60, 0xff, 0x03, 0x00, 0x00, 0x00,
       0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

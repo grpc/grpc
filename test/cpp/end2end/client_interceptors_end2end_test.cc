@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -75,15 +75,19 @@ class HijackingInterceptor : public experimental::Interceptor {
   explicit HijackingInterceptor(experimental::ClientRpcInfo* info) {
     info_ = info;
     // Make sure it is the right method
-    EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
+    EXPECT_EQ(
+        strcmp("/grpc.testing.EchoTestService/Echo", info->method()),
+        0);
     EXPECT_EQ(info->suffix_for_stats(), nullptr);
     EXPECT_EQ(info->type(), experimental::ClientRpcInfo::Type::UNARY);
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
@@ -97,9 +101,9 @@ class HijackingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(SerializationTraits<EchoRequest>::Deserialize(
+                      &copied_buffer, &req)
+                      .ok());
       EXPECT_EQ(req.message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -107,7 +111,8 @@ class HijackingInterceptor : public experimental::Interceptor {
       // Got nothing to do here for now
     }
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
@@ -116,8 +121,8 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
       EchoResponse* resp =
           static_cast<EchoResponse*>(methods->GetRecvMessage());
-      // Check that we got the hijacked message, and re-insert the expected
-      // message
+      // Check that we got the hijacked message, and re-insert the
+      // expected message
       EXPECT_EQ(resp->message(), "Hello1");
       resp->set_message("Hello");
     }
@@ -136,7 +141,8 @@ class HijackingInterceptor : public experimental::Interceptor {
       EXPECT_EQ(status->ok(), true);
     }
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
@@ -177,19 +183,25 @@ class HijackingInterceptorFactory
   }
 };
 
-class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
+class HijackingInterceptorMakesAnotherCall
+    : public experimental::Interceptor {
  public:
   explicit HijackingInterceptorMakesAnotherCall(
       experimental::ClientRpcInfo* info) {
     info_ = info;
     // Make sure it is the right method
-    EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
-    EXPECT_EQ(strcmp("TestSuffixForStats", info->suffix_for_stats()), 0);
+    EXPECT_EQ(
+        strcmp("/grpc.testing.EchoTestService/Echo", info->method()),
+        0);
+    EXPECT_EQ(strcmp("TestSuffixForStats", info->suffix_for_stats()),
+              0);
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
@@ -204,24 +216,26 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(SerializationTraits<EchoRequest>::Deserialize(
+                      &copied_buffer, &req)
+                      .ok());
       EXPECT_EQ(req.message(), "Hello");
       req_ = req;
       stub_ = grpc::testing::EchoTestService::NewStub(
           methods->GetInterceptedChannel());
       ctx_.AddMetadata(metadata_map_.begin()->first,
                        metadata_map_.begin()->second);
-      stub_->async()->Echo(&ctx_, &req_, &resp_, [this, methods](Status s) {
-        EXPECT_EQ(s.ok(), true);
-        EXPECT_EQ(resp_.message(), "Hello");
-        methods->Hijack();
-      });
-      // This is a Unary RPC and we have got nothing interesting to do in the
-      // PRE_SEND_CLOSE interception hook point for this interceptor, so let's
-      // return here. (We do not want to call methods->Proceed(). When the new
-      // RPC returns, we will call methods->Hijack() instead.)
+      stub_->async()->Echo(&ctx_, &req_, &resp_,
+                           [this, methods](Status s) {
+                             EXPECT_EQ(s.ok(), true);
+                             EXPECT_EQ(resp_.message(), "Hello");
+                             methods->Hijack();
+                           });
+      // This is a Unary RPC and we have got nothing interesting to do
+      // in the PRE_SEND_CLOSE interception hook point for this
+      // interceptor, so let's return here. (We do not want to call
+      // methods->Proceed(). When the new RPC returns, we will call
+      // methods->Hijack() instead.)
       return;
     }
     if (methods->QueryInterceptionHookPoint(
@@ -229,7 +243,8 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       // Got nothing to do here for now
     }
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
@@ -238,8 +253,8 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
       EchoResponse* resp =
           static_cast<EchoResponse*>(methods->GetRecvMessage());
-      // Check that we got the hijacked message, and re-insert the expected
-      // message
+      // Check that we got the hijacked message, and re-insert the
+      // expected message
       EXPECT_EQ(resp->message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -257,7 +272,8 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       EXPECT_EQ(status->ok(), true);
     }
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
@@ -300,7 +316,8 @@ class HijackingInterceptorMakesAnotherCallFactory
   }
 };
 
-class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
+class BidiStreamingRpcHijackingInterceptor
+    : public experimental::Interceptor {
  public:
   explicit BidiStreamingRpcHijackingInterceptor(
       experimental::ClientRpcInfo* info) {
@@ -308,11 +325,14 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
     EXPECT_EQ(info->suffix_for_stats(), nullptr);
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      CheckMetadata(*methods->GetSendInitialMetadata(), "testkey", "testvalue");
+            experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
+      CheckMetadata(*methods->GetSendInitialMetadata(), "testkey",
+                    "testvalue");
       hijack = true;
     }
     if (methods->QueryInterceptionHookPoint(
@@ -320,9 +340,9 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(SerializationTraits<EchoRequest>::Deserialize(
+                      &copied_buffer, &req)
+                      .ok());
       EXPECT_EQ(req.message().find("Hello"), 0u);
       msg = req.message();
     }
@@ -377,15 +397,18 @@ class ClientStreamingRpcHijackingInterceptor
   explicit ClientStreamingRpcHijackingInterceptor(
       experimental::ClientRpcInfo* info) {
     info_ = info;
-    EXPECT_EQ(
-        strcmp("/grpc.testing.EchoTestService/RequestStream", info->method()),
-        0);
-    EXPECT_EQ(strcmp("TestSuffixForStats", info->suffix_for_stats()), 0);
+    EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/RequestStream",
+                     info->method()),
+              0);
+    EXPECT_EQ(strcmp("TestSuffixForStats", info->suffix_for_stats()),
+              0);
   }
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
       hijack = true;
     }
     if (methods->QueryInterceptionHookPoint(
@@ -402,7 +425,8 @@ class ClientStreamingRpcHijackingInterceptor
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* status = methods->GetRecvStatus();
-      *status = Status(StatusCode::UNAVAILABLE, "Done sending 10 messages");
+      *status =
+          Status(StatusCode::UNAVAILABLE, "Done sending 10 messages");
     }
     if (hijack) {
       methods->Hijack();
@@ -440,10 +464,12 @@ class ServerStreamingRpcHijackingInterceptor
     EXPECT_EQ(info->suffix_for_stats(), nullptr);
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
@@ -457,9 +483,9 @@ class ServerStreamingRpcHijackingInterceptor
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(SerializationTraits<EchoRequest>::Deserialize(
+                      &copied_buffer, &req)
+                      .ok());
       EXPECT_EQ(req.message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -519,7 +545,8 @@ class ServerStreamingRpcHijackingInterceptor
   int count_ = 0;
 };
 
-bool ServerStreamingRpcHijackingInterceptor::got_failed_message_ = false;
+bool ServerStreamingRpcHijackingInterceptor::got_failed_message_ =
+    false;
 
 class ServerStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
@@ -539,10 +566,11 @@ class BidiStreamingRpcHijackingInterceptorFactory
   }
 };
 
-// The logging interceptor is for testing purposes only. It is used to verify
-// that all the appropriate hook points are invoked for an RPC. The counts are
-// reset each time a new object of LoggingInterceptor is created, so only a
-// single RPC should be made on the channel before calling the Verify methods.
+// The logging interceptor is for testing purposes only. It is used to
+// verify that all the appropriate hook points are invoked for an RPC.
+// The counts are reset each time a new object of LoggingInterceptor is
+// created, so only a single RPC should be made on the channel before
+// calling the Verify methods.
 class LoggingInterceptor : public experimental::Interceptor {
  public:
   explicit LoggingInterceptor(experimental::ClientRpcInfo* /*info*/) {
@@ -554,9 +582,11 @@ class LoggingInterceptor : public experimental::Interceptor {
     post_recv_status_ = false;
   }
 
-  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+  void Intercept(
+      experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
@@ -571,25 +601,26 @@ class LoggingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* send_msg = methods->GetSendMessage();
       if (send_msg == nullptr) {
-        // We did not get the non-serialized form of the message. Get the
-        // serialized form.
+        // We did not get the non-serialized form of the message. Get
+        // the serialized form.
         auto* buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
         EchoRequest req;
-        EXPECT_TRUE(
-            SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-                .ok());
+        EXPECT_TRUE(SerializationTraits<EchoRequest>::Deserialize(
+                        &copied_buffer, &req)
+                        .ok());
         EXPECT_EQ(req.message(), "Hello");
       } else {
         EXPECT_EQ(
-            static_cast<const EchoRequest*>(send_msg)->message().find("Hello"),
+            static_cast<const EchoRequest*>(send_msg)->message().find(
+                "Hello"),
             0u);
       }
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(SerializationTraits<EchoRequest>::Deserialize(
+                      &copied_buffer, &req)
+                      .ok());
       EXPECT_TRUE(req.message().find("Hello") == 0u);
       pre_send_message_count_++;
     }
@@ -599,7 +630,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       pre_send_close_ = true;
     }
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
+            experimental::InterceptionHookPoints::
+                POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
@@ -752,7 +784,8 @@ class ParameterizedClientInterceptorsEnd2endTest
     if (GetParam().channel_type() == ChannelType::kHttpChannel) {
       int port = grpc_pick_unused_port_or_die();
       server_address_ = "localhost:" + std::to_string(port);
-      builder.AddListeningPort(server_address_, InsecureServerCredentials());
+      builder.AddListeningPort(server_address_,
+                               InsecureServerCredentials());
       server_ = builder.BuildAndStart();
     }
 #ifdef GRPC_POSIX_SOCKET
@@ -783,13 +816,14 @@ class ParameterizedClientInterceptorsEnd2endTest
           creators) {
     if (GetParam().channel_type() == ChannelType::kHttpChannel) {
       return experimental::CreateCustomChannelWithInterceptors(
-          server_address_, InsecureChannelCredentials(), ChannelArguments(),
-          std::move(creators));
+          server_address_, InsecureChannelCredentials(),
+          ChannelArguments(), std::move(creators));
     }
 #ifdef GRPC_POSIX_SOCKET
     else if (GetParam().channel_type() == ChannelType::kFdChannel) {
-      return experimental::CreateCustomInsecureChannelWithInterceptorsFromFd(
-          "", sv_[0], ChannelArguments(), std::move(creators));
+      return experimental::
+          CreateCustomInsecureChannelWithInterceptorsFromFd(
+              "", sv_[0], ChannelArguments(), std::move(creators));
     }
 #endif /* GRPC_POSIX_SOCKET */
     return nullptr;
@@ -834,7 +868,8 @@ TEST_P(ParameterizedClientInterceptorsEnd2endTest,
        ClientInterceptorLoggingTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 phony interceptors
@@ -860,7 +895,8 @@ class ClientInterceptorsEnd2endTest
 
     ServerBuilder builder;
     server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.AddListeningPort(server_address_,
+                             InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
@@ -875,7 +911,8 @@ class ClientInterceptorsEnd2endTest
 TEST_F(ClientInterceptorsEnd2endTest,
        LameChannelClientInterceptorHijackingTest) {
   ChannelArguments args;
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<HijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
@@ -886,7 +923,8 @@ TEST_F(ClientInterceptorsEnd2endTest,
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 phony interceptors before hijacking interceptor
   creators.reserve(20);
@@ -899,20 +937,24 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeCall(channel);
   // Make sure only 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
-TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLogThenHijackTest) {
+TEST_F(ClientInterceptorsEnd2endTest,
+       ClientInterceptorLogThenHijackTest) {
   ChannelArguments args;
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   creators.push_back(absl::make_unique<HijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
 }
@@ -921,7 +963,8 @@ TEST_F(ClientInterceptorsEnd2endTest,
        ClientInterceptorHijackingMakesAnotherCallTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 5 phony interceptors before hijacking interceptor
   creators.reserve(5);
@@ -935,12 +978,13 @@ TEST_F(ClientInterceptorsEnd2endTest,
   for (auto i = 0; i < 7; i++) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
-  auto channel = server_->experimental().InProcessChannelWithInterceptors(
-      args, std::move(creators));
+  auto channel =
+      server_->experimental().InProcessChannelWithInterceptors(
+          args, std::move(creators));
 
   MakeCall(channel, StubOptions("TestSuffixForStats"));
-  // Make sure all interceptors were run once, since the hijacking interceptor
-  // makes an RPC on the intercepted channel
+  // Make sure all interceptors were run once, since the hijacking
+  // interceptor makes an RPC on the intercepted channel
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 12);
 }
 
@@ -951,12 +995,15 @@ class ClientInterceptorsCallbackEnd2endTest : public ::testing::Test {
 
     ServerBuilder builder;
     server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.AddListeningPort(server_address_,
+                             InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
 
-  ~ClientInterceptorsCallbackEnd2endTest() override { server_->Shutdown(); }
+  ~ClientInterceptorsCallbackEnd2endTest() override {
+    server_->Shutdown();
+  }
 
   std::string server_address_;
   TestServiceImpl service_;
@@ -967,15 +1014,17 @@ TEST_F(ClientInterceptorsCallbackEnd2endTest,
        ClientInterceptorLoggingTestWithCallback) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 phony interceptors
   for (auto i = 0; i < 20; i++) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
-  auto channel = server_->experimental().InProcessChannelWithInterceptors(
-      args, std::move(creators));
+  auto channel =
+      server_->experimental().InProcessChannelWithInterceptors(
+          args, std::move(creators));
   MakeCallbackCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
   // Make sure all 20 phony interceptors were run
@@ -986,7 +1035,8 @@ TEST_F(ClientInterceptorsCallbackEnd2endTest,
        ClientInterceptorFactoryAllowsNullptrReturn) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 phony interceptors and 20 null interceptors
@@ -994,8 +1044,9 @@ TEST_F(ClientInterceptorsCallbackEnd2endTest,
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
     creators.push_back(absl::make_unique<NullInterceptorFactory>());
   }
-  auto channel = server_->experimental().InProcessChannelWithInterceptors(
-      args, std::move(creators));
+  auto channel =
+      server_->experimental().InProcessChannelWithInterceptors(
+          args, std::move(creators));
   MakeCallbackCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
   // Make sure all 20 phony interceptors were run
@@ -1009,12 +1060,15 @@ class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
 
     ServerBuilder builder;
     server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.AddListeningPort(server_address_,
+                             InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
 
-  ~ClientInterceptorsStreamingEnd2endTest() override { server_->Shutdown(); }
+  ~ClientInterceptorsStreamingEnd2endTest() override {
+    server_->Shutdown();
+  }
 
   std::string server_address_;
   EchoTestServiceStreamingImpl service_;
@@ -1024,7 +1078,8 @@ class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 phony interceptors
@@ -1032,7 +1087,8 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeClientStreamingCall(channel);
   LoggingInterceptor::VerifyClientStreamingCall();
   // Make sure all 20 phony interceptors were run
@@ -1042,7 +1098,8 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 phony interceptors
@@ -1050,21 +1107,25 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeServerStreamingCall(channel);
   LoggingInterceptor::VerifyServerStreamingCall();
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
-TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
+TEST_F(ClientInterceptorsStreamingEnd2endTest,
+       ClientStreamingHijackingTest) {
   ChannelArguments args;
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(
-      absl::make_unique<ClientStreamingRpcHijackingInterceptorFactory>());
+  creators.push_back(absl::make_unique<
+                     ClientStreamingRpcHijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
 
   auto stub = grpc::testing::EchoTestService::NewStub(
       channel, StubOptions("TestSuffixForStats"));
@@ -1086,49 +1147,60 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
   EXPECT_TRUE(ClientStreamingRpcHijackingInterceptor::GotFailedSend());
 }
 
-TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingHijackingTest) {
+TEST_F(ClientInterceptorsStreamingEnd2endTest,
+       ServerStreamingHijackingTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(
-      absl::make_unique<ServerStreamingRpcHijackingInterceptorFactory>());
+  creators.push_back(absl::make_unique<
+                     ServerStreamingRpcHijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeServerStreamingCall(channel);
-  EXPECT_TRUE(ServerStreamingRpcHijackingInterceptor::GotFailedMessage());
+  EXPECT_TRUE(
+      ServerStreamingRpcHijackingInterceptor::GotFailedMessage());
 }
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest,
        AsyncCQServerStreamingHijackingTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  creators.push_back(
-      absl::make_unique<ServerStreamingRpcHijackingInterceptorFactory>());
+  creators.push_back(absl::make_unique<
+                     ServerStreamingRpcHijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeAsyncCQServerStreamingCall(channel);
-  EXPECT_TRUE(ServerStreamingRpcHijackingInterceptor::GotFailedMessage());
+  EXPECT_TRUE(
+      ServerStreamingRpcHijackingInterceptor::GotFailedMessage());
 }
 
-TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingHijackingTest) {
+TEST_F(ClientInterceptorsStreamingEnd2endTest,
+       BidiStreamingHijackingTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(
       absl::make_unique<BidiStreamingRpcHijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeBidiStreamingCall(channel);
 }
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
   // Add 20 phony interceptors
@@ -1136,7 +1208,8 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeBidiStreamingCall(channel);
   LoggingInterceptor::VerifyBidiStreamingCall();
   // Make sure all 20 phony interceptors were run
@@ -1150,12 +1223,15 @@ class ClientGlobalInterceptorEnd2endTest : public ::testing::Test {
 
     ServerBuilder builder;
     server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.AddListeningPort(server_address_,
+                             InsecureServerCredentials());
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
 
-  ~ClientGlobalInterceptorEnd2endTest() override { server_->Shutdown(); }
+  ~ClientGlobalInterceptorEnd2endTest() override {
+    server_->Shutdown();
+  }
 
   std::string server_address_;
   TestServiceImpl service_;
@@ -1164,13 +1240,15 @@ class ClientGlobalInterceptorEnd2endTest : public ::testing::Test {
 
 TEST_F(ClientGlobalInterceptorEnd2endTest, PhonyGlobalInterceptor) {
   // We should ideally be registering a global interceptor only once per
-  // process, but for the purposes of testing, it should be fine to modify the
-  // registered global interceptor when there are no ongoing gRPC operations
+  // process, but for the purposes of testing, it should be fine to
+  // modify the registered global interceptor when there are no ongoing
+  // gRPC operations
   PhonyInterceptorFactory global_factory;
   experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 phony interceptors
   creators.reserve(20);
@@ -1178,22 +1256,26 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, PhonyGlobalInterceptor) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeCall(channel);
-  // Make sure all 20 phony interceptors were run with the global interceptor
+  // Make sure all 20 phony interceptors were run with the global
+  // interceptor
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 21);
   experimental::TestOnlyResetGlobalClientInterceptorFactory();
 }
 
 TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
   // We should ideally be registering a global interceptor only once per
-  // process, but for the purposes of testing, it should be fine to modify the
-  // registered global interceptor when there are no ongoing gRPC operations
+  // process, but for the purposes of testing, it should be fine to
+  // modify the registered global interceptor when there are no ongoing
+  // gRPC operations
   LoggingInterceptorFactory global_factory;
   experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 phony interceptors
   creators.reserve(20);
@@ -1201,7 +1283,8 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
   // Make sure all 20 phony interceptors were run
@@ -1211,13 +1294,15 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
 
 TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
   // We should ideally be registering a global interceptor only once per
-  // process, but for the purposes of testing, it should be fine to modify the
-  // registered global interceptor when there are no ongoing gRPC operations
+  // process, but for the purposes of testing, it should be fine to
+  // modify the registered global interceptor when there are no ongoing
+  // gRPC operations
   HijackingInterceptorFactory global_factory;
   experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
   ChannelArguments args;
   PhonyInterceptor::Reset();
-  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+  std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 phony interceptors
   creators.reserve(20);
@@ -1225,7 +1310,8 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+      server_address_, InsecureChannelCredentials(), args,
+      std::move(creators));
   MakeCall(channel);
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);

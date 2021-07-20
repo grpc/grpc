@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,7 +28,8 @@ using google::protobuf::compiler::ParseGeneratorParameter;
 using grpc_php_generator::GenerateFile;
 using grpc_php_generator::GetPHPServiceFilename;
 
-class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class PHPGrpcGenerator
+    : public grpc::protobuf::compiler::CodeGenerator {
  public:
   PHPGrpcGenerator() {}
   ~PHPGrpcGenerator() {}
@@ -62,9 +63,11 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     for (int i = 0; i < file->service_count(); i++) {
-      GenerateService(file, file->service(i), class_suffix, false, context);
+      GenerateService(file, file->service(i), class_suffix, false,
+                      context);
       if (generate_server) {
-        GenerateService(file, file->service(i), class_suffix, true, context);
+        GenerateService(file, file->service(i), class_suffix, true,
+                        context);
       }
     }
 
@@ -77,7 +80,8 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       const grpc::protobuf::ServiceDescriptor* service,
       const std::string& class_suffix, bool is_server,
       grpc::protobuf::compiler::GeneratorContext* context) const {
-    std::string code = GenerateFile(file, service, class_suffix, is_server);
+    std::string code =
+        GenerateFile(file, service, class_suffix, is_server);
 
     // Get output file name
     std::string file_name =

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,8 +36,8 @@ static void alts_server_options_destroy(
 static const grpc_alts_credentials_options_vtable vtable = {
     alts_server_options_copy, alts_server_options_destroy};
 
-grpc_alts_credentials_options* grpc_alts_credentials_server_options_create(
-    void) {
+grpc_alts_credentials_options*
+grpc_alts_credentials_server_options_create(void) {
   grpc_alts_credentials_server_options* server_options =
       static_cast<grpc_alts_credentials_server_options*>(
           gpr_zalloc(sizeof(*server_options)));

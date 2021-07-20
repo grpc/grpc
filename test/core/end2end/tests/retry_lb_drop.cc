@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include "test/core/end2end/end2end_tests.h"
@@ -44,13 +44,15 @@ const char* kDropPolicyName = "drop_lb";
 
 class DropPolicy : public LoadBalancingPolicy {
  public:
-  explicit DropPolicy(Args args) : LoadBalancingPolicy(std::move(args)) {}
+  explicit DropPolicy(Args args)
+      : LoadBalancingPolicy(std::move(args)) {}
 
   const char* name() const override { return kDropPolicyName; }
 
   void UpdateLocked(UpdateArgs) override {
-    channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
-                                          absl::make_unique<DropPicker>());
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_READY, absl::Status(),
+        absl::make_unique<DropPicker>());
   }
 
   void ResetBackoffLocked() override {}
@@ -82,7 +84,8 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kDropPolicyName; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json& /*json*/,
+      grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<DropLbConfig>();
   }
 };
@@ -90,8 +93,9 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
 std::vector<PickArgsSeen>* g_pick_args_vector = nullptr;
 
 void RegisterDropPolicy() {
-  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<DropPolicyFactory>());
+  LoadBalancingPolicyRegistry::Builder::
+      RegisterLoadBalancingPolicyFactory(
+          absl::make_unique<DropPolicyFactory>());
   RegisterTestPickArgsLoadBalancingPolicy(
       [](const PickArgsSeen& pick_args) {
         GPR_ASSERT(g_pick_args_vector != nullptr);
@@ -105,10 +109,9 @@ void RegisterDropPolicy() {
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -128,16 +131,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -170,7 +174,8 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
-  grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
+  grpc_slice request_payload_slice =
+      grpc_slice_from_static_string("foo");
   grpc_byte_buffer* request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload_recv = nullptr;
@@ -193,7 +198,8 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
               "  } ],\n"
               "  \"methodConfig\": [ {\n"
               "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "      { \"service\": \"service\", \"method\": "
+              "\"method\" }\n"
               "    ],\n"
               "    \"retryPolicy\": {\n"
               "      \"maxAttempts\": 2,\n"
@@ -212,9 +218,10 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/service/method"),
-                               nullptr, deadline, nullptr);
+  c = grpc_channel_create_call(
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/service/method"), nullptr,
+      deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -234,23 +241,26 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details,
-                                     "Call dropped by load balancing policy"));
+  GPR_ASSERT(0 ==
+             grpc_slice_str_cmp(
+                 details, "Call dropped by load balancing policy"));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -262,7 +272,8 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
 
   cq_verifier_destroy(cqv);
 
-  gpr_log(GPR_INFO, "NUMBER OF LB PICKS: %" PRIuPTR, pick_args_seen.size());
+  gpr_log(GPR_INFO, "NUMBER OF LB PICKS: %" PRIuPTR,
+          pick_args_seen.size());
   GPR_ASSERT(pick_args_seen.size() == 1);
 
   grpc_core::g_pick_args_vector = nullptr;
@@ -272,7 +283,8 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
 }
 
 void retry_lb_drop(grpc_end2end_test_config config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
+  GPR_ASSERT(config.feature_mask &
+             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_lb_drop(config);
 }
 

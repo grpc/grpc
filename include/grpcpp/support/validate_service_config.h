@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,9 +26,10 @@ namespace grpc {
 namespace experimental {
 /// Validates \a service_config_json. If valid, returns an empty string.
 /// Otherwise, returns the validation error.
-/// TODO(yashykt): Promote it to out of experimental once it is proved useful
-/// and gRFC is accepted.
-std::string ValidateServiceConfigJSON(const std::string& service_config_json);
+/// TODO(yashykt): Promote it to out of experimental once it is proved
+/// useful and gRFC is accepted.
+std::string ValidateServiceConfigJSON(
+    const std::string& service_config_json);
 }  // namespace experimental
 
 }  // namespace grpc

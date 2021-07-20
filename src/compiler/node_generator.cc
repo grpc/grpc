@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,17 +34,19 @@ using std::map;
 namespace grpc_node_generator {
 namespace {
 
-// Returns the alias we assign to the module of the given .proto filename
-// when importing. Copied entirely from
+// Returns the alias we assign to the module of the given .proto
+// filename when importing. Copied entirely from
 // github:google/protobuf/src/google/protobuf/compiler/js/js_generator.cc#L154
 std::string ModuleAlias(const std::string filename) {
-  // This scheme could technically cause problems if a file includes any 2 of:
+  // This scheme could technically cause problems if a file includes any
+  // 2 of:
   //   foo/bar_baz.proto
   //   foo_bar_baz.proto
   //   foo_bar/baz.proto
   //
-  // We'll worry about this problem if/when we actually see it.  This name isn't
-  // exposed to users so we can change it later if we need to.
+  // We'll worry about this problem if/when we actually see it.  This
+  // name isn't exposed to users so we can change it later if we need
+  // to.
   std::string basename = grpc_generator::StripProto(filename);
   basename = grpc_generator::StringReplace(basename, "-", "$");
   basename = grpc_generator::StringReplace(basename, "/", "_");
@@ -52,8 +54,8 @@ std::string ModuleAlias(const std::string filename) {
   return basename + "_pb";
 }
 
-// Given a filename like foo/bar/baz.proto, returns the corresponding JavaScript
-// message file foo/bar/baz.js
+// Given a filename like foo/bar/baz.proto, returns the corresponding
+// JavaScript message file foo/bar/baz.js
 std::string GetJSMessageFilename(const std::string& filename) {
   std::string name = filename;
   return grpc_generator::StripProto(name) + "_pb.js";
@@ -64,13 +66,14 @@ std::string GetJSMessageFilename(const std::string& filename) {
 std::string GetRootPath(const std::string& from_filename,
                         const std::string& to_filename) {
   if (to_filename.find("google/protobuf") == 0) {
-    // Well-known types (.proto files in the google/protobuf directory) are
-    // assumed to come from the 'google-protobuf' npm package.  We may want to
-    // generalize this exception later by letting others put generated code in
-    // their own npm packages.
+    // Well-known types (.proto files in the google/protobuf directory)
+    // are assumed to come from the 'google-protobuf' npm package.  We
+    // may want to generalize this exception later by letting others put
+    // generated code in their own npm packages.
     return "google-protobuf/";
   }
-  size_t slashes = std::count(from_filename.begin(), from_filename.end(), '/');
+  size_t slashes =
+      std::count(from_filename.begin(), from_filename.end(), '/');
   if (slashes == 0) {
     return "./";
   }
@@ -81,16 +84,19 @@ std::string GetRootPath(const std::string& from_filename,
   return result;
 }
 
-// Return the relative path to load to_file from the directory containing
-// from_file, assuming that both paths are relative to the same directory
+// Return the relative path to load to_file from the directory
+// containing from_file, assuming that both paths are relative to the
+// same directory
 std::string GetRelativePath(const std::string& from_file,
                             const std::string& to_file) {
   return GetRootPath(from_file, to_file) + to_file;
 }
 
-/* Finds all message types used in all services in the file, and returns them
- * as a map of fully qualified message type name to message descriptor */
-map<std::string, const Descriptor*> GetAllMessages(const FileDescriptor* file) {
+/* Finds all message types used in all services in the file, and returns
+ * them as a map of fully qualified message type name to message
+ * descriptor */
+map<std::string, const Descriptor*> GetAllMessages(
+    const FileDescriptor* file) {
   map<std::string, const Descriptor*> message_types;
   for (int service_num = 0; service_num < file->service_count();
        service_num++) {
@@ -114,7 +120,8 @@ std::string MessageIdentifierName(const std::string& name) {
 std::string NodeObjectPath(const Descriptor* descriptor) {
   std::string module_alias = ModuleAlias(descriptor->file()->name());
   std::string name = descriptor->full_name();
-  grpc_generator::StripPrefix(&name, descriptor->file()->package() + ".");
+  grpc_generator::StripPrefix(&name,
+                              descriptor->file()->package() + ".");
   return module_alias + "." + name;
 }
 
@@ -127,7 +134,8 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
   template_vars["name"] = full_name;
   template_vars["node_name"] = NodeObjectPath(descriptor);
   // Print the serializer
-  out->Print(template_vars, "function serialize_$identifier_name$(arg) {\n");
+  out->Print(template_vars,
+             "function serialize_$identifier_name$(arg) {\n");
   out->Indent();
   out->Print(template_vars, "if (!(arg instanceof $node_name$)) {\n");
   out->Indent();
@@ -148,9 +156,9 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
   out->Print(template_vars,
              "function deserialize_$identifier_name$(buffer_arg) {\n");
   out->Indent();
-  out->Print(
-      template_vars,
-      "return $node_name$.deserializeBinary(new Uint8Array(buffer_arg));\n");
+  out->Print(template_vars,
+             "return $node_name$.deserializeBinary(new "
+             "Uint8Array(buffer_arg));\n");
   out->Outdent();
   out->Print("}\n\n");
 }
@@ -162,9 +170,11 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
   vars["input_type"] = NodeObjectPath(input_type);
-  vars["input_type_id"] = MessageIdentifierName(input_type->full_name());
+  vars["input_type_id"] =
+      MessageIdentifierName(input_type->full_name());
   vars["output_type"] = NodeObjectPath(output_type);
-  vars["output_type_id"] = MessageIdentifierName(output_type->full_name());
+  vars["output_type_id"] =
+      MessageIdentifierName(output_type->full_name());
   vars["client_stream"] = method->client_streaming() ? "true" : "false";
   vars["server_stream"] = method->server_streaming() ? "true" : "false";
   out->Print("{\n");
@@ -175,9 +185,11 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   out->Print(vars, "requestType: $input_type$,\n");
   out->Print(vars, "responseType: $output_type$,\n");
   out->Print(vars, "requestSerialize: serialize_$input_type_id$,\n");
-  out->Print(vars, "requestDeserialize: deserialize_$input_type_id$,\n");
+  out->Print(vars,
+             "requestDeserialize: deserialize_$input_type_id$,\n");
   out->Print(vars, "responseSerialize: serialize_$output_type_id$,\n");
-  out->Print(vars, "responseDeserialize: deserialize_$output_type_id$,\n");
+  out->Print(vars,
+             "responseDeserialize: deserialize_$output_type_id$,\n");
   out->Outdent();
   out->Print("}");
 }
@@ -187,11 +199,12 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
   map<std::string, std::string> template_vars;
   out->Print(GetNodeComments(service, true).c_str());
   template_vars["name"] = service->name();
-  out->Print(template_vars, "var $name$Service = exports.$name$Service = {\n");
+  out->Print(template_vars,
+             "var $name$Service = exports.$name$Service = {\n");
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
-    std::string method_name =
-        grpc_generator::LowercaseFirstLetter(service->method(i)->name());
+    std::string method_name = grpc_generator::LowercaseFirstLetter(
+        service->method(i)->name());
     out->Print(GetNodeComments(service->method(i), true).c_str());
     out->Print("$method_name$: ", "method_name", method_name);
     PrintMethod(service->method(i), out);
@@ -209,18 +222,20 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
 void PrintImports(const FileDescriptor* file, Printer* out) {
   out->Print("var grpc = require('grpc');\n");
   if (file->message_type_count() > 0) {
-    std::string file_path =
-        GetRelativePath(file->name(), GetJSMessageFilename(file->name()));
-    out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
-               ModuleAlias(file->name()), "file_path", file_path);
+    std::string file_path = GetRelativePath(
+        file->name(), GetJSMessageFilename(file->name()));
+    out->Print("var $module_alias$ = require('$file_path$');\n",
+               "module_alias", ModuleAlias(file->name()), "file_path",
+               file_path);
   }
 
   for (int i = 0; i < file->dependency_count(); i++) {
     std::string file_path = GetRelativePath(
-        file->name(), GetJSMessageFilename(file->dependency(i)->name()));
-    out->Print("var $module_alias$ = require('$file_path$');\n", "module_alias",
-               ModuleAlias(file->dependency(i)->name()), "file_path",
-               file_path);
+        file->name(),
+        GetJSMessageFilename(file->dependency(i)->name()));
+    out->Print("var $module_alias$ = require('$file_path$');\n",
+               "module_alias", ModuleAlias(file->dependency(i)->name()),
+               "file_path", file_path);
   }
   out->Print("\n");
 }
@@ -228,7 +243,8 @@ void PrintImports(const FileDescriptor* file, Printer* out) {
 void PrintTransformers(const FileDescriptor* file, Printer* out,
                        const Parameters& params) {
   map<std::string, const Descriptor*> messages = GetAllMessages(file);
-  for (std::map<std::string, const Descriptor*>::iterator it = messages.begin();
+  for (std::map<std::string, const Descriptor*>::iterator it =
+           messages.begin();
        it != messages.end(); it++) {
     PrintMessageTransformer(it->second, out, params);
   }
@@ -242,7 +258,8 @@ void PrintServices(const FileDescriptor* file, Printer* out) {
 }
 }  // namespace
 
-std::string GenerateFile(const FileDescriptor* file, const Parameters& params) {
+std::string GenerateFile(const FileDescriptor* file,
+                         const Parameters& params) {
   std::string output;
   {
     StringOutputStream output_stream(&output);

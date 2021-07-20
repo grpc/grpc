@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,8 +38,8 @@ grpc_compression_algorithm grpc_compression_algorithm_from_slice(
 grpc_mdelem grpc_compression_encoding_mdelem(
     grpc_compression_algorithm algorithm);
 
-/** Return message compression algorithm based metadata element (grpc-encoding:
- * xxx) */
+/** Return message compression algorithm based metadata element
+ * (grpc-encoding: xxx) */
 grpc_mdelem grpc_message_compression_encoding_mdelem(
     grpc_message_compression_algorithm algorithm);
 
@@ -55,7 +55,7 @@ grpc_message_compression_algorithm_from_slice(const grpc_slice& str);
 
 /** Find stream compression algorithm based on passed in mdstr - returns
  * GRPC_STREAM_COMPRESS_ALGORITHM_COUNT on failure */
-grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
-    const grpc_slice& str);
+grpc_stream_compression_algorithm
+grpc_stream_compression_algorithm_from_slice(const grpc_slice& str);
 
 #endif /* GRPC_CORE_LIB_COMPRESSION_ALGORITHM_METADATA_H */

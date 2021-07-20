@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -80,9 +80,10 @@ class EndpointPairFixture {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      server_->c_server()->core_server->SetupTransport(transport, nullptr,
-                                                       server_args, nullptr);
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+      server_->c_server()->core_server->SetupTransport(
+          transport, nullptr, server_args, nullptr);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                          nullptr);
     }
 
     /* create channel */
@@ -97,7 +98,8 @@ class EndpointPairFixture {
       GPR_ASSERT(transport);
       grpc_channel* channel = grpc_channel_create(
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                          nullptr);
 
       channel_ = ::grpc::CreateChannelInternal(
           "", channel,
@@ -127,7 +129,8 @@ class EndpointPairFixture {
 class InProcessCHTTP2 : public EndpointPairFixture {
  public:
   InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
-      : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
+      : EndpointPairFixture(service, MakeEndpoints(stats)),
+        stats_(stats) {}
 
   ~InProcessCHTTP2() override {
     if (stats_ != nullptr) {
@@ -140,7 +143,8 @@ class InProcessCHTTP2 : public EndpointPairFixture {
  private:
   grpc_passthru_endpoint_stats* stats_;
 
-  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
+  static grpc_endpoint_pair MakeEndpoints(
+      grpc_passthru_endpoint_stats* stats) {
     static grpc_resource_quota* rq = grpc_resource_quota_create("bm");
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, rq, stats);
@@ -152,8 +156,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   const int kIterations = 10000;
 
   EchoTestService::AsyncService service;
-  std::unique_ptr<InProcessCHTTP2> fixture(
-      new InProcessCHTTP2(&service, grpc_passthru_endpoint_stats_create()));
+  std::unique_ptr<InProcessCHTTP2> fixture(new InProcessCHTTP2(
+      &service, grpc_passthru_endpoint_stats_create()));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;
@@ -173,7 +177,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   uint8_t server_env_buffer[2 * sizeof(ServerEnv)];
   ServerEnv* server_env[2] = {
       reinterpret_cast<ServerEnv*>(server_env_buffer),
-      reinterpret_cast<ServerEnv*>(server_env_buffer + sizeof(ServerEnv))};
+      reinterpret_cast<ServerEnv*>(server_env_buffer +
+                                   sizeof(ServerEnv))};
   new (server_env[0]) ServerEnv;
   new (server_env[1]) ServerEnv;
   service.RequestEcho(&server_env[0]->ctx, &server_env[0]->recv_request,
@@ -187,8 +192,9 @@ static double UnaryPingPong(int request_size, int response_size) {
   for (int iteration = 0; iteration < kIterations; iteration++) {
     recv_response.Clear();
     ClientContext cli_ctx;
-    std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
-        stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
+    std::unique_ptr<ClientAsyncResponseReader<EchoResponse>>
+        response_reader(
+            stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     void* t;
     bool ok;
     response_reader->Finish(&recv_response, &recv_status, tag(4));
@@ -209,8 +215,9 @@ static double UnaryPingPong(int request_size, int response_size) {
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();
-    service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
-                        fixture->cq(), fixture->cq(), tag(slot));
+    service.RequestEcho(&senv->ctx, &senv->recv_request,
+                        &senv->response_writer, fixture->cq(),
+                        fixture->cq(), tag(slot));
   }
 
   double writes_per_iteration =

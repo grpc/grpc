@@ -10,16 +10,17 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
 #ifndef GRPC_RB_LOADER_H_
 #define GRPC_RB_LOADER_H_
 
-/* Attempts to load the core if necessary, and return non-zero upon succes. */
+/* Attempts to load the core if necessary, and return non-zero upon
+ * succes. */
 int grpc_rb_load_core();
 
 #endif /* GRPC_RB_BYTE_BUFFER_H_ */

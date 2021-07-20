@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,7 +60,8 @@ typedef enum {
 #define GRPC_AUTHORIZATION_METADATA_KEY "authorization"
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
   "x-goog-iam-authorization-token"
-#define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
+#define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY \
+  "x-goog-iam-authority-selector"
 
 #define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
 
@@ -75,12 +76,14 @@ typedef enum {
   "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&" \
   "assertion="
 
-#define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING \
-  "client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token"
+#define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING                     \
+  "client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_" \
+  "token"
 
 /* --- Google utils --- */
 
-/* It is the caller's responsibility to gpr_free the result if not NULL. */
+/* It is the caller's responsibility to gpr_free the result if not NULL.
+ */
 std::string grpc_get_well_known_google_credentials_file_path(void);
 
 /* Implementation function for the different platforms. */
@@ -95,28 +98,28 @@ void grpc_override_well_known_credentials_path_getter(
 
 #define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.channel_credentials"
 
-// This type is forward declared as a C struct and we cannot define it as a
-// class. Otherwise, compiler will complain about type mismatch due to
-// -Wmismatched-tags.
+// This type is forward declared as a C struct and we cannot define it
+// as a class. Otherwise, compiler will complain about type mismatch due
+// to -Wmismatched-tags.
 struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
   explicit grpc_channel_credentials(const char* type) : type_(type) {}
   ~grpc_channel_credentials() override = default;
 
-  // Creates a security connector for the channel. May also create new channel
-  // args for the channel to be used in place of the passed in const args if
-  // returned non NULL. In that case the caller is responsible for destroying
-  // new_args after channel creation.
+  // Creates a security connector for the channel. May also create new
+  // channel args for the channel to be used in place of the passed in
+  // const args if returned non NULL. In that case the caller is
+  // responsible for destroying new_args after channel creation.
   virtual grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) = 0;
 
-  // Creates a version of the channel credentials without any attached call
-  // credentials. This can be used in order to open a channel to a non-trusted
-  // gRPC load balancer.
+  // Creates a version of the channel credentials without any attached
+  // call credentials. This can be used in order to open a channel to a
+  // non-trusted gRPC load balancer.
   virtual grpc_core::RefCountedPtr<grpc_channel_credentials>
   duplicate_without_call_credentials() {
     // By default we just increment the refcount.
@@ -138,7 +141,8 @@ struct grpc_channel_credentials
 };
 
 /* Util to encapsulate the channel credentials in a channel arg. */
-grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials* credentials);
+grpc_arg grpc_channel_credentials_to_arg(
+    grpc_channel_credentials* credentials);
 
 /* Util to get the channel credentials from a channel arg. */
 grpc_channel_credentials* grpc_channel_credentials_from_arg(
@@ -155,45 +159,49 @@ struct grpc_credentials_mdelem_array {
   size_t size = 0;
 };
 /// Takes a new ref to \a md.
-void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array* list,
-                                       grpc_mdelem md);
+void grpc_credentials_mdelem_array_add(
+    grpc_credentials_mdelem_array* list, grpc_mdelem md);
 
-/// Appends all elements from \a src to \a dst, taking a new ref to each one.
-void grpc_credentials_mdelem_array_append(grpc_credentials_mdelem_array* dst,
-                                          grpc_credentials_mdelem_array* src);
+/// Appends all elements from \a src to \a dst, taking a new ref to each
+/// one.
+void grpc_credentials_mdelem_array_append(
+    grpc_credentials_mdelem_array* dst,
+    grpc_credentials_mdelem_array* src);
 
-void grpc_credentials_mdelem_array_destroy(grpc_credentials_mdelem_array* list);
+void grpc_credentials_mdelem_array_destroy(
+    grpc_credentials_mdelem_array* list);
 
 /* --- grpc_call_credentials. --- */
 
-// This type is forward declared as a C struct and we cannot define it as a
-// class. Otherwise, compiler will complain about type mismatch due to
-// -Wmismatched-tags.
+// This type is forward declared as a C struct and we cannot define it
+// as a class. Otherwise, compiler will complain about type mismatch due
+// to -Wmismatched-tags.
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
   explicit grpc_call_credentials(
-      const char* type,
-      grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
+      const char* type, grpc_security_level min_security_level =
+                            GRPC_PRIVACY_AND_INTEGRITY)
       : type_(type), min_security_level_(min_security_level) {}
 
   ~grpc_call_credentials() override = default;
 
-  // Returns true if completed synchronously, in which case \a error will
-  // be set to indicate the result.  Otherwise, \a on_request_metadata will
-  // be invoked asynchronously when complete.  \a md_array will be populated
-  // with the resulting metadata once complete.
-  virtual bool get_request_metadata(grpc_polling_entity* pollent,
-                                    grpc_auth_metadata_context context,
-                                    grpc_credentials_mdelem_array* md_array,
-                                    grpc_closure* on_request_metadata,
-                                    grpc_error_handle* error) = 0;
+  // Returns true if completed synchronously, in which case \a error
+  // will be set to indicate the result.  Otherwise, \a
+  // on_request_metadata will be invoked asynchronously when complete.
+  // \a md_array will be populated with the resulting metadata once
+  // complete.
+  virtual bool get_request_metadata(
+      grpc_polling_entity* pollent, grpc_auth_metadata_context context,
+      grpc_credentials_mdelem_array* md_array,
+      grpc_closure* on_request_metadata, grpc_error_handle* error) = 0;
 
   // Cancels a pending asynchronous operation started by
   // grpc_call_credentials_get_request_metadata() with the corresponding
   // value of \a md_array.
   virtual void cancel_get_request_metadata(
-      grpc_credentials_mdelem_array* md_array, grpc_error_handle error) = 0;
+      grpc_credentials_mdelem_array* md_array,
+      grpc_error_handle error) = 0;
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;
@@ -217,9 +225,9 @@ grpc_call_credentials* grpc_md_only_test_credentials_create(
 
 /* --- grpc_server_credentials. --- */
 
-// This type is forward declared as a C struct and we cannot define it as a
-// class. Otherwise, compiler will complain about type mismatch due to
-// -Wmismatched-tags.
+// This type is forward declared as a C struct and we cannot define it
+// as a class. Otherwise, compiler will complain about type mismatch due
+// to -Wmismatched-tags.
 struct grpc_server_credentials
     : public grpc_core::RefCounted<grpc_server_credentials> {
  public:
@@ -254,7 +262,8 @@ struct grpc_server_credentials
 #define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
 
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c);
-grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);
+grpc_server_credentials* grpc_server_credentials_from_arg(
+    const grpc_arg* arg);
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* args);
 

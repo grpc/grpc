@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,9 +45,9 @@
  * in the read buffer of the handshaker arg. This scenario is created by
  * adding a fake "readahead" handshaker at the beginning of the server's
  * handshaker list, which just reads from the connection and then places
- * read bytes into the read buffer of the handshake arg (to be passed down
- * to the security_handshaker). This test is meant to protect code relying on
- * this functionality that lives outside of this repo. */
+ * read bytes into the read buffer of the handshake arg (to be passed
+ * down to the security_handshaker). This test is meant to protect code
+ * relying on this functionality that lives outside of this repo. */
 
 namespace grpc_core {
 
@@ -59,7 +59,8 @@ class ReadAheadHandshaker : public Handshaker {
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
-    grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
+    grpc_endpoint_read(args->endpoint, args->read_buffer,
+                       on_handshake_done,
                        /*urgent=*/false);
   }
 };

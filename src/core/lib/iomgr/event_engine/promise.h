@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_PROMISE_H
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_PROMISE_H
 #include <grpc/support/port_platform.h>
@@ -22,9 +22,9 @@ namespace experimental {
 
 /// A minimal promise implementation.
 ///
-/// This is light-duty, syntactical sugar around cv wait & signal, which is
-/// useful in some cases. A more robust implementation is being worked on
-/// separately.
+/// This is light-duty, syntactical sugar around cv wait & signal, which
+/// is useful in some cases. A more robust implementation is being
+/// worked on separately.
 template <typename T>
 class Promise {
  public:

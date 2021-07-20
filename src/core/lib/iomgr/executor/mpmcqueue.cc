@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,30 +25,34 @@ namespace grpc_core {
 DebugOnlyTraceFlag grpc_thread_pool_trace(false, "thread_pool");
 
 inline void* InfLenFIFOQueue::PopFront() {
-  // Caller should already check queue is not empty and has already held the
-  // mutex. This function will assume that there is at least one element in the
-  // queue (i.e. queue_head_->content is valid).
+  // Caller should already check queue is not empty and has already held
+  // the mutex. This function will assume that there is at least one
+  // element in the queue (i.e. queue_head_->content is valid).
   void* result = queue_head_->content;
-  count_.Store(count_.Load(MemoryOrder::RELAXED) - 1, MemoryOrder::RELAXED);
+  count_.Store(count_.Load(MemoryOrder::RELAXED) - 1,
+               MemoryOrder::RELAXED);
 
   // Updates Stats when trace flag turned on.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
-    gpr_timespec wait_time =
-        gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), queue_head_->insert_time);
+    gpr_timespec wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC),
+                                          queue_head_->insert_time);
     stats_.num_completed++;
-    stats_.total_queue_time = gpr_time_add(stats_.total_queue_time, wait_time);
+    stats_.total_queue_time =
+        gpr_time_add(stats_.total_queue_time, wait_time);
     stats_.max_queue_time = gpr_time_max(
-        gpr_convert_clock_type(stats_.max_queue_time, GPR_TIMESPAN), wait_time);
+        gpr_convert_clock_type(stats_.max_queue_time, GPR_TIMESPAN),
+        wait_time);
 
     if (count_.Load(MemoryOrder::RELAXED) == 0) {
-      stats_.busy_queue_time =
-          gpr_time_add(stats_.busy_queue_time,
-                       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), busy_time));
+      stats_.busy_queue_time = gpr_time_add(
+          stats_.busy_queue_time,
+          gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), busy_time));
     }
 
     gpr_log(GPR_INFO,
             "[InfLenFIFOQueue PopFront] num_completed:        %" PRIu64
-            " total_queue_time: %f max_queue_time:   %f busy_queue_time:   %f",
+            " total_queue_time: %f max_queue_time:   %f "
+            "busy_queue_time:   %f",
             stats_.num_completed,
             gpr_timespec_to_micros(stats_.total_queue_time),
             gpr_timespec_to_micros(stats_.max_queue_time),
@@ -78,8 +82,8 @@ InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
 
 InfLenFIFOQueue::InfLenFIFOQueue() {
   delete_list_size_ = kDeleteListInitSize;
-  delete_list_ =
-      static_cast<Node**>(gpr_zalloc(sizeof(Node*) * delete_list_size_));
+  delete_list_ = static_cast<Node**>(
+      gpr_zalloc(sizeof(Node*) * delete_list_size_));
 
   Node* new_chunk = AllocateNodes(kQueueInitNumNodes);
   delete_list_[delete_list_count_++] = new_chunk;
@@ -105,7 +109,8 @@ void InfLenFIFOQueue::Put(void* elem) {
   int curr_count = count_.Load(MemoryOrder::RELAXED);
 
   if (queue_tail_ == queue_head_ && curr_count != 0) {
-    // List is full. Expands list to double size by inserting new chunk of nodes
+    // List is full. Expands list to double size by inserting new chunk
+    // of nodes
     Node* new_chunk = AllocateNodes(curr_count);
     delete_list_[delete_list_count_++] = new_chunk;
     // Expands delete list on full.
@@ -125,7 +130,8 @@ void InfLenFIFOQueue::Put(void* elem) {
   // Updates Stats info
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
     stats_.num_started++;
-    gpr_log(GPR_INFO, "[InfLenFIFOQueue Put] num_started:        %" PRIu64,
+    gpr_log(GPR_INFO,
+            "[InfLenFIFOQueue Put] num_started:        %" PRIu64,
             stats_.num_started);
     auto current_time = gpr_now(GPR_CLOCK_MONOTONIC);
     if (curr_count == 0) {
@@ -158,7 +164,8 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
     RemoveWaiter(&self);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace) &&
         wait_time != nullptr) {
-      *wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_time);
+      *wait_time =
+          gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_time);
     }
   }
   GPR_DEBUG_ASSERT(count_.Load(MemoryOrder::RELAXED) > 0);
@@ -178,6 +185,8 @@ void InfLenFIFOQueue::RemoveWaiter(Waiter* waiter) {
   waiter->prev->next = waiter->next;
 }
 
-InfLenFIFOQueue::Waiter* InfLenFIFOQueue::TopWaiter() { return waiters_.next; }
+InfLenFIFOQueue::Waiter* InfLenFIFOQueue::TopWaiter() {
+  return waiters_.next;
+}
 
 }  // namespace grpc_core

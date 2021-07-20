@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,7 +26,8 @@ AuthPropertyIterator::AuthPropertyIterator()
     : property_(nullptr), ctx_(nullptr), index_(0), name_(nullptr) {}
 
 AuthPropertyIterator::AuthPropertyIterator(
-    const grpc_auth_property* property, const grpc_auth_property_iterator* iter)
+    const grpc_auth_property* property,
+    const grpc_auth_property_iterator* iter)
     : property_(property),
       ctx_(iter->ctx),
       index_(iter->index),
@@ -49,7 +50,8 @@ AuthPropertyIterator AuthPropertyIterator::operator++(int) {
   return tmp;
 }
 
-bool AuthPropertyIterator::operator==(const AuthPropertyIterator& rhs) const {
+bool AuthPropertyIterator::operator==(
+    const AuthPropertyIterator& rhs) const {
   if (property_ == nullptr || rhs.property_ == nullptr) {
     return property_ == rhs.property_;
   } else {
@@ -57,7 +59,8 @@ bool AuthPropertyIterator::operator==(const AuthPropertyIterator& rhs) const {
   }
 }
 
-bool AuthPropertyIterator::operator!=(const AuthPropertyIterator& rhs) const {
+bool AuthPropertyIterator::operator!=(
+    const AuthPropertyIterator& rhs) const {
   return !operator==(rhs);
 }
 

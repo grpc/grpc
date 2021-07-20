@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,21 +57,21 @@ grpc_error_handle grpc_tcp_set_non_block(SOCKET sock) {
   int status;
   uint32_t param = 1;
   DWORD ret;
-  status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0, &ret,
-                    NULL, NULL);
-  return status == 0
-             ? GRPC_ERROR_NONE
-             : GRPC_WSA_ERROR(WSAGetLastError(), "WSAIoctl(GRPC_FIONBIO)");
+  status = WSAIoctl(sock, GRPC_FIONBIO, &param, sizeof(param), NULL, 0,
+                    &ret, NULL, NULL);
+  return status == 0 ? GRPC_ERROR_NONE
+                     : GRPC_WSA_ERROR(WSAGetLastError(),
+                                      "WSAIoctl(GRPC_FIONBIO)");
 }
 
 static grpc_error_handle set_dualstack(SOCKET sock) {
   int status;
   unsigned long param = 0;
-  status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&param,
-                      sizeof(param));
-  return status == 0
-             ? GRPC_ERROR_NONE
-             : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
+  status = setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                      (const char*)&param, sizeof(param));
+  return status == 0 ? GRPC_ERROR_NONE
+                     : GRPC_WSA_ERROR(WSAGetLastError(),
+                                      "setsockopt(IPV6_V6ONLY)");
 }
 
 static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
@@ -82,8 +82,9 @@ static grpc_error_handle enable_socket_low_latency(SOCKET sock) {
   if (status == SOCKET_ERROR) {
     status = WSAGetLastError();
   }
-  return status == 0 ? GRPC_ERROR_NONE
-                     : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
+  return status == 0
+             ? GRPC_ERROR_NONE
+             : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
 }
 
 grpc_error_handle grpc_tcp_prepare_socket(SOCKET sock) {
@@ -119,8 +120,8 @@ typedef struct grpc_tcp {
 
   grpc_resource_user* resource_user;
 
-  /* The IO Completion Port runs from another thread. We need some mechanism
-     to protect ourselves when requesting a shutdown. */
+  /* The IO Completion Port runs from another thread. We need some
+     mechanism to protect ourselves when requesting a shutdown. */
   gpr_mu mu;
   int shutting_down;
   grpc_error_handle shutdown_error;
@@ -139,15 +140,17 @@ static void tcp_free(grpc_tcp* tcp) {
 }
 
 #ifndef NDEBUG
-#define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), __FILE__, __LINE__)
-#define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
-static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
-                      int line) {
+#define TCP_UNREF(tcp, reason) \
+  tcp_unref((tcp), (reason), __FILE__, __LINE__)
+#define TCP_REF(tcp, reason) \
+  tcp_ref((tcp), (reason), __FILE__, __LINE__)
+static void tcp_unref(grpc_tcp* tcp, const char* reason,
+                      const char* file, int line) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
-            val - 1);
+            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason,
+            val, val - 1);
   }
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(tcp);
@@ -159,8 +162,8 @@ static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
-            val + 1);
+            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason,
+            val, val + 1);
   }
   gpr_ref(&tcp->refcount);
 }
@@ -197,7 +200,8 @@ static void on_read(void* tcpp, grpc_error_handle error) {
       grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
     } else {
       if (info->bytes_transferred != 0 && !tcp->shutting_down) {
-        GPR_ASSERT((size_t)info->bytes_transferred <= tcp->read_slices->length);
+        GPR_ASSERT((size_t)info->bytes_transferred <=
+                   tcp->read_slices->length);
         if (static_cast<size_t>(info->bytes_transferred) !=
             tcp->read_slices->length) {
           grpc_slice_buffer_trim_end(
@@ -206,7 +210,8 @@ static void on_read(void* tcpp, grpc_error_handle error) {
                   static_cast<size_t>(info->bytes_transferred),
               &tcp->last_read_buffer);
         }
-        GPR_ASSERT((size_t)info->bytes_transferred == tcp->read_slices->length);
+        GPR_ASSERT((size_t)info->bytes_transferred ==
+                   tcp->read_slices->length);
 
         if (grpc_tcp_trace.enabled()) {
           size_t i;
@@ -225,8 +230,10 @@ static void on_read(void* tcpp, grpc_error_handle error) {
         grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
         error = tcp->shutting_down
                     ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                          "TCP stream shutting down", &tcp->shutdown_error, 1)
-                    : GRPC_ERROR_CREATE_FROM_STATIC_STRING("End of TCP stream");
+                          "TCP stream shutting down",
+                          &tcp->shutdown_error, 1)
+                    : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                          "End of TCP stream");
       }
     }
   }
@@ -268,7 +275,8 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 
   if (tcp->read_slices->length < DEFAULT_TARGET_READ_SIZE / 2 &&
       tcp->read_slices->count < MAX_WSABUF_COUNT) {
-    // TODO(jtattermusch): slice should be allocated using resource quota
+    // TODO(jtattermusch): slice should be allocated using resource
+    // quota
     grpc_slice_buffer_add(tcp->read_slices,
                           GRPC_SLICE_MALLOC(DEFAULT_TARGET_READ_SIZE));
   }
@@ -276,35 +284,41 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   GPR_ASSERT(tcp->read_slices->count <= MAX_WSABUF_COUNT);
   for (i = 0; i < tcp->read_slices->count; i++) {
     buffers[i].len = (ULONG)GRPC_SLICE_LENGTH(
-        tcp->read_slices->slices[i]);  // we know slice size fits in 32bit.
-    buffers[i].buf = (char*)GRPC_SLICE_START_PTR(tcp->read_slices->slices[i]);
+        tcp->read_slices
+            ->slices[i]);  // we know slice size fits in 32bit.
+    buffers[i].buf =
+        (char*)GRPC_SLICE_START_PTR(tcp->read_slices->slices[i]);
   }
 
   TCP_REF(tcp, "read");
 
   /* First let's try a synchronous, non-blocking read. */
-  status = WSARecv(tcp->socket->socket, buffers, (DWORD)tcp->read_slices->count,
-                   &bytes_read, &flags, NULL, NULL);
+  status = WSARecv(tcp->socket->socket, buffers,
+                   (DWORD)tcp->read_slices->count, &bytes_read, &flags,
+                   NULL, NULL);
   info->wsa_error = status == 0 ? 0 : WSAGetLastError();
 
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
     info->bytes_transferred = bytes_read;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &tcp->on_read, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &tcp->on_read,
+                            GRPC_ERROR_NONE);
     return;
   }
 
   /* Otherwise, let's retry, by queuing a read. */
   memset(&tcp->socket->read_info.overlapped, 0, sizeof(OVERLAPPED));
-  status = WSARecv(tcp->socket->socket, buffers, (DWORD)tcp->read_slices->count,
-                   &bytes_read, &flags, &info->overlapped, NULL);
+  status = WSARecv(tcp->socket->socket, buffers,
+                   (DWORD)tcp->read_slices->count, &bytes_read, &flags,
+                   &info->overlapped, NULL);
 
   if (status != 0) {
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       info->wsa_error = wsa_error;
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &tcp->on_read,
-                              GRPC_WSA_ERROR(info->wsa_error, "WSARecv"));
+      grpc_core::ExecCtx::Run(
+          DEBUG_LOCATION, &tcp->on_read,
+          GRPC_WSA_ERROR(info->wsa_error, "WSARecv"));
       return;
     }
   }
@@ -359,10 +373,10 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   if (grpc_tcp_trace.enabled()) {
     size_t i;
     for (i = 0; i < slices->count; i++) {
-      char* data =
-          grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string.c_str(),
-              data);
+      char* data = grpc_dump_slice(slices->slices[i],
+                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      gpr_log(GPR_INFO, "WRITE %p (peer=%s): %s", tcp,
+              tcp->peer_string.c_str(), data);
       gpr_free(data);
     }
   }
@@ -379,7 +393,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   tcp->write_slices = slices;
   GPR_ASSERT(tcp->write_slices->count <= UINT_MAX);
   if (tcp->write_slices->count > GPR_ARRAY_SIZE(local_buffers)) {
-    buffers = (WSABUF*)gpr_malloc(sizeof(WSABUF) * tcp->write_slices->count);
+    buffers =
+        (WSABUF*)gpr_malloc(sizeof(WSABUF) * tcp->write_slices->count);
     allocated = buffers;
   }
 
@@ -387,21 +402,23 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     len = GRPC_SLICE_LENGTH(tcp->write_slices->slices[i]);
     GPR_ASSERT(len <= ULONG_MAX);
     buffers[i].len = (ULONG)len;
-    buffers[i].buf = (char*)GRPC_SLICE_START_PTR(tcp->write_slices->slices[i]);
+    buffers[i].buf =
+        (char*)GRPC_SLICE_START_PTR(tcp->write_slices->slices[i]);
   }
 
   /* First, let's try a synchronous, non-blocking write. */
-  status = WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
-                   &bytes_sent, 0, NULL, NULL);
+  status =
+      WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
+              &bytes_sent, 0, NULL, NULL);
   info->wsa_error = status == 0 ? 0 : WSAGetLastError();
 
-  /* We would kind of expect to get a WSAEWOULDBLOCK here, especially on a busy
-     connection that has its send queue filled up. But if we don't, then we can
-     avoid doing an async write operation at all. */
+  /* We would kind of expect to get a WSAEWOULDBLOCK here, especially on
+     a busy connection that has its send queue filled up. But if we
+     don't, then we can avoid doing an async write operation at all. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
-    grpc_error_handle error = status == 0
-                                  ? GRPC_ERROR_NONE
-                                  : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
+    grpc_error_handle error =
+        status == 0 ? GRPC_ERROR_NONE
+                    : GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
     if (allocated) gpr_free(allocated);
     return;
@@ -412,8 +429,9 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   /* If we got a WSAEWOULDBLOCK earlier, then we need to re-do the same
      operation, this time asynchronously. */
   memset(&socket->write_info.overlapped, 0, sizeof(OVERLAPPED));
-  status = WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
-                   &bytes_sent, 0, &socket->write_info.overlapped, NULL);
+  status =
+      WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
+              &bytes_sent, 0, &socket->write_info.overlapped, NULL);
   if (allocated) gpr_free(allocated);
 
   if (status != 0) {
@@ -426,8 +444,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     }
   }
 
-  /* As all is now setup, we can now ask for the IOCP notification. It may
-     trigger the callback immediately however, but no matter. */
+  /* As all is now setup, we can now ask for the IOCP notification. It
+     may trigger the callback immediately however, but no matter. */
   grpc_socket_notify_on_write(socket, &tcp->on_write);
 }
 
@@ -438,7 +456,8 @@ static void win_add_to_pollset(grpc_endpoint* ep, grpc_pollset* ps) {
   grpc_iocp_add_socket(tcp->socket);
 }
 
-static void win_add_to_pollset_set(grpc_endpoint* ep, grpc_pollset_set* pss) {
+static void win_add_to_pollset_set(grpc_endpoint* ep,
+                                   grpc_pollset_set* pss) {
   grpc_tcp* tcp;
   (void)pss;
   tcp = (grpc_tcp*)ep;
@@ -448,17 +467,18 @@ static void win_add_to_pollset_set(grpc_endpoint* ep, grpc_pollset_set* pss) {
 static void win_delete_from_pollset_set(grpc_endpoint* ep,
                                         grpc_pollset_set* pss) {}
 
-/* Initiates a shutdown of the TCP endpoint. This will queue abort callbacks
-   for the potential read and write operations. It is up to the caller to
-   guarantee this isn't called in parallel to a read or write request, so
-   we're not going to protect against these. However the IO Completion Port
-   callback will happen from another thread, so we need to protect against
+/* Initiates a shutdown of the TCP endpoint. This will queue abort
+   callbacks for the potential read and write operations. It is up to
+   the caller to guarantee this isn't called in parallel to a read or
+   write request, so we're not going to protect against these. However
+   the IO Completion Port callback will happen from another thread, so
+   we need to protect against
    concurrent access of the data structure in that regard. */
 static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   gpr_mu_lock(&tcp->mu);
-  /* At that point, what may happen is that we're already inside the IOCP
-     callback. See the comments in on_read and on_write. */
+  /* At that point, what may happen is that we're already inside the
+     IOCP callback. See the comments in on_read and on_write. */
   if (!tcp->shutting_down) {
     tcp->shutting_down = 1;
     tcp->shutdown_error = why;
@@ -511,13 +531,16 @@ static grpc_endpoint_vtable vtable = {win_read,
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
                                const char* peer_string) {
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_create(NULL);
   if (channel_args != NULL) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
+      if (0 ==
+          strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(resource_quota);
         resource_quota = grpc_resource_quota_ref_internal(
-            (grpc_resource_quota*)channel_args->args[i].value.pointer.p);
+            (grpc_resource_quota*)channel_args->args[i]
+                .value.pointer.p);
       }
     }
   }
@@ -527,8 +550,10 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   tcp->socket = socket;
   gpr_mu_init(&tcp->mu);
   gpr_ref_init(&tcp->refcount, 1);
-  GRPC_CLOSURE_INIT(&tcp->on_read, on_read, tcp, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&tcp->on_read, on_read, tcp,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&tcp->on_write, on_write, tcp,
+                    grpc_schedule_on_exec_ctx);
   grpc_resolved_address resolved_local_addr;
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
   if (getsockname(tcp->socket->socket,
@@ -540,7 +565,8 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   }
   tcp->peer_string = peer_string;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
+  tcp->resource_user =
+      grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_quota_unref_internal(resource_quota);
 
   return &tcp->base;

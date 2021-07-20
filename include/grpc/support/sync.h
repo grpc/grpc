@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,54 +30,57 @@ extern "C" {
 
 /** --- Mutex interface ---
 
-   At most one thread may hold an exclusive lock on a mutex at any given time.
-   Actions taken by a thread that holds a mutex exclusively happen after
-   actions taken by all previous holders of the mutex.  Variables of type
-   gpr_mu are uninitialized when first declared.  */
+   At most one thread may hold an exclusive lock on a mutex at any given
+   time. Actions taken by a thread that holds a mutex exclusively happen
+   after actions taken by all previous holders of the mutex.  Variables
+   of type gpr_mu are uninitialized when first declared.  */
 
 /** Initialize *mu.  Requires:  *mu uninitialized.  */
 GPRAPI void gpr_mu_init(gpr_mu* mu);
 
-/** Cause *mu no longer to be initialized, freeing any memory in use.  Requires:
- *mu initialized; no other concurrent operation on *mu.  */
+/** Cause *mu no longer to be initialized, freeing any memory in use.
+ *Requires: mu initialized; no other concurrent operation on *mu.  */
 GPRAPI void gpr_mu_destroy(gpr_mu* mu);
 
-/** Wait until no thread has a lock on *mu, cause the calling thread to own an
-   exclusive lock on *mu, then return.  May block indefinitely or crash if the
-   calling thread has a lock on *mu.  Requires:  *mu initialized.  */
+/** Wait until no thread has a lock on *mu, cause the calling thread to
+   own an exclusive lock on *mu, then return.  May block indefinitely or
+   crash if the calling thread has a lock on *mu.  Requires:  *mu
+   initialized.  */
 GPRAPI void gpr_mu_lock(gpr_mu* mu);
 
-/** Release an exclusive lock on *mu held by the calling thread.  Requires:  *mu
-   initialized; the calling thread holds an exclusive lock on *mu.  */
+/** Release an exclusive lock on *mu held by the calling thread.
+   Requires:  *mu initialized; the calling thread holds an exclusive
+   lock on *mu.  */
 GPRAPI void gpr_mu_unlock(gpr_mu* mu);
 
-/** Without blocking, attempt to acquire an exclusive lock on *mu for the
-   calling thread, then return non-zero iff success.  Fail, if any thread holds
-   the lock; succeeds with high probability if no thread holds the lock.
-   Requires:  *mu initialized.  */
+/** Without blocking, attempt to acquire an exclusive lock on *mu for
+   the calling thread, then return non-zero iff success.  Fail, if any
+   thread holds the lock; succeeds with high probability if no thread
+   holds the lock. Requires:  *mu initialized.  */
 GPRAPI int gpr_mu_trylock(gpr_mu* mu);
 
 /** --- Condition variable interface ---
 
-   A while-loop should be used with gpr_cv_wait() when waiting for conditions
-   to become true.  See the example below.  Variables of type gpr_cv are
-   uninitialized when first declared.  */
+   A while-loop should be used with gpr_cv_wait() when waiting for
+   conditions to become true.  See the example below.  Variables of type
+   gpr_cv are uninitialized when first declared.  */
 
 /** Initialize *cv.  Requires:  *cv uninitialized.  */
 GPRAPI void gpr_cv_init(gpr_cv* cv);
 
-/** Cause *cv no longer to be initialized, freeing any memory in use.  Requires:
- *cv initialized; no other concurrent operation on *cv.*/
+/** Cause *cv no longer to be initialized, freeing any memory in use.
+ *Requires: cv initialized; no other concurrent operation on *cv.*/
 GPRAPI void gpr_cv_destroy(gpr_cv* cv);
 
-/** Atomically release *mu and wait on *cv.  When the calling thread is woken
-   from *cv or the deadline abs_deadline is exceeded, execute gpr_mu_lock(mu)
-   and return whether the deadline was exceeded.  Use
-   abs_deadline==gpr_inf_future for no deadline.  abs_deadline can be either
-   an absolute deadline, or a GPR_TIMESPAN.  May return even when not
-   woken explicitly.  Requires:  *mu and *cv initialized; the calling thread
-   holds an exclusive lock on *mu.  */
-GPRAPI int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline);
+/** Atomically release *mu and wait on *cv.  When the calling thread is
+   woken from *cv or the deadline abs_deadline is exceeded, execute
+   gpr_mu_lock(mu) and return whether the deadline was exceeded.  Use
+   abs_deadline==gpr_inf_future for no deadline.  abs_deadline can be
+   either an absolute deadline, or a GPR_TIMESPAN.  May return even when
+   not woken explicitly.  Requires:  *mu and *cv initialized; the
+   calling thread holds an exclusive lock on *mu.  */
+GPRAPI int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu,
+                       gpr_timespec abs_deadline);
 
 /** If any threads are waiting on *cv, wake at least one.
    Clients may treat this as an optimization of gpr_cv_broadcast()
@@ -90,15 +93,15 @@ GPRAPI void gpr_cv_broadcast(gpr_cv* cv);
 
 /** --- One-time initialization ---
 
-   gpr_once must be declared with static storage class, and initialized with
-   GPR_ONCE_INIT.  e.g.,
+   gpr_once must be declared with static storage class, and initialized
+   with GPR_ONCE_INIT.  e.g.,
      static gpr_once once_var = GPR_ONCE_INIT;     */
 
 /** Ensure that (*init_function)() has been called exactly once (for the
    specified gpr_once instance) and then return.
-   If multiple threads call gpr_once() on the same gpr_once instance, one of
-   them will call (*init_function)(), and the others will block until that call
-   finishes.*/
+   If multiple threads call gpr_once() on the same gpr_once instance,
+   one of them will call (*init_function)(), and the others will block
+   until that call finishes.*/
 GPRAPI void gpr_once_init(gpr_once* once, void (*init_function)(void));
 
 /** --- One-time event notification ---
@@ -111,28 +114,29 @@ GPRAPI void gpr_once_init(gpr_once* once, void (*init_function)(void));
 /** Initialize *ev. */
 GPRAPI void gpr_event_init(gpr_event* ev);
 
-/** Set *ev so that gpr_event_get() and gpr_event_wait() will return value.
-   Requires:  *ev initialized; value != NULL; no prior or concurrent calls to
-   gpr_event_set(ev, ...) since initialization.  */
+/** Set *ev so that gpr_event_get() and gpr_event_wait() will return
+   value. Requires:  *ev initialized; value != NULL; no prior or
+   concurrent calls to gpr_event_set(ev, ...) since initialization.  */
 GPRAPI void gpr_event_set(gpr_event* ev, void* value);
 
-/** Return the value set by gpr_event_set(ev, ...), or NULL if no such call has
-   completed.  If the result is non-NULL, all operations that occurred prior to
-   the gpr_event_set(ev, ...) set will be visible after this call returns.
-   Requires:  *ev initialized.  This operation is faster than acquiring a mutex
-   on most platforms.  */
+/** Return the value set by gpr_event_set(ev, ...), or NULL if no such
+   call has completed.  If the result is non-NULL, all operations that
+   occurred prior to the gpr_event_set(ev, ...) set will be visible
+   after this call returns. Requires:  *ev initialized.  This operation
+   is faster than acquiring a mutex on most platforms.  */
 GPRAPI void* gpr_event_get(gpr_event* ev);
 
 /** Wait until *ev is set by gpr_event_set(ev, ...), or abs_deadline is
-   exceeded, then return gpr_event_get(ev).  Requires:  *ev initialized.  Use
-   abs_deadline==gpr_inf_future for no deadline.  When the event has been
-   signalled before the call, this operation is faster than acquiring a mutex
-   on most platforms.  */
+   exceeded, then return gpr_event_get(ev).  Requires:  *ev initialized.
+   Use abs_deadline==gpr_inf_future for no deadline.  When the event has
+   been signalled before the call, this operation is faster than
+   acquiring a mutex on most platforms.  */
 GPRAPI void* gpr_event_wait(gpr_event* ev, gpr_timespec abs_deadline);
 
 /** --- Reference counting ---
 
-   These calls act on the type gpr_refcount.  It requires no destruction.  */
+   These calls act on the type gpr_refcount.  It requires no
+   destruction.  */
 
 /** Initialize *r to value n.  */
 GPRAPI void gpr_ref_init(gpr_refcount* r, int n);
@@ -144,24 +148,25 @@ GPRAPI void gpr_ref(gpr_refcount* r);
    Crashes if refcount is zero */
 GPRAPI void gpr_ref_non_zero(gpr_refcount* r);
 
-/** Increment the reference count *r by n.  Requires *r initialized, n > 0. */
+/** Increment the reference count *r by n.  Requires *r initialized, n >
+ * 0. */
 GPRAPI void gpr_refn(gpr_refcount* r, int n);
 
-/** Decrement the reference count *r and return non-zero iff it has reached
-   zero. .  Requires *r initialized. */
+/** Decrement the reference count *r and return non-zero iff it has
+   reached zero. .  Requires *r initialized. */
 GPRAPI int gpr_unref(gpr_refcount* r);
 
-/** Return non-zero iff the reference count of *r is one, and thus is owned
-   by exactly one object. */
+/** Return non-zero iff the reference count of *r is one, and thus is
+   owned by exactly one object. */
 GPRAPI int gpr_ref_is_unique(gpr_refcount* r);
 
 /** --- Stats counters ---
 
-   These calls act on the integral type gpr_stats_counter.  It requires no
-   destruction.  Static instances may be initialized with
+   These calls act on the integral type gpr_stats_counter.  It requires
+   no destruction.  Static instances may be initialized with
        gpr_stats_counter c = GPR_STATS_INIT;
-   Beware:  These operations do not imply memory barriers.  Do not use them to
-   synchronize other events.  */
+   Beware:  These operations do not imply memory barriers.  Do not use
+   them to synchronize other events.  */
 
 /** Initialize *c to the value n. */
 GPRAPI void gpr_stats_init(gpr_stats_counter* c, intptr_t n);

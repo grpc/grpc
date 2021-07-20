@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,30 +36,36 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-inline void SendCallbackUnaryPingPong(
-    benchmark::State* state, ClientContext* cli_ctx, EchoRequest* request,
-    EchoResponse* response, EchoTestService::Stub* stub_, bool* done,
-    std::mutex* mu, std::condition_variable* cv) {
+inline void SendCallbackUnaryPingPong(benchmark::State* state,
+                                      ClientContext* cli_ctx,
+                                      EchoRequest* request,
+                                      EchoResponse* response,
+                                      EchoTestService::Stub* stub_,
+                                      bool* done, std::mutex* mu,
+                                      std::condition_variable* cv) {
   int response_msgs_size = state->range(1);
-  cli_ctx->AddMetadata(kServerMessageSize, std::to_string(response_msgs_size));
-  stub_->async()->Echo(
-      cli_ctx, request, response,
-      [state, cli_ctx, request, response, stub_, done, mu, cv](Status s) {
-        GPR_ASSERT(s.ok());
-        if (state->KeepRunning()) {
-          cli_ctx->~ClientContext();
-          new (cli_ctx) ClientContext();
-          SendCallbackUnaryPingPong(state, cli_ctx, request, response, stub_,
-                                    done, mu, cv);
-        } else {
-          std::lock_guard<std::mutex> l(*mu);
-          *done = true;
-          cv->notify_one();
-        }
-      });
+  cli_ctx->AddMetadata(kServerMessageSize,
+                       std::to_string(response_msgs_size));
+  stub_->async()->Echo(cli_ctx, request, response,
+                       [state, cli_ctx, request, response, stub_, done,
+                        mu, cv](Status s) {
+                         GPR_ASSERT(s.ok());
+                         if (state->KeepRunning()) {
+                           cli_ctx->~ClientContext();
+                           new (cli_ctx) ClientContext();
+                           SendCallbackUnaryPingPong(
+                               state, cli_ctx, request, response, stub_,
+                               done, mu, cv);
+                         } else {
+                           std::lock_guard<std::mutex> l(*mu);
+                           *done = true;
+                           cv->notify_one();
+                         }
+                       });
 };
 
-template <class Fixture, class ClientContextMutator, class ServerContextMutator>
+template <class Fixture, class ClientContextMutator,
+          class ServerContextMutator>
 static void BM_CallbackUnaryPingPong(benchmark::State& state) {
   int request_msgs_size = state.range(0);
   int response_msgs_size = state.range(1);

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,9 +32,11 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
 }
 
 /* Perform input santity check. */
-static grpc_status_code unseal_check(alts_crypter* c, const unsigned char* data,
+static grpc_status_code unseal_check(alts_crypter* c,
+                                     const unsigned char* data,
                                      size_t /*data_allocated_size*/,
-                                     size_t data_size, size_t* output_size,
+                                     size_t data_size,
+                                     size_t* output_size,
                                      char** error_details) {
   /* Do common input sanity check. */
   grpc_status_code status = input_sanity_check(
@@ -44,10 +46,11 @@ static grpc_status_code unseal_check(alts_crypter* c, const unsigned char* data,
     return status;
   }
   /* Do unseal-specific input check. */
-  size_t num_overhead_bytes =
-      alts_crypter_num_overhead_bytes(reinterpret_cast<const alts_crypter*>(c));
+  size_t num_overhead_bytes = alts_crypter_num_overhead_bytes(
+      reinterpret_cast<const alts_crypter*>(c));
   if (num_overhead_bytes > data_size) {
-    const char error_msg[] = "data_size is smaller than num_overhead_bytes.";
+    const char error_msg[] =
+        "data_size is smaller than num_overhead_bytes.";
     maybe_copy_error_msg(error_msg, error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
@@ -57,8 +60,9 @@ static grpc_status_code unseal_check(alts_crypter* c, const unsigned char* data,
 static grpc_status_code alts_unseal_crypter_process_in_place(
     alts_crypter* c, unsigned char* data, size_t data_allocated_size,
     size_t data_size, size_t* output_size, char** error_details) {
-  grpc_status_code status = unseal_check(c, data, data_allocated_size,
-                                         data_size, output_size, error_details);
+  grpc_status_code status =
+      unseal_check(c, data, data_allocated_size, data_size, output_size,
+                   error_details);
   if (status != GRPC_STATUS_OK) {
     return status;
   }
@@ -92,8 +96,8 @@ grpc_status_code alts_unseal_crypter_create(gsec_aead_crypter* gc,
     maybe_copy_error_msg(error_msg, error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
-  alts_record_protocol_crypter* rp_crypter =
-      alts_crypter_create_common(gc, is_client, overflow_size, error_details);
+  alts_record_protocol_crypter* rp_crypter = alts_crypter_create_common(
+      gc, is_client, overflow_size, error_details);
   if (rp_crypter == nullptr) {
     return GRPC_STATUS_FAILED_PRECONDITION;
   }

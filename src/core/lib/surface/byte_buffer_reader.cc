@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -81,17 +81,20 @@ int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
   return 0;
 }
 
-grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader) {
+grpc_slice grpc_byte_buffer_reader_readall(
+    grpc_byte_buffer_reader* reader) {
   grpc_slice in_slice;
   size_t bytes_read = 0;
   const size_t input_size = grpc_byte_buffer_length(reader->buffer_out);
   grpc_slice out_slice = GRPC_SLICE_MALLOC(input_size);
-  uint8_t* const outbuf = GRPC_SLICE_START_PTR(out_slice); /* just an alias */
+  uint8_t* const outbuf =
+      GRPC_SLICE_START_PTR(out_slice); /* just an alias */
 
   grpc_core::ExecCtx exec_ctx;
   while (grpc_byte_buffer_reader_next(reader, &in_slice) != 0) {
     const size_t slice_length = GRPC_SLICE_LENGTH(in_slice);
-    memcpy(&(outbuf[bytes_read]), GRPC_SLICE_START_PTR(in_slice), slice_length);
+    memcpy(&(outbuf[bytes_read]), GRPC_SLICE_START_PTR(in_slice),
+           slice_length);
     bytes_read += slice_length;
     grpc_slice_unref_internal(in_slice);
     GPR_ASSERT(bytes_read <= input_size);

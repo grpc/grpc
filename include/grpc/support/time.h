@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,8 +33,10 @@ extern "C" {
 /** Time constants. */
 GPRAPI gpr_timespec
 gpr_time_0(gpr_clock_type type); /** The zero time interval. */
-GPRAPI gpr_timespec gpr_inf_future(gpr_clock_type type); /** The far future */
-GPRAPI gpr_timespec gpr_inf_past(gpr_clock_type type);   /** The far past. */
+GPRAPI gpr_timespec
+gpr_inf_future(gpr_clock_type type); /** The far future */
+GPRAPI gpr_timespec
+gpr_inf_past(gpr_clock_type type); /** The far past. */
 
 #define GPR_MS_PER_SEC 1000
 #define GPR_US_PER_SEC 1000000
@@ -64,14 +66,21 @@ GPRAPI gpr_timespec gpr_time_min(gpr_timespec a, gpr_timespec b);
 GPRAPI gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b);
 GPRAPI gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b);
 
-/** Return a timespec representing a given number of time units. INT64_MIN is
-   interpreted as gpr_inf_past, and INT64_MAX as gpr_inf_future.  */
-GPRAPI gpr_timespec gpr_time_from_micros(int64_t us, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_seconds(int64_t s, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_minutes(int64_t m, gpr_clock_type clock_type);
-GPRAPI gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type clock_type);
+/** Return a timespec representing a given number of time units.
+   INT64_MIN is interpreted as gpr_inf_past, and INT64_MAX as
+   gpr_inf_future.  */
+GPRAPI gpr_timespec gpr_time_from_micros(int64_t us,
+                                         gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_nanos(int64_t ns,
+                                        gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_millis(int64_t ms,
+                                         gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_seconds(int64_t s,
+                                          gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_minutes(int64_t m,
+                                          gpr_clock_type clock_type);
+GPRAPI gpr_timespec gpr_time_from_hours(int64_t h,
+                                        gpr_clock_type clock_type);
 
 GPRAPI int32_t gpr_time_to_millis(gpr_timespec timespec);
 

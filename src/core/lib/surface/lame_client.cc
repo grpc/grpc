@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -68,8 +68,9 @@ static void lame_start_transport_stream_op_batch(
       op, GRPC_ERROR_REF(chand->error), calld->call_combiner);
 }
 
-static void lame_get_channel_info(grpc_channel_element* /*elem*/,
-                                  const grpc_channel_info* /*channel_info*/) {}
+static void lame_get_channel_info(
+    grpc_channel_element* /*elem*/,
+    const grpc_channel_info* /*channel_info*/) {}
 
 static void lame_start_transport_op(grpc_channel_element* elem,
                                     grpc_transport_op* op) {
@@ -77,20 +78,23 @@ static void lame_start_transport_op(grpc_channel_element* elem,
   {
     MutexLock lock(&chand->mu);
     if (op->start_connectivity_watch != nullptr) {
-      chand->state_tracker.AddWatcher(op->start_connectivity_watch_state,
-                                      std::move(op->start_connectivity_watch));
+      chand->state_tracker.AddWatcher(
+          op->start_connectivity_watch_state,
+          std::move(op->start_connectivity_watch));
     }
     if (op->stop_connectivity_watch != nullptr) {
       chand->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
     }
   }
   if (op->send_ping.on_initiate != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_initiate,
-                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
+    ExecCtx::Run(
+        DEBUG_LOCATION, op->send_ping.on_initiate,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   if (op->send_ping.on_ack != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_ack,
-                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
+    ExecCtx::Run(
+        DEBUG_LOCATION, op->send_ping.on_ack,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
   if (op->on_consumed != nullptr) {
@@ -105,9 +109,10 @@ static grpc_error_handle lame_init_call_elem(
   return GRPC_ERROR_NONE;
 }
 
-static void lame_destroy_call_elem(grpc_call_element* /*elem*/,
-                                   const grpc_call_final_info* /*final_info*/,
-                                   grpc_closure* then_schedule_closure) {
+static void lame_destroy_call_elem(
+    grpc_call_element* /*elem*/,
+    const grpc_call_final_info* /*final_info*/,
+    grpc_closure* then_schedule_closure) {
   ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
@@ -161,9 +166,9 @@ const grpc_channel_filter grpc_lame_filter = {
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 
-grpc_channel* grpc_lame_client_channel_create(const char* target,
-                                              grpc_status_code error_code,
-                                              const char* error_message) {
+grpc_channel* grpc_lame_client_channel_create(
+    const char* target, grpc_status_code error_code,
+    const char* error_message) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "
@@ -177,8 +182,8 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       grpc_slice_from_static_string(error_message));
   grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(error);
   grpc_channel_args args = {1, &error_arg};
-  grpc_channel* channel =
-      grpc_channel_create(target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr);
+  grpc_channel* channel = grpc_channel_create(
+      target, &args, GRPC_CLIENT_LAME_CHANNEL, nullptr);
   GRPC_ERROR_UNREF(error);
   return channel;
 }

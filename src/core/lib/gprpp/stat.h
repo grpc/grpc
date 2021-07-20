@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_LIB_GPRPP_STAT_H
@@ -28,10 +28,11 @@
 namespace grpc_core {
 
 // Gets the last-modified timestamp of a file or a directory.
-// On success, the correct timestamp will be filled with an StatusCode::kOk
-// returned. Otherwise, timestamp will be untouched and an
-// StatusCode::kInternal will be returned.
-absl::Status GetFileModificationTime(const char* filename, time_t* timestamp);
+// On success, the correct timestamp will be filled with an
+// StatusCode::kOk returned. Otherwise, timestamp will be untouched and
+// an StatusCode::kInternal will be returned.
+absl::Status GetFileModificationTime(const char* filename,
+                                     time_t* timestamp);
 
 }  // namespace grpc_core
 

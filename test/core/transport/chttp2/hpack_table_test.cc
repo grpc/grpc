@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,8 +36,8 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 
-static void assert_str(const grpc_chttp2_hptbl* /*tbl*/, grpc_slice mdstr,
-                       const char* str) {
+static void assert_str(const grpc_chttp2_hptbl* /*tbl*/,
+                       grpc_slice mdstr, const char* str) {
   GPR_ASSERT(grpc_slice_str_cmp(mdstr, str) == 0);
 }
 
@@ -151,8 +151,9 @@ static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl,
                                                  const char* key,
                                                  const char* value) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_mdelem md = grpc_mdelem_from_slices(
-      grpc_slice_from_copied_string(key), grpc_slice_from_copied_string(value));
+  grpc_mdelem md =
+      grpc_mdelem_from_slices(grpc_slice_from_copied_string(key),
+                              grpc_slice_from_copied_string(value));
   grpc_chttp2_hptbl_find_result r = grpc_chttp2_hptbl_find(tbl, md);
   GRPC_MDELEM_UNREF(md);
 
@@ -229,8 +230,9 @@ static void test_find(void) {
   /* overflow the string buffer, check find still works */
   for (i = 0; i < 10000; i++) {
     int64_ttoa(i, buffer);
-    elem = grpc_mdelem_from_slices(grpc_slice_from_static_string("test"),
-                                   grpc_slice_from_copied_string(buffer));
+    elem =
+        grpc_mdelem_from_slices(grpc_slice_from_static_string("test"),
+                                grpc_slice_from_copied_string(buffer));
     GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
     GRPC_MDELEM_UNREF(elem);
   }

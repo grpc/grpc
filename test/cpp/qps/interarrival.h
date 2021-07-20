@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,10 +31,10 @@ namespace testing {
 
 // First create classes that define a random distribution
 // Note that this code does not include C++-specific random distribution
-// features supported in std::random. Although this would make this code easier,
-// this code is required to serve as the template code for other language
-// stacks. Thus, this code only uses a uniform distribution of doubles [0,1)
-// and then provides the distribution functions itself.
+// features supported in std::random. Although this would make this code
+// easier, this code is required to serve as the template code for other
+// language stacks. Thus, this code only uses a uniform distribution of
+// doubles [0,1) and then provides the distribution functions itself.
 
 class RandomDistInterface {
  public:
@@ -68,13 +68,15 @@ class ExpDist final : public RandomDistInterface {
 };
 
 // A class library for generating pseudo-random interarrival times
-// in an efficient re-entrant way. The random table is built at construction
-// time, and each call must include the thread id of the invoker
+// in an efficient re-entrant way. The random table is built at
+// construction time, and each call must include the thread id of the
+// invoker
 
 class InterarrivalTimer {
  public:
   InterarrivalTimer() {}
-  void init(const RandomDistInterface& r, int threads, int entries = 1000000) {
+  void init(const RandomDistInterface& r, int threads,
+            int entries = 1000000) {
     std::random_device devrand;
     std::mt19937_64 generator(devrand());
     std::uniform_real_distribution<double> rando(0, 1);
@@ -84,7 +86,8 @@ class InterarrivalTimer {
     }
     // Now set up the thread positions
     for (int i = 0; i < threads; i++) {
-      thread_posns_.push_back(random_table_.begin() + (entries * i) / threads);
+      thread_posns_.push_back(random_table_.begin() +
+                              (entries * i) / threads);
     }
   }
   virtual ~InterarrivalTimer(){};

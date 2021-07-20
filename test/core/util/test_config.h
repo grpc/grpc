@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,7 +33,8 @@ gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s);
 /* Converts a given timeout (in milliseconds) to a deadline. */
 gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 
-#if !defined(GRPC_TEST_CUSTOM_PICK_PORT) && !defined(GRPC_PORT_ISOLATED_RUNTIME)
+#if !defined(GRPC_TEST_CUSTOM_PICK_PORT) && \
+    !defined(GRPC_PORT_ISOLATED_RUNTIME)
 #define GRPC_TEST_PICK_PORT
 #endif
 
@@ -59,8 +60,8 @@ bool grpc_wait_until_shutdown(int64_t time_s);
 namespace grpc {
 namespace testing {
 
-// A TestEnvironment object should be alive in the main function of a test. It
-// provides test init and shutdown inside.
+// A TestEnvironment object should be alive in the main function of a
+// test. It provides test init and shutdown inside.
 class TestEnvironment {
  public:
   TestEnvironment(int argc, char** argv);

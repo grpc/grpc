@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,9 +43,10 @@ typedef struct grpc_httpcli_context {
 
 struct grpc_httpcli_handshaker {
   const char* default_port;
-  void (*handshake)(void* arg, grpc_endpoint* endpoint, const char* host,
-                    grpc_millis deadline,
-                    void (*on_done)(void* arg, grpc_endpoint* endpoint));
+  void (*handshake)(void* arg, grpc_endpoint* endpoint,
+                    const char* host, grpc_millis deadline,
+                    void (*on_done)(void* arg,
+                                    grpc_endpoint* endpoint));
 };
 extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;
 extern const grpc_httpcli_handshaker grpc_httpcli_ssl;
@@ -57,8 +58,8 @@ typedef struct grpc_httpcli_request {
   /* The host to verify in the SSL handshake (or NULL) */
   char* ssl_host_override;
   /* The main part of the request
-     The following headers are supplied automatically and MUST NOT be set here:
-     Host, Connection, User-Agent */
+     The following headers are supplied automatically and MUST NOT be
+     set here: Host, Connection, User-Agent */
   grpc_http_request http;
   /* handshaker to use ssl for the request */
   const grpc_httpcli_handshaker* handshaker;
@@ -75,30 +76,30 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context);
    'pollset' indicates a grpc_pollset that is interested in the result
      of the get - work on this pollset may be used to progress the get
      operation
-   'request' contains request parameters - these are caller owned and can be
-     destroyed once the call returns
-   'deadline' contains a deadline for the request (or gpr_inf_future)
-   'on_response' is a callback to report results to */
+   'request' contains request parameters - these are caller owned and
+   can be destroyed once the call returns 'deadline' contains a deadline
+   for the request (or gpr_inf_future) 'on_response' is a callback to
+   report results to */
 void grpc_httpcli_get(grpc_httpcli_context* context,
                       grpc_polling_entity* pollent,
                       grpc_resource_quota* resource_quota,
-                      const grpc_httpcli_request* request, grpc_millis deadline,
-                      grpc_closure* on_done, grpc_httpcli_response* response);
+                      const grpc_httpcli_request* request,
+                      grpc_millis deadline, grpc_closure* on_done,
+                      grpc_httpcli_response* response);
 
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
    'pollset' indicates a grpc_pollset that is interested in the result
      of the post - work on this pollset may be used to progress the post
      operation
-   'request' contains request parameters - these are caller owned and can be
-     destroyed once the call returns
-   'body_bytes' and 'body_size' specify the payload for the post.
-     When there is no body, pass in NULL as body_bytes.
-   'deadline' contains a deadline for the request (or gpr_inf_future)
-   'em' points to a caller owned event manager that must be alive for the
-     lifetime of the request
-   'on_response' is a callback to report results to
-   Does not support ?var1=val1&var2=val2 in the path. */
+   'request' contains request parameters - these are caller owned and
+   can be destroyed once the call returns 'body_bytes' and 'body_size'
+   specify the payload for the post. When there is no body, pass in NULL
+   as body_bytes. 'deadline' contains a deadline for the request (or
+   gpr_inf_future) 'em' points to a caller owned event manager that must
+   be alive for the lifetime of the request 'on_response' is a callback
+   to report results to Does not support ?var1=val1&var2=val2 in the
+   path. */
 void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_polling_entity* pollent,
                        grpc_resource_quota* resource_quota,
@@ -107,17 +108,15 @@ void grpc_httpcli_post(grpc_httpcli_context* context,
                        grpc_millis deadline, grpc_closure* on_done,
                        grpc_httpcli_response* response);
 
-/* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request,
-                                         grpc_millis deadline,
-                                         grpc_closure* on_complete,
-                                         grpc_httpcli_response* response);
-typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
-                                          const char* body_bytes,
-                                          size_t body_size,
-                                          grpc_millis deadline,
-                                          grpc_closure* on_complete,
-                                          grpc_httpcli_response* response);
+/* override functions return 1 if they handled the request, 0 otherwise
+ */
+typedef int (*grpc_httpcli_get_override)(
+    const grpc_httpcli_request* request, grpc_millis deadline,
+    grpc_closure* on_complete, grpc_httpcli_response* response);
+typedef int (*grpc_httpcli_post_override)(
+    const grpc_httpcli_request* request, const char* body_bytes,
+    size_t body_size, grpc_millis deadline, grpc_closure* on_complete,
+    grpc_httpcli_response* response);
 
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);

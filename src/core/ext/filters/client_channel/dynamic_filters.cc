@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -23,9 +23,10 @@
 #include "src/core/lib/surface/lame_client.h"
 
 // Conversion between call and call stack.
-#define CALL_TO_CALL_STACK(call)                                     \
-  (grpc_call_stack*)((char*)(call) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
-                                         sizeof(DynamicFilters::Call)))
+#define CALL_TO_CALL_STACK(call)                     \
+  (grpc_call_stack*)((char*)(call) +                 \
+                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
+                         sizeof(DynamicFilters::Call)))
 #define CALL_STACK_TO_CALL(callstack)                     \
   (DynamicFilters::Call*)(((char*)(call_stack)) -         \
                           GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
@@ -50,10 +51,11 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
       args.arena,        /* arena */
       args.call_combiner /* call_combiner */
   };
-  *error = grpc_call_stack_init(channel_stack_->channel_stack_, 1, Destroy,
-                                this, &call_args);
+  *error = grpc_call_stack_init(channel_stack_->channel_stack_, 1,
+                                Destroy, this, &call_args);
   if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
-    gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
+    gpr_log(GPR_ERROR, "error: %s",
+            grpc_error_std_string(*error).c_str());
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(call_stack, args.pollent);
@@ -67,7 +69,8 @@ void DynamicFilters::Call::StartTransportStreamOpBatch(
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
 }
 
-void DynamicFilters::Call::SetAfterCallStackDestroy(grpc_closure* closure) {
+void DynamicFilters::Call::SetAfterCallStackDestroy(
+    grpc_closure* closure) {
   GPR_ASSERT(after_call_stack_destroy_ == nullptr);
   GPR_ASSERT(closure != nullptr);
   after_call_stack_destroy_ = closure;
@@ -93,19 +96,24 @@ void DynamicFilters::Call::Unref(const DebugLocation& /*location*/,
   GRPC_CALL_STACK_UNREF(CALL_TO_CALL_STACK(this), reason);
 }
 
-void DynamicFilters::Call::Destroy(void* arg, grpc_error_handle /*error*/) {
+void DynamicFilters::Call::Destroy(void* arg,
+                                   grpc_error_handle /*error*/) {
   DynamicFilters::Call* self = static_cast<DynamicFilters::Call*>(arg);
   // Keep some members before destroying the subchannel call.
-  grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
-  RefCountedPtr<DynamicFilters> channel_stack = std::move(self->channel_stack_);
+  grpc_closure* after_call_stack_destroy =
+      self->after_call_stack_destroy_;
+  RefCountedPtr<DynamicFilters> channel_stack =
+      std::move(self->channel_stack_);
   // Destroy the subchannel call.
   self->~Call();
-  // Destroy the call stack. This should be after destroying the call, because
-  // call->after_call_stack_destroy(), if not null, will free the call arena.
+  // Destroy the call stack. This should be after destroying the call,
+  // because call->after_call_stack_destroy(), if not null, will free
+  // the call arena.
   grpc_call_stack_destroy(CALL_TO_CALL_STACK(self), nullptr,
                           after_call_stack_destroy);
-  // Automatically reset channel_stack. This should be after destroying the call
-  // stack, because destroying call stack needs access to the channel stack.
+  // Automatically reset channel_stack. This should be after destroying
+  // the call stack, because destroying call stack needs access to the
+  // channel stack.
 }
 
 void DynamicFilters::Call::IncrementRefCount() {
@@ -124,7 +132,8 @@ void DynamicFilters::Call::IncrementRefCount(
 namespace {
 
 void DestroyChannelStack(void* arg, grpc_error_handle /*error*/) {
-  grpc_channel_stack* channel_stack = static_cast<grpc_channel_stack*>(arg);
+  grpc_channel_stack* channel_stack =
+      static_cast<grpc_channel_stack*>(arg);
   grpc_channel_stack_destroy(channel_stack);
   gpr_free(channel_stack);
 }
@@ -136,12 +145,13 @@ std::pair<grpc_channel_stack*, grpc_error_handle> CreateChannelStack(
   const size_t channel_stack_size =
       grpc_channel_stack_size(filters.data(), filters.size());
   grpc_channel_stack* channel_stack =
-      reinterpret_cast<grpc_channel_stack*>(gpr_zalloc(channel_stack_size));
+      reinterpret_cast<grpc_channel_stack*>(
+          gpr_zalloc(channel_stack_size));
   // Initialize stack.
   grpc_error_handle error = grpc_channel_stack_init(
-      /*initial_refs=*/1, DestroyChannelStack, channel_stack, filters.data(),
-      filters.size(), args, /*optional_transport=*/nullptr, "DynamicFilters",
-      channel_stack);
+      /*initial_refs=*/1, DestroyChannelStack, channel_stack,
+      filters.data(), filters.size(), args,
+      /*optional_transport=*/nullptr, "DynamicFilters", channel_stack);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "error initializing client internal stack: %s",
             grpc_error_std_string(error).c_str());
@@ -180,8 +190,9 @@ DynamicFilters::~DynamicFilters() {
 
 RefCountedPtr<DynamicFilters::Call> DynamicFilters::CreateCall(
     DynamicFilters::Call::Args args, grpc_error_handle* error) {
-  size_t allocation_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)) +
-                           channel_stack_->call_stack_size;
+  size_t allocation_size =
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)) +
+      channel_stack_->call_stack_size;
   Call* call = static_cast<Call*>(args.arena->Alloc(allocation_size));
   new (call) Call(std::move(args), error);
   return call;

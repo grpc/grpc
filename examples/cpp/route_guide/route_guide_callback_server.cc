@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -50,7 +50,8 @@ using std::chrono::system_clock;
 
 float ConvertToRadians(float num) { return num * 3.1415926 / 180; }
 
-// The formula is based on http://mathforum.org/library/drmath/view/51879.html
+// The formula is based on
+// http://mathforum.org/library/drmath/view/51879.html
 float GetDistance(const Point& start, const Point& end) {
   const float kCoordFactor = 10000000.0;
   float lat_1 = start.latitude() / kCoordFactor;
@@ -62,8 +63,9 @@ float GetDistance(const Point& start, const Point& end) {
   float delta_lat_rad = ConvertToRadians(lat_2 - lat_1);
   float delta_lon_rad = ConvertToRadians(lon_2 - lon_1);
 
-  float a = pow(sin(delta_lat_rad / 2), 2) +
-            cos(lat_rad_1) * cos(lat_rad_2) * pow(sin(delta_lon_rad / 2), 2);
+  float a =
+      pow(sin(delta_lat_rad / 2), 2) +
+      cos(lat_rad_1) * cos(lat_rad_2) * pow(sin(delta_lon_rad / 2), 2);
   float c = 2 * atan2(sqrt(a), sqrt(1 - a));
   int R = 6371000;  // metres
 
@@ -145,11 +147,12 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
     return new Lister(rectangle, &feature_list_);
   }
 
-  grpc::ServerReadReactor<Point>* RecordRoute(CallbackServerContext* context,
-                                              RouteSummary* summary) override {
+  grpc::ServerReadReactor<Point>* RecordRoute(
+      CallbackServerContext* context, RouteSummary* summary) override {
     class Recorder : public grpc::ServerReadReactor<Point> {
      public:
-      Recorder(RouteSummary* summary, const std::vector<Feature>* feature_list)
+      Recorder(RouteSummary* summary,
+               const std::vector<Feature>* feature_list)
           : start_time_(system_clock::now()),
             summary_(summary),
             feature_list_(feature_list) {
@@ -193,7 +196,8 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
 
   grpc::ServerBidiReactor<RouteNote, RouteNote>* RouteChat(
       CallbackServerContext* context) override {
-    class Chatter : public grpc::ServerBidiReactor<RouteNote, RouteNote> {
+    class Chatter
+        : public grpc::ServerBidiReactor<RouteNote, RouteNote> {
      public:
       Chatter(std::mutex* mu, std::vector<RouteNote>* received_notes)
           : mu_(mu), received_notes_(received_notes) {
@@ -208,9 +212,9 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
       }
       void OnReadDone(bool ok) override {
         if (ok) {
-          // We may need to wait an arbitary amount of time on this mutex
-          // and we cannot delay the reaction, so start it in a thread
-          // Collect the previous read_starter thread if needed
+          // We may need to wait an arbitary amount of time on this
+          // mutex and we cannot delay the reaction, so start it in a
+          // thread Collect the previous read_starter thread if needed
           if (read_starter_.joinable()) {
             read_starter_.join();
           }
@@ -231,7 +235,8 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           const RouteNote& n = *notes_iterator_;
           notes_iterator_++;
           if (n.location().latitude() == note_.location().latitude() &&
-              n.location().longitude() == note_.location().longitude()) {
+              n.location().longitude() ==
+                  note_.location().longitude()) {
             StartWrite(&n);
             return;
           }
@@ -261,7 +266,8 @@ void RunServer(const std::string& db_path) {
   RouteGuideImpl service(db_path);
 
   ServerBuilder builder;
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address,
+                           grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;

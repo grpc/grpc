@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_ENGINE_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_ENGINE_H
@@ -23,23 +23,24 @@
 
 namespace grpc_core {
 
-// GrpcAuthorizationEngine can be either an Allow engine or Deny engine. This
-// engine makes authorization decisions to Allow or Deny incoming RPC request
-// based on permission and principal configs in the provided RBAC policy and the
-// engine type. This engine ignores condition field in RBAC config. It is the
-// caller's responsibility to provide RBAC policies that are compatible with
-// this engine.
+// GrpcAuthorizationEngine can be either an Allow engine or Deny engine.
+// This engine makes authorization decisions to Allow or Deny incoming
+// RPC request based on permission and principal configs in the provided
+// RBAC policy and the engine type. This engine ignores condition field
+// in RBAC config. It is the caller's responsibility to provide RBAC
+// policies that are compatible with this engine.
 class GrpcAuthorizationEngine : public AuthorizationEngine {
  public:
   // Builds GrpcAuthorizationEngine without any policies.
-  explicit GrpcAuthorizationEngine(Rbac::Action action) : action_(action) {}
+  explicit GrpcAuthorizationEngine(Rbac::Action action)
+      : action_(action) {}
   // Builds GrpcAuthorizationEngine with allow/deny RBAC policy.
   explicit GrpcAuthorizationEngine(Rbac policy);
 
   Rbac::Action action() { return action_; }
 
-  // Evaluates incoming request against RBAC policy and makes a decision to
-  // whether allow/deny this request.
+  // Evaluates incoming request against RBAC policy and makes a decision
+  // to whether allow/deny this request.
   Decision Evaluate(const EvaluateArgs& args) const override;
 
  private:

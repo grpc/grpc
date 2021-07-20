@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -36,11 +36,13 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const override {
+      upb_strview serialized_filter_config,
+      upb_arena* arena) const override {
     if (envoy_extensions_filters_http_router_v3_Router_parse(
-            serialized_filter_config.data, serialized_filter_config.size,
-            arena) == nullptr) {
-      return absl::InvalidArgumentError("could not parse router filter config");
+            serialized_filter_config.data,
+            serialized_filter_config.size, arena) == nullptr) {
+      return absl::InvalidArgumentError(
+          "could not parse router filter config");
     }
     return FilterConfig{kXdsHttpRouterFilterConfigName, Json()};
   }
@@ -53,13 +55,16 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   // No-op -- this filter is special-cased by the xds resolver.
-  const grpc_channel_filter* channel_filter() const override { return nullptr; }
+  const grpc_channel_filter* channel_filter() const override {
+    return nullptr;
+  }
 
   // No-op -- this filter is special-cased by the xds resolver.
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,
       const FilterConfig* /*filter_config_override*/) const override {
-    return absl::UnimplementedError("router filter should never be called");
+    return absl::UnimplementedError(
+        "router filter should never be called");
   }
 
   bool IsSupportedOnClients() const override { return true; }
@@ -68,7 +73,8 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
 };
 
 using FilterOwnerList = std::vector<std::unique_ptr<XdsHttpFilterImpl>>;
-using FilterRegistryMap = std::map<absl::string_view, XdsHttpFilterImpl*>;
+using FilterRegistryMap =
+    std::map<absl::string_view, XdsHttpFilterImpl*>;
 
 FilterOwnerList* g_filters = nullptr;
 FilterRegistryMap* g_filter_registry = nullptr;

@@ -11,9 +11,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -61,7 +61,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       custom_server_key_ = ReadFile(absl::GetFlag(FLAGS_tls_key_file));
     }
     if (!absl::GetFlag(FLAGS_tls_cert_file).empty()) {
-      custom_server_cert_ = ReadFile(absl::GetFlag(FLAGS_tls_cert_file));
+      custom_server_cert_ =
+          ReadFile(absl::GetFlag(FLAGS_tls_cert_file));
     }
   }
   ~DefaultCredentialsProvider() override {}
@@ -69,8 +70,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   void AddSecureType(
       const std::string& type,
       std::unique_ptr<CredentialTypeProvider> type_provider) override {
-    // This clobbers any existing entry for type, except the defaults, which
-    // can't be clobbered.
+    // This clobbers any existing entry for type, except the defaults,
+    // which can't be clobbered.
     std::unique_lock<std::mutex> lock(mu_);
     auto it = std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type);
@@ -78,7 +79,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       added_secure_type_names_.push_back(type);
       added_secure_type_providers_.push_back(std::move(type_provider));
     } else {
-      added_secure_type_providers_[it - added_secure_type_names_.begin()] =
+      added_secure_type_providers_[it -
+                                   added_secure_type_names_.begin()] =
           std::move(type_provider);
     }
   }
@@ -101,10 +103,12 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       auto it(std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
-        gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
+        gpr_log(GPR_ERROR, "Unsupported credentials type %s.",
+                type.c_str());
         return nullptr;
       }
-      return added_secure_type_providers_[it - added_secure_type_names_.begin()]
+      return added_secure_type_providers_[it - added_secure_type_names_
+                                                   .begin()]
           ->GetChannelCredentials(args);
     }
   }
@@ -124,8 +128,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
             custom_server_key_, custom_server_cert_};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       } else {
-        SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                            test_server1_cert};
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {
+            test_server1_key, test_server1_cert};
         ssl_opts.pem_key_cert_pairs.push_back(pkcp);
       }
       return SslServerCredentials(ssl_opts);
@@ -134,10 +138,12 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       auto it(std::find(added_secure_type_names_.begin(),
                         added_secure_type_names_.end(), type));
       if (it == added_secure_type_names_.end()) {
-        gpr_log(GPR_ERROR, "Unsupported credentials type %s.", type.c_str());
+        gpr_log(GPR_ERROR, "Unsupported credentials type %s.",
+                type.c_str());
         return nullptr;
       }
-      return added_secure_type_providers_[it - added_secure_type_names_.begin()]
+      return added_secure_type_providers_[it - added_secure_type_names_
+                                                   .begin()]
           ->GetServerCredentials();
     }
   }

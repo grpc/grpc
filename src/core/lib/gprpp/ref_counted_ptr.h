@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,8 +29,9 @@
 
 namespace grpc_core {
 
-// A smart pointer class for objects that provide IncrementRefCount() and
-// Unref() methods, such as those provided by the RefCounted base class.
+// A smart pointer class for objects that provide IncrementRefCount()
+// and Unref() methods, such as those provided by the RefCounted base
+// class.
 template <typename T>
 class RefCountedPtr {
  public:
@@ -85,8 +86,8 @@ class RefCountedPtr {
   // Copy assignment.
   // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   RefCountedPtr& operator=(const RefCountedPtr& other) {
-    // Note: Order of reffing and unreffing is important here in case value_
-    // and other.value_ are the same object.
+    // Note: Order of reffing and unreffing is important here in case
+    // value_ and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
     reset(other.value_);
     return *this;
@@ -95,8 +96,8 @@ class RefCountedPtr {
   RefCountedPtr& operator=(const RefCountedPtr<Y>& other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
-    // Note: Order of reffing and unreffing is important here in case value_
-    // and other.value_ are the same object.
+    // Note: Order of reffing and unreffing is important here in case
+    // value_ and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
     reset(other.value_);
     return *this;
@@ -134,10 +135,10 @@ class RefCountedPtr {
     value_ = static_cast<T*>(value);
   }
 
-  // TODO(roth): This method exists solely as a transition mechanism to allow
-  // us to pass a ref to idiomatic C code that does not use RefCountedPtr<>.
-  // Once all of our code has been converted to idiomatic C++, this
-  // method should go away.
+  // TODO(roth): This method exists solely as a transition mechanism to
+  // allow us to pass a ref to idiomatic C code that does not use
+  // RefCountedPtr<>. Once all of our code has been converted to
+  // idiomatic C++, this method should go away.
   T* release() {
     T* value = value_;
     value_ = nullptr;
@@ -180,8 +181,9 @@ class RefCountedPtr {
   T* value_ = nullptr;
 };
 
-// A smart pointer class for objects that provide IncrementWeakRefCount() and
-// WeakUnref() methods, such as those provided by the DualRefCounted base class.
+// A smart pointer class for objects that provide
+// IncrementWeakRefCount() and WeakUnref() methods, such as those
+// provided by the DualRefCounted base class.
 template <typename T>
 class WeakRefCountedPtr {
  public:
@@ -238,8 +240,8 @@ class WeakRefCountedPtr {
   // Copy assignment.
   // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   WeakRefCountedPtr& operator=(const WeakRefCountedPtr& other) {
-    // Note: Order of reffing and unreffing is important here in case value_
-    // and other.value_ are the same object.
+    // Note: Order of reffing and unreffing is important here in case
+    // value_ and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementWeakRefCount();
     reset(other.value_);
     return *this;
@@ -248,8 +250,8 @@ class WeakRefCountedPtr {
   WeakRefCountedPtr& operator=(const WeakRefCountedPtr<Y>& other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
-    // Note: Order of reffing and unreffing is important here in case value_
-    // and other.value_ are the same object.
+    // Note: Order of reffing and unreffing is important here in case
+    // value_ and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementWeakRefCount();
     reset(other.value_);
     return *this;
@@ -259,7 +261,9 @@ class WeakRefCountedPtr {
     if (value_ != nullptr) value_->WeakUnref();
   }
 
-  void swap(WeakRefCountedPtr& other) { std::swap(value_, other.value_); }
+  void swap(WeakRefCountedPtr& other) {
+    std::swap(value_, other.value_);
+  }
 
   // If value is non-null, we take ownership of a ref to it.
   void reset(T* value = nullptr) {
@@ -287,10 +291,10 @@ class WeakRefCountedPtr {
     value_ = static_cast<T*>(value);
   }
 
-  // TODO(roth): This method exists solely as a transition mechanism to allow
-  // us to pass a ref to idiomatic C code that does not use WeakRefCountedPtr<>.
-  // Once all of our code has been converted to idiomatic C++, this
-  // method should go away.
+  // TODO(roth): This method exists solely as a transition mechanism to
+  // allow us to pass a ref to idiomatic C code that does not use
+  // WeakRefCountedPtr<>. Once all of our code has been converted to
+  // idiomatic C++, this method should go away.
   T* release() {
     T* value = value_;
     value_ = nullptr;
@@ -344,7 +348,8 @@ bool operator<(const RefCountedPtr<T>& p1, const RefCountedPtr<T>& p2) {
 }
 
 template <typename T>
-bool operator<(const WeakRefCountedPtr<T>& p1, const WeakRefCountedPtr<T>& p2) {
+bool operator<(const WeakRefCountedPtr<T>& p1,
+               const WeakRefCountedPtr<T>& p2) {
   return p1.get() < p2.get();
 }
 

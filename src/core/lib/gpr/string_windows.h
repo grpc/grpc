@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,7 +23,8 @@
 
 #ifdef GPR_WINDOWS
 
-/* These allocate new strings using gpr_malloc to convert from and to utf-8. */
+/* These allocate new strings using gpr_malloc to convert from and to
+ * utf-8. */
 LPTSTR gpr_char_to_tchar(LPCSTR input);
 LPSTR gpr_tchar_to_char(LPCTSTR input);
 

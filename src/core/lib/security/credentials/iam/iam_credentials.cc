@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,15 +34,18 @@ grpc_google_iam_credentials::~grpc_google_iam_credentials() {
 }
 
 bool grpc_google_iam_credentials::get_request_metadata(
-    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
+    grpc_polling_entity* /*pollent*/,
+    grpc_auth_metadata_context /*context*/,
     grpc_credentials_mdelem_array* md_array,
-    grpc_closure* /*on_request_metadata*/, grpc_error_handle* /*error*/) {
+    grpc_closure* /*on_request_metadata*/,
+    grpc_error_handle* /*error*/) {
   grpc_credentials_mdelem_array_append(md_array, &md_array_);
   return true;
 }
 
 void grpc_google_iam_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
+    grpc_credentials_mdelem_array* /*md_array*/,
+    grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -51,14 +54,17 @@ grpc_google_iam_credentials::grpc_google_iam_credentials(
     : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_IAM),
       debug_string_(absl::StrFormat(
           "GoogleIAMCredentials{Token:%s,AuthoritySelector:%s}",
-          token != nullptr ? "present" : "absent", authority_selector)) {
+          token != nullptr ? "present" : "absent",
+          authority_selector)) {
   grpc_mdelem md = grpc_mdelem_from_slices(
-      grpc_slice_from_static_string(GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
+      grpc_slice_from_static_string(
+          GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
       grpc_slice_from_copied_string(token));
   grpc_credentials_mdelem_array_add(&md_array_, md);
   GRPC_MDELEM_UNREF(md);
   md = grpc_mdelem_from_slices(
-      grpc_slice_from_static_string(GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY),
+      grpc_slice_from_static_string(
+          GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY),
       grpc_slice_from_copied_string(authority_selector));
   grpc_credentials_mdelem_array_add(&md_array_, md);
   GRPC_MDELEM_UNREF(md);

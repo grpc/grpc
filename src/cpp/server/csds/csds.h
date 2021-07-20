@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -32,20 +32,24 @@ namespace experimental {
 // The implementation of
 // envoy::service::status::v3::ClientStatusDiscoveryService
 class ClientStatusDiscoveryService final
-    : public envoy::service::status::v3::ClientStatusDiscoveryService::Service {
+    : public envoy::service::status::v3::ClientStatusDiscoveryService::
+          Service {
  public:
   // A streaming call that responds client status for each request.
   Status StreamClientStatus(
       ServerContext* /*context*/,
-      ServerReaderWriter<envoy::service::status::v3::ClientStatusResponse,
-                         envoy::service::status::v3::ClientStatusRequest>*
-          stream) override;
+      ServerReaderWriter<
+          envoy::service::status::v3::ClientStatusResponse,
+          envoy::service::status::v3::ClientStatusRequest>* stream)
+      override;
 
   // An unary call to fetch client status.
   Status FetchClientStatus(
       ServerContext* /*unused*/,
-      const envoy::service::status::v3::ClientStatusRequest* /*request*/,
-      envoy::service::status::v3::ClientStatusResponse* response) override;
+      const envoy::service::status::v3::
+          ClientStatusRequest* /*request*/,
+      envoy::service::status::v3::ClientStatusResponse* response)
+      override;
 };
 
 }  // namespace experimental

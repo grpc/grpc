@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,8 +38,9 @@
 grpc_channel* grpc_insecure_channel_create_from_fd(
     const char* target, int fd, const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE("grpc_insecure_channel_create(target=%p, fd=%d, args=%p)", 3,
-                 (target, fd, args));
+  GRPC_API_TRACE(
+      "grpc_insecure_channel_create(target=%p, fd=%d, args=%p)", 3,
+      (target, fd, args));
 
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
@@ -57,17 +58,19 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel =
-      grpc_channel_create(target, final_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          transport, nullptr, &error);
+  grpc_channel* channel = grpc_channel_create(
+      target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport,
+      nullptr, &error);
   grpc_channel_args_destroy(final_args);
   if (channel != nullptr) {
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr,
+                                        nullptr);
     grpc_core::ExecCtx::Get()->Flush();
   } else {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                           &integer)) {
       status = static_cast<grpc_status_code>(integer);
     }
     GRPC_ERROR_UNREF(error);

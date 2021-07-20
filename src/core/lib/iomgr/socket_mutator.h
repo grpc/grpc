@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,14 +46,15 @@ typedef struct {
 
 /** The virtual table of grpc_socket_mutator */
 struct grpc_socket_mutator_vtable {
-  /** Mutates the socket options of \a fd -- deprecated, prefer mutate_fd_2 */
+  /** Mutates the socket options of \a fd -- deprecated, prefer
+   * mutate_fd_2 */
   bool (*mutate_fd)(int fd, grpc_socket_mutator* mutator);
   /** Compare socket mutator \a a and \a b */
   int (*compare)(grpc_socket_mutator* a, grpc_socket_mutator* b);
   /** Destroys the socket mutator instance */
   void (*destroy)(grpc_socket_mutator* mutator);
-  /** Mutates the socket options of the fd in \a info - if set takes preference
-   * to mutate_fd */
+  /** Mutates the socket options of the fd in \a info - if set takes
+   * preference to mutate_fd */
   bool (*mutate_fd_2)(const grpc_mutate_socket_info* info,
                       grpc_socket_mutator* mutator);
 };
@@ -71,14 +72,18 @@ void grpc_socket_mutator_init(grpc_socket_mutator* mutator,
 /** Wrap \a mutator as a grpc_arg */
 grpc_arg grpc_socket_mutator_to_arg(grpc_socket_mutator* mutator);
 
-/** Perform the file descriptor mutation operation of \a mutator on \a fd */
+/** Perform the file descriptor mutation operation of \a mutator on \a
+ * fd */
 bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
                                    grpc_fd_usage usage);
 
-/** Compare if \a a and \a b are the same mutator or have same settings */
-int grpc_socket_mutator_compare(grpc_socket_mutator* a, grpc_socket_mutator* b);
+/** Compare if \a a and \a b are the same mutator or have same settings
+ */
+int grpc_socket_mutator_compare(grpc_socket_mutator* a,
+                                grpc_socket_mutator* b);
 
-grpc_socket_mutator* grpc_socket_mutator_ref(grpc_socket_mutator* mutator);
+grpc_socket_mutator* grpc_socket_mutator_ref(
+    grpc_socket_mutator* mutator);
 void grpc_socket_mutator_unref(grpc_socket_mutator* mutator);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_MUTATOR_H */

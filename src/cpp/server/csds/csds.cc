@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -55,7 +55,8 @@ absl::StatusOr<ClientConfig> DumpClientConfig() {
 
 Status ClientStatusDiscoveryService::StreamClientStatus(
     ServerContext* /*context*/,
-    ServerReaderWriter<ClientStatusResponse, ClientStatusRequest>* stream) {
+    ServerReaderWriter<ClientStatusResponse, ClientStatusRequest>*
+        stream) {
   ClientStatusRequest request;
   while (stream->Read(&request)) {
     ClientStatusResponse response;
@@ -66,7 +67,8 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
         stream->Write(response);
         continue;
       }
-      return Status(StatusCode(s.status().raw_code()), s.status().ToString());
+      return Status(StatusCode(s.status().raw_code()),
+                    s.status().ToString());
     }
     *response.add_config() = std::move(s.value());
     stream->Write(response);
@@ -83,7 +85,8 @@ Status ClientStatusDiscoveryService::FetchClientStatus(
       // If the xDS client is not initialized, return empty response
       return Status::OK;
     }
-    return Status(StatusCode(s.status().raw_code()), s.status().ToString());
+    return Status(StatusCode(s.status().raw_code()),
+                  s.status().ToString());
   }
   *response->add_config() = std::move(s.value());
   return Status::OK;

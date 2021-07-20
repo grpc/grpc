@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -49,11 +49,12 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
 /* Check peer name information returned from SSL handshakes. */
 grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
                                            const tsi_peer* peer);
-/* Compare targer_name information extracted from SSL security connectors. */
-int grpc_ssl_cmp_target_name(absl::string_view target_name,
-                             absl::string_view other_target_name,
-                             absl::string_view overridden_target_name,
-                             absl::string_view other_overridden_target_name);
+/* Compare targer_name information extracted from SSL security
+ * connectors. */
+int grpc_ssl_cmp_target_name(
+    absl::string_view target_name, absl::string_view other_target_name,
+    absl::string_view overridden_target_name,
+    absl::string_view other_overridden_target_name);
 /* Check the host that will be set for a call is acceptable.*/
 bool grpc_ssl_check_call_host(absl::string_view host,
                               absl::string_view target_name,
@@ -77,32 +78,37 @@ grpc_security_level grpc_tsi_security_level_string_to_enum(
 tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version);
 
 /* Map grpc_security_level enum to a string. */
-const char* grpc_security_level_to_string(grpc_security_level security_level);
+const char* grpc_security_level_to_string(
+    grpc_security_level security_level);
 
 /* Check security level of channel and call credential.*/
 bool grpc_check_security_level(grpc_security_level channel_level,
                                grpc_security_level call_cred_level);
 
 /* Return an array of strings containing alpn protocols. */
-const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
+const char** grpc_fill_alpn_protocol_strings(
+    size_t* num_alpn_protocols);
 
 /* Initialize TSI SSL server/client handshaker factory. */
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
-    bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
-    tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
+    tsi_ssl_pem_key_cert_pair* key_cert_pair,
+    const char* pem_root_certs,
+    bool skip_server_certificate_verification,
+    tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
+    tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
-    const char* pem_root_certs,
+    tsi_ssl_pem_key_cert_pair* key_cert_pairs,
+    size_t num_key_cert_pairs, const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 /* Exposed for testing only. */
-grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
-    const tsi_peer* peer, const char* transport_security_type);
+grpc_core::RefCountedPtr<grpc_auth_context>
+grpc_ssl_peer_to_auth_context(const tsi_peer* peer,
+                              const char* transport_security_type);
 tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void grpc_shallow_peer_destruct(tsi_peer* peer);
@@ -122,8 +128,9 @@ class DefaultSslRootStore {
   static const char* GetPemRootCerts();
 
  protected:
-  // Returns default PEM root certificates in nullptr terminated grpc_slice.
-  // This function is protected instead of private, so that it can be tested.
+  // Returns default PEM root certificates in nullptr terminated
+  // grpc_slice. This function is protected instead of private, so that
+  // it can be tested.
   static grpc_slice ComputePemRootCerts();
 
  private:
@@ -145,7 +152,8 @@ class DefaultSslRootStore {
 
 class PemKeyCertPair {
  public:
-  PemKeyCertPair(absl::string_view private_key, absl::string_view cert_chain)
+  PemKeyCertPair(absl::string_view private_key,
+                 absl::string_view cert_chain)
       : private_key_(private_key), cert_chain_(cert_chain) {}
 
   // Movable.
@@ -161,7 +169,8 @@ class PemKeyCertPair {
 
   // Copyable.
   PemKeyCertPair(const PemKeyCertPair& other)
-      : private_key_(other.private_key()), cert_chain_(other.cert_chain()) {}
+      : private_key_(other.private_key()),
+        cert_chain_(other.cert_chain()) {}
   PemKeyCertPair& operator=(const PemKeyCertPair& other) {
     private_key_ = other.private_key();
     cert_chain_ = other.cert_chain();
@@ -181,7 +190,8 @@ class PemKeyCertPair {
   std::string cert_chain_;
 };
 
-typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
+typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1>
+    PemKeyCertPairList;
 
 }  // namespace grpc_core
 

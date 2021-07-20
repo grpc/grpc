@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -63,7 +63,8 @@ static grpc_slice maybe_dup(grpc_slice in, bool dup) {
 static void test_create_metadata(bool intern_keys, bool intern_values) {
   grpc_mdelem m1, m2, m3;
 
-  gpr_log(GPR_INFO, "test_create_metadata: intern_keys=%d intern_values=%d",
+  gpr_log(GPR_INFO,
+          "test_create_metadata: intern_keys=%d intern_values=%d",
           intern_keys, intern_values);
 
   grpc_init();
@@ -96,10 +97,10 @@ static void test_create_many_ephemeral_metadata(bool intern_keys,
   char buffer[GPR_LTOA_MIN_BUFSIZE];
   long i;
 
-  gpr_log(
-      GPR_INFO,
-      "test_create_many_ephemeral_metadata: intern_keys=%d intern_values=%d",
-      intern_keys, intern_values);
+  gpr_log(GPR_INFO,
+          "test_create_many_ephemeral_metadata: intern_keys=%d "
+          "intern_values=%d",
+          intern_keys, intern_values);
 
   grpc_init();
   grpc_core::ExecCtx exec_ctx;
@@ -108,7 +109,8 @@ static void test_create_many_ephemeral_metadata(bool intern_keys,
     gpr_ltoa(i, buffer);
     GRPC_MDELEM_UNREF(grpc_mdelem_from_slices(
         maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
-        maybe_intern(grpc_slice_from_copied_string(buffer), intern_values)));
+        maybe_intern(grpc_slice_from_copied_string(buffer),
+                     intern_values)));
   }
 
   grpc_shutdown();
@@ -154,7 +156,8 @@ static void test_create_many_persistant_metadata(void) {
 static void test_spin_creating_the_same_thing(bool intern_keys,
                                               bool intern_values) {
   gpr_log(GPR_INFO,
-          "test_spin_creating_the_same_thing: intern_keys=%d intern_values=%d",
+          "test_spin_creating_the_same_thing: intern_keys=%d "
+          "intern_values=%d",
           intern_keys, intern_values);
 
   grpc_init();
@@ -163,15 +166,18 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
   GRPC_MDELEM_UNREF(
       a = grpc_mdelem_from_slices(
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
-          maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
+          maybe_intern(grpc_slice_from_static_string("b"),
+                       intern_values)));
   GRPC_MDELEM_UNREF(
       b = grpc_mdelem_from_slices(
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
-          maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
+          maybe_intern(grpc_slice_from_static_string("b"),
+                       intern_values)));
   GRPC_MDELEM_UNREF(
       c = grpc_mdelem_from_slices(
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
-          maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
+          maybe_intern(grpc_slice_from_static_string("b"),
+                       intern_values)));
   if (intern_keys && intern_values) {
     GPR_ASSERT(a.payload == b.payload);
     GPR_ASSERT(a.payload == c.payload);
@@ -181,7 +187,8 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
 }
 
 static void test_identity_laws(bool intern_keys, bool intern_values) {
-  gpr_log(GPR_INFO, "test_identity_laws: intern_keys=%d intern_values=%d",
+  gpr_log(GPR_INFO,
+          "test_identity_laws: intern_keys=%d intern_values=%d",
           intern_keys, intern_values);
 
   grpc_init();
@@ -225,7 +232,8 @@ static void test_things_stick_around(void) {
   size_t nstrs = 1000;
   grpc_slice* strs =
       static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nstrs));
-  size_t* shuf = static_cast<size_t*>(gpr_malloc(sizeof(size_t) * nstrs));
+  size_t* shuf =
+      static_cast<size_t*>(gpr_malloc(sizeof(size_t) * nstrs));
   grpc_slice test;
 
   gpr_log(GPR_INFO, "test_things_stick_around");
@@ -234,9 +242,10 @@ static void test_things_stick_around(void) {
   grpc_core::ExecCtx exec_ctx;
 
   for (i = 0; i < nstrs; i++) {
-    std::string buffer =
-        absl::StrFormat("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", i);
-    strs[i] = grpc_slice_intern(grpc_slice_from_static_string(buffer.c_str()));
+    std::string buffer = absl::StrFormat(
+        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", i);
+    strs[i] = grpc_slice_intern(
+        grpc_slice_from_static_string(buffer.c_str()));
     shuf[i] = i;
   }
 
@@ -258,7 +267,8 @@ static void test_things_stick_around(void) {
     for (j = i + 1; j < nstrs; j++) {
       std::string buffer = absl::StrFormat(
           "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", shuf[j]);
-      test = grpc_slice_intern(grpc_slice_from_static_string(buffer.c_str()));
+      test = grpc_slice_intern(
+          grpc_slice_from_static_string(buffer.c_str()));
       GPR_ASSERT(grpc_slice_is_equivalent(test, strs[shuf[j]]));
       grpc_slice_unref_internal(test);
     }
@@ -315,7 +325,8 @@ static void test_user_data_works_for_allocated_md(void) {
 }
 
 static void verify_ascii_header_size(const char* key, const char* value,
-                                     bool intern_key, bool intern_value) {
+                                     bool intern_key,
+                                     bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
       maybe_intern(grpc_slice_from_static_string(key), intern_key),
       maybe_intern(grpc_slice_from_static_string(value), intern_value));
@@ -325,7 +336,8 @@ static void verify_ascii_header_size(const char* key, const char* value,
   GRPC_MDELEM_UNREF(elem);
 }
 
-static void verify_binary_header_size(const char* key, const uint8_t* value,
+static void verify_binary_header_size(const char* key,
+                                      const uint8_t* value,
                                       size_t value_len, bool intern_key,
                                       bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
@@ -337,7 +349,8 @@ static void verify_binary_header_size(const char* key, const uint8_t* value,
   grpc_slice value_slice = grpc_slice_from_copied_buffer(
       reinterpret_cast<const char*>(value), value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
-  size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
+  size_t expected_size =
+      32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
   GPR_ASSERT(expected_size == elem_size);
   grpc_slice_unref_internal(value_slice);
   grpc_slice_unref_internal(base64_encoded);
@@ -345,7 +358,8 @@ static void verify_binary_header_size(const char* key, const uint8_t* value,
 }
 
 #define BUFFER_SIZE 64
-static void test_mdelem_sizes_in_hpack(bool intern_key, bool intern_value) {
+static void test_mdelem_sizes_in_hpack(bool intern_key,
+                                       bool intern_value) {
   gpr_log(GPR_INFO, "test_mdelem_size: intern_key=%d intern_value=%d",
           intern_key, intern_value);
   grpc_init();
@@ -357,7 +371,8 @@ static void test_mdelem_sizes_in_hpack(bool intern_key, bool intern_value) {
   }
 
   verify_ascii_header_size("hello", "world", intern_key, intern_value);
-  verify_ascii_header_size("hello", "worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  verify_ascii_header_size("hello",
+                           "worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                            intern_key, intern_value);
   verify_ascii_header_size(":scheme", "http", intern_key, intern_value);
 
@@ -370,8 +385,8 @@ static void test_mdelem_sizes_in_hpack(bool intern_key, bool intern_value) {
 }
 
 static void test_copied_static_metadata(bool dup_key, bool dup_value) {
-  gpr_log(GPR_INFO, "test_static_metadata: dup_key=%d dup_value=%d", dup_key,
-          dup_value);
+  gpr_log(GPR_INFO, "test_static_metadata: dup_key=%d dup_value=%d",
+          dup_key, dup_value);
   grpc_init();
   grpc_core::ExecCtx exec_ctx;
 
@@ -399,8 +414,9 @@ static void test_grpc_metadata_batch_get_value_with_absent_key(void) {
   grpc_metadata_batch metadata;
   grpc_metadata_batch_init(&metadata);
   std::string concatenated_value;
-  absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
-      &metadata, "absent_key", &concatenated_value);
+  absl::optional<absl::string_view> value =
+      grpc_metadata_batch_get_value(&metadata, "absent_key",
+                                    &concatenated_value);
   GPR_ASSERT(value == absl::nullopt);
   grpc_metadata_batch_destroy(&metadata);
   grpc_shutdown();
@@ -420,14 +436,16 @@ static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
              GRPC_ERROR_NONE);
   std::string concatenated_value;
   absl::optional<absl::string_view> value =
-      grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
+      grpc_metadata_batch_get_value(&metadata, kKey,
+                                    &concatenated_value);
   GPR_ASSERT(value.has_value());
   GPR_ASSERT(value.value() == kValue);
   grpc_metadata_batch_destroy(&metadata);
   grpc_shutdown();
 }
 
-static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
+static void test_grpc_metadata_batch_get_value_returns_multiple_values(
+    void) {
   grpc_init();
   const char* kKey = "some_key";
   const char* kValue1 = "value1";
@@ -448,7 +466,8 @@ static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
              GRPC_ERROR_NONE);
   std::string concatenated_value;
   absl::optional<absl::string_view> value =
-      grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
+      grpc_metadata_batch_get_value(&metadata, kKey,
+                                    &concatenated_value);
   GPR_ASSERT(value.has_value());
   GPR_ASSERT(value.value() == absl::StrCat(kValue1, ",", kValue2));
   grpc_metadata_batch_destroy(&metadata);

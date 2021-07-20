@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_POLICY_PROVIDER_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_POLICY_PROVIDER_H
@@ -27,13 +27,14 @@
 namespace grpc_core {
 
 // Provider class will get SDK Authorization policy from string during
-// initialization. This policy will be translated to Envoy RBAC policies and
-// used to initialize allow and deny AuthorizationEngine objects. This provider
-// will return the same authorization engines everytime.
+// initialization. This policy will be translated to Envoy RBAC policies
+// and used to initialize allow and deny AuthorizationEngine objects.
+// This provider will return the same authorization engines everytime.
 class StaticDataAuthorizationPolicyProvider
     : public grpc_authorization_policy_provider {
  public:
-  static absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
+  static absl::StatusOr<
+      RefCountedPtr<grpc_authorization_policy_provider>>
   Create(absl::string_view authz_policy);
 
   explicit StaticDataAuthorizationPolicyProvider(RbacPolicies policies);
@@ -52,8 +53,8 @@ class StaticDataAuthorizationPolicyProvider
   RefCountedPtr<AuthorizationEngine> deny_engine_;
 };
 
-// TODO(ashithasantosh): Add implementation for file watcher authorization
-// policy provider.
+// TODO(ashithasantosh): Add implementation for file watcher
+// authorization policy provider.
 
 }  // namespace grpc_core
 

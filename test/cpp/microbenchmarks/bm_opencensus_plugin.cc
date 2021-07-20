@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,9 +31,12 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 
 absl::once_flag once;
-void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
+void RegisterOnce() {
+  absl::call_once(once, grpc::RegisterOpenCensusPlugin);
+}
 
-class EchoServer final : public grpc::testing::EchoTestService::Service {
+class EchoServer final
+    : public grpc::testing::EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* /*context*/,
                     const grpc::testing::EchoRequest* request,
                     grpc::testing::EchoResponse* response) override {
@@ -48,22 +51,23 @@ class EchoServer final : public grpc::testing::EchoTestService::Service {
   }
 };
 
-// An EchoServerThread object creates an EchoServer on a separate thread and
-// shuts down the server and thread when it goes out of scope.
+// An EchoServerThread object creates an EchoServer on a separate thread
+// and shuts down the server and thread when it goes out of scope.
 class EchoServerThread final {
  public:
   EchoServerThread() {
     grpc::ServerBuilder builder;
     int port;
-    builder.AddListeningPort("[::]:0", grpc::InsecureServerCredentials(),
-                             &port);
+    builder.AddListeningPort("[::]:0",
+                             grpc::InsecureServerCredentials(), &port);
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
     if (server_ == nullptr || port == 0) {
       std::abort();
     }
     server_address_ = absl::StrCat("[::]:", port);
-    server_thread_ = std::thread(&EchoServerThread::RunServerLoop, this);
+    server_thread_ =
+        std::thread(&EchoServerThread::RunServerLoop, this);
   }
 
   ~EchoServerThread() {
@@ -99,10 +103,11 @@ static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusDisabled);
 
 static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
-  // Now start the test by registering the plugin (once in the execution)
+  // Now start the test by registering the plugin (once in the
+  // execution)
   RegisterOnce();
-  // This we can safely repeat, and doing so clears accumulated data to avoid
-  // initialization costs varying between runs.
+  // This we can safely repeat, and doing so clears accumulated data to
+  // avoid initialization costs varying between runs.
   grpc::RegisterOpenCensusViewsForExport();
 
   grpc::testing::TestGrpcScope grpc_scope;

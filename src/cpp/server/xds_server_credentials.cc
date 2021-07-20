@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -34,7 +34,8 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
   }
   return std::make_shared<SecureServerCredentials>(
       grpc_xds_server_credentials_create(
-          fallback_credentials->AsSecureServerCredentials()->c_creds()));
+          fallback_credentials->AsSecureServerCredentials()
+              ->c_creds()));
 }
 
 }  // namespace experimental

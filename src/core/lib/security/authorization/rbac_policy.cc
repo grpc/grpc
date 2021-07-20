@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
@@ -40,10 +40,11 @@ Rbac& Rbac::operator=(Rbac&& other) noexcept {
 std::string Rbac::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(absl::StrFormat(
-      "Rbac action=%s{", action == Rbac::Action::kAllow ? "Allow" : "Deny"));
+      "Rbac action=%s{",
+      action == Rbac::Action::kAllow ? "Allow" : "Deny"));
   for (const auto& p : policies) {
-    contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}", p.first,
-                                       p.second.ToString()));
+    contents.push_back(absl::StrFormat("{\n  policy_name=%s\n%s\n}",
+                                       p.first, p.second.ToString()));
   }
   contents.push_back("}");
   return absl::StrJoin(contents, "\n");
@@ -53,14 +54,17 @@ std::string Rbac::ToString() const {
 // CidrRange
 //
 
-Rbac::CidrRange::CidrRange(std::string address_prefix, uint32_t prefix_len)
-    : address_prefix(std::move(address_prefix)), prefix_len(prefix_len) {}
+Rbac::CidrRange::CidrRange(std::string address_prefix,
+                           uint32_t prefix_len)
+    : address_prefix(std::move(address_prefix)),
+      prefix_len(prefix_len) {}
 
 Rbac::CidrRange::CidrRange(Rbac::CidrRange&& other) noexcept
     : address_prefix(std::move(other.address_prefix)),
       prefix_len(other.prefix_len) {}
 
-Rbac::CidrRange& Rbac::CidrRange::operator=(Rbac::CidrRange&& other) noexcept {
+Rbac::CidrRange& Rbac::CidrRange::operator=(
+    Rbac::CidrRange&& other) noexcept {
   address_prefix = std::move(other.address_prefix);
   prefix_len = other.prefix_len;
   return *this;
@@ -79,7 +83,8 @@ Rbac::Permission::Permission(
     Permission::RuleType type,
     std::vector<std::unique_ptr<Permission>> permissions)
     : type(type), permissions(std::move(permissions)) {}
-Rbac::Permission::Permission(Permission::RuleType type, Permission permission)
+Rbac::Permission::Permission(Permission::RuleType type,
+                             Permission permission)
     : type(type) {
   permissions.push_back(
       absl::make_unique<Rbac::Permission>(std::move(permission)));
@@ -190,10 +195,12 @@ std::string Rbac::Permission::ToString() const {
 // Principal
 //
 
-Rbac::Principal::Principal(Principal::RuleType type,
-                           std::vector<std::unique_ptr<Principal>> principals)
+Rbac::Principal::Principal(
+    Principal::RuleType type,
+    std::vector<std::unique_ptr<Principal>> principals)
     : type(type), principals(std::move(principals)) {}
-Rbac::Principal::Principal(Principal::RuleType type, Principal principal)
+Rbac::Principal::Principal(Principal::RuleType type,
+                           Principal principal)
     : type(type) {
   principals.push_back(
       absl::make_unique<Rbac::Principal>(std::move(principal)));
@@ -230,7 +237,8 @@ Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
   }
 }
 
-Rbac::Principal& Rbac::Principal::operator=(Rbac::Principal&& other) noexcept {
+Rbac::Principal& Rbac::Principal::operator=(
+    Rbac::Principal&& other) noexcept {
   type = other.type;
   switch (type) {
     case RuleType::kAnd:
@@ -276,7 +284,8 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kAny:
       return "any";
     case RuleType::kPrincipalName:
-      return absl::StrFormat("principal_name=%s", string_matcher.ToString());
+      return absl::StrFormat("principal_name=%s",
+                             string_matcher.ToString());
     case RuleType::kSourceIp:
       return absl::StrFormat("source_ip=%s", ip.ToString());
     case RuleType::kDirectRemoteIp:
@@ -297,7 +306,8 @@ std::string Rbac::Principal::ToString() const {
 //
 
 Rbac::Policy::Policy(Permission permissions, Principal principals)
-    : permissions(std::move(permissions)), principals(std::move(principals)) {}
+    : permissions(std::move(permissions)),
+      principals(std::move(principals)) {}
 
 Rbac::Policy::Policy(Rbac::Policy&& other) noexcept
     : permissions(std::move(other.permissions)),

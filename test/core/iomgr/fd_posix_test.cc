@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -65,10 +65,12 @@ static void create_test_socket(int port, int* socket_fd,
 
   fd = socket(AF_INET, SOCK_STREAM, 0);
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
-  /* Reset the size of socket send buffer to the minimal value to facilitate
-     buffer filling up and triggering notify_on_write  */
-  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes) == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes) == GRPC_ERROR_NONE);
+  /* Reset the size of socket send buffer to the minimal value to
+     facilitate buffer filling up and triggering notify_on_write  */
+  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes) ==
+             GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes) ==
+             GRPC_ERROR_NONE);
   /* Make fd non-blocking */
   flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
@@ -91,7 +93,7 @@ void no_op_cb(void* /*arg*/, int /*success*/) {}
 typedef struct {
   grpc_fd* em_fd;           /* listening fd */
   ssize_t read_bytes_total; /* total number of received bytes */
-  int done;                 /* set to 1 when a server finishes serving */
+  int done; /* set to 1 when a server finishes serving */
   grpc_closure listen_closure;
 } server;
 
@@ -118,8 +120,8 @@ static void session_shutdown_cb(void* arg, /*session */
   grpc_fd_orphan(se->em_fd, nullptr, nullptr, "a");
   gpr_free(se);
   /* Start to shutdown listen fd. */
-  grpc_fd_shutdown(sv->em_fd,
-                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("session_shutdown_cb"));
+  grpc_fd_shutdown(sv->em_fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                  "session_shutdown_cb"));
 }
 
 /* Called when data become readable in a session. */
@@ -142,22 +144,23 @@ static void session_read_cb(void* arg, /*session */
   } while (read_once > 0);
   se->sv->read_bytes_total += read_total;
 
-  /* read() returns 0 to indicate the TCP connection was closed by the client.
-     read(fd, read_buf, 0) also returns 0 which should never be called as such.
-     It is possible to read nothing due to spurious edge event or data has
-     been drained, In such a case, read() returns -1 and set errno to EAGAIN. */
+  /* read() returns 0 to indicate the TCP connection was closed by the
+     client. read(fd, read_buf, 0) also returns 0 which should never be
+     called as such. It is possible to read nothing due to spurious edge
+     event or data has been drained, In such a case, read() returns -1
+     and set errno to EAGAIN. */
   if (read_once == 0) {
     session_shutdown_cb(arg, true);
   } else if (read_once == -1) {
     if (errno == EAGAIN) {
-      /* An edge triggered event is cached in the kernel until next poll.
-         In the current single thread implementation, session_read_cb is called
-         in the polling thread, such that polling only happens after this
-         callback, and will catch read edge event if data is available again
-         before notify_on_read.
-         TODO(chenw): in multi-threaded version, callback and polling can be
-         run in different threads. polling may catch a persist read edge event
-         before notify_on_read is called.  */
+      /* An edge triggered event is cached in the kernel until next
+         poll. In the current single thread implementation,
+         session_read_cb is called in the polling thread, such that
+         polling only happens after this callback, and will catch read
+         edge event if data is available again before notify_on_read.
+         TODO(chenw): in multi-threaded version, callback and polling
+         can be run in different threads. polling may catch a persist
+         read edge event before notify_on_read is called.  */
       grpc_fd_notify_on_read(se->em_fd, &se->session_read_closure);
     } else {
       gpr_log(GPR_ERROR, "Unhandled read error %s", strerror(errno));
@@ -175,12 +178,13 @@ static void listen_shutdown_cb(void* arg /*server*/, int /*success*/) {
 
   gpr_mu_lock(g_mu);
   sv->done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
-/* Called when a new TCP connection request arrives in the listening port. */
+/* Called when a new TCP connection request arrives in the listening
+ * port. */
 static void listen_cb(void* arg, /*=sv_arg*/
                       grpc_error_handle error) {
   server* sv = static_cast<server*>(arg);
@@ -216,10 +220,10 @@ static void listen_cb(void* arg, /*=sv_arg*/
 /* Max number of connections pending to be accepted by listen(). */
 #define MAX_NUM_FD 1024
 
-/* Start a test server, return the TCP listening port bound to listen_fd.
-   listen_cb() is registered to be interested in reading from listen_fd.
-   When connection request arrives, listen_cb() is called to accept the
-   connection request. */
+/* Start a test server, return the TCP listening port bound to
+   listen_fd. listen_cb() is registered to be interested in reading from
+   listen_fd. When connection request arrives, listen_cb() is called to
+   accept the connection request. */
 static int server_start(server* sv) {
   int port = 0;
   int fd;
@@ -287,12 +291,13 @@ static void client_init(client* cl) {
 }
 
 /* Called when a client upload session is ready to shutdown. */
-static void client_session_shutdown_cb(void* arg /*client*/, int /*success*/) {
+static void client_session_shutdown_cb(void* arg /*client*/,
+                                       int /*success*/) {
   client* cl = static_cast<client*>(arg);
   grpc_fd_orphan(cl->em_fd, nullptr, nullptr, "c");
   cl->done = 1;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(g_pollset, nullptr)));
 }
 
 /* Write as much as possible, then register notify_on_write. */
@@ -336,19 +341,21 @@ static void client_start(client* cl, int port) {
   int fd;
   struct sockaddr_in sin;
   create_test_socket(port, &fd, &sin);
-  if (connect(fd, reinterpret_cast<struct sockaddr*>(&sin), sizeof(sin)) ==
-      -1) {
+  if (connect(fd, reinterpret_cast<struct sockaddr*>(&sin),
+              sizeof(sin)) == -1) {
     if (errno == EINPROGRESS) {
       struct pollfd pfd;
       pfd.fd = fd;
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d",
+                errno);
         abort();
       }
     } else {
-      gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)", errno);
+      gpr_log(GPR_ERROR, "Failed to connect to the server (errno=%d)",
+              errno);
       abort();
     }
   }
@@ -376,8 +383,8 @@ static void client_wait_and_shutdown(client* cl) {
 }
 
 /* Test grpc_fd. Start an upload server and client, upload a stream of
-   bytes from the client to the server, and verify that the total number of
-   sent bytes is equal to the total number of received bytes. */
+   bytes from the client to the server, and verify that the total number
+   of sent bytes is equal to the total number of received bytes. */
 static void test_grpc_fd(void) {
   server sv;
   client cl;
@@ -399,7 +406,9 @@ typedef struct fd_change_data {
   grpc_iomgr_cb_func cb_that_ran;
 } fd_change_data;
 
-void init_change_data(fd_change_data* fdc) { fdc->cb_that_ran = nullptr; }
+void init_change_data(fd_change_data* fdc) {
+  fdc->cb_that_ran = nullptr;
+}
 
 void destroy_change_data(fd_change_data* /*fdc*/) {}
 
@@ -409,8 +418,8 @@ static void first_read_callback(void* arg /* fd_change_data */,
 
   gpr_mu_lock(g_mu);
   fdc->cb_that_ran = first_read_callback;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -420,15 +429,16 @@ static void second_read_callback(void* arg /* fd_change_data */,
 
   gpr_mu_lock(g_mu);
   fdc->cb_that_ran = second_read_callback;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
+                               grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
-/* Test that changing the callback we use for notify_on_read actually works.
-   Note that we have two different but almost identical callbacks above -- the
-   point is to have two different function pointers and two different data
-   pointers and make sure that changing both really works. */
+/* Test that changing the callback we use for notify_on_read actually
+   works. Note that we have two different but almost identical callbacks
+   above -- the point is to have two different function pointers and two
+   different data pointers and make sure that changing both really
+   works. */
 static void test_grpc_fd_change(void) {
   grpc_fd* em_fd;
   fd_change_data a, b;
@@ -481,8 +491,8 @@ static void test_grpc_fd_change(void) {
   result = read(sv[0], &data, 1);
   GPR_ASSERT(result == 1);
 
-  /* Now register a second callback with distinct change data, and do the same
-     thing again. */
+  /* Now register a second callback with distinct change data, and do
+     the same thing again. */
   grpc_fd_notify_on_read(em_fd, &second_closure);
   data = 0;
   result = write(sv[1], &data, 1);
@@ -519,7 +529,8 @@ int main(int argc, char** argv) {
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
-    g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    g_pollset =
+        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
     test_grpc_fd();
     test_grpc_fd_change();

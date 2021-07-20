@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -37,14 +37,15 @@ namespace testing {
 
 static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
-// Repeatedly makes Streaming Bidi calls (exchanging a configurable number of
-// messages in each call) in a loop on a single channel
+// Repeatedly makes Streaming Bidi calls (exchanging a configurable
+// number of messages in each call) in a loop on a single channel
 //
 //  First parmeter (i.e state.range(0)):  Message size (in bytes) to use
 //  Second parameter (i.e state.range(1)): Number of ping pong messages.
-//      Note: One ping-pong means two messages (one from client to server and
-//      the other from server to client):
-template <class Fixture, class ClientContextMutator, class ServerContextMutator>
+//      Note: One ping-pong means two messages (one from client to
+//      server and the other from server to client):
+template <class Fixture, class ClientContextMutator,
+          class ServerContextMutator>
 static void BM_StreamingPingPong(benchmark::State& state) {
   const int msg_size = state.range(0);
   const int max_ping_pongs = state.range(1);
@@ -68,13 +69,15 @@ static void BM_StreamingPingPong(benchmark::State& state) {
     for (auto _ : state) {
       ServerContext svr_ctx;
       ServerContextMutator svr_ctx_mut(&svr_ctx);
-      ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+      ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(
+          &svr_ctx);
       service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
                                 fixture->cq(), tag(0));
 
       ClientContext cli_ctx;
       ClientContextMutator cli_ctx_mut(&cli_ctx);
-      auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+      auto request_rw =
+          stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
 
       // Establish async stream between client side and server side
       void* t;
@@ -133,12 +136,16 @@ static void BM_StreamingPingPong(benchmark::State& state) {
 
   fixture->Finish(state);
   fixture.reset();
-  state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
+  state.SetBytesProcessed(msg_size * state.iterations() *
+                          max_ping_pongs * 2);
 }
 
-// Repeatedly sends ping pong messages in a single streaming Bidi call in a loop
-//     First parmeter (i.e state.range(0)):  Message size (in bytes) to use
-template <class Fixture, class ClientContextMutator, class ServerContextMutator>
+// Repeatedly sends ping pong messages in a single streaming Bidi call
+// in a loop
+//     First parmeter (i.e state.range(0)):  Message size (in bytes) to
+//     use
+template <class Fixture, class ClientContextMutator,
+          class ServerContextMutator>
 static void BM_StreamingPingPongMsgs(benchmark::State& state) {
   const int msg_size = state.range(0);
 
@@ -160,13 +167,15 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
 
     ServerContext svr_ctx;
     ServerContextMutator svr_ctx_mut(&svr_ctx);
-    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+    ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(
+        &svr_ctx);
     service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
                               fixture->cq(), tag(0));
 
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
-    auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+    auto request_rw =
+        stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
 
     // Establish async stream between client side and server side
     void* t;
@@ -223,27 +232,31 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
   state.SetBytesProcessed(msg_size * state.iterations() * 2);
 }
 
-// Repeatedly makes Streaming Bidi calls (exchanging a configurable number of
-// messages in each call) in a loop on a single channel. Different from
-// BM_StreamingPingPong we are using stream coalescing api, e.g. WriteLast,
-// WriteAndFinish, set_initial_metadata_corked. These apis aim at saving
-// sendmsg syscalls for streaming by coalescing 1. initial metadata with first
-// message; 2. final streaming message with trailing metadata.
+// Repeatedly makes Streaming Bidi calls (exchanging a configurable
+// number of messages in each call) in a loop on a single channel.
+// Different from BM_StreamingPingPong we are using stream coalescing
+// api, e.g. WriteLast, WriteAndFinish, set_initial_metadata_corked.
+// These apis aim at saving sendmsg syscalls for streaming by
+// coalescing 1. initial metadata with first message; 2. final streaming
+// message with trailing metadata.
 //
 //  First parmeter (i.e state.range(0)):  Message size (in bytes) to use
 //  Second parameter (i.e state.range(1)): Number of ping pong messages.
-//      Note: One ping-pong means two messages (one from client to server and
-//      the other from server to client):
-//  Third parameter (i.e state.range(2)): Switch between using WriteAndFinish
-//  API and WriteLast API for server.
-template <class Fixture, class ClientContextMutator, class ServerContextMutator>
-static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
+//      Note: One ping-pong means two messages (one from client to
+//      server and the other from server to client):
+//  Third parameter (i.e state.range(2)): Switch between using
+//  WriteAndFinish API and WriteLast API for server.
+template <class Fixture, class ClientContextMutator,
+          class ServerContextMutator>
+static void BM_StreamingPingPongWithCoalescingApi(
+    benchmark::State& state) {
   const int msg_size = state.range(0);
   const int max_ping_pongs = state.range(1);
-  // This options is used to test out server API: WriteLast and WriteAndFinish
-  // respectively, since we can not use both of them on server side at the same
-  // time. Value 1 means we are testing out the WriteAndFinish API, and
-  // otherwise we are testing out the WriteLast API.
+  // This options is used to test out server API: WriteLast and
+  // WriteAndFinish respectively, since we can not use both of them on
+  // server side at the same time. Value 1 means we are testing out the
+  // WriteAndFinish API, and otherwise we are testing out the WriteLast
+  // API.
   const int write_and_finish = state.range(2);
 
   EchoTestService::AsyncService service;
@@ -265,16 +278,18 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
     for (auto _ : state) {
       ServerContext svr_ctx;
       ServerContextMutator svr_ctx_mut(&svr_ctx);
-      ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
+      ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(
+          &svr_ctx);
       service.RequestBidiStream(&svr_ctx, &response_rw, fixture->cq(),
                                 fixture->cq(), tag(0));
 
       ClientContext cli_ctx;
       ClientContextMutator cli_ctx_mut(&cli_ctx);
       cli_ctx.set_initial_metadata_corked(true);
-      // tag:1 here will never comes up, since we are not performing any op due
-      // to initial metadata coalescing.
-      auto request_rw = stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
+      // tag:1 here will never comes up, since we are not performing any
+      // op due to initial metadata coalescing.
+      auto request_rw =
+          stub->AsyncBidiStream(&cli_ctx, fixture->cq(), tag(1));
 
       void* t;
       bool ok;
@@ -293,13 +308,13 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
 
         if (ping_pong_cnt == 0) {
           // wait for the server call structure (call_hook, etc.) to be
-          // initialized (async stream between client side and server side
-          // established). It is necessary when client init metadata is
-          // coalesced
+          // initialized (async stream between client side and server
+          // side established). It is necessary when client init
+          // metadata is coalesced
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
           while (static_cast<int>(reinterpret_cast<intptr_t>(t)) != 0) {
-            // In some cases tag:2 comes before tag:0 (write tag comes out
-            // first), this while loop is to make sure get tag:0.
+            // In some cases tag:2 comes before tag:0 (write tag comes
+            // out first), this while loop is to make sure get tag:0.
             int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
             GPR_ASSERT(await_tags & (1 << i));
             await_tags &= ~(1 << i);
@@ -323,14 +338,15 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
           if (i == 3) {
             if (ping_pong_cnt == max_ping_pongs - 1) {
               if (write_and_finish == 1) {
-                response_rw.WriteAndFinish(send_response, WriteOptions(),
-                                           Status::OK, tag(5));
+                response_rw.WriteAndFinish(
+                    send_response, WriteOptions(), Status::OK, tag(5));
                 expect_tags |= (1 << 5);
               } else {
-                response_rw.WriteLast(send_response, WriteOptions(), tag(5));
-                // WriteLast buffers the write, so it's possible neither server
-                // write op nor client read op will finish inside the while
-                // loop.
+                response_rw.WriteLast(send_response, WriteOptions(),
+                                      tag(5));
+                // WriteLast buffers the write, so it's possible neither
+                // server write op nor client read op will finish inside
+                // the while loop.
                 await_tags &= ~(1 << 4);
                 await_tags &= ~(1 << 5);
                 expect_tags |= (1 << 5);
@@ -355,8 +371,8 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
         if (write_and_finish == 1) {
           expect_tags |= (1 << 8);
         } else {
-          // server's buffered write and the client's read of the buffered write
-          // tags should come up.
+          // server's buffered write and the client's read of the
+          // buffered write tags should come up.
           expect_tags |= (1 << 7) | (1 << 8);
         }
       }
@@ -396,7 +412,8 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
 
   fixture->Finish(state);
   fixture.reset();
-  state.SetBytesProcessed(msg_size * state.iterations() * max_ping_pongs * 2);
+  state.SetBytesProcessed(msg_size * state.iterations() *
+                          max_ping_pongs * 2);
 }
 }  // namespace testing
 }  // namespace grpc

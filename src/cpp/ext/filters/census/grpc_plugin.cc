@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,8 +39,8 @@ void RegisterOpenCensusPlugin() {
       "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
 
-  // Access measures to ensure they are initialized. Otherwise, creating a view
-  // before the first RPC would cause an error.
+  // Access measures to ensure they are initialized. Otherwise, creating
+  // a view before the first RPC would cause an error.
   RpcClientSentBytesPerRpc();
   RpcClientReceivedBytesPerRpc();
   RpcClientRoundtripLatency();
@@ -59,7 +59,8 @@ void RegisterOpenCensusPlugin() {
     grpc::ServerContext* context) {
   if (context == nullptr) return opencensus::trace::Span::BlankSpan();
 
-  return reinterpret_cast<const grpc::CensusContext*>(context->census_context())
+  return reinterpret_cast<const grpc::CensusContext*>(
+             context->census_context())
       ->Span();
 }
 
@@ -95,8 +96,9 @@ ABSL_CONST_INIT const absl::string_view
     kRpcClientSentMessagesPerRpcMeasureName =
         "grpc.io/client/sent_messages_per_rpc";
 
-ABSL_CONST_INIT const absl::string_view kRpcClientSentBytesPerRpcMeasureName =
-    "grpc.io/client/sent_bytes_per_rpc";
+ABSL_CONST_INIT const absl::string_view
+    kRpcClientSentBytesPerRpcMeasureName =
+        "grpc.io/client/sent_bytes_per_rpc";
 
 ABSL_CONST_INIT const absl::string_view
     kRpcClientReceivedMessagesPerRpcMeasureName =
@@ -106,19 +108,22 @@ ABSL_CONST_INIT const absl::string_view
     kRpcClientReceivedBytesPerRpcMeasureName =
         "grpc.io/client/received_bytes_per_rpc";
 
-ABSL_CONST_INIT const absl::string_view kRpcClientRoundtripLatencyMeasureName =
-    "grpc.io/client/roundtrip_latency";
+ABSL_CONST_INIT const absl::string_view
+    kRpcClientRoundtripLatencyMeasureName =
+        "grpc.io/client/roundtrip_latency";
 
-ABSL_CONST_INIT const absl::string_view kRpcClientServerLatencyMeasureName =
-    "grpc.io/client/server_latency";
+ABSL_CONST_INIT const absl::string_view
+    kRpcClientServerLatencyMeasureName =
+        "grpc.io/client/server_latency";
 
 // Server
 ABSL_CONST_INIT const absl::string_view
     kRpcServerSentMessagesPerRpcMeasureName =
         "grpc.io/server/sent_messages_per_rpc";
 
-ABSL_CONST_INIT const absl::string_view kRpcServerSentBytesPerRpcMeasureName =
-    "grpc.io/server/sent_bytes_per_rpc";
+ABSL_CONST_INIT const absl::string_view
+    kRpcServerSentBytesPerRpcMeasureName =
+        "grpc.io/server/sent_bytes_per_rpc";
 
 ABSL_CONST_INIT const absl::string_view
     kRpcServerReceivedMessagesPerRpcMeasureName =
@@ -128,6 +133,7 @@ ABSL_CONST_INIT const absl::string_view
     kRpcServerReceivedBytesPerRpcMeasureName =
         "grpc.io/server/received_bytes_per_rpc";
 
-ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
-    "grpc.io/server/server_latency";
+ABSL_CONST_INIT const absl::string_view
+    kRpcServerServerLatencyMeasureName =
+        "grpc.io/server/server_latency";
 }  // namespace grpc

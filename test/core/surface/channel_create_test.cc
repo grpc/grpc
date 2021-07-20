@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,8 +36,8 @@ void test_unknown_scheme_target(void) {
   GPR_ASSERT(chan != nullptr);
 
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel_element* elem =
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
+  grpc_channel_element* elem = grpc_channel_stack_element(
+      grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
 
   grpc_channel_destroy(chan);

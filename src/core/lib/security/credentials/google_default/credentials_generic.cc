@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,11 +29,13 @@
 
 #include "src/core/lib/gpr/env.h"
 
-std::string grpc_get_well_known_google_credentials_file_path_impl(void) {
+std::string grpc_get_well_known_google_credentials_file_path_impl(
+    void) {
   char* base = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR);
   if (base == nullptr) {
-    gpr_log(GPR_ERROR, "Could not get " GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR
-                       " environment variable.");
+    gpr_log(GPR_ERROR,
+            "Could not get " GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR
+            " environment variable.");
     return "";
   }
   std::string result =

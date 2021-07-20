@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -111,19 +111,22 @@ static void test_with_vtable(const grpc_socket_mutator_vtable* vtable) {
   mutator.option_value = IPTOS_LOWDELAY;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
+      grpc_set_socket_with_mutator(sock,
+                                   GRPC_FD_CLIENT_CONNECTION_USAGE,
                                    (grpc_socket_mutator*)&mutator)));
 
   mutator.option_value = IPTOS_THROUGHPUT;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
+      grpc_set_socket_with_mutator(sock,
+                                   GRPC_FD_CLIENT_CONNECTION_USAGE,
                                    (grpc_socket_mutator*)&mutator)));
 
   mutator.option_value = IPTOS_RELIABILITY;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "set_socket_with_mutator",
-      grpc_set_socket_with_mutator(sock, GRPC_FD_CLIENT_CONNECTION_USAGE,
+      grpc_set_socket_with_mutator(sock,
+                                   GRPC_FD_CLIENT_CONNECTION_USAGE,
                                    (grpc_socket_mutator*)&mutator)));
 
   mutator.option_value = -1;

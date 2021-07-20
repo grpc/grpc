@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  */
 
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CALLBACK_H
@@ -52,10 +52,10 @@ class ServerReactor {
   virtual void OnDone() = 0;
   virtual void OnCancel() = 0;
 
-  // The following is not API. It is for internal use only and specifies whether
-  // all reactions of this Reactor can be run without an extra executor
-  // scheduling. This should only be used for internally-defined reactors with
-  // trivial reactions.
+  // The following is not API. It is for internal use only and specifies
+  // whether all reactions of this Reactor can be run without an extra
+  // executor scheduling. This should only be used for
+  // internally-defined reactors with trivial reactions.
   virtual bool InternalInlineable() { return false; }
 
  private:
@@ -74,21 +74,24 @@ class ServerCallbackCall {
  public:
   virtual ~ServerCallbackCall() {}
 
-  // This object is responsible for tracking when it is safe to call OnDone and
-  // OnCancel. OnDone should not be called until the method handler is complete,
-  // Finish has been called, the ServerContext CompletionOp (which tracks
-  // cancellation or successful completion) has completed, and all outstanding
-  // Read/Write actions have seen their reactions. OnCancel should not be called
-  // until after the method handler is done and the RPC has completed with a
-  // cancellation. This is tracked by counting how many of these conditions have
-  // been met and calling OnCancel when none remain unmet.
+  // This object is responsible for tracking when it is safe to call
+  // OnDone and OnCancel. OnDone should not be called until the method
+  // handler is complete, Finish has been called, the ServerContext
+  // CompletionOp (which tracks cancellation or successful completion)
+  // has completed, and all outstanding Read/Write actions have seen
+  // their reactions. OnCancel should not be called until after the
+  // method handler is done and the RPC has completed with a
+  // cancellation. This is tracked by counting how many of these
+  // conditions have been met and calling OnCancel when none remain
+  // unmet.
 
-  // Public versions of MaybeDone: one where we don't know the reactor in
-  // advance (used for the ServerContext CompletionOp), and one for where we
-  // know the inlineability of the OnDone reaction. You should set the inline
-  // flag to true if either the Reactor is InternalInlineable() or if this
-  // callback is already being forced to run dispatched to an executor
-  // (typically because it contains additional work than just the MaybeDone).
+  // Public versions of MaybeDone: one where we don't know the reactor
+  // in advance (used for the ServerContext CompletionOp), and one for
+  // where we know the inlineability of the OnDone reaction. You should
+  // set the inline flag to true if either the Reactor is
+  // InternalInlineable() or if this callback is already being forced to
+  // run dispatched to an executor (typically because it contains
+  // additional work than just the MaybeDone).
 
   void MaybeDone() {
     if (GPR_UNLIKELY(Unref() == 1)) {
@@ -110,10 +113,10 @@ class ServerCallbackCall {
     }
   }
 
-  // Slower version called from object that doesn't know the reactor a priori
-  // (such as the ServerContext CompletionOp which is formed before the
-  // reactor). This is used in cancel cases only, so it's ok to be slower and
-  // invoke a virtual function.
+  // Slower version called from object that doesn't know the reactor a
+  // priori (such as the ServerContext CompletionOp which is formed
+  // before the reactor). This is used in cancel cases only, so it's ok
+  // to be slower and invoke a virtual function.
   void MaybeCallOnCancel() {
     if (GPR_UNLIKELY(UnblockCancellation())) {
       CallOnCancel(reactor());
@@ -122,26 +125,29 @@ class ServerCallbackCall {
 
  protected:
   /// Increases the reference count
-  void Ref() { callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed); }
+  void Ref() {
+    callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
+  }
 
  private:
   virtual ServerReactor* reactor() = 0;
 
-  // CallOnDone performs the work required at completion of the RPC: invoking
-  // the OnDone function and doing all necessary cleanup. This function is only
-  // ever invoked on a fully-Unref'fed ServerCallbackCall.
+  // CallOnDone performs the work required at completion of the RPC:
+  // invoking the OnDone function and doing all necessary cleanup. This
+  // function is only ever invoked on a fully-Unref'fed
+  // ServerCallbackCall.
   virtual void CallOnDone() = 0;
 
-  // If the OnDone reaction is inlineable, execute it inline. Otherwise send it
-  // to an executor.
+  // If the OnDone reaction is inlineable, execute it inline. Otherwise
+  // send it to an executor.
   void ScheduleOnDone(bool inline_ondone);
 
-  // If the OnCancel reaction is inlineable, execute it inline. Otherwise send
-  // it to an executor.
+  // If the OnCancel reaction is inlineable, execute it inline.
+  // Otherwise send it to an executor.
   void CallOnCancel(ServerReactor* reactor);
 
-  // Implement the cancellation constraint counter. Return true if OnCancel
-  // should be called, false otherwise.
+  // Implement the cancellation constraint counter. Return true if
+  // OnCancel should be called, false otherwise.
   bool UnblockCancellation() {
     return on_cancel_conditions_remaining_.fetch_sub(
                1, std::memory_order_acq_rel) == 1;
@@ -149,7 +155,8 @@ class ServerCallbackCall {
 
   /// Decreases the reference count and returns the previous value
   int Unref() {
-    return callbacks_outstanding_.fetch_sub(1, std::memory_order_acq_rel);
+    return callbacks_outstanding_.fetch_sub(1,
+                                            std::memory_order_acq_rel);
   }
 
   std::atomic_int on_cancel_conditions_remaining_{2};
@@ -185,9 +192,9 @@ class ServerWriteReactor;
 template <class Request, class Response>
 class ServerBidiReactor;
 
-// NOTE: The actual call/stream object classes are provided as API only to
-// support mocking. There are no implementations of these class interfaces in
-// the API.
+// NOTE: The actual call/stream object classes are provided as API only
+// to support mocking. There are no implementations of these class
+// interfaces in the API.
 class ServerCallbackUnary : public internal::ServerCallbackCall {
  public:
   ~ServerCallbackUnary() override {}
@@ -195,8 +202,8 @@ class ServerCallbackUnary : public internal::ServerCallbackCall {
   virtual void SendInitialMetadata() = 0;
 
  protected:
-  // Use a template rather than explicitly specifying ServerUnaryReactor to
-  // delay binding and avoid a circular forward declaration issue
+  // Use a template rather than explicitly specifying ServerUnaryReactor
+  // to delay binding and avoid a circular forward declaration issue
   template <class Reactor>
   void BindReactor(Reactor* reactor) {
     reactor->InternalBindCall(this);
@@ -224,8 +231,10 @@ class ServerCallbackWriter : public internal::ServerCallbackCall {
 
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
-  virtual void Write(const Response* msg, ::grpc::WriteOptions options) = 0;
-  virtual void WriteAndFinish(const Response* msg, ::grpc::WriteOptions options,
+  virtual void Write(const Response* msg,
+                     ::grpc::WriteOptions options) = 0;
+  virtual void WriteAndFinish(const Response* msg,
+                              ::grpc::WriteOptions options,
                               ::grpc::Status s) = 0;
 
  protected:
@@ -242,8 +251,10 @@ class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
   virtual void Finish(::grpc::Status s) = 0;
   virtual void SendInitialMetadata() = 0;
   virtual void Read(Request* msg) = 0;
-  virtual void Write(const Response* msg, ::grpc::WriteOptions options) = 0;
-  virtual void WriteAndFinish(const Response* msg, ::grpc::WriteOptions options,
+  virtual void Write(const Response* msg,
+                     ::grpc::WriteOptions options) = 0;
+  virtual void WriteAndFinish(const Response* msg,
+                              ::grpc::WriteOptions options,
                               ::grpc::Status s) = 0;
 
  protected:
@@ -252,32 +263,38 @@ class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
   }
 };
 
-// The following classes are the reactor interfaces that are to be implemented
-// by the user, returned as the output parameter of the method handler for a
-// callback method. Note that none of the classes are pure; all reactions have a
-// default empty reaction so that the user class only needs to override those
-// reactions that it cares about. The reaction methods will be invoked by the
-// library in response to the completion of various operations. Reactions must
-// not include blocking operations (such as blocking I/O, starting synchronous
-// RPCs, or waiting on condition variables). Reactions may be invoked
-// concurrently, except that OnDone is called after all others (assuming proper
-// API usage). The reactor may not be deleted until OnDone is called.
+// The following classes are the reactor interfaces that are to be
+// implemented by the user, returned as the output parameter of the
+// method handler for a callback method. Note that none of the classes
+// are pure; all reactions have a default empty reaction so that the
+// user class only needs to override those reactions that it cares
+// about. The reaction methods will be invoked by the library in
+// response to the completion of various operations. Reactions must not
+// include blocking operations (such as blocking I/O, starting
+// synchronous RPCs, or waiting on condition variables). Reactions may
+// be invoked concurrently, except that OnDone is called after all
+// others (assuming proper API usage). The reactor may not be deleted
+// until OnDone is called.
 
-/// \a ServerBidiReactor is the interface for a bidirectional streaming RPC.
+/// \a ServerBidiReactor is the interface for a bidirectional streaming
+/// RPC.
 template <class Request, class Response>
 class ServerBidiReactor : public internal::ServerReactor {
  public:
-  // NOTE: Initializing stream_ as a constructor initializer rather than a
-  //       default initializer because gcc-4.x requires a copy constructor for
-  //       default initializing a templated member, which isn't ok for atomic.
-  // TODO(vjpai): Switch to default constructor and default initializer when
+  // NOTE: Initializing stream_ as a constructor initializer rather than
+  // a
+  //       default initializer because gcc-4.x requires a copy
+  //       constructor for default initializing a templated member,
+  //       which isn't ok for atomic.
+  // TODO(vjpai): Switch to default constructor and default initializer
+  // when
   //              gcc-4.x is no longer supported
   ServerBidiReactor() : stream_(nullptr) {}
   ~ServerBidiReactor() override = default;
 
-  /// Send any initial metadata stored in the RPC context. If not invoked,
-  /// any initial metadata will be passed along with the first Write or the
-  /// Finish (if there are no writes).
+  /// Send any initial metadata stored in the RPC context. If not
+  /// invoked, any initial metadata will be passed along with the first
+  /// Write or the Finish (if there are no writes).
   void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
@@ -294,7 +311,8 @@ class ServerBidiReactor : public internal::ServerReactor {
 
   /// Initiate a read operation.
   ///
-  /// \param[out] req Where to eventually store the read message. Valid when
+  /// \param[out] req Where to eventually store the read message. Valid
+  /// when
   ///                 the library calls OnReadDone
   void StartRead(Request* req) ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
@@ -312,19 +330,24 @@ class ServerBidiReactor : public internal::ServerReactor {
 
   /// Initiate a write operation.
   ///
-  /// \param[in] resp The message to be written. The library does not take
-  ///                 ownership but the caller must ensure that the message is
-  ///                 not deleted or modified until OnWriteDone is called.
+  /// \param[in] resp The message to be written. The library does not
+  /// take
+  ///                 ownership but the caller must ensure that the
+  ///                 message is not deleted or modified until
+  ///                 OnWriteDone is called.
   void StartWrite(const Response* resp) {
     StartWrite(resp, ::grpc::WriteOptions());
   }
 
   /// Initiate a write operation with specified options.
   ///
-  /// \param[in] resp The message to be written. The library does not take
-  ///                 ownership but the caller must ensure that the message is
-  ///                 not deleted or modified until OnWriteDone is called.
-  /// \param[in] options The WriteOptions to use for writing this message
+  /// \param[in] resp The message to be written. The library does not
+  /// take
+  ///                 ownership but the caller must ensure that the
+  ///                 message is not deleted or modified until
+  ///                 OnWriteDone is called.
+  /// \param[in] options The WriteOptions to use for writing this
+  /// message
   void StartWrite(const Response* resp, ::grpc::WriteOptions options)
       ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
@@ -341,21 +364,25 @@ class ServerBidiReactor : public internal::ServerReactor {
     stream->Write(resp, options);
   }
 
-  /// Initiate a write operation with specified options and final RPC Status,
-  /// which also causes any trailing metadata for this RPC to be sent out.
-  /// StartWriteAndFinish is like merging StartWriteLast and Finish into a
-  /// single step. A key difference, though, is that this operation doesn't have
-  /// an OnWriteDone reaction - it is considered complete only when OnDone is
-  /// available. An RPC can either have StartWriteAndFinish or Finish, but not
-  /// both.
+  /// Initiate a write operation with specified options and final RPC
+  /// Status, which also causes any trailing metadata for this RPC to be
+  /// sent out. StartWriteAndFinish is like merging StartWriteLast and
+  /// Finish into a single step. A key difference, though, is that this
+  /// operation doesn't have an OnWriteDone reaction - it is considered
+  /// complete only when OnDone is available. An RPC can either have
+  /// StartWriteAndFinish or Finish, but not both.
   ///
-  /// \param[in] resp The message to be written. The library does not take
-  ///                 ownership but the caller must ensure that the message is
-  ///                 not deleted or modified until OnDone is called.
-  /// \param[in] options The WriteOptions to use for writing this message
-  /// \param[in] s The status outcome of this RPC
-  void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
-                           ::grpc::Status s) ABSL_LOCKS_EXCLUDED(stream_mu_) {
+  /// \param[in] resp The message to be written. The library does not
+  /// take
+  ///                 ownership but the caller must ensure that the
+  ///                 message is not deleted or modified until OnDone is
+  ///                 called.
+  /// \param[in] options The WriteOptions to use for writing this
+  /// message \param[in] s The status outcome of this RPC
+  void StartWriteAndFinish(const Response* resp,
+                           ::grpc::WriteOptions options,
+                           ::grpc::Status s)
+      ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
@@ -372,22 +399,27 @@ class ServerBidiReactor : public internal::ServerReactor {
     stream->WriteAndFinish(resp, options, std::move(s));
   }
 
-  /// Inform system of a planned write operation with specified options, but
-  /// allow the library to schedule the actual write coalesced with the writing
-  /// of trailing metadata (which takes place on a Finish call).
+  /// Inform system of a planned write operation with specified options,
+  /// but allow the library to schedule the actual write coalesced with
+  /// the writing of trailing metadata (which takes place on a Finish
+  /// call).
   ///
-  /// \param[in] resp The message to be written. The library does not take
-  ///                 ownership but the caller must ensure that the message is
-  ///                 not deleted or modified until OnWriteDone is called.
-  /// \param[in] options The WriteOptions to use for writing this message
-  void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
+  /// \param[in] resp The message to be written. The library does not
+  /// take
+  ///                 ownership but the caller must ensure that the
+  ///                 message is not deleted or modified until
+  ///                 OnWriteDone is called.
+  /// \param[in] options The WriteOptions to use for writing this
+  /// message
+  void StartWriteLast(const Response* resp,
+                      ::grpc::WriteOptions options) {
     StartWrite(resp, options.set_last_message());
   }
 
-  /// Indicate that the stream is to be finished and the trailing metadata and
-  /// RPC status are to be sent. Every RPC MUST be finished using either Finish
-  /// or StartWriteAndFinish (but not both), even if the RPC is already
-  /// cancelled.
+  /// Indicate that the stream is to be finished and the trailing
+  /// metadata and RPC status are to be sent. Every RPC MUST be finished
+  /// using either Finish or StartWriteAndFinish (but not both), even if
+  /// the RPC is already cancelled.
   ///
   /// \param[in] s The status outcome of this RPC
   void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(stream_mu_) {
@@ -409,37 +441,41 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// operation completed. Not used when the sending of initial metadata
   /// piggybacks onto the first write.
   ///
-  /// \param[in] ok Was it successful? If false, no further write-side operation
+  /// \param[in] ok Was it successful? If false, no further write-side
+  /// operation
   ///               will succeed.
   virtual void OnSendInitialMetadataDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartRead operation completed.
   ///
-  /// \param[in] ok Was it successful? If false, no further read-side operation
+  /// \param[in] ok Was it successful? If false, no further read-side
+  /// operation
   ///               will succeed.
   virtual void OnReadDone(bool /*ok*/) {}
 
-  /// Notifies the application that a StartWrite (or StartWriteLast) operation
-  /// completed.
+  /// Notifies the application that a StartWrite (or StartWriteLast)
+  /// operation completed.
   ///
-  /// \param[in] ok Was it successful? If false, no further write-side operation
+  /// \param[in] ok Was it successful? If false, no further write-side
+  /// operation
   ///               will succeed.
   virtual void OnWriteDone(bool /*ok*/) {}
 
-  /// Notifies the application that all operations associated with this RPC
-  /// have completed. This is an override (from the internal base class) but
-  /// still abstract, so derived classes MUST override it to be instantiated.
+  /// Notifies the application that all operations associated with this
+  /// RPC have completed. This is an override (from the internal base
+  /// class) but still abstract, so derived classes MUST override it to
+  /// be instantiated.
   void OnDone() override = 0;
 
-  /// Notifies the application that this RPC has been cancelled. This is an
-  /// override (from the internal base class) but not final, so derived classes
-  /// should override it if they want to take action.
+  /// Notifies the application that this RPC has been cancelled. This is
+  /// an override (from the internal base class) but not final, so
+  /// derived classes should override it if they want to take action.
   void OnCancel() override {}
 
  private:
   friend class ServerCallbackReaderWriter<Request, Response>;
-  // May be overridden by internal implementation details. This is not a public
-  // customization point.
+  // May be overridden by internal implementation details. This is not a
+  // public customization point.
   virtual void InternalBindStream(
       ServerCallbackReaderWriter<Request, Response>* stream) {
     grpc::internal::MutexLock l(&stream_mu_);
@@ -468,11 +504,14 @@ class ServerBidiReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex stream_mu_;
-  // TODO(vjpai): Make stream_or_backlog_ into a std::variant or absl::variant
-  //              once C++17 or ABSL is supported since stream and backlog are
-  //              mutually exclusive in this class. Do likewise with the
-  //              remaining reactor classes and their backlogs as well.
-  std::atomic<ServerCallbackReaderWriter<Request, Response>*> stream_{nullptr};
+  // TODO(vjpai): Make stream_or_backlog_ into a std::variant or
+  // absl::variant
+  //              once C++17 or ABSL is supported since stream and
+  //              backlog are mutually exclusive in this class. Do
+  //              likewise with the remaining reactor classes and their
+  //              backlogs as well.
+  std::atomic<ServerCallbackReaderWriter<Request, Response>*> stream_{
+      nullptr};
   struct PreBindBacklog {
     bool send_initial_metadata_wanted = false;
     bool write_and_finish_wanted = false;
@@ -492,7 +531,8 @@ class ServerReadReactor : public internal::ServerReactor {
   ServerReadReactor() : reader_(nullptr) {}
   ~ServerReadReactor() override = default;
 
-  /// The following operation initiations are exactly like ServerBidiReactor.
+  /// The following operation initiations are exactly like
+  /// ServerBidiReactor.
   void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(reader_mu_) {
     ServerCallbackReader<Request>* reader =
         reader_.load(std::memory_order_acquire);
@@ -543,8 +583,8 @@ class ServerReadReactor : public internal::ServerReactor {
  private:
   friend class ServerCallbackReader<Request>;
 
-  // May be overridden by internal implementation details. This is not a public
-  // customization point.
+  // May be overridden by internal implementation details. This is not a
+  // public customization point.
   virtual void InternalBindReader(ServerCallbackReader<Request>* reader)
       ABSL_LOCKS_EXCLUDED(reader_mu_) {
     grpc::internal::MutexLock l(&reader_mu_);
@@ -580,7 +620,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   ServerWriteReactor() : writer_(nullptr) {}
   ~ServerWriteReactor() override = default;
 
-  /// The following operation initiations are exactly like ServerBidiReactor.
+  /// The following operation initiations are exactly like
+  /// ServerBidiReactor.
   void StartSendInitialMetadata() ABSL_LOCKS_EXCLUDED(writer_mu_) {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
@@ -612,8 +653,10 @@ class ServerWriteReactor : public internal::ServerReactor {
     }
     writer->Write(resp, options);
   }
-  void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
-                           ::grpc::Status s) ABSL_LOCKS_EXCLUDED(writer_mu_) {
+  void StartWriteAndFinish(const Response* resp,
+                           ::grpc::WriteOptions options,
+                           ::grpc::Status s)
+      ABSL_LOCKS_EXCLUDED(writer_mu_) {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
@@ -629,7 +672,8 @@ class ServerWriteReactor : public internal::ServerReactor {
     }
     writer->WriteAndFinish(resp, options, std::move(s));
   }
-  void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
+  void StartWriteLast(const Response* resp,
+                      ::grpc::WriteOptions options) {
     StartWrite(resp, options.set_last_message());
   }
   void Finish(::grpc::Status s) ABSL_LOCKS_EXCLUDED(writer_mu_) {
@@ -655,9 +699,10 @@ class ServerWriteReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackWriter<Response>;
-  // May be overridden by internal implementation details. This is not a public
-  // customization point.
-  virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer)
+  // May be overridden by internal implementation details. This is not a
+  // public customization point.
+  virtual void InternalBindWriter(
+      ServerCallbackWriter<Response>* writer)
       ABSL_LOCKS_EXCLUDED(writer_mu_) {
     grpc::internal::MutexLock l(&writer_mu_);
 
@@ -736,8 +781,8 @@ class ServerUnaryReactor : public internal::ServerReactor {
 
  private:
   friend class ServerCallbackUnary;
-  // May be overridden by internal implementation details. This is not a public
-  // customization point.
+  // May be overridden by internal implementation details. This is not a
+  // public customization point.
   virtual void InternalBindCall(ServerCallbackUnary* call)
       ABSL_LOCKS_EXCLUDED(call_mu_) {
     grpc::internal::MutexLock l(&call_mu_);
@@ -767,13 +812,16 @@ namespace internal {
 template <class Base>
 class FinishOnlyReactor : public Base {
  public:
-  explicit FinishOnlyReactor(::grpc::Status s) { this->Finish(std::move(s)); }
+  explicit FinishOnlyReactor(::grpc::Status s) {
+    this->Finish(std::move(s));
+  }
   void OnDone() override { this->~FinishOnlyReactor(); }
 };
 
 using UnimplementedUnaryReactor = FinishOnlyReactor<ServerUnaryReactor>;
 template <class Request>
-using UnimplementedReadReactor = FinishOnlyReactor<ServerReadReactor<Request>>;
+using UnimplementedReadReactor =
+    FinishOnlyReactor<ServerReadReactor<Request>>;
 template <class Response>
 using UnimplementedWriteReactor =
     FinishOnlyReactor<ServerWriteReactor<Response>>;
@@ -783,8 +831,8 @@ using UnimplementedBidiReactor =
 
 }  // namespace internal
 
-// TODO(vjpai): Remove namespace experimental when last known users are migrated
-// off.
+// TODO(vjpai): Remove namespace experimental when last known users are
+// migrated off.
 namespace experimental {
 
 template <class Request, class Response>

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,29 +25,30 @@
 
 #include "src/core/lib/surface/server.h"
 
-#define PFX_STR                                                            \
-  "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \
-  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
-                                            simple_request.headers in this \
-                                            directory */                   \
-  "\x10\x05:path\x08/foo/bar"                                              \
-  "\x10\x07:scheme\x04http"                                                \
-  "\x10\x07:method\x04POST"                                                \
-  "\x10\x0a:authority\x09localhost"                                        \
-  "\x10\x0c"                                                               \
-  "content-type\x10"                                                       \
-  "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15"                                       \
-  "deflate,identity,gzip"                                                  \
-  "\x10\x02te\x08trailers"                                                 \
+#define PFX_STR                                                       \
+  "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                              \
+  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from   \
+                                            simple_request.headers in \
+                                            this directory */                                                         \
+  "\x10\x05:path\x08/foo/bar"                                         \
+  "\x10\x07:scheme\x04http"                                           \
+  "\x10\x07:method\x04POST"                                           \
+  "\x10\x0a:authority\x09localhost"                                   \
+  "\x10\x0c"                                                          \
+  "content-type\x10"                                                  \
+  "application/grpc"                                                  \
+  "\x10\x14grpc-accept-encoding\x15"                                  \
+  "deflate,identity,gzip"                                             \
+  "\x10\x02te\x08trailers"                                            \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (server->core_server->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(
+            cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+            .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -95,7 +96,8 @@ int main(int argc, char** argv) {
   grpc_bad_client_arg bca[2];
   bca[0] = connection_preface_arg;
   bca[1] = {rst_stream_client_validator, nullptr, g_buffer, g_count};
-  grpc_run_bad_client_test(verifier, bca, 2, GRPC_BAD_CLIENT_LARGE_REQUEST);
+  grpc_run_bad_client_test(verifier, bca, 2,
+                           GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
   grpc_shutdown();
 

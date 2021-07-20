@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,7 +39,8 @@ std::string GetDbFileContent(int argc, char** argv) {
     size_t start_position = argv_1.find(arg_str);
     if (start_position != std::string::npos) {
       start_position += arg_str.size();
-      if (argv_1[start_position] == ' ' || argv_1[start_position] == '=') {
+      if (argv_1[start_position] == ' ' ||
+          argv_1[start_position] == '=') {
         db_path = argv_1.substr(start_position + 1);
       }
     }
@@ -60,14 +61,16 @@ std::string GetDbFileContent(int argc, char** argv) {
   return db.str();
 }
 
-// A simple parser for the json db file. It requires the db file to have the
-// exact form of [{"location": { "latitude": 123, "longitude": 456}, "name":
-// "the name can be empty" }, { ... } ... The spaces will be stripped.
+// A simple parser for the json db file. It requires the db file to have
+// the exact form of [{"location": { "latitude": 123, "longitude": 456},
+// "name": "the name can be empty" }, { ... } ... The spaces will be
+// stripped.
 class Parser {
  public:
   explicit Parser(const std::string& db) : db_(db) {
     // Remove all spaces.
-    db_.erase(std::remove_if(db_.begin(), db_.end(), isspace), db_.end());
+    db_.erase(std::remove_if(db_.begin(), db_.end(), isspace),
+              db_.end());
     if (!Match("[")) {
       SetFailedAndReturnFalse();
     }
@@ -99,7 +102,8 @@ class Parser {
     if (current_ == db_.size()) {
       return SetFailedAndReturnFalse();
     }
-    feature->set_name(db_.substr(name_start, current_ - name_start - 1));
+    feature->set_name(
+        db_.substr(name_start, current_ - name_start - 1));
     if (!Match("},")) {
       if (db_[current_ - 1] == ']' && current_ == db_.size()) {
         return true;
@@ -140,7 +144,8 @@ class Parser {
   const std::string name_ = "\"name\":";
 };
 
-void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
+void ParseDb(const std::string& db,
+             std::vector<Feature>* feature_list) {
   feature_list->clear();
   std::string db_content(db);
   db_content.erase(
@@ -157,8 +162,8 @@ void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
       break;
     }
   }
-  std::cout << "DB parsed, loaded " << feature_list->size() << " features."
-            << std::endl;
+  std::cout << "DB parsed, loaded " << feature_list->size()
+            << " features." << std::endl;
 }
 
 }  // namespace routeguide

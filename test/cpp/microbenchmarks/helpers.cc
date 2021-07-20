@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -63,9 +63,10 @@ void TrackCounters::AddLabel(const std::string& label) {
   labels_.push_back(label);
 }
 
-void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
-  // Use the parameters to avoid unused-parameter warnings depending on the
-  // #define's present
+void TrackCounters::AddToLabel(std::ostream& out,
+                               benchmark::State& state) {
+  // Use the parameters to avoid unused-parameter warnings depending on
+  // the #define's present
   (void)out;
   (void)state;
 #ifdef GRPC_COLLECT_STATS
@@ -80,13 +81,16 @@ void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
   }
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
     out << " " << grpc_stats_histogram_name[i] << "-median:"
-        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 50.0)
+        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i,
+                                       50.0)
         << " " << grpc_stats_histogram_name[i] << "-99p:"
-        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 99.0);
+        << grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i,
+                                       99.0);
   }
 #endif
 #ifdef GPR_LOW_LEVEL_COUNTERS
-  grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
+  grpc_memory_counters counters_at_end =
+      grpc_memory_counters_snapshot();
   out << " locks/iter:"
       << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
                    mu_locks_at_start_) /

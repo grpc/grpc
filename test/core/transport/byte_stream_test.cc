@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -132,7 +132,8 @@ TEST(CachingByteStream, Basic) {
   SliceBufferByteStream underlying_stream(&buffer, 0);
   grpc_slice_buffer_destroy_internal(&buffer);
   // Create cache and caching stream.
-  ByteStreamCache cache((OrphanablePtr<ByteStream>(&underlying_stream)));
+  ByteStreamCache cache(
+      (OrphanablePtr<ByteStream>(&underlying_stream)));
   ByteStreamCache::CachingByteStream stream(&cache);
   grpc_closure closure;
   GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
@@ -167,7 +168,8 @@ TEST(CachingByteStream, Reset) {
   SliceBufferByteStream underlying_stream(&buffer, 0);
   grpc_slice_buffer_destroy_internal(&buffer);
   // Create cache and caching stream.
-  ByteStreamCache cache((OrphanablePtr<ByteStream>(&underlying_stream)));
+  ByteStreamCache cache(
+      (OrphanablePtr<ByteStream>(&underlying_stream)));
   ByteStreamCache::CachingByteStream stream(&cache);
   grpc_closure closure;
   GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
@@ -209,7 +211,8 @@ TEST(CachingByteStream, SharedCache) {
   SliceBufferByteStream underlying_stream(&buffer, 0);
   grpc_slice_buffer_destroy_internal(&buffer);
   // Create cache and two caching streams.
-  ByteStreamCache cache((OrphanablePtr<ByteStream>(&underlying_stream)));
+  ByteStreamCache cache(
+      (OrphanablePtr<ByteStream>(&underlying_stream)));
   ByteStreamCache::CachingByteStream stream1(&cache);
   ByteStreamCache::CachingByteStream stream2(&cache);
   grpc_closure closure;

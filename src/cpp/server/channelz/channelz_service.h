@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,12 +30,14 @@ class ChannelzService final : public channelz::v1::Channelz::Service {
  private:
   // implementation of GetTopChannels rpc
   Status GetTopChannels(
-      ServerContext* unused, const channelz::v1::GetTopChannelsRequest* request,
+      ServerContext* unused,
+      const channelz::v1::GetTopChannelsRequest* request,
       channelz::v1::GetTopChannelsResponse* response) override;
   // implementation of GetServers rpc
-  Status GetServers(ServerContext* unused,
-                    const channelz::v1::GetServersRequest* request,
-                    channelz::v1::GetServersResponse* response) override;
+  Status GetServers(
+      ServerContext* unused,
+      const channelz::v1::GetServersRequest* request,
+      channelz::v1::GetServersResponse* response) override;
   // implementation of GetServer rpc
   Status GetServer(ServerContext* unused,
                    const channelz::v1::GetServerRequest* request,
@@ -46,13 +48,15 @@ class ChannelzService final : public channelz::v1::Channelz::Service {
       const channelz::v1::GetServerSocketsRequest* request,
       channelz::v1::GetServerSocketsResponse* response) override;
   // implementation of GetChannel rpc
-  Status GetChannel(ServerContext* unused,
-                    const channelz::v1::GetChannelRequest* request,
-                    channelz::v1::GetChannelResponse* response) override;
+  Status GetChannel(
+      ServerContext* unused,
+      const channelz::v1::GetChannelRequest* request,
+      channelz::v1::GetChannelResponse* response) override;
   // implementation of GetSubchannel rpc
-  Status GetSubchannel(ServerContext* unused,
-                       const channelz::v1::GetSubchannelRequest* request,
-                       channelz::v1::GetSubchannelResponse* response) override;
+  Status GetSubchannel(
+      ServerContext* unused,
+      const channelz::v1::GetSubchannelRequest* request,
+      channelz::v1::GetSubchannelResponse* response) override;
   // implementation of GetSocket rpc
   Status GetSocket(ServerContext* unused,
                    const channelz::v1::GetSocketRequest* request,

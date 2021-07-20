@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -23,7 +23,8 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 
 static grpc_pollset_set* pollset_set_create(void) {
-  return reinterpret_cast<grpc_pollset_set*>(static_cast<intptr_t>(0xdeafbeef));
+  return reinterpret_cast<grpc_pollset_set*>(
+      static_cast<intptr_t>(0xdeafbeef));
 }
 
 static void pollset_set_destroy(grpc_pollset_set* /*pollset_set*/) {}
@@ -45,4 +46,6 @@ static grpc_pollset_set_vtable vtable = {
     pollset_set_add_pollset,     pollset_set_del_pollset,
     pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
-void grpc_custom_pollset_set_init() { grpc_set_pollset_set_vtable(&vtable); }
+void grpc_custom_pollset_set_init() {
+  grpc_set_pollset_set_vtable(&vtable);
+}

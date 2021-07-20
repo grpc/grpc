@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 #include <grpc/support/port_platform.h>
 
 #include "grpc/event_engine/slice_allocator.h"
@@ -40,14 +40,16 @@ SliceAllocator::SliceAllocator(SliceAllocator&& other) noexcept
   other.resource_user_ = nullptr;
 }
 
-SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) noexcept {
+SliceAllocator& SliceAllocator::operator=(
+    SliceAllocator&& other) noexcept {
   resource_user_ = other.resource_user_;
   other.resource_user_ = nullptr;
   return *this;
 }
 
-absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
-                                      SliceAllocator::AllocateCallback cb) {
+absl::Status SliceAllocator::Allocate(
+    size_t size, SliceBuffer* dest,
+    SliceAllocator::AllocateCallback cb) {
   // TODO(hork): merge the implementation from the uv-ee branch.
   (void)size;
   (void)dest;

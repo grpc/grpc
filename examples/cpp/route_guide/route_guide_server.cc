@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,7 +52,8 @@ using std::chrono::system_clock;
 
 float ConvertToRadians(float num) { return num * 3.1415926 / 180; }
 
-// The formula is based on http://mathforum.org/library/drmath/view/51879.html
+// The formula is based on
+// http://mathforum.org/library/drmath/view/51879.html
 float GetDistance(const Point& start, const Point& end) {
   const float kCoordFactor = 10000000.0;
   float lat_1 = start.latitude() / kCoordFactor;
@@ -64,8 +65,9 @@ float GetDistance(const Point& start, const Point& end) {
   float delta_lat_rad = ConvertToRadians(lat_2 - lat_1);
   float delta_lon_rad = ConvertToRadians(lon_2 - lon_1);
 
-  float a = pow(sin(delta_lat_rad / 2), 2) +
-            cos(lat_rad_1) * cos(lat_rad_2) * pow(sin(delta_lon_rad / 2), 2);
+  float a =
+      pow(sin(delta_lat_rad / 2), 2) +
+      cos(lat_rad_1) * cos(lat_rad_2) * pow(sin(delta_lon_rad / 2), 2);
   float c = 2 * atan2(sqrt(a), sqrt(1 - a));
   int R = 6371000;  // metres
 
@@ -108,14 +110,16 @@ class RouteGuideImpl final : public RouteGuide::Service {
     for (const Feature& f : feature_list_) {
       if (f.location().longitude() >= left &&
           f.location().longitude() <= right &&
-          f.location().latitude() >= bottom && f.location().latitude() <= top) {
+          f.location().latitude() >= bottom &&
+          f.location().latitude() <= top) {
         writer->Write(f);
       }
     }
     return Status::OK;
   }
 
-  Status RecordRoute(ServerContext* context, ServerReader<Point>* reader,
+  Status RecordRoute(ServerContext* context,
+                     ServerReader<Point>* reader,
                      RouteSummary* summary) override {
     Point point;
     int point_count = 0;
@@ -138,15 +142,16 @@ class RouteGuideImpl final : public RouteGuide::Service {
     summary->set_point_count(point_count);
     summary->set_feature_count(feature_count);
     summary->set_distance(static_cast<long>(distance));
-    auto secs =
-        std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time);
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(
+        end_time - start_time);
     summary->set_elapsed_time(secs.count());
 
     return Status::OK;
   }
 
-  Status RouteChat(ServerContext* context,
-                   ServerReaderWriter<RouteNote, RouteNote>* stream) override {
+  Status RouteChat(
+      ServerContext* context,
+      ServerReaderWriter<RouteNote, RouteNote>* stream) override {
     RouteNote note;
     while (stream->Read(&note)) {
       std::unique_lock<std::mutex> lock(mu_);
@@ -173,7 +178,8 @@ void RunServer(const std::string& db_path) {
   RouteGuideImpl service(db_path);
 
   ServerBuilder builder;
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  builder.AddListeningPort(server_address,
+                           grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;

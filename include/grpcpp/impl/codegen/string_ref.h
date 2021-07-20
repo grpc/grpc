@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,7 +34,8 @@ namespace grpc {
 ///
 /// It should be a strict subset of the upcoming std::string_ref.
 ///
-/// \see http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3442.html
+/// \see
+/// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3442.html
 ///
 /// The constexpr is dropped or replaced with const for legacy compiler
 /// compatibility.
@@ -62,7 +63,8 @@ class string_ref {
   string_ref(const char* s) : data_(s), length_(strlen(s)) {}
   string_ref(const char* s, size_t l) : data_(s), length_(l) {}
   /* NOLINTNEXTLINE(google-explicit-constructor) */
-  string_ref(const std::string& s) : data_(s.data()), length_(s.length()) {}
+  string_ref(const std::string& s)
+      : data_(s.data()), length_(s.length()) {}
 
   /// iterators
   const_iterator begin() const { return data_; }
@@ -103,12 +105,14 @@ class string_ref {
   }
 
   bool starts_with(string_ref x) const {
-    return length_ >= x.length_ && (memcmp(data_, x.data_, x.length_) == 0);
+    return length_ >= x.length_ &&
+           (memcmp(data_, x.data_, x.length_) == 0);
   }
 
   bool ends_with(string_ref x) const {
     return length_ >= x.length_ &&
-           (memcmp(data_ + (length_ - x.length_), x.data_, x.length_) == 0);
+           (memcmp(data_ + (length_ - x.length_), x.data_, x.length_) ==
+            0);
   }
 
   size_t find(string_ref s) const {
@@ -133,14 +137,27 @@ class string_ref {
 };
 
 /// Comparison operators
-inline bool operator==(string_ref x, string_ref y) { return x.compare(y) == 0; }
-inline bool operator!=(string_ref x, string_ref y) { return x.compare(y) != 0; }
-inline bool operator<(string_ref x, string_ref y) { return x.compare(y) < 0; }
-inline bool operator<=(string_ref x, string_ref y) { return x.compare(y) <= 0; }
-inline bool operator>(string_ref x, string_ref y) { return x.compare(y) > 0; }
-inline bool operator>=(string_ref x, string_ref y) { return x.compare(y) >= 0; }
+inline bool operator==(string_ref x, string_ref y) {
+  return x.compare(y) == 0;
+}
+inline bool operator!=(string_ref x, string_ref y) {
+  return x.compare(y) != 0;
+}
+inline bool operator<(string_ref x, string_ref y) {
+  return x.compare(y) < 0;
+}
+inline bool operator<=(string_ref x, string_ref y) {
+  return x.compare(y) <= 0;
+}
+inline bool operator>(string_ref x, string_ref y) {
+  return x.compare(y) > 0;
+}
+inline bool operator>=(string_ref x, string_ref y) {
+  return x.compare(y) >= 0;
+}
 
-inline std::ostream& operator<<(std::ostream& out, const string_ref& string) {
+inline std::ostream& operator<<(std::ostream& out,
+                                const string_ref& string) {
   return out << std::string(string.begin(), string.end());
 }
 

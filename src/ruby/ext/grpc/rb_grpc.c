@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -69,9 +69,10 @@ VALUE grpc_rb_cannot_alloc(VALUE cls) {
 
 /* Init func that fails by raising an exception. */
 VALUE grpc_rb_cannot_init(VALUE self) {
-  rb_raise(rb_eTypeError,
-           "initialization of %s only allowed from the gRPC native layer",
-           rb_obj_classname(self));
+  rb_raise(
+      rb_eTypeError,
+      "initialization of %s only allowed from the gRPC native layer",
+      rb_obj_classname(self));
   return Qnil;
 }
 
@@ -90,28 +91,30 @@ static ID id_tv_nsec;
 /**
  * grpc_rb_time_timeval creates a timeval from a ruby time object.
  *
- * This func is copied from ruby source, MRI/source/time.c, which is published
- * under the same license as the ruby.h, on which the entire extensions is
- * based.
+ * This func is copied from ruby source, MRI/source/time.c, which is
+ * published under the same license as the ruby.h, on which the entire
+ * extensions is based.
  */
 gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   gpr_timespec t;
   gpr_timespec* time_const;
   const char* tstr = interval ? "time interval" : "time";
-  const char* want = " want <secs from epoch>|<Time>|<GRPC::TimeConst.*>";
+  const char* want =
+      " want <secs from epoch>|<Time>|<GRPC::TimeConst.*>";
 
   t.clock_type = GPR_CLOCK_REALTIME;
   switch (TYPE(time)) {
     case T_DATA:
       if (CLASS_OF(time) == grpc_rb_cTimeVal) {
-        TypedData_Get_Struct(time, gpr_timespec, &grpc_rb_timespec_data_type,
-                             time_const);
+        TypedData_Get_Struct(time, gpr_timespec,
+                             &grpc_rb_timespec_data_type, time_const);
         t = *time_const;
       } else if (CLASS_OF(time) == rb_cTime) {
         t.tv_sec = NUM2INT(rb_funcall(time, id_tv_sec, 0));
         t.tv_nsec = NUM2INT(rb_funcall(time, id_tv_nsec, 0));
       } else {
-        rb_raise(rb_eTypeError, "bad input: (%s)->c_timeval, got <%s>,%s", tstr,
+        rb_raise(rb_eTypeError,
+                 "bad input: (%s)->c_timeval, got <%s>,%s", tstr,
                  rb_obj_classname(time), want);
       }
       break;
@@ -136,7 +139,8 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
         }
         t.tv_sec = (int64_t)f;
         if (f != t.tv_sec) {
-          rb_raise(rb_eRangeError, "%f out of Time range", RFLOAT_VALUE(time));
+          rb_raise(rb_eRangeError, "%f out of Time range",
+                   RFLOAT_VALUE(time));
         }
         t.tv_nsec = (int)(d * 1e9 + 0.5);
       }
@@ -150,8 +154,8 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
       break;
 
     default:
-      rb_raise(rb_eTypeError, "bad input: (%s)->c_timeval, got <%s>,%s", tstr,
-               rb_obj_classname(time), want);
+      rb_raise(rb_eTypeError, "bad input: (%s)->c_timeval, got <%s>,%s",
+               tstr, rb_obj_classname(time), want);
       break;
   }
   return t;
@@ -191,7 +195,8 @@ static gpr_timespec zero_realtime;
 static gpr_timespec inf_future_realtime;
 static gpr_timespec inf_past_realtime;
 
-/* Adds a module with constants that map to gpr's static timeval structs. */
+/* Adds a module with constants that map to gpr's static timeval
+ * structs. */
 static void Init_grpc_time_consts() {
   VALUE grpc_rb_mTimeConsts =
       rb_define_module_under(grpc_rb_mGrpcCore, "TimeConsts");
@@ -200,20 +205,22 @@ static void Init_grpc_time_consts() {
   zero_realtime = gpr_time_0(GPR_CLOCK_REALTIME);
   inf_future_realtime = gpr_inf_future(GPR_CLOCK_REALTIME);
   inf_past_realtime = gpr_inf_past(GPR_CLOCK_REALTIME);
-  rb_define_const(
-      grpc_rb_mTimeConsts, "ZERO",
-      TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void*)&zero_realtime));
-  rb_define_const(
-      grpc_rb_mTimeConsts, "INFINITE_FUTURE",
-      TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void*)&inf_future_realtime));
-  rb_define_const(
-      grpc_rb_mTimeConsts, "INFINITE_PAST",
-      TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void*)&inf_past_realtime));
-  rb_define_method(grpc_rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
-  rb_define_method(grpc_rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
+  rb_define_const(grpc_rb_mTimeConsts, "ZERO",
+                  TypedData_Wrap_Struct(grpc_rb_cTimeVal,
+                                        &grpc_rb_timespec_data_type,
+                                        (void*)&zero_realtime));
+  rb_define_const(grpc_rb_mTimeConsts, "INFINITE_FUTURE",
+                  TypedData_Wrap_Struct(grpc_rb_cTimeVal,
+                                        &grpc_rb_timespec_data_type,
+                                        (void*)&inf_future_realtime));
+  rb_define_const(grpc_rb_mTimeConsts, "INFINITE_PAST",
+                  TypedData_Wrap_Struct(grpc_rb_cTimeVal,
+                                        &grpc_rb_timespec_data_type,
+                                        (void*)&inf_past_realtime));
+  rb_define_method(grpc_rb_cTimeVal, "to_time",
+                   grpc_rb_time_val_to_time, 0);
+  rb_define_method(grpc_rb_cTimeVal, "inspect",
+                   grpc_rb_time_val_inspect, 0);
   rb_define_method(grpc_rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);
   id_at = rb_intern("at");
   id_inspect = rb_intern("inspect");
@@ -241,7 +248,8 @@ static bool grpc_ruby_forked_after_init(void) {
 
 /* Initialize the GRPC module structs */
 
-/* grpc_rb_sNewServerRpc is the struct that holds new server rpc details. */
+/* grpc_rb_sNewServerRpc is the struct that holds new server rpc
+ * details. */
 VALUE grpc_rb_sNewServerRpc = Qnil;
 /* grpc_rb_sStatus is the struct that holds status details. */
 VALUE grpc_rb_sStatus = Qnil;
@@ -259,7 +267,8 @@ static gpr_once g_once_init = GPR_ONCE_INIT;
 
 void grpc_ruby_fork_guard() {
   if (grpc_ruby_forked_after_init()) {
-    rb_raise(rb_eRuntimeError, "grpc cannot be used before and after forking");
+    rb_raise(rb_eRuntimeError,
+             "grpc cannot be used before and after forking");
   }
 }
 
@@ -269,8 +278,9 @@ static int bg_thread_init_done = 0;
 static void grpc_ruby_init_threads() {
   // Avoid calling into ruby library (when creating threads here)
   // in gpr_once_init. In general, it appears to be unsafe to call
-  // into the ruby library while holding a non-ruby mutex, because a gil yield
-  // could end up trying to lock onto that same mutex and deadlocking.
+  // into the ruby library while holding a non-ruby mutex, because a gil
+  // yield could end up trying to lock onto that same mutex and
+  // deadlocking.
   rb_mutex_lock(bg_thread_init_rb_mu);
   if (!bg_thread_init_done) {
     grpc_rb_event_queue_thread_start();
@@ -288,22 +298,24 @@ void grpc_ruby_init() {
   grpc_ruby_init_threads();
   // (only gpr_log after logging has been initialized)
   gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: grpc_ruby_init - prev g_grpc_ruby_init_count:%" PRId64,
+          "GRPC_RUBY: grpc_ruby_init - prev "
+          "g_grpc_ruby_init_count:%" PRId64,
           g_grpc_ruby_init_count++);
 }
 
 void grpc_ruby_shutdown() {
   GPR_ASSERT(g_grpc_ruby_init_count > 0);
   if (!grpc_ruby_forked_after_init()) grpc_shutdown();
-  gpr_log(
-      GPR_DEBUG,
-      "GRPC_RUBY: grpc_ruby_shutdown - prev g_grpc_ruby_init_count:%" PRId64,
-      g_grpc_ruby_init_count--);
+  gpr_log(GPR_DEBUG,
+          "GRPC_RUBY: grpc_ruby_shutdown - prev "
+          "g_grpc_ruby_init_count:%" PRId64,
+          g_grpc_ruby_init_count--);
 }
 
 void Init_grpc_c() {
   if (!grpc_rb_load_core()) {
-    rb_raise(rb_eLoadError, "Couldn't find or load gRPC's dynamic C core");
+    rb_raise(rb_eLoadError,
+             "Couldn't find or load gRPC's dynamic C core");
     return;
   }
 
@@ -312,8 +324,9 @@ void Init_grpc_c() {
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
-  grpc_rb_sNewServerRpc = rb_struct_define(
-      "NewServerRpc", "method", "host", "deadline", "metadata", "call", NULL);
+  grpc_rb_sNewServerRpc =
+      rb_struct_define("NewServerRpc", "method", "host", "deadline",
+                       "metadata", "call", NULL);
   grpc_rb_sStatus = rb_const_get(rb_cStruct, rb_intern("Status"));
   sym_code = ID2SYM(rb_intern("code"));
   sym_details = ID2SYM(rb_intern("details"));

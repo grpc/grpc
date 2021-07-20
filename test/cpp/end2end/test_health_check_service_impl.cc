@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,8 +57,9 @@ Status HealthCheckServiceImpl::Watch(
         last_state = response.status();
       }
     }
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                 gpr_time_from_millis(1000, GPR_TIMESPAN)));
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_millis(1000, GPR_TIMESPAN)));
   }
   return Status::OK;
 }
@@ -73,12 +74,14 @@ void HealthCheckServiceImpl::SetStatus(
   status_map_[service_name] = status;
 }
 
-void HealthCheckServiceImpl::SetAll(HealthCheckResponse::ServingStatus status) {
+void HealthCheckServiceImpl::SetAll(
+    HealthCheckResponse::ServingStatus status) {
   std::lock_guard<std::mutex> lock(mu_);
   if (shutdown_) {
     return;
   }
-  for (auto iter = status_map_.begin(); iter != status_map_.end(); ++iter) {
+  for (auto iter = status_map_.begin(); iter != status_map_.end();
+       ++iter) {
     iter->second = status;
   }
 }
@@ -89,7 +92,8 @@ void HealthCheckServiceImpl::Shutdown() {
     return;
   }
   shutdown_ = true;
-  for (auto iter = status_map_.begin(); iter != status_map_.end(); ++iter) {
+  for (auto iter = status_map_.begin(); iter != status_map_.end();
+       ++iter) {
     iter->second = HealthCheckResponse::NOT_SERVING;
   }
 }

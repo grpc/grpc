@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,15 +30,15 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata.h"
 
-grpc_channel* grpc_channel_create(const char* target,
-                                  const grpc_channel_args* args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport* optional_transport,
-                                  grpc_resource_user* resource_user = nullptr,
-                                  grpc_error_handle* error = nullptr);
+grpc_channel* grpc_channel_create(
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_stack_type channel_stack_type,
+    grpc_transport* optional_transport,
+    grpc_resource_user* resource_user = nullptr,
+    grpc_error_handle* error = nullptr);
 
-/** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
- * is safe to use from within core. */
+/** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and
+ * so is safe to use from within core. */
 void grpc_channel_destroy_internal(grpc_channel* channel);
 
 grpc_channel* grpc_channel_create_with_builder(
@@ -47,32 +47,37 @@ grpc_channel* grpc_channel_create_with_builder(
     grpc_error_handle* error = nullptr);
 
 /** Create a call given a grpc_channel, in order to call \a method.
-    Progress is tied to activity on \a pollset_set. The returned call object is
-    meant to be used with \a grpc_call_start_batch_and_execute, which relies on
-    callbacks to signal completions. \a method and \a host need
-    only live through the invocation of this function. If \a parent_call is
-    non-NULL, it must be a server-side call. It will be used to propagate
-    properties from the server call to this new client call, depending on the
-    value of \a propagation_mask (see propagation_bits.h for possible values) */
+    Progress is tied to activity on \a pollset_set. The returned call
+   object is meant to be used with \a grpc_call_start_batch_and_execute,
+   which relies on callbacks to signal completions. \a method and \a
+   host need only live through the invocation of this function. If \a
+   parent_call is non-NULL, it must be a server-side call. It will be
+   used to propagate properties from the server call to this new client
+   call, depending on the value of \a propagation_mask (see
+   propagation_bits.h for possible values) */
 grpc_call* grpc_channel_create_pollset_set_call(
-    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_pollset_set* pollset_set, const grpc_slice& method,
-    const grpc_slice* host, grpc_millis deadline, void* reserved);
+    grpc_channel* channel, grpc_call* parent_call,
+    uint32_t propagation_mask, grpc_pollset_set* pollset_set,
+    const grpc_slice& method, const grpc_slice* host,
+    grpc_millis deadline, void* reserved);
 
-/** Get a (borrowed) pointer to this channels underlying channel stack */
-grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
+/** Get a (borrowed) pointer to this channels underlying channel stack
+ */
+grpc_channel_stack* grpc_channel_get_channel_stack(
+    grpc_channel* channel);
 
 grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
     grpc_channel* channel);
 
 size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
-void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
+void grpc_channel_update_call_size_estimate(grpc_channel* channel,
+                                            size_t size);
 
 namespace grpc_core {
 
 struct RegisteredCall {
-  // The method and host are kept as part of this struct just to manage their
-  // lifetime since they must outlive the mdelem contents.
+  // The method and host are kept as part of this struct just to manage
+  // their lifetime since they must outlive the mdelem contents.
   std::string method;
   std::string host;
 
@@ -80,7 +85,8 @@ struct RegisteredCall {
   grpc_mdelem authority;
 
   explicit RegisteredCall(const char* method_arg, const char* host_arg);
-  // TODO(vjpai): delete copy constructor once all supported compilers allow
+  // TODO(vjpai): delete copy constructor once all supported compilers
+  // allow
   //              std::map value_type to be MoveConstructible.
   RegisteredCall(const RegisteredCall& other);
   RegisteredCall(RegisteredCall&& other) noexcept;
@@ -93,8 +99,9 @@ struct RegisteredCall {
 struct CallRegistrationTable {
   grpc_core::Mutex mu;
   // The map key should be owned strings rather than unowned char*'s to
-  // guarantee that it outlives calls on the core channel (which may outlast the
-  // C++ or other wrapped language Channel that registered these calls).
+  // guarantee that it outlives calls on the core channel (which may
+  // outlast the C++ or other wrapped language Channel that registered
+  // these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall> map
       ABSL_GUARDED_BY(mu);
   int method_registration_attempts ABSL_GUARDED_BY(mu) = 0;
@@ -109,14 +116,17 @@ struct grpc_channel {
   gpr_atm call_size_estimate;
   grpc_resource_user* resource_user;
 
-  // TODO(vjpai): Once the grpc_channel is allocated via new rather than malloc,
-  //              expand the members of the CallRegistrationTable directly into
-  //              the grpc_channel. For now it is kept separate so that all the
-  //              manual constructing can be done with a single call rather than
-  //              a separate manual construction for each field.
+  // TODO(vjpai): Once the grpc_channel is allocated via new rather than
+  // malloc,
+  //              expand the members of the CallRegistrationTable
+  //              directly into the grpc_channel. For now it is kept
+  //              separate so that all the manual constructing can be
+  //              done with a single call rather than a separate manual
+  //              construction for each field.
   grpc_core::ManualConstructor<grpc_core::CallRegistrationTable>
       registration_table;
-  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
+  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode>
+      channelz_node;
 
   char* target;
 };
@@ -155,7 +165,8 @@ inline void grpc_channel_internal_ref(grpc_channel* channel) {
   GRPC_CHANNEL_STACK_REF(CHANNEL_STACK_FROM_CHANNEL(channel), "unused");
 }
 inline void grpc_channel_internal_unref(grpc_channel* channel) {
-  GRPC_CHANNEL_STACK_UNREF(CHANNEL_STACK_FROM_CHANNEL(channel), "unused");
+  GRPC_CHANNEL_STACK_UNREF(CHANNEL_STACK_FROM_CHANNEL(channel),
+                           "unused");
 }
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel)
@@ -167,8 +178,9 @@ inline void grpc_channel_internal_unref(grpc_channel* channel) {
 grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel);
 
-// Ping the channels peer (load balanced channels will select one sub-channel to
-// ping); if the channel is not connected, posts a failed.
+// Ping the channels peer (load balanced channels will select one
+// sub-channel to ping); if the channel is not connected, posts a
+// failed.
 void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
                        void* tag, void* reserved);
 

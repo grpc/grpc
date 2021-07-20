@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,14 +29,16 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
+static void test(const uint8_t* data, size_t size,
+                 const uint8_t* dict) {
   grpc_init();
-  grpc_slice input =
-      grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size);
+  grpc_slice input = grpc_slice_from_copied_buffer(
+      reinterpret_cast<const char*>(data), size);
   grpc_slice output = grpc_percent_encode_slice(input, dict);
   grpc_slice decoded_output;
   // encoder must always produce decodable output
-  GPR_ASSERT(grpc_strict_percent_decode_slice(output, dict, &decoded_output));
+  GPR_ASSERT(
+      grpc_strict_percent_decode_slice(output, dict, &decoded_output));
   grpc_slice permissive_decoded_output =
       grpc_permissive_percent_decode_slice(output);
   // and decoded output must always match the input
@@ -49,7 +51,8 @@ static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
   grpc_shutdown();
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data,
+                                      size_t size) {
   test(data, size, grpc_url_percent_encoding_unreserved_bytes);
   test(data, size, grpc_compatible_percent_encoding_unreserved_bytes);
   return 0;

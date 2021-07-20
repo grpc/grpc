@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,9 +28,10 @@
 namespace grpc {
 namespace load_reporter {
 
-// The plugin that registers and starts load reporting service when starting a
-// server.
-class LoadReportingServiceServerBuilderPlugin : public ServerBuilderPlugin {
+// The plugin that registers and starts load reporting service when
+// starting a server.
+class LoadReportingServiceServerBuilderPlugin
+    : public ServerBuilderPlugin {
  public:
   ~LoadReportingServiceServerBuilderPlugin() override = default;
   std::string name() override { return "load_reporting_service"; }
@@ -44,8 +45,10 @@ class LoadReportingServiceServerBuilderPlugin : public ServerBuilderPlugin {
   // Starts the load reporter service.
   void Finish(ServerInitializer* si) override;
 
-  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {}
-  void UpdateChannelArguments(grpc::ChannelArguments* /*args*/) override {}
+  void ChangeArguments(const std::string& /*name*/,
+                       void* /*value*/) override {}
+  void UpdateChannelArguments(
+      grpc::ChannelArguments* /*args*/) override {}
   bool has_sync_methods() const override;
   bool has_async_methods() const override;
 

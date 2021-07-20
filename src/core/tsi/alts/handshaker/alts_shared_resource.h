@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -44,7 +44,8 @@ typedef struct alts_shared_resource_dedicated {
 /* This method returns the address of alts_shared_resource_dedicated
  * object shared by all TSI handshakes.
  */
-alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(void);
+alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(
+    void);
 
 /**
  * This method destroys the alts_shared_resource_dedicated object
@@ -61,10 +62,11 @@ void grpc_alts_shared_resource_dedicated_shutdown();
 void grpc_alts_shared_resource_dedicated_init();
 
 /**
- * This method populates various fields of the alts_shared_resource_dedicated
- * object shared by all TSI handshakes and start the dedicated thread.
- * The API will be invoked by the caller in a lazy manner. That is,
- * it will get invoked when ALTS TSI handshake occurs for the first time.
+ * This method populates various fields of the
+ * alts_shared_resource_dedicated object shared by all TSI handshakes
+ * and start the dedicated thread. The API will be invoked by the caller
+ * in a lazy manner. That is, it will get invoked when ALTS TSI
+ * handshake occurs for the first time.
  */
 void grpc_alts_shared_resource_dedicated_start(
     const char* handshaker_service_url);

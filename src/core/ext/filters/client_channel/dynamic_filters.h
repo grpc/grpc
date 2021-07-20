@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_DYNAMIC_FILTERS_H
@@ -49,18 +49,20 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
     Call(Args args, grpc_error_handle* error);
 
     // Continues processing a transport stream op batch.
-    void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
+    void StartTransportStreamOpBatch(
+        grpc_transport_stream_op_batch* batch);
 
-    // Sets the 'then_schedule_closure' argument for call stack destruction.
-    // Must be called once per call.
+    // Sets the 'then_schedule_closure' argument for call stack
+    // destruction. Must be called once per call.
     void SetAfterCallStackDestroy(grpc_closure* closure);
 
     // Interface of RefCounted<>.
     RefCountedPtr<Call> Ref() GRPC_MUST_USE_RESULT;
     RefCountedPtr<Call> Ref(const DebugLocation& location,
                             const char* reason) GRPC_MUST_USE_RESULT;
-    // When refcount drops to 0, destroys itself and the associated call stack,
-    // but does NOT free the memory because it's in the call arena.
+    // When refcount drops to 0, destroys itself and the associated call
+    // stack, but does NOT free the memory because it's in the call
+    // arena.
     void Unref();
     void Unref(const DebugLocation& location, const char* reason);
 
@@ -71,7 +73,8 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
 
     // Interface of RefCounted<>.
     void IncrementRefCount();
-    void IncrementRefCount(const DebugLocation& location, const char* reason);
+    void IncrementRefCount(const DebugLocation& location,
+                           const char* reason);
 
     static void Destroy(void* arg, grpc_error_handle error);
 
@@ -88,7 +91,8 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
 
   ~DynamicFilters() override;
 
-  RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
+  RefCountedPtr<Call> CreateCall(Call::Args args,
+                                 grpc_error_handle* error);
 
  private:
   grpc_channel_stack* channel_stack_;

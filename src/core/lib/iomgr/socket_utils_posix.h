@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,8 +41,8 @@
 #endif /* ifdef GRPC_LINUX_ERRQUEUE */
 
 /* a wrapper for accept or accept4 */
-int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
-                 int cloexec);
+int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr,
+                 int nonblock, int cloexec);
 
 /* set a socket to use zerocopy */
 grpc_error_handle grpc_set_socket_zerocopy(int fd);
@@ -66,7 +66,8 @@ grpc_error_handle grpc_set_socket_low_latency(int fd, int low_latency);
 grpc_error_handle grpc_set_socket_reuse_port(int fd, int reuse);
 
 /* Configure the default values for TCP_USER_TIMEOUT */
-void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client);
+void config_default_tcp_user_timeout(bool enable, int timeout,
+                                     bool is_client);
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
@@ -75,10 +76,11 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
 
-   This is more restrictive than checking for socket(AF_INET6) to succeed,
-   because Linux with "net.ipv6.conf.all.disable_ipv6 = 1" is able to create
-   and bind IPv6 sockets, but cannot connect to a getsockname() of [::]:port
-   without a valid loopback interface.  Rather than expose this half-broken
+   This is more restrictive than checking for socket(AF_INET6) to
+   succeed, because Linux with "net.ipv6.conf.all.disable_ipv6 = 1" is
+   able to create and bind IPv6 sockets, but cannot connect to a
+   getsockname() of [::]:port without a valid loopback interface. Rather
+   than expose this half-broken
    state to library users, we turn off IPv6 sockets. */
 int grpc_ipv6_loopback_available(void);
 
@@ -101,18 +103,20 @@ grpc_error_handle grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
 grpc_error_handle grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 
 /* Tries to set the socket using a grpc_socket_mutator */
-grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
-                                               grpc_socket_mutator* mutator);
+grpc_error_handle grpc_set_socket_with_mutator(
+    int fd, grpc_fd_usage usage, grpc_socket_mutator* mutator);
 
-/* Extracts the first socket mutator from args if any and applies on the fd. */
+/* Extracts the first socket mutator from args if any and applies on the
+ * fd. */
 grpc_error_handle grpc_apply_socket_mutator_in_args(
     int fd, grpc_fd_usage usage, const grpc_channel_args* args);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
-   Currently, this information is only used when a socket is first created, but
-   in the future we may wish to store it alongside the fd.  This would let calls
-   like sendto() know which family to use without asking the kernel first. */
+   Currently, this information is only used when a socket is first
+   created, but in the future we may wish to store it alongside the fd.
+   This would let calls like sendto() know which family to use without
+   asking the kernel first. */
 typedef enum grpc_dualstack_mode {
   /* Uninitialized, or a non-IP socket. */
   GRPC_DSMODE_NONE,
@@ -132,32 +136,33 @@ int grpc_set_socket_dualstack(int fd);
 
 /* Creates a new socket for connecting to (or listening on) an address.
 
-   If addr is AF_INET6, this creates an IPv6 socket first.  If that fails,
-   and addr is within ::ffff:0.0.0.0/96, then it automatically falls back to
-   an IPv4 socket.
+   If addr is AF_INET6, this creates an IPv6 socket first.  If that
+   fails, and addr is within ::ffff:0.0.0.0/96, then it automatically
+   falls back to an IPv4 socket.
 
-   If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
-   calling socket() directly.
+   If addr is AF_INET, AF_UNIX, or anything else, then this is similar
+   to calling socket() directly.
 
-   Returns an fd on success, otherwise returns -1 with errno set to the result
-   of a failed socket() call.
+   Returns an fd on success, otherwise returns -1 with errno set to the
+   result of a failed socket() call.
 
-   The *dsmode output indicates which address family was actually created.
-   The recommended way to use this is:
+   The *dsmode output indicates which address family was actually
+   created. The recommended way to use this is:
    - First convert to IPv6 using grpc_sockaddr_to_v4mapped().
    - Create the socket.
-   - If *dsmode is IPV4, use grpc_sockaddr_is_v4mapped() to convert back to
-     IPv4, so that bind() or connect() see the correct family.
-   Also, it's important to distinguish between DUALSTACK and IPV6 when
+   - If *dsmode is IPV4, use grpc_sockaddr_is_v4mapped() to convert back
+   to IPv4, so that bind() or connect() see the correct family. Also,
+   it's important to distinguish between DUALSTACK and IPV6 when
    listening on the [::] wildcard address. */
 grpc_error_handle grpc_create_dualstack_socket(
     const grpc_resolved_address* addr, int type, int protocol,
     grpc_dualstack_mode* dsmode, int* newfd);
 
-/* Same as grpc_create_dualstack_socket(), but use the given socket factory (if
-   non-null) to create the socket, rather than calling socket() directly. */
+/* Same as grpc_create_dualstack_socket(), but use the given socket
+   factory (if non-null) to create the socket, rather than calling
+   socket() directly. */
 grpc_error_handle grpc_create_dualstack_socket_using_factory(
-    grpc_socket_factory* factory, const grpc_resolved_address* addr, int type,
-    int protocol, grpc_dualstack_mode* dsmode, int* newfd);
+    grpc_socket_factory* factory, const grpc_resolved_address* addr,
+    int type, int protocol, grpc_dualstack_mode* dsmode, int* newfd);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H */

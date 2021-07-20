@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,12 +30,14 @@
 #include "src/core/lib/iomgr/event_engine/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
 
-static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
+static void exec_ctx_run(grpc_closure* closure,
+                         grpc_error_handle error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (grpc_trace_closure.enabled()) {
-    gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
-            closure, closure->file_created, closure->line_created,
+    gpr_log(GPR_DEBUG,
+            "running closure %p: created [%s:%d]: %s [%s:%d]", closure,
+            closure->file_created, closure->line_created,
             closure->run ? "run" : "scheduled", closure->file_initiated,
             closure->line_initiated);
   }
@@ -49,13 +51,15 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void exec_ctx_sched(grpc_closure* closure, grpc_error_handle error) {
+static void exec_ctx_sched(grpc_closure* closure,
+                           grpc_error_handle error) {
 #if defined(GRPC_USE_EVENT_ENGINE) && \
     defined(GRPC_EVENT_ENGINE_REPLACE_EXEC_CTX)
-  grpc_iomgr_event_engine()->Run(GrpcClosureToCallback(closure, error), {});
+  grpc_iomgr_event_engine()->Run(GrpcClosureToCallback(closure, error),
+                                 {});
 #else
-  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
-                           error);
+  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(),
+                           closure, error);
 #endif
 }
 
@@ -94,8 +98,8 @@ static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
                                      gpr_clock_type clock_type) {
-  // special-case infinities as grpc_millis can be 32bit on some platforms
-  // while gpr_time_from_millis always takes an int64_t.
+  // special-case infinities as grpc_millis can be 32bit on some
+  // platforms while gpr_time_from_millis always takes an int64_t.
   if (millis == GRPC_MILLIS_INF_FUTURE) {
     return gpr_inf_future(clock_type);
   }
@@ -120,12 +124,14 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
       gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
-grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
+grpc_millis grpc_cycle_counter_to_millis_round_down(
+    gpr_cycle_counter cycles) {
   return timespan_to_millis_round_down(
       gpr_cycle_counter_sub(cycles, g_start_cycle));
 }
 
-grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
+grpc_millis grpc_cycle_counter_to_millis_round_up(
+    gpr_cycle_counter cycles) {
   return timespan_to_millis_round_up(
       gpr_cycle_counter_sub(cycles, g_start_cycle));
 }
@@ -141,9 +147,9 @@ void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
 }
 
 void ExecCtx::GlobalInit(void) {
-  // gpr_now(GPR_CLOCK_MONOTONIC) incurs a syscall. We don't actually know the
-  // exact cycle the time was captured, so we use the average of cycles before
-  // and after the syscall as the starting cycle.
+  // gpr_now(GPR_CLOCK_MONOTONIC) incurs a syscall. We don't actually
+  // know the exact cycle the time was captured, so we use the average
+  // of cycles before and after the syscall as the starting cycle.
   const gpr_cycle_counter cycle_before = gpr_get_cycle_counter();
   g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   const gpr_cycle_counter cycle_after = gpr_get_cycle_counter();
@@ -190,12 +196,14 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   }
 #ifndef NDEBUG
   if (closure->scheduled) {
-    gpr_log(GPR_ERROR,
-            "Closure already scheduled. (closure: %p, created: [%s:%d], "
-            "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
-            closure, closure->file_created, closure->line_created,
-            closure->file_initiated, closure->line_initiated, location.file(),
-            location.line());
+    gpr_log(
+        GPR_ERROR,
+        "Closure already scheduled. (closure: %p, created: [%s:%d], "
+        "previously scheduled at: [%s: %d], newly scheduled at [%s: "
+        "%d]",
+        closure, closure->file_created, closure->line_created,
+        closure->file_initiated, closure->line_initiated,
+        location.file(), location.line());
     abort();
   }
   closure->scheduled = true;
@@ -207,18 +215,21 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   exec_ctx_sched(closure, error);
 }
 
-void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
+void ExecCtx::RunList(const DebugLocation& location,
+                      grpc_closure_list* list) {
   (void)location;
   grpc_closure* c = list->head;
   while (c != nullptr) {
     grpc_closure* next = c->next_data.next;
 #ifndef NDEBUG
     if (c->scheduled) {
-      gpr_log(GPR_ERROR,
-              "Closure already scheduled. (closure: %p, created: [%s:%d], "
-              "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
-              c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated, location.file(), location.line());
+      gpr_log(
+          GPR_ERROR,
+          "Closure already scheduled. (closure: %p, created: [%s:%d], "
+          "previously scheduled at: [%s: %d], newly scheduled at "
+          "[%s:%d]",
+          c, c->file_created, c->line_created, c->file_initiated,
+          c->line_initiated, location.file(), location.line());
       abort();
     }
     c->scheduled = true;

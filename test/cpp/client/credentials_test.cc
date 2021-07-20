@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -54,7 +54,8 @@ static void tls_server_authorization_check_callback(
     grpc_tls_server_authorization_check_arg* arg) {
   GPR_ASSERT(arg != nullptr);
   std::string cb_user_data = "cb_user_data";
-  arg->cb_user_data = static_cast<void*>(gpr_strdup(cb_user_data.c_str()));
+  arg->cb_user_data =
+      static_cast<void*>(gpr_strdup(cb_user_data.c_str()));
   arg->success = 1;
   arg->target_name = gpr_strdup("callback_target_name");
   arg->peer_cert = gpr_strdup("callback_peer_cert");
@@ -67,7 +68,8 @@ class TestTlsServerAuthorizationCheck
   int Schedule(TlsServerAuthorizationCheckArg* arg) override {
     GPR_ASSERT(arg != nullptr);
     std::string cb_user_data = "cb_user_data";
-    arg->set_cb_user_data(static_cast<void*>(gpr_strdup(cb_user_data.c_str())));
+    arg->set_cb_user_data(
+        static_cast<void*>(gpr_strdup(cb_user_data.c_str())));
     arg->set_success(1);
     arg->set_target_name("sync_target_name");
     arg->set_peer_cert("sync_peer_cert");
@@ -89,7 +91,8 @@ namespace testing {
 namespace {
 
 TEST(CredentialsTest, InvalidGoogleRefreshToken) {
-  std::shared_ptr<CallCredentials> bad1 = GoogleRefreshTokenCredentials("");
+  std::shared_ptr<CallCredentials> bad1 =
+      GoogleRefreshTokenCredentials("");
   EXPECT_EQ(static_cast<CallCredentials*>(nullptr), bad1.get());
 }
 
@@ -100,47 +103,64 @@ TEST(CredentialsTest, DefaultCredentials) {
 TEST(CredentialsTest, ExternalAccountCredentials) {
   // url credentials
   std::string url_options_string(
-      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
-      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "{\"type\":\"external_account\",\"audience\":\"audience\","
+      "\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_"
+      "impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":"
+      "\"https://"
       "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
-      "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
-      "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
-      "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
+      "token_info\",\"credential_source\":{\"url\":\"https://"
+      "foo.com:5555/"
+      "generate_subject_token_format_json\",\"headers\":{\"Metadata-"
+      "Flavor\":"
+      "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_"
+      "name\":"
       "\"access_token\"}},\"quota_project_id\":\"quota_"
-      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":"
+      "\"client_"
       "secret\"}");
-  auto url_creds = grpc::ExternalAccountCredentials(url_options_string,
-                                                    {"scope1", "scope2"});
+  auto url_creds = grpc::ExternalAccountCredentials(
+      url_options_string, {"scope1", "scope2"});
   EXPECT_TRUE(url_creds != nullptr);
   // file credentials
   std::string file_options_string(
-      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
-      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "{\"type\":\"external_account\",\"audience\":\"audience\","
+      "\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_"
+      "impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":"
+      "\"https://"
       "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
-      "token_info\",\"credential_source\":{\"file\":\"credentials_file_path\"},"
+      "token_info\",\"credential_source\":{\"file\":\"credentials_file_"
+      "path\"},"
       "\"quota_project_id\":\"quota_"
-      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":"
+      "\"client_"
       "secret\"}");
-  auto file_creds = grpc::ExternalAccountCredentials(file_options_string,
-                                                     {"scope1", "scope2"});
+  auto file_creds = grpc::ExternalAccountCredentials(
+      file_options_string, {"scope1", "scope2"});
   EXPECT_TRUE(file_creds != nullptr);
   // aws credentials
   std::string aws_options_string(
-      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
-      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "{\"type\":\"external_account\",\"audience\":\"audience\","
+      "\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_"
+      "impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":"
+      "\"https://"
       "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
       "token_info\",\"credential_source\":{\"environment_id\":\"aws1\","
-      "\"region_url\":\"https://foo.com:5555/region_url\",\"url\":\"https://"
+      "\"region_url\":\"https://foo.com:5555/"
+      "region_url\",\"url\":\"https://"
       "foo.com:5555/url\",\"regional_cred_verification_url\":\"https://"
       "foo.com:5555/regional_cred_verification_url_{region}\"},"
       "\"quota_project_id\":\"quota_"
-      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":"
+      "\"client_"
       "secret\"}");
-  auto aws_creds = grpc::ExternalAccountCredentials(aws_options_string,
-                                                    {"scope1", "scope2"});
+  auto aws_creds = grpc::ExternalAccountCredentials(
+      aws_options_string, {"scope1", "scope2"});
   EXPECT_TRUE(aws_creds != nullptr);
 }
 
@@ -162,7 +182,8 @@ TEST(CredentialsTest, StsCredentialsOptionsCppToCore) {
   EXPECT_EQ(options.resource, core_opts.resource);
   EXPECT_EQ(options.audience, core_opts.audience);
   EXPECT_EQ(options.scope, core_opts.scope);
-  EXPECT_EQ(options.requested_token_type, core_opts.requested_token_type);
+  EXPECT_EQ(options.requested_token_type,
+            core_opts.requested_token_type);
   EXPECT_EQ(options.subject_token_path, core_opts.subject_token_path);
   EXPECT_EQ(options.subject_token_type, core_opts.subject_token_type);
   EXPECT_EQ(options.actor_token_path, core_opts.actor_token_path);
@@ -183,9 +204,9 @@ TEST(CredentialsTest, StsCredentialsOptionsJson) {
     "actor_token_type": "actor_token_type"
   })";
   grpc::experimental::StsCredentialsOptions options;
-  EXPECT_TRUE(
-      grpc::experimental::StsCredentialsOptionsFromJson(valid_json, &options)
-          .ok());
+  EXPECT_TRUE(grpc::experimental::StsCredentialsOptionsFromJson(
+                  valid_json, &options)
+                  .ok());
   EXPECT_EQ(options.token_exchange_service_uri, "https://foo/exchange");
   EXPECT_EQ(options.resource, "resource");
   EXPECT_EQ(options.audience, "audience");
@@ -218,10 +239,10 @@ TEST(CredentialsTest, StsCredentialsOptionsJson) {
   const char invalid_json[] = R"(
   I'm not a valid JSON.
   )";
-  EXPECT_EQ(
-      grpc::StatusCode::INVALID_ARGUMENT,
-      grpc::experimental::StsCredentialsOptionsFromJson(invalid_json, &options)
-          .error_code());
+  EXPECT_EQ(grpc::StatusCode::INVALID_ARGUMENT,
+            grpc::experimental::StsCredentialsOptionsFromJson(
+                invalid_json, &options)
+                .error_code());
 
   const char invalid_json_missing_subject_token_type[] = R"(
   {
@@ -261,7 +282,8 @@ TEST(CredentialsTest, StsCredentialsOptionsFromEnv) {
   // Unset env and check expected failure.
   gpr_unsetenv("STS_CREDENTIALS");
   grpc::experimental::StsCredentialsOptions options;
-  auto status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
+  auto status =
+      grpc::experimental::StsCredentialsOptionsFromEnv(&options);
   EXPECT_EQ(grpc::StatusCode::NOT_FOUND, status.error_code());
 
   // Set env and check for success.
@@ -334,8 +356,10 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
 
 TEST(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   std::shared_ptr<TestTlsServerAuthorizationCheck>
-      test_server_authorization_check(new TestTlsServerAuthorizationCheck());
-  TlsServerAuthorizationCheckConfig config(test_server_authorization_check);
+      test_server_authorization_check(
+          new TestTlsServerAuthorizationCheck());
+  TlsServerAuthorizationCheckConfig config(
+      test_server_authorization_check);
   grpc_tls_server_authorization_check_arg* c_arg =
       new grpc_tls_server_authorization_check_arg();
   c_arg->error_details = new grpc_tls_error_details();
@@ -375,8 +399,10 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
 
 TEST(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   std::shared_ptr<TestTlsServerAuthorizationCheck>
-      test_server_authorization_check(new TestTlsServerAuthorizationCheck());
-  TlsServerAuthorizationCheckConfig config(test_server_authorization_check);
+      test_server_authorization_check(
+          new TestTlsServerAuthorizationCheck());
+  TlsServerAuthorizationCheckConfig config(
+      test_server_authorization_check);
   grpc_tls_server_authorization_check_arg c_arg;
   c_arg.cb = tls_server_authorization_check_callback;
   c_arg.cb_user_data = nullptr;
@@ -416,7 +442,8 @@ TEST(CredentialsTest, TlsChannelCredentialsWithDefaultRoots) {
           test_server_authorization_check);
   options.set_server_authorization_check_config(
       server_authorization_check_config);
-  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  auto channel_credentials =
+      grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
@@ -426,10 +453,12 @@ TEST(
   experimental::IdentityKeyCertPair key_cert_pair;
   key_cert_pair.private_key = kIdentityCertPrivateKey;
   key_cert_pair.certificate_chain = kIdentityCertContents;
-  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  std::vector<experimental::IdentityKeyCertPair>
+      identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
-  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
-      kRootCertContents, identity_key_cert_pairs);
+  auto certificate_provider =
+      std::make_shared<StaticDataCertificateProvider>(
+          kRootCertContents, identity_key_cert_pairs);
   auto test_server_authorization_check =
       std::make_shared<TestTlsServerAuthorizationCheck>();
   auto server_authorization_check_config =
@@ -444,14 +473,17 @@ TEST(
   options.set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   options.set_server_authorization_check_config(
       server_authorization_check_config);
-  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  auto channel_credentials =
+      grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
-TEST(CredentialsTest,
-     TlsChannelCredentialsWithStaticDataCertificateProviderLoadingRootOnly) {
+TEST(
+    CredentialsTest,
+    TlsChannelCredentialsWithStaticDataCertificateProviderLoadingRootOnly) {
   auto certificate_provider =
-      std::make_shared<StaticDataCertificateProvider>(kRootCertContents);
+      std::make_shared<StaticDataCertificateProvider>(
+          kRootCertContents);
   auto test_server_authorization_check =
       std::make_shared<TestTlsServerAuthorizationCheck>();
   auto server_authorization_check_config =
@@ -466,7 +498,8 @@ TEST(CredentialsTest,
   options.set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   options.set_server_authorization_check_config(
       server_authorization_check_config);
-  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  auto channel_credentials =
+      grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
@@ -476,10 +509,12 @@ TEST(
   experimental::IdentityKeyCertPair key_cert_pair;
   key_cert_pair.private_key = kIdentityCertPrivateKey;
   key_cert_pair.certificate_chain = kIdentityCertContents;
-  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  std::vector<experimental::IdentityKeyCertPair>
+      identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   auto certificate_provider =
-      std::make_shared<StaticDataCertificateProvider>(identity_key_cert_pairs);
+      std::make_shared<StaticDataCertificateProvider>(
+          identity_key_cert_pairs);
   auto test_server_authorization_check =
       std::make_shared<TestTlsServerAuthorizationCheck>();
   auto server_authorization_check_config =
@@ -492,15 +527,17 @@ TEST(
   options.set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   options.set_server_authorization_check_config(
       server_authorization_check_config);
-  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  auto channel_credentials =
+      grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
 TEST(
     CredentialsTest,
     TlsChannelCredentialsWithFileWatcherCertificateProviderLoadingRootAndIdentity) {
-  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
-      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  auto certificate_provider =
+      std::make_shared<FileWatcherCertificateProvider>(
+          SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(certificate_provider);
   options.watch_root_certs();
@@ -515,12 +552,14 @@ TEST(
           test_server_authorization_check);
   options.set_server_authorization_check_config(
       server_authorization_check_config);
-  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  auto channel_credentials =
+      grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
-TEST(CredentialsTest,
-     TlsChannelCredentialsWithFileWatcherCertificateProviderLoadingRootOnly) {
+TEST(
+    CredentialsTest,
+    TlsChannelCredentialsWithFileWatcherCertificateProviderLoadingRootOnly) {
   auto certificate_provider =
       std::make_shared<FileWatcherCertificateProvider>(CA_CERT_PATH, 1);
   grpc::experimental::TlsChannelCredentialsOptions options;
@@ -535,7 +574,8 @@ TEST(CredentialsTest,
           test_server_authorization_check);
   options.set_server_authorization_check_config(
       server_authorization_check_config);
-  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  auto channel_credentials =
+      grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials.get() != nullptr);
 }
 
@@ -552,16 +592,16 @@ TEST(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
 
   EXPECT_EQ(schedule_output, 1);
   EXPECT_EQ(arg->status(), GRPC_STATUS_NOT_FOUND);
-  EXPECT_STREQ(
-      arg->error_details().c_str(),
-      "the interface of the server authorization check config is nullptr");
+  EXPECT_STREQ(arg->error_details().c_str(),
+               "the interface of the server authorization check config "
+               "is nullptr");
 
   arg->set_status(GRPC_STATUS_OK);
   config->Cancel(arg);
   EXPECT_EQ(arg->status(), GRPC_STATUS_NOT_FOUND);
-  EXPECT_STREQ(
-      arg->error_details().c_str(),
-      "the interface of the server authorization check config is nullptr");
+  EXPECT_STREQ(arg->error_details().c_str(),
+               "the interface of the server authorization check config "
+               "is nullptr");
 
   // Cleanup.
   delete c_arg->error_details;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,14 +42,16 @@ bool check_windows_registry_product_name(HKEY root_key,
   const size_t kProductNameBufferSize = 256;
   char const expected_substr[] = "Google";
 
-  // Get the size of the string first to allocate our buffer. This includes
-  // enough space for the trailing NUL character that will be included.
+  // Get the size of the string first to allocate our buffer. This
+  // includes enough space for the trailing NUL character that will be
+  // included.
   DWORD buffer_size{};
   auto rc = ::RegGetValueA(
       root_key, reg_key_path, reg_key_name, RRF_RT_REG_SZ,
-      nullptr,        // We know the type will be REG_SZ.
-      nullptr,        // We're only fetching the size; no buffer given yet.
-      &buffer_size);  // Fetch the size in bytes of the value, if it exists.
+      nullptr,  // We know the type will be REG_SZ.
+      nullptr,  // We're only fetching the size; no buffer given yet.
+      &buffer_size);  // Fetch the size in bytes of the value, if it
+                      // exists.
   if (rc != 0) {
     return false;
   }
@@ -65,7 +67,8 @@ bool check_windows_registry_product_name(HKEY root_key,
       root_key, reg_key_path, reg_key_name, RRF_RT_REG_SZ,
       nullptr,                     // We know the type will be REG_SZ.
       static_cast<void*>(buffer),  // Fetch the string value this time.
-      &buffer_size);  // The string size in bytes, not including trailing NUL.
+      &buffer_size);  // The string size in bytes, not including
+                      // trailing NUL.
   if (rc != 0) {
     return false;
   }

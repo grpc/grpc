@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -49,8 +49,8 @@ struct TestChecker {
 };
 
 static void test_vector(grpc_core::HPackParser* parser,
-                        grpc_slice_split_mode mode, const char* hexstring,
-                        MDVec expect) {
+                        grpc_slice_split_mode mode,
+                        const char* hexstring, MDVec expect) {
   grpc_slice input = parse_hexstring(hexstring);
   grpc_slice* slices;
   size_t nslices;
@@ -95,26 +95,27 @@ static void test_vectors(grpc_slice_split_mode mode) {
                 "74",
                 {std::make_pair("password", "secret")});
     /* D.2.4 */
-    test_vector(&parser, mode, "82", {std::make_pair(":method", "GET")});
+    test_vector(&parser, mode, "82",
+                {std::make_pair(":method", "GET")});
   }
 
   {
     grpc_core::HPackParser parser;
     /* D.3.1 */
-    test_vector(
-        &parser, mode,
-        "8286 8441 0f77 7777 2e65 7861 6d70 6c65"
-        "2e63 6f6d",
-        {std::make_pair(":method", "GET"), std::make_pair(":scheme", "http"),
-         std::make_pair(":path", "/"),
-         std::make_pair(":authority", "www.example.com")});
+    test_vector(&parser, mode,
+                "8286 8441 0f77 7777 2e65 7861 6d70 6c65"
+                "2e63 6f6d",
+                {std::make_pair(":method", "GET"),
+                 std::make_pair(":scheme", "http"),
+                 std::make_pair(":path", "/"),
+                 std::make_pair(":authority", "www.example.com")});
     /* D.3.2 */
-    test_vector(
-        &parser, mode, "8286 84be 5808 6e6f 2d63 6163 6865",
-        {std::make_pair(":method", "GET"), std::make_pair(":scheme", "http"),
-         std::make_pair(":path", "/"),
-         std::make_pair(":authority", "www.example.com"),
-         std::make_pair("cache-control", "no-cache")});
+    test_vector(&parser, mode, "8286 84be 5808 6e6f 2d63 6163 6865",
+                {std::make_pair(":method", "GET"),
+                 std::make_pair(":scheme", "http"),
+                 std::make_pair(":path", "/"),
+                 std::make_pair(":authority", "www.example.com"),
+                 std::make_pair("cache-control", "no-cache")});
     /* D.3.3 */
     test_vector(&parser, mode,
                 "8287 85bf 400a 6375 7374 6f6d 2d6b 6579"
@@ -131,29 +132,29 @@ static void test_vectors(grpc_slice_split_mode mode) {
   {
     grpc_core::HPackParser parser;
     /* D.4.1 */
-    test_vector(
-        &parser, mode,
-        "8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
-        "ff",
-        {std::make_pair(":method", "GET"), std::make_pair(":scheme", "http"),
-         std::make_pair(":path", "/"),
-         std::make_pair(":authority", "www.example.com")});
+    test_vector(&parser, mode,
+                "8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
+                "ff",
+                {std::make_pair(":method", "GET"),
+                 std::make_pair(":scheme", "http"),
+                 std::make_pair(":path", "/"),
+                 std::make_pair(":authority", "www.example.com")});
     /* D.4.2 */
-    test_vector(
-        &parser, mode, "8286 84be 5886 a8eb 1064 9cbf",
-        {std::make_pair(":method", "GET"), std::make_pair(":scheme", "http"),
-         std::make_pair(":path", "/"),
-         std::make_pair(":authority", "www.example.com"),
-         std::make_pair("cache-control", "no-cache")});
+    test_vector(&parser, mode, "8286 84be 5886 a8eb 1064 9cbf",
+                {std::make_pair(":method", "GET"),
+                 std::make_pair(":scheme", "http"),
+                 std::make_pair(":path", "/"),
+                 std::make_pair(":authority", "www.example.com"),
+                 std::make_pair("cache-control", "no-cache")});
     /* D.4.3 */
-    test_vector(
-        &parser, mode,
-        "8287 85bf 4088 25a8 49e9 5ba9 7d7f 8925"
-        "a849 e95b b8e8 b4bf",
-        {std::make_pair(":method", "GET"), std::make_pair(":scheme", "https"),
-         std::make_pair(":path", "/index.html"),
-         std::make_pair(":authority", "www.example.com"),
-         std::make_pair("custom-key", "custom-value")});
+    test_vector(&parser, mode,
+                "8287 85bf 4088 25a8 49e9 5ba9 7d7f 8925"
+                "a849 e95b b8e8 b4bf",
+                {std::make_pair(":method", "GET"),
+                 std::make_pair(":scheme", "https"),
+                 std::make_pair(":path", "/index.html"),
+                 std::make_pair(":authority", "www.example.com"),
+                 std::make_pair("custom-key", "custom-value")});
   }
 
   {
@@ -161,22 +162,24 @@ static void test_vectors(grpc_slice_split_mode mode) {
     grpc_chttp2_hptbl_set_max_bytes(parser.hpack_table(), 256);
     grpc_chttp2_hptbl_set_current_table_size(parser.hpack_table(), 256);
     /* D.5.1 */
-    test_vector(&parser, mode,
-                "4803 3330 3258 0770 7269 7661 7465 611d"
-                "4d6f 6e2c 2032 3120 4f63 7420 3230 3133"
-                "2032 303a 3133 3a32 3120 474d 546e 1768"
-                "7474 7073 3a2f 2f77 7777 2e65 7861 6d70"
-                "6c65 2e63 6f6d",
-                {std::make_pair(":status", "302"),
-                 std::make_pair("cache-control", "private"),
-                 std::make_pair("date", "Mon, 21 Oct 2013 20:13:21 GMT"),
-                 std::make_pair("location", "https://www.example.com")});
+    test_vector(
+        &parser, mode,
+        "4803 3330 3258 0770 7269 7661 7465 611d"
+        "4d6f 6e2c 2032 3120 4f63 7420 3230 3133"
+        "2032 303a 3133 3a32 3120 474d 546e 1768"
+        "7474 7073 3a2f 2f77 7777 2e65 7861 6d70"
+        "6c65 2e63 6f6d",
+        {std::make_pair(":status", "302"),
+         std::make_pair("cache-control", "private"),
+         std::make_pair("date", "Mon, 21 Oct 2013 20:13:21 GMT"),
+         std::make_pair("location", "https://www.example.com")});
     /* D.5.2 */
-    test_vector(&parser, mode, "4803 3330 37c1 c0bf",
-                {std::make_pair(":status", "307"),
-                 std::make_pair("cache-control", "private"),
-                 std::make_pair("date", "Mon, 21 Oct 2013 20:13:21 GMT"),
-                 std::make_pair("location", "https://www.example.com")});
+    test_vector(
+        &parser, mode, "4803 3330 37c1 c0bf",
+        {std::make_pair(":status", "307"),
+         std::make_pair("cache-control", "private"),
+         std::make_pair("date", "Mon, 21 Oct 2013 20:13:21 GMT"),
+         std::make_pair("location", "https://www.example.com")});
     /* D.5.3 */
     test_vector(
         &parser, mode,
@@ -192,9 +195,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
          std::make_pair("date", "Mon, 21 Oct 2013 20:13:22 GMT"),
          std::make_pair("location", "https://www.example.com"),
          std::make_pair("content-encoding", "gzip"),
-         std::make_pair(
-             "set-cookie",
-             "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1")});
+         std::make_pair("set-cookie",
+                        "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; "
+                        "max-age=3600; version=1")});
   }
 
   {
@@ -202,21 +205,23 @@ static void test_vectors(grpc_slice_split_mode mode) {
     grpc_chttp2_hptbl_set_max_bytes(parser.hpack_table(), 256);
     grpc_chttp2_hptbl_set_current_table_size(parser.hpack_table(), 256);
     /* D.6.1 */
-    test_vector(&parser, mode,
-                "4882 6402 5885 aec3 771a 4b61 96d0 7abe"
-                "9410 54d4 44a8 2005 9504 0b81 66e0 82a6"
-                "2d1b ff6e 919d 29ad 1718 63c7 8f0b 97c8"
-                "e9ae 82ae 43d3",
-                {std::make_pair(":status", "302"),
-                 std::make_pair("cache-control", "private"),
-                 std::make_pair("date", "Mon, 21 Oct 2013 20:13:21 GMT"),
-                 std::make_pair("location", "https://www.example.com")});
+    test_vector(
+        &parser, mode,
+        "4882 6402 5885 aec3 771a 4b61 96d0 7abe"
+        "9410 54d4 44a8 2005 9504 0b81 66e0 82a6"
+        "2d1b ff6e 919d 29ad 1718 63c7 8f0b 97c8"
+        "e9ae 82ae 43d3",
+        {std::make_pair(":status", "302"),
+         std::make_pair("cache-control", "private"),
+         std::make_pair("date", "Mon, 21 Oct 2013 20:13:21 GMT"),
+         std::make_pair("location", "https://www.example.com")});
     /* D.6.2 */
-    test_vector(&parser, mode, "4883 640e ffc1 c0bf",
-                {std::make_pair(":status", "307"),
-                 std::make_pair("cache-control", "private"),
-                 std::make_pair("date", "Mon, 21 Oct 2013 20:13:21 GMT"),
-                 std::make_pair("location", "https://www.example.com")});
+    test_vector(
+        &parser, mode, "4883 640e ffc1 c0bf",
+        {std::make_pair(":status", "307"),
+         std::make_pair("cache-control", "private"),
+         std::make_pair("date", "Mon, 21 Oct 2013 20:13:21 GMT"),
+         std::make_pair("location", "https://www.example.com")});
     /* D.6.3 */
     test_vector(
         &parser, mode,
@@ -230,9 +235,9 @@ static void test_vectors(grpc_slice_split_mode mode) {
          std::make_pair("date", "Mon, 21 Oct 2013 20:13:22 GMT"),
          std::make_pair("location", "https://www.example.com"),
          std::make_pair("content-encoding", "gzip"),
-         std::make_pair(
-             "set-cookie",
-             "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1")});
+         std::make_pair("set-cookie",
+                        "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; "
+                        "max-age=3600; version=1")});
   }
 }
 

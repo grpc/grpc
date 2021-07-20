@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -35,7 +35,9 @@ static void addhdr(grpc_event* ev, std::vector<std::string>* buf) {
   buf->push_back(absl::StrFormat("tag:%p", ev->tag));
 }
 
-static const char* errstr(int success) { return success ? "OK" : "ERROR"; }
+static const char* errstr(int success) {
+  return success ? "OK" : "ERROR";
+}
 
 static void adderr(int success, std::vector<std::string>* buf) {
   buf->push_back(absl::StrFormat(" %s", errstr(success)));

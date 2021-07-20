@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,7 +45,8 @@ void CoreStatsToProto(const grpc_stats_data& core, Stats* proto) {
   }
 }
 
-void ProtoToCoreStats(const grpc::core::Stats& proto, grpc_stats_data* core) {
+void ProtoToCoreStats(const grpc::core::Stats& proto,
+                      grpc_stats_data* core) {
   memset(core, 0, sizeof(*core));
   for (const auto& m : proto.metrics()) {
     switch (m.value_case()) {
@@ -64,7 +65,8 @@ void ProtoToCoreStats(const grpc::core::Stats& proto, grpc_stats_data* core) {
           if (m.name() == grpc_stats_histogram_name[i]) {
             const auto& h = m.histogram();
             bool valid = true;
-            if (grpc_stats_histo_buckets[i] != h.buckets_size()) valid = false;
+            if (grpc_stats_histo_buckets[i] != h.buckets_size())
+              valid = false;
             for (int j = 0; valid && j < h.buckets_size(); j++) {
               if (grpc_stats_histo_bucket_boundaries[i][j] !=
                   h.buckets(j).start()) {
@@ -73,7 +75,8 @@ void ProtoToCoreStats(const grpc::core::Stats& proto, grpc_stats_data* core) {
             }
             if (!valid) {
               gpr_log(GPR_ERROR,
-                      "Found histogram %s but shape is different from proto",
+                      "Found histogram %s but shape is different from "
+                      "proto",
                       m.name().c_str());
             }
             for (int j = 0; valid && j < h.buckets_size(); j++) {

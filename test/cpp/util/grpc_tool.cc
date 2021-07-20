@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -50,33 +50,39 @@
 ABSL_FLAG(bool, l, false, "Use a long listing format");
 ABSL_FLAG(bool, remotedb, true,
           "Use server types to parse and format messages");
-ABSL_FLAG(std::string, metadata, "",
-          "Metadata to send to server, in the form of key1:val1:key2:val2");
-ABSL_FLAG(std::string, proto_path, ".",
-          "Path to look for the proto file. "
-          "Multiple paths can be separated by " GRPC_CLI_PATH_SEPARATOR);
+ABSL_FLAG(
+    std::string, metadata, "",
+    "Metadata to send to server, in the form of key1:val1:key2:val2");
+ABSL_FLAG(
+    std::string, proto_path, ".",
+    "Path to look for the proto file. "
+    "Multiple paths can be separated by " GRPC_CLI_PATH_SEPARATOR);
 ABSL_FLAG(std::string, protofiles, "", "Name of the proto file.");
 ABSL_FLAG(bool, binary_input, false, "Input in binary format");
 ABSL_FLAG(bool, binary_output, false, "Output in binary format");
-ABSL_FLAG(std::string, default_service_config, "",
-          "Default service config to use on the channel, if non-empty. Note "
-          "that this will be ignored if the name resolver returns a service "
-          "config.");
+ABSL_FLAG(
+    std::string, default_service_config, "",
+    "Default service config to use on the channel, if non-empty. Note "
+    "that this will be ignored if the name resolver returns a service "
+    "config.");
 ABSL_FLAG(bool, display_peer_address, false,
-          "Log the peer socket address of the connection that each RPC is made "
+          "Log the peer socket address of the connection that each RPC "
+          "is made "
           "on to stderr.");
 ABSL_FLAG(bool, json_input, false, "Input in json format");
 ABSL_FLAG(bool, json_output, false, "Output in json format");
 ABSL_FLAG(std::string, infile, "", "Input file (default is stdin)");
-ABSL_FLAG(bool, batch, false,
-          "Input contains multiple requests. Please do not use this to send "
-          "more than a few RPCs. gRPC CLI has very different performance "
-          "characteristics compared with normal RPC calls which make it "
-          "unsuitable for loadtesting or significant production traffic.");
+ABSL_FLAG(
+    bool, batch, false,
+    "Input contains multiple requests. Please do not use this to send "
+    "more than a few RPCs. gRPC CLI has very different performance "
+    "characteristics compared with normal RPC calls which make it "
+    "unsuitable for loadtesting or significant production traffic.");
 // TODO(Capstan): Consider using absl::Duration
-ABSL_FLAG(double, timeout, -1,
-          "Specify timeout in seconds, used to set the deadline for all "
-          "RPCs. The default value of -1 means no deadline has been set.");
+ABSL_FLAG(
+    double, timeout, -1,
+    "Specify timeout in seconds, used to set the deadline for all "
+    "RPCs. The default value of -1 means no deadline has been set.");
 
 namespace grpc {
 namespace testing {
@@ -89,18 +95,21 @@ class GrpcTool {
 
   bool Help(int argc, const char** argv, const CliCredentials& cred,
             const GrpcToolOutputCallback& callback);
-  bool CallMethod(int argc, const char** argv, const CliCredentials& cred,
+  bool CallMethod(int argc, const char** argv,
+                  const CliCredentials& cred,
                   const GrpcToolOutputCallback& callback);
-  bool ListServices(int argc, const char** argv, const CliCredentials& cred,
+  bool ListServices(int argc, const char** argv,
+                    const CliCredentials& cred,
                     const GrpcToolOutputCallback& callback);
-  bool PrintType(int argc, const char** argv, const CliCredentials& cred,
+  bool PrintType(int argc, const char** argv,
+                 const CliCredentials& cred,
                  const GrpcToolOutputCallback& callback);
   // TODO(zyc): implement the following methods
-  // bool ListServices(int argc, const char** argv, GrpcToolOutputCallback
-  // callback);
-  // bool PrintTypeId(int argc, const char** argv, GrpcToolOutputCallback
-  // callback);
-  bool ParseMessage(int argc, const char** argv, const CliCredentials& cred,
+  // bool ListServices(int argc, const char** argv,
+  // GrpcToolOutputCallback callback); bool PrintTypeId(int argc, const
+  // char** argv, GrpcToolOutputCallback callback);
+  bool ParseMessage(int argc, const char** argv,
+                    const CliCredentials& cred,
                     const GrpcToolOutputCallback& callback);
   bool ToText(int argc, const char** argv, const CliCredentials& cred,
               const GrpcToolOutputCallback& callback);
@@ -185,7 +194,8 @@ void PrintMetadata(const T& m, const std::string& message) {
   }
   fprintf(stderr, "%s\n", message.c_str());
   std::string pair;
-  for (typename T::const_iterator iter = m.begin(); iter != m.end(); ++iter) {
+  for (typename T::const_iterator iter = m.begin(); iter != m.end();
+       ++iter) {
     pair.clear();
     pair.append(iter->first.data(), iter->first.size());
     pair.append(" : ");
@@ -196,20 +206,24 @@ void PrintMetadata(const T& m, const std::string& message) {
 
 void ReadResponse(CliCall* call, const std::string& method_name,
                   const GrpcToolOutputCallback& callback,
-                  ProtoFileParser* parser, gpr_mu* parser_mu, bool print_mode) {
+                  ProtoFileParser* parser, gpr_mu* parser_mu,
+                  bool print_mode) {
   std::string serialized_response_proto;
-  std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata;
+  std::multimap<grpc::string_ref, grpc::string_ref>
+      server_initial_metadata;
 
-  for (bool receive_initial_metadata = true; call->ReadAndMaybeNotifyWrite(
-           &serialized_response_proto,
-           receive_initial_metadata ? &server_initial_metadata : nullptr);
+  for (bool receive_initial_metadata = true;
+       call->ReadAndMaybeNotifyWrite(&serialized_response_proto,
+                                     receive_initial_metadata
+                                         ? &server_initial_metadata
+                                         : nullptr);
        receive_initial_metadata = false) {
     fprintf(stderr, "got response.\n");
     if (!absl::GetFlag(FLAGS_binary_output)) {
       gpr_mu_lock(parser_mu);
       serialized_response_proto = parser->GetFormattedStringFromMethod(
-          method_name, serialized_response_proto, false /* is_request */,
-          absl::GetFlag(FLAGS_json_output));
+          method_name, serialized_response_proto,
+          false /* is_request */, absl::GetFlag(FLAGS_json_output));
       if (parser->HasError() && print_mode) {
         fprintf(stderr, "Failed to parse response.\n");
       }
@@ -238,14 +252,14 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   // See |GRPC_ARG_MAX_METADATA_SIZE| in |grpc_types.h|.
   // Set to large enough size (10M) that should work for most use cases.
   args.SetInt(GRPC_ARG_MAX_METADATA_SIZE, 10 * 1024 * 1024);
-  return ::grpc::CreateCustomChannel(server_address, cred.GetCredentials(),
-                                     args);
+  return ::grpc::CreateCustomChannel(server_address,
+                                     cred.GetCredentials(), args);
 }
 
 struct Command {
   const char* command;
-  std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
-                     GrpcToolOutputCallback)>
+  std::function<bool(GrpcTool*, int, const char**,
+                     const CliCredentials&, GrpcToolOutputCallback)>
       function;
   int min_args;
   int max_args;
@@ -264,19 +278,19 @@ const Command ops[] = {
 };
 
 void Usage(const std::string& msg) {
-  fprintf(
-      stderr,
-      "%s\n"
-      "  grpc_cli ls ...         ; List services\n"
-      "  grpc_cli call ...       ; Call method\n"
-      "  grpc_cli type ...       ; Print type\n"
-      "  grpc_cli parse ...      ; Parse message\n"
-      "  grpc_cli totext ...     ; Convert binary message to text\n"
-      "  grpc_cli tojson ...     ; Convert binary message to json\n"
-      "  grpc_cli tobinary ...   ; Convert text message to binary\n"
-      "  grpc_cli help ...       ; Print this message, or per-command usage\n"
-      "\n",
-      msg.c_str());
+  fprintf(stderr,
+          "%s\n"
+          "  grpc_cli ls ...         ; List services\n"
+          "  grpc_cli call ...       ; Call method\n"
+          "  grpc_cli type ...       ; Print type\n"
+          "  grpc_cli parse ...      ; Parse message\n"
+          "  grpc_cli totext ...     ; Convert binary message to text\n"
+          "  grpc_cli tojson ...     ; Convert binary message to json\n"
+          "  grpc_cli tobinary ...   ; Convert text message to binary\n"
+          "  grpc_cli help ...       ; Print this message, or "
+          "per-command usage\n"
+          "\n",
+          msg.c_str());
 
   exit(1);
 }
@@ -291,7 +305,8 @@ const Command* FindCommand(const std::string& name) {
 }
 }  // namespace
 
-int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
+int GrpcToolMainLib(int argc, const char** argv,
+                    const CliCredentials& cred,
                     const GrpcToolOutputCallback& callback) {
   if (argc < 2) {
     Usage("No command specified");
@@ -306,11 +321,13 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
     GrpcTool grpc_tool;
     if (argc < cmd->min_args || argc > cmd->max_args) {
       // Force the command to print its usage message
-      fprintf(stderr, "\nWrong number of arguments for %s\n", command.c_str());
+      fprintf(stderr, "\nWrong number of arguments for %s\n",
+              command.c_str());
       grpc_tool.SetPrintCommandMode(1);
       return cmd->function(&grpc_tool, -1, nullptr, cred, callback);
     }
-    const bool ok = cmd->function(&grpc_tool, argc, argv, cred, callback);
+    const bool ok =
+        cmd->function(&grpc_tool, argc, argv, cred, callback);
     return ok ? 0 : 1;
   } else {
     Usage("Invalid command '" + std::string(command.c_str()) + "'");
@@ -318,17 +335,20 @@ int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
   return 1;
 }
 
-GrpcTool::GrpcTool() : print_command_usage_(false), usage_exit_status_(0) {}
+GrpcTool::GrpcTool()
+    : print_command_usage_(false), usage_exit_status_(0) {}
 
 void GrpcTool::CommandUsage(const std::string& usage) const {
   if (print_command_usage_) {
-    fprintf(stderr, "\n%s%s\n", usage.c_str(),
-            (usage.empty() || usage[usage.size() - 1] != '\n') ? "\n" : "");
+    fprintf(
+        stderr, "\n%s%s\n", usage.c_str(),
+        (usage.empty() || usage[usage.size() - 1] != '\n') ? "\n" : "");
     exit(usage_exit_status_);
   }
 }
 
-bool GrpcTool::Help(int argc, const char** argv, const CliCredentials& cred,
+bool GrpcTool::Help(int argc, const char** argv,
+                    const CliCredentials& cred,
                     const GrpcToolOutputCallback& callback) {
   CommandUsage(
       "Print help\n"
@@ -357,7 +377,8 @@ bool GrpcTool::ListServices(int argc, const char** argv,
       "    <service>                ; Exported service name\n"
       "    <method>                 ; Method name\n"
       "    --l                      ; Use a long listing format\n"
-      "    --outfile                ; Output filename (defaults to stdout)\n" +
+      "    --outfile                ; Output filename (defaults to "
+      "stdout)\n" +
       cred.GetCredentialUsage());
 
   std::string server_address(argv[0]);
@@ -368,19 +389,21 @@ bool GrpcTool::ListServices(int argc, const char** argv,
 
   std::vector<std::string> service_list;
   if (!desc_db.GetServices(&service_list)) {
-    fprintf(stderr, "Received an error when querying services endpoint.\n");
+    fprintf(stderr,
+            "Received an error when querying services endpoint.\n");
     return false;
   }
 
   // If no service is specified, dump the list of services.
   std::string output;
   if (argc < 2) {
-    // List all services, if --l is passed, then include full description,
-    // otherwise include a summarized list only.
+    // List all services, if --l is passed, then include full
+    // description, otherwise include a summarized list only.
     if (absl::GetFlag(FLAGS_l)) {
       output = DescribeServiceList(service_list, desc_pool);
     } else {
-      for (auto it = service_list.begin(); it != service_list.end(); it++) {
+      for (auto it = service_list.begin(); it != service_list.end();
+           it++) {
         auto const& service = *it;
         output.append(service);
         output.append("\n");
@@ -432,7 +455,8 @@ bool GrpcTool::ListServices(int argc, const char** argv,
       }
     } else {
       if (!method_name.empty()) {
-        fprintf(stderr, "Service %s not found.\n", service_name.c_str());
+        fprintf(stderr, "Service %s not found.\n",
+                service_name.c_str());
         return false;
       } else {
         const grpc::protobuf::MethodDescriptor* method =
@@ -488,22 +512,29 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    <address>                ; host:port\n"
       "    <service>                ; Exported service name\n"
       "    <method>                 ; Method name\n"
-      "    <request>                ; Text protobuffer (overrides infile)\n"
-      "    --protofiles             ; Comma separated proto files used as a"
+      "    <request>                ; Text protobuffer (overrides "
+      "infile)\n"
+      "    --protofiles             ; Comma separated proto files used "
+      "as a"
       " fallback when parsing request/response\n"
       "    --proto_path             ; The search paths of proto files"
       " (" GRPC_CLI_PATH_SEPARATOR
       " separated), valid only when --protofiles is given\n"
-      "    --noremotedb             ; Don't attempt to use reflection service"
+      "    --noremotedb             ; Don't attempt to use reflection "
+      "service"
       " at all\n"
-      "    --metadata               ; The metadata to be sent to the server\n"
-      "    --infile                 ; Input filename (defaults to stdin)\n"
-      "    --outfile                ; Output filename (defaults to stdout)\n"
+      "    --metadata               ; The metadata to be sent to the "
+      "server\n"
+      "    --infile                 ; Input filename (defaults to "
+      "stdin)\n"
+      "    --outfile                ; Output filename (defaults to "
+      "stdout)\n"
       "    --binary_input           ; Input in binary format\n"
       "    --binary_output          ; Output in binary format\n"
       "    --json_input             ; Input in json format\n"
       "    --json_output            ; Output in json format\n"
-      "    --timeout                ; Specify timeout (in seconds), used to "
+      "    --timeout                ; Specify timeout (in seconds), "
+      "used to "
       "set the deadline for RPCs. The default value of -1 means no "
       "deadline has been set.\n" +
       cred.GetCredentialUsage());
@@ -526,11 +557,12 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       !absl::GetFlag(FLAGS_binary_output)) {
     parser = absl::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
-        absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
+        absl::GetFlag(FLAGS_proto_path),
+        absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {
-      fprintf(
-          stderr,
-          "Failed to find remote reflection service and local proto files.\n");
+      fprintf(stderr,
+              "Failed to find remote reflection service and local "
+              "proto files.\n");
       return false;
     }
   }
@@ -554,7 +586,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     std::ifstream input_file;
 
     if (absl::GetFlag(FLAGS_batch)) {
-      fprintf(stderr, "Batch mode for streaming RPC is not supported.\n");
+      fprintf(stderr,
+              "Batch mode for streaming RPC is not supported.\n");
       return false;
     }
 
@@ -562,16 +595,19 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
-    CliCall call(channel, formatted_method_name, client_metadata, cli_args);
+    CliCall call(channel, formatted_method_name, client_metadata,
+                 cli_args);
     if (absl::GetFlag(FLAGS_display_peer_address)) {
-      fprintf(stderr, "New call for method_name:%s has peer address:|%s|\n",
+      fprintf(stderr,
+              "New call for method_name:%s has peer address:|%s|\n",
               formatted_method_name.c_str(), call.peer().c_str());
     }
 
     if (absl::GetFlag(FLAGS_infile).empty()) {
       if (isatty(fileno(stdin))) {
         print_mode = true;
-        fprintf(stderr, "reading streaming request message from stdin...\n");
+        fprintf(stderr,
+                "reading streaming request message from stdin...\n");
       }
       input_stream = &std::cin;
     } else {
@@ -595,9 +631,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           request_text.clear();
         } else {
           gpr_mu_lock(&parser_mu);
-          serialized_request_proto = parser->GetSerializedProtoFromMethod(
-              method_name, request_text, true /* is_request */,
-              absl::GetFlag(FLAGS_json_input));
+          serialized_request_proto =
+              parser->GetSerializedProtoFromMethod(
+                  method_name, request_text, true /* is_request */,
+                  absl::GetFlag(FLAGS_json_input));
           request_text.clear();
           if (parser->HasError()) {
             if (print_mode) {
@@ -631,7 +668,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     read_thread.join();
     gpr_mu_destroy(&parser_mu);
 
-    std::multimap<grpc::string_ref, grpc::string_ref> server_trailing_metadata;
+    std::multimap<grpc::string_ref, grpc::string_ref>
+        server_trailing_metadata;
     Status status = call.Finish(&server_trailing_metadata);
     PrintMetadata(server_trailing_metadata,
                   "Received trailing metadata from server:");
@@ -640,7 +678,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       fprintf(stderr, "Stream RPC succeeded with OK status\n");
       return true;
     } else {
-      fprintf(stderr, "Rpc failed with status code %d, error message: %s\n",
+      fprintf(stderr,
+              "Rpc failed with status code %d, error message: %s\n",
               status.error_code(), status.error_message().c_str());
       return false;
     }
@@ -648,7 +687,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   } else {  // parser->IsStreaming(method_name, true /* is_request */)
     if (absl::GetFlag(FLAGS_batch)) {
       if (parser->IsStreaming(method_name, false /* is_request */)) {
-        fprintf(stderr, "Batch mode for streaming RPC is not supported.\n");
+        fprintf(stderr,
+                "Batch mode for streaming RPC is not supported.\n");
         return false;
       }
 
@@ -670,7 +710,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       std::multimap<std::string, std::string> client_metadata;
       ParseMetadataFlag(&client_metadata);
       if (print_mode) {
-        PrintMetadata(client_metadata, "Sending client initial metadata:");
+        PrintMetadata(client_metadata,
+                      "Sending client initial metadata:");
       }
 
       std::stringstream request_ss;
@@ -682,9 +723,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
             serialized_request_proto = request_text;
             request_text.clear();
           } else {
-            serialized_request_proto = parser->GetSerializedProtoFromMethod(
-                method_name, request_text, true /* is_request */,
-                absl::GetFlag(FLAGS_json_input));
+            serialized_request_proto =
+                parser->GetSerializedProtoFromMethod(
+                    method_name, request_text, true /* is_request */,
+                    absl::GetFlag(FLAGS_json_input));
             request_text.clear();
             if (parser->HasError()) {
               if (print_mode) {
@@ -700,9 +742,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           CliCall call(channel, formatted_method_name, client_metadata,
                        cli_args);
           if (absl::GetFlag(FLAGS_display_peer_address)) {
-            fprintf(stderr,
-                    "New call for method_name:%s has peer address:|%s|\n",
-                    formatted_method_name.c_str(), call.peer().c_str());
+            fprintf(
+                stderr,
+                "New call for method_name:%s has peer address:|%s|\n",
+                formatted_method_name.c_str(), call.peer().c_str());
           }
           call.Write(serialized_request_proto);
           call.WritesDone();
@@ -726,9 +769,11 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
                 break;
               }
             } else {
-              std::string response_text = parser->GetFormattedStringFromMethod(
-                  method_name, serialized_response_proto,
-                  false /* is_request */, absl::GetFlag(FLAGS_json_output));
+              std::string response_text =
+                  parser->GetFormattedStringFromMethod(
+                      method_name, serialized_response_proto,
+                      false /* is_request */,
+                      absl::GetFlag(FLAGS_json_output));
 
               if (parser->HasError() && print_mode) {
                 fprintf(stderr, "Failed to parse response.\n");
@@ -740,9 +785,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
             }
           } else {
             if (print_mode) {
-              fprintf(stderr,
-                      "Rpc failed with status code %d, error message: %s\n",
-                      status.error_code(), status.error_message().c_str());
+              fprintf(
+                  stderr,
+                  "Rpc failed with status code %d, error message: %s\n",
+                  status.error_code(), status.error_message().c_str());
             }
           }
         } else {
@@ -765,7 +811,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
     if (argc == 3) {
       if (!absl::GetFlag(FLAGS_infile).empty()) {
-        fprintf(stderr, "warning: request given in argv, ignoring --infile\n");
+        fprintf(stderr,
+                "warning: request given in argv, ignoring --infile\n");
       }
     } else {
       std::stringstream input_stream;
@@ -798,27 +845,32 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
     std::string serialized_response_proto;
     std::multimap<std::string, std::string> client_metadata;
-    std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
-        server_trailing_metadata;
+    std::multimap<grpc::string_ref, grpc::string_ref>
+        server_initial_metadata, server_trailing_metadata;
     ParseMetadataFlag(&client_metadata);
     PrintMetadata(client_metadata, "Sending client initial metadata:");
 
-    CliCall call(channel, formatted_method_name, client_metadata, cli_args);
+    CliCall call(channel, formatted_method_name, client_metadata,
+                 cli_args);
     if (absl::GetFlag(FLAGS_display_peer_address)) {
-      fprintf(stderr, "New call for method_name:%s has peer address:|%s|\n",
+      fprintf(stderr,
+              "New call for method_name:%s has peer address:|%s|\n",
               formatted_method_name.c_str(), call.peer().c_str());
     }
     call.Write(serialized_request_proto);
     call.WritesDone();
 
-    for (bool receive_initial_metadata = true; call.Read(
-             &serialized_response_proto,
-             receive_initial_metadata ? &server_initial_metadata : nullptr);
+    for (bool receive_initial_metadata = true;
+         call.Read(&serialized_response_proto,
+                   receive_initial_metadata ? &server_initial_metadata
+                                            : nullptr);
          receive_initial_metadata = false) {
       if (!absl::GetFlag(FLAGS_binary_output)) {
-        serialized_response_proto = parser->GetFormattedStringFromMethod(
-            method_name, serialized_response_proto, false /* is_request */,
-            absl::GetFlag(FLAGS_json_output));
+        serialized_response_proto =
+            parser->GetFormattedStringFromMethod(
+                method_name, serialized_response_proto,
+                false /* is_request */,
+                absl::GetFlag(FLAGS_json_output));
         if (parser->HasError()) {
           fprintf(stderr, "Failed to parse response.\n");
           return false;
@@ -840,7 +892,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       fprintf(stderr, "Rpc succeeded with OK status\n");
       return true;
     } else {
-      fprintf(stderr, "Rpc failed with status code %d, error message: %s\n",
+      fprintf(stderr,
+              "Rpc failed with status code %d, error message: %s\n",
               status.error_code(), status.error_message().c_str());
       return false;
     }
@@ -856,16 +909,21 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
       "  grpc_cli parse <address> <type> [<message>]\n"
       "    <address>                ; host:port\n"
       "    <type>                   ; Protocol buffer type name\n"
-      "    <message>                ; Text protobuffer (overrides --infile)\n"
-      "    --protofiles             ; Comma separated proto files used as a"
+      "    <message>                ; Text protobuffer (overrides "
+      "--infile)\n"
+      "    --protofiles             ; Comma separated proto files used "
+      "as a"
       " fallback when parsing request/response\n"
       "    --proto_path             ; The search paths of proto files"
       " (" GRPC_CLI_PATH_SEPARATOR
       " separated), valid  only when --protofiles is given\n"
-      "    --noremotedb             ; Don't attempt to use reflection service"
+      "    --noremotedb             ; Don't attempt to use reflection "
+      "service"
       " at all\n"
-      "    --infile                 ; Input filename (defaults to stdin)\n"
-      "    --outfile                ; Output filename (defaults to stdout)\n"
+      "    --infile                 ; Input filename (defaults to "
+      "stdin)\n"
+      "    --outfile                ; Output filename (defaults to "
+      "stdout)\n"
       "    --binary_input           ; Input in binary format\n"
       "    --binary_output          ; Output in binary format\n"
       "    --json_input             ; Input in json format\n"
@@ -882,7 +940,8 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   if (argc == 3) {
     message_text = argv[2];
     if (!absl::GetFlag(FLAGS_infile).empty()) {
-      fprintf(stderr, "warning: message given in argv, ignoring --infile.\n");
+      fprintf(stderr,
+              "warning: message given in argv, ignoring --infile.\n");
     }
   } else {
     std::stringstream input_stream;
@@ -906,11 +965,12 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
         CreateCliChannel(server_address, cred);
     parser = absl::make_unique<grpc::testing::ProtoFileParser>(
         absl::GetFlag(FLAGS_remotedb) ? channel : nullptr,
-        absl::GetFlag(FLAGS_proto_path), absl::GetFlag(FLAGS_protofiles));
+        absl::GetFlag(FLAGS_proto_path),
+        absl::GetFlag(FLAGS_protofiles));
     if (parser->HasError()) {
-      fprintf(
-          stderr,
-          "Failed to find remote reflection service and local proto files.\n");
+      fprintf(stderr,
+              "Failed to find remote reflection service and local "
+              "proto files.\n");
       return false;
     }
   }
@@ -918,8 +978,9 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   if (absl::GetFlag(FLAGS_binary_input)) {
     serialized_request_proto = message_text;
   } else {
-    serialized_request_proto = parser->GetSerializedProtoFromMessageType(
-        type_name, message_text, absl::GetFlag(FLAGS_json_input));
+    serialized_request_proto =
+        parser->GetSerializedProtoFromMessageType(
+            type_name, message_text, absl::GetFlag(FLAGS_json_input));
     if (parser->HasError()) {
       fprintf(stderr, "Failed to serialize the message.\n");
       return false;
@@ -931,7 +992,8 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   } else {
     std::string output_text;
     output_text = parser->GetFormattedStringFromMessageType(
-        type_name, serialized_request_proto, absl::GetFlag(FLAGS_json_output));
+        type_name, serialized_request_proto,
+        absl::GetFlag(FLAGS_json_output));
     if (parser->HasError()) {
       fprintf(stderr, "Failed to deserialize the message.\n");
       return false;
@@ -943,18 +1005,22 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   return callback(output_ss.str());
 }
 
-bool GrpcTool::ToText(int argc, const char** argv, const CliCredentials& cred,
+bool GrpcTool::ToText(int argc, const char** argv,
+                      const CliCredentials& cred,
                       const GrpcToolOutputCallback& callback) {
   CommandUsage(
       "Convert binary message to text\n"
       "  grpc_cli totext <protofiles> <type>\n"
-      "    <protofiles>             ; Comma separated list of proto files\n"
+      "    <protofiles>             ; Comma separated list of proto "
+      "files\n"
       "    <type>                   ; Protocol buffer type name\n"
       "    --proto_path             ; The search paths of proto files"
       " (" GRPC_CLI_PATH_SEPARATOR
       " separated)\n"
-      "    --infile                 ; Input filename (defaults to stdin)\n"
-      "    --outfile                ; Output filename (defaults to stdout)\n");
+      "    --infile                 ; Input filename (defaults to "
+      "stdin)\n"
+      "    --outfile                ; Output filename (defaults to "
+      "stdout)\n");
 
   absl::SetFlag(&FLAGS_protofiles, argv[0]);
   absl::SetFlag(&FLAGS_remotedb, false);
@@ -963,18 +1029,22 @@ bool GrpcTool::ToText(int argc, const char** argv, const CliCredentials& cred,
   return ParseMessage(argc, argv, cred, callback);
 }
 
-bool GrpcTool::ToJson(int argc, const char** argv, const CliCredentials& cred,
+bool GrpcTool::ToJson(int argc, const char** argv,
+                      const CliCredentials& cred,
                       const GrpcToolOutputCallback& callback) {
   CommandUsage(
       "Convert binary message to json\n"
       "  grpc_cli tojson <protofiles> <type>\n"
-      "    <protofiles>             ; Comma separated list of proto files\n"
+      "    <protofiles>             ; Comma separated list of proto "
+      "files\n"
       "    <type>                   ; Protocol buffer type name\n"
       "    --proto_path             ; The search paths of proto files"
       " (" GRPC_CLI_PATH_SEPARATOR
       " separated)\n"
-      "    --infile                 ; Input filename (defaults to stdin)\n"
-      "    --outfile                ; Output filename (defaults to stdout)\n");
+      "    --infile                 ; Input filename (defaults to "
+      "stdin)\n"
+      "    --outfile                ; Output filename (defaults to "
+      "stdout)\n");
 
   absl::SetFlag(&FLAGS_protofiles, argv[0]);
   absl::SetFlag(&FLAGS_remotedb, false);
@@ -984,18 +1054,22 @@ bool GrpcTool::ToJson(int argc, const char** argv, const CliCredentials& cred,
   return ParseMessage(argc, argv, cred, callback);
 }
 
-bool GrpcTool::ToBinary(int argc, const char** argv, const CliCredentials& cred,
+bool GrpcTool::ToBinary(int argc, const char** argv,
+                        const CliCredentials& cred,
                         const GrpcToolOutputCallback& callback) {
   CommandUsage(
       "Convert text message to binary\n"
       "  grpc_cli tobinary <protofiles> <type> [<message>]\n"
-      "    <protofiles>             ; Comma separated list of proto files\n"
+      "    <protofiles>             ; Comma separated list of proto "
+      "files\n"
       "    <type>                   ; Protocol buffer type name\n"
       "    --proto_path             ; The search paths of proto files"
       " (" GRPC_CLI_PATH_SEPARATOR
       " separated)\n"
-      "    --infile                 ; Input filename (defaults to stdin)\n"
-      "    --outfile                ; Output filename (defaults to stdout)\n");
+      "    --infile                 ; Input filename (defaults to "
+      "stdin)\n"
+      "    --outfile                ; Output filename (defaults to "
+      "stdout)\n");
 
   absl::SetFlag(&FLAGS_protofiles, argv[0]);
   absl::SetFlag(&FLAGS_remotedb, false);

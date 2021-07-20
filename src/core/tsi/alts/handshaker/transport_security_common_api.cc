@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -61,10 +61,10 @@ bool grpc_gcp_rpc_protocol_versions_encode(
   upb::Arena arena;
   grpc_gcp_RpcProtocolVersions* versions_msg =
       grpc_gcp_RpcProtocolVersions_new(arena.ptr());
-  grpc_gcp_RpcProtocolVersions_assign_from_struct(versions_msg, arena.ptr(),
-                                                  versions);
-  return grpc_gcp_rpc_protocol_versions_encode(versions_msg, arena.ptr(),
-                                               slice);
+  grpc_gcp_RpcProtocolVersions_assign_from_struct(
+      versions_msg, arena.ptr(), versions);
+  return grpc_gcp_rpc_protocol_versions_encode(versions_msg,
+                                               arena.ptr(), slice);
 }
 
 bool grpc_gcp_rpc_protocol_versions_encode(
@@ -77,8 +77,8 @@ bool grpc_gcp_rpc_protocol_versions_encode(
     return false;
   }
   size_t buf_length;
-  char* buf =
-      grpc_gcp_RpcProtocolVersions_serialize(versions, arena, &buf_length);
+  char* buf = grpc_gcp_RpcProtocolVersions_serialize(versions, arena,
+                                                     &buf_length);
   if (buf == nullptr) {
     return false;
   }
@@ -100,10 +100,12 @@ bool grpc_gcp_rpc_protocol_versions_decode(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
           GRPC_SLICE_LENGTH(slice), arena.ptr());
   if (versions_msg == nullptr) {
-    gpr_log(GPR_ERROR, "cannot deserialize RpcProtocolVersions message");
+    gpr_log(GPR_ERROR,
+            "cannot deserialize RpcProtocolVersions message");
     return false;
   }
-  grpc_gcp_rpc_protocol_versions_assign_from_upb(versions, versions_msg);
+  grpc_gcp_rpc_protocol_versions_assign_from_upb(versions,
+                                                 versions_msg);
   return true;
 }
 
@@ -138,17 +140,19 @@ void grpc_gcp_RpcProtocolVersions_assign_from_struct(
     grpc_gcp_RpcProtocolVersions* versions, upb_arena* arena,
     const grpc_gcp_rpc_protocol_versions* value) {
   grpc_gcp_RpcProtocolVersions_Version* max_version_msg =
-      grpc_gcp_RpcProtocolVersions_mutable_max_rpc_version(versions, arena);
-  grpc_gcp_RpcProtocolVersions_Version_set_major(max_version_msg,
-                                                 value->max_rpc_version.major);
-  grpc_gcp_RpcProtocolVersions_Version_set_minor(max_version_msg,
-                                                 value->max_rpc_version.minor);
+      grpc_gcp_RpcProtocolVersions_mutable_max_rpc_version(versions,
+                                                           arena);
+  grpc_gcp_RpcProtocolVersions_Version_set_major(
+      max_version_msg, value->max_rpc_version.major);
+  grpc_gcp_RpcProtocolVersions_Version_set_minor(
+      max_version_msg, value->max_rpc_version.minor);
   grpc_gcp_RpcProtocolVersions_Version* min_version_msg =
-      grpc_gcp_RpcProtocolVersions_mutable_min_rpc_version(versions, arena);
-  grpc_gcp_RpcProtocolVersions_Version_set_major(min_version_msg,
-                                                 value->min_rpc_version.major);
-  grpc_gcp_RpcProtocolVersions_Version_set_minor(min_version_msg,
-                                                 value->min_rpc_version.minor);
+      grpc_gcp_RpcProtocolVersions_mutable_min_rpc_version(versions,
+                                                           arena);
+  grpc_gcp_RpcProtocolVersions_Version_set_major(
+      min_version_msg, value->min_rpc_version.major);
+  grpc_gcp_RpcProtocolVersions_Version_set_minor(
+      min_version_msg, value->min_rpc_version.minor);
 }
 
 bool grpc_gcp_rpc_protocol_versions_copy(
@@ -164,10 +168,10 @@ bool grpc_gcp_rpc_protocol_versions_copy(
   if (src == nullptr) {
     return true;
   }
-  grpc_gcp_rpc_protocol_versions_set_max(dst, src->max_rpc_version.major,
-                                         src->max_rpc_version.minor);
-  grpc_gcp_rpc_protocol_versions_set_min(dst, src->min_rpc_version.major,
-                                         src->min_rpc_version.minor);
+  grpc_gcp_rpc_protocol_versions_set_max(
+      dst, src->max_rpc_version.major, src->max_rpc_version.minor);
+  grpc_gcp_rpc_protocol_versions_set_min(
+      dst, src->min_rpc_version.major, src->min_rpc_version.minor);
   return true;
 }
 
@@ -204,17 +208,20 @@ bool grpc_gcp_rpc_protocol_versions_check(
   /* max_common_version is MIN(local.max, peer.max) */
   const grpc_gcp_rpc_protocol_versions_version* max_common_version =
       grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
-          &local_versions->max_rpc_version, &peer_versions->max_rpc_version) > 0
+          &local_versions->max_rpc_version,
+          &peer_versions->max_rpc_version) > 0
           ? &peer_versions->max_rpc_version
           : &local_versions->max_rpc_version;
   /* min_common_version is MAX(local.min, peer.min) */
   const grpc_gcp_rpc_protocol_versions_version* min_common_version =
       grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
-          &local_versions->min_rpc_version, &peer_versions->min_rpc_version) > 0
+          &local_versions->min_rpc_version,
+          &peer_versions->min_rpc_version) > 0
           ? &local_versions->min_rpc_version
           : &peer_versions->min_rpc_version;
-  bool result = grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
-                    max_common_version, min_common_version) >= 0;
+  bool result =
+      grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
+          max_common_version, min_common_version) >= 0;
   if (result && highest_common_version != nullptr) {
     memcpy(highest_common_version, max_common_version,
            sizeof(grpc_gcp_rpc_protocol_versions_version));

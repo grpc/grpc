@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -54,7 +54,10 @@ class ServerBuilderTest : public ::testing::Test {
 TEST_F(ServerBuilderTest, NoOp) { ServerBuilder b; }
 
 TEST_F(ServerBuilderTest, CreateServerNoPorts) {
-  ServerBuilder().RegisterService(&g_service).BuildAndStart()->Shutdown();
+  ServerBuilder()
+      .RegisterService(&g_service)
+      .BuildAndStart()
+      ->Shutdown();
 }
 
 TEST_F(ServerBuilderTest, CreateServerOnePort) {
@@ -74,14 +77,16 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPort) {
       ->Shutdown();
 }
 
-TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
-  EXPECT_EQ(ServerBuilder()
-                .RegisterService(&g_service)
-                .AddListeningPort(GetPort(), InsecureServerCredentials())
-                .AddListeningPort(GetPort(), InsecureServerCredentials())
-                .AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0)
-                .BuildAndStart(),
-            nullptr);
+TEST_F(ServerBuilderTest,
+       CreateServerRepeatedPortWithDisallowedReusePort) {
+  EXPECT_EQ(
+      ServerBuilder()
+          .RegisterService(&g_service)
+          .AddListeningPort(GetPort(), InsecureServerCredentials())
+          .AddListeningPort(GetPort(), InsecureServerCredentials())
+          .AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0)
+          .BuildAndStart(),
+      nullptr);
 }
 
 }  // namespace

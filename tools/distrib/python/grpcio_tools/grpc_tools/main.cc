@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #include <google/protobuf/compiler/command_line_interface.h>
 #include <google/protobuf/compiler/python/python_generator.h>
@@ -52,7 +52,8 @@ int protoc_main(int argc, char* argv[]) {
 
   // gRPC Python
   grpc_python_generator::GeneratorConfiguration grpc_py_config;
-  grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
+  grpc_python_generator::PythonGrpcGenerator grpc_py_generator(
+      grpc_py_config);
   cli.RegisterGenerator("--grpc_python_out", &grpc_py_generator,
                         "Generate Python source file.");
 
@@ -73,14 +74,16 @@ class GeneratorContextImpl : public GeneratorContext {
     return new StringOutputStream(&(files_->back().second));
   }
 
-  // NOTE(rbellevi): Equivalent to Open, since all files start out empty.
+  // NOTE(rbellevi): Equivalent to Open, since all files start out
+  // empty.
   ZeroCopyOutputStream* OpenForAppend(const std::string& filename) {
     return Open(filename);
   }
 
-  // NOTE(rbellevi): Equivalent to Open, since all files start out empty.
-  ZeroCopyOutputStream* OpenForInsert(const std::string& filename,
-                                      const std::string& insertion_point) {
+  // NOTE(rbellevi): Equivalent to Open, since all files start out
+  // empty.
+  ZeroCopyOutputStream* OpenForInsert(
+      const std::string& filename, const std::string& insertion_point) {
     return Open(filename);
   }
 
@@ -118,11 +121,13 @@ class ErrorCollectorImpl : public MultiFileErrorCollector {
 static void calculate_transitive_closure(
     const FileDescriptor* descriptor,
     std::vector<const FileDescriptor*>* transitive_closure,
-    std::unordered_set<const ::google::protobuf::FileDescriptor*>* visited) {
+    std::unordered_set<const ::google::protobuf::FileDescriptor*>*
+        visited) {
   for (int i = 0; i < descriptor->dependency_count(); ++i) {
     const FileDescriptor* dependency = descriptor->dependency(i);
     if (visited->find(dependency) == visited->end()) {
-      calculate_transitive_closure(dependency, transitive_closure, visited);
+      calculate_transitive_closure(dependency, transitive_closure,
+                                   visited);
     }
   }
   transitive_closure->push_back(descriptor);
@@ -150,13 +155,14 @@ static int generate_code(
   }
   std::vector<const FileDescriptor*> transitive_closure;
   std::unordered_set<const FileDescriptor*> visited;
-  internal::calculate_transitive_closure(parsed_file, &transitive_closure,
-                                         &visited);
+  internal::calculate_transitive_closure(parsed_file,
+                                         &transitive_closure, &visited);
   internal::GeneratorContextImpl generator_context(transitive_closure,
                                                    files_out);
   std::string error;
   for (const auto descriptor : transitive_closure) {
-    code_generator->Generate(descriptor, "", &generator_context, &error);
+    code_generator->Generate(descriptor, "", &generator_context,
+                             &error);
   }
   return 0;
 }
@@ -177,7 +183,8 @@ int protoc_get_services(
     std::vector<::grpc_tools::ProtocError>* errors,
     std::vector<::grpc_tools::ProtocWarning>* warnings) {
   grpc_python_generator::GeneratorConfiguration grpc_py_config;
-  grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
+  grpc_python_generator::PythonGrpcGenerator grpc_py_generator(
+      grpc_py_config);
   return generate_code(&grpc_py_generator, protobuf_path, include_paths,
                        files_out, errors, warnings);
 }

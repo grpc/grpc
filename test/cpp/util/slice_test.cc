@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,7 +45,8 @@ class SliceTest : public ::testing::Test {
   void CheckSlice(const Slice& s, const std::string& content) {
     EXPECT_EQ(content.size(), s.size());
     EXPECT_EQ(content,
-              std::string(reinterpret_cast<const char*>(s.begin()), s.size()));
+              std::string(reinterpret_cast<const char*>(s.begin()),
+                          s.size()));
   }
 };
 
@@ -77,12 +78,14 @@ TEST_F(SliceTest, StaticBuf) {
 TEST_F(SliceTest, SliceNew) {
   char* x = new char[strlen(kContent) + 1];
   strcpy(x, kContent);
-  Slice spp(x, strlen(x), [](void* p) { delete[] static_cast<char*>(p); });
+  Slice spp(x, strlen(x),
+            [](void* p) { delete[] static_cast<char*>(p); });
   CheckSlice(spp, kContent);
 }
 
 TEST_F(SliceTest, SliceNewDoNothing) {
-  Slice spp(const_cast<char*>(kContent), strlen(kContent), [](void* /*p*/) {});
+  Slice spp(const_cast<char*>(kContent), strlen(kContent),
+            [](void* /*p*/) {});
   CheckSlice(spp, kContent);
 }
 
@@ -106,8 +109,9 @@ TEST_F(SliceTest, SliceNewWithUserData) {
 }
 
 TEST_F(SliceTest, SliceNewLen) {
-  Slice spp(const_cast<char*>(kContent), strlen(kContent),
-            [](void* /*p*/, size_t l) { EXPECT_EQ(l, strlen(kContent)); });
+  Slice spp(
+      const_cast<char*>(kContent), strlen(kContent),
+      [](void* /*p*/, size_t l) { EXPECT_EQ(l, strlen(kContent)); });
   CheckSlice(spp, kContent);
 }
 

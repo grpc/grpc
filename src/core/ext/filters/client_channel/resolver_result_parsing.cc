@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #include <grpc/support/port_platform.h>
@@ -61,8 +61,8 @@ void ClientChannelServiceConfigParser::Register() {
 
 namespace {
 
-absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
-                                                   grpc_error_handle* error) {
+absl::optional<std::string> ParseHealthCheckConfig(
+    const Json& field, grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   if (field.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -80,8 +80,8 @@ absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
       service_name = it->second.string_value();
     }
   }
-  *error =
-      GRPC_ERROR_CREATE_FROM_VECTOR("field:healthCheckConfig", &error_list);
+  *error = GRPC_ERROR_CREATE_FROM_VECTOR("field:healthCheckConfig",
+                                         &error_list);
   return service_name;
 }
 
@@ -98,8 +98,9 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
   auto it = json.object_value().find("loadBalancingConfig");
   if (it != json.object_value().end()) {
     grpc_error_handle parse_error = GRPC_ERROR_NONE;
-    parsed_lb_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
-        it->second, &parse_error);
+    parsed_lb_config =
+        LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+            it->second, &parse_error);
     if (parsed_lb_config == nullptr) {
       std::vector<grpc_error_handle> lb_errors;
       lb_errors.push_back(parse_error);
@@ -126,9 +127,10 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
             "field:loadBalancingPolicy error:Unknown lb policy"));
       } else if (requires_config) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("field:loadBalancingPolicy error:", lb_policy_name,
-                         " requires a config. Please use loadBalancingConfig "
-                         "instead.")
+            absl::StrCat(
+                "field:loadBalancingPolicy error:", lb_policy_name,
+                " requires a config. Please use loadBalancingConfig "
+                "instead.")
                 .c_str()));
       }
     }
@@ -175,13 +177,14 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
   }
   // Parse timeout.
   grpc_millis timeout = 0;
-  ParseJsonObjectFieldAsDuration(json.object_value(), "timeout", &timeout,
-                                 &error_list, false);
+  ParseJsonObjectFieldAsDuration(json.object_value(), "timeout",
+                                 &timeout, &error_list, false);
   // Return result.
-  *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
+  *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser",
+                                         &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return absl::make_unique<ClientChannelMethodParsedConfig>(timeout,
-                                                              wait_for_ready);
+    return absl::make_unique<ClientChannelMethodParsedConfig>(
+        timeout, wait_for_ready);
   }
   return nullptr;
 }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -60,7 +60,8 @@ std::string MessageIdentifierName(const std::string& name,
   if (PackageName(file) != "") {
     oss << PackageName(file) << "\\";
   }
-  oss << grpc_generator::CapitalizeFirstLetter(tokens[tokens.size() - 1]);
+  oss << grpc_generator::CapitalizeFirstLetter(
+      tokens[tokens.size() - 1]);
   return oss.str();
 }
 
@@ -70,8 +71,8 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   map<std::string, std::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
-  vars["input_type_id"] =
-      MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
+  vars["input_type_id"] = MessageIdentifierName(
+      GeneratedClassName(input_type), input_type->file());
   vars["output_type_id"] = MessageIdentifierName(
       GeneratedClassName(output_type), output_type->file());
 
@@ -137,8 +138,8 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   const Descriptor* output_type = method->output_type();
   vars["service_name"] = method->service()->full_name();
   vars["method_name"] = method->name();
-  vars["input_type_id"] =
-      MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
+  vars["input_type_id"] = MessageIdentifierName(
+      GeneratedClassName(input_type), input_type->file());
   vars["output_type_id"] = MessageIdentifierName(
       GeneratedClassName(output_type), output_type->file());
 
@@ -148,11 +149,14 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   const char* method_template;
   if (method->client_streaming() && method->server_streaming()) {
     method_template =
-        " * @param \\Grpc\\ServerCallReader $$reader read client request data "
+        " * @param \\Grpc\\ServerCallReader $$reader read client "
+        "request data "
         "of \\$input_type_id$\n"
-        " * @param \\Grpc\\ServerCallWriter $$writer write response data of "
+        " * @param \\Grpc\\ServerCallWriter $$writer write response "
+        "data of "
         "\\$output_type_id$\n"
-        " * @param \\Grpc\\ServerContext $$context server request context\n"
+        " * @param \\Grpc\\ServerContext $$context server request "
+        "context\n"
         " * @return void\n"
         " */\n"
         "public function $method_name$(\n"
@@ -165,12 +169,16 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
         "}\n\n";
   } else if (method->client_streaming()) {
     method_template =
-        " * @param \\Grpc\\ServerCallReader $$reader read client request data "
+        " * @param \\Grpc\\ServerCallReader $$reader read client "
+        "request data "
         "of \\$input_type_id$\n"
-        " * @param \\Grpc\\ServerContext $$context server request context\n"
-        " * @return \\$output_type_id$ for response data, null if if error "
+        " * @param \\Grpc\\ServerContext $$context server request "
+        "context\n"
+        " * @return \\$output_type_id$ for response data, null if if "
+        "error "
         "occured\n"
-        " *     initial metadata (if any) and status (if not ok) should be set "
+        " *     initial metadata (if any) and status (if not ok) "
+        "should be set "
         "to $$context\n"
         " */\n"
         "public function $method_name$(\n"
@@ -183,9 +191,11 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   } else if (method->server_streaming()) {
     method_template =
         " * @param \\$input_type_id$ $$request client request\n"
-        " * @param \\Grpc\\ServerCallWriter $$writer write response data of "
+        " * @param \\Grpc\\ServerCallWriter $$writer write response "
+        "data of "
         "\\$output_type_id$\n"
-        " * @param \\Grpc\\ServerContext $$context server request context\n"
+        " * @param \\Grpc\\ServerContext $$context server request "
+        "context\n"
         " * @return void\n"
         " */\n"
         "public function $method_name$(\n"
@@ -199,10 +209,13 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
   } else {
     method_template =
         " * @param \\$input_type_id$ $$request client request\n"
-        " * @param \\Grpc\\ServerContext $$context server request context\n"
-        " * @return \\$output_type_id$ for response data, null if if error "
+        " * @param \\Grpc\\ServerContext $$context server request "
+        "context\n"
+        " * @return \\$output_type_id$ for response data, null if if "
+        "error "
         "occured\n"
-        " *     initial metadata (if any) and status (if not ok) should be set "
+        " *     initial metadata (if any) and status (if not ok) "
+        "should be set "
         "to $$context\n"
         " */\n"
         "public function $method_name$(\n"
@@ -223,9 +236,11 @@ void PrintServerMethodDescriptors(const ServiceDescriptor* service,
 
   out->Print(
       "/**\n"
-      " * Get the method descriptors of the service for server registration\n"
+      " * Get the method descriptors of the service for server "
+      "registration\n"
       " *\n"
-      " * @return array of \\Grpc\\MethodDescriptor for the service methods\n"
+      " * @return array of \\Grpc\\MethodDescriptor for the service "
+      "methods\n"
       " */\n"
       "public final function getMethodDescriptors(): array\n{\n");
   out->Indent();
@@ -248,14 +263,14 @@ void PrintServerMethodDescriptors(const ServiceDescriptor* service,
     } else {
       vars["call_type"] = "UNARY_CALL";
     }
-    out->Print(
-        vars,
-        "'/$service_name$/$method_name$' => new \\Grpc\\MethodDescriptor(\n"
-        "    $$this,\n"
-        "    '$method_name$',\n"
-        "    '\\$input_type_id$',\n"
-        "    \\Grpc\\MethodDescriptor::$call_type$\n"
-        "),\n");
+    out->Print(vars,
+               "'/$service_name$/$method_name$' => new "
+               "\\Grpc\\MethodDescriptor(\n"
+               "    $$this,\n"
+               "    '$method_name$',\n"
+               "    '\\$input_type_id$',\n"
+               "    \\Grpc\\MethodDescriptor::$call_type$\n"
+               "),\n");
   }
   out->Outdent();
   out->Outdent();
@@ -273,7 +288,8 @@ void PrintService(const ServiceDescriptor* service,
   out->Print("/**\n");
   out->Print(GetPHPComments(service, " *").c_str());
   out->Print(" */\n");
-  vars["name"] = GetPHPServiceClassname(service, class_suffix, is_server);
+  vars["name"] =
+      GetPHPServiceClassname(service, class_suffix, is_server);
   vars["extends"] = is_server ? "" : "extends \\Grpc\\BaseStub ";
   out->Print(vars, "class $name$ $extends${\n\n");
   out->Indent();
@@ -282,7 +298,8 @@ void PrintService(const ServiceDescriptor* service,
     out->Print(
         "/**\n * @param string $$hostname hostname\n"
         " * @param array $$opts channel options\n"
-        " * @param \\Grpc\\Channel $$channel (optional) re-use channel object\n"
+        " * @param \\Grpc\\Channel $$channel (optional) re-use channel "
+        "object\n"
         " */\n"
         "public function __construct($$hostname, $$opts, "
         "$$channel = null) {\n");
@@ -311,7 +328,8 @@ void PrintService(const ServiceDescriptor* service,
 
 std::string GenerateFile(const FileDescriptor* file,
                          const ServiceDescriptor* service,
-                         const std::string& class_suffix, bool is_server) {
+                         const std::string& class_suffix,
+                         bool is_server) {
   std::string output;
   {
     StringOutputStream output_stream(&output);

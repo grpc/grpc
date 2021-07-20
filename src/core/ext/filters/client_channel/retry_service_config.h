@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_SERVICE_CONFIG_H
@@ -31,7 +31,8 @@ namespace internal {
 
 class RetryGlobalConfig : public ServiceConfigParser::ParsedConfig {
  public:
-  RetryGlobalConfig(intptr_t max_milli_tokens, intptr_t milli_token_ratio)
+  RetryGlobalConfig(intptr_t max_milli_tokens,
+                    intptr_t milli_token_ratio)
       : max_milli_tokens_(max_milli_tokens),
         milli_token_ratio_(milli_token_ratio) {}
 
@@ -45,10 +46,11 @@ class RetryGlobalConfig : public ServiceConfigParser::ParsedConfig {
 
 class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
  public:
-  RetryMethodConfig(int max_attempts, grpc_millis initial_backoff,
-                    grpc_millis max_backoff, float backoff_multiplier,
-                    StatusCodeSet retryable_status_codes,
-                    absl::optional<grpc_millis> per_attempt_recv_timeout)
+  RetryMethodConfig(
+      int max_attempts, grpc_millis initial_backoff,
+      grpc_millis max_backoff, float backoff_multiplier,
+      StatusCodeSet retryable_status_codes,
+      absl::optional<grpc_millis> per_attempt_recv_timeout)
       : max_attempts_(max_attempts),
         initial_backoff_(initial_backoff),
         max_backoff_(max_backoff),
@@ -82,9 +84,10 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
       const grpc_channel_args* /*args*/, const Json& json,
       grpc_error_handle* error) override;
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* /*args*/, const Json& json,
-      grpc_error_handle* error) override;
+  std::unique_ptr<ServiceConfigParser::ParsedConfig>
+  ParsePerMethodParams(const grpc_channel_args* /*args*/,
+                       const Json& json,
+                       grpc_error_handle* error) override;
 
   static size_t ParserIndex();
   static void Register();

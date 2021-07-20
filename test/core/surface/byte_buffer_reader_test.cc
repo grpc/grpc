@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -116,7 +116,8 @@ static void test_peek_one_slice(void) {
              "Couldn't init byte buffer reader");
   first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
   GPR_ASSERT(first_code != 0);
-  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) ==
+             0);
   second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
   GPR_ASSERT(second_code == 0);
   grpc_byte_buffer_destroy(buffer);
@@ -139,7 +140,8 @@ static void test_peek_one_slice_malloc(void) {
              "Couldn't init byte buffer reader");
   first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
   GPR_ASSERT(first_code != 0);
-  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) ==
+             0);
   second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
   GPR_ASSERT(second_code == 0);
   grpc_byte_buffer_destroy(buffer);
@@ -161,7 +163,8 @@ static void test_peek_none_compressed_slice(void) {
              "Couldn't init byte buffer reader");
   first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
   GPR_ASSERT(first_code != 0);
-  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) ==
+             0);
   second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
   GPR_ASSERT(second_code == 0);
   grpc_byte_buffer_destroy(buffer);
@@ -182,11 +185,13 @@ static void test_byte_buffer_from_reader(void) {
 
   buffer_from_reader = grpc_raw_byte_buffer_from_reader(&reader);
   GPR_ASSERT(buffer->type == buffer_from_reader->type);
-  GPR_ASSERT(buffer_from_reader->data.raw.compression == GRPC_COMPRESS_NONE);
+  GPR_ASSERT(buffer_from_reader->data.raw.compression ==
+             GRPC_COMPRESS_NONE);
   GPR_ASSERT(buffer_from_reader->data.raw.slice_buffer.count == 1);
-  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(
-                        buffer_from_reader->data.raw.slice_buffer.slices[0]),
-                    "test", 4) == 0);
+  GPR_ASSERT(
+      memcmp(GRPC_SLICE_START_PTR(
+                 buffer_from_reader->data.raw.slice_buffer.slices[0]),
+             "test", 4) == 0);
 
   grpc_byte_buffer_destroy(buffer);
   grpc_byte_buffer_destroy(buffer_from_reader);
@@ -219,9 +224,10 @@ static void test_readall(void) {
   slice_out = grpc_byte_buffer_reader_readall(&reader);
 
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_out) == 512 + 1024);
-  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(slice_out), lotsa_as, 512) == 0);
-  GPR_ASSERT(memcmp(&(GRPC_SLICE_START_PTR(slice_out)[512]), lotsa_bs, 1024) ==
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(slice_out), lotsa_as, 512) ==
              0);
+  GPR_ASSERT(memcmp(&(GRPC_SLICE_START_PTR(slice_out)[512]), lotsa_bs,
+                    1024) == 0);
   grpc_slice_unref(slice_out);
   grpc_byte_buffer_destroy(buffer);
 }
@@ -255,9 +261,10 @@ static void test_byte_buffer_copy(void) {
   slice_out = grpc_byte_buffer_reader_readall(&reader);
 
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_out) == 512 + 1024);
-  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(slice_out), lotsa_as, 512) == 0);
-  GPR_ASSERT(memcmp(&(GRPC_SLICE_START_PTR(slice_out)[512]), lotsa_bs, 1024) ==
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(slice_out), lotsa_as, 512) ==
              0);
+  GPR_ASSERT(memcmp(&(GRPC_SLICE_START_PTR(slice_out)[512]), lotsa_bs,
+                    1024) == 0);
   grpc_slice_unref(slice_out);
   grpc_byte_buffer_destroy(buffer);
   grpc_byte_buffer_destroy(copied_buffer);

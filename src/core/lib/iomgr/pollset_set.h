@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,18 +25,23 @@
 
 /* A grpc_pollset_set is a set of pollsets that are interested in an
    action. Adding a pollset to a pollset_set automatically adds any
-   fd's (etc) that have been registered with the set_set to that pollset.
-   Registering fd's automatically adds them to all current pollsets. */
+   fd's (etc) that have been registered with the set_set to that
+   pollset. Registering fd's automatically adds them to all current
+   pollsets. */
 
 typedef struct grpc_pollset_set grpc_pollset_set;
 
 typedef struct grpc_pollset_set_vtable {
   grpc_pollset_set* (*create)(void);
   void (*destroy)(grpc_pollset_set* pollset_set);
-  void (*add_pollset)(grpc_pollset_set* pollset_set, grpc_pollset* pollset);
-  void (*del_pollset)(grpc_pollset_set* pollset_set, grpc_pollset* pollset);
-  void (*add_pollset_set)(grpc_pollset_set* bag, grpc_pollset_set* item);
-  void (*del_pollset_set)(grpc_pollset_set* bag, grpc_pollset_set* item);
+  void (*add_pollset)(grpc_pollset_set* pollset_set,
+                      grpc_pollset* pollset);
+  void (*del_pollset)(grpc_pollset_set* pollset_set,
+                      grpc_pollset* pollset);
+  void (*add_pollset_set)(grpc_pollset_set* bag,
+                          grpc_pollset_set* item);
+  void (*del_pollset_set)(grpc_pollset_set* bag,
+                          grpc_pollset_set* item);
 } grpc_pollset_set_vtable;
 
 void grpc_set_pollset_set_vtable(grpc_pollset_set_vtable* vtable);

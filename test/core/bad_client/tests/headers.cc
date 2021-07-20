@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,9 +26,10 @@
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (server->core_server->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(
+        grpc_completion_queue_next(
+            cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+            .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -43,13 +44,17 @@ int main(int argc, char** argv) {
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x01",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x01\x00",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x01\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x01\x04",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x01\x04",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00\x00\x00\x01\x05",
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
+                           PFX_STR "\x00\x00\x00\x01\x05",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x01\x04\x00",
@@ -60,12 +65,12 @@ int main(int argc, char** argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x01\x04\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x01\x04\x00\x00\x00\x00",
-                           GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x01\x04\x00\x00\x00\x01",
-                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x00\x01\x04\x00\x00\x00\x00",
+      GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x00\x01\x04\x00\x00\x00\x01",
+      GRPC_BAD_CLIENT_DISCONNECT);
 
   /* test adding prioritization data */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
@@ -294,7 +299,8 @@ int main(int argc, char** argv) {
                            "\x00\x00\x00\x01\x00\x00\x00\x00\x01"
                            "\x00\x00\x00\x00\x04\x00\x00\x00\x01",
                            0);
-  /* non-ending header followed by a continuation frame for a different stream
+  /* non-ending header followed by a continuation frame for a different
+   * stream
    */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
@@ -303,8 +309,9 @@ int main(int argc, char** argv) {
                            "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
                            0);
   /* opening with a continuation frame */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x09\x04\x00\x00\x00\x01", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
+      0);
   /* three header frames */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
                            PFX_STR
@@ -314,9 +321,9 @@ int main(int argc, char** argv) {
                            GRPC_BAD_CLIENT_DISCONNECT);
 
   /* an invalid header found with fuzzing */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,
-                           PFX_STR "\x00\x00\x00\x01\x39\x67\xed\x1d\x64",
-                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, nullptr, PFX_STR "\x00\x00\x00\x01\x39\x67\xed\x1d\x64",
+      GRPC_BAD_CLIENT_DISCONNECT);
 
   /* a badly encoded timeout value */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,

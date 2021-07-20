@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,7 +26,8 @@
 
 #include <grpc/grpc.h>
 
-/* Main struct for a crypter counter managed within seal/unseal operations. */
+/* Main struct for a crypter counter managed within seal/unseal
+ * operations. */
 typedef struct alts_counter {
   size_t size;
   size_t overflow_size;
@@ -36,21 +37,24 @@ typedef struct alts_counter {
 /**
  * This method creates and initializes an alts_counter instance.
  *
- * - is_client: a flag indicating if the alts_counter instance will be used
- *   at client (is_client = true) or server (is_client = false) side.
+ * - is_client: a flag indicating if the alts_counter instance will be
+ * used at client (is_client = true) or server (is_client = false) side.
  * - counter_size: size of buffer holding the counter value.
- * - overflow_size: overflow size in bytes. The counter instance can be used
- *   to produce at most 2^(overflow_size*8) frames.
- * - crypter_counter: an alts_counter instance to be returned from the method.
- * - error_details: a buffer containing an error message if the method does not
- *   function correctly. It is legal to pass nullptr into error_details and
- *   otherwise, the parameter should be freed with gpr_free.
+ * - overflow_size: overflow size in bytes. The counter instance can be
+ * used to produce at most 2^(overflow_size*8) frames.
+ * - crypter_counter: an alts_counter instance to be returned from the
+ * method.
+ * - error_details: a buffer containing an error message if the method
+ * does not function correctly. It is legal to pass nullptr into
+ * error_details and otherwise, the parameter should be freed with
+ * gpr_free.
  *
  * On success, the method returns GRPC_STATUS_OK. Otherwise,
  * it returns an error status code along with its details specified in
  * error_details (if error_details is not nullptr).
  */
-grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
+grpc_status_code alts_counter_create(bool is_client,
+                                     size_t counter_size,
                                      size_t overflow_size,
                                      alts_counter** crypter_counter,
                                      char** error_details);
@@ -59,13 +63,14 @@ grpc_status_code alts_counter_create(bool is_client, size_t counter_size,
  * This method increments the internal counter.
  *
  * - crypter_counter: an alts_counter instance.
- * - is_overflow: after incrementing the internal counter, if an overflow
- *   occurs, is_overflow is set to true, and no further calls to
- *   alts_counter_increment() should be made. Otherwise, is_overflow is set to
- *   false.
- * - error_details: a buffer containing an error message if the method does not
- *   function correctly. It is legal to pass nullptr into error_details and
- *   otherwise, the parameter should be freed with gpr_free.
+ * - is_overflow: after incrementing the internal counter, if an
+ * overflow occurs, is_overflow is set to true, and no further calls to
+ *   alts_counter_increment() should be made. Otherwise, is_overflow is
+ * set to false.
+ * - error_details: a buffer containing an error message if the method
+ * does not function correctly. It is legal to pass nullptr into
+ * error_details and otherwise, the parameter should be freed with
+ * gpr_free.
  *
  * On success, the method returns GRPC_STATUS_OK. Otherwise,
  * it returns an error status code along with its details specified in
@@ -90,7 +95,8 @@ size_t alts_counter_get_size(alts_counter* crypter_counter);
 unsigned char* alts_counter_get_counter(alts_counter* crypter_counter);
 
 /**
- * This method de-allocates all memory allocated to an alts_coutner instance.
+ * This method de-allocates all memory allocated to an alts_coutner
+ * instance.
  * - crypter_counter: an alts_counter instance.
  */
 void alts_counter_destroy(alts_counter* crypter_counter);

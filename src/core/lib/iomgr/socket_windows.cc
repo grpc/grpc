@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,12 +43,14 @@
 static DWORD s_wsa_socket_flags;
 
 grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
-  grpc_winsocket* r = (grpc_winsocket*)gpr_malloc(sizeof(grpc_winsocket));
+  grpc_winsocket* r =
+      (grpc_winsocket*)gpr_malloc(sizeof(grpc_winsocket));
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
   grpc_iomgr_register_object(
-      &r->iomgr_object, absl::StrFormat("%s:socket=0x%p", name, r).c_str());
+      &r->iomgr_object,
+      absl::StrFormat("%s:socket=0x%p", name, r).c_str());
   grpc_iocp_add_socket(r);
   return r;
 }
@@ -62,8 +64,8 @@ SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket) {
    various callsites of that function, which happens to be in various
    mutex hold states, and that'd be unsafe to call them directly. */
 void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
-  /* Grab the function pointer for DisconnectEx for that specific socket.
-     It may change depending on the interface. */
+  /* Grab the function pointer for DisconnectEx for that specific
+     socket. It may change depending on the interface. */
   int status;
   GUID guid = WSAID_DISCONNECTEX;
   LPFN_DISCONNECTEX DisconnectEx;
@@ -77,9 +79,10 @@ void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
   winsocket->shutdown_called = true;
   gpr_mu_unlock(&winsocket->state_mu);
 
-  status = WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
-                    &guid, sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
-                    &ioctl_num_bytes, NULL, NULL);
+  status =
+      WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+               &guid, sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
+               &ioctl_num_bytes, NULL, NULL);
 
   if (status == 0) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
@@ -117,7 +120,8 @@ void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
 -) The IOCP already completed in the background, and we need to call
 the callback now.
 -) The IOCP hasn't completed yet, and we're queuing it for later. */
-static void socket_notify_on_iocp(grpc_winsocket* socket, grpc_closure* closure,
+static void socket_notify_on_iocp(grpc_winsocket* socket,
+                                  grpc_closure* closure,
                                   grpc_winsocket_callback_info* info) {
   GPR_ASSERT(info->closure == NULL);
   gpr_mu_lock(&socket->state_mu);
@@ -135,7 +139,8 @@ void grpc_socket_notify_on_write(grpc_winsocket* socket,
   socket_notify_on_iocp(socket, closure, &socket->write_info);
 }
 
-void grpc_socket_notify_on_read(grpc_winsocket* socket, grpc_closure* closure) {
+void grpc_socket_notify_on_read(grpc_winsocket* socket,
+                                grpc_closure* closure) {
   socket_notify_on_iocp(socket, closure, &socket->read_info);
 }
 
@@ -144,7 +149,8 @@ void grpc_socket_become_ready(grpc_winsocket* socket,
   GPR_ASSERT(!info->has_pending_iocp);
   gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, info->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, info->closure,
+                            GRPC_ERROR_NONE);
     info->closure = NULL;
   } else {
     info->has_pending_iocp = 1;
@@ -161,17 +167,20 @@ static void probe_ipv6_once(void) {
   SOCKET s = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (s == INVALID_SOCKET) {
-    gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+    gpr_log(GPR_INFO,
+            "Disabling AF_INET6 sockets because socket() failed.");
   } else {
     grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
-    if (bind(s, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
+    if (bind(s, reinterpret_cast<grpc_sockaddr*>(&addr),
+             sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
-      gpr_log(GPR_INFO,
-              "Disabling AF_INET6 sockets because ::1 is not available.");
+      gpr_log(
+          GPR_INFO,
+          "Disabling AF_INET6 sockets because ::1 is not available.");
     }
     closesocket(s);
   }
@@ -186,12 +195,13 @@ DWORD grpc_get_default_wsa_socket_flags() { return s_wsa_socket_flags; }
 
 void grpc_wsa_socket_flags_init() {
   s_wsa_socket_flags = WSA_FLAG_OVERLAPPED;
-  /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older Windows
-     versions, see
+  /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older
+     Windows versions, see
      https://msdn.microsoft.com/en-us/library/windows/desktop/ms742212(v=vs.85).aspx
      for details. */
-  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                          s_wsa_socket_flags | WSA_FLAG_NO_HANDLE_INHERIT);
+  SOCKET sock =
+      WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
+                s_wsa_socket_flags | WSA_FLAG_NO_HANDLE_INHERIT);
   if (sock != INVALID_SOCKET) {
     /* Windows 7, Windows 2008 R2 with SP1 or later */
     s_wsa_socket_flags |= WSA_FLAG_NO_HANDLE_INHERIT;

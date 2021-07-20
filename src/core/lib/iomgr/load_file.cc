@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,7 +30,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 
-grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
+grpc_error_handle grpc_load_file(const char* filename,
+                                 int add_null_terminator,
                                  grpc_slice* output) {
   unsigned char* contents = nullptr;
   size_t contents_size = 0;
@@ -67,12 +68,12 @@ end:
   *output = result;
   if (file != nullptr) fclose(file);
   if (error != GRPC_ERROR_NONE) {
-    grpc_error_handle error_out =
-        grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                               "Failed to load file", &error, 1),
-                           GRPC_ERROR_STR_FILENAME,
-                           grpc_slice_from_copied_string(
-                               filename));  // TODO(ncteisen), always static?
+    grpc_error_handle error_out = grpc_error_set_str(
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "Failed to load file", &error, 1),
+        GRPC_ERROR_STR_FILENAME,
+        grpc_slice_from_copied_string(
+            filename));  // TODO(ncteisen), always static?
     GRPC_ERROR_UNREF(error);
     error = error_out;
   }

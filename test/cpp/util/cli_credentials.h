@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,20 +33,22 @@ class CliCredentials {
   virtual std::string GetSslTargetNameOverride() const;
 
  protected:
-  // Returns the appropriate channel_creds_type value for the set of legacy
-  // flag arguments.
+  // Returns the appropriate channel_creds_type value for the set of
+  // legacy flag arguments.
   virtual std::string GetDefaultChannelCredsType() const;
   // Returns the appropriate call_creds value for the set of legacy flag
   // arguments.
   virtual std::string GetDefaultCallCreds() const;
-  // Returns the base transport channel credentials. Child classes can override
-  // to support additional channel_creds_types unknown to this base class.
-  virtual std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials()
+  // Returns the base transport channel credentials. Child classes can
+  // override to support additional channel_creds_types unknown to this
+  // base class.
+  virtual std::shared_ptr<grpc::ChannelCredentials>
+  GetChannelCredentials() const;
+  // Returns call credentials to composite onto the base transport
+  // channel credentials. Child classes can override to support
+  // additional authentication flags unknown to this base class.
+  virtual std::shared_ptr<grpc::CallCredentials> GetCallCredentials()
       const;
-  // Returns call credentials to composite onto the base transport channel
-  // credentials. Child classes can override to support additional
-  // authentication flags unknown to this base class.
-  virtual std::shared_ptr<grpc::CallCredentials> GetCallCredentials() const;
 };
 
 }  // namespace testing

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -40,19 +40,22 @@ int main(int argc, char** argv) {
 
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file",
-      grpc_load_file("src/core/tsi/test_creds/badserver.pem", 1, &cert_slice)));
+      grpc_load_file("src/core/tsi/test_creds/badserver.pem", 1,
+                     &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file",
-      grpc_load_file("src/core/tsi/test_creds/badserver.key", 1, &key_slice)));
+      grpc_load_file("src/core/tsi/test_creds/badserver.key", 1,
+                     &key_slice)));
   pem_key_cert_pair.private_key =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
 
-  ssl_creds = grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair, 1,
-                                                 0, nullptr);
+  ssl_creds = grpc_ssl_server_credentials_create(
+      nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
+  GPR_ASSERT(
+      grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
 
   grpc_slice_unref(cert_slice);

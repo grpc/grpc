@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #ifndef GRPC_CORE_LIB_IOMGR_PORT_H
@@ -25,8 +25,8 @@
 #define GRPC_CUSTOM_SOCKET
 #endif
 #endif
-/* This needs to be separate from the other conditions because it needs to
- * apply to custom sockets too */
+/* This needs to be separate from the other conditions because it needs
+ * to apply to custom sockets too */
 #ifdef GPR_WINDOWS
 #define GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY 1
 #endif
@@ -80,8 +80,8 @@
 #endif
 #if !(__GLIBC_PREREQ(2, 17))
 /*
- * TCP_USER_TIMEOUT wasn't imported to glibc until 2.17. Use Linux system
- * header instead.
+ * TCP_USER_TIMEOUT wasn't imported to glibc until 2.17. Use Linux
+ * system header instead.
  */
 #define GRPC_LINUX_TCP_H 1
 #endif /* __GLIBC_PREREQ(2, 17) */
@@ -173,8 +173,8 @@
 #define GRPC_HAVE_IFADDRS 1
 #define GRPC_HAVE_IPV6_RECVPKTINFO 1
 #define GRPC_HAVE_IP_PKTINFO 1
-// Zircon does not support the MSG_NOSIGNAL flag since it doesn't support
-// signals.
+// Zircon does not support the MSG_NOSIGNAL flag since it doesn't
+// support signals.
 #undef GRPC_HAVE_MSG_NOSIGNAL
 #define GRPC_HAVE_UNIX_SOCKET 1
 #define GRPC_POSIX_WAKEUP_FD 1
@@ -217,7 +217,8 @@
 #endif
 
 #if defined(GRPC_POSIX_HOST_NAME_MAX) && defined(GRPC_POSIX_SYSCONF)
-#error "Cannot define both GRPC_POSIX_HOST_NAME_MAX and GRPC_POSIX_SYSCONF"
+#error \
+    "Cannot define both GRPC_POSIX_HOST_NAME_MAX and GRPC_POSIX_SYSCONF"
 #endif
 #if !defined(GRPC_POSIX_HOST_NAME_MAX) && !defined(GRPC_POSIX_SYSCONF)
 #define GRPC_GETHOSTNAME_FALLBACK 1

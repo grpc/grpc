@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,7 +46,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-/* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
+/* This test exercises IPv4, IPv6, and dualstack sockets in various
+ * ways. */
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -58,9 +59,11 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void log_resolved_addrs(const char* label, const char* hostname) {
+static void log_resolved_addrs(const char* label,
+                               const char* hostname) {
   grpc_resolved_addresses* res = nullptr;
-  grpc_error_handle error = grpc_blocking_resolve_address(hostname, "80", &res);
+  grpc_error_handle error =
+      grpc_blocking_resolve_address(hostname, "80", &res);
   if (error != GRPC_ERROR_NONE || res == nullptr) {
     GRPC_LOG_IF_ERROR(hostname, error);
     return;
@@ -72,8 +75,8 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses_destroy(res);
 }
 
-void test_connect(const char* server_host, const char* client_host, int port,
-                  int expect_ok) {
+void test_connect(const char* server_host, const char* client_host,
+                  int port, int expect_ok) {
   grpc_channel* client;
   grpc_server* server;
   grpc_completion_queue* cq;
@@ -101,7 +104,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     picked_port = 1;
   }
 
-  std::string server_hostport = grpc_core::JoinHostPort(server_host, port);
+  std::string server_hostport =
+      grpc_core::JoinHostPort(server_host, port);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -125,20 +129,22 @@ void test_connect(const char* server_host, const char* client_host, int port,
   /* Create client. */
   std::string client_hostport;
   if (client_host[0] == 'i') {
-    /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
+    /* for ipv4:/ipv6: addresses, concatenate the port to each of the
+     * parts */
     std::vector<absl::string_view> uri_parts =
         absl::StrSplit(client_host, ',', absl::SkipEmpty());
     std::vector<std::string> hosts_with_port;
     hosts_with_port.reserve(uri_parts.size());
     for (const absl::string_view& uri_part : uri_parts) {
-      hosts_with_port.push_back(absl::StrFormat("%s:%d", uri_part, port));
+      hosts_with_port.push_back(
+          absl::StrFormat("%s:%d", uri_part, port));
     }
     client_hostport = absl::StrJoin(hosts_with_port, ",");
   } else {
     client_hostport = grpc_core::JoinHostPort(client_host, port);
   }
-  client =
-      grpc_insecure_channel_create(client_hostport.c_str(), nullptr, nullptr);
+  client = grpc_insecure_channel_create(client_hostport.c_str(),
+                                        nullptr, nullptr);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport.c_str(), client_hostport.c_str(),
@@ -157,9 +163,9 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
   /* Send a trivial request. */
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr");
-  c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-                               grpc_slice_from_static_string("/foo"), &host,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(
+      client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+      grpc_slice_from_static_string("/foo"), &host, deadline, nullptr);
   GPR_ASSERT(c);
 
   memset(ops, 0, sizeof(ops));
@@ -174,25 +180,28 @@ void test_connect(const char* server_host, const char* client_host, int port,
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (expect_ok) {
     /* Check for a successful request. */
     error = grpc_server_request_call(server, &s, &call_details,
-                                     &request_metadata_recv, cq, cq, tag(101));
+                                     &request_metadata_recv, cq, cq,
+                                     tag(101));
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
     cq_verify(cqv);
@@ -229,8 +238,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
     GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
     GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-    GPR_ASSERT(0 ==
-               grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
+    GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host,
+                                       "foo.test.google.fr"));
     GPR_ASSERT(was_cancelled == 0);
 
     grpc_call_unref(s);
@@ -254,9 +263,9 @@ void test_connect(const char* server_host, const char* client_host, int port,
   /* Destroy server. */
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(shutdown_cq);
@@ -277,7 +286,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
 int external_dns_works(const char* host) {
   grpc_resolved_addresses* res = nullptr;
-  grpc_error_handle error = grpc_blocking_resolve_address(host, "80", &res);
+  grpc_error_handle error =
+      grpc_blocking_resolve_address(host, "80", &res);
   GRPC_ERROR_UNREF(error);
   if (res != nullptr) {
     grpc_resolved_addresses_destroy(res);
@@ -311,7 +321,8 @@ int main(int argc, char** argv) {
     test_connect("0.0.0.0", "::ffff:127.0.0.1", 0, 1);
     test_connect("0.0.0.0", "ipv4:127.0.0.1", 0, 1);
     test_connect("0.0.0.0", "ipv4:127.0.0.1,127.0.0.2,127.0.0.3", 0, 1);
-    test_connect("0.0.0.0", "ipv6:[::ffff:127.0.0.1],[::ffff:127.0.0.2]", 0, 1);
+    test_connect("0.0.0.0",
+                 "ipv6:[::ffff:127.0.0.1],[::ffff:127.0.0.2]", 0, 1);
     test_connect("0.0.0.0", "localhost", 0, 1);
     if (do_ipv6) {
       test_connect("::", "::1", 0, 1);
@@ -333,21 +344,22 @@ int main(int argc, char** argv) {
     }
 
     if (!external_dns_works("loopback46.unittest.grpc.io")) {
-      gpr_log(GPR_INFO, "Skipping tests that depend on *.unittest.grpc.io.");
+      gpr_log(GPR_INFO,
+              "Skipping tests that depend on *.unittest.grpc.io.");
     } else {
-      test_connect("loopback46.unittest.grpc.io", "loopback4.unittest.grpc.io",
-                   0, 1);
-      test_connect("loopback4.unittest.grpc.io", "loopback46.unittest.grpc.io",
-                   0, 1);
+      test_connect("loopback46.unittest.grpc.io",
+                   "loopback4.unittest.grpc.io", 0, 1);
+      test_connect("loopback4.unittest.grpc.io",
+                   "loopback46.unittest.grpc.io", 0, 1);
       if (do_ipv6) {
         test_connect("loopback46.unittest.grpc.io",
                      "loopback6.unittest.grpc.io", 0, 1);
         test_connect("loopback6.unittest.grpc.io",
                      "loopback46.unittest.grpc.io", 0, 1);
-        test_connect("loopback4.unittest.grpc.io", "loopback6.unittest.grpc.io",
-                     0, 0);
-        test_connect("loopback6.unittest.grpc.io", "loopback4.unittest.grpc.io",
-                     0, 0);
+        test_connect("loopback4.unittest.grpc.io",
+                     "loopback6.unittest.grpc.io", 0, 0);
+        test_connect("loopback6.unittest.grpc.io",
+                     "loopback4.unittest.grpc.io", 0, 0);
       }
     }
   }

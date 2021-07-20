@@ -8,9 +8,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 #ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H
@@ -30,17 +30,17 @@ class AuthorizationMatcher {
  public:
   virtual ~AuthorizationMatcher() = default;
 
-  // Returns whether or not the permission/principal matches the rules of the
-  // matcher.
+  // Returns whether or not the permission/principal matches the rules
+  // of the matcher.
   virtual bool Matches(const EvaluateArgs& args) const = 0;
 
-  // Creates an instance of a matcher based off the rules defined in Permission
-  // config.
+  // Creates an instance of a matcher based off the rules defined in
+  // Permission config.
   static std::unique_ptr<AuthorizationMatcher> Create(
       Rbac::Permission permission);
 
-  // Creates an instance of a matcher based off the rules defined in Principal
-  // config.
+  // Creates an instance of a matcher based off the rules defined in
+  // Principal config.
   static std::unique_ptr<AuthorizationMatcher> Create(
       Rbac::Principal principal);
 };
@@ -124,7 +124,8 @@ class IpAuthorizationMatcher : public AuthorizationMatcher {
   const uint32_t prefix_len_;
 };
 
-// Perform a match against port number of the destination (local) address.
+// Perform a match against port number of the destination (local)
+// address.
 class PortAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit PortAuthorizationMatcher(int port) : port_(port) {}
@@ -135,8 +136,8 @@ class PortAuthorizationMatcher : public AuthorizationMatcher {
   const int port_;
 };
 
-// Matches the principal name as described in the peer certificate. Uses URI SAN
-// or DNS SAN in that order, otherwise uses subject field.
+// Matches the principal name as described in the peer certificate. Uses
+// URI SAN or DNS SAN in that order, otherwise uses subject field.
 class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit AuthenticatedAuthorizationMatcher(StringMatcher auth)
@@ -148,8 +149,8 @@ class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
   const StringMatcher matcher_;
 };
 
-// Perform a match against the request server from the client's connection
-// request. This is typically TLS SNI. Currently unsupported.
+// Perform a match against the request server from the client's
+// connection request. This is typically TLS SNI. Currently unsupported.
 class ReqServerNameAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit ReqServerNameAuthorizationMatcher(
@@ -175,15 +176,15 @@ class PathAuthorizationMatcher : public AuthorizationMatcher {
 };
 
 // Performs a match for policy field in RBAC, which is a collection of
-// permission and principal matchers. Policy matches iff, we find a match in one
-// of its permissions and a match in one of its principals.
+// permission and principal matchers. Policy matches iff, we find a
+// match in one of its permissions and a match in one of its principals.
 class PolicyAuthorizationMatcher : public AuthorizationMatcher {
  public:
   explicit PolicyAuthorizationMatcher(Rbac::Policy policy)
-      : permissions_(
-            AuthorizationMatcher::Create(std::move(policy.permissions))),
-        principals_(
-            AuthorizationMatcher::Create(std::move(policy.principals))) {}
+      : permissions_(AuthorizationMatcher::Create(
+            std::move(policy.permissions))),
+        principals_(AuthorizationMatcher::Create(
+            std::move(policy.principals))) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 

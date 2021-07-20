@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,7 +62,8 @@ static size_t bucket_for_unchecked(grpc_histogram* h, double x) {
 
 /* bounds checked version of the above */
 static size_t bucket_for(grpc_histogram* h, double x) {
-  size_t bucket = bucket_for_unchecked(h, GPR_CLAMP(x, 1.0, h->max_possible));
+  size_t bucket =
+      bucket_for_unchecked(h, GPR_CLAMP(x, 1.0, h->max_possible));
   GPR_ASSERT(bucket < h->num_buckets);
   return bucket;
 }
@@ -89,8 +90,8 @@ grpc_histogram* grpc_histogram_create(double resolution,
   h->num_buckets = bucket_for_unchecked(h, max_bucket_start) + 1;
   GPR_ASSERT(h->num_buckets > 1);
   GPR_ASSERT(h->num_buckets < 100000000);
-  h->buckets =
-      static_cast<uint32_t*>(gpr_zalloc(sizeof(uint32_t) * h->num_buckets));
+  h->buckets = static_cast<uint32_t*>(
+      gpr_zalloc(sizeof(uint32_t) * h->num_buckets));
   return h;
 }
 
@@ -112,7 +113,8 @@ void grpc_histogram_add(grpc_histogram* h, double x) {
   h->buckets[bucket_for(h, x)]++;
 }
 
-int grpc_histogram_merge(grpc_histogram* dst, const grpc_histogram* src) {
+int grpc_histogram_merge(grpc_histogram* dst,
+                         const grpc_histogram* src) {
   if ((dst->num_buckets != src->num_buckets) ||
       (dst->multiplier != src->multiplier)) {
     /* Fail because these histograms don't match */
@@ -125,9 +127,11 @@ int grpc_histogram_merge(grpc_histogram* dst, const grpc_histogram* src) {
 }
 
 void grpc_histogram_merge_contents(grpc_histogram* histogram,
-                                   const uint32_t* data, size_t data_count,
-                                   double min_seen, double max_seen, double sum,
-                                   double sum_of_squares, double count) {
+                                   const uint32_t* data,
+                                   size_t data_count, double min_seen,
+                                   double max_seen, double sum,
+                                   double sum_of_squares,
+                                   double count) {
   size_t i;
   GPR_ASSERT(histogram->num_buckets == data_count);
   histogram->sum += sum;
@@ -144,7 +148,8 @@ void grpc_histogram_merge_contents(grpc_histogram* histogram,
   }
 }
 
-static double threshold_for_count_below(grpc_histogram* h, double count_below) {
+static double threshold_for_count_below(grpc_histogram* h,
+                                        double count_below) {
   double count_so_far;
   double lower_bound;
   double upper_bound;
@@ -171,9 +176,10 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
     }
   }
   if (count_so_far == count_below) {
-    /* this bucket hits the threshold exactly... we should be midway through
-       any run of zero values following the bucket */
-    for (upper_idx = lower_idx + 1; upper_idx < h->num_buckets; upper_idx++) {
+    /* this bucket hits the threshold exactly... we should be midway
+       through any run of zero values following the bucket */
+    for (upper_idx = lower_idx + 1; upper_idx < h->num_buckets;
+         upper_idx++) {
       if (h->buckets[upper_idx]) {
         break;
       }
@@ -182,8 +188,8 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
             bucket_start(h, static_cast<double>(upper_idx))) /
            2.0;
   } else {
-    /* treat values as uniform throughout the bucket, and find where this value
-       should lie */
+    /* treat values as uniform throughout the bucket, and find where
+       this value should lie */
     lower_bound = bucket_start(h, static_cast<double>(lower_idx));
     upper_bound = bucket_start(h, static_cast<double>(lower_idx + 1));
     return GPR_CLAMP(upper_bound - (upper_bound - lower_bound) *

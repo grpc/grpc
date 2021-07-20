@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -62,7 +62,8 @@ namespace testing {
 namespace {
 class FakeClient {
  public:
-  explicit FakeClient(EchoTestService::StubInterface* stub) : stub_(stub) {}
+  explicit FakeClient(EchoTestService::StubInterface* stub)
+      : stub_(stub) {}
 
   void DoEcho() {
     ClientContext context;
@@ -129,7 +130,8 @@ class FakeClient {
     ClientContext context;
     std::string msg("hello");
 
-    std::unique_ptr<ClientReaderWriterInterface<EchoRequest, EchoResponse>>
+    std::unique_ptr<
+        ClientReaderWriterInterface<EchoRequest, EchoResponse>>
         stream = stub_->BidiStream(&context);
 
     request.set_message(msg + "0");
@@ -160,22 +162,24 @@ class FakeClient {
   EchoTestService::StubInterface* stub_;
 };
 
-class CallbackTestServiceImpl : public EchoTestService::CallbackService {
+class CallbackTestServiceImpl
+    : public EchoTestService::CallbackService {
  public:
   ServerUnaryReactor* Echo(CallbackServerContext* context,
                            const EchoRequest* request,
                            EchoResponse* response) override {
-    // Make the mock service explicitly treat empty input messages as invalid
-    // arguments so that we can test various results of status. In general, a
-    // mocked service should just use the original service methods, but we are
-    // adding this variance in Status return value just to improve coverage in
-    // this test.
+    // Make the mock service explicitly treat empty input messages as
+    // invalid arguments so that we can test various results of status.
+    // In general, a mocked service should just use the original service
+    // methods, but we are adding this variance in Status return value
+    // just to improve coverage in this test.
     auto* reactor = context->DefaultReactor();
     if (request->message().length() > 0) {
       response->set_message(request->message());
       reactor->Finish(Status::OK);
     } else {
-      reactor->Finish(Status(StatusCode::INVALID_ARGUMENT, "Invalid request"));
+      reactor->Finish(
+          Status(StatusCode::INVALID_ARGUMENT, "Invalid request"));
     }
     return reactor;
   }
@@ -238,7 +242,8 @@ TEST_F(MockCallbackTest, MockedCallFails) {
   auto* reactor = service_.Echo(&ctx, &req, &resp);
   EXPECT_EQ(reactor, peer.reactor());
   EXPECT_TRUE(peer.test_status_set());
-  EXPECT_EQ(peer.test_status().error_code(), StatusCode::INVALID_ARGUMENT);
+  EXPECT_EQ(peer.test_status().error_code(),
+            StatusCode::INVALID_ARGUMENT);
 }
 
 class TestServiceImpl : public EchoTestService::Service {
@@ -262,7 +267,8 @@ class TestServiceImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* /*context*/, const EchoRequest* request,
+  Status ResponseStream(ServerContext* /*context*/,
+                        const EchoRequest* request,
                         ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     vector<std::string> tokens = split(request->message());

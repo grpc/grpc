@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -52,15 +52,17 @@
 
 // Each large-metadata header is constructed from these start and end
 // strings, with a two-digit number in between.
-#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR "\x10\x0duser-header"
-#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR                   \
-  "~aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR \
+  "\x10\x0duser-header"
+#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR               \
+  "~aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+  "aaaa"                                                               \
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 // The size of each large-metadata header string.
-#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE                     \
-  ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR) - 1) + 2 + \
-   (sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR) - 1))
+#define PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_SIZE                 \
+  ((sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR) - 1) + \
+   2 + (sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR) - 1))
 
 // The number of headers we're adding and the total size of the client
 // payload.
@@ -78,13 +80,14 @@ int main(int argc, char** argv) {
   std::vector<std::string> headers;
   for (i = 0; i < NUM_HEADERS; ++i) {
     headers.push_back(absl::StrFormat(
-        "%s%02d%s", PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR, i,
-        PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR));
+        "%s%02d%s", PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_START_STR,
+        i, PFX_TOO_MUCH_METADATA_FROM_CLIENT_HEADER_END_STR));
   }
   std::string client_headers = absl::StrJoin(headers, "");
   char client_payload[TOO_MUCH_METADATA_FROM_CLIENT_REQUEST_SIZE] =
       PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST;
-  memcpy(client_payload + sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST) - 1,
+  memcpy(client_payload +
+             sizeof(PFX_TOO_MUCH_METADATA_FROM_CLIENT_REQUEST) - 1,
          client_headers.data(), client_headers.size());
   grpc_bad_client_arg args[2];
   args[0] = connection_preface_arg;

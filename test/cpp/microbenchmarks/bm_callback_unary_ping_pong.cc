@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,8 +27,8 @@ namespace testing {
  * CONFIGURATIONS
  */
 
-// Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
-// internal microbenchmarking tooling
+// Replace "benchmark::internal::Benchmark" with "::testing::Benchmark"
+// to use internal microbenchmarking tooling
 static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
   b->Args({0, 0});
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
@@ -50,62 +50,76 @@ BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, MinInProcess, NoOpMutator,
 
 // Client context with different metadata
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>, NoOpMutator)
+                   Client_AddMetadata<RandomBinaryMetadata<10>, 1>,
+                   NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>, NoOpMutator)
+                   Client_AddMetadata<RandomBinaryMetadata<31>, 1>,
+                   NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<100>, 1>,
                    NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>, NoOpMutator)
+                   Client_AddMetadata<RandomBinaryMetadata<10>, 2>,
+                   NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>, NoOpMutator)
+                   Client_AddMetadata<RandomBinaryMetadata<31>, 2>,
+                   NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
                    Client_AddMetadata<RandomBinaryMetadata<100>, 2>,
                    NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>, NoOpMutator)
+                   Client_AddMetadata<RandomAsciiMetadata<10>, 1>,
+                   NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>, NoOpMutator)
+                   Client_AddMetadata<RandomAsciiMetadata<31>, 1>,
+                   NoOpMutator)
     ->Args({0, 0});
 BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess,
-                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>, NoOpMutator)
+                   Client_AddMetadata<RandomAsciiMetadata<100>, 1>,
+                   NoOpMutator)
     ->Args({0, 0});
 
 // Server context with different metadata
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>)
+BENCHMARK_TEMPLATE(
+    BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
+    Server_AddInitialMetadata<RandomBinaryMetadata<10>, 1>)
     ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>)
+BENCHMARK_TEMPLATE(
+    BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
+    Server_AddInitialMetadata<RandomBinaryMetadata<31>, 1>)
     ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>)
+BENCHMARK_TEMPLATE(
+    BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
+    Server_AddInitialMetadata<RandomBinaryMetadata<100>, 1>)
     ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>)
+BENCHMARK_TEMPLATE(
+    BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
+    Server_AddInitialMetadata<RandomAsciiMetadata<10>, 1>)
     ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>)
+BENCHMARK_TEMPLATE(
+    BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
+    Server_AddInitialMetadata<RandomAsciiMetadata<31>, 1>)
     ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>)
+BENCHMARK_TEMPLATE(
+    BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
+    Server_AddInitialMetadata<RandomAsciiMetadata<100>, 1>)
     ->Args({0, 0});
-BENCHMARK_TEMPLATE(BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
-                   Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>)
+BENCHMARK_TEMPLATE(
+    BM_CallbackUnaryPingPong, InProcess, NoOpMutator,
+    Server_AddInitialMetadata<RandomAsciiMetadata<10>, 100>)
     ->Args({0, 0});
 }  // namespace testing
 }  // namespace grpc
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

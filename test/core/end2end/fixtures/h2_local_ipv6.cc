@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,23 +27,27 @@
 #include "test/core/util/test_config.h"
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_ipv6(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/,
+    grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f =
       grpc_end2end_local_chttp2_create_fixture_fullstack();
   int port = grpc_pick_unused_port_or_die();
-  static_cast<grpc_end2end_local_fullstack_fixture_data*>(f.fixture_data)
+  static_cast<grpc_end2end_local_fullstack_fixture_data*>(
+      f.fixture_data)
       ->localaddr = grpc_core::JoinHostPort("[::1]", port);
   return f;
 }
 
-static void chttp2_init_client_fullstack_ipv6(grpc_end2end_test_fixture* f,
-                                              grpc_channel_args* client_args) {
-  grpc_end2end_local_chttp2_init_client_fullstack(f, client_args, LOCAL_TCP);
+static void chttp2_init_client_fullstack_ipv6(
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
+  grpc_end2end_local_chttp2_init_client_fullstack(f, client_args,
+                                                  LOCAL_TCP);
 }
 
-static void chttp2_init_server_fullstack_ipv6(grpc_end2end_test_fixture* f,
-                                              grpc_channel_args* client_args) {
-  grpc_end2end_local_chttp2_init_server_fullstack(f, client_args, LOCAL_TCP);
+static void chttp2_init_server_fullstack_ipv6(
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
+  grpc_end2end_local_chttp2_init_server_fullstack(f, client_args,
+                                                  LOCAL_TCP);
 }
 
 /* All test configurations */
@@ -54,7 +58,8 @@ static grpc_end2end_test_config configs[] = {
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
      nullptr, chttp2_create_fixture_fullstack_ipv6,
-     chttp2_init_client_fullstack_ipv6, chttp2_init_server_fullstack_ipv6,
+     chttp2_init_client_fullstack_ipv6,
+     chttp2_init_server_fullstack_ipv6,
      grpc_end2end_local_chttp2_tear_down_fullstack}};
 
 int main(int argc, char** argv) {

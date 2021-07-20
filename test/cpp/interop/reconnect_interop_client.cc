@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,10 +32,12 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(int32_t, server_control_port, 0, "Server port for control rpcs.");
+ABSL_FLAG(int32_t, server_control_port, 0,
+          "Server port for control rpcs.");
 ABSL_FLAG(int32_t, server_retry_port, 0,
           "Server port for testing reconnection.");
-ABSL_FLAG(std::string, server_host, "localhost", "Server host to connect to");
+ABSL_FLAG(std::string, server_host, "localhost",
+          "Server host to connect to");
 // TODO(Capstan): Consider using absl::Duration
 ABSL_FLAG(int32_t, max_reconnect_backoff_ms, 0,
           "Maximum backoff time, or 0 for default.");
@@ -69,8 +71,8 @@ int main(int argc, char** argv) {
   reconnect_params.set_max_reconnect_backoff_ms(
       absl::GetFlag(FLAGS_max_reconnect_backoff_ms));
   Empty empty_response;
-  Status start_status =
-      control_stub->Start(&start_context, reconnect_params, &empty_response);
+  Status start_status = control_stub->Start(
+      &start_context, reconnect_params, &empty_response);
   GPR_ASSERT(start_status.ok());
 
   gpr_log(GPR_INFO, "Starting connections with retries.");
@@ -82,9 +84,9 @@ int main(int argc, char** argv) {
     channel_args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS,
                         absl::GetFlag(FLAGS_max_reconnect_backoff_ms));
   }
-  std::shared_ptr<Channel> retry_channel =
-      CreateTestChannel(server_address.str(), "foo.test.google.fr", TLS, false,
-                        std::shared_ptr<CallCredentials>(), channel_args);
+  std::shared_ptr<Channel> retry_channel = CreateTestChannel(
+      server_address.str(), "foo.test.google.fr", TLS, false,
+      std::shared_ptr<CallCredentials>(), channel_args);
 
   // About 13 retries.
   const int kDeadlineSeconds = 540;
@@ -94,14 +96,16 @@ int main(int argc, char** argv) {
   ClientContext retry_context;
   retry_context.set_deadline(std::chrono::system_clock::now() +
                              std::chrono::seconds(kDeadlineSeconds));
-  Status retry_status =
-      retry_stub->Start(&retry_context, reconnect_params, &empty_response);
-  GPR_ASSERT(retry_status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED);
+  Status retry_status = retry_stub->Start(
+      &retry_context, reconnect_params, &empty_response);
+  GPR_ASSERT(retry_status.error_code() ==
+             grpc::StatusCode::DEADLINE_EXCEEDED);
   gpr_log(GPR_INFO, "Done retrying, getting final data from server");
 
   ClientContext stop_context;
   ReconnectInfo response;
-  Status stop_status = control_stub->Stop(&stop_context, Empty(), &response);
+  Status stop_status =
+      control_stub->Stop(&stop_context, Empty(), &response);
   GPR_ASSERT(stop_status.ok());
   GPR_ASSERT(response.passed() == true);
   gpr_log(GPR_INFO, "Passed");

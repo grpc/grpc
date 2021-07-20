@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,13 +24,13 @@
 
 #ifndef OPENSSL_IS_BORINGSSL
 
-// OpenSSL invalidates SSL_SESSION on SSL destruction making it pointless
-// to cache sessions. The workaround is to serialize (relatively expensive)
-// session into binary blob and re-create it from blob on every handshake.
-// Note that it's safe to keep serialized session outside of SSL lifetime
-// as openssl performs all necessary validation while attempting to use a
-// session and creates a new one if something is wrong (e.g. server changed
-// set of allowed codecs).
+// OpenSSL invalidates SSL_SESSION on SSL destruction making it
+// pointless to cache sessions. The workaround is to serialize
+// (relatively expensive) session into binary blob and re-create it from
+// blob on every handshake. Note that it's safe to keep serialized
+// session outside of SSL lifetime as openssl performs all necessary
+// validation while attempting to use a session and creates a new one if
+// something is wrong (e.g. server changed set of allowed codecs).
 
 namespace tsi {
 namespace {
@@ -47,10 +47,13 @@ class OpenSslCachedSession : public SslCachedSession {
     serialized_session_ = slice;
   }
 
-  virtual ~OpenSslCachedSession() { grpc_slice_unref(serialized_session_); }
+  virtual ~OpenSslCachedSession() {
+    grpc_slice_unref(serialized_session_);
+  }
 
   SslSessionPtr CopySession() const override {
-    const unsigned char* data = GRPC_SLICE_START_PTR(serialized_session_);
+    const unsigned char* data =
+        GRPC_SLICE_START_PTR(serialized_session_);
     size_t length = GRPC_SLICE_LENGTH(serialized_session_);
     SSL_SESSION* session = d2i_SSL_SESSION(nullptr, &data, length);
     if (session == nullptr) {

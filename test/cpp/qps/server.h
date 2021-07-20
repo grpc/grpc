@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -43,7 +43,8 @@ class Server {
   explicit Server(const ServerConfig& config)
       : timer_(new UsageTimer), last_reset_poll_count_(0) {
     cores_ = gpr_cpu_num_cores();
-    if (config.port()) {  // positive for a fixed port, negative for inproc
+    if (config.port()) {  // positive for a fixed port, negative for
+                          // inproc
       port_ = config.port();
     } else {  // zero for dynamic port
       port_ = grpc_pick_unused_port_or_die();
@@ -122,8 +123,9 @@ class Server {
   static void ApplyConfigToBuilder(const ServerConfig& config,
                                    ServerBuilder* builder) {
     if (config.resource_quota_size() > 0) {
-      builder->SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
-                                    .Resize(config.resource_quota_size()));
+      builder->SetResourceQuota(
+          ResourceQuota("AsyncQpsServerTest")
+              .Resize(config.resource_quota_size()));
     }
     for (const auto& channel_arg : config.channel_args()) {
       switch (channel_arg.value_case()) {
@@ -150,10 +152,13 @@ class Server {
   int last_reset_poll_count_;
 };
 
-std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateSynchronousServer(
+    const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
-std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig& config);
-std::unique_ptr<Server> CreateCallbackServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateAsyncGenericServer(
+    const ServerConfig& config);
+std::unique_ptr<Server> CreateCallbackServer(
+    const ServerConfig& config);
 
 }  // namespace testing
 }  // namespace grpc

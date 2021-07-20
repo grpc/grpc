@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,7 +36,8 @@ namespace testing {
 
 class BenchmarkServiceImpl final : public BenchmarkService::Service {
  public:
-  Status UnaryCall(ServerContext* /*context*/, const SimpleRequest* request,
+  Status UnaryCall(ServerContext* /*context*/,
+                   const SimpleRequest* request,
                    SimpleResponse* response) override {
     auto s = SetResponse(request, response);
     if (!s.ok()) {
@@ -46,7 +47,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
   }
   Status StreamingCall(
       ServerContext* /*context*/,
-      ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) override {
+      ServerReaderWriter<SimpleResponse, SimpleRequest>* stream)
+      override {
     SimpleRequest request;
     while (stream->Read(&request)) {
       SimpleResponse response;
@@ -69,9 +71,9 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     }
     return Status::OK;
   }
-  Status StreamingFromServer(ServerContext* context,
-                             const SimpleRequest* request,
-                             ServerWriter<SimpleResponse>* stream) override {
+  Status StreamingFromServer(
+      ServerContext* context, const SimpleRequest* request,
+      ServerWriter<SimpleResponse>* stream) override {
     SimpleResponse response;
     auto s = SetResponse(request, &response);
     if (!s.ok()) {
@@ -81,7 +83,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
   }
   Status StreamingBothWays(
       ServerContext* context,
-      ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) override {
+      ServerReaderWriter<SimpleResponse, SimpleRequest>* stream)
+      override {
     // Read the first client message to setup server response
     SimpleRequest request;
     if (!stream->Read(&request)) {
@@ -120,9 +123,11 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     while (stream->Read(&request)) {
     }
     if (request.response_size() > 0) {
-      if (!Server::SetPayload(request.response_type(), request.response_size(),
+      if (!Server::SetPayload(request.response_type(),
+                              request.response_size(),
                               response->mutable_payload())) {
-        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+        return Status(grpc::StatusCode::INTERNAL,
+                      "Error creating payload.");
       }
     }
     return Status::OK;
@@ -145,7 +150,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
       if (!Server::SetPayload(request->response_type(),
                               request->response_size(),
                               response->mutable_payload())) {
-        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+        return Status(grpc::StatusCode::INTERNAL,
+                      "Error creating payload.");
       }
     }
     return Status::OK;
@@ -154,13 +160,16 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
 
 class SynchronousServer final : public grpc::testing::Server {
  public:
-  explicit SynchronousServer(const ServerConfig& config) : Server(config) {
+  explicit SynchronousServer(const ServerConfig& config)
+      : Server(config) {
     std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
 
     auto port_num = port();
-    // Negative port number means inproc server, so no listen port needed
+    // Negative port number means inproc server, so no listen port
+    // needed
     if (port_num >= 0) {
-      std::string server_address = grpc_core::JoinHostPort("::", port_num);
+      std::string server_address =
+          grpc_core::JoinHostPort("::", port_num);
       builder->AddListeningPort(server_address.c_str(),
                                 Server::CreateServerCredentials(config),
                                 &port_num);
@@ -172,7 +181,8 @@ class SynchronousServer final : public grpc::testing::Server {
 
     impl_ = builder->BuildAndStart();
     if (impl_ == nullptr) {
-      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)",
+              port_num);
     } else {
       gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
     }

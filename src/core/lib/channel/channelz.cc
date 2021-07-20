@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -109,11 +109,12 @@ void CallCountingHelper::CollectData(CounterData* out) {
     out->calls_succeeded +=
         per_cpu_counter_data_storage_[core].calls_succeeded.Load(
             MemoryOrder::RELAXED);
-    out->calls_failed += per_cpu_counter_data_storage_[core].calls_failed.Load(
-        MemoryOrder::RELAXED);
-    const gpr_cycle_counter last_call =
-        per_cpu_counter_data_storage_[core].last_call_started_cycle.Load(
+    out->calls_failed +=
+        per_cpu_counter_data_storage_[core].calls_failed.Load(
             MemoryOrder::RELAXED);
+    const gpr_cycle_counter last_call =
+        per_cpu_counter_data_storage_[core]
+            .last_call_started_cycle.Load(MemoryOrder::RELAXED);
     if (last_call > out->last_call_started_cycle) {
       out->last_call_started_cycle = last_call;
     }
@@ -142,7 +143,8 @@ void CallCountingHelper::PopulateCallCounts(Json::Object* json) {
 // ChannelNode
 //
 
-ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
+ChannelNode::ChannelNode(std::string target,
+                         size_t channel_tracer_max_nodes,
                          bool is_internal_channel)
     : BaseNode(is_internal_channel ? EntityType::kInternalChannel
                                    : EntityType::kTopLevelChannel,
@@ -196,8 +198,8 @@ Json ChannelNode::RenderJson() {
        }},
       {"data", std::move(data)},
   };
-  // Template method. Child classes may override this to add their specific
-  // functionality.
+  // Template method. Child classes may override this to add their
+  // specific functionality.
   PopulateChildRefs(&json);
   return json;
 }
@@ -255,7 +257,8 @@ void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
 //
 
 ServerNode::ServerNode(size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer, ""), trace_(channel_tracer_max_nodes) {}
+    : BaseNode(EntityType::kServer, ""),
+      trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
 
@@ -269,9 +272,11 @@ void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
   child_sockets_.erase(child_uuid);
 }
 
-void ServerNode::AddChildListenSocket(RefCountedPtr<ListenSocketNode> node) {
+void ServerNode::AddChildListenSocket(
+    RefCountedPtr<ListenSocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_listen_sockets_.insert(std::make_pair(node->uuid(), std::move(node)));
+  child_listen_sockets_.insert(
+      std::make_pair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
@@ -292,7 +297,8 @@ std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
     // Create list of socket refs.
     Json::Array array;
     auto it = child_sockets_.lower_bound(start_socket_id);
-    for (; it != child_sockets_.end() && sockets_rendered < pagination_limit;
+    for (; it != child_sockets_.end() &&
+           sockets_rendered < pagination_limit;
          ++it, ++sockets_rendered) {
       array.emplace_back(Json::Object{
           {"socketId", std::to_string(it->first)},
@@ -410,7 +416,8 @@ grpc_arg SocketNode::Security::MakeChannelArg() const {
       const_cast<SocketNode::Security*>(this), &kChannelArgVtable);
 }
 
-RefCountedPtr<SocketNode::Security> SocketNode::Security::GetFromChannelArgs(
+RefCountedPtr<SocketNode::Security>
+SocketNode::Security::GetFromChannelArgs(
     const grpc_channel_args* args) {
   Security* security = grpc_channel_args_find_pointer<Security>(
       args, GRPC_ARG_CHANNELZ_SECURITY);
@@ -428,11 +435,12 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
   if (addr_str == nullptr) return;
   Json::Object data;
   absl::StatusOr<URI> uri = URI::Parse(addr_str);
-  if (uri.ok() && (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
+  if (uri.ok() &&
+      (uri->scheme() == "ipv4" || uri->scheme() == "ipv6")) {
     std::string host;
     std::string port;
-    GPR_ASSERT(
-        SplitHostPort(absl::StripPrefix(uri->path(), "/"), &host, &port));
+    GPR_ASSERT(SplitHostPort(absl::StripPrefix(uri->path(), "/"), &host,
+                             &port));
     int port_num = -1;
     if (!port.empty()) {
       port_num = atoi(port.data());
@@ -441,7 +449,8 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
     grpc_error_handle error =
         grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
     if (error == GRPC_ERROR_NONE) {
-      std::string packed_host = grpc_sockaddr_get_packed_host(&resolved_host);
+      std::string packed_host =
+          grpc_sockaddr_get_packed_host(&resolved_host);
       std::string b64_host = absl::Base64Escape(packed_host);
       data["tcpip_address"] = Json::Object{
           {"port", port_num},
@@ -466,7 +475,8 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
 
 }  // namespace
 
-SocketNode::SocketNode(std::string local, std::string remote, std::string name,
+SocketNode::SocketNode(std::string local, std::string remote,
+                       std::string name,
                        RefCountedPtr<Security> security)
     : BaseNode(EntityType::kSocket, std::move(name)),
       local_(std::move(local)),
@@ -487,7 +497,8 @@ void SocketNode::RecordStreamStartedFromRemote() {
 
 void SocketNode::RecordMessagesSent(uint32_t num_sent) {
   messages_sent_.FetchAdd(num_sent, MemoryOrder::RELAXED);
-  last_message_sent_cycle_.Store(gpr_get_cycle_counter(), MemoryOrder::RELAXED);
+  last_message_sent_cycle_.Store(gpr_get_cycle_counter(),
+                                 MemoryOrder::RELAXED);
 }
 
 void SocketNode::RecordMessageReceived() {
@@ -517,10 +528,12 @@ Json SocketNode::RenderJson() {
       ts = gpr_convert_clock_type(
           gpr_cycle_counter_to_time(last_remote_stream_created_cycle),
           GPR_CLOCK_REALTIME);
-      data["lastRemoteStreamCreatedTimestamp"] = gpr_format_timespec(ts);
+      data["lastRemoteStreamCreatedTimestamp"] =
+          gpr_format_timespec(ts);
     }
   }
-  int64_t streams_succeeded = streams_succeeded_.Load(MemoryOrder::RELAXED);
+  int64_t streams_succeeded =
+      streams_succeeded_.Load(MemoryOrder::RELAXED);
   if (streams_succeeded != 0) {
     data["streamsSucceeded"] = std::to_string(streams_succeeded);
   }
@@ -537,7 +550,8 @@ Json SocketNode::RenderJson() {
         GPR_CLOCK_REALTIME);
     data["lastMessageSentTimestamp"] = gpr_format_timespec(ts);
   }
-  int64_t messages_received = messages_received_.Load(MemoryOrder::RELAXED);
+  int64_t messages_received =
+      messages_received_.Load(MemoryOrder::RELAXED);
   if (messages_received != 0) {
     data["messagesReceived"] = std::to_string(messages_received);
     ts = gpr_convert_clock_type(
@@ -572,7 +586,8 @@ Json SocketNode::RenderJson() {
 // ListenSocketNode
 //
 
-ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
+ListenSocketNode::ListenSocketNode(std::string local_addr,
+                                   std::string name)
     : BaseNode(EntityType::kSocket, std::move(name)),
       local_addr_(std::move(local_addr)) {}
 

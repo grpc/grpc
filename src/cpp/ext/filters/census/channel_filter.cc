@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -22,8 +22,9 @@
 
 namespace grpc {
 
-grpc_error_handle CensusChannelData::Init(grpc_channel_element* /*elem*/,
-                                          grpc_channel_element_args* /*args*/) {
+grpc_error_handle CensusChannelData::Init(
+    grpc_channel_element* /*elem*/,
+    grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,17 +34,20 @@ struct WorkItem {
 };
 
 // Thread to "produce" items and put items into queue
-// It will also check that all items has been marked done and clean up all
-// produced items on destructing.
+// It will also check that all items has been marked done and clean up
+// all produced items on destructing.
 class ProducerThread {
  public:
   ProducerThread(grpc_core::InfLenFIFOQueue* queue, int start_index,
                  int num_items)
-      : start_index_(start_index), num_items_(num_items), queue_(queue) {
+      : start_index_(start_index),
+        num_items_(num_items),
+        queue_(queue) {
     items_ = nullptr;
     thd_ = grpc_core::Thread(
         "mpmcq_test_producer_thd",
-        [](void* th) { static_cast<ProducerThread*>(th)->Run(); }, this);
+        [](void* th) { static_cast<ProducerThread*>(th)->Run(); },
+        this);
   }
   ~ProducerThread() {
     for (int i = 0; i < num_items_; ++i) {
@@ -59,8 +62,8 @@ class ProducerThread {
 
  private:
   void Run() {
-    items_ =
-        static_cast<WorkItem**>(gpr_zalloc(num_items_ * sizeof(WorkItem*)));
+    items_ = static_cast<WorkItem**>(
+        gpr_zalloc(num_items_ * sizeof(WorkItem*)));
     for (int i = 0; i < num_items_; ++i) {
       items_[i] = new WorkItem(start_index_ + i);
       queue_->Put(items_[i]);
@@ -77,10 +80,12 @@ class ProducerThread {
 // Thread to pull out items from queue
 class ConsumerThread {
  public:
-  explicit ConsumerThread(grpc_core::InfLenFIFOQueue* queue) : queue_(queue) {
+  explicit ConsumerThread(grpc_core::InfLenFIFOQueue* queue)
+      : queue_(queue) {
     thd_ = grpc_core::Thread(
         "mpmcq_test_consumer_thd",
-        [](void* th) { static_cast<ConsumerThread*>(th)->Run(); }, this);
+        [](void* th) { static_cast<ConsumerThread*>(th)->Run(); },
+        this);
   }
   ~ConsumerThread() {}
 
@@ -93,13 +98,15 @@ class ConsumerThread {
     int count = 0;
 
     WorkItem* item;
-    while ((item = static_cast<WorkItem*>(queue_->Get(nullptr))) != nullptr) {
+    while ((item = static_cast<WorkItem*>(queue_->Get(nullptr))) !=
+           nullptr) {
       count++;
       GPR_ASSERT(!item->done);
       item->done = true;
     }
 
-    gpr_log(GPR_DEBUG, "ConsumerThread: %d times of Get() called.", count);
+    gpr_log(GPR_DEBUG, "ConsumerThread: %d times of Get() called.",
+            count);
   }
   grpc_core::InfLenFIFOQueue* queue_;
   grpc_core::Thread thd_;
@@ -119,8 +126,8 @@ static void test_FIFO(void) {
   }
 }
 
-// Test if queue's behavior of expanding is correct. (Only does expansion when
-// it gets full, and each time expands to doubled size).
+// Test if queue's behavior of expanding is correct. (Only does
+// expansion when it gets full, and each time expands to doubled size).
 static void test_space_efficiency(void) {
   gpr_log(GPR_INFO, "test_space_efficiency");
   grpc_core::InfLenFIFOQueue queue;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -33,8 +33,9 @@
 namespace grpc_core {
 namespace channelz {
 
-// singleton registry object to track all objects that are needed to support
-// channelz bookkeeping. All objects share globally distributed uuids.
+// singleton registry object to track all objects that are needed to
+// support channelz bookkeeping. All objects share globally distributed
+// uuids.
 class ChannelzRegistry {
  public:
   // To be called in grpc_init()
@@ -46,7 +47,9 @@ class ChannelzRegistry {
   static void Register(BaseNode* node) {
     return Default()->InternalRegister(node);
   }
-  static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
+  static void Unregister(intptr_t uuid) {
+    Default()->InternalUnregister(uuid);
+  }
   static RefCountedPtr<BaseNode> Get(intptr_t uuid) {
     return Default()->InternalGet(uuid);
   }
@@ -63,8 +66,8 @@ class ChannelzRegistry {
     return Default()->InternalGetServers(start_server_id);
   }
 
-  // Test only helper function to dump the JSON representation to std out.
-  // This can aid in debugging channelz code.
+  // Test only helper function to dump the JSON representation to std
+  // out. This can aid in debugging channelz code.
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
 
  private:
@@ -74,12 +77,14 @@ class ChannelzRegistry {
   // globally registers an Entry. Returns its unique uuid
   void InternalRegister(BaseNode* node);
 
-  // globally unregisters the object that is associated to uuid. Also does
-  // sanity check that an object doesn't try to unregister the wrong type.
+  // globally unregisters the object that is associated to uuid. Also
+  // does sanity check that an object doesn't try to unregister the
+  // wrong type.
   void InternalUnregister(intptr_t uuid);
 
-  // if object with uuid has previously been registered as the correct type,
-  // returns the void* associated with that uuid. Else returns nullptr.
+  // if object with uuid has previously been registered as the correct
+  // type, returns the void* associated with that uuid. Else returns
+  // nullptr.
   RefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
 
   std::string InternalGetTopChannels(intptr_t start_channel_id);

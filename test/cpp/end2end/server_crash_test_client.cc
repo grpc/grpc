@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,8 +38,9 @@ using grpc::testing::EchoResponse;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  auto stub = grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
-      absl::GetFlag(FLAGS_address), grpc::InsecureChannelCredentials()));
+  auto stub = grpc::testing::EchoTestService::NewStub(
+      grpc::CreateChannel(absl::GetFlag(FLAGS_address),
+                          grpc::InsecureChannelCredentials()));
 
   EchoRequest request;
   EchoResponse response;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,9 +28,10 @@ extern "C" {
 #endif
 
 /**
-  A Census Context is a handle used by Census to represent the current tracing
-  and stats collection information. Contexts should be propagated across RPC's
-  (this is the responsibility of the local RPC system). */
+  A Census Context is a handle used by Census to represent the current
+  tracing and stats collection information. Contexts should be
+  propagated across RPC's (this is the responsibility of the local RPC
+  system). */
 typedef struct census_context census_context;
 
 #ifdef __cplusplus

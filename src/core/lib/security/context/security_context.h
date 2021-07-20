@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,7 +31,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
 /* --- grpc_auth_context ---
 
-   High level authentication context object. Can optionally be chained. */
+   High level authentication context object. Can optionally be chained.
+ */
 
 /* Property names are always NULL terminated. */
 
@@ -43,9 +44,9 @@ struct grpc_auth_property_array {
 
 void grpc_auth_property_reset(grpc_auth_property* property);
 
-// This type is forward declared as a C struct and we cannot define it as a
-// class. Otherwise, compiler will complain about type mismatch due to
-// -Wmismatched-tags.
+// This type is forward declared as a C struct and we cannot define it
+// as a class. Otherwise, compiler will complain about type mismatch due
+// to -Wmismatched-tags.
 struct grpc_auth_context
     : public grpc_core::RefCounted<grpc_auth_context,
                                    grpc_core::NonPolymorphicRefCount> {
@@ -59,7 +60,8 @@ struct grpc_auth_context
                 : nullptr),
         chained_(std::move(chained)) {
     if (chained_ != nullptr) {
-      peer_identity_property_name_ = chained_->peer_identity_property_name_;
+      peer_identity_property_name_ =
+          chained_->peer_identity_property_name_;
     }
   }
 
@@ -74,7 +76,9 @@ struct grpc_auth_context
   }
 
   const grpc_auth_context* chained() const { return chained_.get(); }
-  const grpc_auth_property_array& properties() const { return properties_; }
+  const grpc_auth_property_array& properties() const {
+    return properties_;
+  }
 
   bool is_authenticated() const {
     return peer_identity_property_name_ != nullptr;
@@ -87,7 +91,8 @@ struct grpc_auth_context
   }
 
   void ensure_capacity();
-  void add_property(const char* name, const char* value, size_t value_length);
+  void add_property(const char* name, const char* value,
+                    size_t value_length);
   void add_cstring_property(const char* name, const char* value);
 
  private:
@@ -98,8 +103,8 @@ struct grpc_auth_context
 
 /* --- grpc_security_context_extension ---
 
-   Extension to the security context that may be set in a filter and accessed
-   later by a higher level method on a grpc_call object. */
+   Extension to the security context that may be set in a filter and
+   accessed later by a higher level method on a grpc_call object. */
 
 struct grpc_security_context_extension {
   void* instance = nullptr;

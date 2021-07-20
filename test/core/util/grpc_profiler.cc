@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -21,7 +21,9 @@
 #if GRPC_HAVE_PERFTOOLS
 #include <gperftools/profiler.h>
 
-void grpc_profiler_start(const char* filename) { ProfilerStart(filename); }
+void grpc_profiler_start(const char* filename) {
+  ProfilerStart(filename);
+}
 
 void grpc_profiler_stop() { ProfilerStop(); }
 #else
@@ -31,12 +33,14 @@ void grpc_profiler_start(const char* filename) {
   static int printed_warning = 0;
   if (!printed_warning) {
     gpr_log(GPR_DEBUG,
-            "You do not have google-perftools installed, profiling is disabled "
+            "You do not have google-perftools installed, profiling is "
+            "disabled "
             "[for %s]",
             filename);
-    gpr_log(GPR_DEBUG,
-            "To install on ubuntu: sudo apt-get install google-perftools "
-            "libgoogle-perftools-dev");
+    gpr_log(
+        GPR_DEBUG,
+        "To install on ubuntu: sudo apt-get install google-perftools "
+        "libgoogle-perftools-dev");
     printed_warning = 1;
   }
 }

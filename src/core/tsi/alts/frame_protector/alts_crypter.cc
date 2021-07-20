@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,13 +32,14 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
 }
 
 grpc_status_code alts_crypter_process_in_place(
-    alts_crypter* crypter, unsigned char* data, size_t data_allocated_size,
-    size_t data_size, size_t* output_size, char** error_details) {
+    alts_crypter* crypter, unsigned char* data,
+    size_t data_allocated_size, size_t data_size, size_t* output_size,
+    char** error_details) {
   if (crypter != nullptr && crypter->vtable != nullptr &&
       crypter->vtable->process_in_place != nullptr) {
-    return crypter->vtable->process_in_place(crypter, data, data_allocated_size,
-                                             data_size, output_size,
-                                             error_details);
+    return crypter->vtable->process_in_place(
+        crypter, data, data_allocated_size, data_size, output_size,
+        error_details);
   }
   /* An error occurred. */
   const char error_msg[] =
@@ -58,7 +59,8 @@ size_t alts_crypter_num_overhead_bytes(const alts_crypter* crypter) {
 
 void alts_crypter_destroy(alts_crypter* crypter) {
   if (crypter != nullptr) {
-    if (crypter->vtable != nullptr && crypter->vtable->destruct != nullptr) {
+    if (crypter->vtable != nullptr &&
+        crypter->vtable->destruct != nullptr) {
       crypter->vtable->destruct(crypter);
     }
     gpr_free(crypter);

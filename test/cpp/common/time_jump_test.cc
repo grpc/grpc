@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -48,8 +48,9 @@ void run_cmd(const char* cmd) {
                         const_cast<const char*>("-c"), cmd, nullptr};
   int status;
 
-  status = posix_spawn(&pid, const_cast<const char*>("/bin/sh"), nullptr,
-                       nullptr, const_cast<char**>(argv), environ);
+  status =
+      posix_spawn(&pid, const_cast<const char*>("/bin/sh"), nullptr,
+                  nullptr, const_cast<char**>(argv), environ);
   if (status == 0) {
     if (waitpid(pid, &status, 0) == -1) {
       perror("waitpid");
@@ -118,16 +119,18 @@ TEST_P(TimeJumpTest, TimedWait) {
       run_cmd(cmd.str().c_str());
     });
     gpr_timespec before = gpr_now(GPR_CLOCK_MONOTONIC);
-    bool timedout = cond.WaitWithTimeout(&mu, absl::Milliseconds(kWaitTimeMs));
+    bool timedout =
+        cond.WaitWithTimeout(&mu, absl::Milliseconds(kWaitTimeMs));
     gpr_timespec after = gpr_now(GPR_CLOCK_MONOTONIC);
-    int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(after, before));
-    gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d", timedout,
-            elapsed_ms);
+    int32_t elapsed_ms =
+        gpr_time_to_millis(gpr_time_sub(after, before));
+    gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d",
+            timedout, elapsed_ms);
     GPR_ASSERT(1 == timedout);
-    GPR_ASSERT(1 ==
-               gpr_time_similar(gpr_time_sub(after, before),
-                                gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
-                                gpr_time_from_millis(50, GPR_TIMESPAN)));
+    GPR_ASSERT(1 == gpr_time_similar(
+                        gpr_time_sub(after, before),
+                        gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
+                        gpr_time_from_millis(50, GPR_TIMESPAN)));
 
     thd.join();
   }

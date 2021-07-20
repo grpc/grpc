@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,7 +24,8 @@
 #include <string.h>
 
 /* Returns 1 if the version is supported, 0 otherwise. */
-int grpc_chttp2_is_alpn_version_supported(const char* version, size_t size);
+int grpc_chttp2_is_alpn_version_supported(const char* version,
+                                          size_t size);
 
 /* Returns the number of protocol versions to advertise */
 size_t grpc_chttp2_num_alpn_versions(void);

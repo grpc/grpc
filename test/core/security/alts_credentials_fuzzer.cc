@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -53,13 +53,14 @@ static void read_target_service_accounts(
     }
   }
   // Added to improve code coverage.
-  grpc_alts_credentials_client_options_add_target_service_account(options,
-                                                                  nullptr);
+  grpc_alts_credentials_client_options_add_target_service_account(
+      options, nullptr);
   grpc_alts_credentials_client_options_add_target_service_account(
       nullptr, "this is service account");
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data,
+                                      size_t size) {
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) {
     gpr_set_log_function(dont_log);
@@ -79,8 +80,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_alts_credentials_options* options =
           grpc_alts_credentials_client_options_create();
       read_target_service_accounts(&inp, options);
-      grpc_channel_credentials* cred = grpc_alts_credentials_create_customized(
-          options, handshaker_service_url, enable_untrusted_alts);
+      grpc_channel_credentials* cred =
+          grpc_alts_credentials_create_customized(
+              options, handshaker_service_url, enable_untrusted_alts);
       if (!enable_untrusted_alts && !is_on_gcp) {
         GPR_ASSERT(cred == nullptr);
       } else {

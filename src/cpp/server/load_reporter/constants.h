@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -26,13 +26,13 @@
 namespace grpc {
 namespace load_reporter {
 
-// TODO(juanlishen): Update the version number with the PR number every time
-// there is any change to the server load reporter.
+// TODO(juanlishen): Update the version number with the PR number every
+// time there is any change to the server load reporter.
 constexpr uint32_t kVersion = 15853;
 
-// TODO(juanlishen): This window size is from the internal spec for the load
-// reporter. Need to ask the gRPC LB team whether we should make this and the
-// fetching interval configurable.
+// TODO(juanlishen): This window size is from the internal spec for the
+// load reporter. Need to ask the gRPC LB team whether we should make
+// this and the fetching interval configurable.
 constexpr uint32_t kFeedbackSampleWindowSeconds = 10;
 constexpr uint32_t kFetchAndSampleIntervalSeconds = 1;
 
@@ -63,14 +63,16 @@ constexpr char kMeasureEndCount[] = "grpc.io/lb/end_count";
 constexpr char kMeasureEndBytesSent[] = "grpc.io/lb/bytes_sent";
 constexpr char kMeasureEndBytesReceived[] = "grpc.io/lb/bytes_received";
 constexpr char kMeasureEndLatencyMs[] = "grpc.io/lb/latency_ms";
-constexpr char kMeasureOtherCallMetric[] = "grpc.io/lb/other_call_metric";
+constexpr char kMeasureOtherCallMetric[] =
+    "grpc.io/lb/other_call_metric";
 
 // View names.
 
 constexpr char kViewStartCount[] = "grpc.io/lb_view/start_count";
 constexpr char kViewEndCount[] = "grpc.io/lb_view/end_count";
 constexpr char kViewEndBytesSent[] = "grpc.io/lb_view/bytes_sent";
-constexpr char kViewEndBytesReceived[] = "grpc.io/lb_view/bytes_received";
+constexpr char kViewEndBytesReceived[] =
+    "grpc.io/lb_view/bytes_received";
 constexpr char kViewEndLatencyMs[] = "grpc.io/lb_view/latency_ms";
 constexpr char kViewOtherCallMetricCount[] =
     "grpc.io/lb_view/other_call_metric_count";

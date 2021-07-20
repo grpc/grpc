@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -38,8 +38,8 @@ bool ServerInitialMetadataContains(const ClientContext& context,
                                    const grpc::string_ref& key,
                                    const grpc::string_ref& value) {
   const auto& server_metadata = context.GetServerInitialMetadata();
-  for (auto iter = server_metadata.begin(); iter != server_metadata.end();
-       ++iter) {
+  for (auto iter = server_metadata.begin();
+       iter != server_metadata.end(); ++iter) {
     if (iter->first == key && iter->second == value) {
       return true;
     }

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #include <grpc/support/port_platform.h>
@@ -45,7 +45,8 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
   GrpcPolledFdLibuv(ares_socket_t as,
                     std::shared_ptr<WorkSerializer> work_serializer)
-      : name_(absl::StrFormat("c-ares socket: %" PRIdPTR, (intptr_t)as)),
+      : name_(
+            absl::StrFormat("c-ares socket: %" PRIdPTR, (intptr_t)as)),
         as_(as),
         work_serializer_(std::move(work_serializer)) {
     handle_ = new uv_poll_t();
@@ -53,7 +54,8 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     handle_->data = this;
   }
 
-  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
+  void RegisterForOnReadableLocked(
+      grpc_closure* read_closure) override {
     GPR_ASSERT(read_closure_ == nullptr);
     GPR_ASSERT((poll_events_ & UV_READABLE) == 0);
     read_closure_ = read_closure;
@@ -61,7 +63,8 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     uv_poll_start(handle_, poll_events_, ares_uv_poll_cb);
   }
 
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
+  void RegisterForOnWriteableLocked(
+      grpc_closure* write_closure) override {
     GPR_ASSERT(write_closure_ == nullptr);
     GPR_ASSERT((poll_events_ & UV_WRITABLE) == 0);
     write_closure_ = write_closure;
@@ -70,14 +73,15 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
   }
 
   bool IsFdStillReadableLocked() override {
-    /* uv_poll_t is based on poll, which is level triggered. So, if cares
-     * leaves some data unread, the event will trigger again. */
+    /* uv_poll_t is based on poll, which is level triggered. So, if
+     * cares leaves some data unread, the event will trigger again. */
     return false;
   }
 
   void ShutdownInternalLocked(grpc_error_handle error) {
     uv_poll_stop(handle_);
-    uv_close(reinterpret_cast<uv_handle_t*>(handle_), ares_uv_poll_close_cb);
+    uv_close(reinterpret_cast<uv_handle_t*>(handle_),
+             ares_uv_poll_close_cb);
     if (read_closure_ != nullptr) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_,
                               GRPC_ERROR_CANCELLED);
@@ -130,19 +134,21 @@ static void ares_uv_poll_cb_locked(AresUvPollCbArg* arg) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (status < 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("cares polling error");
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
-                           grpc_slice_from_static_string(uv_strerror(status)));
+    error = grpc_error_set_str(
+        error, GRPC_ERROR_STR_OS_ERROR,
+        grpc_slice_from_static_string(uv_strerror(status)));
   }
   if (events & UV_READABLE) {
     GPR_ASSERT(polled_fd->read_closure_ != nullptr);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, polled_fd->read_closure_, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, polled_fd->read_closure_,
+                            error);
     polled_fd->read_closure_ = nullptr;
     polled_fd->poll_events_ &= ~UV_READABLE;
   }
   if (events & UV_WRITABLE) {
     GPR_ASSERT(polled_fd->write_closure_ != nullptr);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, polled_fd->write_closure_, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, polled_fd->write_closure_,
+                            error);
     polled_fd->write_closure_ = nullptr;
     polled_fd->poll_events_ &= ~UV_WRITABLE;
   }
@@ -154,8 +160,8 @@ void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
   GrpcPolledFdLibuv* polled_fd =
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
   AresUvPollCbArg* arg = new AresUvPollCbArg(handle, status, events);
-  polled_fd->work_serializer_->Run([arg]() { ares_uv_poll_cb_locked(arg); },
-                                   DEBUG_LOCATION);
+  polled_fd->work_serializer_->Run(
+      [arg]() { ares_uv_poll_cb_locked(arg); }, DEBUG_LOCATION);
 }
 
 class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {

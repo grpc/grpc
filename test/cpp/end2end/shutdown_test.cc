@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -42,7 +42,8 @@ using grpc::testing::EchoResponse;
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl
+    : public ::grpc::testing::EchoTestService::Service {
  public:
   explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
 
@@ -60,7 +61,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
 class ShutdownTest : public ::testing::TestWithParam<string> {
  public:
-  ShutdownTest() : shutdown_(false), service_(&ev_) { gpr_event_init(&ev_); }
+  ShutdownTest() : shutdown_(false), service_(&ev_) {
+    gpr_event_init(&ev_);
+  }
 
   void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
@@ -85,7 +88,8 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     string target = "dns:localhost:" + to_string(port_);
     ChannelArguments args;
     auto channel_creds =
-        GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args);
+        GetCredentialsProvider()->GetChannelCredentials(GetParam(),
+                                                        &args);
     channel_ = ::grpc::CreateCustomChannel(target, channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
@@ -118,11 +122,12 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
 
 std::vector<string> GetAllCredentialsTypeList() {
   std::vector<std::string> credentials_types;
-  if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
-                                                      nullptr) != nullptr) {
+  if (GetCredentialsProvider()->GetChannelCredentials(
+          kInsecureCredentialsType, nullptr) != nullptr) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
+  auto sec_list =
+      GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
@@ -136,8 +141,9 @@ std::vector<string> GetAllCredentialsTypeList() {
   return credentials_types;
 }
 
-INSTANTIATE_TEST_SUITE_P(End2EndShutdown, ShutdownTest,
-                         ::testing::ValuesIn(GetAllCredentialsTypeList()));
+INSTANTIATE_TEST_SUITE_P(
+    End2EndShutdown, ShutdownTest,
+    ::testing::ValuesIn(GetAllCredentialsTypeList()));
 
 // TODO(ctiller): leaked objects in this test
 TEST_P(ShutdownTest, ShutdownTest) {

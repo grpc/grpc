@@ -10,10 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *is % allowed in string
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ *implied. See the License for the specific language governing
+ *permissions and limitations under the License. is % allowed in string
  */
 
 #ifndef GRPC_TEST_CPP_STRESS_INTEROP_CLIENT_H
@@ -80,8 +79,8 @@ class WeightedRandomTestSelector {
   explicit WeightedRandomTestSelector(
       const vector<pair<TestCaseType, int>>& tests);
 
-  // Returns a weighted-randomly chosen test case based on the test cases and
-  // weights passed in the constructor
+  // Returns a weighted-randomly chosen test case based on the test
+  // cases and weights passed in the constructor
   TestCaseType GetNextTest() const;
 
  private:
@@ -91,11 +90,12 @@ class WeightedRandomTestSelector {
 
 class StressTestInteropClient {
  public:
-  StressTestInteropClient(int test_id, const std::string& server_address,
-                          ChannelCreationFunc channel_creation_func,
-                          const WeightedRandomTestSelector& test_selector,
-                          long test_duration_secs, long sleep_duration_ms,
-                          bool do_not_abort_on_transient_failures);
+  StressTestInteropClient(
+      int test_id, const std::string& server_address,
+      ChannelCreationFunc channel_creation_func,
+      const WeightedRandomTestSelector& test_selector,
+      long test_duration_secs, long sleep_duration_ms,
+      bool do_not_abort_on_transient_failures);
 
   // The main function. Use this as the thread entry point.
   // qps_gauge is the QpsGauge to record the requests per second metric

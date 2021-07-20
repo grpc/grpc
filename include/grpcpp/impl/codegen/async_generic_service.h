@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -32,8 +32,10 @@ namespace grpc {
 
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
-typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
-typedef ServerAsyncReader<ByteBuffer, ByteBuffer> GenericServerAsyncReader;
+typedef ServerAsyncResponseWriter<ByteBuffer>
+    GenericServerAsyncResponseWriter;
+typedef ServerAsyncReader<ByteBuffer, ByteBuffer>
+    GenericServerAsyncReader;
 typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
 class GenericServerContext final : public ServerContext {
@@ -48,10 +50,9 @@ class GenericServerContext final : public ServerContext {
   std::string host_;
 };
 
-// A generic service at the server side accepts all RPC methods and hosts. It is
-// typically used in proxies. The generic service can be registered to a server
-// which also has other services.
-// Sample usage:
+// A generic service at the server side accepts all RPC methods and
+// hosts. It is typically used in proxies. The generic service can be
+// registered to a server which also has other services. Sample usage:
 //   ServerBuilder builder;
 //   auto cq = builder.AddCompletionQueue();
 //   AsyncGenericService generic_service;
@@ -61,10 +62,11 @@ class GenericServerContext final : public ServerContext {
 //   // request a new call
 //   GenericServerContext context;
 //   GenericServerAsyncReaderWriter stream;
-//   generic_service.RequestCall(&context, &stream, cq.get(), cq.get(), tag);
+//   generic_service.RequestCall(&context, &stream, cq.get(), cq.get(),
+//   tag);
 //
-// When tag is retrieved from cq->Next(), context.method() can be used to look
-// at the method and the RPC can be handled accordingly.
+// When tag is retrieved from cq->Next(), context.method() can be used
+// to look at the method and the RPC can be handled accordingly.
 class AsyncGenericService final {
  public:
   AsyncGenericService() : server_(nullptr) {}
@@ -72,19 +74,22 @@ class AsyncGenericService final {
   void RequestCall(GenericServerContext* ctx,
                    GenericServerAsyncReaderWriter* reader_writer,
                    ::grpc::CompletionQueue* call_cq,
-                   ::grpc::ServerCompletionQueue* notification_cq, void* tag);
+                   ::grpc::ServerCompletionQueue* notification_cq,
+                   void* tag);
 
  private:
   friend class grpc::Server;
   grpc::Server* server_;
 };
 
-/// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
-/// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
-/// ByteBuffer arguments.
-using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
+/// \a ServerGenericBidiReactor is the reactor class for bidi streaming
+/// RPCs invoked on a CallbackGenericService. It is just a ServerBidi
+/// reactor with ByteBuffer arguments.
+using ServerGenericBidiReactor =
+    ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
-class GenericCallbackServerContext final : public grpc::CallbackServerContext {
+class GenericCallbackServerContext final
+    : public grpc::CallbackServerContext {
  public:
   const std::string& method() const { return method_; }
   const std::string& host() const { return host_; }
@@ -96,17 +101,18 @@ class GenericCallbackServerContext final : public grpc::CallbackServerContext {
   std::string host_;
 };
 
-/// \a CallbackGenericService is the base class for generic services implemented
-/// using the callback API and registered through the ServerBuilder using
-/// RegisterCallbackGenericService.
+/// \a CallbackGenericService is the base class for generic services
+/// implemented using the callback API and registered through the
+/// ServerBuilder using RegisterCallbackGenericService.
 class CallbackGenericService {
  public:
   CallbackGenericService() {}
   virtual ~CallbackGenericService() {}
 
   /// The "method handler" for the generic API. This function should be
-  /// overridden to provide a ServerGenericBidiReactor that implements the
-  /// application-level interface for this RPC. Unimplemented by default.
+  /// overridden to provide a ServerGenericBidiReactor that implements
+  /// the application-level interface for this RPC. Unimplemented by
+  /// default.
   virtual ServerGenericBidiReactor* CreateReactor(
       GenericCallbackServerContext* /*ctx*/) {
     class Reactor : public ServerGenericBidiReactor {
@@ -123,7 +129,8 @@ class CallbackGenericService {
   internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
     return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
         [this](::grpc::CallbackServerContext* ctx) {
-          return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
+          return CreateReactor(
+              static_cast<GenericCallbackServerContext*>(ctx));
         });
   }
 

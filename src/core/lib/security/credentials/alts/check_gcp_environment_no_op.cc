@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -25,8 +25,9 @@
 #include <grpc/support/log.h>
 
 bool grpc_alts_is_running_on_gcp() {
-  gpr_log(GPR_INFO,
-          "ALTS: Platforms other than Linux and Windows are not supported");
+  gpr_log(
+      GPR_INFO,
+      "ALTS: Platforms other than Linux and Windows are not supported");
   return false;
 }
 

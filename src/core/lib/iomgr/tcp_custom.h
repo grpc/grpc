@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -57,7 +57,8 @@ typedef struct grpc_socket_vtable {
                   size_t len, grpc_custom_connect_callback cb);
   void (*destroy)(grpc_custom_socket* socket);
   void (*shutdown)(grpc_custom_socket* socket);
-  void (*close)(grpc_custom_socket* socket, grpc_custom_close_callback cb);
+  void (*close)(grpc_custom_socket* socket,
+                grpc_custom_close_callback cb);
   void (*write)(grpc_custom_socket* socket, grpc_slice_buffer* slices,
                 grpc_custom_write_callback cb);
   void (*read)(grpc_custom_socket* socket, char* buffer, size_t length,
@@ -67,7 +68,8 @@ typedef struct grpc_socket_vtable {
   grpc_error_handle (*getsockname)(grpc_custom_socket* socket,
                                    const grpc_sockaddr* addr, int* len);
   grpc_error_handle (*bind)(grpc_custom_socket* socket,
-                            const grpc_sockaddr* addr, size_t len, int flags);
+                            const grpc_sockaddr* addr, size_t len,
+                            int flags);
   grpc_error_handle (*listen)(grpc_custom_socket* socket);
   void (*accept)(grpc_custom_socket* socket, grpc_custom_socket* client,
                  grpc_custom_accept_callback cb);
@@ -78,8 +80,8 @@ void grpc_custom_endpoint_init(grpc_socket_vtable* impl);
 
 void grpc_custom_close_server_callback(grpc_tcp_listener* listener);
 
-grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
-                                          grpc_resource_quota* resource_quota,
-                                          const char* peer_string);
+grpc_endpoint* custom_tcp_endpoint_create(
+    grpc_custom_socket* socket, grpc_resource_quota* resource_quota,
+    const char* peer_string);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CUSTOM_H */

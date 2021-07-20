@@ -10,9 +10,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 //
 
@@ -24,8 +24,10 @@
 
 // The subchannel pool to reuse subchannels.
 #define GRPC_ARG_SUBCHANNEL_POOL "grpc.subchannel_pool"
-// The subchannel key ID that is only used in test to make each key unique.
-#define GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID "grpc.subchannel_key_test_only_id"
+// The subchannel key ID that is only used in test to make each key
+// unique.
+#define GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID \
+  "grpc.subchannel_key_test_only_id"
 
 namespace grpc_core {
 
@@ -57,7 +59,8 @@ SubchannelKey::SubchannelKey(SubchannelKey&& other) noexcept {
   other.args_ = nullptr;
 }
 
-SubchannelKey& SubchannelKey::operator=(SubchannelKey&& other) noexcept {
+SubchannelKey& SubchannelKey::operator=(
+    SubchannelKey&& other) noexcept {
   args_ = other.args_;
   other.args_ = nullptr;
   return *this;
@@ -67,9 +70,9 @@ bool SubchannelKey::operator<(const SubchannelKey& other) const {
   return grpc_channel_args_compare(args_, other.args_) < 0;
 }
 
-void SubchannelKey::Init(
-    const grpc_channel_args* args,
-    grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
+void SubchannelKey::Init(const grpc_channel_args* args,
+                         grpc_channel_args* (*copy_channel_args)(
+                             const grpc_channel_args* args)) {
   args_ = copy_channel_args(args);
 }
 
@@ -103,7 +106,8 @@ grpc_arg SubchannelPoolInterface::CreateChannelArg(
 SubchannelPoolInterface*
 SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
     const grpc_channel_args* args) {
-  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_POOL);
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_POOL);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
   return static_cast<SubchannelPoolInterface*>(arg->value.pointer.p);
 }

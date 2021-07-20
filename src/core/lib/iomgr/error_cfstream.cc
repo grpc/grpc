@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,9 +31,8 @@
 
 #define MAX_ERROR_DESCRIPTION 256
 
-grpc_error_handle grpc_error_create_from_cferror(const char* file, int line,
-                                                 void* arg,
-                                                 const char* custom_desc) {
+grpc_error_handle grpc_error_create_from_cferror(
+    const char* file, int line, void* arg, const char* custom_desc) {
   CFErrorRef error = static_cast<CFErrorRef>(arg);
   char buf_domain[MAX_ERROR_DESCRIPTION];
   char buf_desc[MAX_ERROR_DESCRIPTION];
@@ -49,6 +48,7 @@ grpc_error_handle grpc_error_create_from_cferror(const char* file, int line,
                       custom_desc, buf_domain, code, buf_desc);
   CFRelease(desc);
   return grpc_error_create(
-      file, line, grpc_slice_from_copied_string(error_msg.c_str()), NULL, 0);
+      file, line, grpc_slice_from_copied_string(error_msg.c_str()),
+      NULL, 0);
 }
 #endif /* GRPC_CFSTREAM */

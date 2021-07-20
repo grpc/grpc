@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -29,7 +29,8 @@ typedef intptr_t gpr_atm;
 #define GPR_ATM_INC_CAS_THEN(blah) blah
 #define GPR_ATM_INC_ADD_THEN(blah) blah
 
-#define GPR_ATM_COMPILE_BARRIER_() __asm__ __volatile__("" : : : "memory")
+#define GPR_ATM_COMPILE_BARRIER_() \
+  __asm__ __volatile__("" : : : "memory")
 
 #if defined(__i386) || defined(__x86_64__)
 /* All loads are acquire loads and all stores are release stores.  */
@@ -57,7 +58,8 @@ static __inline void gpr_atm_rel_store(gpr_atm* p, gpr_atm value) {
   *p = value;
 }
 
-static __inline void gpr_atm_no_barrier_store(gpr_atm* p, gpr_atm value) {
+static __inline void gpr_atm_no_barrier_store(gpr_atm* p,
+                                              gpr_atm value) {
   GPR_ATM_COMPILE_BARRIER_();
   *p = value;
 }
@@ -67,10 +69,12 @@ static __inline void gpr_atm_no_barrier_store(gpr_atm* p, gpr_atm value) {
 
 #define gpr_atm_no_barrier_fetch_add(p, delta) \
   gpr_atm_full_fetch_add((p), (delta))
-#define gpr_atm_full_fetch_add(p, delta) (__sync_fetch_and_add((p), (delta)))
+#define gpr_atm_full_fetch_add(p, delta) \
+  (__sync_fetch_and_add((p), (delta)))
 
 #define gpr_atm_no_barrier_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
-#define gpr_atm_acq_cas(p, o, n) (__sync_bool_compare_and_swap((p), (o), (n)))
+#define gpr_atm_acq_cas(p, o, n) \
+  (__sync_bool_compare_and_swap((p), (o), (n)))
 #define gpr_atm_rel_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
 #define gpr_atm_full_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))
 

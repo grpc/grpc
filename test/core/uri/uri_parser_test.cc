@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -36,7 +36,8 @@ using ::testing::Pair;
 static void TestSucceeds(
     absl::string_view uri_text, absl::string_view scheme,
     absl::string_view authority, absl::string_view path,
-    const std::map<absl::string_view, absl::string_view>& query_param_map,
+    const std::map<absl::string_view, absl::string_view>&
+        query_param_map,
     const std::vector<grpc_core::URI::QueryParam>& query_param_pairs,
     absl::string_view fragment) {
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(uri_text);
@@ -45,7 +46,8 @@ static void TestSucceeds(
   EXPECT_EQ(authority, uri->authority());
   EXPECT_EQ(path, uri->path());
   EXPECT_THAT(uri->query_parameter_map(), ContainerEq(query_param_map));
-  EXPECT_THAT(uri->query_parameter_pairs(), ContainerEq(query_param_pairs));
+  EXPECT_THAT(uri->query_parameter_pairs(),
+              ContainerEq(query_param_pairs));
   EXPECT_EQ(fragment, uri->fragment());
 }
 
@@ -55,29 +57,31 @@ static void TestFails(absl::string_view uri_text) {
 }
 
 TEST(URIParserTest, BasicExamplesAreParsedCorrectly) {
-  TestSucceeds("http://www.google.com", "http", "www.google.com", "", {}, {},
-               "");
+  TestSucceeds("http://www.google.com", "http", "www.google.com", "",
+               {}, {}, "");
   TestSucceeds("dns:///foo", "dns", "", "/foo", {}, {}, "");
-  TestSucceeds("http://www.google.com:90", "http", "www.google.com:90", "", {},
+  TestSucceeds("http://www.google.com:90", "http", "www.google.com:90",
+               "", {}, {}, "");
+  TestSucceeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom", {},
                {}, "");
-  TestSucceeds("a192.4-df:foo.coom", "a192.4-df", "", "foo.coom", {}, {}, "");
   TestSucceeds("a+b:foo.coom", "a+b", "", "foo.coom", {}, {}, "");
   TestSucceeds("zookeeper://127.0.0.1:2181/foo/bar", "zookeeper",
                "127.0.0.1:2181", "/foo/bar", {}, {}, "");
-  TestSucceeds("dns:foo.com#fragment-all-the-things", "dns", "", "foo.com", {},
-               {}, "fragment-all-the-things");
+  TestSucceeds("dns:foo.com#fragment-all-the-things", "dns", "",
+               "foo.com", {}, {}, "fragment-all-the-things");
   TestSucceeds("http://localhost:8080/whatzit?mi_casa=su_casa", "http",
                "localhost:8080", "/whatzit", {{"mi_casa", "su_casa"}},
                {{"mi_casa", "su_casa"}}, "");
-  TestSucceeds("http://localhost:8080/whatzit?1=2#buckle/my/shoe", "http",
-               "localhost:8080", "/whatzit", {{"1", "2"}}, {{"1", "2"}},
-               "buckle/my/shoe");
+  TestSucceeds("http://localhost:8080/whatzit?1=2#buckle/my/shoe",
+               "http", "localhost:8080", "/whatzit", {{"1", "2"}},
+               {{"1", "2"}}, "buckle/my/shoe");
 }
 
 TEST(URIParserTest, UncommonValidExamplesAreParsedCorrectly) {
-  TestSucceeds("scheme:path//is/ok", "scheme", "", "path//is/ok", {}, {}, "");
-  TestSucceeds("http:?legit", "http", "", "", {{"legit", ""}}, {{"legit", ""}},
-               "");
+  TestSucceeds("scheme:path//is/ok", "scheme", "", "path//is/ok", {},
+               {}, "");
+  TestSucceeds("http:?legit", "http", "", "", {{"legit", ""}},
+               {{"legit", ""}}, "");
   TestSucceeds("unix:#this-is-ok-too", "unix", "", "", {}, {},
                "this-is-ok-too");
   TestSucceeds("http:?legit#twice", "http", "", "", {{"legit", ""}},
@@ -85,24 +89,28 @@ TEST(URIParserTest, UncommonValidExamplesAreParsedCorrectly) {
   TestSucceeds("fake:///", "fake", "", "/", {}, {}, "");
 }
 
-TEST(URIParserTest, VariousKeyValueAndNonKVQueryParamsAreParsedCorrectly) {
+TEST(URIParserTest,
+     VariousKeyValueAndNonKVQueryParamsAreParsedCorrectly) {
   TestSucceeds("http://foo/path?a&b=B&c=&#frag", "http", "foo", "/path",
                {{"c", ""}, {"a", ""}, {"b", "B"}},
                {{"a", ""}, {"b", "B"}, {"c", ""}}, "frag");
 }
 
-TEST(URIParserTest, ParserTreatsFirstEqualSignAsKVDelimiterInQueryString) {
+TEST(URIParserTest,
+     ParserTreatsFirstEqualSignAsKVDelimiterInQueryString) {
   TestSucceeds(
-      "http://localhost:8080/?too=many=equals&are=present=here#fragged", "http",
-      "localhost:8080", "/", {{"are", "present=here"}, {"too", "many=equals"}},
+      "http://localhost:8080/?too=many=equals&are=present=here#fragged",
+      "http", "localhost:8080", "/",
+      {{"are", "present=here"}, {"too", "many=equals"}},
       {{"too", "many=equals"}, {"are", "present=here"}}, "fragged");
   TestSucceeds("http://auth/path?foo=bar=baz&foobar===", "http", "auth",
                "/path", {{"foo", "bar=baz"}, {"foobar", "=="}},
                {{"foo", "bar=baz"}, {"foobar", "=="}}, "");
 }
 
-TEST(URIParserTest,
-     RepeatedQueryParamsAreSupportedInOrderedPairsButDeduplicatedInTheMap) {
+TEST(
+    URIParserTest,
+    RepeatedQueryParamsAreSupportedInOrderedPairsButDeduplicatedInTheMap) {
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse("http://foo/path?a=2&a=1&a=3");
   ASSERT_TRUE(uri.ok());
@@ -128,10 +136,10 @@ TEST(URIParserTest, QueryParamMapRemainsValiditAfterMovingTheURI) {
 }
 
 TEST(URIParserTest, QueryParamMapRemainsValidAfterCopyingTheURI) {
-  // Since the query parameter map points to objects stored in the param pair
-  // vector, this test checks that the param map pointers remain valid after
-  // a copy. Ideally {a,m}san will catch this if there's a problem.
-  // testing copy operator=:
+  // Since the query parameter map points to objects stored in the param
+  // pair vector, this test checks that the param map pointers remain
+  // valid after a copy. Ideally {a,m}san will catch this if there's a
+  // problem. testing copy operator=:
   grpc_core::URI uri_copy;
   {
     absl::StatusOr<grpc_core::URI> del_uri =
@@ -143,19 +151,23 @@ TEST(URIParserTest, QueryParamMapRemainsValidAfterCopyingTheURI) {
   grpc_core::URI* del_uri2 = new grpc_core::URI(uri_copy);
   grpc_core::URI uri_copy2(*del_uri2);
   delete del_uri2;
-  ASSERT_THAT(uri_copy2.query_parameter_map(), Contains(Pair("a", "2")));
+  ASSERT_THAT(uri_copy2.query_parameter_map(),
+              Contains(Pair("a", "2")));
 }
 
 TEST(URIParserTest, AWSExternalAccountRegressionTest) {
   TestSucceeds(
       "https://foo.com:5555/v1/"
-      "token-exchange?subject_token=eyJhbGciO&subject_token_type=urn:ietf:"
+      "token-exchange?subject_token=eyJhbGciO&subject_token_type=urn:"
+      "ietf:"
       "params:oauth:token-type:id_token",
       "https", "foo.com:5555", "/v1/token-exchange",
       {{"subject_token", "eyJhbGciO"},
-       {"subject_token_type", "urn:ietf:params:oauth:token-type:id_token"}},
+       {"subject_token_type",
+        "urn:ietf:params:oauth:token-type:id_token"}},
       {{"subject_token", "eyJhbGciO"},
-       {"subject_token_type", "urn:ietf:params:oauth:token-type:id_token"}},
+       {"subject_token_type",
+        "urn:ietf:params:oauth:token-type:id_token"}},
       "");
 }
 
@@ -172,9 +184,10 @@ TEST(URIParserTest, IPV6StringsAreParsedCorrectly) {
                "[fe80::90%eth1.sky1]:6010", {}, {}, "");
 }
 
-TEST(URIParserTest, PreviouslyReservedCharactersInUnrelatedURIPartsAreIgnored) {
-  // The '?' and '/' characters are not reserved delimiter characters in the
-  // fragment. See http://go/rfc/3986#section-3.5
+TEST(URIParserTest,
+     PreviouslyReservedCharactersInUnrelatedURIPartsAreIgnored) {
+  // The '?' and '/' characters are not reserved delimiter characters in
+  // the fragment. See http://go/rfc/3986#section-3.5
   TestSucceeds("http://foo?bar#lol?", "http", "foo", "", {{"bar", ""}},
                {{"bar", ""}}, "lol?");
   TestSucceeds("http://foo?bar#lol?/", "http", "foo", "", {{"bar", ""}},
@@ -188,20 +201,23 @@ TEST(URIParserTest, EncodedCharactersInQueryStringAreParsedCorrectly) {
 }
 
 TEST(URIParserTest, InvalidPercentEncodingsArePassedThrough) {
-  TestSucceeds("x:y?%xx", "x", "", "y", {{"%xx", ""}}, {{"%xx", ""}}, "");
+  TestSucceeds("x:y?%xx", "x", "", "y", {{"%xx", ""}}, {{"%xx", ""}},
+               "");
   TestSucceeds("http:?dangling-pct-%0", "http", "", "",
-               {{"dangling-pct-%0", ""}}, {{"dangling-pct-%0", ""}}, "");
+               {{"dangling-pct-%0", ""}}, {{"dangling-pct-%0", ""}},
+               "");
 }
 
 TEST(URIParserTest, NullCharactersInURIStringAreSupported) {
   // Artificial examples to show that embedded nulls are supported.
-  TestSucceeds(std::string("unix-abstract:\0should-be-ok", 27), "unix-abstract",
-               "", std::string("\0should-be-ok", 13), {}, {}, "");
+  TestSucceeds(std::string("unix-abstract:\0should-be-ok", 27),
+               "unix-abstract", "", std::string("\0should-be-ok", 13),
+               {}, {}, "");
 }
 
 TEST(URIParserTest, EncodedNullsInURIStringAreSupported) {
-  TestSucceeds("unix-abstract:%00x", "unix-abstract", "", std::string("\0x", 2),
-               {}, {}, "");
+  TestSucceeds("unix-abstract:%00x", "unix-abstract", "",
+               std::string("\0x", 2), {}, {}, "");
 }
 
 TEST(URIParserTest, InvalidURIsResultInFailureStatuses) {

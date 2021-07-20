@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_SERVICE_CONFIG_PARSER_H
@@ -49,16 +49,19 @@ class FaultInjectionMethodParsedConfig
 
   explicit FaultInjectionMethodParsedConfig(
       std::vector<FaultInjectionPolicy> fault_injection_policies)
-      : fault_injection_policies_(std::move(fault_injection_policies)) {}
+      : fault_injection_policies_(std::move(fault_injection_policies)) {
+  }
 
   // Returns the fault injection policy at certain index.
-  // There might be multiple fault injection policies functioning at the same
-  // time. The order between the policies are stable, and an index is used to
-  // keep track of their relative positions. The FaultInjectionFilter uses this
-  // method to access the parsed fault injection policy in service config,
-  // whether it came from xDS resolver or directly from service config
+  // There might be multiple fault injection policies functioning at the
+  // same time. The order between the policies are stable, and an index
+  // is used to keep track of their relative positions. The
+  // FaultInjectionFilter uses this method to access the parsed fault
+  // injection policy in service config, whether it came from xDS
+  // resolver or directly from service config
   const FaultInjectionPolicy* fault_injection_policy(int index) const {
-    if (static_cast<size_t>(index) >= fault_injection_policies_.size()) {
+    if (static_cast<size_t>(index) >=
+        fault_injection_policies_.size()) {
       return nullptr;
     }
     return &fault_injection_policies_[index];
@@ -68,12 +71,13 @@ class FaultInjectionMethodParsedConfig
   std::vector<FaultInjectionPolicy> fault_injection_policies_;
 };
 
-class FaultInjectionServiceConfigParser : public ServiceConfigParser::Parser {
+class FaultInjectionServiceConfigParser
+    : public ServiceConfigParser::Parser {
  public:
   // Parses the per-method service config for fault injection filter.
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* args, const Json& json,
-      grpc_error_handle* error) override;
+  std::unique_ptr<ServiceConfigParser::ParsedConfig>
+  ParsePerMethodParams(const grpc_channel_args* args, const Json& json,
+                       grpc_error_handle* error) override;
   // Returns the parser index for FaultInjectionServiceConfigParser.
   static size_t ParserIndex();
   // Registers FaultInjectionServiceConfigParser to ServiceConfigParser.

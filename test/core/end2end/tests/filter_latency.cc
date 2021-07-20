@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -41,10 +41,9 @@ static gpr_timespec g_server_latency;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -64,16 +63,17 @@ static gpr_timespec five_seconds_from_now(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, five_seconds_from_now(),
+                                    nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->shutdown_cq, tag(1000),
+                 grpc_timeout_seconds_to_deadline(5), nullptr)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -95,7 +95,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Simple request via a server filter that saves the reported latency value.
+// Simple request via a server filter that saves the reported latency
+// value.
 static void test_request(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
@@ -125,9 +126,10 @@ static void test_request(grpc_end2end_test_config config) {
   const gpr_timespec start_time = gpr_now(GPR_CLOCK_REALTIME);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               grpc_slice_from_static_string("/foo"), nullptr,
-                               deadline, nullptr);
+  c = grpc_channel_create_call(f.client, nullptr,
+                               GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -153,24 +155,26 @@ static void test_request(grpc_end2end_test_config config) {
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->data.recv_initial_metadata.recv_initial_metadata =
+      &initial_metadata_recv;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.trailing_metadata =
+      &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
   op->data.recv_status_on_client.status_details = &details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f.server, &s, &call_details,
-                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  error = grpc_server_request_call(f.server, &s, &call_details,
+                                   &request_metadata_recv, f.cq, f.cq,
+                                   tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -196,8 +200,8 @@ static void test_request(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
-                                nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -228,17 +232,20 @@ static void test_request(grpc_end2end_test_config config) {
   const gpr_timespec max_latency = gpr_time_sub(end_time, start_time);
 
   // Perform checks after test tear-down
-  // Guards against the case that there's outstanding channel-related work on a
-  // call prior to verification
+  // Guards against the case that there's outstanding channel-related
+  // work on a call prior to verification
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(gpr_time_cmp(max_latency, g_client_latency) >= 0);
-  GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_client_latency) <= 0);
+  GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_client_latency) <=
+             0);
   GPR_ASSERT(gpr_time_cmp(max_latency, g_server_latency) >= 0);
-  GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_server_latency) <= 0);
-  // Server latency should always be smaller than client latency, however since
-  // we only calculate latency at destruction time, and that might mean that we
-  // need to wait for outstanding channel-related work, this isn't verifiable
-  // right now (the server MAY hold on to the call for longer than the client).
+  GPR_ASSERT(gpr_time_cmp(gpr_time_0(GPR_TIMESPAN), g_server_latency) <=
+             0);
+  // Server latency should always be smaller than client latency,
+  // however since we only calculate latency at destruction time, and
+  // that might mean that we need to wait for outstanding
+  // channel-related work, this isn't verifiable right now (the server
+  // MAY hold on to the call for longer than the client).
   // GPR_ASSERT(gpr_time_cmp(g_server_latency, g_client_latency) < 0);
   gpr_mu_unlock(&g_mu);
 }
@@ -248,28 +255,30 @@ static void test_request(grpc_end2end_test_config config) {
  */
 
 static grpc_error_handle init_call_elem(
-    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
+    grpc_call_element* /*elem*/,
+    const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static void client_destroy_call_elem(grpc_call_element* /*elem*/,
-                                     const grpc_call_final_info* final_info,
-                                     grpc_closure* /*ignored*/) {
+static void client_destroy_call_elem(
+    grpc_call_element* /*elem*/, const grpc_call_final_info* final_info,
+    grpc_closure* /*ignored*/) {
   gpr_mu_lock(&g_mu);
   g_client_latency = final_info->stats.latency;
   gpr_mu_unlock(&g_mu);
 }
 
-static void server_destroy_call_elem(grpc_call_element* /*elem*/,
-                                     const grpc_call_final_info* final_info,
-                                     grpc_closure* /*ignored*/) {
+static void server_destroy_call_elem(
+    grpc_call_element* /*elem*/, const grpc_call_final_info* final_info,
+    grpc_closure* /*ignored*/) {
   gpr_mu_lock(&g_mu);
   g_server_latency = final_info->stats.latency;
   gpr_mu_unlock(&g_mu);
 }
 
 static grpc_error_handle init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
+    grpc_channel_element* /*elem*/,
+    grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -305,13 +314,15 @@ static const grpc_channel_filter test_server_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
+static bool maybe_add_filter(grpc_channel_stack_builder* builder,
+                             void* arg) {
   grpc_channel_filter* filter = static_cast<grpc_channel_filter*>(arg);
   if (g_enable_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
-    // can't add it at the very end, because the connected channel filter
-    // must be the last one.  So we add it right before the last one.
+    // can't add it at the very end, because the connected channel
+    // filter must be the last one.  So we add it right before the last
+    // one.
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
     GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));

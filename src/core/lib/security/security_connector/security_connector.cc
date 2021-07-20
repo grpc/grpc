@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,12 +46,14 @@ grpc_server_security_connector::grpc_server_security_connector(
     : grpc_security_connector(url_scheme),
       server_creds_(std::move(server_creds)) {}
 
-grpc_server_security_connector::~grpc_server_security_connector() = default;
+grpc_server_security_connector::~grpc_server_security_connector() =
+    default;
 
 grpc_channel_security_connector::grpc_channel_security_connector(
     const char* url_scheme,
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds)
+    grpc_core::RefCountedPtr<grpc_call_credentials>
+        request_metadata_creds)
     : grpc_security_connector(url_scheme),
       channel_creds_(std::move(channel_creds)),
       request_metadata_creds_(std::move(request_metadata_creds)) {}
@@ -72,7 +74,8 @@ int grpc_channel_security_connector::channel_security_connector_cmp(
   GPR_ASSERT(other_sc->channel_creds() != nullptr);
   int c = GPR_ICMP(channel_creds(), other_sc->channel_creds());
   if (c != 0) return c;
-  return GPR_ICMP(request_metadata_creds(), other_sc->request_metadata_creds());
+  return GPR_ICMP(request_metadata_creds(),
+                  other_sc->request_metadata_creds());
 }
 
 int grpc_server_security_connector::server_security_connector_cmp(
@@ -85,8 +88,8 @@ int grpc_server_security_connector::server_security_connector_cmp(
 }
 
 static void connector_arg_destroy(void* p) {
-  static_cast<grpc_security_connector*>(p)->Unref(DEBUG_LOCATION,
-                                                  "connector_arg_destroy");
+  static_cast<grpc_security_connector*>(p)->Unref(
+      DEBUG_LOCATION, "connector_arg_destroy");
 }
 
 static void* connector_arg_copy(void* p) {
@@ -109,8 +112,10 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
       &connector_arg_vtable);
 }
 
-grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_ARG_SECURITY_CONNECTOR) != 0) return nullptr;
+grpc_security_connector* grpc_security_connector_from_arg(
+    const grpc_arg* arg) {
+  if (strcmp(arg->key, GRPC_ARG_SECURITY_CONNECTOR) != 0)
+    return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
             GRPC_ARG_SECURITY_CONNECTOR);

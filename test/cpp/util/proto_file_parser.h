@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,69 +39,73 @@ class ErrorPrinter;
 // Find method and associated request/response types.
 class ProtoFileParser {
  public:
-  // The parser will search proto files using the server reflection service
-  // provided on the given channel. The given protofiles in a source tree rooted
-  // from proto_path will also be searched.
+  // The parser will search proto files using the server reflection
+  // service provided on the given channel. The given protofiles in a
+  // source tree rooted from proto_path will also be searched.
   ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
-                  const std::string& proto_path, const std::string& protofiles);
+                  const std::string& proto_path,
+                  const std::string& protofiles);
 
   ~ProtoFileParser();
 
-  // The input method name in the following four functions could be a partial
-  // string such as Service.Method or even just Method. It will log an error if
-  // there is ambiguity.
-  // Full method name is in the form of Service.Method, it's good to be used in
-  // descriptor database queries.
+  // The input method name in the following four functions could be a
+  // partial string such as Service.Method or even just Method. It will
+  // log an error if there is ambiguity. Full method name is in the form
+  // of Service.Method, it's good to be used in descriptor database
+  // queries.
   std::string GetFullMethodName(const std::string& method);
 
-  // Formatted method name is in the form of /Service/Method, it's good to be
-  // used as the argument of Stub::Call()
+  // Formatted method name is in the form of /Service/Method, it's good
+  // to be used as the argument of Stub::Call()
   std::string GetFormattedMethodName(const std::string& method);
 
-  /// Converts a text or json string to its binary proto representation for the
-  /// given method's input or return type.
-  /// \param method the name of the method (does not need to be fully qualified
+  /// Converts a text or json string to its binary proto representation
+  /// for the given method's input or return type. \param method the
+  /// name of the method (does not need to be fully qualified
   ///        name)
   /// \param formatted_proto the text- or json-formatted proto string
-  /// \param is_request if \c true the resolved type is that of the input
+  /// \param is_request if \c true the resolved type is that of the
+  /// input
   ///        parameter of the method, otherwise it is the output type
-  /// \param is_json_format if \c true the \c formatted_proto is treated as a
-  ///        json-formatted proto, otherwise it is treated as a text-formatted
-  ///        proto
-  /// \return the serialised binary proto representation of \c formatted_proto
-  std::string GetSerializedProtoFromMethod(const std::string& method,
-                                           const std::string& formatted_proto,
-                                           bool is_request,
-                                           bool is_json_format);
+  /// \param is_json_format if \c true the \c formatted_proto is treated
+  /// as a
+  ///        json-formatted proto, otherwise it is treated as a
+  ///        text-formatted proto
+  /// \return the serialised binary proto representation of \c
+  /// formatted_proto
+  std::string GetSerializedProtoFromMethod(
+      const std::string& method, const std::string& formatted_proto,
+      bool is_request, bool is_json_format);
 
-  /// Converts a text or json string to its proto representation for the given
-  /// message type.
-  /// \param formatted_proto the text- or json-formatted proto string
-  /// \return the serialised binary proto representation of \c formatted_proto
+  /// Converts a text or json string to its proto representation for the
+  /// given message type. \param formatted_proto the text- or
+  /// json-formatted proto string \return the serialised binary proto
+  /// representation of \c formatted_proto
   std::string GetSerializedProtoFromMessageType(
-      const std::string& message_type_name, const std::string& formatted_proto,
-      bool is_json_format);
+      const std::string& message_type_name,
+      const std::string& formatted_proto, bool is_json_format);
 
-  /// Converts a binary proto string to its text or json string representation
-  /// for the given method's input or return type.
-  /// \param method the name of the method (does not need to be a fully
+  /// Converts a binary proto string to its text or json string
+  /// representation for the given method's input or return type. \param
+  /// method the name of the method (does not need to be a fully
   ///        qualified name)
   /// \param the serialised binary proto representation of type
   ///        \c message_type_name
-  /// \return the text- or json-formatted proto string of \c serialized_proto
-  std::string GetFormattedStringFromMethod(const std::string& method,
-                                           const std::string& serialized_proto,
-                                           bool is_request,
-                                           bool is_json_format);
+  /// \return the text- or json-formatted proto string of \c
+  /// serialized_proto
+  std::string GetFormattedStringFromMethod(
+      const std::string& method, const std::string& serialized_proto,
+      bool is_request, bool is_json_format);
 
-  /// Converts a binary proto string to its text or json string representation
-  /// for the given message type.
-  /// \param the serialised binary proto representation of type
+  /// Converts a binary proto string to its text or json string
+  /// representation for the given message type. \param the serialised
+  /// binary proto representation of type
   ///        \c message_type_name
-  /// \return the text- or json-formatted proto string of \c serialized_proto
+  /// \return the text- or json-formatted proto string of \c
+  /// serialized_proto
   std::string GetFormattedStringFromMessageType(
-      const std::string& message_type_name, const std::string& serialized_proto,
-      bool is_json_format);
+      const std::string& message_type_name,
+      const std::string& serialized_proto, bool is_json_format);
 
   bool IsStreaming(const std::string& method, bool is_request);
 
@@ -118,7 +122,8 @@ class ProtoFileParser {
   protobuf::compiler::DiskSourceTree source_tree_;
   std::unique_ptr<ErrorPrinter> error_printer_;
   std::unique_ptr<protobuf::compiler::Importer> importer_;
-  std::unique_ptr<grpc::ProtoReflectionDescriptorDatabase> reflection_db_;
+  std::unique_ptr<grpc::ProtoReflectionDescriptorDatabase>
+      reflection_db_;
   std::unique_ptr<protobuf::DescriptorPoolDatabase> file_db_;
   std::unique_ptr<protobuf::DescriptorDatabase> desc_db_;
   std::unique_ptr<protobuf::DescriptorPool> desc_pool_;

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,7 +24,8 @@
 #include "test/core/util/test_config.h"
 
 static void test_format_get_request(void) {
-  grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
+  grpc_http_header hdr = {const_cast<char*>("x-yz"),
+                          const_cast<char*>("abc")};
   grpc_httpcli_request req;
   grpc_slice slice;
 
@@ -36,20 +37,21 @@ static void test_format_get_request(void) {
 
   slice = grpc_httpcli_format_get_request(&req);
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "GET /index.html HTTP/1.0\r\n"
-                                     "Host: example.com\r\n"
-                                     "Connection: close\r\n"
-                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                     "\r\n"
-                                     "x-yz: abc\r\n"
-                                     "\r\n"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(
+                      slice,
+                      "GET /index.html HTTP/1.0\r\n"
+                      "Host: example.com\r\n"
+                      "Connection: close\r\n"
+                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
+                      "x-yz: abc\r\n"
+                      "\r\n"));
 
   grpc_slice_unref(slice);
 }
 
 static void test_format_post_request(void) {
-  grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
+  grpc_http_header hdr = {const_cast<char*>("x-yz"),
+                          const_cast<char*>("abc")};
   grpc_httpcli_request req;
   grpc_slice slice;
   char body_bytes[] = "fake body";
@@ -63,23 +65,24 @@ static void test_format_post_request(void) {
 
   slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "POST /index.html HTTP/1.0\r\n"
-                                     "Host: example.com\r\n"
-                                     "Connection: close\r\n"
-                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                     "\r\n"
-                                     "x-yz: abc\r\n"
-                                     "Content-Type: text/plain\r\n"
-                                     "Content-Length: 9\r\n"
-                                     "\r\n"
-                                     "fake body"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(
+                      slice,
+                      "POST /index.html HTTP/1.0\r\n"
+                      "Host: example.com\r\n"
+                      "Connection: close\r\n"
+                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
+                      "x-yz: abc\r\n"
+                      "Content-Type: text/plain\r\n"
+                      "Content-Length: 9\r\n"
+                      "\r\n"
+                      "fake body"));
 
   grpc_slice_unref(slice);
 }
 
 static void test_format_post_request_no_body(void) {
-  grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
+  grpc_http_header hdr = {const_cast<char*>("x-yz"),
+                          const_cast<char*>("abc")};
   grpc_httpcli_request req;
   grpc_slice slice;
 
@@ -91,14 +94,14 @@ static void test_format_post_request_no_body(void) {
 
   slice = grpc_httpcli_format_post_request(&req, nullptr, 0);
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "POST /index.html HTTP/1.0\r\n"
-                                     "Host: example.com\r\n"
-                                     "Connection: close\r\n"
-                                     "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                     "\r\n"
-                                     "x-yz: abc\r\n"
-                                     "\r\n"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(
+                      slice,
+                      "POST /index.html HTTP/1.0\r\n"
+                      "Host: example.com\r\n"
+                      "Connection: close\r\n"
+                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
+                      "x-yz: abc\r\n"
+                      "\r\n"));
 
   grpc_slice_unref(slice);
 }
@@ -113,7 +116,8 @@ static void test_format_post_request_content_type_override(void) {
   hdrs[0].key = const_cast<char*>("x-yz");
   hdrs[0].value = const_cast<char*>("abc");
   hdrs[1].key = const_cast<char*>("Content-Type");
-  hdrs[1].value = const_cast<char*>("application/x-www-form-urlencoded");
+  hdrs[1].value =
+      const_cast<char*>("application/x-www-form-urlencoded");
   memset(&req, 0, sizeof(req));
   req.host = const_cast<char*>("example.com");
   req.http.path = const_cast<char*>("/index.html");
@@ -122,17 +126,18 @@ static void test_format_post_request_content_type_override(void) {
 
   slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(
-                      slice,
-                      "POST /index.html HTTP/1.0\r\n"
-                      "Host: example.com\r\n"
-                      "Connection: close\r\n"
-                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
-                      "x-yz: abc\r\n"
-                      "Content-Type: application/x-www-form-urlencoded\r\n"
-                      "Content-Length: 11\r\n"
-                      "\r\n"
-                      "fake%20body"));
+  GPR_ASSERT(0 ==
+             grpc_slice_str_cmp(
+                 slice,
+                 "POST /index.html HTTP/1.0\r\n"
+                 "Host: example.com\r\n"
+                 "Connection: close\r\n"
+                 "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
+                 "x-yz: abc\r\n"
+                 "Content-Type: application/x-www-form-urlencoded\r\n"
+                 "Content-Length: 11\r\n"
+                 "\r\n"
+                 "fake%20body"));
 
   grpc_slice_unref(slice);
 }

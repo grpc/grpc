@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -30,12 +30,13 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
+bool server_ssl_test(const char* alpn_list[],
+                     unsigned int alpn_list_len,
                      const char* alpn_expected);
 
 /** Cleans up the SSL library. To be called after the last call to
- *  server_ssl_test returns. This is a NO-OP when gRPC is built against OpenSSL
- *  versions > 1.0.2. */
+ *  server_ssl_test returns. This is a NO-OP when gRPC is built against
+ * OpenSSL versions > 1.0.2. */
 void CleanupSslLibrary();
 
 #endif  // GRPC_SERVER_SSL_COMMON_H

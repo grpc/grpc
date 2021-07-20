@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -46,7 +46,8 @@ BENCHMARK(BM_ErrorCreateFromStatic);
 static void BM_ErrorCreateFromCopied(benchmark::State& state) {
   TrackCounters track_counters;
   for (auto _ : state) {
-    GRPC_ERROR_UNREF(GRPC_ERROR_CREATE_FROM_COPIED_STRING("Error not inline"));
+    GRPC_ERROR_UNREF(
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING("Error not inline"));
   }
   track_counters.Finish(state);
 }
@@ -55,9 +56,9 @@ BENCHMARK(BM_ErrorCreateFromCopied);
 static void BM_ErrorCreateAndSetStatus(benchmark::State& state) {
   TrackCounters track_counters;
   for (auto _ : state) {
-    GRPC_ERROR_UNREF(
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED));
+    GRPC_ERROR_UNREF(grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED));
   }
   track_counters.Finish(state);
 }
@@ -70,7 +71,8 @@ static void BM_ErrorCreateAndSetIntAndStr(benchmark::State& state) {
         grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
             GRPC_ERROR_INT_HTTP2_ERROR, (intptr_t)0),
-        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_from_static_string("raw bytes")));
+        GRPC_ERROR_STR_RAW_BYTES,
+        grpc_slice_from_static_string("raw bytes")));
   }
   track_counters.Finish(state);
 }
@@ -78,7 +80,8 @@ BENCHMARK(BM_ErrorCreateAndSetIntAndStr);
 
 static void BM_ErrorCreateAndSetIntLoop(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
+  grpc_error_handle error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
   int n = 0;
   for (auto _ : state) {
     error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, n++);
@@ -90,7 +93,8 @@ BENCHMARK(BM_ErrorCreateAndSetIntLoop);
 
 static void BM_ErrorCreateAndSetStrLoop(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
+  grpc_error_handle error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
   const char* str = "hello";
   for (auto _ : state) {
     error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
@@ -103,7 +107,8 @@ BENCHMARK(BM_ErrorCreateAndSetStrLoop);
 
 static void BM_ErrorRefUnref(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
+  grpc_error_handle error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error");
   for (auto _ : state) {
     GRPC_ERROR_UNREF(GRPC_ERROR_REF(error));
   }
@@ -124,7 +129,8 @@ static void BM_ErrorGetIntFromNoError(benchmark::State& state) {
   TrackCounters track_counters;
   for (auto _ : state) {
     intptr_t value;
-    grpc_error_get_int(GRPC_ERROR_NONE, GRPC_ERROR_INT_GRPC_STATUS, &value);
+    grpc_error_get_int(GRPC_ERROR_NONE, GRPC_ERROR_INT_GRPC_STATUS,
+                       &value);
   }
   track_counters.Finish(state);
 }
@@ -132,8 +138,9 @@ BENCHMARK(BM_ErrorGetIntFromNoError);
 
 static void BM_ErrorGetMissingInt(benchmark::State& state) {
   TrackCounters track_counters;
-  ErrorPtr error(grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_INDEX, 1));
+  ErrorPtr error(
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+                         GRPC_ERROR_INT_INDEX, 1));
   for (auto _ : state) {
     intptr_t value;
     grpc_error_get_int(error.get(), GRPC_ERROR_INT_OFFSET, &value);
@@ -144,8 +151,9 @@ BENCHMARK(BM_ErrorGetMissingInt);
 
 static void BM_ErrorGetPresentInt(benchmark::State& state) {
   TrackCounters track_counters;
-  ErrorPtr error(grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_OFFSET, 1));
+  ErrorPtr error(
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+                         GRPC_ERROR_INT_OFFSET, 1));
   for (auto _ : state) {
     intptr_t value;
     grpc_error_get_int(error.get(), GRPC_ERROR_INT_OFFSET, &value);
@@ -191,8 +199,8 @@ class ErrorWithGrpcStatus {
  private:
   const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
   ErrorPtr error_{grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_GRPC_STATUS,
-      GRPC_STATUS_UNIMPLEMENTED)};
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNIMPLEMENTED)};
 };
 
 class ErrorWithHttpError {
@@ -203,8 +211,8 @@ class ErrorWithHttpError {
  private:
   const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
   ErrorPtr error_{grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_HTTP2_ERROR,
-      GRPC_HTTP2_COMPRESSION_ERROR)};
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+      GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_COMPRESSION_ERROR)};
 };
 
 class ErrorWithNestedGrpcStatus {
@@ -215,8 +223,8 @@ class ErrorWithNestedGrpcStatus {
  private:
   const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
   ErrorPtr nested_error_{grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_GRPC_STATUS,
-      GRPC_STATUS_UNIMPLEMENTED)};
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNIMPLEMENTED)};
   grpc_error_handle nested_errors_[1] = {nested_error_.get()};
   ErrorPtr error_{GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
       "Error", nested_errors_, 1)};
@@ -250,8 +258,8 @@ static void BM_ErrorGetStatus(benchmark::State& state) {
   for (auto _ : state) {
     grpc_status_code status;
     grpc_slice slice;
-    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &slice,
-                          nullptr, nullptr);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status,
+                          &slice, nullptr, nullptr);
   }
 
   track_counters.Finish(state);
@@ -264,8 +272,8 @@ static void BM_ErrorGetStatusCode(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_status_code status;
-    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, nullptr,
-                          nullptr, nullptr);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status,
+                          nullptr, nullptr, nullptr);
   }
 
   track_counters.Finish(state);
@@ -278,8 +286,8 @@ static void BM_ErrorHttpError(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_http2_error_code error;
-    grpc_error_get_status(fixture.error(), fixture.deadline(), nullptr, nullptr,
-                          &error, nullptr);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), nullptr,
+                          nullptr, &error, nullptr);
   }
 
   track_counters.Finish(state);
@@ -310,8 +318,8 @@ BENCHMARK_SUITE(ErrorWithGrpcStatus);
 BENCHMARK_SUITE(ErrorWithHttpError);
 BENCHMARK_SUITE(ErrorWithNestedGrpcStatus);
 
-// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
-// and others do not. This allows us to support both modes.
+// Some distros have RunSpecifiedBenchmarks under the benchmark
+// namespace, and others do not. This allows us to support both modes.
 namespace benchmark {
 void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark

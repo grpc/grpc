@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,9 +31,9 @@ namespace grpc {
 /// Create a new \a Channel pointing to \a target.
 ///
 /// \param target The URI of the endpoint to connect to.
-/// \param creds Credentials to use for the created channel. If it does not
-/// hold an object or is invalid, a lame channel (one on which all operations
-/// fail) is returned.
+/// \param creds Credentials to use for the created channel. If it does
+/// not hold an object or is invalid, a lame channel (one on which all
+/// operations fail) is returned.
 std::shared_ptr<Channel> CreateChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds);
@@ -44,10 +44,10 @@ std::shared_ptr<Channel> CreateChannel(
 /// arguments only if necessary.
 ///
 /// \param target The URI of the endpoint to connect to.
-/// \param creds Credentials to use for the created channel. If it does not
-/// hold an object or is invalid, a lame channel (one on which all operations
-/// fail) is returned.
-/// \param args Options for channel creation.
+/// \param creds Credentials to use for the created channel. If it does
+/// not hold an object or is invalid, a lame channel (one on which all
+/// operations fail) is returned. \param args Options for channel
+/// creation.
 std::shared_ptr<Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
@@ -61,16 +61,16 @@ namespace experimental {
 /// arguments only if necessary.
 ///
 /// \param target The URI of the endpoint to connect to.
-/// \param creds Credentials to use for the created channel. If it does not
-/// hold an object or is invalid, a lame channel (one on which all operations
-/// fail) is returned.
-/// \param args Options for channel creation.
+/// \param creds Credentials to use for the created channel. If it does
+/// not hold an object or is invalid, a lame channel (one on which all
+/// operations fail) is returned. \param args Options for channel
+/// creation.
 std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args,
-    std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+    std::vector<std::unique_ptr<
+        experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 }  // namespace experimental
 }  // namespace grpc

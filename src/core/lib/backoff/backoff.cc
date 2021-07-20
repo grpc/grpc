@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,16 +28,16 @@ namespace grpc_core {
 
 namespace {
 
-/* Generate a random number between 0 and 1. We roll our own RNG because seeding
- * rand() modifies a global variable we have no control over. */
+/* Generate a random number between 0 and 1. We roll our own RNG because
+ * seeding rand() modifies a global variable we have no control over. */
 double generate_uniform_random_number(uint32_t* rng_state) {
   constexpr uint32_t two_raise_31 = uint32_t(1) << 31;
   *rng_state = (1103515245 * *rng_state + 12345) % two_raise_31;
   return *rng_state / static_cast<double>(two_raise_31);
 }
 
-double generate_uniform_random_number_between(uint32_t* rng_state, double a,
-                                              double b) {
+double generate_uniform_random_number_between(uint32_t* rng_state,
+                                              double a, double b) {
   if (a == b) return a;
   if (a > b) GPR_SWAP(double, a, b);  // make sure a < b
   const double range = b - a;
@@ -48,7 +48,8 @@ double generate_uniform_random_number_between(uint32_t* rng_state, double a,
 
 BackOff::BackOff(const Options& options)
     : options_(options),
-      rng_state_(static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec)) {
+      rng_state_(
+          static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec)) {
   Reset();
 }
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -34,18 +34,22 @@ typedef struct grpc_stats_data {
 
 extern grpc_stats_data* grpc_stats_per_cpu_storage;
 
-#define GRPC_THREAD_STATS_DATA() \
-  (&grpc_stats_per_cpu_storage[grpc_core::ExecCtx::Get()->starting_cpu()])
+#define GRPC_THREAD_STATS_DATA()                         \
+  (&grpc_stats_per_cpu_storage[grpc_core::ExecCtx::Get() \
+                                   ->starting_cpu()])
 
-/* Only collect stats if GRPC_COLLECT_STATS is defined or it is a debug build.
+/* Only collect stats if GRPC_COLLECT_STATS is defined or it is a debug
+ * build.
  */
 #if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
 #define GRPC_STATS_INC_COUNTER(ctr) \
-  (gpr_atm_no_barrier_fetch_add(&GRPC_THREAD_STATS_DATA()->counters[(ctr)], 1))
+  (gpr_atm_no_barrier_fetch_add(    \
+      &GRPC_THREAD_STATS_DATA()->counters[(ctr)], 1))
 
-#define GRPC_STATS_INC_HISTOGRAM(histogram, index)                             \
-  (gpr_atm_no_barrier_fetch_add(                                               \
-      &GRPC_THREAD_STATS_DATA()->histograms[histogram##_FIRST_SLOT + (index)], \
+#define GRPC_STATS_INC_HISTOGRAM(histogram, index)         \
+  (gpr_atm_no_barrier_fetch_add(                           \
+      &GRPC_THREAD_STATS_DATA()                            \
+           ->histograms[histogram##_FIRST_SLOT + (index)], \
       1))
 #else /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 #define GRPC_STATS_INC_COUNTER(ctr)

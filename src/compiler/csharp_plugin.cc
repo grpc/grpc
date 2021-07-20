@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -24,7 +24,8 @@
 #include "src/compiler/csharp_generator.h"
 #include "src/compiler/csharp_generator_helpers.h"
 
-class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
+class CSharpGrpcGenerator
+    : public grpc::protobuf::compiler::CodeGenerator {
  public:
   CSharpGrpcGenerator() {}
   ~CSharpGrpcGenerator() {}
@@ -38,13 +39,14 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                 grpc::protobuf::compiler::GeneratorContext* context,
                 std::string* error) const override {
     std::vector<std::pair<std::string, std::string> > options;
-    grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
+    grpc::protobuf::compiler::ParseGeneratorParameter(parameter,
+                                                      &options);
 
     bool generate_client = true;
     bool generate_server = true;
     bool internal_access = false;
-    // the suffix that will get appended to the name generated from the name
-    // of the original .proto file
+    // the suffix that will get appended to the name generated from the
+    // name of the original .proto file
     std::string file_suffix = "Grpc.cs";
     for (size_t i = 0; i < options.size(); i++) {
       if (options[i].first == "no_client") {

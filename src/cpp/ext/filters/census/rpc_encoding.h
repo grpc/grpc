@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -31,11 +31,11 @@
 
 namespace grpc {
 
-// TODO(unknown): This may not be needed. Check to see if opencensus requires
-// a trailing server response.
-// RpcServerStatsEncoding encapsulates the logic for encoding and decoding of
-// rpc server stats messages. Rpc server stats consists of a uint64_t time
-// value (server latency in nanoseconds).
+// TODO(unknown): This may not be needed. Check to see if opencensus
+// requires a trailing server response. RpcServerStatsEncoding
+// encapsulates the logic for encoding and decoding of rpc server stats
+// messages. Rpc server stats consists of a uint64_t time value (server
+// latency in nanoseconds).
 class RpcServerStatsEncoding {
  public:
   // Size of encoded RPC server stats.
@@ -43,11 +43,12 @@ class RpcServerStatsEncoding {
   // Error value.
   static constexpr size_t kEncodeDecodeFailure = 0;
 
-  // Deserializes rpc server stats from the incoming 'buf' into *time.  Returns
-  // number of bytes decoded. If the buffer is of insufficient size (it must be
-  // at least kRpcServerStatsSize bytes) or the encoding version or field ID are
-  // unrecognized, *time will be set to 0 and it will return
-  // kEncodeDecodeFailure. Inlined for performance reasons.
+  // Deserializes rpc server stats from the incoming 'buf' into *time.
+  // Returns number of bytes decoded. If the buffer is of insufficient
+  // size (it must be at least kRpcServerStatsSize bytes) or the
+  // encoding version or field ID are unrecognized, *time will be set to
+  // 0 and it will return kEncodeDecodeFailure. Inlined for performance
+  // reasons.
   static size_t Decode(absl::string_view buf, uint64_t* time) {
     if (buf.size() < kRpcServerStatsSize) {
       *time = 0;
@@ -65,10 +66,10 @@ class RpcServerStatsEncoding {
     return kRpcServerStatsSize;
   }
 
-  // Serializes rpc server stats into the provided buffer.  It returns the
-  // number of bytes written to the buffer. If the buffer is smaller than
-  // kRpcServerStatsSize bytes it will return kEncodeDecodeFailure. Inlined for
-  // performance reasons.
+  // Serializes rpc server stats into the provided buffer.  It returns
+  // the number of bytes written to the buffer. If the buffer is smaller
+  // than kRpcServerStatsSize bytes it will return kEncodeDecodeFailure.
+  // Inlined for performance reasons.
   static size_t Encode(uint64_t time, char* buf, size_t buf_size) {
     if (buf_size < kRpcServerStatsSize) {
       return kEncodeDecodeFailure;
@@ -76,8 +77,8 @@ class RpcServerStatsEncoding {
 
     buf[kVersionIdOffset] = kVersionId;
     buf[kServerElapsedTimeOffset] = kServerElapsedTimeField;
-    absl::little_endian::Store64(&buf[kServerElapsedTimeOffset + kFieldIdSize],
-                                 time);
+    absl::little_endian::Store64(
+        &buf[kServerElapsedTimeOffset + kFieldIdSize], time);
     return kRpcServerStatsSize;
   }
 
@@ -106,7 +107,8 @@ class RpcServerStatsEncoding {
   RpcServerStatsEncoding() = delete;
   RpcServerStatsEncoding(const RpcServerStatsEncoding&) = delete;
   RpcServerStatsEncoding(RpcServerStatsEncoding&&) = delete;
-  RpcServerStatsEncoding operator=(const RpcServerStatsEncoding&) = delete;
+  RpcServerStatsEncoding operator=(const RpcServerStatsEncoding&) =
+      delete;
   RpcServerStatsEncoding operator=(RpcServerStatsEncoding&&) = delete;
 };
 

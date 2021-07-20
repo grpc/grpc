@@ -9,9 +9,9 @@
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 //
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
@@ -32,9 +32,9 @@ namespace grpc_core {
 class FakeResolver;
 
 /// A mechanism for generating responses for the fake resolver.
-/// An instance of this class is passed to the fake resolver via a channel
-/// argument (see \a MakeChannelArg()) and used to inject and trigger custom
-/// resolutions.
+/// An instance of this class is passed to the fake resolver via a
+/// channel argument (see \a MakeChannelArg()) and used to inject and
+/// trigger custom resolutions.
 // TODO(roth): I would ideally like this to be InternallyRefCounted
 // instead of RefCounted, but external refs are currently needed to
 // encode this in channel args.  Once channel_args are converted to C++,
@@ -48,31 +48,36 @@ class FakeResolverResponseGenerator
   ~FakeResolverResponseGenerator() override;
 
   // Instructs the fake resolver associated with the response generator
-  // instance to trigger a new resolution with the specified result. If the
-  // resolver is not available yet, delays response setting until it is. This
-  // can be called at most once before the resolver is available.
+  // instance to trigger a new resolution with the specified result. If
+  // the resolver is not available yet, delays response setting until it
+  // is. This can be called at most once before the resolver is
+  // available.
   void SetResponse(Resolver::Result result);
 
-  // Sets the re-resolution response, which is returned by the fake resolver
-  // when re-resolution is requested (via \a RequestReresolutionLocked()).
-  // The new re-resolution response replaces any previous re-resolution
-  // response that may have been set by a previous call.
+  // Sets the re-resolution response, which is returned by the fake
+  // resolver when re-resolution is requested (via \a
+  // RequestReresolutionLocked()). The new re-resolution response
+  // replaces any previous re-resolution response that may have been set
+  // by a previous call.
   void SetReresolutionResponse(Resolver::Result result);
 
-  // Unsets the re-resolution response.  After this, the fake resolver will
-  // not return anything when \a RequestReresolutionLocked() is called.
+  // Unsets the re-resolution response.  After this, the fake resolver
+  // will not return anything when \a RequestReresolutionLocked() is
+  // called.
   void UnsetReresolutionResponse();
 
   // Tells the resolver to return a transient failure.
   void SetFailure();
 
   // Same as SetFailure(), but instead of returning the error
-  // immediately, waits for the next call to RequestReresolutionLocked().
+  // immediately, waits for the next call to
+  // RequestReresolutionLocked().
   void SetFailureOnReresolution();
 
   // Returns a channel arg containing \a generator.
   // TODO(roth): When we have time, make this a non-static method.
-  static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
+  static grpc_arg MakeChannelArg(
+      FakeResolverResponseGenerator* generator);
 
   // Returns the response generator in \a args, or null if not found.
   static RefCountedPtr<FakeResolverResponseGenerator> GetFromArgs(

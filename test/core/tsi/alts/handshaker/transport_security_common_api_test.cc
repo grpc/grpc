@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -55,11 +55,13 @@ static void test_success() {
       &version, kMinRpcVersionMajor, kMinRpcVersionMinor));
   /* Serializes to grpc slice. */
   grpc_slice encoded_slice;
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode(&version, &encoded_slice));
-  /* Deserializes and compares with the original version. */
   GPR_ASSERT(
-      grpc_gcp_rpc_protocol_versions_decode(encoded_slice, &decoded_version));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_equal(&version, &decoded_version));
+      grpc_gcp_rpc_protocol_versions_encode(&version, &encoded_slice));
+  /* Deserializes and compares with the original version. */
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_decode(encoded_slice,
+                                                   &decoded_version));
+  GPR_ASSERT(
+      grpc_gcp_rpc_protocol_versions_equal(&version, &decoded_version));
   grpc_slice_unref(encoded_slice);
 }
 
@@ -75,26 +77,29 @@ static void test_failure() {
       &version, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
       &version, kMinRpcVersionMajor, kMinRpcVersionMinor));
-  GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_encode(nullptr, &encoded_slice));
+  GPR_ASSERT(
+      !grpc_gcp_rpc_protocol_versions_encode(nullptr, &encoded_slice));
   GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_encode(&version, nullptr));
-  GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_decode(encoded_slice, nullptr));
+  GPR_ASSERT(
+      !grpc_gcp_rpc_protocol_versions_decode(encoded_slice, nullptr));
   /* Test for upb decode. */
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode(&version, &encoded_slice));
+  GPR_ASSERT(
+      grpc_gcp_rpc_protocol_versions_encode(&version, &encoded_slice));
   grpc_slice bad_slice = grpc_slice_split_head(
       &encoded_slice, GRPC_SLICE_LENGTH(encoded_slice) - 1);
   grpc_slice_unref(encoded_slice);
-  GPR_ASSERT(
-      !grpc_gcp_rpc_protocol_versions_decode(bad_slice, &decoded_version));
+  GPR_ASSERT(!grpc_gcp_rpc_protocol_versions_decode(bad_slice,
+                                                    &decoded_version));
   grpc_slice_unref(bad_slice);
 }
 
 static void test_copy() {
   grpc_gcp_rpc_protocol_versions src;
   grpc_gcp_rpc_protocol_versions des;
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(&src, kMaxRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&src, kMinRpcVersionMajor,
-                                                    kMinRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
+      &src, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
+      &src, kMinRpcVersionMajor, kMinRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_copy(&src, &des));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_equal(&src, &des));
 }
@@ -104,14 +109,14 @@ static void test_check_success() {
   grpc_gcp_rpc_protocol_versions v2;
   grpc_gcp_rpc_protocol_versions_version highest_common_version;
   /* test equality. */
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(&v1, kMaxRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v1, kMaxRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(&v2, kMaxRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v2, kMaxRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
+      &v1, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
+      &v1, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
+      &v2, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
+      &v2, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_check(
                  (const grpc_gcp_rpc_protocol_versions*)&v1,
                  (const grpc_gcp_rpc_protocol_versions*)&v2,
@@ -120,14 +125,14 @@ static void test_check_success() {
                  &highest_common_version, &v1.max_rpc_version) == 0);
 
   /* test inequality. */
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(&v1, kMaxRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v1, kMinRpcVersionMinor,
-                                                    kMinRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(&v2, kMaxRpcVersionMajor,
-                                                    kMinRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v2, kMinRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
+      &v1, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
+      &v1, kMinRpcVersionMinor, kMinRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
+      &v2, kMaxRpcVersionMajor, kMinRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
+      &v2, kMinRpcVersionMajor, kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_check(
                  (const grpc_gcp_rpc_protocol_versions*)&v1,
                  (const grpc_gcp_rpc_protocol_versions*)&v2,
@@ -141,14 +146,14 @@ static void test_check_failure() {
   grpc_gcp_rpc_protocol_versions v2;
   grpc_gcp_rpc_protocol_versions_version highest_common_version;
 
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(&v1, kMinRpcVersionMajor,
-                                                    kMinRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v1, kMinRpcVersionMajor,
-                                                    kMinRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(&v2, kMaxRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(&v2, kMaxRpcVersionMajor,
-                                                    kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
+      &v1, kMinRpcVersionMajor, kMinRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
+      &v1, kMinRpcVersionMajor, kMinRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
+      &v2, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
+      &v2, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_check(
                  (const grpc_gcp_rpc_protocol_versions*)&v1,
                  (const grpc_gcp_rpc_protocol_versions*)&v2,

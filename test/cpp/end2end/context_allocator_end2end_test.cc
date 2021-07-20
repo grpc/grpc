@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -61,7 +61,8 @@ class TestScenario {
 static std::ostream& operator<<(std::ostream& out,
                                 const TestScenario& scenario) {
   return out << "TestScenario{protocol="
-             << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
+             << (scenario.protocol == Protocol::INPROC ? "INPROC"
+                                                       : "TCP")
              << "," << scenario.credentials_type << "}";
 }
 
@@ -82,7 +83,8 @@ class ContextAllocatorEnd2endTestBase
 
   void SetUp() override { GetParam().Log(); }
 
-  void CreateServer(std::unique_ptr<grpc::ContextAllocator> context_allocator) {
+  void CreateServer(
+      std::unique_ptr<grpc::ContextAllocator> context_allocator) {
     ServerBuilder builder;
 
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -107,8 +109,9 @@ class ContextAllocatorEnd2endTestBase
 
   void ResetStub() {
     ChannelArguments args;
-    auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type, &args);
+    auto channel_creds =
+        GetCredentialsProvider()->GetChannelCredentials(
+            GetParam().credentials_type, &args);
     switch (GetParam().protocol) {
       case Protocol::TCP:
         channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
@@ -170,7 +173,8 @@ class ContextAllocatorEnd2endTestBase
   std::ostringstream server_address_;
 };
 
-class DefaultContextAllocatorTest : public ContextAllocatorEnd2endTestBase {};
+class DefaultContextAllocatorTest
+    : public ContextAllocatorEnd2endTestBase {};
 
 TEST_P(DefaultContextAllocatorTest, SimpleRpc) {
   const int kRpcCount = 10;
@@ -179,7 +183,8 @@ TEST_P(DefaultContextAllocatorTest, SimpleRpc) {
   SendRpcs(kRpcCount);
 }
 
-class NullContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
+class NullContextAllocatorTest
+    : public ContextAllocatorEnd2endTestBase {
  public:
   class NullAllocator : public grpc::ContextAllocator {
    public:
@@ -192,13 +197,15 @@ class NullContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
       return nullptr;
     }
 
-    GenericCallbackServerContext* NewGenericCallbackServerContext() override {
+    GenericCallbackServerContext* NewGenericCallbackServerContext()
+        override {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return nullptr;
     }
 
     void Release(
-        grpc::CallbackServerContext* /*callback_server_context*/) override {
+        grpc::CallbackServerContext* /*callback_server_context*/)
+        override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
     }
 
@@ -229,7 +236,8 @@ TEST_P(NullContextAllocatorTest, UnaryRpc) {
   EXPECT_EQ(kRpcCount, deallocation_count);
 }
 
-class SimpleContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
+class SimpleContextAllocatorTest
+    : public ContextAllocatorEnd2endTestBase {
  public:
   class SimpleAllocator : public grpc::ContextAllocator {
    public:
@@ -241,7 +249,8 @@ class SimpleContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return new grpc::CallbackServerContext();
     }
-    GenericCallbackServerContext* NewGenericCallbackServerContext() override {
+    GenericCallbackServerContext* NewGenericCallbackServerContext()
+        override {
       allocation_count_->fetch_add(1, std::memory_order_relaxed);
       return new GenericCallbackServerContext();
     }
@@ -252,8 +261,8 @@ class SimpleContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
       delete callback_server_context;
     }
 
-    void Release(GenericCallbackServerContext* generic_callback_server_context)
-        override {
+    void Release(GenericCallbackServerContext*
+                     generic_callback_server_context) override {
       deallocation_count_->fetch_add(1, std::memory_order_relaxed);
       delete generic_callback_server_context;
     }
@@ -284,8 +293,9 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   std::vector<std::string> credentials_types{
       GetCredentialsProvider()->GetSecureCredentialsTypeList()};
   auto insec_ok = [] {
-    // Only allow insecure credentials type when it is registered with the
-    // provider. User may create providers that do not have insecure.
+    // Only allow insecure credentials type when it is registered with
+    // the provider. User may create providers that do not have
+    // insecure.
     return GetCredentialsProvider()->GetChannelCredentials(
                kInsecureCredentialsType, nullptr) != nullptr;
   };
@@ -307,16 +317,18 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   return scenarios;
 }
 
-// TODO(ddyihai): adding client streaming/server streaming/bidi streaming
-// test.
+// TODO(ddyihai): adding client streaming/server streaming/bidi
+// streaming test.
 
-INSTANTIATE_TEST_SUITE_P(DefaultContextAllocatorTest,
-                         DefaultContextAllocatorTest,
-                         ::testing::ValuesIn(CreateTestScenarios(true)));
-INSTANTIATE_TEST_SUITE_P(NullContextAllocatorTest, NullContextAllocatorTest,
-                         ::testing::ValuesIn(CreateTestScenarios(true)));
-INSTANTIATE_TEST_SUITE_P(SimpleContextAllocatorTest, SimpleContextAllocatorTest,
-                         ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(
+    DefaultContextAllocatorTest, DefaultContextAllocatorTest,
+    ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(
+    NullContextAllocatorTest, NullContextAllocatorTest,
+    ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(
+    SimpleContextAllocatorTest, SimpleContextAllocatorTest,
+    ::testing::ValuesIn(CreateTestScenarios(true)));
 
 }  // namespace
 }  // namespace testing

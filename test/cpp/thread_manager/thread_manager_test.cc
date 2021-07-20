@@ -10,10 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *is % allowed in string
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ *implied. See the License for the specific language governing
+ *permissions and limitations under the License. is % allowed in string
  */
 
 #include <atomic>
@@ -61,14 +60,17 @@ class TestThreadManager final : public grpc::ThreadManager {
  public:
   TestThreadManager(const char* name, grpc_resource_quota* rq,
                     const TestThreadManagerSettings& settings)
-      : ThreadManager(name, rq, settings.min_pollers, settings.max_pollers),
+      : ThreadManager(name, rq, settings.min_pollers,
+                      settings.max_pollers),
         settings_(settings),
         num_do_work_(0),
         num_poll_for_work_(0),
         num_work_found_(0) {}
 
-  grpc::ThreadManager::WorkStatus PollForWork(void** tag, bool* ok) override;
-  void DoWork(void* /* tag */, bool /*ok*/, bool /*resources*/) override {
+  grpc::ThreadManager::WorkStatus PollForWork(void** tag,
+                                              bool* ok) override;
+  void DoWork(void* /* tag */, bool /*ok*/,
+              bool /*resources*/) override {
     num_do_work_.fetch_add(1, std::memory_order_relaxed);
 
     // Simulate work by sleeping
@@ -95,12 +97,14 @@ class TestThreadManager final : public grpc::ThreadManager {
   // Counters
   std::atomic_int num_do_work_;        // Number of calls to DoWork
   std::atomic_int num_poll_for_work_;  // Number of calls to PollForWork
-  std::atomic_int num_work_found_;  // Number of times WORK_FOUND was returned
+  std::atomic_int
+      num_work_found_;  // Number of times WORK_FOUND was returned
 };
 
-grpc::ThreadManager::WorkStatus TestThreadManager::PollForWork(void** tag,
-                                                               bool* ok) {
-  int call_num = num_poll_for_work_.fetch_add(1, std::memory_order_relaxed);
+grpc::ThreadManager::WorkStatus TestThreadManager::PollForWork(
+    void** tag, bool* ok) {
+  int call_num =
+      num_poll_for_work_.fetch_add(1, std::memory_order_relaxed);
   if (call_num >= settings_.max_poll_calls) {
     Shutdown();
     return SHUTDOWN;
@@ -112,8 +116,8 @@ grpc::ThreadManager::WorkStatus TestThreadManager::PollForWork(void** tag,
   *tag = nullptr;
   *ok = true;
 
-  // Return timeout roughly 1 out of every 3 calls just to make the test a bit
-  // more interesting
+  // Return timeout roughly 1 out of every 3 calls just to make the test
+  // a bit more interesting
   if (call_num % 3 == 0) {
     return TIMEOUT;
   }
@@ -126,7 +130,8 @@ class ThreadManagerTest
     : public ::testing::TestWithParam<TestThreadManagerSettings> {
  protected:
   void SetUp() override {
-    grpc_resource_quota* rq = grpc_resource_quota_create("Thread manager test");
+    grpc_resource_quota* rq =
+        grpc_resource_quota_create("Thread manager test");
     if (GetParam().thread_limit > 0) {
       grpc_resource_quota_set_max_threads(rq, GetParam().thread_limit);
     }
@@ -147,20 +152,21 @@ class ThreadManagerTest
 };
 
 TestThreadManagerSettings scenarios[] = {
-    {2 /* min_pollers */, 10 /* max_pollers */, 10 /* poll_duration_ms */,
-     1 /* work_duration_ms */, 50 /* max_poll_calls */,
-     INT_MAX /* thread_limit */, 1 /* thread_manager_count */},
+    {2 /* min_pollers */, 10 /* max_pollers */,
+     10 /* poll_duration_ms */, 1 /* work_duration_ms */,
+     50 /* max_poll_calls */, INT_MAX /* thread_limit */,
+     1 /* thread_manager_count */},
     {1 /* min_pollers */, 1 /* max_pollers */, 1 /* poll_duration_ms */,
-     10 /* work_duration_ms */, 50 /* max_poll_calls */, 3 /* thread_limit */,
-     2 /* thread_manager_count */}};
+     10 /* work_duration_ms */, 50 /* max_poll_calls */,
+     3 /* thread_limit */, 2 /* thread_manager_count */}};
 
 INSTANTIATE_TEST_SUITE_P(ThreadManagerTest, ThreadManagerTest,
                          ::testing::ValuesIn(scenarios));
 
 TEST_P(ThreadManagerTest, TestPollAndWork) {
   for (auto& tm : thread_manager_) {
-    // Verify that The number of times DoWork() was called is equal to the
-    // number of times WORK_FOUND was returned
+    // Verify that The number of times DoWork() was called is equal to
+    // the number of times WORK_FOUND was returned
     gpr_log(GPR_DEBUG, "DoWork() called %d times", tm->num_do_work());
     EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
     EXPECT_EQ(tm->num_do_work(), tm->num_work_found());
@@ -171,7 +177,8 @@ TEST_P(ThreadManagerTest, TestThreadQuota) {
   if (GetParam().thread_limit > 0) {
     for (auto& tm : thread_manager_) {
       EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
-      EXPECT_LE(tm->GetMaxActiveThreadsSoFar(), GetParam().thread_limit);
+      EXPECT_LE(tm->GetMaxActiveThreadsSoFar(),
+                GetParam().thread_limit);
     }
   }
 }

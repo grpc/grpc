@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,10 +39,12 @@ struct SslServerCredentialsOptions {
   /// \warning Deprecated
   SslServerCredentialsOptions()
       : force_client_auth(false),
-        client_certificate_request(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
+        client_certificate_request(
+            GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {}
   explicit SslServerCredentialsOptions(
       grpc_ssl_client_certificate_request_type request_type)
-      : force_client_auth(false), client_certificate_request(request_type) {}
+      : force_client_auth(false),
+        client_certificate_request(request_type) {}
 
   struct PemKeyCertPair {
     std::string private_key;
@@ -66,16 +68,18 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials);
 }  // namespace experimental
 
-/// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
+/// Wrapper around \a grpc_server_credentials, a way to authenticate a
+/// server.
 class ServerCredentials : private grpc::GrpcLibraryCodegen {
  public:
   ServerCredentials();
   ~ServerCredentials() override;
 
-  /// This method is not thread-safe and has to be called before the server is
-  /// started. The last call to this function wins.
+  /// This method is not thread-safe and has to be called before the
+  /// server is started. The last call to this function wins.
   virtual void SetAuthMetadataProcessor(
-      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) = 0;
+      const std::shared_ptr<grpc::AuthMetadataProcessor>&
+          processor) = 0;
 
  private:
   friend class Server;
@@ -92,15 +96,17 @@ class ServerCredentials : private grpc::GrpcLibraryCodegen {
   ///
   /// \return bound port number on success, 0 on failure.
   // TODO(dgq): the "port" part seems to be a misnomer.
-  virtual int AddPortToServer(const std::string& addr, grpc_server* server) = 0;
+  virtual int AddPortToServer(const std::string& addr,
+                              grpc_server* server) = 0;
 
-  // TODO(yashykt): This is a hack since InsecureServerCredentials() cannot use
-  // grpc_insecure_server_credentials_create() and should be removed after
-  // insecure builds are removed from gRPC.
+  // TODO(yashykt): This is a hack since InsecureServerCredentials()
+  // cannot use grpc_insecure_server_credentials_create() and should be
+  // removed after insecure builds are removed from gRPC.
   virtual bool IsInsecure() const { return false; }
 
-  // TODO(yashkt): This is a hack that should be removed once we remove insecure
-  // builds and the indirect method of adding ports to a server.
+  // TODO(yashkt): This is a hack that should be removed once we remove
+  // insecure builds and the indirect method of adding ports to a
+  // server.
   virtual SecureServerCredentials* AsSecureServerCredentials() {
     return nullptr;
   }

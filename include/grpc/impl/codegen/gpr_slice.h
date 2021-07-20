@@ -10,18 +10,19 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 #ifndef GRPC_IMPL_CODEGEN_GPR_SLICE_H
 #define GRPC_IMPL_CODEGEN_GPR_SLICE_H
 
-/** WARNING: Please do not use this header. This was added as a temporary
- * measure to not break some of the external projects that depend on
- * gpr_slice_* functions. We are actively working on moving all the
- * gpr_slice_* references to grpc_slice_* and this file will be removed
+/** WARNING: Please do not use this header. This was added as a
+ * temporary measure to not break some of the external projects that
+ * depend on gpr_slice_* functions. We are actively working on moving
+ * all the gpr_slice_* references to grpc_slice_* and this file will be
+ * removed
  */
 
 /* TODO (sreek) - Allowed by default but will be very soon turned off */
@@ -57,7 +58,8 @@
 #define gpr_slice_buffer_addn grpc_slice_buffer_addn
 #define gpr_slice_buffer_tiny_add grpc_slice_buffer_tiny_add
 #define gpr_slice_buffer_pop grpc_slice_buffer_pop
-#define gpr_slice_buffer_reset_and_unref grpc_slice_buffer_reset_and_unref
+#define gpr_slice_buffer_reset_and_unref \
+  grpc_slice_buffer_reset_and_unref
 #define gpr_slice_buffer_swap grpc_slice_buffer_swap
 #define gpr_slice_buffer_move_into grpc_slice_buffer_move_into
 #define gpr_slice_buffer_trim_end grpc_slice_buffer_trim_end

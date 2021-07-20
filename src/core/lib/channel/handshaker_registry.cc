@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -39,7 +39,8 @@ namespace {
 
 class HandshakerFactoryList {
  public:
-  void Register(bool at_start, std::unique_ptr<HandshakerFactory> factory);
+  void Register(bool at_start,
+                std::unique_ptr<HandshakerFactory> factory);
   void AddHandshakers(const grpc_channel_args* args,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr);
@@ -61,12 +62,13 @@ void HandshakerFactoryList::Register(
   }
 }
 
-void HandshakerFactoryList::AddHandshakers(const grpc_channel_args* args,
-                                           grpc_pollset_set* interested_parties,
-                                           HandshakeManager* handshake_mgr) {
+void HandshakerFactoryList::AddHandshakers(
+    const grpc_channel_args* args, grpc_pollset_set* interested_parties,
+    HandshakeManager* handshake_mgr) {
   for (size_t idx = 0; idx < factories_.size(); ++idx) {
     auto& handshaker_factory = factories_[idx];
-    handshaker_factory->AddHandshakers(args, interested_parties, handshake_mgr);
+    handshaker_factory->AddHandshakers(args, interested_parties,
+                                       handshake_mgr);
   }
 }
 
@@ -76,7 +78,8 @@ void HandshakerFactoryList::AddHandshakers(const grpc_channel_args* args,
 
 void HandshakerRegistry::Init() {
   GPR_ASSERT(g_handshaker_factory_lists == nullptr);
-  g_handshaker_factory_lists = new HandshakerFactoryList[NUM_HANDSHAKER_TYPES];
+  g_handshaker_factory_lists =
+      new HandshakerFactoryList[NUM_HANDSHAKER_TYPES];
 }
 
 void HandshakerRegistry::Shutdown() {
@@ -93,10 +96,10 @@ void HandshakerRegistry::RegisterHandshakerFactory(
   factory_list.Register(at_start, std::move(factory));
 }
 
-void HandshakerRegistry::AddHandshakers(HandshakerType handshaker_type,
-                                        const grpc_channel_args* args,
-                                        grpc_pollset_set* interested_parties,
-                                        HandshakeManager* handshake_mgr) {
+void HandshakerRegistry::AddHandshakers(
+    HandshakerType handshaker_type, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
+    HandshakeManager* handshake_mgr) {
   GPR_ASSERT(g_handshaker_factory_lists != nullptr);
   auto& factory_list = g_handshaker_factory_lists[handshaker_type];
   factory_list.AddHandshakers(args, interested_parties, handshake_mgr);

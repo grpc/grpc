@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -27,17 +27,17 @@
 
 namespace grpc_core {
 
-// Creates a bundle slice containing the contents of all certificate files in
-// a directory.
-// Returns such slice.
-// Exposed for testing purposes only.
+// Creates a bundle slice containing the contents of all certificate
+// files in a directory. Returns such slice. Exposed for testing
+// purposes only.
 grpc_slice CreateRootCertsBundle(const char* certs_directory);
 
 // Gets the absolute file path needed to load a certificate file.
 // Populates path_buffer, which must be of size MAXPATHLEN.
 // Exposed for testing purposes only.
 void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, char* path_buffer);
+                         const char* file_entry_name,
+                         char* path_buffer);
 
 }  // namespace grpc_core
 

@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -28,7 +28,8 @@
 #include <grpc/support/log.h>
 
 grpc_slice grpc_chttp2_window_update_create(
-    uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats) {
+    uint32_t id, uint32_t window_delta,
+    grpc_transport_one_way_stats* stats) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   stats->header_bytes += frame_size;
@@ -54,11 +55,12 @@ grpc_slice grpc_chttp2_window_update_create(
 }
 
 grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
-    grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags) {
+    grpc_chttp2_window_update_parser* parser, uint32_t length,
+    uint8_t flags) {
   if (flags || length != 4) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrFormat("invalid window update: length=%d, flags=%02x", length,
-                        flags)
+        absl::StrFormat("invalid window update: length=%d, flags=%02x",
+                        length, flags)
             .c_str());
   }
   parser->byte = 0;
@@ -90,7 +92,8 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     uint32_t received_update = p->amount & 0x7fffffffu;
     if (received_update == 0) {
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("invalid window update bytes: ", p->amount).c_str());
+          absl::StrCat("invalid window update bytes: ", p->amount)
+              .c_str());
     }
     GPR_ASSERT(is_last);
 
@@ -100,7 +103,8 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(t, s);
           grpc_chttp2_initiate_write(
-              t, GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE);
+              t,
+              GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE);
         }
       }
     } else {
@@ -109,7 +113,8 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
       bool is_zero = t->flow_control->remote_window() <= 0;
       if (was_zero && !is_zero) {
         grpc_chttp2_initiate_write(
-            t, GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED);
+            t,
+            GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL_UNSTALLED);
       }
     }
   }

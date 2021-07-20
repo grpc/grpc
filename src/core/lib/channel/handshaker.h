@@ -10,9 +10,9 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  *
  */
 
@@ -45,7 +45,8 @@ namespace grpc_core {
 ///
 /// In general, handshakers should be used via a handshake manager.
 
-/// Arguments passed through handshakers and to the on_handshake_done callback.
+/// Arguments passed through handshakers and to the on_handshake_done
+/// callback.
 ///
 /// For handshakers, all members are input/output parameters; for
 /// example, a handshaker may read from or write to \a endpoint and
@@ -98,26 +99,28 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   /// Takes ownership of \a handshaker.
   void Add(RefCountedPtr<Handshaker> handshaker);
 
-  /// Shuts down the handshake manager (e.g., to clean up when the operation is
-  /// aborted in the middle).
+  /// Shuts down the handshake manager (e.g., to clean up when the
+  /// operation is aborted in the middle).
   void Shutdown(grpc_error_handle why);
 
   /// Invokes handshakers in the order they were added.
   /// Takes ownership of \a endpoint, and then passes that ownership to
   /// the \a on_handshake_done callback.
-  /// Does NOT take ownership of \a channel_args.  Instead, makes a copy before
-  /// invoking the first handshaker.
-  /// \a acceptor will be nullptr for client-side handshakers.
+  /// Does NOT take ownership of \a channel_args.  Instead, makes a copy
+  /// before invoking the first handshaker. \a acceptor will be nullptr
+  /// for client-side handshakers.
   ///
   /// When done, invokes \a on_handshake_done with a HandshakerArgs
   /// object as its argument.  If the callback is invoked with error !=
-  /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
-  /// the necessary clean-up.  Otherwise, the callback takes ownership of
-  /// the arguments.
+  /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has
+  /// done the necessary clean-up.  Otherwise, the callback takes
+  /// ownership of the arguments.
   void DoHandshake(grpc_endpoint* endpoint,
-                   const grpc_channel_args* channel_args, grpc_millis deadline,
+                   const grpc_channel_args* channel_args,
+                   grpc_millis deadline,
                    grpc_tcp_server_acceptor* acceptor,
-                   grpc_iomgr_cb_func on_handshake_done, void* user_data);
+                   grpc_iomgr_cb_func on_handshake_done,
+                   void* user_data);
 
  private:
   bool CallNextHandshakerLocked(grpc_error_handle error);
@@ -136,7 +139,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   // An array of handshakers added via grpc_handshake_manager_add().
   absl::InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE>
       handshakers_;
-  // The index of the handshaker to invoke next and closure to invoke it.
+  // The index of the handshaker to invoke next and closure to invoke
+  // it.
   size_t index_ = 0;
   grpc_closure call_next_handshaker_;
   // The acceptor to call the handshakers with.
@@ -144,7 +148,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   // Deadline timer across all handshakers.
   grpc_timer deadline_timer_;
   grpc_closure on_timeout_;
-  // The final callback and user_data to invoke after the last handshaker.
+  // The final callback and user_data to invoke after the last
+  // handshaker.
   grpc_closure on_handshake_done_;
   // Handshaker args.
   HandshakerArgs args_;
@@ -152,8 +157,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 
 }  // namespace grpc_core
 
-// TODO(arjunroy): These are transitional to account for the new handshaker API
-// and will eventually be removed entirely.
+// TODO(arjunroy): These are transitional to account for the new
+// handshaker API and will eventually be removed entirely.
 typedef grpc_core::HandshakeManager grpc_handshake_manager;
 typedef grpc_core::Handshaker grpc_handshaker;
 void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
