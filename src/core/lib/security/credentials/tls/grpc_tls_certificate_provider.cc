@@ -198,36 +198,29 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       root_certificate_ = "";
     }
   }
-  absl::StatusOr<bool> key_cert_catch = false;
+  absl::StatusOr<bool> matched_or = false;
   const bool identity_cert_changed =
       (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
       (pem_key_cert_pairs.has_value() &&
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
-      bool reload = true;
+      bool perform_reload = true;
       for (int i = 0; i < pem_key_cert_pairs->size(); i++) {
-        key_cert_catch = PrivateKeyAndCertificateMatch(
+        matched_or = PrivateKeyAndCertificateMatch(
           pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
-        if (!(key_cert_catch.ok() && *key_cert_catch)) {
-          reload = false;
-          gpr_log(GPR_ERROR,
-                  "Certificate-key match status result: %s, bool result: %d",
-                  key_cert_catch.status().ToString().c_str(), key_cert_catch.value());
+        if (!(matched_or.ok() && *matched_or)) {
+          perform_reload = false;
           break;
         }
       }
-      //in case of a match, update the credentials.
-      if (reload){
+      if (perform_reload){
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
       }
     } else {
       pem_key_cert_pairs_ = {};
     }
   }
-  gpr_log(GPR_ERROR,
-                  "Certificate old empty? line 239: %d",
-                  pem_key_cert_pairs_.empty());
   if (root_cert_changed || identity_cert_changed) {
     ExecCtx exec_ctx;
     grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
