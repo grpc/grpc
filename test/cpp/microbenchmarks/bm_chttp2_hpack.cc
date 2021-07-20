@@ -458,19 +458,25 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   const int kArenaSize = 4096 * 4096;
   auto* arena = grpc_core::Arena::Create(kArenaSize);
   p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
-               grpc_core::HPackParser::Boundary::None,
+               grpc_core::HPackParser::Boundary::EndOfHeaders,
                grpc_core::HPackParser::Priority::None);
   for (auto slice : init_slices) {
     p.QueueBufferToParse(slice);
   }
-  GPR_ASSERT(GRPC_ERROR_NONE == p.Parse());
+  auto check_error = [](grpc_error_handle e) {
+    if (e != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "%s", grpc_error_string(e));
+      abort();
+    }
+  };
+  check_error(p.Parse());
   p.FinishFrame();
   while (state.KeepRunning()) {
     for (auto slice : benchmark_slices) {
       p.QueueBufferToParse(slice);
     }
     p.ResetSink([arena](grpc_mdelem e) { return OnHeader(arena, e); });
-    GPR_ASSERT(GRPC_ERROR_NONE == p.Parse());
+    check_error(p.Parse());
     p.FinishFrame();
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
@@ -478,7 +484,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       arena->Destroy();
       arena = grpc_core::Arena::Create(kArenaSize);
       p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
-                   grpc_core::HPackParser::Boundary::None,
+                   grpc_core::HPackParser::Boundary::EndOfHeaders,
                    grpc_core::HPackParser::Priority::None);
     }
   }
@@ -758,16 +764,17 @@ class RepresentativeServerInitialMetadata {
 class RepresentativeServerTrailingMetadata {
  public:
   static std::vector<grpc_slice> GetInitSlices() {
-    return {grpc_slice_from_static_string(
-        // generated with:
-        // ```
-        // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
-        // <
-        // test/cpp/microbenchmarks/representative_server_trailing_metadata.headers
-        // ```
-        "@\x0bgrpc-status\x01"
-        "0"
-        "@\x0cgrpc-message\x00")};
+    // generated with:
+    // ```
+    // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
+    // --hex
+    // <
+    // test/cpp/microbenchmarks/representative_server_trailing_metadata.headers
+    // ```
+    return {MakeSlice({0x40, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
+                       0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30, 0x40,
+                       0x0c, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x6d, 0x65,
+                       0x73, 0x73, 0x61, 0x67, 0x65, 0x00})};
   }
   static std::vector<grpc_slice> GetBenchmarkSlices() {
     // generated with:
