@@ -293,6 +293,7 @@ void grpc_end2end_tests_pre_init(void) {
   write_buffering_at_end_pre_init();
 }
 
+// NOLINTNEXTLINE(readability-function-size)
 void grpc_end2end_tests(int argc, char **argv,
                         grpc_end2end_test_config config) {
   int i;
