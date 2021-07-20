@@ -26,10 +26,32 @@ from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
 
+_ComputeV1 = gcp.compute.ComputeV1
+GcpResource = _ComputeV1.GcpResource
 
 class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
     ENDPOINT_CONFIG_SELECTORS = 'endpointConfigSelectors'
     GRPC_ROUTES = 'grpcRoutes'
+    ROUTERS = 'routers'
+
+    @dataclasses.dataclass(frozen=True)
+    class Router:
+
+        name: str
+        url: str
+        type: str
+        network: Optional[str]
+        routes: Optional[List[str]]
+
+        @staticmethod
+        def from_dict(name: str, d: dict) -> Router:
+            return NetworkServicesV1Alpha1.Router(
+                name=name,
+                url=d["name"],
+                type=d["type"],
+                network=d.get("network"),
+                routes=list(d["routes"]) if "routes" in d else None,
+            )
 
     @dataclasses.dataclass(frozen=True)
     class GrpcRoute:
@@ -122,7 +144,6 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
 
         @staticmethod
         def from_dict(name: str, d: dict) -> RouteRule:
-            print("********* GrpcRoute.from_dict: {}".format(d))
             return NetworkServicesV1Alpha1.GrpcRoute(
                 name=name,
                 url=d["name"],
@@ -194,9 +215,28 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             reraise=True)
         retryer(super()._execute, *args, **kwargs)
 
-    def create_grpc_route(self, name: str, body: dict):
+    def create_router(self, name: str, body: dict) -> GcpResource:
         return self._create_resource(
-                # TODO: I have no idea how this works.
+            self._api_locations.routers(),
+            body,
+            routerId=name,
+        )
+
+    def get_router(self, name: str) -> Router:
+        result = self._get_resource(
+            collection=self._api_locations.routers(),
+            full_name=self.resource_full_name(name,
+                                              self.ROUTERS))
+        return self.Router.from_dict(name, result)
+
+    def delete_router(self, name: str) -> None:
+        return self._delete_resource(
+            collection=self._api_locations.routers(),
+            full_name=self.resource_full_name(name,
+                                              self.ROUTERS))
+
+    def create_grpc_route(self, name: str, body: dict) -> GcpResource:
+        return self._create_resource(
                 self._api_locations.grpcRoutes(),
                 body,
                 grpcRouteId=name)

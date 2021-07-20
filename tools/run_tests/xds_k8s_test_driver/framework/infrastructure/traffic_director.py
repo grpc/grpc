@@ -416,6 +416,7 @@ class TrafficDirectorManager:
 class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
     GRPC_ROUTE_NAME = "grpc-route"
+    ROUTER_NAME = "router"
 
     def __init__(self,
                  gcp_api_manager: gcp.api.GcpApiManager,
@@ -435,10 +436,37 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
         # Managed resources
         self.grpc_route: Optional[_NetworkSecurityV1Alpha1.GrpcRoute] = None
+        self.router: Optional[_NetworkSecurityV1Alpha1.Router] = None
 
-    def create_grpc_route(self, hosts: Iterable[str]) -> GcpResource:
+    def create_router(self) -> GcpResource:
+        name = self.make_resource_name(self.ROUTER_NAME)
+        logger.debug("Creating Router %s", name)
         body = {
-            "hostnames": list(hosts),
+            "type": "PROXYLESS_GRPC",
+            "routes": [self.grpc_route.url],
+            "network": "default",
+        }
+        resource = self.netsvc.create_router(name, body)
+        self.router = self.netsvc.get_router(name)
+        logger.debug("Loaded Router: %s", self.router)
+        return resource
+
+    def delete_router(self, force=False):
+        if force:
+            name = self.make_resource_name(self.ROUTER_NAME)
+        elif self.router:
+            name = self.router.name
+        else:
+            return
+        logger.info('Deleting Router %s', name)
+        self.netsvc.delete_router(name)
+        self.router = None
+
+
+    def create_grpc_route(self, src_host: str, src_port: int) -> GcpResource:
+        host = f'{src_host}:{src_port}'
+        body = {
+            "hostnames": host,
             "rules": [
                 {
                     "action": {
@@ -450,6 +478,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
             ],
         }
         name = self.make_resource_name(self.GRPC_ROUTE_NAME)
+        logger.debug("Creating GrpcRoute %s", name)
         resource = self.netsvc.create_grpc_route(name, body)
         self.grpc_route = self.netsvc.get_grpc_route(name)
         logger.debug("Loaded GrpcRoute: %s", self.grpc_route)
@@ -458,6 +487,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
 
     def create_grpc_route_with_content(self, body: Any) -> GcpResource:
         name = self.make_resource_name(self.GRPC_ROUTE_NAME)
+        logger.debug("Creating GrpcRoute %s", name)
         resource = self.netsvc.create_grpc_route(name, body)
         self.grpc_route = self.netsvc.get_grpc_route(name)
         logger.debug("Loaded GrpcRoute: %s", self.grpc_route)
@@ -475,6 +505,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         self.grpc_route = None
 
     def cleanup(self, *, force=False):
+        self.delete_router(force=force)
         self.delete_grpc_route(force=force)
         super().cleanup(force=force)
 

@@ -342,13 +342,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
         test_client.wait_for_active_server_channel()
         return test_client
 
-class AppNetXdsKubernetesTestCase(XdsKubernetesTestCase):
+class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
     td: TrafficDirectorAppNetManager
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
 
     def initTrafficDirectorManager(self) -> TrafficDirectorAppNetManager:
         return TrafficDirectorAppNetManager(
@@ -357,38 +352,6 @@ class AppNetXdsKubernetesTestCase(XdsKubernetesTestCase):
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
             network=self.network)
-
-    # TODO: Take another look at these two copy-pasted methods.
-    def initKubernetesServerRunner(self) -> KubernetesServerRunner:
-        return KubernetesServerRunner(
-            k8s.KubernetesNamespace(self.k8s_api_manager,
-                                    self.server_namespace),
-            deployment_name=self.server_name,
-            image_name=self.server_image,
-            td_bootstrap_image=self.td_bootstrap_image,
-            gcp_project=self.project,
-            gcp_api_manager=self.gcp_api_manager,
-            gcp_service_account=self.gcp_service_account,
-            xds_server_uri=self.xds_server_uri,
-            network=self.network)
-
-    def initKubernetesClientRunner(self) -> KubernetesClientRunner:
-        return KubernetesClientRunner(
-            k8s.KubernetesNamespace(self.k8s_api_manager,
-                                    self.client_namespace),
-            deployment_name=self.client_name,
-            image_name=self.client_image,
-            td_bootstrap_image=self.td_bootstrap_image,
-            gcp_project=self.project,
-            gcp_api_manager=self.gcp_api_manager,
-            gcp_service_account=self.gcp_service_account,
-            xds_server_uri=self.xds_server_uri,
-            network=self.network,
-            debug_use_port_forwarding=self.debug_use_port_forwarding,
-            stats_port=self.client_port,
-            reuse_namespace=self.server_namespace == self.client_namespace)
-
-
 
 class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
     td: TrafficDirectorSecureManager

@@ -23,13 +23,18 @@ from framework.infrastructure.gcp import network_services
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
-# TODO: Different base class. This does too much stuff.
 class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
 
     def test_ping_pong(self):
         self.td.create_health_check()
         self.td.create_backend_service()
-        self.td.create_grpc_route(("foo.bar.com",))
+        self.td.create_grpc_route(self.server_xds_host, self.server_xds_port)
+        self.td.create_router()
+        test_server: _XdsTestServer = self.startTestServer()
+        self.setupServerBackends()
+        test_client: _XdsTestClient = self.startTestClient(test_server)
+        self.assertXdsConfigExists(test_client)
+        self.assertSuccessfulRpcs(test_client)
 
 if __name__ == '__main__':
     absltest.main(failfast=True)
