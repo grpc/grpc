@@ -19,7 +19,7 @@ cd $(dirname $0)/../..
 
 tools/buildgen/generate_projects.sh
 tools/distrib/clang_format_code.sh
-tools/distrib/check_copyright.py
+tools/distrib/check_copyright.py --fix
 tools/distrib/check_trailing_newlines.sh --fix
 tools/run_tests/sanity/check_port_platform.py --fix
 
