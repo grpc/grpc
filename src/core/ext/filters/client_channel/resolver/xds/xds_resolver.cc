@@ -34,7 +34,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -243,7 +242,6 @@ class XdsResolver : public Resolver {
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
-    grpc_error_handle filter_error_ = GRPC_ERROR_NONE;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
@@ -422,16 +420,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     }
   }
   // Populate filter list.
-  bool found_router = false;
   for (const auto& http_filter :
        resolver_->current_listener_.http_connection_manager.http_filters) {
-    // Stop at the router filter.  It's a no-op for us, and we ignore
-    // anything that may come after it, for compatibility with Envoy.
-    if (http_filter.config.config_proto_type_name ==
-        kXdsHttpRouterFilterConfigName) {
-      found_router = true;
-      break;
-    }
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
@@ -439,16 +429,9 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
     // Add C-core filter to list.
-    filters_.push_back(filter_impl->channel_filter());
-  }
-  // For compatibility with Envoy, if the router filter is not
-  // configured, we fail all RPCs.
-  if (!found_router) {
-    filter_error_ =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "no xDS HTTP router filter configured"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-    filters_.push_back(&grpc_lame_filter);
+    if (filter_impl->channel_filter() != nullptr) {
+      filters_.push_back(filter_impl->channel_filter());
+    }
   }
 }
 
@@ -459,7 +442,6 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   }
   clusters_.clear();
   resolver_->MaybeRemoveUnusedClusters();
-  GRPC_ERROR_UNREF(filter_error_);
 }
 
 const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
@@ -499,18 +481,15 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
   grpc_channel_args* args = grpc_channel_args_copy(resolver_->args_);
   for (const auto& http_filter :
        resolver_->current_listener_.http_connection_manager.http_filters) {
-    // Stop at the router filter.  It's a no-op for us, and we ignore
-    // anything that may come after it, for compatibility with Envoy.
-    if (http_filter.config.config_proto_type_name ==
-        kXdsHttpRouterFilterConfigName) {
-      break;
-    }
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(
             http_filter.config.config_proto_type_name);
     GPR_ASSERT(filter_impl != nullptr);
+    // If there is not actually any C-core filter associated with this
+    // xDS filter, then it won't need any config, so skip it.
+    if (filter_impl->channel_filter() == nullptr) continue;
     // Allow filter to add channel args that may affect service config
     // parsing.
     args = filter_impl->ModifyChannelArgs(args);
@@ -558,12 +537,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
 
 grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
     grpc_channel_args* args) {
-  if (filter_error_ == GRPC_ERROR_NONE) return args;
-  grpc_arg error_arg = MakeLameClientErrorArg(filter_error_);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &error_arg, 1);
-  grpc_channel_args_destroy(args);
-  return new_args;
+  return args;
 }
 
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {

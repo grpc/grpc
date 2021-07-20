@@ -52,10 +52,9 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
         "router filter does not support config override");
   }
 
-  // No-op -- this filter is special-cased by the xds resolver.
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
 
-  // No-op -- this filter is special-cased by the xds resolver.
+  // No-op.  This will never be called, since channel_filter() returns null.
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,
       const FilterConfig* /*filter_config_override*/) const override {
@@ -65,6 +64,8 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   bool IsSupportedOnClients() const override { return true; }
 
   bool IsSupportedOnServers() const override { return true; }
+
+  bool IsTerminalFilter() const override { return true; }
 };
 
 using FilterOwnerList = std::vector<std::unique_ptr<XdsHttpFilterImpl>>;
