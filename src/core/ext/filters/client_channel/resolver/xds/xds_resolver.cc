@@ -185,7 +185,6 @@ class XdsResolver : public Resolver {
         : cluster_state_(std::move(cluster_state)), max_retries_(max_retries) {}
 
     bool ShouldRetry() override {
-      // TODO(donnadionne): Implement the retry circuit breaker here.
       uint32_t current = cluster_state_->retry_counter()->Load();
       // Check and see if we exceeded the max retries
       if (current >= max_retries_) return false;
@@ -194,8 +193,6 @@ class XdsResolver : public Resolver {
     }
 
     void Commit() override {
-      // TODO(donnadionne): If ShouldRetry() was called previously,
-      // decrement the retry circuit breaker counter.
       cluster_state_->retry_counter()->Decrement();
       cluster_state_.reset();
     }
@@ -591,7 +588,7 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
     if (it == resolver_->cluster_state_map_.end()) {
       auto new_cluster_state = MakeRefCounted<ClusterState>(
           resolver_, name,
-          grpc_core::XdsCircuitBreakerRetryMap::GetOrCreate(name));
+          XdsCircuitBreakerRetryMap::GetOrCreate(name));
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
       clusters_[it->second->cluster()] = it->second->Ref();
@@ -757,10 +754,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
     // Look up max retry value, should have been filled by CDS udpates.
-    auto max_retry =
+    auto debug_max_retry =
         resolver_->cluster_max_retries_map_->Lookup(std::string(cluster_name));
     gpr_log(GPR_INFO, "donna looked up newly updated max retry value of %d",
-            max_retry);
+            debug_max_retry);
     call_config.call_dispatch_controller =
         args.arena->New<XdsCallDispatchController>(
             it->second->Ref(), resolver_->cluster_max_retries_map_->Lookup(
