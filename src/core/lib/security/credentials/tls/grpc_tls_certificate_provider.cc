@@ -206,7 +206,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
       bool perform_reload = true;
-      for (int i = 0; i < pem_key_cert_pairs->size(); i++) {
+      for (int i = 0; i < pem_key_cert_pairs->size(); ++i) {
         matched_or = PrivateKeyAndCertificateMatch(
           pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
         if (!(matched_or.ok() && *matched_or)) {
