@@ -43,7 +43,7 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 
 // TODO(hork): remove these classes in PR #26643, when the iomgr APIs change to
 // accept SliceAllocators and SliceAllocatorFactory(ie)s. In the meantime, the
-// libuv work has had temporary implementations as well.
+// libuv work has temporary implementations as well.
 class NoopSliceAllocator : public SliceAllocator {
  public:
   absl::Status Allocate(size_t size, SliceBuffer* dest,
@@ -143,8 +143,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   }
   // TODO(hork): tcp_server_create will change to accept a
   // SliceAllocatorFactory. This is temporary.
-  std::unique_ptr<SliceAllocatorFactory> saf =
-      absl::make_unique<NoopSliceAllocatorFactory>();
+  auto saf = absl::make_unique<NoopSliceAllocatorFactory>();
   EventEngine* event_engine = grpc_iomgr_event_engine();
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       event_engine->CreateListener(
