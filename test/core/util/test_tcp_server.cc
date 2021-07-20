@@ -63,6 +63,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   addr->sin_family = GRPC_AF_INET;
   addr->sin_port = grpc_htons(static_cast<uint16_t>(port));
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
+  resolved_addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 
   grpc_error_handle error = grpc_tcp_server_create(
       &server->shutdown_complete, nullptr, &server->tcp_server);

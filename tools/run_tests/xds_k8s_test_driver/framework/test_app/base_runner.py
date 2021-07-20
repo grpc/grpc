@@ -55,7 +55,7 @@ class KubernetesBaseRunner:
 
     def cleanup(self, *, force=False):
         if (self.namespace and not self.reuse_namespace) or force:
-            self._delete_namespace()
+            self.delete_namespace()
             self.namespace = None
 
     @staticmethod
@@ -249,7 +249,7 @@ class KubernetesBaseRunner:
             self.k8s_namespace.wait_for_service_account_deleted(name)
         logger.debug('Service account %s deleted', name)
 
-    def _delete_namespace(self, wait_for_deletion=True):
+    def delete_namespace(self, wait_for_deletion=True):
         logger.info('Deleting namespace %s', self.k8s_namespace.name)
         try:
             self.k8s_namespace.delete()
@@ -286,3 +286,14 @@ class KubernetesBaseRunner:
             name, service_port)
         logger.info("Service %s: detected NEG=%s in zones=%s", name, neg_name,
                     neg_zones)
+
+    @classmethod
+    def _make_namespace_name(cls, resource_prefix: str, resource_suffix: str,
+                             name: str) -> str:
+        """A helper to make consistent test app kubernetes namespace name
+        for given resource prefix and suffix."""
+        parts = [resource_prefix, name]
+        # Avoid trailing dash when the suffix is empty.
+        if resource_suffix:
+            parts.append(resource_suffix)
+        return '-'.join(parts)

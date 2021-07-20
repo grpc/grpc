@@ -434,17 +434,8 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  grpc_chttp2_hpack_parser p;
-  // Initial destruction so we don't leak memory in the loop.
-  grpc_chttp2_hptbl_destroy(&p.table);
   for (auto _ : state) {
-    grpc_chttp2_hpack_parser_init(&p);
-    // Note that grpc_chttp2_hpack_parser_destroy frees the table dynamic
-    // elements so we need to recreate it here. In actual operation,
-    // new grpc_chttp2_hpack_parser_destroy allocates the table once
-    // and for all.
-    new (&p.table) grpc_chttp2_hptbl();
-    grpc_chttp2_hpack_parser_destroy(&p);
+    { grpc_core::HPackParser(); }
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -463,30 +454,33 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
-  grpc_chttp2_hpack_parser p;
-  grpc_chttp2_hpack_parser_init(&p);
+  grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
-  p.on_header_user_data = grpc_core::Arena::Create(kArenaSize);
-  p.on_header = OnHeader;
+  auto* arena = grpc_core::Arena::Create(kArenaSize);
+  p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
+               grpc_core::HPackParser::Boundary::None,
+               grpc_core::HPackParser::Priority::None);
   for (auto slice : init_slices) {
-    GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
+    GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice));
   }
   while (state.KeepRunning()) {
     for (auto slice : benchmark_slices) {
-      GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
+      GPR_ASSERT(GRPC_ERROR_NONE == p.Parse(slice));
     }
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {
-      static_cast<grpc_core::Arena*>(p.on_header_user_data)->Destroy();
-      p.on_header_user_data = grpc_core::Arena::Create(kArenaSize);
+      arena->Destroy();
+      arena = grpc_core::Arena::Create(kArenaSize);
+      p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
+                   grpc_core::HPackParser::Boundary::None,
+                   grpc_core::HPackParser::Priority::None);
     }
   }
   // Clean up
-  static_cast<grpc_core::Arena*>(p.on_header_user_data)->Destroy();
+  arena->Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
-  grpc_chttp2_hpack_parser_destroy(&p);
 
   track_counters.Finish(state);
 }

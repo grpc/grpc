@@ -495,6 +495,7 @@ typedef enum grpc_call_error {
   (GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_THROUGH)
 
 /** Initial metadata flags */
+/** These flags are to be passed to the `grpc_op::flags` field */
 /** Signal that the call is idempotent */
 #define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
@@ -521,8 +522,6 @@ typedef struct grpc_metadata {
      changing them, update metadata.h at the same time. */
   grpc_slice key;
   grpc_slice value;
-
-  uint32_t flags;
 
   /** The following fields are reserved for grpc internal use.
       There is no need to initialize them, and they will be set to garbage
@@ -769,9 +768,6 @@ typedef struct grpc_completion_queue_functor {
   int internal_success;
   struct grpc_completion_queue_functor* internal_next;
 } grpc_completion_queue_functor;
-
-typedef grpc_completion_queue_functor
-    grpc_experimental_completion_queue_functor;
 
 #define GRPC_CQ_CURRENT_VERSION 2
 #define GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE 2

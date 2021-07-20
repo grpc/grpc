@@ -21,6 +21,7 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -50,6 +51,7 @@ bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
     case GRPC_FD_SERVER_LISTENER_USAGE:
       return mutator->vtable->mutate_fd(fd, mutator);
   }
+  GPR_UNREACHABLE_CODE(return false);
 }
 
 int grpc_socket_mutator_compare(grpc_socket_mutator* a,
