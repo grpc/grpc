@@ -404,7 +404,8 @@ class _StreamRequestMixin(Call):
                         await self._write(request)
                     except AioRpcError as rpc_error:
                         _LOGGER.debug(
-                            'Exception while consuming the request_iterator: %s', rpc_error)
+                            'Exception while consuming the request_iterator: %s',
+                            rpc_error)
                         return
             else:
                 for request in request_iterator:
@@ -412,7 +413,8 @@ class _StreamRequestMixin(Call):
                         await self._write(request)
                     except AioRpcError as rpc_error:
                         _LOGGER.debug(
-                            'Exception while consuming the request_iterator: %s', rpc_error)
+                            'Exception while consuming the request_iterator: %s',
+                            rpc_error)
                         return
 
             await self._done_writing()
@@ -420,7 +422,8 @@ class _StreamRequestMixin(Call):
             # Client iterators can raise exceptions, which we should handle by
             # cancelling the RPC and logging the client's error. No exceptions
             # should escape this function.
-            _LOGGER.debug('Client request_iterator raised exception:\n%s', traceback.format_exc())
+            _LOGGER.debug('Client request_iterator raised exception:\n%s',
+                          traceback.format_exc())
             self.cancel()
 
     async def _write(self, request: RequestType) -> None:
