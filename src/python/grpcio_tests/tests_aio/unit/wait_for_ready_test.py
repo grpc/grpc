@@ -18,6 +18,7 @@ import logging
 import unittest
 import time
 import gc
+import platform
 
 import grpc
 from grpc.experimental import aio
@@ -119,6 +120,8 @@ class TestWaitForReady(AioTestBase):
         """RPC should fail immediately after connection failed."""
         await self._connection_fails_fast(False)
 
+    @unittest.skipIf(platform.system() == 'Windows',
+                     'https://github.com/grpc/grpc/pull/26729')
     async def test_call_wait_for_ready_enabled(self):
         """RPC will wait until the connection is ready."""
         for action in _RPC_ACTIONS:
