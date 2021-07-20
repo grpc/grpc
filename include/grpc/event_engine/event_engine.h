@@ -143,8 +143,8 @@ class EventEngine {
     /// These methods return an address in the format described in DNSResolver.
     /// The returned values are owned by the Endpoint and are expected to remain
     /// valid for the life of the Endpoint.
-    virtual const ResolvedAddress* GetPeerAddress() const = 0;
-    virtual const ResolvedAddress* GetLocalAddress() const = 0;
+    virtual const ResolvedAddress& GetPeerAddress() const = 0;
+    virtual const ResolvedAddress& GetLocalAddress() const = 0;
   };
 
   /// Called when a new connection is established.

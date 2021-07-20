@@ -27,25 +27,12 @@ namespace grpc_event_engine {
 namespace experimental {
 
 Chttp2SliceAllocator::Chttp2SliceAllocator(grpc_resource_user* user)
-    : resource_user_(user){};
+    : resource_user_(user) {}
 
 Chttp2SliceAllocator::~Chttp2SliceAllocator() {
   if (resource_user_ != nullptr) {
     grpc_resource_user_unref(resource_user_);
   }
-};
-
-Chttp2SliceAllocator::Chttp2SliceAllocator(
-    Chttp2SliceAllocator&& other) noexcept
-    : resource_user_(other.resource_user_) {
-  other.resource_user_ = nullptr;
-}
-
-Chttp2SliceAllocator& Chttp2SliceAllocator::operator=(
-    Chttp2SliceAllocator&& other) noexcept {
-  resource_user_ = other.resource_user_;
-  other.resource_user_ = nullptr;
-  return *this;
 }
 
 absl::Status Chttp2SliceAllocator::Allocate(
@@ -67,19 +54,6 @@ Chttp2SliceAllocatorFactory::~Chttp2SliceAllocatorFactory() {
   if (resource_quota_ != nullptr) {
     grpc_resource_quota_unref_internal(resource_quota_);
   }
-}
-
-Chttp2SliceAllocatorFactory::Chttp2SliceAllocatorFactory(
-    Chttp2SliceAllocatorFactory&& other) noexcept
-    : resource_quota_(other.resource_quota_) {
-  other.resource_quota_ = nullptr;
-}
-
-Chttp2SliceAllocatorFactory& Chttp2SliceAllocatorFactory::operator=(
-    Chttp2SliceAllocatorFactory&& other) noexcept {
-  resource_quota_ = other.resource_quota_;
-  other.resource_quota_ = nullptr;
-  return *this;
 }
 
 std::unique_ptr<SliceAllocator>

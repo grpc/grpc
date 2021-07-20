@@ -61,7 +61,7 @@ class NoopSliceAllocatorFactory : public SliceAllocatorFactory {
 };
 
 struct grpc_tcp_server {
-  grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener)
+  explicit grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener)
       : refcount(1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr),
         listener(std::move(listener)) {
     shutdown_starting.head = nullptr;

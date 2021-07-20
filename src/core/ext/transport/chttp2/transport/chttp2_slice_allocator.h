@@ -36,9 +36,9 @@ class Chttp2SliceAllocator
   // Not copyable
   Chttp2SliceAllocator(Chttp2SliceAllocator& other) = delete;
   Chttp2SliceAllocator& operator=(const Chttp2SliceAllocator& other) = delete;
-  // Moveable
-  Chttp2SliceAllocator(Chttp2SliceAllocator&& other) noexcept;
-  Chttp2SliceAllocator& operator=(Chttp2SliceAllocator&& other) noexcept;
+  // Not Moveable
+  Chttp2SliceAllocator(Chttp2SliceAllocator&& other) = delete;
+  Chttp2SliceAllocator& operator=(Chttp2SliceAllocator&& other) = delete;
   ~Chttp2SliceAllocator() override;
   absl::Status Allocate(size_t size, SliceBuffer* dest,
                         SliceAllocator::AllocateCallback cb) override;
@@ -56,10 +56,10 @@ class Chttp2SliceAllocatorFactory
   Chttp2SliceAllocatorFactory(Chttp2SliceAllocatorFactory& other) = delete;
   Chttp2SliceAllocatorFactory& operator=(
       const Chttp2SliceAllocatorFactory& other) = delete;
-  // Moveable
-  Chttp2SliceAllocatorFactory(Chttp2SliceAllocatorFactory&& other) noexcept;
-  Chttp2SliceAllocatorFactory& operator=(
-      Chttp2SliceAllocatorFactory&& other) noexcept;
+  // Not Moveable
+  Chttp2SliceAllocatorFactory(Chttp2SliceAllocatorFactory&& other) = delete;
+  Chttp2SliceAllocatorFactory& operator=(Chttp2SliceAllocatorFactory&& other) =
+      delete;
   ~Chttp2SliceAllocatorFactory() override;
   std::unique_ptr<SliceAllocator> CreateSliceAllocator(
       absl::string_view peer_name) override;
