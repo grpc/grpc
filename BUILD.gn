@@ -822,6 +822,7 @@ config("grpc_config") {
         "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/backoff/backoff.h",
+        "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.cc",
