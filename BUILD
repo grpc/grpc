@@ -511,6 +511,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    visibility = ["@grpc:public"],
     deps = [
         "grpc++",
     ],
@@ -714,6 +715,16 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
 )
 
+# A library that vends only port_platform, so that libraries that don't need
+# anything else from gpr can still be portable!
+grpc_cc_library(
+    name = "gpr_platform",
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/impl/codegen/port_platform.h",
+    ],
+)
+
 grpc_cc_library(
     name = "grpc_trace",
     srcs = ["src/core/lib/debug/trace.cc"],
@@ -749,6 +760,7 @@ grpc_cc_library(
     name = "overload",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/overload.h"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -758,7 +770,10 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/match.h"],
-    deps = ["overload"],
+    deps = [
+        "gpr_platform",
+        "overload",
+    ],
 )
 
 grpc_cc_library(
@@ -1471,6 +1486,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
     ],
     language = "c++",
+    visibility = ["@grpc:grpclb"],
     deps = [
         "gpr_base",
         "grpc_base_c",
@@ -3535,6 +3551,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_annotations_upbdefs",
         "envoy_core_upb",
         "envoy_type_upbdefs",
         "google_api_upbdefs",
