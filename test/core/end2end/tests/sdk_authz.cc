@@ -176,8 +176,6 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  gpr_log(GPR_ERROR, "Status %d", status);
   GPR_ASSERT(GRPC_STATUS_OK == status);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, ""));
 
@@ -188,9 +186,8 @@ static void test_allow_authorized_request(grpc_end2end_test_config config) {
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  grpc_authorization_policy_provider_release(provider);
   cq_verifier_destroy(cqv);
+  grpc_authorization_policy_provider_release(provider);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -309,9 +306,8 @@ static void test_deny_unauthorized_request(grpc_end2end_test_config config) {
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
-
-  grpc_authorization_policy_provider_release(provider);
   cq_verifier_destroy(cqv);
+  grpc_authorization_policy_provider_release(provider);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -421,9 +417,8 @@ static void test_deny_request_no_match_in_policy(
   grpc_call_details_destroy(&call_details);
 
   grpc_call_unref(c);
-
-  grpc_authorization_policy_provider_release(provider);
   cq_verifier_destroy(cqv);
+  grpc_authorization_policy_provider_release(provider);
 
   end_test(&f);
   config.tear_down_data(&f);
