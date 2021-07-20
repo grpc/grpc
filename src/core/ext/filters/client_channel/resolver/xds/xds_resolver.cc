@@ -502,12 +502,6 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         route.retry_policy->retry_back_off.base_interval.nanos,
         route.retry_policy->retry_back_off.max_interval.seconds,
         route.retry_policy->retry_back_off.max_interval.nanos));
-    if (route.retry_policy->per_try_timeout.has_value()) {
-      retry_parts.push_back(
-          absl::StrFormat("      \"perAttemptRecvTimeout\": \"%d.%09ds\",\n",
-                          route.retry_policy->per_try_timeout->seconds,
-                          route.retry_policy->per_try_timeout->nanos));
-    }
     std::vector<std::string> code_parts;
     if (route.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
       code_parts.push_back("        \"CANCELLED\"");

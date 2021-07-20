@@ -116,7 +116,6 @@ class XdsApi {
     struct RetryPolicy {
       internal::StatusCodeSet retry_on;
       uint32_t num_retries;
-      absl::optional<Duration> per_try_timeout;
 
       struct RetryBackOff {
         Duration base_interval;
@@ -133,7 +132,6 @@ class XdsApi {
       bool operator==(const RetryPolicy& other) const {
         return (retry_on == other.retry_on &&
                 num_retries == other.num_retries &&
-                per_try_timeout == other.per_try_timeout &&
                 retry_back_off == other.retry_back_off);
       }
       std::string ToString() const;

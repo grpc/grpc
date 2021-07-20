@@ -34,7 +34,6 @@ import "google/protobuf/wrappers.proto";
 message RetryPolicy {
   string retry_on = 1;
   google.protobuf.UInt32Value num_retries = 2;
-  google.protobuf.Duration per_try_timeout = 3;
 
   message RetryBackOff {
     google.protobuf.Duration base_interval = 1;

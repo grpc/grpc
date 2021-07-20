@@ -5550,9 +5550,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   retry_policy->set_retry_on(
       "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto per_try_timeout = retry_policy->mutable_per_try_timeout();
-  per_try_timeout->set_seconds(1);
-  per_try_timeout->set_nanos(0);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
   base_interval->set_seconds(0);
@@ -5645,9 +5642,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   retry_policy->set_retry_on(
       "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto per_try_timeout = retry_policy->mutable_per_try_timeout();
-  per_try_timeout->set_seconds(1);
-  per_try_timeout->set_nanos(0);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
   base_interval->set_seconds(0);
@@ -5668,7 +5662,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
-/*
 TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
   const size_t kNumRetries = 3;
@@ -5688,9 +5681,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   // deadline-exceeded is mistyped as deadline_exceeded
   retry_policy->set_retry_on("deadline_exceeded");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto per_try_timeout = retry_policy->mutable_per_try_timeout();
-  per_try_timeout->set_seconds(1);
-  per_try_timeout->set_nanos(0);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
   base_interval->set_seconds(0);
@@ -5707,7 +5697,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
-*/
 
 TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
@@ -5727,9 +5716,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   retry_policy->set_retry_on("deadline-exceeded");
   // Setting num_retries to zero is not valid.
   retry_policy->mutable_num_retries()->set_value(0);
-  auto per_try_timeout = retry_policy->mutable_per_try_timeout();
-  per_try_timeout->set_seconds(1);
-  per_try_timeout->set_nanos(0);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
   base_interval->set_seconds(0);
@@ -5769,9 +5755,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
   retry_policy->set_retry_on("deadline-exceeded");
   // Setting num_retries to zero is not valid.
   retry_policy->mutable_num_retries()->set_value(1);
-  auto per_try_timeout = retry_policy->mutable_per_try_timeout();
-  per_try_timeout->set_seconds(1);
-  per_try_timeout->set_nanos(0);
   auto max_interval =
       retry_policy->mutable_retry_back_off()->mutable_max_interval();
   max_interval->set_seconds(0);
