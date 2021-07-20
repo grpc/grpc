@@ -42,13 +42,13 @@ absl::Status Chttp2SliceAllocator::Allocate(
   (void)dest;
   (void)cb;
   return absl::OkStatus();
-};
+}
 
 Chttp2SliceAllocatorFactory::Chttp2SliceAllocatorFactory(
     grpc_resource_quota* quota)
     : resource_quota_(quota) {
   grpc_resource_quota_ref_internal(resource_quota_);
-};
+}
 
 Chttp2SliceAllocatorFactory::~Chttp2SliceAllocatorFactory() {
   if (resource_quota_ != nullptr) {
