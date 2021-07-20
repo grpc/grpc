@@ -5549,14 +5549,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto base_interval =
-      retry_policy->mutable_retry_back_off()->mutable_base_interval();
-  base_interval->set_seconds(0);
-  base_interval->set_nanos(25000000);
-  auto max_interval =
-      retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(0);
-  max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
   // Ensure we retried the correct number of times on all supported status.
   CheckRpcSendFailure(
@@ -5609,20 +5601,50 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   retry_policy->set_retry_on(
       "cancelled,deadline-exceeded,internal,resource-exhausted,unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto base_interval =
-      retry_policy->mutable_retry_back_off()->mutable_base_interval();
-  base_interval->set_seconds(0);
-  base_interval->set_nanos(25000000);
-  auto max_interval =
-      retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(0);
-  max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
   // Ensure we retried the correct number of times on a supported status.
   CheckRpcSendFailure(
       1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
       StatusCode::DEADLINE_EXCEEDED);
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
+}
+
+TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY", "true");
+  // Set num retries to 3, but due to longer back off, we expect only 1 retry
+  // will take place.
+  const size_t kNumRetries = 3;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Populate new EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Construct route config to set retry policy.
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
+  retry_policy->set_retry_on(
+      "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
+      "unavailable");
+  retry_policy->mutable_num_retries()->set_value(kNumRetries);
+  auto base_interval =
+      retry_policy->mutable_retry_back_off()->mutable_base_interval();
+  // Set backoff to 500ms, 1/2 of rpc timeout of 1 second.
+  base_interval->set_seconds(0);
+  base_interval->set_nanos(500000000);
+  auto max_interval =
+      retry_policy->mutable_retry_back_off()->mutable_max_interval();
+  max_interval->set_seconds(5);
+  max_interval->set_nanos(0);
+  SetRouteConfiguration(0, new_route_config);
+  // We expect 1 retry before the RPC times out with DEADLINE_EXCEEDED.
+  CheckRpcSendFailure(
+      1, RpcOptions().set_server_expected_error(StatusCode::CANCELLED),
+      StatusCode::DEADLINE_EXCEEDED);
+  EXPECT_EQ(1 + 1, backends_[0]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
 }
 
@@ -5642,14 +5664,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on("5xx");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto base_interval =
-      retry_policy->mutable_retry_back_off()->mutable_base_interval();
-  base_interval->set_seconds(0);
-  base_interval->set_nanos(25000000);
-  auto max_interval =
-      retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(0);
-  max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
   // Ensure we don't retry.
   CheckRpcSendFailure(
@@ -5675,14 +5689,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   retry_policy->set_retry_on("deadline-exceeded");
   // Setting num_retries to zero is not valid.
   retry_policy->mutable_num_retries()->set_value(0);
-  auto base_interval =
-      retry_policy->mutable_retry_back_off()->mutable_base_interval();
-  base_interval->set_seconds(0);
-  base_interval->set_nanos(25000000);
-  auto max_interval =
-      retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(0);
-  max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
   CheckRpcSendFailure(
       1, RpcOptions().set_server_expected_error(StatusCode::DEADLINE_EXCEEDED),
@@ -5713,14 +5719,6 @@ TEST_P(LdsRdsTest, XdsRetryPolicyDisabled) {
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  auto base_interval =
-      retry_policy->mutable_retry_back_off()->mutable_base_interval();
-  base_interval->set_seconds(0);
-  base_interval->set_nanos(25000000);
-  auto max_interval =
-      retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(0);
-  max_interval->set_nanos(250000000);
   SetRouteConfiguration(0, new_route_config);
   // Ensure we don't retry on supported statuses.
   CheckRpcSendFailure(
@@ -5769,8 +5767,8 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
   auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* retry_policy = route1->mutable_route()->mutable_retry_policy();
   retry_policy->set_retry_on("deadline-exceeded");
-  // Setting num_retries to zero is not valid.
   retry_policy->mutable_num_retries()->set_value(1);
+  // RetryBackoff is there but base interval is missing.
   auto max_interval =
       retry_policy->mutable_retry_back_off()->mutable_max_interval();
   max_interval->set_seconds(0);
