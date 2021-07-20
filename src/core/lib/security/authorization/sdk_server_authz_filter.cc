@@ -36,11 +36,9 @@ grpc_error_handle SdkServerAuthzFilter::Init(grpc_channel_element* elem,
   GPR_ASSERT(!args->is_last);
   grpc_auth_context* auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
-  GPR_ASSERT(auth_context != nullptr);
   grpc_transport* transport = args->optional_transport;
   GPR_ASSERT(transport != nullptr);
   grpc_endpoint* endpoint = grpc_transport_get_endpoint(transport);
-  GPR_ASSERT(endpoint != nullptr);
   grpc_authorization_policy_provider* provider =
       grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
           args->channel_args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
@@ -151,8 +149,6 @@ void SdkServerAuthzFilter::CallData::RecvInitialMetadataReady(
                                  GRPC_STATUS_PERMISSION_DENIED);
       calld->recv_initial_metadata_error_ = GRPC_ERROR_REF(error);
     }
-  } else {
-    GRPC_ERROR_REF(error);
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready_;
   calld->original_recv_initial_metadata_ready_ = nullptr;
@@ -163,7 +159,7 @@ void SdkServerAuthzFilter::CallData::RecvInitialMetadataReady(
                              calld->recv_trailing_metadata_error_,
                              "continue recv_trailing_metadata_ready");
   }
-  Closure::Run(DEBUG_LOCATION, closure, error);
+  Closure::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(error));
 }
 
 void SdkServerAuthzFilter::CallData::RecvTrailingMetadataReady(
