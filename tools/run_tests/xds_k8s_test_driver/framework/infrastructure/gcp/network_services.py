@@ -12,12 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO: This may not be acceptable due to requirements on interpreter version.
-from __future__ import annotations
-
 import dataclasses
 import logging
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from google.rpc import code_pb2
 import tenacity
@@ -44,7 +41,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         routes: Optional[List[str]]
 
         @staticmethod
-        def from_dict(name: str, d: dict) -> Router:
+        def from_dict(name: str, d: dict) -> 'Router':
             return NetworkServicesV1Alpha1.Router(
                 name=name,
                 url=d["name"],
@@ -64,7 +61,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             case_sensitive: Optional[bool]
 
             @staticmethod
-            def from_dict(d: dict) -> MethodMatch:
+            def from_dict(d: dict) -> 'MethodMatch':
                 return MethodMatch(
                     type=d.get("type"),
                     grpc_service=d.get("grpcService"),
@@ -79,7 +76,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             value: str
 
             @staticmethod
-            def from_dict(d: dict) -> HeaderMatch:
+            def from_dict(d: dict) -> 'HeaderMatch':
                 return NetworkServicesV1Alpha1.HeaderMatch(
                     type=d.get("type"),
                     key=d["key"],
@@ -89,11 +86,11 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
 
         @dataclasses.dataclass(frozen=True)
         class RouteMatch:
-            method: Optional[MethodMatch]
-            headers: Tuple[HeaderMatch]
+            method: Optional['MethodMatch']
+            headers: Tuple['HeaderMatch']
 
             @staticmethod
-            def from_dict(d: dict) -> RouteMatch:
+            def from_dict(d: dict) -> 'RouteMatch':
                 return RouteMatch(
                     method=NetworkServicesV1Alpha1.MethodMatch.from_dict(d["method"]) if "method" in d else None,
                     headers=tuple(NetworkServicesV1Alpha1.HeaderMatch.from_dict(h) for h in d["headers"]) if "headers" in d else (),
@@ -105,7 +102,7 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
             weight: Optional[int]
 
             @staticmethod
-            def from_dict(d: dict) -> Destination:
+            def from_dict(d: dict) -> 'Destination':
                 return NetworkServicesV1Alpha1.Destination(
                     service_name=d["serviceName"],
                     weight=d.get("weight"),
@@ -113,11 +110,11 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
 
         @dataclasses.dataclass(frozen=True)
         class RouteAction:
-            destination: Optional[Destination]
+            destination: Optional['Destination']
             drop: Optional[int]
 
             @staticmethod
-            def from_dict(d: dict) -> RouteAction:
+            def from_dict(d: dict) -> 'RouteAction':
                 return NetworkServicesV1Alpha1.RouteAction(
                     destination=NetworkServicesV1Alpha1.Destination.from_dict(d["destination"]) if "destination" in d else None,
                     drop=d.get("drop"),
@@ -126,11 +123,11 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
 
         @dataclasses.dataclass(frozen=True)
         class RouteRule:
-            match: Optional[RouteMatch]
-            action: RouteAction
+            match: Optional['RouteMatch']
+            action: 'RouteAction'
 
             @staticmethod
-            def from_dict(d: dict) -> RouteRule:
+            def from_dict(d: dict) -> 'RouteRule':
                 return NetworkServicesV1Alpha1.RouteRule(
                     match=NetworkServicesV1Alpha1.RouteMatch.from_dict(d["match"]) if "match" in d else "",
                     action=NetworkServicesV1Alpha1.RouteAction.from_dict(d["action"]),
@@ -140,10 +137,10 @@ class NetworkServicesV1Alpha1(gcp.api.GcpStandardCloudApiResource):
         name: str
         url: str
         hostnames: Tuple[str]
-        rules: Tuple[RouteRule]
+        rules: Tuple['RouteRule']
 
         @staticmethod
-        def from_dict(name: str, d: dict) -> RouteRule:
+        def from_dict(name: str, d: dict) -> 'RouteRule':
             return NetworkServicesV1Alpha1.GrpcRoute(
                 name=name,
                 url=d["name"],
