@@ -198,7 +198,6 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       root_certificate_ = "";
     }
   }
-  absl::StatusOr<bool> matched_or = false;
   const bool identity_cert_changed =
       (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
       (pem_key_cert_pairs.has_value() &&
@@ -207,7 +206,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     if (pem_key_cert_pairs.has_value()) {
       bool perform_reload = true;
       for (int i = 0; i < pem_key_cert_pairs->size(); ++i) {
-        matched_or = PrivateKeyAndCertificateMatch(
+        absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
           pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
         if (!(matched_or.ok() && *matched_or)) {
           perform_reload = false;
