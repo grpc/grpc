@@ -170,9 +170,8 @@ class XdsResolver : public Resolver {
 
     uint32_t max_retries() const { return max_retries_; }
 
-    RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter()
-        const {
-      return retry_counter_;
+    XdsCircuitBreakerRetryMap::RetryCounter* retry_counter() const {
+      return retry_counter_.get();
     }
 
    private:
@@ -226,23 +225,34 @@ class XdsResolver : public Resolver {
     }
 
     bool ShouldRetry() override {
+      if (status == OK_TO_RETRY) return true;
+      if (status == NO_RETRY) return false;
+      // First attempt, check against max_retries and increment if necessary.
       uint32_t current = cluster_state_->retry_counter()->Load();
       // Check and see if we exceeded the max retries
-      if (current >= cluster_state_->max_retries()) return false;
+      if (current >= cluster_state_->max_retries()) {
+        status = NO_RETRY;
+        return false;
+      }
       cluster_state_->retry_counter()->Increment();
+      status = OK_TO_RETRY;
       return true;
     }
 
     void Commit() override {
-      cluster_state_->retry_counter()->Decrement();
+      if (status == OK_TO_RETRY) {
+        cluster_state_->retry_counter()->Decrement();
+      }
       cluster_state_.reset();
     }
 
    private:
+    enum RetryStatus { UNDETERMINED, OK_TO_RETRY, NO_RETRY };
     // Note: The XdsCallDispatchController object is never actually destroyed,
     // so do not add any data members that require destruction unless you have
     // some other way to clean them up.
     RefCountedPtr<ClusterState> cluster_state_;
+    RetryStatus status = UNDETERMINED;
   };
 
   class XdsConfigSelector : public ConfigSelector {
@@ -297,7 +307,6 @@ class XdsResolver : public Resolver {
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
     std::vector<const grpc_channel_filter*> filters_;
     grpc_error_handle filter_error_ = GRPC_ERROR_NONE;
-    RefCountedPtr<XdsCircuitBreakerRetryMap::RetryCounter> retry_counter_;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
