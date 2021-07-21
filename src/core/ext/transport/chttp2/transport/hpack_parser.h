@@ -54,6 +54,9 @@ class HPackParser {
   bool is_eof() const { return boundary_ == Boundary::EndOfStream; }
 
  private:
+  class Parser;
+  class Input;
+
   enum class BinaryState {
     kNotBinary,
     kBinaryBegin,
@@ -79,80 +82,6 @@ class HPackParser {
     void AppendBytes(const uint8_t* data, size_t length);
   };
 
-  using State = grpc_error_handle (HPackParser::*)(const uint8_t* beg,
-                                                   const uint8_t* end);
-
-  // Forward declarations for parsing states.
-  // These are keeping their old (C-style) names until a future refactor where
-  // they will be eliminated.
-  grpc_error_handle parse_next(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_begin(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_error(const uint8_t* cur, const uint8_t* end,
-                                grpc_error_handle error);
-  grpc_error_handle still_parse_error(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_illegal_op(const uint8_t* cur, const uint8_t* end);
-
-  grpc_error_handle parse_string_prefix(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_key_string(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_value_string(const uint8_t* cur, const uint8_t* end,
-                                       bool is_binary);
-  grpc_error_handle parse_value_string_with_indexed_key(const uint8_t* cur,
-                                                        const uint8_t* end);
-  grpc_error_handle parse_value_string_with_literal_key(const uint8_t* cur,
-                                                        const uint8_t* end);
-  grpc_error_handle parse_stream_weight(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_value0(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_value1(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_value2(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_value3(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_value4(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_value5up(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_stream_dep0(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_stream_dep1(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_stream_dep2(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_stream_dep3(const uint8_t* cur, const uint8_t* end);
-
-  grpc_error_handle parse_indexed_field(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_indexed_field_x(const uint8_t* cur,
-                                          const uint8_t* end);
-  grpc_error_handle parse_lithdr_incidx(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_lithdr_incidx_x(const uint8_t* cur,
-                                          const uint8_t* end);
-  grpc_error_handle parse_lithdr_incidx_v(const uint8_t* cur,
-                                          const uint8_t* end);
-  grpc_error_handle parse_lithdr_notidx(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_lithdr_notidx_x(const uint8_t* cur,
-                                          const uint8_t* end);
-  grpc_error_handle parse_lithdr_notidx_v(const uint8_t* cur,
-                                          const uint8_t* end);
-  grpc_error_handle parse_lithdr_nvridx(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_lithdr_nvridx_x(const uint8_t* cur,
-                                          const uint8_t* end);
-  grpc_error_handle parse_lithdr_nvridx_v(const uint8_t* cur,
-                                          const uint8_t* end);
-  grpc_error_handle parse_max_tbl_size(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle parse_max_tbl_size_x(const uint8_t* cur,
-                                         const uint8_t* end);
-  grpc_error_handle parse_string(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle begin_parse_string(const uint8_t* cur, const uint8_t* end,
-                                       BinaryState binary, String* str);
-
-  grpc_error_handle finish_indexed_field(const uint8_t* cur,
-                                         const uint8_t* end);
-  grpc_error_handle finish_lithdr_incidx(const uint8_t* cur,
-                                         const uint8_t* end);
-  grpc_error_handle finish_lithdr_incidx_v(const uint8_t* cur,
-                                           const uint8_t* end);
-  grpc_error_handle finish_lithdr_notidx(const uint8_t* cur,
-                                         const uint8_t* end);
-  grpc_error_handle finish_lithdr_notidx_v(const uint8_t* cur,
-                                           const uint8_t* end);
-  grpc_error_handle finish_lithdr_nvridx(const uint8_t* cur,
-                                         const uint8_t* end);
-  grpc_error_handle finish_lithdr_nvridx_v(const uint8_t* cur,
-                                           const uint8_t* end);
-  grpc_error_handle finish_max_tbl_size(const uint8_t* cur, const uint8_t* end);
-  grpc_error_handle finish_str(const uint8_t* cur, const uint8_t* end);
 
   enum class TableAction {
     kAddToTable,
@@ -160,10 +89,7 @@ class HPackParser {
   };
 
   GPR_ATTRIBUTE_NOINLINE grpc_error_handle InvalidHPackIndexError();
-  GPR_ATTRIBUTE_NOINLINE void LogHeader(grpc_mdelem md);
   grpc_error_handle AddHeaderToTable(grpc_mdelem md);
-  template <TableAction table_action>
-  grpc_error_handle FinishHeader(grpc_mdelem md);
 
   grpc_mdelem GetPrecomputedMDForIndex();
   void SetPrecomputedMDIndex(grpc_mdelem md);
@@ -182,12 +108,6 @@ class HPackParser {
 
   absl::InlinedVector<grpc_slice, 2> queued_slices_;
 
-  // current parse state - or a function that implements it
-  State state_;
-  // future states dependent on the opening op code
-  const State* next_state_;
-  // what to do after skipping prioritization data
-  State after_prioritization_;
   // the refcount of the slice that we're currently parsing
   grpc_slice_refcount* current_slice_refcount_;
   // the value we're currently parsing

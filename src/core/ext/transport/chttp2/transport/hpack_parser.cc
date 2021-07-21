@@ -464,38 +464,71 @@ struct Base64InverseTable {
 static GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
 }  // namespace
 
-void GPR_ATTRIBUTE_NOINLINE HPackParser::LogHeader(grpc_mdelem md) {
-  char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
-  char* v = nullptr;
-  if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
-    v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
-  } else {
-    v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+// Input tracks the current byte through the input data and provides it
+// via a simple stream interface.
+class HPackParser:: Input {
+ public:
+  absl::optional<uint8_t> peek() {
+    if (begin_ == end_) {
+      return {};
+    }
+    return *begin_;
   }
-  gpr_log(
-      GPR_INFO,
-      "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
-      k, v, GRPC_MDELEM_IS_INTERNED(md), GRPC_MDELEM_STORAGE(md),
-      grpc_slice_is_interned(GRPC_MDKEY(md)),
-      grpc_slice_is_interned(GRPC_MDVALUE(md)));
-  gpr_free(k);
-  gpr_free(v);
-}
 
-/* emission helpers */
-template <HPackParser::TableAction action>
-grpc_error_handle HPackParser::FinishHeader(grpc_mdelem md) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
-    LogHeader(md);
+  absl::optional<uint8_t> Next() {
+    if (begin_ == end_) {
+      return {};
+    }
+    return *begin_++;
   }
-  if (action == TableAction::kAddToTable) {
-    GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_INTERNED ||
-                     GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
-    grpc_error_handle err = grpc_chttp2_hptbl_add(&table_, md);
-    if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) return err;
+
+ private:
+  const uint8_t *begin_;
+  const uint8_t *const end_;
+};
+
+// Parser parses one frame + continuations worth of headers.
+class HPackParser::Parser {
+ public:
+  Parser(Input input, HPackParser::Sink sink) : input_(input), sink_(std::move(sink)) {}
+
+ private:
+  void GPR_ATTRIBUTE_NOINLINE LogHeader(grpc_mdelem md) {
+    char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
+    char* v = nullptr;
+    if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
+      v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
+    } else {
+      v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+    }
+    gpr_log(
+        GPR_INFO,
+        "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
+        k, v, GRPC_MDELEM_IS_INTERNED(md), GRPC_MDELEM_STORAGE(md),
+        grpc_slice_is_interned(GRPC_MDKEY(md)),
+        grpc_slice_is_interned(GRPC_MDVALUE(md)));
+    gpr_free(k);
+    gpr_free(v);
   }
-  return sink_(md);
-}
+
+  /* emission helpers */
+  template <HPackParser::TableAction action>
+  grpc_error_handle FinishHeader(grpc_mdelem md) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
+      LogHeader(md);
+    }
+    if (action == TableAction::kAddToTable) {
+      GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_INTERNED ||
+                      GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
+      grpc_error_handle err = grpc_chttp2_hptbl_add(&table_, md);
+      if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) return err;
+    }
+    return sink_(md);
+  }
+
+  Input input_;
+  HPackParser::Sink sink_;
+};
 
 UnmanagedMemorySlice HPackParser::String::TakeExtern() {
   UnmanagedMemorySlice s;
@@ -523,12 +556,6 @@ ManagedMemorySlice HPackParser::String::TakeIntern() {
   }
   data_.copied.length = 0;
   return s;
-}
-
-grpc_error_handle HPackParser::parse_next(const uint8_t* cur,
-                                          const uint8_t* end) {
-  state_ = *next_state_++;
-  return (this->*state_)(cur, end);
 }
 
 /* begin parsing a header: all functionality is encoded into lookup tables
