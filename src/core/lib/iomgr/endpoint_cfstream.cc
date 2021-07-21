@@ -303,6 +303,7 @@ void CFStreamDestroy(grpc_endpoint* ep) {
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy", ep_impl);
   }
+  grpc_resource_user_slice_allocator_destroy(&ep_impl->slice_allocator);
   EP_UNREF(ep_impl, "destroy");
 }
 

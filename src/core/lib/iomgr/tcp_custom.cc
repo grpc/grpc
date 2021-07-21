@@ -318,6 +318,7 @@ static void custom_close_callback(grpc_custom_socket* socket) {
 
 static void endpoint_destroy(grpc_endpoint* ep) {
   custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
+  grpc_resource_user_slice_allocator_destroy(&tcp->slice_allocator);
   grpc_custom_socket_vtable->close(tcp->socket, custom_close_callback);
 }
 

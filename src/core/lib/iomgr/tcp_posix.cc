@@ -670,6 +670,7 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 static void tcp_destroy(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
+  grpc_resource_user_slice_allocator_destroy(&tcp->slice_allocator);
   if (grpc_event_engine_can_track_errors()) {
     ZerocopyDisableAndWaitForRemaining(tcp);
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
