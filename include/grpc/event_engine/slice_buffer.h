@@ -19,6 +19,8 @@
 #ifndef GRPC_EVENT_ENGINE_SLICE_BUFFER_H
 #define GRPC_EVENT_ENGINE_SLICE_BUFFER_H
 
+#include <functional>
+
 #include <grpc/event_engine/slice.h>
 #include <grpc/slice_buffer.h>
 
@@ -43,10 +45,12 @@ class SliceBuffer final {
     grpc_slice_buffer_add(sb_, slice.slice_);
     slice.slice_ = grpc_empty_slice();
   }
-  void add(Slice&& slice) {
-    grpc_slice_buffer_add(sb_, slice.slice_);
-    slice.slice_ = grpc_empty_slice();
-  }
+  // TODO(nnoble): identical to add, ambiguous compilation with
+  // `sb.add(Slice(42))`;
+  //  void add(Slice&& slice) {
+  //   grpc_slice_buffer_add(sb_, slice.slice_);
+  //   slice.slice_ = grpc_empty_slice();
+  // }
   size_t add_indexed(Slice slice) {
     size_t r = grpc_slice_buffer_add_indexed(sb_, slice.slice_);
     slice.slice_ = grpc_empty_slice();
@@ -70,6 +74,7 @@ class SliceBuffer final {
   }
   void clear() { grpc_slice_buffer_reset_and_unref(sb_); }
   Slice take_first() {
+    // TODO(nnoble): document take_first on empty SliceBuffer
     grpc_slice slice = grpc_slice_buffer_take_first(sb_);
     return Slice(slice, Slice::STEAL_REF);
   }
