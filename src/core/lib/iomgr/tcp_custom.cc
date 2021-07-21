@@ -65,7 +65,7 @@ struct custom_tcp_endpoint {
   grpc_slice_buffer* write_slices = nullptr;
 
   grpc_resource_user* resource_user;
-  grpc_resource_user_slice_allocator slice_allocator;
+  grpc_slice_allocator slice_allocator;
 
   bool shutting_down;
 
@@ -318,7 +318,7 @@ static void custom_close_callback(grpc_custom_socket* socket) {
 
 static void endpoint_destroy(grpc_endpoint* ep) {
   custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
-  grpc_resource_user_slice_allocator_destroy(&tcp->slice_allocator);
+  grpc_slice_allocator_destroy(&tcp->slice_allocator);
   grpc_custom_socket_vtable->close(tcp->socket, custom_close_callback);
 }
 
@@ -376,7 +376,7 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
   }
   tcp->shutting_down = false;
   tcp->resource_user = resource_user;
-  grpc_resource_user_slice_allocator_init(&tcp->slice_allocator,
+  grpc_slice_allocator_init(&tcp->slice_allocator,
                                           tcp->resource_user);
 
   return &tcp->base;

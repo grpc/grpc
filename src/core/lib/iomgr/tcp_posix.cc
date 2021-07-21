@@ -394,7 +394,7 @@ struct grpc_tcp {
   std::string local_address;
 
   grpc_resource_user* resource_user;
-  grpc_resource_user_slice_allocator slice_allocator;
+  grpc_slice_allocator slice_allocator;
 
   grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
   gpr_mu tb_mu; /* Lock for access to list of traced buffers */
@@ -670,7 +670,7 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 static void tcp_destroy(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
-  grpc_resource_user_slice_allocator_destroy(&tcp->slice_allocator);
+  grpc_slice_allocator_destroy(&tcp->slice_allocator);
   if (grpc_event_engine_can_track_errors()) {
     ZerocopyDisableAndWaitForRemaining(tcp);
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
@@ -1792,7 +1792,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  grpc_resource_user_slice_allocator_init(&tcp->slice_allocator,
+  grpc_slice_allocator_init(&tcp->slice_allocator,
                                           tcp->resource_user);
   gpr_mu_init(&tcp->tb_mu);
   tcp->tb_head = nullptr;

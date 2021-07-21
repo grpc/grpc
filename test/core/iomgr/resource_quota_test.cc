@@ -692,9 +692,9 @@ static void test_one_slice(void) {
 
   grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
 
-  grpc_resource_user_slice_allocator alloc;
+  grpc_slice_allocator alloc;
   int num_allocs = 0;
-  grpc_resource_user_slice_allocator_init(&alloc, usr);
+  grpc_slice_allocator_init(&alloc, usr);
 
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -714,7 +714,7 @@ static void test_one_slice(void) {
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_slice_allocator_destroy(&alloc);
+    grpc_slice_allocator_destroy(&alloc);
   }
   grpc_resource_quota_unref(q);
 }
@@ -725,10 +725,10 @@ static void test_one_slice_through_slice_allocator_factory(void) {
       "test_one_slice_through_slice_allocator_factory");
   int num_allocs = 0;
   grpc_resource_quota_resize(rq, 1024);
-  grpc_resource_user_slice_allocator_factory alloc_factory;
-  grpc_resource_user_slice_allocator_factory_init(&alloc_factory, rq);
-  grpc_resource_user_slice_allocator alloc;
-  grpc_resource_user_slice_allocator_factory_initialize_slice_allocator(
+  grpc_slice_allocator_factory alloc_factory;
+  grpc_slice_allocator_factory_init(&alloc_factory, rq);
+  grpc_slice_allocator alloc;
+  grpc_slice_allocator_factory_initialize_slice_allocator(
       &alloc_factory, "usr", &alloc);
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -743,8 +743,8 @@ static void test_one_slice_through_slice_allocator_factory(void) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_slice_buffer_destroy_internal(&buffer);
-    grpc_resource_user_slice_allocator_destroy(&alloc);
-    grpc_resource_user_slice_allocator_factory_destroy(&alloc_factory);
+    grpc_slice_allocator_destroy(&alloc);
+    grpc_slice_allocator_factory_destroy(&alloc_factory);
   }
 }
 
@@ -757,9 +757,9 @@ static void test_one_slice_deleted_late(void) {
 
   grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
 
-  grpc_resource_user_slice_allocator alloc;
+  grpc_slice_allocator alloc;
   int num_allocs = 0;
-  grpc_resource_user_slice_allocator_init(&alloc, usr);
+  grpc_slice_allocator_init(&alloc, usr);
 
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -775,7 +775,7 @@ static void test_one_slice_deleted_late(void) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_slice_allocator_destroy(&alloc);
+    grpc_slice_allocator_destroy(&alloc);
   }
   grpc_resource_quota_unref(q);
   {
@@ -799,9 +799,9 @@ static void test_negative_rq_free_pool(void) {
 
   grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
 
-  grpc_resource_user_slice_allocator alloc;
+  grpc_slice_allocator alloc;
   int num_allocs = 0;
-  grpc_resource_user_slice_allocator_init(&alloc, usr);
+  grpc_slice_allocator_init(&alloc, usr);
 
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -823,7 +823,7 @@ static void test_negative_rq_free_pool(void) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_slice_allocator_destroy(&alloc);
+    grpc_slice_allocator_destroy(&alloc);
   }
 
   grpc_resource_quota_unref(q);

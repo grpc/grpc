@@ -60,7 +60,7 @@ struct CFStreamEndpoint {
   std::string peer_string;
   std::string local_address;
   grpc_resource_user* resource_user;
-  grpc_resource_user_slice_allocator slice_allocator;
+  grpc_slice_allocator slice_allocator;
 };
 static void CFStreamFree(CFStreamEndpoint* ep) {
   grpc_resource_user_unref(ep->resource_user);
@@ -303,7 +303,7 @@ void CFStreamDestroy(grpc_endpoint* ep) {
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy", ep_impl);
   }
-  grpc_resource_user_slice_allocator_destroy(&ep_impl->slice_allocator);
+  grpc_slice_allocator_destroy(&ep_impl->slice_allocator);
   EP_UNREF(ep_impl, "destroy");
 }
 
@@ -385,7 +385,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
                     static_cast<void*>(ep_impl), grpc_schedule_on_exec_ctx);
   grpc_resource_user_ref(resource_user);
   ep_impl->resource_user = resource_user;
-  grpc_resource_user_slice_allocator_init(&ep_impl->slice_allocator,
+  grpc_slice_allocator_init(&ep_impl->slice_allocator,
                                           ep_impl->resource_user);
 
   return &ep_impl->base;
