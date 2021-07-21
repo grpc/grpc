@@ -3577,11 +3577,10 @@ TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr(
-          "non-terminal filter for config type grpc.testing"
-          ".client_only_http_filter is the last filter in the chain"));
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "non-terminal filter for config type grpc.testing"
+                  ".client_only_http_filter is the last filter in the chain"));
 }
 
 // Test that we NACK terminal filters that are not at the end of the list.
@@ -3647,7 +3646,8 @@ TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
       &http_connection_manager);
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
-  http_connection_manager.mutable_http_filters(0)->mutable_typed_config()
+  http_connection_manager.mutable_http_filters(0)
+      ->mutable_typed_config()
       ->PackFrom(HTTPFault());
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);

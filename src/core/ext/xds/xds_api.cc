@@ -2013,14 +2013,16 @@ grpc_error_handle HttpConnectionManagerParse(
         if (filter_impl->IsTerminalFilter()) {
           return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("terminal filter for config type ", filter_type,
-                           " must be the last filter in the chain").c_str());
+                           " must be the last filter in the chain")
+                  .c_str());
         }
       } else {
         // The last filter must be terminal.
         if (!filter_impl->IsTerminalFilter()) {
           return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("non-terminal filter for config type ", filter_type,
-                           " is the last filter in the chain").c_str());
+                           " is the last filter in the chain")
+                  .c_str());
         }
       }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
