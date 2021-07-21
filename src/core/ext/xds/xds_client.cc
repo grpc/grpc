@@ -35,7 +35,6 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_circuit_breaker_retry_map.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -2335,7 +2334,6 @@ std::string XdsClient::DumpClientConfigBinary() {
 void XdsClientGlobalInit() {
   g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
-  XdsCircuitBreakerRetryMap::Init();
 }
 
 // TODO(roth): Find a better way to clear the fallback config that does
@@ -2346,7 +2344,6 @@ void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   delete g_mu;
   g_mu = nullptr;
   XdsHttpFilterRegistry::Shutdown();
-  XdsCircuitBreakerRetryMap::Shutdown();
 }
 
 namespace {

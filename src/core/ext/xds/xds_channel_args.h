@@ -29,9 +29,4 @@
 #define GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS \
   "grpc.xds_resource_does_not_exist_timeout_ms"
 
-// Client channel map to store the max_retries number for each cluster.
-// The map is passed to CDS LB policy which will set the max_retries in the map
-// when receiving updates.
-#define GRPC_ARG_CLUSTER_MAX_RETRIES_MAP "grpc.xds_cluster_max_retries_map"
-
 #endif /* GRPC_CORE_EXT_XDS_XDS_CHANNEL_ARGS_H */

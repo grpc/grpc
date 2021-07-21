@@ -30,7 +30,6 @@
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_circuit_breaker_retry_map.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -80,6 +79,37 @@ class XdsResolver : public Resolver {
   void ResetBackoffLocked() override {
     if (xds_client_ != nullptr) xds_client_->ResetBackoff();
   }
+
+  class XdsCircuitBreakerRetryMap {
+   public:
+    class RetryCounter : public RefCounted<RetryCounter> {
+     public:
+      explicit RetryCounter(std::string key) : key_(std::move(key)) {}
+      ~RetryCounter() override;
+
+      uint32_t Load() {
+        return concurrent_requests_.Load(MemoryOrder::SEQ_CST);
+      }
+      uint32_t Increment() { return concurrent_requests_.FetchAdd(1); }
+      void Decrement() { concurrent_requests_.FetchSub(1); }
+
+     private:
+      std::string key_;
+      Atomic<uint32_t> concurrent_requests_{0};
+    };
+
+    static RefCountedPtr<RetryCounter> GetOrCreate(const std::string& cluster);
+
+    // Global Init and shutdown
+    static void Init();
+    static void Shutdown();
+
+   private:
+    Mutex mu_;
+    std::map<std::string, RetryCounter*> map_ ABSL_GUARDED_BY(mu_);
+  };
+
+  // An entry in the map of clusters that need to be present in the LB
 
  private:
   class Notifier {
@@ -144,14 +174,15 @@ class XdsResolver : public Resolver {
     using ClusterStateMap =
         std::map<std::string, WeakRefCountedPtr<ClusterState>>;
 
-    ClusterState(
-        RefCountedPtr<XdsResolver> resolver, const std::string& cluster_name)
+    ClusterState(RefCountedPtr<XdsResolver> resolver,
+                 const std::string& cluster_name)
         : resolver_(std::move(resolver)),
           it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
                   .first),
           max_retries_(3) {
-           retry_counter_ = grpc_core::XdsCircuitBreakerRetryMap::GetOrCreate(cluster_name);
-          }
+      retry_counter_ =
+          XdsResolver::XdsCircuitBreakerRetryMap::GetOrCreate(cluster_name);
+    }
 
     void Orphan() override {
       auto* resolver = resolver_.release();
@@ -340,6 +371,49 @@ class XdsResolver : public Resolver {
   ClusterState::ClusterStateMap cluster_state_map_;
   XdsClusterMaxRetriesMapImpl cluster_max_retries_map_;
 };
+
+//
+// global retry circuit breaker atomic map
+//
+
+XdsResolver::XdsCircuitBreakerRetryMap* g_retry_map = nullptr;
+
+//
+// XdsResolver::XdsCircuitBreakerRetryMap
+//
+
+RefCountedPtr<XdsResolver::XdsCircuitBreakerRetryMap::RetryCounter>
+XdsResolver::XdsCircuitBreakerRetryMap::GetOrCreate(
+    const std::string& cluster) {
+  std::string key(cluster);
+  RefCountedPtr<RetryCounter> result;
+  MutexLock lock(&g_retry_map->mu_);
+  auto it = g_retry_map->map_.find(key);
+  if (it == g_retry_map->map_.end()) {
+    it = g_retry_map->map_.insert({key, nullptr}).first;
+  } else {
+    result = it->second->RefIfNonZero();
+  }
+  if (result == nullptr) {
+    result = MakeRefCounted<RetryCounter>(std::move(key));
+    it->second = result.get();
+  }
+  return result;
+}
+
+XdsResolver::XdsCircuitBreakerRetryMap::RetryCounter::~RetryCounter() {
+  MutexLock lock(&g_retry_map->mu_);
+  auto it = g_retry_map->map_.find(key_);
+  if (it != g_retry_map->map_.end() && it->second == this) {
+    g_retry_map->map_.erase(it);
+  }
+}
+
+void XdsResolver::XdsCircuitBreakerRetryMap::Init() {
+  g_retry_map = new XdsCircuitBreakerRetryMap();
+}
+
+void XdsResolver::XdsCircuitBreakerRetryMap::Shutdown() { delete g_retry_map; }
 
 //
 // XdsResolver::Notifier
@@ -634,8 +708,7 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (clusters_.find(name) == clusters_.end()) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
-      auto new_cluster_state = MakeRefCounted<ClusterState>(
-          resolver_, name);
+      auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
       clusters_[it->second->cluster()] = it->second->Ref();
@@ -1090,6 +1163,9 @@ XdsClusterMaxRetriesMap* XdsClusterMaxRetriesMap::GetFromChannelArgs(
 void grpc_resolver_xds_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       absl::make_unique<grpc_core::XdsResolverFactory>());
+  grpc_core::XdsResolver::XdsCircuitBreakerRetryMap::Init();
 }
 
-void grpc_resolver_xds_shutdown() {}
+void grpc_resolver_xds_shutdown() {
+  grpc_core::XdsResolver::XdsCircuitBreakerRetryMap::Shutdown();
+}
