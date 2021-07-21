@@ -544,7 +544,6 @@ TEST_F(GrpcTlsCertificateProviderTest,
                                           tmp_root_cert.name(), 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
-
   // Expect to see error sent to watcher since certificate-key pair will be empty.
   EXPECT_THAT(watcher_state_1->GetErrorQueue(),
               ::testing::Contains(ErrorInfo("", kIdentityError)));
