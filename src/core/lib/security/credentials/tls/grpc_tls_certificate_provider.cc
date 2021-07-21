@@ -204,16 +204,18 @@ void FileWatcherCertificateProvider::ForceUpdate() {
        pem_key_cert_pairs_ != *pem_key_cert_pairs);
   if (identity_cert_changed) {
     if (pem_key_cert_pairs.has_value()) {
-      bool perform_reload = true;
+      absl::StatusOr<bool> perform_reload = true;
       for (int i = 0; i < pem_key_cert_pairs->size(); ++i) {
-        absl::StatusOr<bool> matched_or = PrivateKeyAndCertificateMatch(
+        perform_reload = PrivateKeyAndCertificateMatch(
           pem_key_cert_pairs->at(i).private_key(), pem_key_cert_pairs->at(i).cert_chain());
-        if (!(matched_or.ok() && *matched_or)) {
-          perform_reload = false;
+        if (!(perform_reload.ok() && *perform_reload)) {
+          gpr_log(GPR_ERROR,
+                  "PrivateKeyAndCertificateMatch failed, skip the update. Error message: %d",
+                  perform_reload.status().message());
           break;
         }
       }
-      if (perform_reload){
+      if (perform_reload.value()){
         pem_key_cert_pairs_ = std::move(*pem_key_cert_pairs);
       }
     } else {
@@ -463,3 +465,5 @@ void grpc_tls_certificate_provider_release(
   grpc_core::ExecCtx exec_ctx;
   if (provider != nullptr) provider->Unref();
 }
+
+

@@ -1117,8 +1117,15 @@ grpc_authorization_policy_provider_static_data_create(
 GRPCAPI void grpc_authorization_policy_provider_release(
     grpc_authorization_policy_provider* provider);
 
+struct grpc_status_or_bool{
+  grpc_status_code status;
+  bool boolean;
+};
+
 #ifdef __cplusplus
 }
+
+
 #endif
 
 #endif /* GRPC_GRPC_SECURITY_H */
