@@ -5632,17 +5632,19 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
   auto base_interval =
       retry_policy->mutable_retry_back_off()->mutable_base_interval();
-  // Set backoff to 500ms, 1/2 of rpc timeout of 1 second.
-  base_interval->set_seconds(0);
-  base_interval->set_nanos(500000000);
+  // Set backoff to 1 second, 1/2 of rpc timeout of 2 second.
+  base_interval->set_seconds(1 * grpc_test_slowdown_factor());
+  base_interval->set_nanos(0);
   auto max_interval =
       retry_policy->mutable_retry_back_off()->mutable_max_interval();
-  max_interval->set_seconds(5);
+  max_interval->set_seconds(10 * grpc_test_slowdown_factor());
   max_interval->set_nanos(0);
   SetRouteConfiguration(0, new_route_config);
   // We expect 1 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
-      1, RpcOptions().set_server_expected_error(StatusCode::CANCELLED),
+      1,
+      RpcOptions().set_timeout_ms(2000).set_server_expected_error(
+          StatusCode::CANCELLED),
       StatusCode::DEADLINE_EXCEEDED);
   EXPECT_EQ(1 + 1, backends_[0]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RETRY");
