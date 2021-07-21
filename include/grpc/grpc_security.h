@@ -1117,17 +1117,17 @@ grpc_authorization_policy_provider_static_data_create(
 GRPCAPI void grpc_authorization_policy_provider_release(
     grpc_authorization_policy_provider* provider);
 
-struct grpc_status_or_bool{
-  grpc_status_code status;
-  bool boolean;
-};
+//struct grpc_status_or_bool{
+//  grpc_status_code status;
+//  bool boolean;
+//};
 
 /**
  * Checks if the private key matches the certificate's public key.
  * Returns a not-OK status on failure, or a bool indicating
  * whether the key/cert pair matches.
  */
-GRPCAPI grpc_status_or_bool* grpc_tls_certificate_key_match(
+GRPCAPI grpc_status_code* grpc_tls_certificate_key_match(
     const char* private_key, const char* cert_chain);
 
 #ifdef __cplusplus
