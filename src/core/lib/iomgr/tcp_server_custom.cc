@@ -218,7 +218,6 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
     peer_name_string = grpc_sockaddr_to_uri(&peer_name);
   } else {
     GRPC_LOG_IF_ERROR("getpeername error", err);
-    GRPC_ERROR_UNREF(err);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     if (peer_name_string) {
