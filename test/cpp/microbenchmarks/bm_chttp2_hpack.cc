@@ -452,31 +452,25 @@ template <class Fixture, grpc_error_handle (*OnHeader)(void*, grpc_mdelem)>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  std::vector<grpc_slice> init_slices = Fixture::GetInitSlices();
-  std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
+  absl::optional<grpc_slice> init_slice = Fixture::GetInitSlice();
+  grpc_slice benchmark_slice = Fixture::GetBenchmarkSlice();
   grpc_core::HPackParser p;
   const int kArenaSize = 4096 * 4096;
   auto* arena = grpc_core::Arena::Create(kArenaSize);
   p.BeginFrame([arena](grpc_mdelem e) { return OnHeader(arena, e); },
                grpc_core::HPackParser::Boundary::EndOfHeaders,
                grpc_core::HPackParser::Priority::None);
-  for (auto slice : init_slices) {
-    p.QueueBufferToParse(slice);
-  }
   auto check_error = [](grpc_error_handle e) {
     if (e != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "%s", grpc_error_string(e));
       abort();
     }
   };
-  check_error(p.Parse());
+  if (init_slice.has_value()) check_error(p.Parse(*init_slice));
   p.FinishFrame();
   while (state.KeepRunning()) {
-    for (auto slice : benchmark_slices) {
-      p.QueueBufferToParse(slice);
-    }
     p.ResetSink([arena](grpc_mdelem e) { return OnHeader(arena, e); });
-    check_error(p.Parse());
+    check_error(p.Parse(benchmark_slice));
     p.FinishFrame();
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
@@ -490,8 +484,8 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   }
   // Clean up
   arena->Destroy();
-  for (auto slice : init_slices) grpc_slice_unref(slice);
-  for (auto slice : benchmark_slices) grpc_slice_unref(slice);
+  if (init_slice.has_value()) grpc_slice_unref(*init_slice);
+  grpc_slice_unref(benchmark_slice);
 
   track_counters.Finish(state);
 }
@@ -500,27 +494,23 @@ namespace hpack_parser_fixtures {
 
 class EmptyBatch {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
-    return {MakeSlice({})};
-  }
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() { return {MakeSlice({})}; }
 };
 
 class IndexedSingleStaticElem {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     return {MakeSlice(
         {0x40, 0x07, ':', 's', 't', 'a', 't', 'u', 's', 0x03, '2', '0', '0'})};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
-    return {MakeSlice({0xbe})};
-  }
+  static grpc_slice GetBenchmarkSlice() { return {MakeSlice({0xbe})}; }
 };
 
 class AddIndexedSingleStaticElem {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice(
         {0x40, 0x07, ':', 's', 't', 'a', 't', 'u', 's', 0x03, '2', '0', '0'})};
   }
@@ -528,47 +518,45 @@ class AddIndexedSingleStaticElem {
 
 class KeyIndexedSingleStaticElem {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     return {MakeSlice(
         {0x40, 0x07, ':', 's', 't', 'a', 't', 'u', 's', 0x03, '2', '0', '0'})};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice({0x7e, 0x03, 'd', 'e', 'f'})};
   }
 };
 
 class IndexedSingleInternedElem {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     return {MakeSlice({0x40, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
-    return {MakeSlice({0xbe})};
-  }
+  static grpc_slice GetBenchmarkSlice() { return {MakeSlice({0xbe})}; }
 };
 
 class AddIndexedSingleInternedElem {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice({0x40, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
   }
 };
 
 class KeyIndexedSingleInternedElem {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     return {MakeSlice({0x40, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice({0x7e, 0x03, 'g', 'h', 'i'})};
   }
 };
 
 class NonIndexedElem {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice({0x00, 0x03, 'a', 'b', 'c', 0x03, 'd', 'e', 'f'})};
   }
 };
@@ -579,8 +567,8 @@ class NonIndexedBinaryElem;
 template <int kLength>
 class NonIndexedBinaryElem<kLength, true> {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     std::vector<uint8_t> v = {
         0x00, 0x07, 'a', 'b', 'c',
         '-',  'b',  'i', 'n', static_cast<uint8_t>(kLength + 1),
@@ -595,8 +583,8 @@ class NonIndexedBinaryElem<kLength, true> {
 template <>
 class NonIndexedBinaryElem<1, false> {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice(
         {0x00, 0x07, 'a', 'b', 'c', '-', 'b', 'i', 'n', 0x82, 0xf7, 0xb3})};
   }
@@ -605,8 +593,8 @@ class NonIndexedBinaryElem<1, false> {
 template <>
 class NonIndexedBinaryElem<3, false> {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice({0x00, 0x07, 'a', 'b', 'c', '-', 'b', 'i', 'n', 0x84,
                        0x7f, 0x4e, 0x29, 0x3f})};
   }
@@ -615,8 +603,8 @@ class NonIndexedBinaryElem<3, false> {
 template <>
 class NonIndexedBinaryElem<10, false> {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice({0x00, 0x07, 'a',  'b',  'c',  '-',  'b',
                        'i',  'n',  0x8b, 0x71, 0x0c, 0xa5, 0x81,
                        0x73, 0x7b, 0x47, 0x13, 0xe9, 0xf7, 0xe3})};
@@ -626,8 +614,8 @@ class NonIndexedBinaryElem<10, false> {
 template <>
 class NonIndexedBinaryElem<31, false> {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice({0x00, 0x07, 'a',  'b',  'c',  '-',  'b',  'i',  'n',
                        0xa3, 0x92, 0x43, 0x7f, 0xbe, 0x7c, 0xea, 0x6f, 0xf3,
                        0x3d, 0xa7, 0xa7, 0x67, 0xfb, 0xe2, 0x82, 0xf7, 0xf2,
@@ -639,8 +627,8 @@ class NonIndexedBinaryElem<31, false> {
 template <>
 class NonIndexedBinaryElem<100, false> {
  public:
-  static std::vector<grpc_slice> GetInitSlices() { return {}; }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() { return {}; }
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice(
         {0x00, 0x07, 'a',  'b',  'c',  '-',  'b',  'i',  'n',  0xeb, 0x1d, 0x4d,
          0xe8, 0x96, 0x8c, 0x14, 0x20, 0x06, 0xc1, 0xc3, 0xdf, 0x6e, 0x1f, 0xef,
@@ -657,7 +645,7 @@ class NonIndexedBinaryElem<100, false> {
 
 class RepresentativeClientInitialMetadata {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     return {grpc_slice_from_static_string(
         // generated with:
         // ```
@@ -675,7 +663,7 @@ class RepresentativeClientInitialMetadata {
         "@\x02te\x08trailers"
         "@\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)")};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static grpc_slice GetBenchmarkSlice() {
     // generated with:
     // ```
     // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
@@ -690,7 +678,7 @@ class RepresentativeClientInitialMetadata {
 // the corresponding encoder benchmark above.
 class MoreRepresentativeClientInitialMetadata {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     return {MakeSlice(
         {0x40, 0x07, ':',  's',  'c',  'h',  'e',  'm',  'e',  0x04, 'h',  't',
          't',  'p',  0x40, 0x07, ':',  'm',  'e',  't',  'h',  'o',  'd',  0x04,
@@ -721,7 +709,7 @@ class MoreRepresentativeClientInitialMetadata {
          '1',  '2',  '.',  '0',  '.',  '0',  ' ',  '(',  'l',  'i',  'n',  'u',
          'x',  ')'})};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static grpc_slice GetBenchmarkSlice() {
     return {MakeSlice(
         {0xc7, 0xc6, 0xc5, 0xc4, 0x7f, 0x04, 0x31, 0x00, 0x01, 0x02, 0x03, 0x04,
          0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
@@ -735,7 +723,7 @@ class MoreRepresentativeClientInitialMetadata {
 
 class RepresentativeServerInitialMetadata {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     return {grpc_slice_from_static_string(
         // generated with:
         // ```
@@ -750,7 +738,7 @@ class RepresentativeServerInitialMetadata {
         "application/grpc"
         "@\x14grpc-accept-encoding\x15identity,deflate,gzip")};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static grpc_slice GetBenchmarkSlice() {
     // generated with:
     // ```
     // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
@@ -763,7 +751,7 @@ class RepresentativeServerInitialMetadata {
 
 class RepresentativeServerTrailingMetadata {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     // generated with:
     // ```
     // tools/codegen/core/gen_header_frame.py --compression inc --no_framing
@@ -776,7 +764,7 @@ class RepresentativeServerTrailingMetadata {
                        0x0c, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x6d, 0x65,
                        0x73, 0x73, 0x61, 0x67, 0x65, 0x00})};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static grpc_slice GetBenchmarkSlice() {
     // generated with:
     // ```
     // tools/codegen/core/gen_header_frame.py --compression pre --no_framing
@@ -875,12 +863,12 @@ static grpc_error_handle OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
 // Send the same deadline repeatedly
 class SameDeadline {
  public:
-  static std::vector<grpc_slice> GetInitSlices() {
+  static absl::optional<grpc_slice> GetInitSlice() {
     return {
         grpc_slice_from_static_string("@\x0cgrpc-timeout\x03"
                                       "30S")};
   }
-  static std::vector<grpc_slice> GetBenchmarkSlices() {
+  static grpc_slice GetBenchmarkSlice() {
     // Use saved key and literal value.
     return {MakeSlice({0x0f, 0x2f, 0x03, '3', '0', 'S'})};
   }

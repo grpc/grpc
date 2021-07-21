@@ -46,7 +46,7 @@ class HPackParser {
   void BeginFrame(Sink sink, Boundary boundary, Priority priority);
   void ResetSink(Sink sink) { sink_ = std::move(sink); }
   void QueueBufferToParse(const grpc_slice& slice);
-  grpc_error_handle Parse();
+  grpc_error_handle Parse(const grpc_slice& last_slice);
   void FinishFrame();
 
   grpc_chttp2_hptbl* hpack_table() { return &table_; }
@@ -175,7 +175,7 @@ class HPackParser {
   grpc_error_handle AppendHuffBytes(const uint8_t* cur, const uint8_t* end);
   grpc_error_handle AppendStrBytes(const uint8_t* cur, const uint8_t* end);
 
-  grpc_error_handle Parse(const grpc_slice& slice);
+  grpc_error_handle ParseOneSlice(const grpc_slice& slice);
 
   Sink sink_;
   grpc_error_handle last_error_;
