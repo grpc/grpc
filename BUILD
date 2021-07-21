@@ -855,7 +855,6 @@ grpc_cc_library(
         "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/endpoint_config.cc",
         "src/core/lib/event_engine/event_engine.cc",
-        "src/core/lib/event_engine/slice_allocator.cc",
         "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
@@ -2447,6 +2446,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
+        "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
         "src/core/ext/transport/chttp2/transport/context_list.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",
@@ -2471,6 +2471,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
+        "src/core/ext/transport/chttp2/transport/chttp2_slice_allocator.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/context_list.h",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
@@ -2492,6 +2493,8 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/varint.h",
     ],
     external_deps = [
+        "absl/memory",
+        "absl/status",
         "absl/strings:str_format",
         "absl/strings",
     ],
